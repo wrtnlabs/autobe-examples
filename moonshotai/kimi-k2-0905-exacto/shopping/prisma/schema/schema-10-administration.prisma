@@ -1,0 +1,357 @@
+/// Comprehensive audit trail capturing all administrative actions and system
+/// operations performed by platform administrators.
+///
+/// Maintains detailed records of administrator activities including user
+/// management, configuration changes, order interventions, and system
+/// operations. Each log entry includes complete context about the action
+/// performed, timing, authorization level, and affected resources.
+///
+/// Supports regulatory compliance requirements, security monitoring,
+/// operational troubleshooting, and administrative accountability tracking
+/// across the platform ecosystem.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the logged action. {@link
+  /// ecommerce_mall_administrators.id}
+  ecommerce_mall_administrator_id String
+  
+  /// Administrative session during which the action occurred. {@link
+  /// ecommerce_mall_administrator_sessions.id}
+  ecommerce_mall_administrator_session_id String
+  
+  /// Category of administrative action performed (user_management,
+  /// order_intervention, configuration_change, content_moderation,
+  /// system_operation).
+  action_type String
+  
+  /// Detailed description of the specific action taken by the administrator.
+  action_description String
+  
+  /// Type of system resource affected by the action (user_account,
+  /// product_listing, order, payment, configuration).
+  resource_type String
+  
+  /// Unique identifier of the specific resource affected by the administrative
+  /// action.
+  resource_id String?
+  
+  /// Value or state of the resource before the administrative change, used for
+  /// audit trail comparison.
+  previous_value String?
+  
+  /// Value or state of the resource after the administrative change,
+  /// documenting the modification.
+  new_value String?
+  
+  /// IP address from which the administrative action was performed for
+  /// security tracking.
+  ip_address String
+  
+  /// User agent string identifying the browser or client application used for
+  /// the action.
+  user_agent String?
+  
+  /// Severity classification of the action (info, warning, error, critical)
+  /// for alert prioritization.
+  severity_level String
+  
+  /// Timestamp when the administrative action was performed and logged.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  session ecommerce_mall_administrator_sessions @relation(fields: [ecommerce_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_session_id], map: "ecommerce_mall_admin_logs_ecommerce_mall_administrator_84f413e9")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_id, created_at], map: "ecommerce_mall_admin_logs_ecommerce_mall_administrator_5e9a384f")
+  @@index([action_type, created_at])
+}
+
+/// Comprehensive performance monitoring system capturing real-time system
+/// health metrics and operational statistics.
+///
+/// Tracks critical performance indicators including response times, error
+/// rates, resource utilization, and system availability across all platform
+/// components. Provides administrators with visibility into system health
+/// trends and performance optimization opportunities.
+///
+/// Supports proactive system management, capacity planning, performance
+/// troubleshooting, and SLA compliance monitoring. Maintains historical
+/// performance data for trend analysis and predictive maintenance
+/// scheduling.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_system_performance {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the performance metric being tracked (response_time, cpu_usage,
+  /// memory_usage, disk_io, network_throughput).
+  metric_name String
+  
+  /// Numerical value of the performance metric at the time of measurement.
+  metric_value Float
+  
+  /// Unit of measurement for the metric (milliseconds, percent,
+  /// bytes_per_second, requests_per_second).
+  metric_unit String
+  
+  /// System component generating the metric (database, web_server, cache,
+  /// api_gateway, order_processor).
+  component_type String
+  
+  /// Specific identifier for the component instance (server_name,
+  /// database_instance, service_name).
+  component_identifier String?
+  
+  /// Geographic region where the performance metric was captured for
+  /// distributed system analysis.
+  server_region String
+  
+  /// Hostname or identifier of the server where the metric was recorded for
+  /// infrastructure tracking.
+  host_hostname String?
+  
+  /// Severity classification based on metric value (normal, warning, critical)
+  /// for alerting purposes.
+  severity_level String
+  
+  /// Time interval in seconds over which the metric value was measured for
+  /// rate calculations.
+  measurement_interval Int
+  
+  /// Flag indicating whether the metric value is below acceptable performance
+  /// thresholds.
+  is_below_threshold Boolean
+  
+  /// HTTP response code or system error code associated with the performance
+  /// measurement.
+  response_code Int?
+  
+  /// Timestamp when the performance metric was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([metric_name, created_at])
+  // spellchecker: ignore-next-line
+  @@index([component_type, severity_level, created_at], map: "ecommerce_mall_system_performance_component_type_sever_e753d621")
+}
+
+/// Comprehensive configuration management system storing platform-wide
+/// settings and business operation parameters.
+///
+/// Maintains all system configuration values covering payment gateways,
+/// shipping providers, tax calculations, email settings, feature flags, and
+/// business rules. Supports multi-environment configuration management with
+/// audit trails for configuration changes.
+///
+/// Enables flexible business rule implementation without code deployment,
+/// supports A/B testing configurations, maintains rollback capabilities for
+/// configuration changes. Provides secure storage for sensitive
+/// configuration values while maintaining clear audit trails.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_platform_configuration {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting (domain-specific key
+  /// name).
+  config_key String
+  
+  /// Value of the configuration setting (can represent strings, numbers, JSON,
+  /// or other data types).
+  config_value String
+  
+  /// Data type of the configuration value (string, number, boolean, json, url,
+  /// email, array).
+  config_type String
+  
+  /// Functional category grouping settings (payment, shipping, email, tax,
+  /// features, seo, notifications).
+  category String
+  
+  /// Target environment for the configuration (development, staging,
+  /// production).
+  environment String
+  
+  /// Clear description of the configuration purpose and expected outcomes when
+  /// modified.
+  description String
+  
+  /// Flag indicating whether the configuration value requires encryption for
+  /// sensitive data protection.
+  is_encrypted Boolean
+  
+  /// Flag indicating whether this configuration is mandatory for basic
+  /// platform operation.
+  is_required Boolean
+  
+  /// JSON string containing validation rules that configuration values must
+  /// satisfy.
+  validation_rules String?
+  
+  /// Minimum allowable numeric value for number-type configurations or length
+  /// for string types.
+  min_value Float?
+  
+  /// Maximum allowable numeric value for number-type configurations or length
+  /// for string types.
+  max_value Float?
+  
+  /// Default value to use when no configuration value is currently set for the
+  /// specific key.
+  default_value String?
+  
+  /// JSON array of allowed values for configuration settings with predefined
+  /// value options.
+  allowed_values String?
+  
+  /// Version number tracking configuration changes for audit trail and
+  /// rollback capabilities.
+  version Int
+  
+  /// Date/time when this configuration setting becomes active (NULL means
+  /// immediately active).
+  effective_from DateTime?
+  
+  /// Date/time when this configuration setting expires (NULL means no
+  /// expiration).
+  effective_until DateTime?
+  
+  /// Explanation of why the configuration was changed for documentation and
+  /// audit purposes.
+  modified_reason String?
+  
+  /// Timestamp when this configuration version was created and stored.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([config_key, environment], map: "ecommerce_mall_platform_configuration_config_key_envir_92651a2c")
+  // spellchecker: ignore-next-line
+  @@index([category, environment, effective_from], map: "ecommerce_mall_platform_configuration_category_environ_b909fae9")
+  @@index([category, version])
+}
+
+/// Comprehensive analytics data warehouse storing platform performance
+/// metrics and business intelligence data.
+///
+/// Collects detailed analytics about sales performance, user behavior,
+/// traffic patterns, conversion rates, and operational efficiency.
+/// Aggregates data from all platform components for executive reporting and
+/// strategic decision making.
+///
+/// Provides trend analysis capabilities, supports complex business
+/// intelligence queries, and enables predictive analytics through historical
+/// data analysis. Maintains data granularity while providing efficient
+/// aggregate storage.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_analytics_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Analytics metric identifier (sales_volume, conversion_rate,
+  /// customer_acquisition_cost, average_order_value, traffic_volume,
+  /// cart_abandonment_rate).
+  metric_name String
+  
+  /// Business category classification (sales, marketing, operations,
+  /// financials, traffic, user_experience).
+  metric_category String
+  
+  /// Scope level of the metric (platform_wide, channel_specific,
+  /// seller_specific, product_category, geographic_region).
+  metric_scope String
+  
+  /// Specific entity identifier when scope is narrower than platform wide
+  /// (seller_id, channel_id, category_id, region_id).
+  scope_identifier String?
+  
+  /// Numerical value of the analytics metric being measured (sum, average,
+  /// rate, count depending on metric type).
+  metric_value Float
+  
+  /// Number of individual data points aggregated to produce this metric value
+  /// for statistical accuracy.
+  data_point_count Int
+  
+  /// Time period over which the metric value was calculated (daily, weekly,
+  /// monthly, quarterly, annually).
+  calculation_period String
+  
+  /// Start date/time of the calculation period for metric timestamp accuracy.
+  period_start DateTime
+  
+  /// End date/time of the calculation period defining metric measurement
+  /// boundaries.
+  period_end DateTime
+  
+  /// JSON string containing dimensional breakdowns (device_type,
+  /// traffic_source, customer_segment, geographic_region).
+  dimension_tiers String?
+  
+  /// Stage in conversion funnel being measured (awareness, consideration,
+  /// purchase, retention, advocacy).
+  conversion_stage String?
+  
+  /// Statistical confidence level (0-1) indicating metric reliability for
+  /// decision-making accuracy.
+  confidence_level Float?
+  
+  /// Flag indicating whether the metric value meets statistical significance
+  /// thresholds.
+  is_statistically_significant Boolean
+  
+  /// Source system that provided the data for calculation (order_system,
+  /// traffic_analytics, payment_gateway, crm_system).
+  data_source String
+  
+  /// Statistical method used to aggregate data (sum, average, median,
+  /// percentile, count, unique_count).
+  aggregation_method String
+  
+  /// Timestamp when the analytics metric was calculated and stored in the data
+  /// warehouse.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([metric_name, metric_scope, scope_identifier, calculation_period, period_start], map: "ecommerce_mall_analytics_metrics_metric_name_metric_sc_40871a17")
+  // spellchecker: ignore-next-line
+  @@index([metric_category, period_start, period_end], map: "ecommerce_mall_analytics_metrics_metric_category_perio_5cacf5c2")
+  // spellchecker: ignore-next-line
+  @@index([metric_scope, scope_identifier, period_start], map: "ecommerce_mall_analytics_metrics_metric_scope_scope_id_07198ea2")
+}

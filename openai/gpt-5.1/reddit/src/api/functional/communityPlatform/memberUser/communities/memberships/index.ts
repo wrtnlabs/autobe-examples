@@ -6,62 +6,63 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityMembership } from "../../../../../structures/ICommunityPlatformCommunityMembership";
 
 /**
- * Update a specific community_platform_community_memberships record within a
- * given community.
+ * Get a single community membership (community_platform_community_memberships)
+ * for a given community.
  *
- * Update an existing membership entry in a specific community, reflecting
- * changes to how a member participates in that community.
+ * Retrieve detailed information about a single community membership record
+ * within a specific community.
  *
- * This operation works against the community_platform_community_memberships
- * table, which stores the relationship between a member user and a community,
- * including fields such as membership status, join timestamps, and potentially
- * role or preference-related attributes as defined in the Prisma schema
- * comments for community_platform_community_memberships. By using the
- * membershipId path parameter, the API locates a single membership row, while
- * communityIdentifier is used to ensure the membership is scoped to the correct
- * community from community_platform_communities.
+ * This operation targets the community_platform_community_memberships table,
+ * which stores membership relationships between member users and communities,
+ * including fields such as membership role (for example, regular member vs.
+ * moderator), join status, and any timestamps that track when the membership
+ * was created or last updated. The community_platform_communities table is used
+ * to resolve the community context based on a human-friendly slug identifier
+ * rather than an opaque internal ID, improving URL readability and client
+ * ergonomics.
  *
- * From a security perspective, this endpoint should be restricted to
- * authenticated actors with a legitimate reason to alter the membership.
- * Typically, that means the member user updating their own membership
- * preferences (for example, toggling notification options) or authorized
- * community moderators or platform administrators adjusting membership-level
- * flags such as roles or states in accordance with business rules. The
- * implementation must perform both authentication and authorization checks and
- * should return appropriate errors when an actor attempts to update memberships
- * they do not control.
+ * When invoked, the system first validates the communitySlug path parameter by
+ * looking up the corresponding community_platform_communities row, ensuring
+ * that the community exists and is in a state that allows membership inspection
+ * according to business rules (for example, not banned or hidden where members
+ * cannot be listed). Then it uses the membershipId path parameter to locate the
+ * corresponding community_platform_community_memberships record associated with
+ * that community. If either the community or membership cannot be found, the
+ * operation returns an appropriate not-found error.
  *
- * Internally, the service must validate that the membershipId indeed belongs to
- * the community identified by communityIdentifier, preventing cross-community
- * access by guessing membership identifiers. Any field-level validation rules
- * defined in the domain model or Prisma schema—for example, allowed membership
- * statuses, required timestamps for particular transitions, or constraints
- * around moderator roles—must be enforced before persistence. On success, the
- * API returns the updated ICommunityPlatformCommunityMembership representation
- * so clients can synchronize their UI. Related operations include creating a
- * membership via the communities memberships collection endpoint and deleting
- * or leaving a membership via the corresponding DELETE
- * /communities/{communityIdentifier}/memberships/{membershipId} operation.
+ * Security and authorization rules are enforced in the service layer based on
+ * the authenticated actor. For example, a memberUser may be allowed to view
+ * their own membership details, while an adminUser or community moderator may
+ * be allowed to view membership details for any member within that community.
+ * The authorizationActors array is set to ["memberUser"] to indicate that only
+ * authenticated member users can access this endpoint; additional permission
+ * checks such as ownership or moderator/admin privileges are handled in the
+ * implementation, not at the routing layer.
+ *
+ * This endpoint is typically used together with the membership creation
+ * endpoint (POST /communities/{communitySlug}/memberships) and any list or
+ * search endpoints for community memberships (for example, a PATCH
+ * /communities/{communitySlug}/memberships index operation). Clients may call
+ * this detail endpoint after creating a membership or when navigating to a
+ * community member management screen. Error handling should distinguish between
+ * invalid slugs, missing memberships, and access-denied scenarios so that
+ * clients can react appropriately.
  *
  * @param props.connection
- * @param props.communityIdentifier Identifier of the target community
- *   (typically a human-readable code or slug that is resolved to a
- *   community_platform_communities record).
- * @param props.membershipId Unique identifier of the membership record in
- *   community_platform_community_memberships to update.
- * @param props.body Fields to update on the targeted community membership,
- *   constrained to the mutable properties defined for
- *   community_platform_community_memberships.
- * @path /communityPlatform/memberUser/communities/:communityIdentifier/memberships/:membershipId
- * @accessor api.functional.communityPlatform.memberUser.communities.memberships.update
+ * @param props.communitySlug Human-readable slug of the target community used
+ *   to resolve a row in community_platform_communities (global scope).
+ * @param props.membershipId Unique identifier of the target membership record
+ *   in community_platform_community_memberships.
+ * @path /communityPlatform/memberUser/communities/:communitySlug/memberships/:membershipId
+ * @accessor api.functional.communityPlatform.memberUser.communities.memberships.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function update(
+export async function at(
   connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
+  props: at.Props,
+): Promise<at.Response> {
   return true === connection.simulate
-    ? update.simulate(connection, props)
+    ? at.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -71,71 +72,55 @@ export async function update(
           },
         },
         {
-          ...update.METADATA,
-          path: update.path(props),
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace update {
+export namespace at {
   export type Props = {
     /**
-     * Identifier of the target community (typically a human-readable code
-     * or slug that is resolved to a community_platform_communities
-     * record).
+     * Human-readable slug of the target community used to resolve a row in
+     * community_platform_communities (global scope).
      */
-    communityIdentifier: string;
+    communitySlug: string;
 
     /**
-     * Unique identifier of the membership record in
-     * community_platform_community_memberships to update.
-     */
-    membershipId: string;
-
-    /**
-     * Fields to update on the targeted community membership, constrained to
-     * the mutable properties defined for
+     * Unique identifier of the target membership record in
      * community_platform_community_memberships.
      */
-    body: ICommunityPlatformCommunityMembership.IUpdate;
+    membershipId: string;
   };
-  export type Body = ICommunityPlatformCommunityMembership.IUpdate;
   export type Response = ICommunityPlatformCommunityMembership;
 
   export const METADATA = {
-    method: "PUT",
-    path: "/communityPlatform/memberUser/communities/:communityIdentifier/memberships/:membershipId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    method: "GET",
+    path: "/communityPlatform/memberUser/communities/:communitySlug/memberships/:membershipId",
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/communityPlatform/memberUser/communities/${encodeURIComponent(props.communityIdentifier ?? "null")}/memberships/${encodeURIComponent(props.membershipId ?? "null")}`;
+  export const path = (props: Props) =>
+    `/communityPlatform/memberUser/communities/${encodeURIComponent(props.communitySlug ?? "null")}/memberships/${encodeURIComponent(props.membershipId ?? "null")}`;
   export const random = (): ICommunityPlatformCommunityMembership =>
     typia.random<ICommunityPlatformCommunityMembership>();
   export const simulate = (
     connection: IConnection,
-    props: update.Props,
+    props: at.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: update.path(props),
+      path: at.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("communityIdentifier")(() =>
-        typia.assert(props.communityIdentifier),
-      );
+      assert.param("communitySlug")(() => typia.assert(props.communitySlug));
       assert.param("membershipId")(() => typia.assert(props.membershipId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {
@@ -150,55 +135,60 @@ export namespace update {
 }
 
 /**
- * Delete a specific community_platform_community_memberships record within a
- * given community.
+ * Create a community membership (community_platform_community_memberships) for
+ * a given community.
  *
- * Remove an existing membership entry from a specific community, effectively
- * severing the relationship between a member user and that community.
+ * Create a new membership record for a specific community, establishing or
+ * updating the relationship between a member user and the target community.
  *
- * This operation targets the community_platform_community_memberships table,
- * which represents active or historical memberships linking member users to
- * communities. By specifying membershipId, the API identifies a single
- * membership record, while communityIdentifier ensures that the deletion is
- * scoped to a particular community from community_platform_communities. Before
- * deletion, the system must verify that the membership row indeed belongs to
- * the specified community to prevent misuse of identifiers across communities.
+ * This operation centers on the community_platform_community_memberships table,
+ * which models membership relationships including join status, role, and any
+ * associated timestamps or flags that indicate how and when the membership was
+ * created. The community_platform_communities table is used to resolve the
+ * community via the communitySlug path parameter, allowing URLs to remain
+ * human-readable and stable even if internal IDs change.
  *
- * From an authorization standpoint, the endpoint must restrict who can remove a
- * membership. Common allowed actors include the member user leaving the
- * community voluntarily, community moderators enforcing community rules, and
- * platform administrators carrying out higher-level policy actions. The exact
- * rules should align with business requirements and any guidance expressed in
- * the Prisma schema comments for community_platform_community_memberships and
- * related moderation tables. If the membership cannot be removed due to domain
- * constraints—for example, preventing the last remaining moderator from leaving
- * without designating a replacement—the API should return a clear error
- * explaining the reason.
+ * When the endpoint is called, the service validates the supplied communitySlug
+ * and ensures that the corresponding community exists and is in a state that
+ * accepts new members (for example, not archived or locked against new
+ * memberships). The request body, typed as
+ * ICommunityPlatformCommunityMembership.ICreate, carries the required data to
+ * create the membership row, such as the target member user identifier and any
+ * initial role or settings. The implementation may also enforce business rules
+ * like preventing duplicate memberships, honoring invite-only or
+ * approval-required communities, and logging related events.
  *
- * Upon successful execution, the membership row is permanently deleted from the
- * community_platform_community_memberships table so that the user no longer
- * appears as a member of the community in downstream queries such as community
- * member counts or subscription-based feed construction. Related operations
- * include creating a membership in a community and updating membership
- * attributes via PUT
- * /communities/{communityIdentifier}/memberships/{membershipId}.
+ * Security and authorization are enforced based on the authenticated actor. The
+ * authorizationActors array is defined as ["memberUser"], indicating that only
+ * authenticated member users can call this endpoint, while the internal
+ * business logic further restricts whether users can join directly, require
+ * approval, or create memberships on behalf of others. Validation errors,
+ * conflict scenarios (such as attempting to join a community twice), and
+ * community-state violations should be surfaced with clear error responses so
+ * client applications can communicate precise feedback to end users.
+ *
+ * This endpoint is typically used alongside the membership detail retrieval
+ * (GET /communities/{communitySlug}/memberships/{membershipId}) and any
+ * membership listing operations. After successful creation, the response
+ * returns the complete ICommunityPlatformCommunityMembership representation,
+ * allowing clients to immediately display updated membership status and roles
+ * in the UI.
  *
  * @param props.connection
- * @param props.communityIdentifier Identifier of the target community
- *   (typically a human-readable code or slug that is resolved to a
- *   community_platform_communities record).
- * @param props.membershipId Unique identifier of the membership record in
- *   community_platform_community_memberships to delete.
- * @path /communityPlatform/memberUser/communities/:communityIdentifier/memberships/:membershipId
- * @accessor api.functional.communityPlatform.memberUser.communities.memberships.erase
+ * @param props.communitySlug Human-readable slug of the target community used
+ *   to resolve a row in community_platform_communities (global scope).
+ * @param props.body Payload defining the member user and attributes of the
+ *   community membership to create for the specified community.
+ * @path /communityPlatform/memberUser/communities/:communitySlug/memberships
+ * @accessor api.functional.communityPlatform.memberUser.communities.memberships.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function erase(
+export async function create(
   connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? erase.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -208,56 +198,60 @@ export async function erase(
           },
         },
         {
-          ...erase.METADATA,
-          path: erase.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
+        props.body,
       );
 }
-export namespace erase {
+export namespace create {
   export type Props = {
     /**
-     * Identifier of the target community (typically a human-readable code
-     * or slug that is resolved to a community_platform_communities
-     * record).
+     * Human-readable slug of the target community used to resolve a row in
+     * community_platform_communities (global scope).
      */
-    communityIdentifier: string;
+    communitySlug: string;
 
     /**
-     * Unique identifier of the membership record in
-     * community_platform_community_memberships to delete.
+     * Payload defining the member user and attributes of the community
+     * membership to create for the specified community.
      */
-    membershipId: string;
+    body: ICommunityPlatformCommunityMembership.ICreate;
   };
+  export type Body = ICommunityPlatformCommunityMembership.ICreate;
+  export type Response = ICommunityPlatformCommunityMembership;
 
   export const METADATA = {
-    method: "DELETE",
-    path: "/communityPlatform/memberUser/communities/:communityIdentifier/memberships/:membershipId",
-    request: null,
+    method: "POST",
+    path: "/communityPlatform/memberUser/communities/:communitySlug/memberships",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Props) =>
-    `/communityPlatform/memberUser/communities/${encodeURIComponent(props.communityIdentifier ?? "null")}/memberships/${encodeURIComponent(props.membershipId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+  export const path = (props: Omit<Props, "body">) =>
+    `/communityPlatform/memberUser/communities/${encodeURIComponent(props.communitySlug ?? "null")}/memberships`;
+  export const random = (): ICommunityPlatformCommunityMembership =>
+    typia.random<ICommunityPlatformCommunityMembership>();
   export const simulate = (
     connection: IConnection,
-    props: erase.Props,
-  ): void => {
+    props: create.Props,
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: erase.path(props),
+      path: create.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("communityIdentifier")(() =>
-        typia.assert(props.communityIdentifier),
-      );
-      assert.param("membershipId")(() => typia.assert(props.membershipId));
+      assert.param("communitySlug")(() => typia.assert(props.communitySlug));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

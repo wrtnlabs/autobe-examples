@@ -8,9 +8,9 @@ AI Model | Score | FCSR | Status
 [`openai/gpt-4.1`](#openaigpt-41) | 100 | 89% | 🟢
 [`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 95 | 78% | 🟡
 [`openai/gpt-5.1`](#openaigpt-51) | 87.5 | 80% | 🟡
+[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 77.5 | 82% | 🟡
 [`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 72.5 | 42% | 🟡
 [`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 70 | 64% | 🟡
-[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 68.75 | 79% | 🟡
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 92% | 🟡
 [`mistralai/codestral-2508`](#mistralaicodestral-2508) | 30 | 100% | ❌
 [`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 30 | 99% | ❌
@@ -301,16 +301,16 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`openai/gpt-5.1/reddit`](./openai/gpt-5.1/reddit/)
 - Score: 80
-- Elapsed Time: 2h 27m 32s
-- Token Usage: 261.47M
-- Function Calling Success Rate: 82.66%
+- Elapsed Time: 1h 55m 1s
+- Token Usage: 205.01M
+- Function Calling Success Rate: 82.22%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 12 | 1.25M | 8m 40s | 100%
-🟢 Prisma | `namespaces`: 8, `models`: 54 | 1.25M | 5m 25s | 90%
-🟢 Interface | `operations`: 330, `schemas`: 340 | 126.98M | 1h 8m 50s | 70%
-🟢 Test | `functions`: 1003 | 131.99M | 1h 4m 36s | 98%
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.21M | 8m 15s | 100%
+🟢 Prisma | `namespaces`: 9, `models`: 43 | 1.35M | 6m 57s | 86%
+🟢 Interface | `operations`: 237, `schemas`: 299 | 105.48M | 44m 29s | 70%
+🟢 Test | `functions`: 779 | 96.97M | 55m 19s | 99%
 ⚪ Realize |  |  |  | 
 
 
@@ -328,6 +328,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Prisma | `namespaces`: 10, `models`: 90 | 1.87M | 11m 2s | 84%
 🟢 Interface | `operations`: 503, `schemas`: 698 | 286.62M | 1h 38m 8s | 64%
 🔴 Test | `functions`: 1273, `errors`: 2 | 222.49M | 1h 47m 47s | 98%
+⚪ Realize |  |  |  | 
+
+
+## `moonshotai/kimi-k2-0905-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./moonshotai/kimi-k2-0905-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+[`shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+### `moonshotai/kimi-k2-0905-exacto` - `todo`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/todo`](./moonshotai/kimi-k2-0905-exacto/todo/)
+- Score: 100
+- Elapsed Time: 1h 23m 19s
+- Token Usage: 30.24M
+- Function Calling Success Rate: 76.67%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 4 | 165.5K | 5m 36s | 100%
+🟢 Prisma | `namespaces`: 3, `models`: 5 | 205.1K | 2m 32s | 100%
+🟢 Interface | `operations`: 31, `schemas`: 37 | 18.00M | 42m 14s | 76%
+🟢 Test | `functions`: 67 | 10.15M | 24m 24s | 62%
+🟢 Realize | `functions`: 31 | 1.72M | 8m 31s | 100%
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `bbs`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/)
+- Score: 100
+- Elapsed Time: 4h 1m 32s
+- Token Usage: 117.34M
+- Function Calling Success Rate: 84.23%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 5 | 223.4K | 10m 2s | 100%
+🟢 Prisma | `namespaces`: 6, `models`: 16 | 614.8K | 10m 25s | 94%
+🟢 Interface | `operations`: 94, `schemas`: 118 | 51.79M | 1h 6m 42s | 79%
+🟢 Test | `functions`: 253 | 43.61M | 41m 58s | 89%
+🟢 Realize | `functions`: 94 | 21.10M | 1h 52m 22s | 84%
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `reddit`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/)
+- Score: 80
+- Elapsed Time: 2h 29m 4s
+- Token Usage: 95.68M
+- Function Calling Success Rate: 83.80%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 15 | 1.08M | 12m 53s | 100%
+🟢 Prisma | `namespaces`: 8, `models`: 41 | 1.08M | 23m 42s | 91%
+🟢 Interface | `operations`: 85, `schemas`: 92 | 51.73M | 1h 16m 54s | 77%
+🟢 Test | `functions`: 240 | 41.78M | 35m 33s | 91%
+⚪ Realize |  |  |  | 
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `shopping`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/)
+- Score: 30
+- Elapsed Time: 24m 57s
+- Token Usage: 2.93M
+- Function Calling Success Rate: 78.13%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 12 | 808.1K | 10m 17s | 96%
+🟢 Prisma | `namespaces`: 10, `models`: 46 | 2.12M | 14m 40s | 65%
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
 
 
@@ -480,83 +557,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
 🟢 Analyze | `actors`: 4, `documents`: 13 | 874.2K | 2m 31s | 100%
 🟢 Prisma | `namespaces`: 10, `models`: 72 | 1.47M | 10m 34s | 87%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-## `moonshotai/kimi-k2-0905-exacto`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./moonshotai/kimi-k2-0905-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/) | 45 | 🟢 | 🟢 | 🟡 | ❌ | ❌
-[`shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-
-### `moonshotai/kimi-k2-0905-exacto` - `todo`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/todo`](./moonshotai/kimi-k2-0905-exacto/todo/)
-- Score: 100
-- Elapsed Time: 1h 23m 19s
-- Token Usage: 30.24M
-- Function Calling Success Rate: 76.67%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 4 | 165.5K | 5m 36s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 5 | 205.1K | 2m 32s | 100%
-🟢 Interface | `operations`: 31, `schemas`: 37 | 18.00M | 42m 14s | 76%
-🟢 Test | `functions`: 67 | 10.15M | 24m 24s | 62%
-🟢 Realize | `functions`: 31 | 1.72M | 8m 31s | 100%
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `bbs`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/)
-- Score: 100
-- Elapsed Time: 4h 1m 32s
-- Token Usage: 117.34M
-- Function Calling Success Rate: 84.23%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 5 | 223.4K | 10m 2s | 100%
-🟢 Prisma | `namespaces`: 6, `models`: 16 | 614.8K | 10m 25s | 94%
-🟢 Interface | `operations`: 94, `schemas`: 118 | 51.79M | 1h 6m 42s | 79%
-🟢 Test | `functions`: 253 | 43.61M | 41m 58s | 89%
-🟢 Realize | `functions`: 94 | 21.10M | 1h 52m 22s | 84%
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `reddit`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/)
-- Score: 45
-- Elapsed Time: 4h 42m 39s
-- Token Usage: 191.75M
-- Function Calling Success Rate: 77.13%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 15 | 1.08M | 12m 53s | 100%
-🟢 Prisma | `namespaces`: 8, `models`: 41 | 1.08M | 23m 42s | 91%
-🔴 Interface | `operations`: 311, `schemas`: 345 | 189.58M | 4h 6m 3s | 76%
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `shopping`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/)
-- Score: 30
-- Elapsed Time: 23m 4s
-- Token Usage: 2.06M
-- Function Calling Success Rate: 98.11%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 5, `documents`: 12 | 818.7K | 14m 30s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 43 | 1.24M | 8m 33s | 96%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 

@@ -1,0 +1,75 @@
+/// Member subscriptions linking users to communities for personalized feeds
+/// and engagement.
+///
+/// This table records which member users are subscribed to which
+/// communities, forming the basis for personalized home feeds, subscription
+/// management, and per-user subscription limits. Each row represents a
+/// single logical subscription relationship between one member and one
+/// community.
+///
+/// The model is designed to support idempotent subscribe/unsubscribe
+/// behavior by maintaining a unique pair of member and community and
+/// tracking whether the subscription is currently active. Temporal fields
+/// provide local auditability and allow analytics on subscription churn over
+/// time.
+///
+/// It relates to {@link community_platform_memberusers} as the subscriber
+/// and {@link community_platform_communities} as the target community.
+/// Higher-level audit and moderation behavior is handled by separate
+/// components, while this table focuses on the core subscription linkage and
+/// preferences relevant to feeds and notifications.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the subscription record. Uniquely identifies each
+  /// member-to-community subscription relationship.
+  id String @id
+  
+  /// Reference to the subscribing member user. Links this subscription to the
+  /// underlying account in {@link community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Reference to the subscribed community. Links this subscription to the
+  /// target community in {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Indicates whether this subscription is currently active. When false, the
+  /// record represents a logically unsubscribed relationship retained for
+  /// history and idempotent behavior.
+  is_active Boolean
+  
+  /// Flag indicating whether the subscriber has opted in to receive
+  /// notifications related to this community, such as new posts or important
+  /// announcements.
+  receive_notifications Boolean
+  
+  /// Timestamp when the subscription was initially created. Used for auditing,
+  /// sorting, and enforcing time-based business rules.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this subscription record,
+  /// including changes to active state or preferences.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was logically deleted or fully
+  /// deactivated, if applicable. Null when the subscription has never been
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id, community_platform_community_id], map: "community_platform_community_subscriptions_community_p_feec9fdf")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, is_active], map: "community_platform_community_subscriptions_community_p_35c343c1")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, is_active], map: "community_platform_community_subscriptions_community_p_1ead7e47")
+}

@@ -1,379 +1,268 @@
-# Requirements Analysis – communityPlatform (Reddit-like Community Platform)
+# Requirements Analysis – Reddit-like Community Platform Backend (communityPlatform)
 
-## 1. Service Overview
+## 1. Service Overview and Scope
 
-communityPlatform is a Reddit-like online community service where users organize discussions into topic-based communities, publish posts (text, links, images), discuss via nested comments, vote on content, accumulate karma, subscribe to communities, maintain public profiles, and report inappropriate content for moderation.
+THE "communityPlatform" backend SHALL support a Reddit-like community service where users can:
+- Register and log in as members.
+- Create and manage topic-based communities (similar to subreddits).
+- Create posts containing text, links, or images within communities.
+- Comment on posts with nested (threaded) replies.
+- Upvote or downvote posts and comments.
+- Accumulate and display user karma.
+- Sort posts by hot, new, top, and controversial metrics.
+- Subscribe to communities and view personalized feeds.
+- View user profiles listing posts, comments, and karma.
+- Report inappropriate content for moderation.
 
-The platform must support:
-- User registration, login, logout, and session management.
-- Creation and configuration of communities by users.
-- Posting of text, link, and image content within communities.
-- Commenting on posts with nested reply threads.
-- Upvote/downvote voting on posts and comments.
-- A user karma system driven by voting outcomes.
-- Sorting by hot, new, top, and controversial across feeds.
-- Subscriptions to communities and personalized feeds.
-- User profiles summarizing activity and karma.
-- Reporting of inappropriate content and moderation workflows.
+THE requirements in this analysis SHALL describe **what** the backend must do in business and behavioral terms and SHALL avoid prescribing **how** it is implemented (no API shapes, no database schemas, no infrastructure details).
 
-All requirements in this document are expressed as business requirements, independent of specific technical implementation choices.
 
+## 2. User Actors and High-level Capabilities
 
-## 2. User Actors
+### 2.1 guestUser
 
-### 2.1 Actor List
+- THE system SHALL treat any visitor without a valid authenticated session as a guestUser.
+- THE system SHALL allow guestUser to browse public communities, posts, and comments.
+- THE system SHALL allow guestUser to view public portions of user profiles.
+- THE system SHALL forbid guestUser from creating communities, posts, comments, votes, subscriptions, or reports.
 
-- **guestUser** – Unauthenticated visitor.
-- **memberUser** – Registered, authenticated user.
-- **communityModerator** – memberUser with extra permissions for specific communities.
-- **platformAdmin** – Platform-level administrator with global authority.
+### 2.2 memberUser
 
-### 2.2 Actor Capabilities (High-Level)
+- THE system SHALL treat any authenticated non-admin account as memberUser.
+- THE system SHALL allow memberUser to create and manage their own posts and comments.
+- THE system SHALL allow memberUser to create communities where business rules permit.
+- THE system SHALL allow memberUser to vote on posts and comments, subscribe to communities, report content, and manage profiles.
 
-- THE communityPlatform SHALL allow **guestUser** to browse public communities and public content but not to create or interact with content that requires identity.
-- THE communityPlatform SHALL allow **memberUser** to fully participate in communities (create communities, posts, comments, votes, subscriptions, and reports) within policy limits.
-- THE communityPlatform SHALL allow **communityModerator** to manage communities they moderate, including content moderation actions and community configuration, in addition to memberUser capabilities.
-- THE communityPlatform SHALL allow **platformAdmin** to view and moderate content across all communities and manage global policies, overrides, and sanctions.
+### 2.3 adminUser
 
+- THE system SHALL treat any authenticated account with administrative role as adminUser.
+- THE system SHALL allow adminUser to perform all memberUser actions.
+- THE system SHALL allow adminUser to review reports, moderate content, and apply account-level restrictions.
 
-## 3. Core Domain Concepts
 
-### 3.1 Communities
+## 3. Authentication and Account Management
 
-- A community is a named, topic-focused space where posts and comments are shared.
-- Each community has a unique identifier, a title, description, rules, visibility, and one or more communityModerators.
+### 3.1 Registration
 
-EARS requirements:
-- THE communityPlatform SHALL treat each community as belonging to exactly one global namespace where its identifier is unique.
-- WHEN a community is visible as public, THE communityPlatform SHALL allow any actor to view its public posts and comments subject to moderation rules.
+- WHEN a visitor submits registration data, THE system SHALL validate mandatory fields (for example username-like handle, secret credential, and any required contact identifier) for presence, format, and uniqueness.
+- IF registration data fails validation, THEN THE system SHALL reject the registration attempt and SHALL return human-understandable validation reasons grouped by field.
+- WHEN registration succeeds, THE system SHALL create a memberUser account and SHALL either establish an authenticated session immediately or SHALL guide the user to log in according to business rules (for example email verification requirement).
+- WHERE email or identity verification is required, THE system SHALL treat the account as limited until verification succeeds and SHALL block actions that require a verified identity according to policy.
 
-### 3.2 Posts
+### 3.2 Login and Logout
 
-- A post is a content item created inside a community.
-- Post types include text, link, and image-based posts.
-- Posts have an author (memberUser), creation time, body, optional edits, and voting.
+- WHEN a user submits login credentials, THE system SHALL verify them against stored account records.
+- IF credentials are invalid or the account is not permitted to log in (for example banned or disabled), THEN THE system SHALL deny login and SHALL not reveal which specific credential was incorrect.
+- WHEN login succeeds, THE system SHALL establish a session that identifies the actor as guestUser, memberUser, or adminUser appropriately.
+- WHEN a logged-in user requests logout, THE system SHALL terminate the active session and SHALL treat further actions from that client as guestUser actions.
+- WHEN a user requests "log out from all devices", THE system SHALL invalidate all active sessions associated with that account.
 
-EARS requirements:
-- THE communityPlatform SHALL associate each post with exactly one community and exactly one author.
-- THE communityPlatform SHALL store the post type in a way that allows enforcement of type-specific rules.
+### 3.3 Session Behavior and Expiry
 
-### 3.3 Comments and Nested Replies
+- WHILE a session is valid, THE system SHALL honor the actor’s role (guestUser, memberUser, adminUser) for authorization decisions.
+- WHEN a session exceeds its configured lifetime or inactivity timeout, THE system SHALL expire the session and SHALL require re-authentication for protected actions.
+- IF a session is detected as compromised according to business-defined signals, THEN THE system SHALL revoke that session and MAY revoke related sessions according to risk policy.
 
-- A comment is a reply to either a post (top-level comment) or another comment (nested reply).
-- Comments form a tree structure per post.
 
-EARS requirements:
-- THE communityPlatform SHALL associate each comment with a single post and optionally a parent comment.
-- THE communityPlatform SHALL maintain a parent-child relationship between comments to support nested display.
+## 4. Communities (Subreddit-like Spaces)
 
-### 3.4 Votes and Scores
+### 4.1 Community Creation
 
-- Votes are upvotes or downvotes applied by authenticated users to posts and comments.
-- Each user has at most one active vote per target item.
+- WHEN a memberUser requests to create a community, THE system SHALL require a unique community identifier (name), a description, and any required metadata (for example visibility type) and SHALL validate them.
+- WHEN community name validation fails due to length, prohibited characters, prohibited words, or duplication, THE system SHALL reject the creation request and SHALL indicate the violated rules.
+- WHEN community creation succeeds, THE system SHALL associate the new community with the creating memberUser as owner or primary maintainer and SHALL record creation time.
+- WHERE business policy restricts who can create communities (for example minimum karma or account age), THE system SHALL enforce those restrictions.
 
-EARS requirements:
-- THE communityPlatform SHALL allow only authenticated users to cast votes on posts and comments.
-- THE communityPlatform SHALL maintain a numeric score for each post and comment derived from its votes.
+### 4.2 Community Visibility
 
-### 3.5 Karma
+- WHERE a community is public, THE system SHALL allow guestUser and memberUser to view its metadata, posts, and comments subject to content visibility rules.
+- WHERE a community is restricted, THE system SHALL allow only eligible users to create posts and comments while still allowing broader viewing according to policy.
+- WHERE a community is private, THE system SHALL restrict visibility and participation to approved users and SHALL treat access attempts by others as unauthorized.
 
-- Karma is a numeric representation of a user’s contribution quality based on votes on their posts and comments.
+### 4.3 Community Management
 
-EARS requirements:
-- THE communityPlatform SHALL maintain karma values per user and SHALL update them when votes on their content change.
+- WHEN a community owner or adminUser updates community metadata (for example description, rules, visibility flags), THE system SHALL validate and apply the changes while recording the time of update.
+- IF a memberUser who is not an authorized owner or manager attempts to update community metadata, THEN THE system SHALL reject the action for insufficient permission.
+- WHERE business policy allows community deletion or closure, THE system SHALL ensure only authorized actors (owner or adminUser) can trigger such actions and SHALL apply consistent behavior to associated posts and comments (for example archive or hide) according to data lifecycle rules.
 
-### 3.6 Subscriptions and Feeds
 
-- A subscription links a memberUser to a community they want to follow.
-- A personalized feed is a list of posts built primarily from subscribed communities.
+## 5. Posts (Text, Link, Image)
 
-EARS requirements:
-- THE communityPlatform SHALL maintain subscription relationships between memberUser and communities.
-- WHEN constructing a personalized feed, THE communityPlatform SHALL consider posts from communities where the user is subscribed, subject to visibility and safety rules.
+### 5.1 Post Types and Required Fields
 
-### 3.7 User Profiles
+- WHEN a memberUser creates a post, THE system SHALL require the target community, a title, and a post type (text, link, or image).
+- WHERE the type is text, THE system SHALL require a textual body that satisfies minimum and maximum length rules.
+- WHERE the type is link, THE system SHALL require a URL that complies with format, safety, and policy rules (for example no banned domains) and SHALL reject malformed or disallowed URLs.
+- WHERE the type is image, THE system SHALL require an image reference that respects allowed formats and size constraints defined by policy.
 
-- A user profile summarizes a memberUser’s public activity (posts, comments, karma, and basic attributes).
+### 5.2 Post Creation and Validation
 
-EARS requirements:
-- THE communityPlatform SHALL provide a profile view for each memberUser containing public information and activity summaries subject to privacy and moderation rules.
+- WHEN a memberUser submits a post, THE system SHALL verify that the community exists, is visible to the user, and allows posting by that memberUser.
+- WHEN required fields or content rules are violated, THE system SHALL reject post creation and SHALL provide field-level validation messages.
+- WHEN post creation succeeds, THE system SHALL persist the post with references to the author and community and SHALL initialize score and visibility state.
 
-### 3.8 Reports and Moderation
+### 5.3 Post Editing and Deletion
 
-- A report flags content or users for potential violation of rules.
-- Reports feed into moderation workflows processed by communityModerators and platformAdmins.
+- WHERE business rules allow post editing within a time window, THE system SHALL allow the author to edit allowed fields (for example title and body) while enforcing that the edited content still passes all validations.
+- IF a memberUser attempts to edit a post outside the permitted conditions, THEN THE system SHALL reject the edit and SHALL indicate why editing is disallowed.
+- WHEN an author deletes their post, THE system SHALL hide the post from standard views and SHALL prevent new comments and votes on that post while applying consistent behavior for existing comments (for example leaving them with a deleted-parent indicator).
+- WHEN an adminUser removes a post for policy reasons, THE system SHALL mark the post as removed due to moderation, SHALL prevent new interactions, and SHALL retain moderation metadata for audit.
 
-EARS requirements:
-- THE communityPlatform SHALL allow users to submit structured reports on posts, comments, communities, and users, subject to platform policy.
 
+## 6. Comments and Nested Replies
 
-## 4. Authentication and Session Requirements
+### 6.1 Comment Creation
 
-### 4.1 Registration
+- WHEN a memberUser views a post that accepts comments, THE system SHALL allow the memberUser to add a top-level comment containing text that meets length and content policies.
+- WHEN a memberUser replies to an existing comment, THE system SHALL create a nested comment associated with both the parent comment and the post.
+- IF the target post or comment is locked, deleted, or invisible to the memberUser, THEN THE system SHALL reject new comment creation on that target.
 
-EARS requirements:
-- WHEN a guestUser submits registration data that satisfies validation rules (unique identifier, credential rules, required fields), THE communityPlatform SHALL create a new memberUser account in either pending or active state according to verification policy.
-- IF registration data does not satisfy validation rules, THEN THE communityPlatform SHALL reject registration and SHALL identify which fields failed business validation.
-- WHERE verification (such as email confirmation) is required, THE communityPlatform SHALL restrict actions of unverified accounts according to policy (for example, limiting posting or voting).
+### 6.2 Comment Editing and Deletion
 
-### 4.2 Login and Logout
+- WHERE business rules allow comment editing, THE system SHALL allow the comment’s author to edit the comment within a configured window and SHALL enforce that new text respects all validations.
+- WHEN an author deletes a comment, THE system SHALL replace its visible text with a generic deletion indicator while preserving thread structure for child comments.
+- WHEN an adminUser removes a comment for moderation reasons, THE system SHALL mark it as removed by moderation and SHALL optionally block new replies to that comment according to policy.
 
-EARS requirements:
-- WHEN a user submits login credentials that match an active, non-banned account, THE communityPlatform SHALL establish an authenticated session and SHALL treat subsequent actions as belonging to that memberUser until logout or session expiry.
-- IF login credentials are invalid or the account is banned or suspended, THEN THE communityPlatform SHALL deny login and SHALL return a generic authentication failure message without exposing sensitive account status.
-- WHEN an authenticated user initiates logout, THE communityPlatform SHALL terminate their current session and SHALL treat subsequent requests as guestUser actions.
-- WHERE a user triggers a "log out from all devices" action, THE communityPlatform SHALL revoke all active sessions associated with that user.
+### 6.3 Comment Thread Presentation
 
-### 4.3 Session Lifetime and Security
+- WHEN any actor views a post, THE system SHALL retrieve associated comments and SHALL present them in a hierarchical (parent/child) structure.
+- WHERE depth or volume is large, THE system SHALL support paginated or incremental loading while preserving parent-child integrity and order.
 
-EARS requirements:
-- THE communityPlatform SHALL enforce a maximum session lifetime and inactivity timeout defined by policy.
-- WHERE a session has expired or been revoked, THE communityPlatform SHALL require re-authentication before allowing actions that require memberUser identity.
 
-### 4.4 Account Status Effects
+## 7. Voting and Karma
 
-EARS requirements:
-- THE communityPlatform SHALL associate each memberUser with an account status (for example active, pending verification, suspended, banned) and SHALL enforce allowed actions based on that status.
-- IF an account is suspended, THEN THE communityPlatform SHALL prevent that user from performing content-creating actions (posting, commenting, voting, reporting, subscribing) while optionally allowing read-only access to public content.
-- IF an account is banned, THEN THE communityPlatform SHALL prevent login and SHALL block all memberUser-only actions for that account.
+### 7.1 Voting on Posts and Comments
 
+- WHEN a memberUser views a post or comment, THE system SHALL allow the memberUser to express one of three vote states: upvote, downvote, or no vote.
+- WHEN a memberUser casts a vote on an item for the first time, THE system SHALL create a vote record and update the item’s score accordingly.
+- WHEN a memberUser changes an existing vote (for example from upvote to downvote or from upvote to no vote), THE system SHALL update the record and SHALL adjust the item’s score based on the change.
+- WHERE business rules forbid self-voting, THE system SHALL prevent a memberUser from voting on their own posts and comments.
+- IF a guestUser attempts to vote, THEN THE system SHALL reject the action and SHALL indicate that authentication is required.
 
-## 5. Community Management Requirements
+### 7.2 Karma Calculation
 
-### 5.1 Community Creation
+- THE system SHALL maintain a karma value for each memberUser that reflects the aggregated impact of votes on that user’s posts and comments according to configured weights.
+- WHEN votes are created, changed, or removed, THE system SHALL adjust affected users’ karma values in line with karma rules.
+- WHEN a user profile is viewed, THE system SHALL display the user’s karma (and optionally separate post and comment karma) according to visibility policy.
+- IF content is removed or restored, THEN THE system SHALL adjust karma associated with that content according to business rules (for example subtracting karma for removed policy-violating content).
 
-EARS requirements:
-- WHEN an authenticated memberUser meets community creation criteria (for example minimum karma or limits not exceeded), THE communityPlatform SHALL allow that memberUser to create a new community with required attributes (identifier, title) and optional attributes (description, rules).
-- THE communityPlatform SHALL ensure that each community identifier is unique and SHALL treat identifiers as unique regardless of case.
-- IF a requested community identifier violates naming or content policies, THEN THE communityPlatform SHALL reject community creation and SHALL explain which rule was violated in business terms.
-- WHEN a community is created successfully, THE communityPlatform SHALL assign the creating memberUser as at least one communityModerator for that community.
 
-### 5.2 Community Configuration
+## 8. Sorting Modes and Feeds
 
-EARS requirements:
-- WHERE a user is a communityModerator for a community, THE communityPlatform SHALL allow that user to update community metadata (title, description, rules, visibility level) within platform-wide policy constraints.
-- IF a configuration change violates global policies (for example disallowed content in description), THEN THE communityPlatform SHALL reject the change and SHALL specify the business reason.
+### 8.1 Sorting Modes
 
-### 5.3 Community Visibility
+- WHEN a list of posts is requested, THE system SHALL support at least four sorting modes: hot, new, top, and controversial.
+- WHERE sorting mode is new, THE system SHALL order posts primarily by creation time descending.
+- WHERE sorting mode is top, THE system SHALL order posts by score descending, optionally constrained to a time window (for example day, week, month) according to business needs.
+- WHERE sorting mode is hot, THE system SHALL use a function that combines score and age to surface currently popular posts while gradually demoting older items.
+- WHERE sorting mode is controversial, THE system SHALL emphasize posts with substantial upvotes and downvotes in a relatively balanced manner.
 
-EARS requirements:
-- THE communityPlatform SHALL support at least public, restricted, and private visibility modes for communities defined in business terms.
-- WHEN a community is public, THE communityPlatform SHALL allow guestUser and all memberUser to view public content of that community.
-- WHEN a community is restricted, THE communityPlatform SHALL allow only authorized users (for example approved members) to view or interact with its non-public content.
-- WHEN a community is private, THE communityPlatform SHALL allow only explicitly approved users, its communityModerators, and platformAdmins to view or interact with its content.
+### 8.2 Community Feeds
 
-### 5.4 Community Archival and Removal
+- WHEN a user views a community feed, THE system SHALL return posts belonging only to that community, filtered by visibility and moderation rules and ordered by the chosen sort mode.
+- THE system SHALL apply paging to community feeds and SHALL ensure that a given combination of sort mode and page parameters returns a consistent slice of posts at the time of the request.
 
-EARS requirements:
-- WHERE a community is marked as archived, THE communityPlatform SHALL prevent creation of new posts while allowing viewing of existing content according to visibility and moderation rules.
-- WHERE a community is removed by platformAdmin for policy reasons, THE communityPlatform SHALL block all user-facing access to that community and SHALL exclude it from discovery and feeds while preserving necessary internal records for audit.
+### 8.3 Personalized Feeds
 
+- WHEN a memberUser requests their personalized home feed, THE system SHALL aggregate posts from communities to which that user is subscribed and SHALL sort them by a chosen mode (for example hot or new).
+- WHERE a memberUser has no active subscriptions, THE system SHALL define behavior such as showing globally popular posts according to business policy.
+- THE system SHALL enforce that hidden or restricted posts do not appear in personalized feeds for users who are not allowed to see them.
 
-## 6. Post Requirements
 
-### 6.1 Post Creation
+## 9. Subscriptions
 
-EARS requirements:
-- WHEN an authenticated memberUser with posting permission in a community submits a valid text post (title and body within limits), THE communityPlatform SHALL create the post, associate it with the community and author, and SHALL make it visible according to sorting and listing rules.
-- WHEN an authenticated memberUser with posting permission submits a valid link post (title and acceptable URL), THE communityPlatform SHALL create the post and SHALL store the URL for later rendering and safety checks.
-- WHEN an authenticated memberUser with posting permission submits a valid image-based post with required image reference and optional body, THE communityPlatform SHALL create the post and SHALL associate it with the underlying image handling solution conceptually.
-- IF a submitted post violates length limits, unsupported type rules, or community-specific content restrictions, THEN THE communityPlatform SHALL reject the post and SHALL identify the violated rule.
-- IF a memberUser attempts to create a post in a community where they are banned or where posting is disabled, THEN THE communityPlatform SHALL reject the post and SHALL indicate that posting is not allowed for that user in that community.
+### 9.1 Subscribe and Unsubscribe Behavior
 
-### 6.2 Post Editing and Deletion
+- WHEN a memberUser requests to subscribe to a community, THE system SHALL create a subscription relationship unless subscriptions to that community are restricted for that user.
+- WHEN a memberUser requests to unsubscribe from a community, THE system SHALL remove the subscription relationship and SHALL exclude the community from future personalized feeds.
+- IF a subscription or unsubscription request repeats an existing state (for example subscribing when already subscribed), THEN THE system SHALL treat the request as idempotent and SHALL not create duplicates.
+- IF a guestUser attempts to subscribe or unsubscribe, THEN THE system SHALL reject the action and SHALL indicate that authentication is required.
 
-EARS requirements:
-- WHERE a memberUser is the author of a post, THE communityPlatform SHALL allow that user to edit the post within policy-defined constraints (for example within an edit window or with visible edit markers).
-- WHEN a post is edited, THE communityPlatform SHALL update the last-updated time and SHALL mark the post as edited.
-- WHERE a memberUser is the author of a post, THE communityPlatform SHALL allow that user to delete the post according to platform deletion rules, which from a user perspective removes the post from standard views and feeds.
-- WHERE a communityModerator or platformAdmin removes a post for moderation reasons, THE communityPlatform SHALL hide the content body from general users while indicating that the post was removed and retaining sufficient metadata for moderation and audit.
 
-### 6.3 Post Locking
+## 10. User Profiles
 
-EARS requirements:
-- WHERE a user is a communityModerator or platformAdmin, THE communityPlatform SHALL allow that user to lock a post to prevent new comments while preserving visibility of existing content.
-- WHILE a post is locked, THE communityPlatform SHALL prevent creation of new comments on that post.
-- WHERE policy requires freezing of votes on locked posts, THE communityPlatform SHALL prevent new votes on locked posts while preserving existing votes.
+### 10.1 Profile Contents
 
-### 6.4 Post Listing and Visibility
+- WHEN a user profile is requested, THE system SHALL present at least the public identifier (for example username-like handle), account age indicator, and aggregate karma.
+- WHEN a profile is requested, THE system SHALL show lists or summaries of public posts and comments authored by that user, subject to content visibility rules (for example omitting fully removed items).
+- WHERE the requester is the profile owner, THE system SHALL allow access to additional account-related data (for example profile bio, certain settings) consistent with privacy policy.
 
-EARS requirements:
-- WHEN users view a community, THE communityPlatform SHALL present a list of posts for that community ordered according to the selected sorting mode and filtered by visibility and moderation status.
-- WHEN users view their personalized feed, THE communityPlatform SHALL present posts from subscribed communities, filtered by user access, community visibility, moderation state, and safety preferences.
+### 10.2 Profile Visibility and Restrictions
 
+- WHERE an account is banned or suspended, THE system SHALL indicate the restricted status when its profile is viewed and SHALL adjust visibility of historical content according to moderation policy.
+- WHEN a profile belongs to a deleted account, THE system SHALL treat the profile as unavailable and SHALL avoid exposing personal identifiers that are meant to be removed.
 
-## 7. Comment Requirements
 
-### 7.1 Comment Creation
+## 11. Reporting Inappropriate Content and Moderation
 
-EARS requirements:
-- WHEN an authenticated memberUser with commenting permission views a post that allows comments and submits a valid comment body, THE communityPlatform SHALL create a top-level comment associated with that post and author.
-- WHEN an authenticated memberUser with commenting permission submits a valid reply to an existing comment within allowed nesting depth, THE communityPlatform SHALL create a nested comment linked to the parent comment and the post.
-- IF a post is locked, archived, or otherwise closed for comments, THEN THE communityPlatform SHALL reject new comments and SHALL inform users that commenting is not allowed.
-- IF a user is banned from a community, THEN THE communityPlatform SHALL prevent that user from commenting on posts in that community.
+### 11.1 Reporting
 
-### 7.2 Comment Editing and Deletion
+- WHEN a memberUser views a post or comment, THE system SHALL allow the memberUser to submit a report indicating that the content may violate rules.
+- WHEN a memberUser submits a report, THE system SHALL capture the reporter, target content, reason category, optional description, and timestamp.
+- IF a memberUser attempts to report the same content repeatedly beyond allowed limits, THEN THE system SHALL restrict duplicate reporting and SHALL inform the user that the content has already been reported.
+- IF a guestUser attempts to report content, THEN THE system SHALL reject the attempt and SHALL indicate that authentication is required.
 
-EARS requirements:
-- WHERE a memberUser is the author of a comment, THE communityPlatform SHALL allow that user to edit the comment within policy-defined constraints.
-- WHEN a comment is edited, THE communityPlatform SHALL update the last-updated time and SHALL mark the comment as edited.
-- WHERE a memberUser is the author of a comment, THE communityPlatform SHALL allow that user to delete the comment; from a user perspective, this replaces the content with a placeholder while preserving thread structure.
-- WHERE a communityModerator or platformAdmin removes a comment for moderation reasons, THE communityPlatform SHALL hide the content body from general users, indicate that it was removed, and preserve necessary metadata for moderation and audit.
+### 11.2 Admin Review and Actions
 
-### 7.3 Comment Locking and Depth
+- WHEN an adminUser reviews reports, THE system SHALL present reported content, context (for example basic stats and history), and report details.
+- WHEN an adminUser decides on a report, THE system SHALL allow actions such as dismiss, hide or remove content, lock threads, or apply user restrictions consistent with moderation policy.
+- WHEN a moderation action is taken, THE system SHALL record the action, the acting adminUser, and the time for audit and potential appeals.
+- WHEN moderation changes content visibility or account status, THE system SHALL ensure subsequent requests respect the updated state (for example removed content no longer appearing in feeds).
 
-EARS requirements:
-- WHERE a user is a communityModerator or platformAdmin, THE communityPlatform SHALL allow that user to lock a comment thread to prevent additional replies under that comment.
-- WHILE a comment thread is locked, THE communityPlatform SHALL prevent new replies while allowing reading of existing comments.
-- THE communityPlatform SHALL enforce a configured maximum nesting depth, beyond which replies are not allowed and SHALL inform users when nesting limit is reached.
 
+## 12. Non-functional Expectations (Business-level)
 
-## 8. Voting and Karma Requirements (High-Level)
+### 12.1 Performance
 
-### 8.1 Voting Eligibility and Behavior
+- WHEN a user loads a community feed or a post with its initial comments, THE system SHALL return results within a few seconds (for example around 2 seconds) under normal load so that the interaction feels responsive.
+- WHEN a memberUser submits posts, comments, votes, subscriptions, or reports, THE system SHALL confirm success or failure within a few seconds under normal load.
 
-EARS requirements:
-- THE communityPlatform SHALL allow only authenticated users to cast upvotes or downvotes on posts and comments.
-- THE communityPlatform SHALL enforce that each user has at most one active vote per post and per comment.
-- WHEN a user casts a vote on content they can view, THE communityPlatform SHALL record the vote, update vote counts, and adjust the content score accordingly.
-- WHEN a user changes or removes their existing vote, THE communityPlatform SHALL update vote counts and content score to reflect the new vote state.
-- IF a user attempts to vote on their own content and self-voting is disallowed, THEN THE communityPlatform SHALL reject that vote and SHALL explain that self-voting is not permitted.
-- IF a user attempts to vote on removed or locked content where voting is disabled, THEN THE communityPlatform SHALL reject the vote.
+### 12.2 Availability and Degradation
 
-### 8.2 Karma Updates
+- THE system SHALL aim to keep core read operations (browsing communities, posts, comments, and profiles) available the vast majority of the time during a typical month.
+- IF partial failures occur, THEN THE system SHALL prioritize core browsing and basic posting over non-critical features (for example advanced analytics) and SHALL degrade gracefully.
 
-EARS requirements:
-- WHEN a vote is added, changed, or removed on a post or comment, THE communityPlatform SHALL update the corresponding author’s karma according to platform-defined rules.
-- THE communityPlatform SHALL distinguish at least between karma from posts and karma from comments for internal policy where required.
-- WHERE policy ties user capabilities to karma thresholds (for example community creation, posting in sensitive communities), THE communityPlatform SHALL evaluate current karma before allowing or denying those actions.
+### 12.3 Security and Access Control
 
+- THE system SHALL enforce role-based access control such that guestUser, memberUser, and adminUser capabilities are honored for all operations.
+- WHEN sensitive operations occur (for example moderation decisions, account restrictions), THE system SHALL log actor, target, and time at a conceptual level suitable for audit.
 
-## 9. Sorting and Ranking Requirements
 
-### 9.1 Sorting Modes
+## 13. Key User Flows (Narrative + Diagram)
 
-EARS requirements:
-- THE communityPlatform SHALL support at least four sorting modes for posts: "hot", "new", "top", and "controversial".
-- WHEN "new" sorting is selected, THE communityPlatform SHALL order posts primarily by creation time from newest to oldest.
-- WHEN "top" sorting is selected, THE communityPlatform SHALL order posts primarily by score, optionally constrained to a selected time range.
-- WHEN "hot" sorting is selected, THE communityPlatform SHALL order posts using a combination of score and age such that recently popular posts appear higher than older posts with similar scores.
-- WHEN "controversial" sorting is selected, THE communityPlatform SHALL prioritize posts with substantial and balanced upvotes and downvotes over posts with low engagement.
+### 13.1 Typical Member Journey
 
-### 9.2 Sorting Contexts
+- WHEN a new visitor wants to participate, THE journey SHALL begin as guestUser browsing public communities.
+- WHEN the visitor decides to post or comment, THE system SHALL require registration and login, transforming the actor into memberUser.
+- WHEN the memberUser discovers interesting communities, THE system SHALL allow subscription and SHALL populate the personalized feed with new posts from those communities.
+- WHEN the memberUser creates posts and comments, other memberUser actors SHALL be able to vote and reply, influencing karma and sorting.
+- WHEN inappropriate content is encountered, memberUser SHALL be able to report it, and adminUser SHALL be able to review and moderate.
 
-EARS requirements:
-- WHERE sorting modes are offered (for example community feeds, personalized feeds, profile post lists), THE communityPlatform SHALL apply sorting rules consistently across those contexts.
-- IF a requested sorting mode is not supported in a given context, THEN THE communityPlatform SHALL fall back to a default mode (for example "hot" or "new") and SHALL indicate the applied mode in user-facing context.
-
-
-## 10. Subscription and Feed Requirements
-
-### 10.1 Subscription Lifecycle
-
-EARS requirements:
-- WHEN an authenticated memberUser requests to subscribe to a community they can access, THE communityPlatform SHALL create a subscription relationship.
-- WHEN an authenticated memberUser requests to unsubscribe from a community they are subscribed to, THE communityPlatform SHALL remove or deactivate that subscription.
-- IF a memberUser attempts to subscribe to a community that is not visible or that has reached subscription limits as defined by policy, THEN THE communityPlatform SHALL reject the subscription and SHALL provide a business explanation.
-- WHERE a user is banned from a community, THE communityPlatform SHALL treat existing subscriptions as inactive for feed construction and SHALL prevent new subscriptions to that community by that user.
-
-### 10.2 Personalized Feed Construction
-
-EARS requirements:
-- WHEN a memberUser requests their personalized feed, THE communityPlatform SHALL construct the feed primarily from posts in communities to which that user is subscribed, filtered by content visibility, moderation status, and user safety settings.
-- WHERE a memberUser has no active subscriptions, THE communityPlatform SHALL build the personalized feed using a default strategy such as showing popular or recommended posts as defined by business rules.
-- THE communityPlatform SHALL allow feed sorting using supported modes and SHALL apply sorting after filters and visibility rules.
-
-
-## 11. User Profile Requirements
-
-### 11.1 Profile Content
-
-EARS requirements:
-- THE communityPlatform SHALL maintain a profile for each memberUser containing at least username, join date, karma summary, and links to posts and comments according to visibility rules.
-- WHERE a user chooses to configure profile attributes (for example display name, bio, avatar reference), THE communityPlatform SHALL enforce validation rules for length and content.
-
-### 11.2 Profile Viewing
-
-EARS requirements:
-- WHEN a user views a memberUser profile, THE communityPlatform SHALL show public parts of that profile (for example posts, comments, karma) filtered by content visibility and moderation state.
-- WHERE profile privacy or safety rules restrict visibility of certain data (for example hidden history), THE communityPlatform SHALL enforce those rules for all actors except platformAdmin where policy requires oversight access.
-
-
-## 12. Reporting and Safety Requirements (High-Level)
-
-### 12.1 Reportable Entities
-
-EARS requirements:
-- THE communityPlatform SHALL allow authenticated users to report posts, comments, communities, and users for potential violations of community or platform policies.
-- WHERE platform policy permits, THE communityPlatform SHALL allow guestUser to report severe abusive content and SHALL mark such reports as originating from unauthenticated actors.
-
-### 12.2 Report Submission
-
-EARS requirements:
-- WHEN a user submits a report, THE communityPlatform SHALL require selection of at least one reason from a predefined list and SHALL allow optional free-text details within limits.
-- IF a report submission is missing mandatory information (for example reason), THEN THE communityPlatform SHALL reject the report and SHALL explain what is missing.
-- WHEN a report is successfully submitted, THE communityPlatform SHALL create a report record containing the reporter (where available), target entity, reasons, and timestamp.
-
-### 12.3 Report Handling and Moderation
-
-EARS requirements:
-- WHERE a report targets content within a community, THE communityPlatform SHALL make the report visible to that community’s communityModerators and to platformAdmins.
-- WHEN communityModerators or platformAdmins review a report, THE communityPlatform SHALL provide them with the reported content, its context, and aggregated report details to support decisions.
-- WHEN a report is resolved, THE communityPlatform SHALL record the outcome (for example no action, content removal, content locking, user sanction) and SHALL update content visibility and user restrictions accordingly.
-
-### 12.4 Safety Priorities
-
-EARS requirements:
-- WHERE reports indicate severe policy violations (for example illegal content, credible threats, extreme harassment), THE communityPlatform SHALL prioritize prompt restriction or removal of the content ahead of slower, less critical processes.
-
-
-## 13. Error Handling and Edge-Case Requirements (Business View)
-
-### 13.1 General Error Principles
-
-EARS requirements:
-- WHEN an action fails due to invalid input, THE communityPlatform SHALL inform the user which business rule was violated and SHALL allow correction and retry.
-- WHEN an action fails due to lack of permission, THE communityPlatform SHALL state that the user is not authorized for that action without exposing internal details.
-- WHEN an action fails due to temporary system issues, THE communityPlatform SHALL inform the user that the issue is temporary and SHALL encourage retrying later.
-
-### 13.2 Concurrency and Consistency
-
-EARS requirements:
-- WHEN two actors attempt conflicting actions on the same content (for example simultaneous edits or moderation actions), THE communityPlatform SHALL apply deterministic rules to select a final content state and SHALL avoid exposing contradictory states.
-- WHEN content is deleted or locked while a user is interacting with it (for example typing a comment), THE communityPlatform SHALL reject new actions on that content and SHALL indicate that the content is no longer available or has been closed.
-
-
-## 14. Example Flow Diagram – Reporting and Moderation
+### 13.2 Mermaid Diagram – End-to-end Posting and Moderation Flow
 
 ```mermaid
 graph LR
-  A["User Encounters Content"] --> B{"Content Violates Rules?"}
-  B -->|"No"| C["User Continues Browsing"]
-  B -->|"Yes"| D["User Submits Report"]
-  D --> E["System Records Report"]
-  E --> F["Report Routed to Moderators"]
-  F --> G["Moderator Reviews Content"]
-  G --> H{"Violation Confirmed?"}
-  H -->|"No"| I["Report Marked No Action"]
-  H -->|"Yes"| J{"Severity Level"}
-  J -->|"Minor"| K["Apply Local Action (Remove/Lock)"]
-  J -->|"Severe"| L["Escalate to Platform Admin"]
-  K --> M["Content Visibility Updated"]
-  L --> N["Admin Applies Global Action"]
-  N --> M
-  M --> O["Outcome Recorded and Optional Notifications"]
+  A["Visitor Browses Communities"] --> B{"Wants To Participate?"}
+  B -->|"No"| C["Continue As guestUser"]
+  B -->|"Yes"| D["Register Or Log In"]
+  D --> E["Become memberUser"]
+  E --> F["Subscribe To Communities"]
+  F --> G["Create Post In Community"]
+  G --> H["Other Members Comment And Vote"]
+  H --> I{"Content Reported?"}
+  I -->|"No"| J["Normal Lifecycle (Sorting, Karma)"]
+  I -->|"Yes"| K["Report Recorded For adminUser"]
+  K --> L["adminUser Reviews Report"]
+  L --> M{"Policy Violation?"}
+  M -->|"No"| N["Dismiss Report"]
+  M -->|"Yes"| O["Apply Moderation Actions"]
+  O --> P["Update Content Visibility And User Status"]
 ```
 
 
-## 15. Non-Functional Expectations (Business Summary)
+## 14. Assumptions and Constraints
 
-EARS requirements:
-- WHEN users perform common actions such as browsing feeds, viewing posts, submitting posts or comments, voting, subscribing, or reporting, THE communityPlatform SHALL respond within a few seconds under normal load so that interaction feels responsive.
-- THE communityPlatform SHALL maintain high availability for core actions (browsing, posting, commenting, voting, reporting) with only rare planned maintenance or unexpected outages.
-- THE communityPlatform SHALL protect user credentials and sensitive data from unauthorized access through appropriate security measures defined in broader platform policies.
-- THE communityPlatform SHALL maintain audit records of key actions (for example moderation decisions, bans, and report handling) to support investigations and compliance.
-
-
-## 16. Implementation Autonomy Statement
-
-THE requirements in this document describe what the communityPlatform must do at the business level. THE development team SHALL retain full autonomy to choose technical architectures, programming languages, frameworks, storage systems, and API designs, provided that the implemented system satisfies all behaviors and constraints defined here.
+- THE platform SHALL treat most communities as public unless business policy defines restricted or private types.
+- THE platform SHALL treat voting as anonymous at the user interface level; other users SHALL not see which specific accounts cast votes.
+- THE platform SHALL use karma as a central, visible signal of contribution quality in profiles and MAY use it for eligibility rules (for example community creation, reduced rate limits).
+- THE requirements described here SHALL remain independent of specific technologies (for example NestJS, Prisma, or particular databases) so that developers retain full autonomy over implementation details while meeting the described behaviors.

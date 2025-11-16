@@ -6,38 +6,39 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityMember } from "../../../structures/IRedditCommunityMember";
 
 /**
- * Register a new member account with email verification.
+ * Register a new member account with email, nickname, and password.
  *
- * Member registration endpoint that creates new member accounts on the
- * Reddit-like community platform. Users provide a unique nickname, valid email
- * address, and secure password to establish their membership. The system
- * enforces username uniqueness through real-time validation and imposes
- * password complexity requirements including minimum 8 characters with mixed
- * case, numbers, and special characters encouraged.
+ * This endpoint enables new users to register as members of the Reddit
+ * Community platform. Members represent authenticated users with full platform
+ * privileges including community participation, content creation, voting,
+ * commenting, and karma building. The operation creates a new member record
+ * with verified email address, unique nickname, and securely hashed password.
  *
- * Upon successful registration, the member account is created with a pending
- * status and a unique identifier is generated. A verification email is
- * automatically dispatched within 2 minutes containing a unique link valid for
- * 24 hours. The account transitions from pending to active status only after
- * successful email verification, granting full member privileges including
- * community participation, content creation, and voting capabilities.
+ * The implementation uses email as the primary identifier for authentication
+ * while enforcing nickname uniqueness for display purposes across the platform.
+ * Created_at and updated_at timestamps are automatically set during
+ * registration, with deleted_at remaining null for active accounts.
  *
- * The registration process includes comprehensive validation checks for email
- * uniqueness and username appropriateness according to community guidelines.
- * Inappropriate or taken usernames are immediately rejected with clear error
- * messages and alternative suggestions when possible. Users must accept
- * platform terms of service and privacy policies before account creation is
- * permitted.
+ * Security considerations include email verification requirements, password
+ * strength validation, and uniqueness constraints on both email and nickname
+ * fields. The soft deletion mechanism allows for account recovery while
+ * maintaining data integrity for posts, comments, and other user-generated
+ * content.
  *
- * This operation integrates with the reddit_community_members table,
- * establishing the core authentication record that enables all subsequent
- * platform interactions. The created member account serves as the foundation
- * for community participation, karma building, and content engagement across
- * all platform features.
+ * Member accounts form the foundation of the community-driven platform,
+ * enabling users to create and join communities, submit various post types
+ * (text, link, image), engage in discussions through comments, and participate
+ * in the voting system that drives content ranking and karma calculation.
+ *
+ * This registration process integrates with the broader authentication
+ * framework, generating JWT tokens upon successful registration and
+ * establishing session management for subsequent platform access. The operation
+ * should be called before any member-specific operations like profile
+ * management or content creation.
  *
  * @param props.connection
- * @param props.body Member registration information including display name,
- *   email, and password
+ * @param props.body Member registration information including email, nickname,
+ *   and password
  * @setHeader token.access Authorization
  *
  * @path /auth/member/join
@@ -73,12 +74,12 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Member registration information including display name, email, and
+     * Member registration information including email, nickname, and
      * password
      */
-    body: IRedditCommunityMember.IJoin;
+    body: IRedditCommunityMember.ICreate;
   };
-  export type Body = IRedditCommunityMember.IJoin;
+  export type Body = IRedditCommunityMember.ICreate;
   export type Response = IRedditCommunityMember.IAuthorized;
 
   export const METADATA = {
@@ -123,37 +124,37 @@ export namespace join {
 }
 
 /**
- * Authenticate member account with email and password.
+ * Authenticate members using email and password credentials.
  *
- * Member authentication endpoint that validates login credentials and
- * establishes authenticated sessions for members. The system accepts either
- * email address or username as the account identifier along with the account
- * password. Login attempts are rate-limited to prevent brute force attacks with
- * a maximum of 5 failed attempts per 15-minute window per IP address.
+ * This endpoint enables existing members to authenticate using their registered
+ * email address and password. The login operation validates credentials against
+ * the member account and issues secure JWT tokens for maintaining authenticated
+ * sessions across the platform.
  *
- * The authentication process implements secure password verification using
- * bcrypt hashing with appropriate cost factors. Suspicious activity detection
- * monitors for unusual login patterns including access from new devices or
- * geographically impossible locations. Account lockout protection engages after
- * repeated failed attempts, gradually increasing delay times between subsequent
- * attempts.
+ * The implementation checks the provided email against existing member
+ * accounts, verifies the password hash against the stored password_hash value,
+ * and generates access and refresh tokens upon successful authentication.
+ * Failed login attempts may trigger security measures like account lockout or
+ * additional verification requirements.
  *
- * Upon successful authentication, the system generates new JWT access tokens
- * valid for 15-30 minutes and refresh tokens with 7-30 day validity periods.
- * All existing sessions are updated with device and browser information for
- * security monitoring. The member's last login timestamp is automatically
- * updated, and comprehensive audit logs track all authentication attempts for
- * security oversight.
+ * Member authentication provides access to personalized features including
+ * community subscriptions, voting history, karma tracking, and content
+ * management. The platform uses JWT tokens for stateless authentication,
+ * allowing members to access protected resources without repeated credential
+ * validation.
  *
- * This operation creates session records in reddit_community_member_sessions,
- * maintaining detailed session metadata including IP addresses, connection
- * URLs, and referrer information. The integration ensures secure token
- * management while enabling multi-device session support and remote session
- * revocation capabilities for enhanced account security.
+ * The login process integrates with the broader platform security framework,
+ * supporting features like session expiration, password recovery, and email
+ * verification workflows. Login attempts are logged for security monitoring and
+ * audit purposes.
+ *
+ * This operation must be called before accessing any member-restricted
+ * operations like content creation, voting, or profile management. The issued
+ * tokens should be included in subsequent API requests to maintain
+ * authenticated state throughout the member session.
  *
  * @param props.connection
- * @param props.body Member login credentials containing email/username and
- *   password for authentication validation
+ * @param props.body Member login credentials including email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/member/login
@@ -188,13 +189,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Member login credentials containing email/username and password for
-     * authentication validation
-     */
-    body: IRedditCommunityMember.ILogin;
+    /** Member login credentials including email and password */
+    body: IRedditCommunityMember.ILoginRequest;
   };
-  export type Body = IRedditCommunityMember.ILogin;
+  export type Body = IRedditCommunityMember.ILoginRequest;
   export type Response = IRedditCommunityMember.IAuthorized;
 
   export const METADATA = {
@@ -239,34 +237,36 @@ export namespace login {
 }
 
 /**
- * Refresh member access tokens using refresh token.
+ * Refresh member access tokens using valid refresh tokens.
  *
- * Member token refresh endpoint that extends authenticated sessions by issuing
- * new JWT access tokens using valid refresh tokens. This operation is essential
- * for maintaining continuous member access without interrupting user activities
- * with frequent re-authentication requirements. Access tokens expire after
- * 15-30 minutes and must be refreshed using the longer-lived refresh token to
- * maintain authenticated status.
+ * This endpoint enables members to refresh expired access tokens using their
+ * valid refresh tokens, maintaining continuous authenticated sessions without
+ * requiring repeated login credentials. The refresh operation validates the
+ * provided refresh token and generates new access tokens for uninterrupted
+ * platform access.
  *
- * The refresh process validates the provided refresh token integrity and
- * expiration status, then immediately issues a new access token with renewed
- * validity. All token operations maintain security audit trails for monitoring
- * purposes. The operation supports the reddit_community_member_sessions table
- * by updating token metadata and extending session lifecycles seamlessly.
+ * The implementation validates refresh tokens for authenticity, expiration, and
+ * association with active member accounts. Valid refresh tokens must be issued
+ * through previous login or refresh operations and should be securely stored
+ * client-side. Refresh tokens typically have longer validity periods than
+ * access tokens while maintaining security controls.
  *
- * This operation enables background authentication maintenance, allowing
- * members to remain continuously logged in during active platform usage. The
- * refresh mechanism supports multi-device sessions by maintaining independent
- * refresh tokens for each active session, enabling selective session management
- * and device-specific revocation capabilities while preserving other active
- * sessions.
+ * Token refresh is essential for maintaining secure member sessions while
+ * avoiding frequent re-authentication requirements. The operation ensures that
+ * members can continue using platform features like content creation, voting,
+ * and community participation even when access tokens have expired.
  *
- * The implementation ensures secure token lifecycle management with appropriate
- * expiration policies and security monitoring
+ * The refresh mechanism supports the platform's security model by limiting
+ * access token lifetimes while providing convenient session renewal. Refresh
+ * tokens should be stored securely and are typically specific to individual
+ * member accounts.
+ *
+ * This operation should be called when member access tokens expire during
+ * active platform usage, enabling seamless continuation of authenticated
+ * operations without disruption to the user experience.
  *
  * @param props.connection
- * @param props.body Token refresh request containing the current refresh token
- *   to be validated and exchanged for new access token
+ * @param props.body Refresh token information for access token renewal
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -301,13 +301,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Token refresh request containing the current refresh token to be
-     * validated and exchanged for new access token
-     */
-    body: IRedditCommunityMember.IRefresh;
+    /** Refresh token information for access token renewal */
+    body: IRedditCommunityMember.IRefreshRequest;
   };
-  export type Body = IRedditCommunityMember.IRefresh;
+  export type Body = IRedditCommunityMember.IRefreshRequest;
   export type Response = IRedditCommunityMember.IAuthorized;
 
   export const METADATA = {

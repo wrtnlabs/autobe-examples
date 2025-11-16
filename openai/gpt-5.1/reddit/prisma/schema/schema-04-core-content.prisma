@@ -1,0 +1,290 @@
+/// Core posts created inside communities.
+///
+/// Represents top-level content items in communities, including text, link,
+/// or image posts. Each post belongs to a community and is authored by a
+/// member user. The table stores only the current version of the post
+/// content; historical edits are preserved in {@link
+/// community_platform_post_edit_histories}.
+///
+/// Posts participate in feeds, sorting (hot, new, top, controversial),
+/// voting, and reporting, which are modeled in other components such as
+/// {@link community_platform_post_votes} and reporting tables. Soft deletion
+/// and status fields allow the system to distinguish between author
+/// deletions, moderation removals, and other visibility states while
+/// preserving structure for comments and audit trails.
+///
+/// @namespace CoreContent
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the post record.
+  id String @id
+  
+  /// Reference to the community where this post is created. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Reference to the member user who authored the post. {@link
+  /// community_platform_memberusers.id}.
+  author_memberuser_id String
+  
+  /// Type of the post content such as text, link, or image. Used to decide
+  /// which payload fields are relevant at runtime.
+  post_type String
+  
+  /// Human-readable title for the post used in listings and search. Must
+  /// satisfy business length and content rules.
+  title String
+  
+  /// Optional text body for text posts. Null for purely link or image posts
+  /// when no text body is provided.
+  body String?
+  
+  /// Optional URL for link posts. Must satisfy URL format and safety rules
+  /// when present.
+  link_url String?
+  
+  /// Optional image reference for image posts. Represents a URL or URI
+  /// pointing to stored media when present.
+  image_url String?
+  
+  /// Business-level visibility and lifecycle status of the post, such as
+  /// visible, deleted_by_author, removed_by_moderation, or locked.
+  status String
+  
+  /// Indicates whether new comments or interactions are disallowed on this
+  /// post according to moderation or community rules.
+  is_locked Boolean
+  
+  /// Timestamp when the post was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated, including edits that changed
+  /// title or body.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted, either by the author or by
+  /// moderation. Null when the post is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  authorMemberuser community_platform_memberusers @relation(fields: [author_memberuser_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_edit_histories community_platform_post_edit_histories[]
+  community_platform_comments community_platform_comments[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_karma_events community_platform_karma_events[]
+  community_platform_post_reports community_platform_post_reports[]
+  community_platform_moderation_actions_on_content community_platform_moderation_actions_on_content[]
+  
+  @@index([author_memberuser_id])
+  
+  @@index([community_id, created_at])
+  @@index([community_id, status, created_at])
+}
+
+/// Historical edit snapshots for posts.
+///
+/// Captures prior versions of {@link community_platform_posts} whenever a
+/// post is edited. Each row represents a point-in-time snapshot that records
+/// the content before or after an edit (depending on implementation choice),
+/// together with the editing actor and timestamp.
+///
+/// These records support audit trails, user-visible edit history, and
+/// moderation workflows without polluting the main posts table with
+/// historical data. The table is append-only in typical usage and is
+/// classified as a snapshot stance model.
+///
+/// @namespace CoreContent
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the post edit history snapshot.
+  id String @id
+  
+  /// Reference to the post whose content was edited. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// Reference to the member user who performed the edit when known. Nullable
+  /// to allow system or administrative edits without direct member
+  /// association.
+  editor_memberuser_id String?
+  
+  /// The prior title value captured by this snapshot. Null when only body or
+  /// non-title fields changed or when title history is not stored.
+  previous_title String?
+  
+  /// The prior body text captured by this snapshot. Null for posts that did
+  /// not have a body or when only non-body fields changed.
+  previous_body String?
+  
+  /// The prior link URL value captured by this snapshot for link posts. Null
+  /// when no link was set or link was unaffected by the edit.
+  previous_link_url String?
+  
+  /// The prior image URL value captured by this snapshot for image posts. Null
+  /// when no image was set or image was unaffected by the edit.
+  previous_image_url String?
+  
+  /// Optional free-text reason for the edit when provided by the editor or
+  /// system, used for audit and user-facing edit annotations.
+  edit_reason String?
+  
+  /// Timestamp when this snapshot record was created, typically corresponding
+  /// to the time of the edit.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  editorMemberuser community_platform_memberusers? @relation(fields: [editor_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([editor_memberuser_id], map: "community_platform_post_edit_histories_editor_memberus_b76d0591")
+  
+  @@index([post_id, created_at])
+}
+
+/// Comments and nested replies on posts.
+///
+/// Represents user comments attached to posts and nested replies to other
+/// comments. Each comment belongs to a post and is authored by a member
+/// user. Threading is modeled via an optional parent_comment_id
+/// self-reference to allow hierarchical comment trees.
+///
+/// The table stores only the current version of each comment’s text;
+/// historical edits are kept in {@link
+/// community_platform_comment_edit_histories}. Voting, karma impact, and
+/// reporting are managed in other components such as {@link
+/// community_platform_comment_votes} and reporting tables. Soft deletion and
+/// status fields allow distinguishing author deletions, moderation removals,
+/// and lock states while preserving thread structure.
+///
+/// @namespace CoreContent
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the comment record.
+  id String @id
+  
+  /// Reference to the post on which this comment is made. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// Reference to the member user who authored the comment. {@link
+  /// community_platform_memberusers.id}.
+  author_memberuser_id String
+  
+  /// Optional reference to the parent comment when this record is a nested
+  /// reply. Null for top-level comments on a post.
+  parent_comment_id String?
+  
+  /// The current text content of the comment. Must comply with length and
+  /// content policy rules.
+  body String
+  
+  /// Business-level visibility and lifecycle status of the comment, such as
+  /// visible, deleted_by_author, or removed_by_moderation.
+  status String
+  
+  /// Indicates whether new replies are disallowed on this comment according to
+  /// moderation or thread-locking rules.
+  is_locked Boolean
+  
+  /// Timestamp when the comment was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated, including edits to its body.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted by the author or moderation.
+  /// Null when the comment is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  authorMemberuser community_platform_memberusers @relation(fields: [author_memberuser_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_edit_histories community_platform_comment_edit_histories[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_karma_events community_platform_karma_events[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_moderation_actions_on_content community_platform_moderation_actions_on_content[]
+  
+  @@index([author_memberuser_id])
+  @@index([parent_comment_id])
+  
+  @@index([post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([post_id, parent_comment_id, created_at], map: "community_platform_comments_post_id_parent_comment_id__94ecc3f4")
+}
+
+/// Historical edit snapshots for comments.
+///
+/// Captures prior versions of {@link community_platform_comments} whenever a
+/// comment is edited. Each row stores the previous text content and metadata
+/// about the edit, such as the editing actor and timestamp.
+///
+/// This model enables displaying edit history to users, supporting
+/// moderation review, and maintaining a complete audit trail of comment
+/// changes without bloating the main comments table. The table is
+/// append-only in normal operation and is classified as a snapshot stance
+/// model.
+///
+/// @namespace CoreContent
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the comment edit history snapshot.
+  id String @id
+  
+  /// Reference to the comment whose content was edited. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Reference to the member user who performed the edit when known. Nullable
+  /// to allow system or administrative edits without direct member
+  /// association.
+  editor_memberuser_id String?
+  
+  /// The prior text body of the comment captured by this snapshot. May be null
+  /// in edge cases where only metadata changed.
+  previous_body String?
+  
+  /// Optional free-text explanation for why the comment was edited, provided
+  /// by the editor or system for audit purposes.
+  edit_reason String?
+  
+  /// Timestamp when this snapshot record was created, typically matching the
+  /// time of the edit.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  editorMemberuser community_platform_memberusers? @relation(fields: [editor_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([editor_memberuser_id], map: "community_platform_comment_edit_histories_editor_membe_919ac4bf")
+  
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "community_platform_comment_edit_histories_comment_id_c_5dd8e361")
+}

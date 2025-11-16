@@ -7,48 +7,65 @@ import { ICommunityPlatformAppeal } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/memberUser/appeals")
 export class CommunityplatformMemberuserAppealsController {
   /**
-   * Create a new appeal record in the community_platform_appeals table for
-   * the communityPlatform service.
+   * Create a new appeal record in the community_platform_appeals table.
    *
-   * Create a new appeal entry in the community platform to request review of
-   * a previous enforcement or moderation decision.
+   * Create a new appeal in the community platform for an existing moderation
+   * action.
    *
-   * This POST /appeals operation maps directly to the
-   * community_platform_appeals Prisma model, which is documented as storing
-   * appeals submitted against moderation decisions or sanctions. When a
-   * caller submits this API, the backend validates that the referenced
-   * report, moderation action, or user sanction exists and is eligible for
-   * appeal, then constructs a new community_platform_appeals record. Core
-   * text fields like appeal_scope, reason_summary, and details are taken from
-   * the request body DTO ICommunityPlatformAppeal.ICreate, while identifiers
-   * such as community_platform_report_id, moderation_action_id, or
-   * user_sanction_id indicate the specific object being appealed.
+   * This operation is designed for member users who wish to contest a
+   * moderation action that has impacted them or their content. It works with
+   * the community_platform_appeals Prisma model, which stores each appeal as
+   * a distinct record linked to a row in
+   * community_platform_moderation_actions (and potentially to subtype tables
+   * like community_platform_moderation_actions_on_users or
+   * community_platform_moderation_actions_on_content). The description
+   * comments in these Prisma tables emphasize auditability, traceability of
+   * enforcement decisions, and structured capture of appeal rationale and
+   * status over time.
    *
-   * On successful creation, the server sets appeal_status to an initial
-   * workflow value such as 'submitted' and uses the created_at and updated_at
-   * datetime columns to record when the appeal entered the system. These
-   * columns are indexed together with appeal_status, and also with
-   * appellant_memberuser_id, to support efficient retrieval of pending
-   * appeals sorted by recency or filtered by status. Actor foreign keys like
-   * appellant_memberuser_id, communitymoderator_id, and platformadmin_id are
-   * not supplied directly by the client but are inferred from the
-   * authenticated principal, ensuring that the audit trail accurately
-   * reflects who initiated the appeal.
+   * When a member user calls this endpoint, the service validates that the
+   * moderation action identifier provided in ICommunityPlatformAppeal.ICreate
+   * refers to an existing action that is eligible for appeal. For example,
+   * the underlying schema comments may specify that only certain action types
+   * (such as suspensions, bans, or content removals) can be appealed, and
+   * that there may be a time window after the action is recorded during which
+   * appeals are accepted. The implementation must also ensure that the
+   * requesting member is the subject of the action or the owner of the
+   * affected content or community, relying on relationships defined between
+   * community_platform_moderation_actions and entities like
+   * community_platform_posts, community_platform_comments,
+   * community_platform_communities, and community_platform_memberusers.
    *
-   * This endpoint must enforce authorization rules so that only authenticated
-   * member users, community moderators, or platform administrators can create
-   * appeals, and must ensure they only appeal decisions they are allowed to
-   * challenge. Error responses should be returned when the request omits
-   * required scope or association information, references unknown or
-   * ineligible targets, or violates invariants implied by the schema (for
-   * example, providing inconsistent combinations of report and sanction
-   * references). The created record, including the generated id and
-   * timestamps, is returned as an ICommunityPlatformAppeal so that clients
-   * can display confirmation and link to subsequent appeal status views.
+   * From a security perspective, this endpoint should only be accessible to
+   * authenticated member users, expressed via authorizationActors:
+   * ["memberUser"]. The business logic layer will additionally confirm
+   * ownership and prevent appeals on actions that target other users or
+   * restricted system-level actions. Input fields such as reason codes and
+   * free-form explanations must be validated for length and content,
+   * consistent with validation rules documented in the Prisma schema comments
+   * and business rules requirements.
+   *
+   * Upon successful validation, a new community_platform_appeals record is
+   * inserted. Fields such as initial status (for example, "pending"),
+   * createdAt, and internal tracking identifiers are populated by the system.
+   * The response returns a full ICommunityPlatformAppeal object, which
+   * includes both the user-submitted fields and system-managed fields like
+   * current status and timestamps. This allows clients to update their UI
+   * immediately with the new appeal and any status or tracking information.
+   * Related operations include updating an appeal (PUT /appeals/{appealId})
+   * by admins to record decisions, and querying moderation cases and actions
+   * to provide additional context to moderators reviewing appeals.
+   *
+   * Error handling includes rejecting requests that reference non-existent or
+   * non-appealable moderation actions, appeals submitted outside the allowed
+   * timeframe, or attempts by users to appeal someone elses moderation
+   * action. Validation errors will be returned when required fields in
+   * ICommunityPlatformAppeal.ICreate are missing or malformed, allowing the
+   * client to correct and resubmit.
    *
    * @param connection
-   * @param body Information required to create a new appeal against a report
-   *   outcome, moderation action, or user sanction.
+   * @param body Payload for creating a new appeal linked to an existing
+   *   moderation action.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()

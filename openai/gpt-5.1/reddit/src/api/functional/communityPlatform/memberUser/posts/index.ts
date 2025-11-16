@@ -1,61 +1,55 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ICommunityPlatformPost } from "../../../../structures/ICommunityPlatformPost";
-export * as state from "./state/index";
 export * as comments from "./comments/index";
+export * as editHistories from "./editHistories/index";
+export * as votes from "./votes/index";
 
 /**
- * Create a new community_platform_posts record representing a post in a
- * community.
+ * Create a new community post backed by the community_platform_posts table.
  *
- * Create a new post record in the community_platform_posts table based on user
- * input.
+ * Create a new post within a community on the platform.
  *
- * This operation is directly backed by the community_platform_posts model,
- * whose primary key id uniquely identifies each post. The request body uses the
- * ICommunityPlatformPost.ICreate DTO, which encapsulates client-provided
- * information for fields like title, body, url, and image_uri, as well as
- * identifiers for the target community and the post type. According to the
- * Prisma description, every post must belong to exactly one community via
- * community_id referencing community_platform_communities.id, and must have
- * exactly one author via author_memberuser_id referencing
- * community_platform_memberusers.id. It must also reference a post type through
- * post_type_id pointing at community_platform_post_types.id so that downstream
- * consumers can interpret whether the post is text-based, link-based, or
- * image-based. The server-side implementation must validate these relationships
- * before inserting, rejecting requests that reference unknown or invalid
- * communities, users, or post types.
+ * This operation is backed by the `community_platform_posts` model, which
+ * stores core post entities created by member users. Fields in that table
+ * generally include the post identifier, foreign keys to the owning community
+ * and author member user, textual fields such as title and body, optional
+ * external link metadata, type indicators for different post kinds, visibility
+ * or status flags, and timestamps like `created_at` and `updated_at`. The
+ * `ICommunityPlatformPost.ICreate` DTO should be designed so that its fields
+ * map cleanly onto these columns, excluding any values that are derived
+ * server-side such as the author ID extracted from the authenticated session or
+ * automatically managed timestamps.
  *
- * At creation time, the system sets created_at to the current server timestamp
- * and initializes updated_at to the same value to reflect that no edits have
- * occurred beyond the initial write. Lifecycle-related columns such as edit
- * flags or optional deletion markers must be initialized according to the
- * actual Prisma schema so that newly created posts are treated as active and
- * unedited. Validation logic should also ensure consistency between the
- * post_type_id and content fields: text posts use body, link posts use url, and
- * image posts use image_uri, with other content fields either ignored or
- * validated as null according to the business rules layered on top of this
- * schema.
+ * From an authorization standpoint, this endpoint must only be accessible to
+ * authenticated member users, because only registered members are allowed to
+ * submit new content. The service implementation should verify that the acting
+ * user has a valid membership or sufficient rights in the target community,
+ * potentially consulting `community_platform_communities` and
+ * `community_platform_community_memberships` if the schema defines them. It
+ * must also enforce business rules described for posts, such as maximum title
+ * length, restrictions on link posts, and any community-specific posting rules
+ * represented either on the community record or in related rule tables.
  *
- * Security and authorization are handled through an authenticated member user
- * context, represented here by the authorizationActors value ["memberUser"].
- * The implementation must not allow clients to spoof author_memberuser_id;
- * instead, it should derive the actual author identity from the authenticated
- * session that maps to a row in community_platform_memberusers. Additional
- * platform-level concerns such as rate limiting, spam checks, and content
- * policy enforcement are applied in domain services, but they all ultimately
- * persist canonical post data into community_platform_posts via this create
- * operation. Related operations include updating posts via PUT
- * /communityPlatform/memberUser/posts/{postId} and various read-oriented
- * endpoints that expose post data together with state, votes, and comments.
+ * Upon successful creation, the operation returns the new post using the
+ * `ICommunityPlatformPost` detailed DTO, which should expose all fields needed
+ * by clients to render the initial post view, including computed or defaulted
+ * values like initial score, comment count (typically zero), and visibility
+ * flags. Implementations may also trigger side effects defined elsewhere in the
+ * system, such as initializing vote aggregates, issuing notifications, or
+ * enqueuing search index updates; these side effects are not modeled directly
+ * in this API contract but are important considerations tied to the
+ * `community_platform_posts` table and its relationships. Any validation or
+ * authorization failures should result in clear error responses indicating
+ * whether the problem stems from missing permissions, invalid field values, or
+ * community-level constraints.
  *
  * @param props.connection
- * @param props.body Payload used to create a new community platform post,
- *   including community, author, post type, and content fields appropriate to
- *   that type.
+ * @param props.body Data required to create a new post in a community,
+ *   including community identifier, post content, and type-specific fields.
  * @path /communityPlatform/memberUser/posts
  * @accessor api.functional.communityPlatform.memberUser.posts.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -85,9 +79,8 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Payload used to create a new community platform post, including
-     * community, author, post type, and content fields appropriate to that
-     * type.
+     * Data required to create a new post in a community, including
+     * community identifier, post content, and type-specific fields.
      */
     body: ICommunityPlatformPost.ICreate;
   };
@@ -136,53 +129,56 @@ export namespace create {
 }
 
 /**
- * Update an existing post row in the community_platform_posts table identified
- * by postId.
+ * Update a post record in the community_platform_posts table identified by
+ * postId.
  *
- * Update the canonical content and metadata of an existing post row in
- * community_platform_posts.
+ * Update an existing post in the `community_platform_posts` table using a
+ * structured update payload.
  *
- * This operation targets a single post identified by the postId path parameter,
- * which corresponds to the id column of community_platform_posts. The request
- * body is represented by ICommunityPlatformPost.IUpdate and contains fields
- * that are allowed to change after creation, such as title, body, url, and
- * image_uri. According to the Prisma schema description, each row in
- * community_platform_posts stores the current title and body of the post, an
- * optional url for link posts, and an optional image_uri for image-based posts,
- * as well as lifecycle-related flags and timestamps such as edit indicators and
- * created/updated timestamps. The update logic must load the existing row,
- * apply only the allowed changes, and preserve relationships to
- * community_platform_communities, community_platform_memberusers, and
- * community_platform_post_types unless the business rules explicitly allow
- * those foreign keys to be reassigned by privileged actors.
+ * This operation allows clients to modify the content and selected metadata of
+ * a post identified by `postId`. The `postId` path parameter is mapped directly
+ * to the primary key column of the `community_platform_posts` Prisma model,
+ * ensuring that the correct record is targeted. The request body must conform
+ * to the `ICommunityPlatformPost.IUpdate` DTO, which is derived from the schema
+ * comments and field definitions of `community_platform_posts` and includes
+ * only the fields that are allowed to change after initial creation, such as
+ * title, text body, link URL, flair tags, or other configurable attributes
+ * defined in the model.
  *
- * When any user-visible content changes, the implementation must update the
- * appropriate edit-tracking flag if it is not already set, to reflect that the
- * post has been edited since creation. The updated_at field (or equivalent)
- * must always be refreshed to the current server time whenever an update
- * occurs, while created_at remains unchanged to preserve historical accuracy.
- * If the schema supports additional lifecycle or visibility-related columns,
- * and business logic uses this endpoint to toggle those states, the
- * implementation should adjust them consistently with the underlying model.
+ * From a security perspective, this operation is typically restricted to
+ * authenticated actors, and more specifically to either the original author of
+ * the post or users with elevated roles such as moderators or admins. For this
+ * reason, `authorizationActors` is set to ["memberUser"], representing a
+ * registered community member; more granular role checks must be enforced by
+ * the business logic based on related tables like
+ * `community_platform_memberusers`, memberships, and moderation entities. The
+ * implementation must ensure that users cannot edit posts that are locked,
+ * archived, or subject to moderation decisions that disallow further changes,
+ * as indicated by status fields and related moderation models.
  *
- * Authorization continues to rely on an authenticated member user context,
- * expressed by authorizationActors ["memberUser"], with more granular
- * permission checks enforced in the domain layer. Typical rules include
- * allowing the original author to edit their own post while also permitting
- * community moderators or platform administrators to perform edits for
- * moderation or policy enforcement. The endpoint should respond with the
- * updated representation of the post from community_platform_posts so that
- * clients can reflect the latest canonical state in user interfaces. This
- * operation is closely related to the POST /communityPlatform/memberUser/posts
- * endpoint for creation and to read-only endpoints that retrieve posts together
- * with their current state, votes, and comment trees.
+ * The service handling this operation must validate the incoming update payload
+ * against business rules, including content validation, length limits, and any
+ * constraints defined in the Prisma schema (for example, enum values for post
+ * types or status fields). On success, the endpoint returns the updated
+ * `ICommunityPlatformPost` representation, reflecting the latest state of the
+ * post in the database. If the `postId` does not correspond to an existing
+ * record, a not-found error should be returned. If the requester lacks
+ * permission to modify the post, an appropriate authorization error must be
+ * produced. Other error scenarios include validation failures and conflicts
+ * when concurrent updates occur.
+ *
+ * This update endpoint works in tandem with the post creation, retrieval, and
+ * edit-history snapshot operations (the latter typically backed by
+ * `community_platform_post_edit_histories` as a snapshot model). The edit
+ * history itself is system-generated and should not be directly modifiable via
+ * APIs, but may be updated internally by the service when this operation is
+ * called.
  *
  * @param props.connection
- * @param props.postId Primary key of the post to update, corresponding to
- *   community_platform_posts.id.
- * @param props.body Fields to modify on the existing community platform post,
- *   such as title, body, url, or image_uri, using the
- *   ICommunityPlatformPost.IUpdate contract.
+ * @param props.postId Unique identifier of the post to be updated in the
+ *   community_platform_posts table.
+ * @param props.body Fields to update on the target post, derived from the
+ *   community_platform_posts schema.
  * @path /communityPlatform/memberUser/posts/:postId
  * @accessor api.functional.communityPlatform.memberUser.posts.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -212,15 +208,14 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Primary key of the post to update, corresponding to
-     * community_platform_posts.id.
+     * Unique identifier of the post to be updated in the
+     * community_platform_posts table.
      */
-    postId: string & tags.Format<"uuid">;
+    postId: string;
 
     /**
-     * Fields to modify on the existing community platform post, such as
-     * title, body, url, or image_uri, using the
-     * ICommunityPlatformPost.IUpdate contract.
+     * Fields to update on the target post, derived from the
+     * community_platform_posts schema.
      */
     body: ICommunityPlatformPost.IUpdate;
   };

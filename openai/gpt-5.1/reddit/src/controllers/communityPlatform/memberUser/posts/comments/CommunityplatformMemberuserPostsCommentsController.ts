@@ -3,46 +3,60 @@ import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
 import typia, { tags } from "typia";
 
 import { ICommunityPlatformComment } from "../../../../../api/structures/ICommunityPlatformComment";
+import { IPageICommunityPlatformComment } from "../../../../../api/structures/IPageICommunityPlatformComment";
 
 @Controller("/communityPlatform/memberUser/posts/:postId/comments")
 export class CommunityplatformMemberuserPostsCommentsController {
   /**
-   * Create a new comment in the community_platform_comments table under a
-   * specific post.
+   * Create a new comment record in the community_platform_comments table for
+   * a specific post.
    *
-   * Create a new comment in the community_platform_comments table under the
-   * post identified by postId.
+   * Create a new comment for the specified post within the community
+   * platform.
    *
-   * This endpoint accepts a request body based on the
-   * ICommunityPlatformComment.ICreate DTO that contains the user-provided
-   * comment content and related metadata. The postId path parameter supplies
-   * the parent post context, enabling the service layer to associate the new
-   * comment with a specific row in the community_platform_posts table. If the
-   * DTO allows an optional parent comment reference, the implementation may
-   * also support nested replies, ensuring that the referenced parent comment
-   * belongs to the same post.
+   * This operation targets the `community_platform_comments` table, which
+   * stores individual comments and nested replies associated with posts. Each
+   * comment belongs to a single post from `community_platform_posts` and is
+   * authored by a registered member user from
+   * `community_platform_memberusers`. The API expects a valid `postId` path
+   * parameter that corresponds to an existing post and a JSON request body
+   * that matches the `ICommunityPlatformComment.ICreate` schema, containing
+   * the comment content and, when applicable, a parent comment reference for
+   * replies.
    *
-   * The operation is write-sensitive and must enforce business rules around
-   * who is allowed to comment (for example, only active member users,
-   * non-banned accounts, or users who meet minimum karma thresholds). It
-   * should also integrate with content policy enforcement, potentially
-   * validating the comment body against prohibited content patterns or length
-   * limits prior to creation. Any violation of these rules should result in a
-   * clear validation error response rather than partial insertion.
+   * From a security and authorization perspective, only authenticated member
+   * users are allowed to create comments. The implementation must verify that
+   * the requesting user is a valid member and that their account is not
+   * currently subject to blocking or restriction episodes recorded in tables
+   * such as `community_platform_account_restrictions`. Additionally, the
+   * community that owns the post must be in a state that allows new comments;
+   * for example, archived or locked communities, as well as locked posts,
+   * should prevent comment creation and return appropriate error responses.
    *
-   * On success, the API returns the complete ICommunityPlatformComment
-   * representation of the newly created resource, including server-assigned
-   * identifiers and timestamps. Downstream systems such as karma calculation,
-   * feed ranking, and notification dispatch may react asynchronously to this
-   * creation event, but those side effects are outside of the responsibility
-   * of this endpoint. This operation is typically used together with comment
-   * listing and retrieval endpoints to power full discussion flows on posts.
+   * In terms of business logic, the operation must enforce validation rules
+   * described in the Prisma schema comments and business requirements. These
+   * rules typically cover limits on comment length, prevention of empty or
+   * whitespace-only comments, and consistent handling of nested threading
+   * using parent comment references. If a `parentCommentId` or similar
+   * relationship field is provided, the implementation must validate that the
+   * parent comment belongs to the same post to maintain a coherent discussion
+   * tree.
+   *
+   * This endpoint is typically used together with list and detail retrieval
+   * operations on comments. For example, clients may first call a post detail
+   * API to display a post, then call a comment listing API to fetch existing
+   * comments, and finally use this creation API to submit new comments or
+   * replies. On success, the operation returns the full created comment as
+   * `ICommunityPlatformComment`, including identifiers, content, author
+   * linkage, timestamps, and any other fields defined in the Prisma model so
+   * that the client can immediately render the new comment in the UI.
    *
    * @param connection
-   * @param postId Unique identifier of the parent post under which the new
-   *   comment will be created.
-   * @param body Data required to create a new comment under the specified
-   *   post.
+   * @param postId Unique identifier of the target post in the
+   *   `community_platform_posts` table for which the comment is being
+   *   created.
+   * @param body Payload containing content and optional parent reference for
+   *   creating a new comment on the specified post.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -58,72 +72,136 @@ export class CommunityplatformMemberuserPostsCommentsController {
   }
 
   /**
-   * Update an existing comment record in the community_platform_comments
-   * table for a specific post.
+   * List and search comments for a specific post from the
+   * community_platform_comments table with pagination and filtering.
    *
-   * Update an existing comment that belongs to a specific post in the
-   * community platform.
+   * Retrieve a filtered and paginated list of comments for a specific post,
+   * using the community_platform_comments table as the primary data source.
    *
-   * This operation targets the community_platform_comments table, which
-   * stores user-generated comments and nested replies associated with posts
-   * in the community_platform_posts table. Each comment is uniquely
-   * identified in API calls using the commentId path parameter, while the
-   * parent post is identified via postId. The database schema for
-   * community_platform_comments typically includes fields such as the comment
-   * text body, author references, parent comment relationships for nesting,
-   * timestamps, and state flags describing whether the comment is edited,
-   * locked, or removed. The update operation focuses strictly on fields
-   * explicitly designated as editable in the
-   * ICommunityPlatformComment.IUpdate DTO, preventing accidental alteration
-   * of system-managed or relational fields.
+   * This endpoint is used by clients when displaying the comment thread under
+   * an individual post. The underlying community_platform_comments table
+   * holds both top-level comments and nested replies. Each record is linked
+   * to a parent post via a foreign key and can optionally reference another
+   * comment to form threaded structures. The operation takes the postId path
+   * parameter to ensure that only comments belonging to the target post are
+   * considered, providing a clean scope for querying.
    *
-   * From a security and permission perspective, only the comment's author or
-   * authorized moderation actors (for example, community moderators or
-   * platform administrators) should be allowed to update a comment. The
-   * implementation must verify that the authenticated user has permission to
-   * edit the specified comment before applying any changes. Additionally, the
-   * service should ensure that the comment being modified belongs to the post
-   * identified by postId, avoiding cross-resource updates that could confuse
-   * users or compromise data integrity. If the comment is locked, archived,
-   * or in a moderation state that disallows further edits as described by the
-   * community_platform_comment_states schema, the operation must reject the
-   * update with an appropriate error.
+   * The request body leverages the ICommunityPlatformComment.IRequest DTO to
+   * express rich query semantics. Typical fields in this request object
+   * include pagination controls (page size, cursor or offset, and direction),
+   * sorting preferences (by creation time, score, or other ranking signals),
+   * and filtering flags (e.g., whether to include comments that have been
+   * removed, collapsed due to low score, or hidden behind moderation
+   * actions). This design allows clients to implement a variety of comment
+   * viewing modes while keeping the path stable and consistent.
    *
-   * In terms of business logic, the system should mark edited comments
-   * appropriately, for example by updating an edited_at timestamp or toggling
-   * an is_edited flag in the community_platform_comments or related state
-   * tables. Optional fields such as an editReason may be stored to support
-   * transparency in moderation contexts. Any audit or moderation-related
-   * logging should be handled internally using tables such as
-   * community_platform_audit_logs or
-   * community_platform_moderation_audit_logs, without exposing write access
-   * to those tables via this API.
-   *
-   * This endpoint is expected to be used alongside comment creation,
-   * retrieval, and deletion operations. For instance, clients will typically
-   * fetch comments using a list or detail API, present an edit interface to
-   * authorized users, and then submit a PUT
-   * /communityPlatform/memberUser/posts/{postId}/comments/{commentId} request
-   * with the desired changes. Error responses should clearly indicate reasons
-   * such as missing comment, mismatched post/comment relationship, lack of
-   * permission, or validation failures (e.g., excessive length or disallowed
-   * content).
+   * The response is a paginated list represented by
+   * IPageICommunityPlatformComment.ISummary. Each summary object is derived
+   * from the community_platform_comments Prisma model but trimmed to fields
+   * most relevant for listing, such as comment identifier, truncated content,
+   * author information references, score or vote aggregates, and key
+   * moderation indicators. Pagination metadata in the wrapper allows clients
+   * to implement infinite scroll or page-based navigation. Authorization and
+   * visibility logic should take into account the viewer's role and any
+   * related moderation structures, ensuring that restricted comments are
+   * either omitted or represented with appropriate placeholders. Errors may
+   * be returned when the post does not exist, when the post is not visible to
+   * the caller, or when invalid pagination parameters are provided.
    *
    * @param connection
-   * @param postId Unique identifier of the parent post to which the target
-   *   comment belongs. This identifier is expected to match the primary key
-   *   of a record in the community_platform_posts table and is used to ensure
-   *   that the comment being updated is associated with the correct post
-   *   context.
-   * @param commentId Unique identifier of the comment to update within the
-   *   context of the specified post. This corresponds to the primary key of a
-   *   record in the community_platform_comments table and is used to locate
-   *   the exact comment instance whose editable fields will be modified.
-   * @param body Payload containing the new values for editable fields of the
-   *   comment, following the ICommunityPlatformComment.IUpdate DTO. Only
-   *   fields explicitly defined as updatable (such as body text or optional
-   *   edit metadata) should be present; relational identifiers and
-   *   system-managed fields must be ignored if provided.
+   * @param postId Unique identifier of the post whose associated comments
+   *   should be listed and searched.
+   * @param body Search, filtering, and pagination parameters used to query
+   *   comments for the specified post.
+   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformComment.IRequest,
+  ): Promise<IPageICommunityPlatformComment.ISummary> {
+    postId;
+    body;
+    return typia.random<IPageICommunityPlatformComment.ISummary>();
+  }
+
+  /**
+   * Update a specific comment in the community_platform_comments table for a
+   * given post.
+   *
+   * Update an existing comment record in the community platform that is
+   * attached to a specific post.
+   *
+   * This operation targets the community_platform_comments table, which
+   * stores comments and nested replies on posts. Each record in this table is
+   * linked to a post through the post_id foreign key referencing
+   * community_platform_posts.id and to its author via author_memberuser_id
+   * referencing community_platform_memberusers.id. The table’s description
+   * explains that it represents user comments attached to posts and nested
+   * replies to other comments, with threading modeled via the optional
+   * parent_comment_id self-reference. Only the current version of each
+   * comment’s text is stored in this table; edit histories are captured
+   * separately by community_platform_comment_edit_histories.
+   *
+   * When a client calls this API, it must supply both the postId and
+   * commentId as path parameters so the system can resolve the exact
+   * community_platform_comments row where community_platform_comments.post_id
+   * equals the provided postId and community_platform_comments.id equals the
+   * provided commentId. This dual-parameter approach prevents accidental
+   * cross-post updates and ensures that a comment is always updated in the
+   * context of its owning post. The request body, represented by
+   * ICommunityPlatformComment.IUpdate, contains fields that map to updatable
+   * columns in the Prisma schema, primarily body, status, and is_locked. The
+   * body field is a non-null string in the schema and must comply with
+   * content policy and length rules described at the business layer, while
+   * status is a non-null string that represents the business-level visibility
+   * and lifecycle state of the comment such as visible, deleted_by_author, or
+   * removed_by_moderation. The is_locked boolean indicates whether new
+   * replies are disallowed on this comment according to moderation or
+   * thread-locking rules.
+   *
+   * Security-wise, the operation is protected for authenticated users only,
+   * and the actual permission model is enforced in the service layer. The
+   * implementation should ensure that typical memberUser actors can only
+   * modify comments they authored, and even then only within allowed business
+   * constraints (such as time windows or disallowing changes once the comment
+   * has been moderated). Admin or moderation actors may be able to update
+   * status and lock flags irrespective of authorship, reflecting broader
+   * moderation powers described in the platform’s requirements. The
+   * updated_at field is always refreshed on successful update, while
+   * created_at and author_memberuser_id are immutable. The deleted_at field
+   * is only set or modified when transitions to certain status values require
+   * it, following the schema’s description that this field holds the
+   * timestamp when the comment was soft deleted by the author or moderation.
+   *
+   * The response returns the full current representation of the comment as
+   * ICommunityPlatformComment, including the updated body text, status,
+   * is_locked flag, and timestamps. Related API operations for this resource
+   * include creating new comments on a post (POST /posts/{postId}/comments),
+   * retrieving the list of comments for a post with sorting and pagination
+   * (PATCH /posts/{postId}/comments), and deleting a specific comment (DELETE
+   * /posts/{postId}/comments/{commentId}). Consumers are expected to use this
+   * update endpoint when editing an existing comment while relying on the
+   * list and detail endpoints to display the latest state of comment threads.
+   * Error handling includes not-found responses when the comment does not
+   * exist for the given postId and commentId combination, authorization
+   * failures when the caller is not permitted to modify the target comment,
+   * and validation errors when the update payload violates data or business
+   * rules.
+   *
+   * @param connection
+   * @param postId Unique identifier (UUID) of the post that owns the target
+   *   comment. This value is matched against
+   *   community_platform_comments.post_id to ensure the comment is updated in
+   *   the correct post context.
+   * @param commentId Unique identifier (UUID) of the comment to update. This
+   *   value is matched against community_platform_comments.id within the
+   *   specified post context.
+   * @param body Fields to update on the target comment, mapped to body,
+   *   status, is_locked, and related updatable properties of the
+   *   community_platform_comments record.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Put(":commentId")
@@ -142,63 +220,62 @@ export class CommunityplatformMemberuserPostsCommentsController {
   }
 
   /**
-   * Delete a comment record from the community_platform_comments table for a
-   * specific post.
+   * Permanently delete a specific comment from the
+   * community_platform_comments table for a given post.
    *
-   * Delete an existing comment that belongs to a specific post in the
-   * community platform.
+   * Erase a specific comment row from the community_platform_comments table
+   * for a given post.
    *
-   * This operation targets the community_platform_comments table, which
-   * stores user comments and threaded replies associated with posts in the
-   * community_platform_posts table. Using the DELETE
-   * /communityPlatform/memberUser/posts/{postId}/comments/{commentId}
-   * endpoint, a client requests the removal of a particular comment
-   * identified by commentId within the context of its parent post identified
-   * by postId. The service must verify that the referenced comment exists and
-   * is associated with the given post, preventing accidental or malicious
-   * deletion across unrelated posts.
+   * This delete operation targets the same domain as the update endpoint but
+   * performs a hard removal of a comment rather than a status-based
+   * visibility change. The community_platform_comments table represents
+   * comments and nested replies attached to posts, with each row linked to a
+   * post via post_id referencing community_platform_posts.id and optionally
+   * to a parent comment via parent_comment_id for nested threads. It stores
+   * the current version of each comment’s body text and its status and lock
+   * state, while historical edits reside in
+   * community_platform_comment_edit_histories.
    *
-   * Authorization rules are critical for this endpoint. Typically, the
-   * comment author may delete their own comment subject to community and
-   * platform policies, while community moderators and platform administrators
-   * may delete comments that violate rules, safety policies, or legal
-   * requirements. The implementation should integrate with the broader
-   * moderation framework, considering related tables such as
-   * community_platform_moderation_actions and
-   * community_platform_user_sanctions for policy enforcement. If the comment
-   * is already removed, locked, or in a state that disallows deletion based
-   * on community_platform_comment_states, the operation should respond with
-   * an appropriate error indicating that the resource cannot be further
-   * modified.
+   * The client must provide both postId and commentId as path parameters.
+   * Internally, the service resolves the target row by ensuring that
+   * community_platform_comments.post_id equals the supplied postId and
+   * community_platform_comments.id equals the supplied commentId. This
+   * dual-key check guarantees that the comment being erased indeed belongs to
+   * the specified post and prevents deletion of a comment from an unintended
+   * context. The operation then performs a permanent deletion of the matching
+   * record from community_platform_comments. Unlike flows that toggle the
+   * status field or set the deleted_at timestamp to hide a comment while
+   * preserving its structure, this operation removes the record itself from
+   * the table.
    *
-   * From a persistence perspective, the Prisma schema might be implemented as
-   * either a true hard deletion of the record from
-   * community_platform_comments or as a transition to a removed/hidden state
-   * managed via fields or related state tables. This specification expresses
-   * the API behavior from the client's perspective: after a successful
-   * DELETE, the comment should no longer appear in normal comment retrieval
-   * operations. Any necessary audit logging, compliance logging, or
-   * moderation trail entries should be recorded internally using tables such
-   * as community_platform_audit_logs or
-   * community_platform_moderation_audit_logs, and are not exposed as part of
-   * this API.
+   * From a security and governance perspective, this endpoint should be
+   * exposed only to privileged actors, which in this API contract are
+   * represented by the adminUser actor type and will be further distinguished
+   * in the business logic based on roles. Typical memberUser actors should
+   * not be allowed to call this endpoint directly; instead they should use
+   * comment update flows that mark a comment as deleted_by_author while
+   * keeping it stored for thread integrity and audit purposes. The service
+   * implementation should enforce strict checks, ensuring only authorized
+   * moderation or administrative users can execute an erase, and should
+   * decide how to handle dependent data such as votes, reports, or child
+   * replies.
    *
-   * Clients will typically use this endpoint as part of comment management
-   * flows, such as user self-service deletion or moderator moderation
-   * actions. Error responses must clearly differentiate between cases such as
-   * comment not found, post/comment mismatch, insufficient permissions, or
-   * business rules preventing deletion (for example, when a comment is part
-   * of an ongoing investigation).
+   * On success, the endpoint does not return a representation of the deleted
+   * comment; responseBody is null to indicate that consumers should use list
+   * or detail retrieval endpoints to observe the resulting state of the
+   * post’s comment tree. Error handling includes returning not-found when no
+   * comment exists for the provided postId and commentId combination,
+   * authorization failures when the caller lacks permission to perform
+   * destructive deletions, and conflict responses when business rules forbid
+   * erasing a comment in certain states (for example, when regulations
+   * require retaining specific moderation records).
    *
    * @param connection
-   * @param postId Unique identifier of the parent post under which the target
-   *   comment is registered. This value corresponds to the primary key of a
-   *   record in the community_platform_posts table and is used to ensure the
-   *   comment deletion occurs within the correct post context.
-   * @param commentId Unique identifier of the comment to delete within the
-   *   specified post. This matches the primary key of a record in the
-   *   community_platform_comments table and is used to locate the comment
-   *   instance that will be removed.
+   * @param postId Unique identifier (UUID) of the post that owns the comment
+   *   to erase. This value is matched against
+   *   community_platform_comments.post_id.
+   * @param commentId Unique identifier (UUID) of the comment to erase from
+   *   the community_platform_comments table.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Delete(":commentId")

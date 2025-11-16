@@ -1,16 +1,21 @@
-/// Topic-based communities (subreddits) that group posts and discussions.
+/// Communities that act as primary containers for posts, comments, and
+/// subscriptions.
 ///
-/// Each community represents a named, thematic space where members can
-/// create posts and comments. Communities have a unique human-readable
-/// identifier, display title, description, and optional rule summary. They
-/// also carry visibility and state flags that control whether they are
-/// public, restricted, private, archived, or removed.
+/// Represents subreddit-like spaces where topics are organized. Each
+/// community has a unique slug identifier, a human-friendly display name, a
+/// description, and visibility/status flags controlling who can view or
+/// participate.
 ///
-/// This table is referenced by posting, subscription, feed, reporting, and
-/// moderation domains to determine where content belongs and how it should
-/// be shown. Community-level governance relationships like memberships,
-/// membership requests, moderator assignments, bans, rules, and tags all
-/// point back to this model.
+/// Communities are owned by a member user but may also be administered by
+/// platform admins through moderation workflows. The current status fields
+/// indicate states such as public, restricted, private, archived, locked,
+/// quarantined, or banned, while detailed historical transitions are stored
+/// in {@link community_platform_community_status_histories}.
+///
+/// This model is the central anchor for related entities such as community
+/// rules, memberships, posts, subscriptions, and moderation cases. It
+/// supports soft deletion and timestamps to enable auditability and
+/// lifecycle management.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -18,473 +23,101 @@ model community_platform_communities {
   //----
   // COLUMNS
   //----
-  /// Primary key for the community. Random UUID value that uniquely identifies
-  /// a community within the platform.
+  /// Primary key for the community record. Globally unique community
+  /// identifier used by all foreign key references.
   id String @id
   
-  /// Authoring member user who created this community. References the account
-  /// that initiated community creation. {@link
-  /// community_platform_memberusers.id}.
-  created_by_memberuser_id String
+  /// Identifier of the member user who originally created and owns this
+  /// community. {@link community_platform_memberusers}.
+  owner_memberuser_id String
   
-  /// Visibility classification applied to the community, such as public,
-  /// restricted, or private. {@link
-  /// community_platform_community_visibility_levels.id}.
-  visibility_level_id String
+  /// Globally unique, URL-safe identifier for the community (for example,
+  /// "technology", "askscience"). Used in routing and user-facing links.
+  slug String
   
-  /// Community identifier used in URLs and references, such as "programming".
-  /// Case is preserved for display but uniqueness is enforced via
-  /// identifier_normalized.
-  identifier String
+  /// Human-friendly display name of the community. Not required to be globally
+  /// unique, but typically descriptive and readable.
+  name String
   
-  /// Lowercased, normalized version of the identifier used for uniqueness
-  /// checks and case-insensitive lookups.
-  identifier_normalized String
-  
-  /// Human-readable community title shown in listings and headers. Can differ
-  /// from the identifier and may include spaces and punctuation.
-  title String
-  
-  /// Optional longer description that explains the community purpose, scope,
-  /// and guidelines in free text form.
+  /// Optional long-form description of the community, shown on community pages
+  /// to explain its purpose and scope.
   description String?
   
-  /// Optional short summary of important community rules displayed prominently
-  /// to users. Detailed structured rules live in community rules table.
-  rules_summary String?
+  /// Current visibility mode of the community. Typical values include
+  /// "public", "restricted", or "private" according to business policy.
+  visibility String
   
-  /// Indicates whether the community is archived. Archived communities block
-  /// new posts but keep existing content visible according to visibility
-  /// rules.
-  is_archived Boolean
+  /// High-level lifecycle status of the community. Typical values include
+  /// "active", "archived", "locked", "quarantined", or "banned" based on
+  /// moderation and configuration rules.
+  status String
   
-  /// Indicates whether the community has been removed or suspended at platform
-  /// level. Removed communities are hidden from general discovery and feeds.
-  is_removed Boolean
+  /// Indicates whether the community is marked as not-safe-for-work (NSFW)
+  /// according to content policy.
+  is_nsfw Boolean
   
-  /// Timestamp when the community record was created.
+  /// Indicates whether the community is currently quarantined, which affects
+  /// discovery and access warnings.
+  is_quarantined Boolean
+  
+  /// Indicates whether regular members are currently prevented from creating
+  /// new posts in this community due to configuration or moderation actions.
+  is_posting_restricted Boolean
+  
+  /// Flag indicating whether text posts are allowed in this community.
+  allow_text_posts Boolean
+  
+  /// Flag indicating whether link posts are allowed in this community.
+  allow_link_posts Boolean
+  
+  /// Flag indicating whether image or media posts are allowed in this
+  /// community.
+  allow_image_posts Boolean
+  
+  /// Timestamp when the community was created.
   created_at DateTime
   
   /// Timestamp when the community record was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp. When set, the community is considered logically
-  /// deleted while keeping data for audit and compliance.
+  /// Timestamp when the community was soft-deleted or permanently closed. Null
+  /// while the community is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  createdByMemberUser community_platform_memberusers @relation(fields: [created_by_memberuser_id], references: [id], onDelete: Cascade)
-  visibilityLevel community_platform_community_visibility_levels @relation(fields: [visibility_level_id], references: [id], onDelete: Cascade)
+  ownerMemberUser community_platform_memberusers @relation(fields: [owner_memberuser_id], references: [id], onDelete: Cascade)
   
-  community_platform_community_memberships community_platform_community_memberships[]
-  community_platform_community_membership_requests community_platform_community_membership_requests[]
-  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
-  community_platform_community_bans community_platform_community_bans[]
   community_platform_community_rules community_platform_community_rules[]
-  community_platform_community_tags community_platform_community_tags[]
+  community_platform_community_memberships community_platform_community_memberships[]
+  community_platform_community_status_histories community_platform_community_status_histories[]
   community_platform_posts community_platform_posts[]
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_voting_rate_limits community_platform_voting_rate_limits[]
   community_platform_community_subscriptions community_platform_community_subscriptions[]
-  community_platform_reports community_platform_reports[]
-  community_platform_report_of_communities community_platform_report_of_communities[]
-  community_platform_moderation_actions community_platform_moderation_actions[]
-  community_platform_user_sanctions community_platform_user_sanctions[]
-  community_platform_moderation_queues community_platform_moderation_queues[]
-  community_platform_audit_logs community_platform_audit_logs[]
-  community_platform_error_logs community_platform_error_logs[]
-  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  community_platform_community_reports community_platform_community_reports[]
+  community_platform_moderation_actions_on_communities community_platform_moderation_actions_on_communities[]
   
-  @@unique([identifier_normalized])
+  @@unique([slug])
+  @@index([visibility, status])
   // spellchecker: ignore-next-line
-  @@index([created_by_memberuser_id, created_at], map: "community_platform_communities_created_by_memberuser_i_b0b6ca7c")
-  // spellchecker: ignore-next-line
-  @@index([visibility_level_id, is_archived, is_removed], map: "community_platform_communities_visibility_level_id_is__b3802040")
-  @@index([created_at, id])
+  @@index([owner_memberuser_id, created_at], map: "community_platform_communities_owner_memberuser_id_cre_d9b9cd39")
+  @@index([created_at, status])
 }
 
-/// Visibility level master data for communities.
+/// Community-specific rules and guidelines text that govern acceptable
+/// behavior within a community.
 ///
-/// Each row describes one visibility classification such as public,
-/// restricted, or private. Communities reference a visibility level to
-/// determine which actors can see or participate in their content.
+/// Stores the canonical rules document for each community, including a
+/// title, markdown or rich-text body, and versioning metadata. This model is
+/// a subsidiary of {@link community_platform_communities} and typically
+/// managed through community settings.
 ///
-/// This table allows platform-wide configuration of visibility semantics and
-/// reuse across communities while keeping the community model focused on
-/// instance-specific data.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_visibility_levels {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the visibility level. Random UUID that uniquely
-  /// identifies a visibility classification.
-  id String @id
-  
-  /// Short machine-readable code for the visibility level, such as "public",
-  /// "restricted", or "private". Used in business logic and configuration.
-  code String
-  
-  /// Human-readable name for the visibility level presented in administrative
-  /// and configuration UIs.
-  name String
-  
-  /// Optional explanation of the visibility semantics, including who can view
-  /// and interact with content under this level.
-  description String?
-  
-  /// Timestamp when the visibility level record was created.
-  created_at DateTime
-  
-  /// Timestamp when the visibility level record was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. When set, the visibility level is no longer used
-  /// for new communities but remains for historical reference.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_communities community_platform_communities[]
-  
-  @@unique([code])
-  @@unique([name])
-  // spellchecker: ignore-next-line
-  @@index([created_at, id], map: "community_platform_community_visibility_levels_created_72547eb5")
-}
-
-/// Active or historical memberships that link member users to communities.
-///
-/// Each record represents a user being a member of a specific community,
-/// including when they joined and optionally when the membership ended.
-/// Membership rows are used to determine who can interact in restricted or
-/// private communities and to build lists such as "communities this user
-/// belongs to" or "members of this community".
-///
-/// Memberships are separate from membership requests so that pending and
-/// rejected requests do not pollute the active membership list. Soft
-/// deletion and end timestamps preserve historical membership information
-/// for audit and analytics.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_memberships {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the community membership. Random UUID that uniquely
-  /// identifies a membership record.
-  id String @id
-  
-  /// Community in which the user holds membership. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Member user who is a member of the community. {@link
-  /// community_platform_memberusers.id}.
-  memberuser_id String
-  
-  /// Timestamp when the membership became active for this user in the
-  /// community.
-  joined_at DateTime
-  
-  /// Timestamp when the membership ended, for example due to user leaving or
-  /// being removed. Null when the membership is currently active.
-  ended_at DateTime?
-  
-  /// Flag indicating whether this membership row currently represents an
-  /// active membership. Used in combination with ended_at.
-  is_active Boolean
-  
-  /// Timestamp when the membership record was created.
-  created_at DateTime
-  
-  /// Timestamp when the membership record was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. When set, the membership is considered logically
-  /// removed while preserving history for audit and analytics.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  memberUser community_platform_memberusers @relation(fields: [memberuser_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_id, memberuser_id, is_active], map: "community_platform_community_memberships_community_id__b9106e8d")
-  // spellchecker: ignore-next-line
-  @@index([memberuser_id, is_active, joined_at], map: "community_platform_community_memberships_memberuser_id_945b7f54")
-  // spellchecker: ignore-next-line
-  @@index([community_id, is_active, joined_at], map: "community_platform_community_memberships_community_id__d11ac45e")
-}
-
-/// Requests from member users to join communities that require approval.
-///
-/// Each row captures a membership request from a user to a community,
-/// including the current status and timestamps for creation and resolution.
-/// Requests can be pending, approved, rejected, or cancelled, and moderation
-/// tooling needs to query and filter them across communities.
-///
-/// When a request is approved, a corresponding membership may be created;
-/// the request record remains as an audit trail of the decision. Soft
-/// deletion is available but requests are typically kept for historical
-/// analysis and dispute resolution.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_membership_requests {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the community membership request. Random UUID that
-  /// uniquely identifies a request.
-  id String @id
-  
-  /// Community to which the user is requesting membership. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Member user who submitted the membership request. {@link
-  /// community_platform_memberusers.id}.
-  requester_memberuser_id String
-  
-  /// Community moderator who reviewed and decided the request, when
-  /// applicable. Null while the request is still pending or auto-handled.
-  /// {@link community_platform_communitymoderators.id}.
-  reviewer_communitymoderator_id String?
-  
-  /// Current status of the membership request such as "pending", "approved",
-  /// "rejected", or "cancelled" according to business rules.
-  status String
-  
-  /// Optional free-text reason supplied by the requester explaining why they
-  /// want to join the community.
-  reason String?
-  
-  /// Optional note recorded by the reviewer explaining the decision from a
-  /// moderation perspective.
-  review_note String?
-  
-  /// Timestamp when the membership request was created by the requester.
-  requested_at DateTime
-  
-  /// Timestamp when the request was approved, rejected, or cancelled. Null
-  /// while the request is still pending.
-  decided_at DateTime?
-  
-  /// Timestamp when the membership request record was created.
-  created_at DateTime
-  
-  /// Timestamp when the membership request record was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. When set, the request is logically removed from
-  /// normal views while kept for audit.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  requesterMemberUser community_platform_memberusers @relation(fields: [requester_memberuser_id], references: [id], onDelete: Cascade)
-  reviewerCommunityModerator community_platform_communitymoderators? @relation(fields: [reviewer_communitymoderator_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([reviewer_communitymoderator_id], map: "community_platform_community_membership_requests_revie_122fa061")
-  
-  // spellchecker: ignore-next-line
-  @@index([community_id, status, requested_at], map: "community_platform_community_membership_requests_commu_b175bb3f")
-  // spellchecker: ignore-next-line
-  @@index([requester_memberuser_id, status, requested_at], map: "community_platform_community_membership_requests_reque_b66ee393")
-  // spellchecker: ignore-next-line
-  @@index([community_id, requester_memberuser_id, requested_at], map: "community_platform_community_membership_requests_commu_cec7b723")
-}
-
-/// Assignments that link moderator identities to communities they manage.
-///
-/// Each record represents one moderator role for a given community. It
-/// tracks when the moderator was added and optionally when the assignment
-/// ended. Assignments are used to drive authorization for moderation actions
-/// and to render moderator lists in community views.
-///
-/// This table references the separate moderator identity table and the
-/// community, and is designed as a pure relationship entity with temporal
-/// fields for audit and governance analysis.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_moderator_assignments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the community moderator assignment. Random UUID that
-  /// uniquely identifies an assignment.
-  id String @id
-  
-  /// Community for which the moderator is assigned. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Community moderator identity that holds moderation rights in the
-  /// community. {@link community_platform_communitymoderators.id}.
-  communitymoderator_id String
-  
-  /// Platform administrator who granted this moderator assignment, when
-  /// applicable. Null when assignment is created by community-level flows
-  /// only. {@link community_platform_platformadmins.id}.
-  assigned_by_platformadmin_id String?
-  
-  /// Timestamp when the moderator assignment became effective for the
-  /// community.
-  assigned_at DateTime
-  
-  /// Timestamp when the moderator assignment was revoked or ended, if
-  /// applicable.
-  revoked_at DateTime?
-  
-  /// Indicates whether this assignment is currently active for authorization
-  /// decisions.
-  is_active Boolean
-  
-  /// Timestamp when the moderator assignment record was created.
-  created_at DateTime
-  
-  /// Timestamp when the moderator assignment record was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. When set, the assignment is logically removed
-  /// while preserved for historical inspection.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  communityModerator community_platform_communitymoderators @relation(fields: [communitymoderator_id], references: [id], onDelete: Cascade)
-  assignedByPlatformAdmin community_platform_platformadmins? @relation(fields: [assigned_by_platformadmin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([assigned_by_platformadmin_id], map: "community_platform_community_moderator_assignments_ass_e41e501d")
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_id, communitymoderator_id, is_active], map: "community_platform_community_moderator_assignments_com_6527dfdf")
-  // spellchecker: ignore-next-line
-  @@index([communitymoderator_id, is_active, assigned_at], map: "community_platform_community_moderator_assignments_com_de7684a4")
-  // spellchecker: ignore-next-line
-  @@index([community_id, is_active, assigned_at], map: "community_platform_community_moderator_assignments_com_40c72fdb")
-}
-
-/// Community-level bans and restrictions applied to member users.
-///
-/// Each record represents a ban or restriction of a specific user within a
-/// specific community. It captures who was banned, by which actor, when the
-/// ban started, when it ends if temporary, and the reason. Bans are used by
-/// higher-level logic to prevent posting, commenting, voting, or subscribing
-/// to the community while still allowing other communities.
-///
-/// This table keeps a full ban history for audit and safety analysis.
-/// Multiple ban records can exist per user and community over time, but
-/// exact duplicates are avoided via indexing and business logic. Soft
-/// deletion supports correction of erroneous records while still preserving
-/// audit trails when needed.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_bans {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the community ban record. Random UUID that uniquely
-  /// identifies a ban or restriction entry.
-  id String @id
-  
-  /// Community in which the user is banned or restricted. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Member user who is subject to the ban or restriction in the community.
-  /// {@link community_platform_memberusers.id}.
-  memberuser_id String
-  
-  /// Community moderator who issued the ban, when the action originates from
-  /// community-level moderation. {@link
-  /// community_platform_communitymoderators.id}.
-  issued_by_communitymoderator_id String?
-  
-  /// Platform administrator who issued or escalated the ban, when applicable.
-  /// {@link community_platform_platformadmins.id}.
-  issued_by_platformadmin_id String?
-  
-  /// Optional free-text explanation describing why the ban or restriction was
-  /// applied from a moderation perspective.
-  reason String?
-  
-  /// Optional high-level policy category associated with the ban, such as
-  /// spam, harassment, or hate, to support reporting and analytics.
-  policy_category String?
-  
-  /// Timestamp when the ban became effective for the member user in the
-  /// community.
-  started_at DateTime
-  
-  /// Timestamp when the ban is scheduled to expire for temporary bans. Null
-  /// for permanent bans or where duration is not predetermined.
-  expires_at DateTime?
-  
-  /// Indicates whether the ban is currently enforced. Used in combination with
-  /// started_at and expires_at.
-  is_active Boolean
-  
-  /// Timestamp when the ban record was created.
-  created_at DateTime
-  
-  /// Timestamp when the ban record was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. When set, the ban entry is considered logically
-  /// removed, usually for correction or privacy reasons while retaining
-  /// minimal history.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  memberUser community_platform_memberusers @relation(fields: [memberuser_id], references: [id], onDelete: Cascade)
-  issuedByCommunityModerator community_platform_communitymoderators? @relation(fields: [issued_by_communitymoderator_id], references: [id], onDelete: Cascade)
-  issuedByPlatformAdmin community_platform_platformadmins? @relation(fields: [issued_by_platformadmin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([issued_by_communitymoderator_id], map: "community_platform_community_bans_issued_by_communitym_16ad33f2")
-  // spellchecker: ignore-next-line
-  @@index([issued_by_platformadmin_id], map: "community_platform_community_bans_issued_by_platformad_bcd1fedc")
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_id, memberuser_id, started_at], map: "community_platform_community_bans_community_id_memberu_57254c81")
-  // spellchecker: ignore-next-line
-  @@index([memberuser_id, is_active, started_at], map: "community_platform_community_bans_memberuser_id_is_act_57b93eb8")
-  // spellchecker: ignore-next-line
-  @@index([community_id, is_active, started_at], map: "community_platform_community_bans_community_id_is_acti_1092427e")
-}
-
-/// Structured rules defined by communities to govern participation and content.
-///
-/// Each rule record belongs to a specific community and describes a single
-/// rule or guideline that members should follow. Rules can reference
-/// platform-level rule categories for classification, and may have ordering
-/// fields used to display them in a consistent sequence.
-///
-/// Rules are managed via community moderation and configuration interfaces
-/// rather than as top-level business entities. They support moderation
-/// workflows by providing an explicit reference when explaining enforcement
-/// actions or report resolutions.
+/// Having rules in a dedicated table allows communities to update or replace
+/// their rules independently of other properties such as visibility or
+/// membership. It also simplifies future extension to multiple rule
+/// documents or versions if business needs evolve. Version uniqueness per
+/// community is enforced so that each version number is used at most once
+/// for a given community.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -492,104 +125,207 @@ model community_platform_community_rules {
   //----
   // COLUMNS
   //----
-  /// Primary key for the community rule. Random UUID that uniquely identifies
-  /// a rule within the platform.
+  /// Primary key for the community rules record.
   id String @id
   
-  /// Community that owns this rule. {@link community_platform_communities.id}.
+  /// Identifier of the community whose rules are defined by this record.
+  /// {@link community_platform_communities}.
   community_id String
   
-  /// Optional reference to a rule category that classifies this rule, such as
-  /// spam, civility, or topic scope. {@link
-  /// community_platform_community_rule_categories.id}.
-  rule_category_id String?
+  /// Short title for the rules document, such as "Community Rules" or "Posting
+  /// Guidelines".
+  title String
   
-  /// Short label for the rule, used as a heading in lists and UI. Should be
-  /// unique within a community for clarity.
-  label String
+  /// Full text of the community rules, typically stored as markdown or another
+  /// rich-text format.
+  body String
   
-  /// Detailed text describing the rule, including examples and clarifications
-  /// for members and moderators.
-  description String
+  /// Monotonic version number for the rules document within the same
+  /// community. Each community must not reuse the same version number for
+  /// different rule contents.
+  version Int
   
-  /// Numeric order value used to sort rules in presentations. Lower values
-  /// appear earlier in lists.
-  display_order Int
-  
-  /// Indicates whether this rule is currently active and should be displayed
-  /// and enforced in the community.
+  /// Indicates whether this rules document is the current active set of rules
+  /// for the community. At most one record should be active per community
+  /// according to business logic.
   is_active Boolean
   
-  /// Timestamp when the rule record was created.
+  /// Timestamp when this rules record was created.
   created_at DateTime
   
-  /// Timestamp when the rule record was last updated.
+  /// Timestamp when this rules record was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp. When set, the rule is no longer shown or enforced
-  /// but remains in history for audit.
+  /// Timestamp when this rules record was soft-deleted or superseded. Null
+  /// while active or historically retained.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  ruleCategory community_platform_community_rule_categories? @relation(fields: [rule_category_id], references: [id], onDelete: Cascade)
   
-  @@index([rule_category_id])
-  
-  @@unique([community_id, label])
-  // spellchecker: ignore-next-line
-  @@index([community_id, is_active, display_order], map: "community_platform_community_rules_community_id_is_act_4cd088e7")
+  @@unique([community_id, version])
+  @@index([community_id, is_active])
 }
 
-/// Tags assigned to communities to support discovery, filtering, and
-/// classification.
+/// Membership relationships between member users and communities, including
+/// roles and join state.
 ///
-/// Each record represents one tag for a specific community. Tags help users
-/// discover communities by topic, technology, language, or other attributes.
-/// They can also be used to power recommendation systems and search filters.
+/// Represents users who are considered members of a community beyond simple
+/// subscriptions, especially for restricted or private communities where
+/// membership gates posting or viewing rights.
 ///
-/// Tags are stored as simple label strings and are deduplicated per
-/// community. They are subsidiary to communities and managed from community
-/// configuration or administrative tooling, not as globally independent
-/// entities.
+/// This model stores membership roles such as normal member, moderator, or
+/// owner delegate, along with join and leave timestamps. It is related to
+/// {@link community_platform_communities} and {@link
+/// community_platform_memberusers} and supports queries such as all
+/// communities a user moderates or all members of a community.
+///
+/// Membership records use soft deletion semantics so that historical
+/// membership can be audited while allowing users to leave communities
+/// cleanly.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_tags {
+model community_platform_community_memberships {
   //----
   // COLUMNS
   //----
-  /// Primary key for the community tag. Random UUID that uniquely identifies a
-  /// tag assignment.
+  /// Primary key for the community membership record.
   id String @id
   
-  /// Community to which this tag is attached. {@link
-  /// community_platform_communities.id}.
+  /// Identifier of the community that the user is a member of. {@link
+  /// community_platform_communities}.
   community_id String
   
-  /// Tag label text, such as a topic or keyword, used for classifying and
-  /// searching communities. Comparison is typically case-insensitive in
-  /// business logic.
-  tag String
+  /// Identifier of the member user participating in the community. {@link
+  /// community_platform_memberusers}.
+  memberuser_id String
   
-  /// Timestamp when the tag record was created.
+  /// Membership role within the community, such as "member", "moderator", or
+  /// "owner_delegate" according to business rules.
+  role String
+  
+  /// Indicates whether the membership has been approved where communities
+  /// require manual approval for joining.
+  is_approved Boolean
+  
+  /// Indicates whether this user is banned from participating in the community
+  /// due to moderation actions.
+  is_banned Boolean
+  
+  /// Timestamp when the user became a member of the community.
+  joined_at DateTime
+  
+  /// Timestamp when the user left the community, if applicable.
+  left_at DateTime?
+  
+  /// Timestamp when this membership record was created.
   created_at DateTime
   
-  /// Timestamp when the tag record was last updated.
+  /// Timestamp when this membership record was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp. When set, the tag assignment is no longer
-  /// considered active but persists for historical analysis.
+  /// Timestamp when this membership record was soft-deleted. Null while
+  /// membership is considered active or historically retained.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  memberUser community_platform_memberusers @relation(fields: [memberuser_id], references: [id], onDelete: Cascade)
   
-  @@unique([community_id, tag])
-  @@index([tag])
-  @@index([community_id, created_at])
+  // spellchecker: ignore-next-line
+  @@unique([community_id, memberuser_id], map: "community_platform_community_memberships_community_id__843c6db7")
+  @@index([memberuser_id, role])
+  @@index([community_id, role])
+  // spellchecker: ignore-next-line
+  @@index([community_id, is_banned], map: "community_platform_community_memberships_community_id__23038b27")
+}
+
+/// Historical snapshots of community status and visibility changes over time.
+///
+/// Each record represents a single transition in the lifecycle of a
+/// community, capturing the previous and new status, visibility mode, and
+/// contextual metadata such as reason category and actor information.
+///
+/// This model enables audit trails for actions like archiving, locking,
+/// quarantining, or banning communities. It is append-only from a business
+/// perspective and supports investigations, appeals, and analytics about how
+/// community states evolve. It references {@link
+/// community_platform_communities} and optionally {@link
+/// community_platform_memberusers} or {@link community_platform_adminusers}
+/// as the actor who triggered the change.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community status history record.
+  id String @id
+  
+  /// Identifier of the community whose status changed. {@link
+  /// community_platform_communities}.
+  community_id String
+  
+  /// Identifier of the member user who triggered the status change, if the
+  /// change originated from a regular member action. {@link
+  /// community_platform_memberusers}.
+  actor_memberuser_id String?
+  
+  /// Identifier of the admin user who triggered the status change, if the
+  /// change was applied by an administrator. {@link
+  /// community_platform_adminusers}.
+  actor_adminuser_id String?
+  
+  /// Visibility mode of the community before the change, such as "public",
+  /// "restricted", or "private". Null if this is the initial state.
+  previous_visibility String?
+  
+  /// Visibility mode of the community after the change.
+  new_visibility String
+  
+  /// Lifecycle status of the community before the change, such as "active",
+  /// "archived", "locked", or "banned". Null if this is the initial state.
+  previous_status String?
+  
+  /// Lifecycle status of the community after the change.
+  new_status String
+  
+  /// High-level category describing why the status was changed, such as
+  /// "moderation", "owner_request", or "system_policy".
+  reason_category String?
+  
+  /// Optional free-text detail giving more context about the status change
+  /// decision.
+  reason_detail String?
+  
+  /// Timestamp when this status history record was created and the change took
+  /// effect.
+  created_at DateTime
+  
+  /// Timestamp when this history record was logically removed from general
+  /// use, if ever. Typically remains null for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  actorMemberUser community_platform_memberusers? @relation(fields: [actor_memberuser_id], references: [id], onDelete: Cascade)
+  actorAdminUser community_platform_adminusers? @relation(fields: [actor_adminuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([actor_memberuser_id], map: "community_platform_community_status_histories_actor_me_49c35547")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_status_histories_communit_97fca710")
+  // spellchecker: ignore-next-line
+  @@index([new_status, created_at], map: "community_platform_community_status_histories_new_stat_d67c3a7a")
+  // spellchecker: ignore-next-line
+  @@index([actor_adminuser_id, created_at], map: "community_platform_community_status_histories_actor_ad_cd5418c4")
 }

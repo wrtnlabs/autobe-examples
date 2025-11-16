@@ -1,14 +1,4 @@
 export * as communities from "./communities/index";
-export * as posts from "./posts/index";
+export * as comments from "./comments/index";
 export * as contentReports from "./contentReports/index";
-export * as reports from "./reports/index";
-export * as votes from "./votes/index";
-export * as analytics from "./analytics/index";
-export * as dashboard from "./dashboard/index";
-export * as reportReasons from "./reportReasons/index";
-export * as moderationQueues from "./moderationQueues/index";
-export * as appeals from "./appeals/index";
-export * as statistics from "./statistics/index";
-export * as userProfiles from "./userProfiles/index";
-export * as helpDesk from "./helpDesk/index";
-export * as supportTickets from "./supportTickets/index";
+export * as moderationQueue from "./moderationQueue/index";

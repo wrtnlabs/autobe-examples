@@ -1,509 +1,565 @@
-/// Customer accounts for the shopping mall platform including personal
-/// information, contact details, and account settings for buyers across the
-/// marketplace.
+/// Customer accounts representing registered shoppers with full platform
+/// access including purchasing, order history, and personal profile
+/// management capabilities.
 ///
-/// Customers can browse products, make purchases, manage addresses and
-/// payment methods, track orders, and interact with sellers. Each customer
-/// account is verified through email confirmation and maintains
-/// comprehensive profile information for personalized shopping experiences.
+/// Customers are the primary users who interact with the marketplace to
+/// discover products, make purchases, and leave reviews. Each customer
+/// account maintains personal information, shipping addresses, payment
+/// methods, communication preferences, and shopping history across multiple
+/// sellers.
+///
+/// The customer entity serves as the foundation for all buyer-side
+/// functionality including cart management, wishlist operations, order
+/// tracking, and account preferences. It integrates with payment systems,
+/// shipping services, and loyalty programs while maintaining strict privacy
+/// controls and data protection standards.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customers {
+model ecommerce_mall_customers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Customer email address used for login and communications. Must be unique
-  /// across all customer accounts.
+  /// Customer email address used for account authentication and communication.
+  /// Must be unique across all customer accounts and validated for safe email
+  /// practices.
   email String
   
-  /// Encrypted password hash for secure authentication using bcrypt with
-  /// minimum security standards.
+  /// Cryptographically hashed password for secure account authentication.
+  /// Never stores plaintext passwords, uses industry-standard hashing
+  /// algorithms.
   password_hash String
   
-  /// Customer's full name for account identification and shipping purposes.
+  /// Customer's full name for order personalization and shipping purposes.
+  /// Used in all customer-facing communications and delivery addresses.
   name String
   
-  /// Customer's phone number with international format support for
-  /// verification and delivery coordination.
-  phone_number String?
+  /// Customer's phone number for order delivery coordination and support
+  /// communications. Validated for format accuracy and optional field for
+  /// privacy preferences.
+  phone String?
   
-  /// Email verification status. Customers must verify email within 7 days of
-  /// registration.
+  /// Customer's date of birth for age verification and marketing
+  /// personalization. Used for birthday promotions and age-restricted product
+  /// compliance.
+  date_of_birth DateTime?
+  
+  /// Indicates whether the customer has verified their email address through
+  /// the confirmation process. Required email verification before full account
+  /// functionality.
   is_verified Boolean
   
-  /// Account status (active|inactive|suspended) for security and business rule
-  /// enforcement.
-  status String
+  /// Current account status indicating whether the customer can access
+  /// platform features. Supports account suspension and restoration
+  /// functionality as needed.
+  is_active Boolean
   
-  /// Account creation timestamp for audit trail and time-based analytics.
+  /// Timestamp when the customer account was first created in the system. Used
+  /// for account age verification and analytics tracking.
   created_at DateTime
   
-  /// Last account update timestamp for tracking account modifications and
-  /// maintenance.
+  /// Timestamp of the most recent account modification including profile
+  /// updates, preference changes, or status modifications. Used for data
+  /// synchronization.
   updated_at DateTime
   
-  /// Soft delete timestamp for account deactivation and potential recovery.
+  /// Soft deletion timestamp when customer account was deactivated. Enables
+  /// GDPR compliance and account recovery while maintaining audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
-  shopping_mall_cart_of_customers shopping_mall_cart_of_customers[]
-  shopping_mall_orders shopping_mall_orders[]
-  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
-  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
-  shopping_mall_mileages shopping_mall_mileages?
-  shopping_mall_coin_wallets_of_customers shopping_mall_coin_wallets_of_customers?
-  shopping_mall_inquiries shopping_mall_inquiries[]
-  shopping_mall_tickets shopping_mall_tickets[]
-  shopping_mall_favorites shopping_mall_favorites[]
-  shopping_mall_wishlists shopping_mall_wishlists[]
-  shopping_mall_bookmarks shopping_mall_bookmarks[]
-  shopping_mall_articles shopping_mall_articles[]
-  shopping_mall_bbs_posts shopping_mall_bbs_posts[]
-  shopping_mall_comments shopping_mall_comments[]
+  ecommerce_mall_customer_sessions ecommerce_mall_customer_sessions[]
+  ecommerce_mall_shopping_carts ecommerce_mall_shopping_carts[]
+  ecommerce_mall_wishlists ecommerce_mall_wishlists[]
+  ecommerce_mall_orders ecommerce_mall_orders[]
+  ecommerce_mall_payment_methods ecommerce_mall_payment_methods[]
+  ecommerce_mall_payment_transactions ecommerce_mall_payment_transactions[]
+  ecommerce_mall_payment_refunds ecommerce_mall_payment_refunds[]
+  ecommerce_mall_customer_points ecommerce_mall_customer_points[]
+  ecommerce_mall_product_reviews ecommerce_mall_product_reviews[]
+  ecommerce_mall_review_helpfulness ecommerce_mall_review_helpfulness[]
   
   @@unique([email])
-  @@index([status, is_verified])
-  @@index([created_at])
+  @@index([is_active, created_at])
+  @@index([is_verified])
+  @@index([deleted_at])
 }
 
-/// Verified business sellers on the shopping mall platform including
-/// business information, tax details, and marketplace settings for vendors
-/// managing their stores.
+/// Seller accounts representing verified merchants who list and sell
+/// products on the platform through the multi-vendor marketplace.
 ///
-/// Sellers undergo a comprehensive verification process including business
-/// registration validation, tax identification verification, and bank
-/// account confirmation. Once approved, sellers can manage product catalogs,
-/// process orders, track performance, and receive platform analytics to
-/// optimize their marketplace operations.
+/// Sellers are business entities that provide product inventory to the
+/// marketplace while managing their own fulfillment processes, customer
+/// service, and marketing activities. Each seller account maintains business
+/// information, tax details, banking details for payments, and operational
+/// metrics.
+///
+/// The seller entity serves as the foundation for all merchant-side
+/// functionality including product listing management, inventory control,
+/// order processing, and customer communication. Sellers can customize their
+/// store branding, set policies, configure shipping options, and access
+/// comprehensive business analytics while adhering to platform quality
+/// standards.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sellers {
+model ecommerce_mall_sellers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Seller business email used for login and business communications.
+  /// Official registered business name for legal and financial purposes. Used
+  /// in contracts, tax documentation, and customer-facing store branding.
+  business_name String
+  
+  /// Government-issued business registration identifier for tax compliance and
+  /// verification. Required for legitimate business operations and regulatory
+  /// adherence.
+  business_registration_number String
+  
+  /// Tax identification number for revenue reporting and tax calculation.
+  /// Essential for payment processing and compliance with tax regulations in
+  /// various jurisdictions.
+  tax_identification_number String
+  
+  /// Primary business email address for official communications and customer
+  /// service. Must be unique across all seller accounts and monitored for
+  /// uptime.
   email String
   
-  /// Encrypted password hash for secure authentication.
+  /// Cryptographically secure password hash for seller account authentication.
+  /// Protects privileged access to business operations and customer data.
   password_hash String
   
-  /// Official registered business name as shown to customers and for tax
+  /// Business phone number for order coordination and customer support.
+  /// Required for legitimate business communications and order fulfillment
+  /// coordination.
+  phone String
+  
+  /// Business address as registered for tax and legal purposes. Used for
+  /// commercial agreements and compliance verification procedures.
+  address String
+  
+  /// City name where the business is registered for geographic and tax
+  /// purposes. Used in shipping calculations and regional compliance.
+  city String
+  
+  /// State or regional designation for business location. Important for tax
+  /// obligations and shipping zone calculation.
+  state String
+  
+  /// Postal or zip code for business location verification. Essential for
+  /// shipping zone accuracy and tax rate determination.
+  postal_code String
+  
+  /// Country code for international business operations. Critical for currency
+  /// handling, tax calculations, and compliance verification.
+  country String
+  
+  /// Banking routing and account number for payment settlements. Encrypted
+  /// storage protects financial information with access controls.
+  bank_account_number String
+  
+  /// Preferred settlement method for seller payments. Configures how
+  /// marketplace commissions and sales revenue are distributed.
+  payment_type String
+  
+  /// Verification status indicating complete business information and
+  /// compliance review. Determines access to seller functionality and order
+  /// processing.
+  is_verified Boolean
+  
+  /// Active status controlling seller account operation. Supports temporary
+  /// suspension for policy violations and restoration after remediation.
+  is_active Boolean
+  
+  /// Account creation timestamp when seller registration was completed. Used
+  /// for seller tenure tracking and milestone analysis.
+  created_at DateTime
+  
+  /// Most recent seller account modification including profile updates and
+  /// status changes. Provides audit trail for administrative oversight.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account deactivation. Enables business
+  /// closure proceedings and account restoration for compliance auditing.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  ecommerce_mall_seller_sessions ecommerce_mall_seller_sessions[]
+  ecommerce_mall_products ecommerce_mall_products[]
+  ecommerce_mall_sale_listings ecommerce_mall_sale_listings[]
+  ecommerce_mall_seller_inventory ecommerce_mall_seller_inventory[]
+  ecommerce_mall_sale_promotions ecommerce_mall_sale_promotions[]
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  ecommerce_mall_shipments ecommerce_mall_shipments[]
+  ecommerce_mall_payment_methods ecommerce_mall_payment_methods[]
+  ecommerce_mall_payment_settlements ecommerce_mall_payment_settlements[]
+  ecommerce_mall_seller_points ecommerce_mall_seller_points[]
+  ecommerce_mall_review_ratings ecommerce_mall_review_ratings[]
+  mv_ecommerce_mall_product_review_statistics mv_ecommerce_mall_product_review_statistics[]
+  
+  @@unique([email])
+  @@unique([tax_identification_number])
+  @@unique([business_registration_number])
+  @@index([is_active, created_at])
+  @@index([is_verified])
+  @@index([country, is_verified])
+  @@index([deleted_at])
+}
+
+/// Administrator accounts representing platform staff responsible for
+/// overseeing operations, managing users, ensuring policy compliance, and
+/// maintaining system integrity.
+///
+/// Administrators are authorized personnel with elevated privileges to
+/// perform critical platform functions including user account management,
+/// content moderation, dispute resolution, system configuration, and
+/// financial oversight. They maintain platform quality standards while
+/// supporting both customers and sellers.
+///
+/// The administrator entity enables comprehensive platform governance
+/// through role-based access controls, detailed audit logging, and
+/// specialized management interfaces. Administrators ensure regulatory
+/// compliance, handle escalated issues, and maintain operational excellence
+/// across all platform functions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrative username for platform access authentication. Must be
+  /// unique across all admin accounts and protected with strong password
+  /// policies for security.
+  username String
+  
+  /// Official administrative email address for system communications and
+  /// notifications. Critical for security alerts and operational updates
+  /// requiring immediate attention.
+  email String
+  
+  /// Secure password hash for administration access protection. Enforces
+  /// highest security standards given elevated system privileges.
+  password_hash String
+  
+  /// Complete administrative name for accountability and communication
+  /// purposes. Used in audit trails and system reports to track administrative
+  /// actions.
+  full_name String
+  
+  /// Administrative department or functional area within platform operations.
+  /// Determines access scope and responsibilities in role-based access control
+  /// system.
+  department String
+  
+  /// Administrator hierarchy level determining system access permissions.
+  /// Controls privilege escalation and limits access to sensitive business
+  /// functions.
+  role_level String
+  
+  /// Current administrative account status controlling access to platform
+  /// management functions. Supports temporary suspension and process-based
+  /// admin activity.
+  status String
+  
+  /// Most recent successful administrative login timestamp. Used for security
+  /// monitoring and audit trail generation for access control purposes.
+  last_login DateTime?
+  
+  /// Admin account creation timestamp when administrator onboarding was
+  /// completed. Used for employee tenure tracking and security clearance
   /// purposes.
-  business_name String
-  
-  /// Tax identification number (TIN/EIN) verified against government databases.
-  tax_id String
-  
-  /// Business contact phone number for customer service and verification.
-  phone_number String
-  
-  /// Registered business address for verification and correspondence.
-  business_address String
-  
-  /// Bank account verification status for payment processing.
-  bank_account_verified Boolean
-  
-  /// Business verification status approved by platform administrators.
-  is_verified Boolean
-  
-  /// Account status (active|inactive|suspended|pending_review).
-  status String
-  
-  /// Verification and account creation timestamp.
   created_at DateTime
   
-  /// Last account update for business information changes.
+  /// Most recent administrator account modification including role changes and
+  /// access updates. Maintains personnel records for internal management.
   updated_at DateTime
   
-  /// Soft delete timestamp for account management.
+  /// Administrative account deactivation timestamp for employee
+  /// onboarding/offboarding. Supports access revocation and compliance
+  /// auditing for staff changes.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
-  shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_order_fulfillments shopping_mall_order_fulfillments[]
-  shopping_mall_coupons shopping_mall_coupons[]
-  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
-  shopping_mall_promotions shopping_mall_promotions[]
-  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
-  shopping_mall_coin_wallets_of_sellers shopping_mall_coin_wallets_of_sellers?
+  ecommerce_mall_administrator_sessions ecommerce_mall_administrator_sessions[]
+  ecommerce_mall_review_moderration ecommerce_mall_review_moderration[]
+  ecommerce_mall_admin_logs ecommerce_mall_admin_logs[]
   
+  @@unique([username])
   @@unique([email])
-  @@unique([tax_id])
-  @@index([status, is_verified])
-  @@index([created_at])
+  @@index([role_level, status])
+  @@index([department])
+  @@index([status, last_login])
+  @@index([deleted_at])
 }
 
-/// Delivery courier partners integrated with the shopping mall platform
-/// including business credentials and delivery management capabilities.
+/// Guest tracking system for browsing sessions and cart management in the
+/// platform without requiring account registration.
 ///
-/// Couriers handle package pickup and delivery across the marketplace with
-/// real-time tracking coordination and performance monitoring. Each courier
-/// requires business registration, insurance verification, and vehicle
-/// registration validation before processing delivery orders.
+/// Guest accounts enable unauthenticated users to browse products, add items
+/// to temporary shopping carts, and explore marketplace functionality before
+/// committing to registration. They serve customers evaluating the platform
+/// and provide access without privacy concerns.
+///
+/// The guest entity bridges unauthenticated browsing with customer
+/// conversion by maintaining session continuity. When guests decide to
+/// purchase, their browsing history and cart contents can be transferred to
+/// newly created customer accounts, ensuring seamless user experience during
+/// the conversion process.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_couriers {
+model ecommerce_mall_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Courier business email for authentication and communications.
-  email String
-  
-  /// Encrypted password hash for secure courier login.
-  password_hash String
-  
-  /// Registered courier business name for customer communications.
-  business_name String
-  
-  /// Business tax identification number for verification and payouts.
-  tax_id String
-  
-  /// Courier control center contact number for delivery coordination.
-  phone_number String
-  
-  /// Geographic region coverage areas for delivery assignment.
-  coverage_area String
-  
-  /// Business verification status approved by platform administrators.
-  is_verified Boolean
-  
-  /// Operational status (active|inactive|suspended|pending_review).
-  status String
-  
-  /// Courier partner registration timestamp.
-  created_at DateTime
-  
-  /// Last account update for business information.
-  updated_at DateTime
-  
-  /// Soft delete timestamp for courier management.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_courier_sessions shopping_mall_courier_sessions[]
-  shopping_mall_order_fulfillments shopping_mall_order_fulfillments[]
-  
-  @@unique([email])
-  @@unique([tax_id])
-  @@index([status, is_verified])
-  @@index([created_at])
-}
-
-/// Platform administrative accounts with comprehensive oversight
-/// capabilities for managing all platform operations including seller
-/// verification, dispute resolution, and system administration.
-///
-/// Administrators have unrestricted access to platform-wide analytics, user
-/// management functions, policy enforcement, and operational oversight. Each
-/// administrator undergoes thorough background verification and
-/// role-specific training before platform access is granted.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_administrators {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Administrator email address for platform management and authentication.
-  email String
-  
-  /// Encrypted password hash for secure administrator login.
-  password_hash String
-  
-  /// Administrator's full name for identification and audit trail purposes.
-  name String
-  
-  /// Admin contact number for two-factor authentication and emergency access.
-  phone_number String
-  
-  /// Administrative role (super_admin|support|content_moderator|financial)
-  role String
-  
-  /// Administrative verification through two-factor authentication setup.
-  is_verified Boolean
-  
-  /// Account status (active|inactive) with immediate effect on platform access.
-  status String
-  
-  /// Administrator account creation timestamp for audit purposes.
-  created_at DateTime
-  
-  /// Last account update for role or access changes.
-  updated_at DateTime
-  
-  /// Soft delete timestamp for administrative account management.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_administrator_sessions shopping_mall_administrator_sessions[]
-  shopping_mall_coin_wallets_of_administrators shopping_mall_coin_wallets_of_administrators?
-  
-  @@unique([email])
-  @@index([role, status])
-  @@index([created_at])
-}
-
-/// Temporary guest accounts for non-authenticated visitors browsing the
-/// shopping mall platform without creating permanent accounts.
-///
-/// Guests can browse products, add items to cart, and view seller
-/// information but cannot complete purchases or access full account
-/// features. Guest sessions are maintained through temporary identifiers and
-/// browser storage mechanisms.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_guests {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique session identifier for temporary guest tracking across browser
-  /// sessions.
+  /// Browser-based session identifier for tracking guest user activity. Used
+  /// to maintain browsing continuity across multiple platform interactions
+  /// without authentication.
   session_id String
   
-  /// Visitor IP address for session management and temporary cart storage.
+  /// Network address identifier for guest session tracking. Used for
+  /// analytics, security monitoring, and geographic personalization purposes
+  /// while respecting privacy regulations.
   ip_address String
   
-  /// Browser user agent information for compatibility and tracking purposes.
+  /// Browser and device identifying information for platform optimization.
+  /// Enables responsive design adaptation and cross-device experience
+  /// consistency.
   user_agent String
   
-  /// Timestamp of the most recent guest activity for session timeout
-  /// management.
-  last_activity_at DateTime
+  /// Website or campaign source that directed the guest to the platform.
+  /// Important for marketing attribution and conversion optimization analysis.
+  referrer String?
   
-  /// Guest session creation timestamp.
+  /// Indicates whether the guest is using private browsing mode. Affects
+  /// tracking capabilities and session persistence for privacy-conscious
+  /// users.
+  is_incognito Boolean
+  
+  /// Guest session creation timestamp when browsing activity was first
+  /// detected. Used for session duration analysis and conversion tracking.
   created_at DateTime
   
-  /// Session expiration timestamp - guest sessions auto-expire after 60
-  /// minutes.
+  /// Most recent guest session activity timestamp before session expiration.
+  /// Provides freshness testing for mobile browsing patterns and re-engagement
+  /// triggers.
+  updated_at DateTime
+  
+  /// Guest session termination time based on cookie and local storage
+  /// expiration policies. Controls memory and storage allocation while
+  /// supporting privacy model.
   expires_at DateTime
   
   //----
   // RELATIONS
   //----
-  shopping_mall_carts shopping_mall_carts[]
-  shopping_mall_cart_of_guests shopping_mall_cart_of_guests[]
-  
   @@unique([session_id])
+  @@index([ip_address, created_at])
+  @@index([is_incognito])
+  @@index([updated_at])
   @@index([expires_at])
-  @@index([last_activity_at])
 }
 
-/// Active customer login sessions providing secure authentication
-/// verification and activity tracking for customers accessing the shopping
-/// mall platform.
+/// Customer authentication sessions for secure platform access and activity
+/// tracking while maintaining user login states across multiple device
+/// sessions.
 ///
-/// Sessions enable multi-device management, timeout control, and security
-/// monitoring while maintaining temporary access credentials for seamless
-/// customer experience across different login sessions.
+/// Customer sessions enable persistent login capabilities, track ongoing
+/// activities, and maintain security through session expiration policies.
+/// They bridge authentication events with ongoing platform usage while
+/// supporting access from multiple devices and browsers.
+///
+/// The session management system ensures security through IP monitoring,
+/// session timeout policies, and concurrent session limitations. It works
+/// with the broader authentication framework to prevent unauthorized access
+/// while providing seamless user experiences for legitimate customers across
+/// mobile and web platforms.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customer_sessions {
+model ecommerce_mall_customer_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged customer's {@link shopping_mall_customers.id}
-  shopping_mall_customer_id String
+  /// Associated customer's {@link ecommerce_mall_customers.id} for session
+  /// verification.
+  ecommerce_mall_customer_id String
   
-  /// Customer IP address for session security and geographic information.
+  /// Network IP address from which the customer accessed the platform. Used
+  /// for security monitoring and geographic-based access controls.
   ip String
   
-  /// Login URL or entry point for tracking session initiation context.
+  /// Complete URL of the customer connection location on the platform. Records
+  /// entry points and navigation paths for analytics and support optimization.
   href String
   
-  /// Referring site or source that initiated the session for analytics.
-  referrer String?
+  /// Source URL or external website that directed the customer to this
+  /// platform session. Important for marketing attribution and conversion
+  /// optimization analysis.
+  referrer String
   
-  /// Session expiration timestamp for automatic logout and security.
-  expired_at DateTime?
-  
-  /// Session creation timestamp for login duration tracking.
+  /// Session creation timestamp when customer logged into the platform.
+  /// Establishes session validity period and security tracking baseline.
   created_at DateTime
+  
+  /// Session termination timestamp based on security policies and inactivity
+  /// timeouts. Controls security posture while balancing user convenience.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_cart_of_customers shopping_mall_cart_of_customers[]
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
-  @@index([ip])
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_customer_sessions_ecommerce_mall_custom_bdec9f40")
 }
 
-/// Active seller login sessions providing secure authentication verification
-/// and business activity tracking for verified sellers managing their
-/// marketplace operations.
+/// Seller authentication sessions for secure merchant platform access and
+/// business management dashboard functionality across multiple active
+/// sessions.
 ///
-/// Sessions enable seller dashboard access, order management, product
-/// updates, and account management while maintaining security through
-/// timeout controls and multi-device awareness.
+/// Seller sessions enable authorized access to complex merchant tools
+/// including product management, inventory control, order processing, and
+/// financial reporting. They maintain privileged access while ensuring
+/// business continuity during extended usage periods with appropriate
+/// security controls.
+///
+/// The seller session system implements enhanced security measures given
+/// elevated business privileges. It supports long-term business operations
+/// while enforcing strict access controls, comprehensive audit logging, and
+/// accelerated session expiration to protect merchant business data and
+/// platform integrity.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_sessions {
+model ecommerce_mall_seller_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged seller's {@link shopping_mall_sellers.id}
-  shopping_mall_seller_id String
+  /// Associated seller's {@link ecommerce_mall_sellers.id} for session
+  /// verification.
+  ecommerce_mall_seller_id String
   
-  /// Seller IP address for session security verification and activity
-  /// monitoring.
+  /// Network IP address from which the seller accessed the merchant platform.
+  /// Critical for security monitoring of privileged access to business
+  /// systems.
   ip String
   
-  /// Login URL or entry point for tracking seller session initiation context.
+  /// Complete URL of the seller connection location within the merchant
+  /// dashboard. Tracks administrative access patterns and business function
+  /// usage.
   href String
   
-  /// Referring site or source that initiated the seller session for analytics.
-  referrer String?
+  /// Source URL directing the seller to the merchant platform session. Records
+  /// navigation from external resources and previous management activities.
+  referrer String
   
-  /// Session expiration timestamp for automatic logout from seller dashboard.
-  expired_at DateTime?
-  
-  /// Seller session creation timestamp for login duration and activity
-  /// tracking.
+  /// Session creation timestamp when seller authenticated to the merchant
+  /// platform. Establishes privileged access period and compliance tracking
+  /// baseline.
   created_at DateTime
+  
+  /// Session termination timestamp based on security policies and business
+  /// inactivity charging periods. Balances operational efficiency with
+  /// security requirements.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
-  @@index([ip])
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_sessions_ecommerce_mall_seller_i_5996fc52")
 }
 
-/// Active courier login sessions providing authentication verification and
-/// delivery activity tracking for courier partners managing shipments on the
-/// platform.
+/// Administrator authentication sessions for secure platform oversight and
+/// critical system management functions across administrative interfaces.
 ///
-/// Sessions enable delivery route management, pickup scheduling, shipment
-/// tracking updates, and performance monitoring while maintaining security
-/// through session timeout controls.
+/// Administrator sessions enable privileged access to platform management
+/// tools including user oversight, financial control, policy enforcement,
+/// and system configuration. Given elevated privileges, these sessions
+/// implement the highest security standards with comprehensive monitoring
+/// and audit practices.
+///
+/// The administrator session system enforces stringent access controls
+/// appropriate for privileged system operations. It prevents unauthorized
+/// administrative access through multiple security layers including IP
+/// verification, concurrent session limits, comprehensive audit logging, and
+/// accelerated session expiration for enhanced platform protection.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_courier_sessions {
+model ecommerce_mall_administrator_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged courier's {@link shopping_mall_couriers.id}
-  shopping_mall_courier_id String
+  /// Associated administrator's {@link ecommerce_mall_administrators.id} for
+  /// session verification.
+  ecommerce_mall_administrator_id String
   
-  /// Courier IP address for session security verification and dispatch
-  /// location tracking.
+  /// Network IP address from which the administrator accessed the platform
+  /// management system. Essential for security logging of privileged
+  /// administrative access activities.
   ip String
   
-  /// Login URL or entry point for tracking courier session initiation context.
+  /// Complete URL of the administrator connection location within the
+  /// management interface. Records platform oversight activities and
+  /// administrative function usage.
   href String
   
-  /// Referring site or source that initiated courier session for delivery
-  /// analytics.
-  referrer String?
+  /// Source URL serving as entry point to administrative access. Monitors
+  /// platform configuration access patterns and administrator workflow
+  /// analysis.
+  referrer String
   
-  /// Session expiration timestamp for automatic logout from courier operations.
-  expired_at DateTime?
-  
-  /// Courier session creation timestamp for login duration and route tracking.
+  /// Session creation timestamp when administrator authenticated to platform
+  /// management. Critical for audit trail and privileged access monitoring
+  /// compliance.
   created_at DateTime
+  
+  /// Session termination timestamp with accelerated expiration compared to
+  /// standard user sessions. Enforces heightened security for administrative
+  /// privileges.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  courier shopping_mall_couriers @relation(fields: [shopping_mall_courier_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_admin_logs ecommerce_mall_admin_logs[]
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_courier_id, created_at], map: "shopping_mall_courier_sessions_shopping_mall_courier_i_745872b8")
-  @@index([ip])
-}
-
-/// Active administrator login sessions providing secure authentication
-/// verification and oversight activity tracking for platform administrators
-/// managing system operations.
-///
-/// Sessions enable comprehensive administrative functions including user
-/// management, seller verification, dispute resolution, platform analytics,
-/// and system configuration while maintaining high security through strict
-/// session controls.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_administrator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged administrator's {@link shopping_mall_administrators.id}
-  shopping_mall_administrator_id String
-  
-  /// Administrator IP address for session security verification and access
-  /// control.
-  ip String
-  
-  /// Login URL or entry point for tracking administrator session initiation
-  /// context.
-  href String
-  
-  /// Referring site or source that initiated administrative session for
-  /// security logging.
-  referrer String?
-  
-  /// Session expiration timestamp for automatic logout from administrative
-  /// functions.
-  expired_at DateTime?
-  
-  /// Administrator session creation timestamp for access audit and tracking.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_sessions_shopping_mall_adm_2e7e19a2")
-  @@index([ip])
+  @@index([ecommerce_mall_administrator_id, created_at], map: "ecommerce_mall_administrator_sessions_ecommerce_mall_a_55705a1d")
 }

@@ -4,183 +4,52 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ICommunityPlatformComment } from "../../../../structures/ICommunityPlatformComment";
-import { IPageICommunityPlatformComment } from "../../../../structures/IPageICommunityPlatformComment";
+export * as replies from "./replies/index";
 
 /**
- * Search and paginate comments for a specific post from
- * community_platform_comments using a request body filter.
+ * Get a specific comment from the community_platform_comments table for a given
+ * post.
  *
- * Retrieve a filtered and paginated list of comments associated with a specific
- * post from the community_platform_comments table.
+ * Retrieve detailed information about a specific comment associated with a
+ * given post.
  *
- * This operation targets the community_platform_comments model, which stores
- * the current canonical body text, is_edited flag, created_at and updated_at
- * timestamps, and relationships such as post_id (referencing
- * community_platform_posts.id), author_memberuser_id for the commenting user,
- * and an optional parent_comment_id that allows nested reply trees to be
- * represented. The API is scoped by the postId path parameter, ensuring that
- * only comments attached to a single post are considered in the search.
+ * This operation uses the `community_platform_comments` Prisma model as its
+ * primary data source. Each row in that table represents a single comment or
+ * reply made on a post from the `community_platform_posts` table. By requiring
+ * both `postId` and `commentId` as path parameters, the API ensures that the
+ * returned comment is correctly scoped to the given post and prevents
+ * cross-post data leakage where a comment could be fetched outside of its
+ * owning post context.
  *
- * Clients send an ICommunityPlatformComment.IRequest payload in the request
- * body to specify pagination and search options. Typical fields include page
- * size, cursor or offset for pagination, sort options leveraging the created_at
- * index, and optional filters such as whether to include comments that have
- * been flagged as deleted or otherwise hidden by the platform's visibility
- * rules. Implementations should use the existing indexes on combinations such
- * as (post_id, created_at), (parent_comment_id, created_at), and
- * (author_memberuser_id, created_at) to efficiently query and order comments
- * while respecting the requested filters and sort direction.
+ * The response body conforms to the `ICommunityPlatformComment` DTO and
+ * includes fields such as the comment identifier, the associated post
+ * identifier, author information (linked to `community_platform_memberusers`),
+ * comment content, creation and update timestamps, and parent-child linkage for
+ * nested replies as defined in the Prisma schema description. This allows
+ * clients to render the comment in its proper position within a thread or to
+ * show it in isolation when navigating directly to a comment permalink.
  *
- * The response body returns an IPageICommunityPlatformComment.ISummary
- * structure that wraps a list of summary view DTOs for comments. These summary
- * DTOs should include key fields needed to render comment lists, such as id,
- * body (or a placeholder for deleted comments), is_edited, created_at,
- * updated_at, and identifiers needed to reconstruct parent/child relationships.
- * The pagination metadata in the page container allows clients to request
- * subsequent pages of comments when implementing infinite scroll or "load more"
- * patterns.
+ * In terms of permissions and visibility, this is a read-only operation that
+ * may be accessible to unauthenticated visitors if the platform and community
+ * configuration allow public viewing of posts and comments. However, the
+ * implementation must integrate with moderation state and visibility rules.
+ * Comments that have been removed, hidden, or otherwise restricted due to
+ * moderation actions defined in the moderation-related tables should be
+ * filtered or transformed into an appropriate representation, such as a
+ * placeholder indicating removal, consistent with the business rules and schema
+ * comments.
  *
- * Security and authorization rules must ensure that only callers allowed to
- * view the underlying post can access its comments. Additional policy should
- * govern whether comments that are marked as deleted or hidden are fully
- * suppressed, partially redacted, or exposed only to moderators and admins.
- * Error handling should provide clear behavior when the postId does not
- * correspond to an existing post or when the caller is not authorized to view
- * the post, in which case comments must not be leaked.
+ * This endpoint is typically used in conjunction with post detail and comment
+ * listing APIs. For example, after listing comments for a post, a client might
+ * navigate to a single comment view by calling this API with the corresponding
+ * identifiers. It also supports deep-linking to specific comments from
+ * notifications or external URLs.
  *
  * @param props.connection
- * @param props.postId Unique identifier of the post whose comments are being
- *   listed, corresponding to community_platform_posts.id.
- * @param props.body Search and pagination parameters for listing comments under
- *   the specified post, based on community_platform_comments fields and
- *   indexes.
- * @path /communityPlatform/posts/:postId/comments
- * @accessor api.functional.communityPlatform.posts.comments.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Unique identifier of the post whose comments are being listed,
-     * corresponding to community_platform_posts.id.
-     */
-    postId: string & tags.Format<"uuid">;
-
-    /**
-     * Search and pagination parameters for listing comments under the
-     * specified post, based on community_platform_comments fields and
-     * indexes.
-     */
-    body: ICommunityPlatformComment.IRequest;
-  };
-  export type Body = ICommunityPlatformComment.IRequest;
-  export type Response = IPageICommunityPlatformComment.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/communityPlatform/posts/:postId/comments",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/communityPlatform/posts/${encodeURIComponent(props.postId ?? "null")}/comments`;
-  export const random = (): IPageICommunityPlatformComment.ISummary =>
-    typia.random<IPageICommunityPlatformComment.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("postId")(() => typia.assert(props.postId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Get a single comment from the community_platform_comments table by commentId
- * within a specific post.
- *
- * Retrieve a specific community comment resource from the
- * community_platform_comments table using a comment identifier within the scope
- * of its parent post.
- *
- * This endpoint is intended to provide a detailed representation of a single
- * comment, including its textual content, metadata, author information (as
- * exposed by the ICommunityPlatformComment DTO), and any state flags that
- * indicate whether the comment is visible, locked, or removed. The API
- * implementation should internally reference the community_platform_comments
- * model as the primary source, and may join to community_platform_posts to
- * ensure that the comment actually belongs to the post identified by the postId
- * parameter.
- *
- * From a security and permissions perspective, this operation is read-only and
- * therefore safe to expose to a wide range of clients. However, the
- * implementation must respect any visibility or moderation rules captured in
- * related state tables such as community_platform_comment_states, ensuring that
- * hidden or removed comments are either redacted or represented according to
- * platform policy. Authorization logic—such as whether a caller is allowed to
- * see removed comments—should be enforced in the service layer based on the
- * caller’s actor type and role.
- *
- * Error handling should distinguish between the following scenarios: the post
- * does not exist, the comment does not exist, or the comment exists but is not
- * associated with the given post. In all such cases, the result should be a
- * not-found response rather than leaking information about the existence of
- * detached resources. This operation is commonly used together with list
- * endpoints that enumerate comments under a post, allowing clients to drill
- * down into a particular comment when navigating discussions or moderation
- * queues.
- *
- * @param props.connection
- * @param props.postId Unique identifier of the parent post under which the
- *   target comment is created.
- * @param props.commentId Unique identifier of the target comment within the
- *   specified post.
+ * @param props.postId Unique identifier of the post in
+ *   `community_platform_posts` that owns the comment being retrieved.
+ * @param props.commentId Unique identifier of the comment in
+ *   `community_platform_comments` to retrieve, scoped to the specified post.
  * @path /communityPlatform/posts/:postId/comments/:commentId
  * @accessor api.functional.communityPlatform.posts.comments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -209,12 +78,15 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the parent post under which the target comment
-     * is created.
+     * Unique identifier of the post in `community_platform_posts` that owns
+     * the comment being retrieved.
      */
     postId: string & tags.Format<"uuid">;
 
-    /** Unique identifier of the target comment within the specified post. */
+    /**
+     * Unique identifier of the comment in `community_platform_comments` to
+     * retrieve, scoped to the specified post.
+     */
     commentId: string & tags.Format<"uuid">;
   };
   export type Response = ICommunityPlatformComment;

@@ -6,55 +6,37 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityPlatformModerator } from "../../../structures/IRedditCommunityPlatformModerator";
 
 /**
- * Platform moderator registration with secure authentication and immediate
- * administrative access.
+ * Create a new platform moderator account.
  *
- * Platform moderator registration functionality for accessing platform-wide
- * administrative capabilities. This operation allows creation of platform
- * moderator accounts that grant comprehensive platform management authority
- * including community oversight, user management, content moderation, and
- * platform-wide policy enforcement.
+ * The platform moderator registration operation creates a new system-wide
+ * administrator account with comprehensive platform management authority. This
+ * API validates that the provided nickname is unique across the entire platform
+ * and follows community guidelines for appropriate naming. The system verifies
+ * email address format and ensures no existing account is associated with the
+ * provided email.
  *
- * The operation validates critical uniqueness constraints by ensuring both
- * email addresses and nicknames are unique across the platform moderator
- * ecosystem. The email field serves as the primary authentication identifier
- * and must be a valid, verified email address capable of receiving platform
- * communications and security notifications. The nickname field provides a
- * unique display identifier across the entire platform for moderator
- * identification and audit trail maintenance.
+ * Security measures include password complexity validation ensuring minimum 8
+ * characters with mixed case, numbers, and special characters as recommended.
+ * The system generates cryptographically secure hash of the provided password
+ * using industry-standard algorithms with appropriate cost factors for
+ * protection against brute force attacks.
  *
- * Password security follows enterprise-grade standards using bcrypt hashing
- * algorithm to securely store password hash representations rather than plain
- * text passwords. The created_at timestamp captures precise account creation
- * timing for administrative auditing, while updated_at tracks subsequent
- * account modifications. The deleted_at field implements soft deletion
- * capability for proper administrative account lifecycle management without
- * permanent data removal.
+ * Upon successful validation, the system creates the platform moderator record
+ * with pending email verification status, generates unique identifier following
+ * UUID v4 standards, and automatically populates created_at and updated_at
+ * timestamps. The initialization process establishes the foundation for
+ * platform-wide administrative privileges.
  *
- * This operation directly interfaces with the
- * reddit_community_platform_moderators table to create platform-wide
- * administrative access. The operation includes automatic session creation to
- * enable immediate post-registration platform access for workflow optimization
- * and administrative readiness. Session data includes IP address, connection
- * URL, referrer information, creation timestamp, and expiration timing for
- * comprehensive security tracking and audit compliance.
- *
- * Platform moderator accounts differ significantly from community-level
- * moderation roles by having system-wide authority across all platform
- * functionality. These accounts are intended for platform administrators who
- * oversee multiple communities, handle escalated issues, enforce platform
- * policies, and maintain overall platform health and user experience
- * standards.
- *
- * Security considerations include unique email validation to prevent duplicate
- * accounts, secure password hashing via bcrypt algorithm, comprehensive session
- * tracking for audit trails, soft deletion for administrative account
- * management, and unique nickname enforcement for proper moderator
- * identification throughout the platform environment.
+ * The operation integrates with the platform's email verification system by
+ * automatically triggering verification email dispatch within 2 minutes of
+ * account creation. Email contains secure verification link with 24-hour
+ * expiration to confirm moderator identity and enable full administrative
+ * capabilities. Failure to verify within the time window results in account
+ * cleanup and resource cleanup.
  *
  * @param props.connection
- * @param props.body Platform moderator registration details including unique
- *   email, display name, and secure password
+ * @param props.body Platform moderator registration information including
+ *   nickname, email, and password
  * @setHeader token.access Authorization
  *
  * @path /auth/platformModerator/join
@@ -90,8 +72,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Platform moderator registration details including unique email,
-     * display name, and secure password
+     * Platform moderator registration information including nickname,
+     * email, and password
      */
     body: IRedditCommunityPlatformModerator.ICreate;
   };
@@ -140,49 +122,35 @@ export namespace join {
 }
 
 /**
- * Platform moderator login with JWT token generation for administrative access.
+ * Authenticate platform moderator credentials.
  *
- * Platform moderator authentication endpoint for secure administrative system
- * access through JWT technology. This operation provides authorized platform
- * moderators with time-limited access and refresh tokens that enable
- * comprehensive platform management capabilities across all communities within
- * the Reddit Community Platform ecosystem.
+ * The platform moderator login operation validates administrator credentials
+ * against the encrypted password hash stored in the
+ * reddit_community_platform_moderators table. The system accepts either
+ * nickname or email address as the login identifier, providing flexibility for
+ * platform moderators who may prefer either method for authentication.
  *
- * The authentication process validates credentials against the
- * reddit_community_platform_moderators table using secure credential comparison
- * techniques. Email serves as the primary authentication identifier and must
- * match an existing active platform moderator account. Password validation
- * occurs using industry-standard bcrypt comparison to verify credential
- * authenticity against the stored password_hash field while maintaining
- * security best practices.
+ * Security implementation includes comprehensive protection against brute force
+ * attacks through rate limiting mechanisms restricting login attempts to
+ * maximum 5 failed attempts per 15-minute window from each IP address. The
+ * system implements progressive delays for repeated failed attempts without
+ * revealing whether the account exists in the system.
  *
- * Upon successful authentication, the operation generates JWT tokens with
- * appropriate administrative scopes and session metadata. The access token
- * provides short-term session access typically ranging from 15 minutes to 1
- * hour, ensuring proper security boundaries and consistent re-authentication
- * requirements for sensitive administrative operations throughout the platform
- * management interface.
+ * Upon successful credential validation, the system generates cryptographically
+ * secure JWT access tokens with 15-30 minute expiration suitable for
+ * platform-wide administrative operations. Refresh tokens are created with
+ * extended 7-30 day validity periods for maintaining administrative sessions
+ * during extended platform management sessions.
  *
- * The system simultaneously creates detailed session records within
- * reddit_community_platform_moderator_sessions table for comprehensive audit
- * trail capabilities. Each session captures essential connection metadata
- * including IP address for geographic tracking, connection URL for system
- * access monitoring, referrer information for traffic source analysis, creation
- * timestamp for session lifecycle management, and expiration timing for
- * automatic cleanup processes to maintain optimal performance of the session
- * management infrastructure.
- *
- * This authentication mechanism enables platform-wide administrative
- * functionality through secure token-based access control, allowing platform
- * moderators to perform community oversight, user management, content
- * moderation, policy enforcement, and system administration tasks while
- * maintaining detailed session and activity audit records for security review
- * and operational transparency purposes to ensure proper administrative
- * oversight across the entire platform infrastructure environment.
+ * The operation maintains comprehensive audit logging of all authentication
+ * attempts with appropriate detail levels for security monitoring and incident
+ * response. Failed login attempts are tracked with appropriate metadata
+ * including IP address, user agent information, and timestamp data for forensic
+ * analysis and security investigations.
  *
  * @param props.connection
- * @param props.body Platform moderator authentication credentials including
- *   email and password
+ * @param props.body Platform moderator login credentials including
+ *   username/email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/platformModerator/login
@@ -218,12 +186,12 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Platform moderator authentication credentials including email and
+     * Platform moderator login credentials including username/email and
      * password
      */
-    body: IRedditCommunityPlatformModerator.Login;
+    body: IRedditCommunityPlatformModerator.ILogin;
   };
-  export type Body = IRedditCommunityPlatformModerator.Login;
+  export type Body = IRedditCommunityPlatformModerator.ILogin;
   export type Response = IRedditCommunityPlatformModerator.IAuthorized;
 
   export const METADATA = {
@@ -268,46 +236,33 @@ export namespace login {
 }
 
 /**
- * Platform moderator JWT token refresh for extended administrative session
- * access.
+ * Refresh platform moderator access tokens.
  *
- * Platform moderator JWT token refresh endpoint for extending administrative
- * session lifetime without requiring complete authentication workflow
- * interruption. This operation accepts valid refresh tokens provided during
- * initial platform moderator authentication and generates fresh access tokens
- * with updated expiration timing for seamless continued administrative access
- * within the Reddit Community Platform ecosystem.
+ * The platform moderator token refresh operation extends administrative
+ * sessions by validating refresh token integrity and issuing new access tokens
+ * for continued platform management capabilities. This operation ensures
+ * platform moderators can maintain extended sessions while conducting
+ * comprehensive platform oversight activities.
  *
- * The refresh mechanism provides essential administrative continuity by
- * validating existing refresh tokens against currently active sessions stored
- * within reddit_community_platform_moderator_sessions table. Token validation
- * includes session verification, expiration checks, IP address consistency
- * validation, and account status confirmation to ensure only legitimate
- * platform moderators receive refreshed authentication credentials with
- * appropriate administrative privileges.
+ * The system validates the refresh token against secure storage mechanisms,
+ * ensuring token authenticity and integrity before authorizing access token
+ * renewal. Refresh tokens are validated for proper format, signature
+ * verification, and expiration status within the designated 7-30 day validity
+ * window appropriate for platform-wide administrative access.
  *
- * Security validation encompasses refresh token authenticity confirmation,
- * session active status verification through the expired_at field validation,
- * platform moderator account active status checking by reviewing deleted_at
- * timestamp, session metadata consistency including IP address matching for
- * suspicious activity detection, and comprehensive audit trail maintenance
- * through session update mechanics for administrative tracking records
- * management across platform moderator activities throughout platform oversight
- * operations.
+ * Upon successful refresh token validation, the system generates new access
+ * tokens with appropriate administrative scope permissions for platform
+ * management operations. New tokens maintain the same user context and
+ * permissions as the original authentication session while providing updated
+ * expiration timing for session security management.
  *
- * This refresh capability enables platform moderators to maintain extended
- * administrative sessions for comprehensive platform management tasks that may
- * require prolonged attention including community policy reviews, extensive
- * content moderation workflows, user investigation procedures, system
- * configuration management, detailed report analysis processes, and other
- * administrative activities that benefit from uninterrupted authentication
- * sessions within appropriate security boundaries and timeout constraints
- * defined by the Reddit Community Platform administrative system architecture
- * design specifications environment security configuration session parameters.
+ * The operation implements secure token rotation by maintaining current session
+ * validity while extending operational access. This approach prevents session
+ * hijacking vulnerabilities while providing seamless administrative continuity
+ * for platform moderation activities spanning extended time periods.
  *
  * @param props.connection
- * @param props.body Refresh token request containing valid refresh token for
- *   new access token generation
+ * @param props.body Refresh token request containing the valid refresh token
  * @setHeader token.access Authorization
  *
  * @path /auth/platformModerator/refresh
@@ -342,10 +297,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Refresh token request containing valid refresh token for new access
-     * token generation
-     */
+    /** Refresh token request containing the valid refresh token */
     body: IRedditCommunityPlatformModerator.IRefresh;
   };
   export type Body = IRedditCommunityPlatformModerator.IRefresh;

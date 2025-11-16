@@ -8,45 +8,57 @@ import { ICommunityPlatformPost } from "../../../api/structures/ICommunityPlatfo
 @Controller("/communityPlatform/posts")
 export class CommunityplatformPostsController {
   /**
-   * Search and retrieve a filtered, paginated list of posts from
-   * community_platform_posts.
-   *
-   * Retrieve a filtered, sorted, and paginated list of posts backed by the
+   * Search and retrieve a paginated list of posts from the
    * community_platform_posts table.
    *
-   * This operation allows clients to request a collection of posts with rich
-   * search semantics using a request body DTO such as
-   * ICommunityPlatformPost.IRequest. The DTO typically includes fields for
-   * community selection, author filters, post type constraints, time windows,
-   * and sort options that map to the platform’s functional requirements for
-   * feeds and discovery. Only fields that actually exist in the Prisma schema
-   * for community_platform_posts and its related entities should be exposed,
-   * and each filter should be translated to safe, validated database
-   * predicates.
+   * Retrieve a filtered and paginated list of posts from the community
+   * platform.
    *
-   * From a security and authorization perspective, the implementation must
-   * ensure that only posts visible to the requesting actor are returned. For
-   * example, posts in private or restricted communities should be included
-   * only if the actor is a member or moderator with appropriate rights, and
-   * posts in certain moderation states or under community or platform-wide
-   * bans may be excluded or down-ranked. While the endpoint itself is
-   * designed to be broadly readable (often by any authenticated member user),
-   * the actual visibility logic is enforced using the relationships and
-   * status fields defined in community_platform_posts and its associated
-   * state/visibility tables.
+   * This operation works over the `community_platform_posts` model, which
+   * stores the core post entities created inside communities. Columns in that
+   * table typically include the post identifier, the community it belongs to,
+   * the author member user, the post title, body or external link metadata,
+   * visibility flags, and timestamps such as creation and last edit times.
+   * The search DTO `ICommunityPlatformPost.IRequest` is expected to expose
+   * filters that map directly to these columns, such as community code or ID,
+   * author ID, creation date ranges, and high-level post type (text, link,
+   * image) when such a discriminator exists in the schema.
    *
-   * The response uses a paginated wrapper such as
-   * IPageICommunityPlatformPost.ISummary to return both the collection of
-   * summarized post records and pagination metadata. Each summary record
-   * focuses on fields necessary for list and feed displays (such as title,
-   * community reference, high-level score or vote totals, and timestamps),
-   * avoiding heavy or deeply nested content structures. This keeps the
-   * operation efficient for large feeds, while separate detail endpoints like
-   * GET /posts/{postId} provide full post content when needed.
+   * From a security and authorization perspective, this endpoint should
+   * normally be accessible to any visiting user, including unauthenticated
+   * guests, because public communities and posts are intended for broad
+   * discovery. However, the implementation must enforce visibility rules
+   * derived from both the `community_platform_posts` table and related
+   * configuration, such as hiding posts that have been removed by moderation
+   * actions, are in private or restricted communities when the caller lacks
+   * access, or are otherwise marked as invisible using status fields. If the
+   * underlying Prisma schema includes flags for things like "is_locked" or
+   * "is_archived", these should be respected when constructing result sets.
+   *
+   * The result of this operation is a paginated list represented by
+   * `IPageICommunityPlatformPost.ISummary`. The summary variant is optimized
+   * for feed and listing views: it should include key attributes such as
+   * title, basic content preview, score or karma indicators derived from vote
+   * aggregates, comment count, community information, and essential
+   * timestamps, but it should avoid loading large bodies or heavy relational
+   * graphs to keep paging efficient. Clients can call the single-post detail
+   * endpoint (not defined here) to obtain the full representation when a user
+   * opens an individual post.
+   *
+   * The search request DTO should also carry standard pagination controls
+   * such as page number or cursor tokens and page size, as well as sort mode
+   * indicators aligned with business rules (e.g., "hot", "new", "top"). The
+   * implementation should validate these values according to constraints
+   * implied by the Prisma schema (such as allowed sort fields and maximum
+   * page size) and return consistent error responses when validation fails.
+   * This listing endpoint is expected to be used heavily by UI feeds, so
+   * implementations should keep queries efficient and may rely on appropriate
+   * indexes defined on the `community_platform_posts` table.
    *
    * @param connection
-   * @param body Search, filter, and pagination criteria for listing posts
-   *   from community_platform_posts.
+   * @param body Search, filtering, and pagination criteria for listing
+   *   community posts, including community and author filters, time range,
+   *   and sort mode.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Patch()
@@ -59,39 +71,51 @@ export class CommunityplatformPostsController {
   }
 
   /**
-   * Retrieve detailed information for a single post from
-   * community_platform_posts by its identifier.
+   * Retrieve a single post from the community_platform_posts table by its
+   * identifier.
    *
-   * Retrieve a single post’s full details from the community_platform_posts
-   * table using its unique identifier.
+   * Retrieve a single post record from the `community_platform_posts` model
+   * by its unique identifier.
    *
-   * The client supplies a path parameter postId that uniquely identifies a
-   * record in community_platform_posts. The implementation must validate that
-   * this identifier is well-formed, then query the Prisma model for the
-   * corresponding row. If no row exists for the supplied identifier, the
-   * endpoint should respond with an appropriate not-found error, ensuring
-   * that no partial or ambiguous data is returned.
+   * This operation represents the canonical "post detail" retrieval in the
+   * community platform. Given a `postId` that corresponds to the primary key
+   * of a row in `community_platform_posts`, the backend will load that post
+   * together with any necessary derived information for rendering. This
+   * includes basic fields such as the post's title, body or content payload,
+   * created/updated timestamps, and flags describing its state (for example
+   * whether it is locked, archived, or removed according to the schema's
+   * status columns). Where appropriate, the service can also enrich the
+   * response with related information such as the owning community and the
+   * author user, while still aligning with the underlying Prisma model.
    *
-   * In addition to raw post fields defined on community_platform_posts, the
-   * returned DTO such as ICommunityPlatformPost may include related or
-   * derived information, such as references to the owning community, current
-   * moderation or visibility state, and precomputed vote or karma metrics.
-   * However, only relationships and computed values that can be derived from
-   * actual Prisma schema relations and fields should be included. Security
-   * and authorization checks must ensure that the requesting actor is allowed
-   * to see this post—for example, posts in private communities or with
-   * restricted moderation states should only be returned if the actor
-   * satisfies the relevant membership or role requirements.
+   * From a security and permission perspective, this operation is read-only
+   * and can be exposed either publicly or to authenticated users depending on
+   * higher-level configuration. The specification itself does not require
+   * authentication (`authorizationActors` is empty), allowing system
+   * integrators to plug in their own access control middleware. The service
+   * implementation must check the `community_platform_communities` and any
+   * moderation-related models to ensure that posts from banned communities,
+   * restricted communities, or posts subject to moderation actions are only
+   * returned when the requester is allowed to see them.
    *
-   * This operation complements collection endpoints like PATCH
-   * /communityPlatform/posts by providing the full details for an individual
-   * post once it has been selected from a list or feed. Clients typically
-   * call this endpoint when rendering a dedicated post detail view that also
-   * includes associated comments obtained from separate comment-related
-   * endpoints.
+   * In terms of business logic and validation, the `postId` path parameter
+   * must map directly to the primary key of the `community_platform_posts`
+   * table. If no matching post exists, the service should respond with a
+   * not-found error. If the post exists but business rules prevent its
+   * exposure to the requester (for example, due to account restrictions or
+   * community privacy settings), the implementation should respond with an
+   * appropriate authorization or visibility error. Other related operations
+   * include the list/search endpoint for posts and the update operation
+   * defined on the same resource.
+   *
+   * Error handling should distinguish between invalid identifiers (malformed
+   * `postId`), non-existent posts, and permission/visibility issues. Clients
+   * can rely on this endpoint to be stable and idempotent, receiving the same
+   * representation for a given `postId` as long as the post remains unchanged
+   * in the database and no moderation or status changes occur.
    *
    * @param connection
-   * @param postId Unique identifier of the target post record in the
+   * @param postId Unique identifier of the target post in the
    *   community_platform_posts table.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */

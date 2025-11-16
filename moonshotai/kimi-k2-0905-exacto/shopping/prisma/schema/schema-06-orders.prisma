@@ -1,0 +1,354 @@
+/// Master order records representing complete customer purchase transactions.
+///
+/// Acts as the central hub for order processing, coordinating multi-seller
+/// purchases through unified order management while maintaining separate
+/// seller fulfillment workflows. Each order may contain products from
+/// multiple sellers, with consolidated customer experience and individual
+/// seller operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Unique order identifier displayed to customers. Generated sequence number
+  /// for easy customer reference.
+  order_number String
+  
+  /// Current order status. Values: pending, confirmed, processing, shipped,
+  /// delivered, cancelled, refunded.
+  status String
+  
+  /// Total order amount including all products, taxes, and shipping costs.
+  total_amount Float
+  
+  /// Calculated tax amount based on shipping address and applicable tax rates.
+  tax_amount Float
+  
+  /// Total shipping costs across all sellers in this order.
+  shipping_amount Float
+  
+  /// Currency code for this order (e.g., USD, EUR). Supports multi-currency
+  /// operations.
+  currency String
+  
+  /// Shipping address identifier for this order. May be null for digital
+  /// products or in-store pickup.
+  shipping_address_id String?
+  
+  /// Order creation timestamp when customer submitted the order.
+  created_at DateTime
+  
+  /// Last modification timestamp for order state changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for cancelled or test orders preserving audit
+  /// trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  ecommerce_mall_order_statuses ecommerce_mall_order_statuses[]
+  ecommerce_mall_shipments ecommerce_mall_shipments[]
+  ecommerce_mall_payment_transactions ecommerce_mall_payment_transactions[]
+  ecommerce_mall_payment_refunds ecommerce_mall_payment_refunds[]
+  ecommerce_mall_product_reviews ecommerce_mall_product_reviews[]
+  
+  @@unique([order_number])
+  @@index([status, created_at])
+  @@index([ecommerce_mall_customer_id, created_at])
+}
+
+/// Individual line items within orders connecting products to specific
+/// sellers and quantities.
+///
+/// Represents the granular level of order processing where multi-seller
+/// coordination occurs. Each item references specific products, sellers,
+/// pricing, and fulfillment details enabling independent seller operations
+/// within unified customer orders.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order containing this item. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Seller who fulfills this item. Enables multi-seller order management.
+  ecommerce_mall_seller_id String
+  
+  /// Specific product variant being ordered. Links to product catalog.
+  ecommerce_mall_product_variant_id String
+  
+  /// Associated shipment for this item. May be null until item is shipped.
+  shipment_id String?
+  
+  /// Number of units ordered for this item.
+  quantity Int
+  
+  /// Price per unit at time of order. Preserves historical pricing for this
+  /// transaction.
+  unit_price Float
+  
+  /// Total price for this item (quantity × unit_price).
+  total_price Float
+  
+  /// Discount amount applied to this item from promotions or coupons.
+  discount_amount Float?
+  
+  /// Calculated tax amount for this specific item based on seller location.
+  tax_amount Float
+  
+  /// Item-specific status for multi-seller fulfillment. Values: pending,
+  /// allocated, shipped, delivered, returned.
+  status String
+  
+  /// Item creation timestamp when added to order.
+  created_at DateTime
+  
+  /// Last modification timestamp for item status changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for cancelled items preserving audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  shipment ecommerce_mall_shipments? @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_order_items_ecommerce_mall_product_vari_eb246768")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_order_items_ecommerce_mall_order_id_eco_f13cbbf0")
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([shipment_id])
+}
+
+/// Historical record of order status transitions for complete audit trail.
+///
+/// Tracks all order status changes throughout the fulfillment lifecycle,
+/// providing transparency for customers, sellers, and platform
+/// administrators. Each status change includes contextual information
+/// supporting business intelligence and dispute resolution.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order whose status is being tracked. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Previous order status for transition tracking. Null for initial status
+  /// entries.
+  previous_status_id String?
+  
+  /// Order status at this point in time. Values: pending, confirmed,
+  /// processing, shipped, delivered, cancelled, refunded.
+  status String
+  
+  /// Optional notes about this status change including reasons or context
+  /// information.
+  notes String?
+  
+  /// Additional status metadata in JSON format for flexible data storage.
+  metadata String?
+  
+  /// Status change timestamp when transition occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  previousStatus ecommerce_mall_order_statuses? @relation("recursive", fields: [previous_status_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_order_statuses[] @relation("recursive")
+  
+  @@index([previous_status_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, created_at], map: "ecommerce_mall_order_statuses_ecommerce_mall_order_id__9d92579a")
+}
+
+/// Shipment tracking records for physical product delivery coordination.
+///
+/// Manages the complex logistics of multi-seller order fulfillment, tracking
+/// individual shipments from sellers to customers. Each shipment represents
+/// a discrete delivery tracking the physical movement of products from
+/// fulfillment location to customer delivery.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this shipment. Links shipments to customer orders.
+  ecommerce_mall_order_id String
+  
+  /// Seller responsible for this shipment. Enables multi-seller fulfillment.
+  ecommerce_mall_seller_id String
+  
+  /// Shipping method selected for this delivery. {@link
+  /// ecommerce_mall_shipping_methods.id}
+  shipping_method_id String
+  
+  /// Carrier tracking number for shipment visibility. May be empty for
+  /// pre-shipment states.
+  tracking_number String?
+  
+  /// Shipping carrier company (e.g., FedEx, UPS, USPS, DHL). Supports multiple
+  /// carrier integrations.
+  carrier String
+  
+  /// Current shipment status. Values: pre_shipment, in_transit,
+  /// out_for_delivery, delivered, failed, returned.
+  status String
+  
+  /// Estimated delivery date from carrier or seller calculation.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery confirmation timestamp when marked as delivered.
+  actual_delivery_date DateTime?
+  
+  /// Complete shipping address for this delivery supporting split shipments.
+  shipping_address String
+  
+  /// Shipment weight in pounds or kilograms for accurate shipping cost
+  /// calculation.
+  weight Float
+  
+  /// Package dimensions in format 'L×W×H' for shipping calculations.
+  dimensions String
+  
+  /// Actual shipping cost charged by carrier for this shipment.
+  shipping_cost Float
+  
+  /// Shipment creation timestamp when seller prepared items.
+  created_at DateTime
+  
+  /// Last update timestamp for shipment status changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for cancelled shipments preserving audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  shippingMethod ecommerce_mall_shipping_methods @relation(fields: [shipping_method_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  
+  @@index([ecommerce_mall_seller_id])
+  @@index([shipping_method_id])
+  
+  @@unique([tracking_number])
+  @@index([ecommerce_mall_order_id, status])
+  @@index([carrier, status])
+}
+
+/// Available shipping method configurations across different carriers and
+/// services.
+///
+/// Defines the shipping options available to sellers for order fulfillment,
+/// including service levels, pricing structures, and delivery timeframes.
+/// Enables flexible shipping strategies while maintaining consistent
+/// customer experiences across the multi-seller platform.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipping_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipping method name displayed to sellers and customers (e.g., Standard
+  /// Shipping, Express Delivery).
+  name String
+  
+  /// Detailed description of shipping method including features and
+  /// restrictions.
+  description String
+  
+  /// Primary carrier company providing this shipping method.
+  carrier String
+  
+  /// Service category: standard, expedited, express, overnight, international.
+  service_level String
+  
+  /// Minimum estimated delivery days for this shipping method.
+  estimated_days_min Int
+  
+  /// Maximum estimated delivery days for this shipping method.
+  estimated_days_max Int
+  
+  /// Maximum weight limit in pounds for this shipping method.
+  max_weight Float?
+  
+  /// Maximum package dimensions in format 'L×W×H' for this shipping method.
+  max_dimensions String?
+  
+  /// Whether this shipping method is currently available for selection.
+  is_active Boolean
+  
+  /// Whether this shipping method supports international destinations.
+  is_international Boolean
+  
+  /// Whether this shipping method provides tracking information.
+  has_tracking Boolean
+  
+  /// Whether this shipping method requires recipient signature upon delivery.
+  requires_signature Boolean
+  
+  /// Creation timestamp when shipping method was configured.
+  created_at DateTime
+  
+  /// Last update timestamp for configuration changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for deprecated shipping methods.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  ecommerce_mall_shipments ecommerce_mall_shipments[]
+  
+  @@unique([name, carrier])
+  @@index([carrier, is_active])
+  @@index([service_level, is_active])
+}

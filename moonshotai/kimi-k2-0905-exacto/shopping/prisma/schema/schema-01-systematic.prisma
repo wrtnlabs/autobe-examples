@@ -1,205 +1,349 @@
-/// Platform channel management defining different marketplace environments,
-/// configurations, and business rules.
+/// Marketplace channels representing different geographic markets, partner
+/// platforms, or specialized market segments within the e-commerce mall
+/// platform.
 ///
-/// Channels represent distinct platform instances with unique settings,
-/// policies, and user experiences. Each channel can have different
-/// commission structures, supported countries, and operational
-/// configurations while sharing the same underlying infrastructure.
+/// Channels enable sellers to organize their presence across different
+/// marketplaces while maintaining centralized management through the
+/// platform.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model ecommerce_mall_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique channel identifier used for routing and configuration.
+  /// Unique channel identifier used for API references and configuration
+  /// settings.
   code String
   
-  /// Channel display name shown to users across the platform.
+  /// Display name of the marketplace channel (e.g., "North American Market",
+  /// "European Premium", "Fashion Outlet").
   name String
   
-  /// Detailed description of channel purpose and business model.
+  /// Detailed description of the channel's target market, requirements, and
+  /// value proposition.
   description String?
   
-  /// Channel operational status: active, inactive, maintenance, suspended.
-  status String
-  
-  /// Primary currency for transactions in this channel (ISO 4217 code).
+  /// Primary currency used for transactions in this channel (e.g., USD, EUR,
+  /// GBP).
   currency String
   
-  /// Primary country code for this channel (ISO 3166-1 alpha-2).
-  country_code String?
+  /// Primary country or region this channel serves following ISO 3166 country
+  /// codes.
+  country String
   
-  /// Primary language for this channel (ISO 639-1).
+  /// Primary language used for customer-facing content in this channel.
   language String
   
-  /// Default commission percentage charged by platform (0-100%).
-  commission_rate Float
+  /// Business hours for customer service and operations in this channel,
+  /// formatted as time ranges.
+  operating_hours String?
   
-  /// Minimum order amount required for checkout in this channel.
-  minimum_order_value Float
+  /// Primary customer service email address for this channel.
+  email_contact String
   
-  /// Whether tax calculation is enabled for this channel.
-  tax_enabled Boolean
+  /// Current operational status of the channel (active, maintenance,
+  /// discontinued).
+  status String
   
-  /// Channel creation timestamp.
+  /// Numerical order for sorting channels in user interfaces and
+  /// administrative dashboards.
+  sort_order Int
+  
+  /// Whether this channel is currently available for seller registration and
+  /// customer use.
+  is_active Boolean
+  
+  /// Timestamp when the marketplace channel was established.
   created_at DateTime
   
-  /// Last modification timestamp.
+  /// Timestamp when the channel configuration was last modified.
   updated_at DateTime
   
-  /// Soft deletion timestamp.
+  /// Timestamp when the channel was soft deleted or discontinued.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_sections shopping_mall_sections[]
-  shopping_mall_configurations shopping_mall_configurations[]
-  shopping_mall_sales shopping_mall_sales[]
+  ecommerce_mall_sections ecommerce_mall_sections[]
   
   @@unique([code])
+  @@unique([name])
+  @@index([is_active])
   @@index([status])
-  @@index([created_at])
+  @@index([country])
+  @@index([sort_order])
 }
 
-/// Channel section organization providing hierarchical navigation and
-/// content distribution within marketplace channels.
+/// Platform sections that organize content and seller presence within
+/// marketplace channels.
 ///
-/// Sections organize content within channels through hierarchical
-/// categorization, creating intuitive navigation for customers while
-/// enabling flexible merchandising and content management strategies per
-/// channel.
+/// Sections provide categorized browsing experiences and enable targeted
+/// marketing strategies across different product categories and customer
+/// segments within each channel.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
+model ecommerce_mall_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel's {@link shopping_mall_channels.id}
-  shopping_mall_channel_id String
+  /// Channel where this section belongs to. {@link ecommerce_mall_channels}
+  ecommerce_mall_channel_id String
   
-  /// Unique section identifier within the channel.
+  /// Unique identifier for the section within the channel.
   code String
   
-  /// Section display name shown to users.
+  /// Display name for platform section (e.g., Fashion, Electronics, Home &
+  /// Garden).
   name String
   
-  /// Detailed description of section content and purpose.
+  /// Detailed description of the section's scope and target customer base.
   description String?
   
-  /// Hierarchy level for nested sections (0 for top-level).
+  /// Section categorization type (product_category, featured, promotional,
+  /// seasonal).
+  type String
+  
+  /// Hierarchical level within channel organization system.
   level Int
   
-  /// Parent section reference for nested hierarchies.
-  parent_id String?
-  
-  /// Display order for sections within the same level.
+  /// Display order priority for section positioning in interfaces.
   sort_order Int
   
-  /// Section status: active, inactive, hidden.
-  status String
-  
-  /// Whether section appears in featured navigation.
+  /// Whether this section is prominently displayed in channel navigation.
   is_featured Boolean
   
-  /// Section creation timestamp.
+  /// Access control for section visibility (public, channel_only, private).
+  visibility String
+  
+  /// When the section was established within the channel.
   created_at DateTime
   
-  /// Last modification timestamp.
+  /// Most recent modification timestamp for section configuration.
   updated_at DateTime
   
-  /// Soft deletion timestamp.
+  /// Timestamp for soft deletion or section deactivation.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  channel ecommerce_mall_channels @relation(fields: [ecommerce_mall_channel_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_sales shopping_mall_sales[]
-  shopping_mall_articles shopping_mall_articles[]
-  shopping_mall_bbs_posts shopping_mall_bbs_posts[]
+  ecommerce_mall_categories ecommerce_mall_categories[]
   
-  @@unique([shopping_mall_channel_id, code])
-  @@index([shopping_mall_channel_id, parent_id])
-  @@index([status])
+  @@unique([code, ecommerce_mall_channel_id])
+  @@index([ecommerce_mall_channel_id])
+  @@index([type])
+  @@index([is_featured])
+  @@index([visibility])
   @@index([level, sort_order])
 }
 
-/// Platform-wide configuration management providing centralized settings and
-/// parameters for system-wide functionality.
+/// System-wide configuration settings that control platform behavior,
+/// feature flags, and operational parameters.
 ///
-/// Configuration options control operational behavior, feature toggles,
-/// security settings, and business rules that apply across all marketplace
-/// channels and sections.
+/// Configurations provide a centralized mechanism for platform
+/// administrators to manage system-wide settings without requiring code
+/// deployments or infrastructure changes.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
+model ecommerce_mall_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel's {@link shopping_mall_channels.id} (nullable for global configs).
-  shopping_mall_channel_id String?
+  /// Unique configuration identifier used to lookup and reference settings
+  /// (e.g., payment.gateway.timeout, email.notification.template).
+  configuration_key String
   
-  /// Configuration key (namespace.value format).
-  key String
+  /// Serialized configuration data stored as string supporting JSON,
+  /// encrypted, or plain text values for various configuration types.
+  configuration_value String
   
-  /// Configuration value (string representing JSON, text, or data).
-  value String
+  /// Data type classification for the configuration value (string, number,
+  /// boolean, json, encrypted).
+  configuration_type String
   
-  /// Data type: string, number, boolean, json, text, file.
-  type String
-  
-  /// Configuration purpose and usage description.
-  description String?
-  
-  /// Configuration category: security, features, business, technical.
+  /// Configuration category for organization and management (payment, email,
+  /// security, performance, marketing).
   category String
   
-  /// Scope: global, channel, section, user.
+  /// Human-readable description explaining the purpose and impact of this
+  /// configuration setting.
+  description String
+  
+  /// Environment scope for configuration application (development, staging,
+  /// production, all).
+  environment String
+  
+  /// Configuration scope level (global, channel, seller, customer).
   scope String
   
-  /// Whether the value is encrypted at rest.
+  /// Whether the configuration contains sensitive information requiring
+  /// encryption.
   is_encrypted Boolean
   
-  /// Whether channel sections can override this setting.
+  /// Whether sellers or channels can override this configuration for specific
+  /// cases.
   is_overridable Boolean
   
-  /// Whether configuration appears in admin interfaces.
-  is_visible Boolean
-  
-  /// JSON rules for value validation.
+  /// JSON schema or validation rules for ensuring configuration values meet
+  /// business requirements.
   validation_rules String?
   
-  /// Configuration creation timestamp.
+  /// Identifier of administrator who established this configuration entry.
+  created_by String
+  
+  /// When this configuration was initially established.
   created_at DateTime
   
-  /// Last modification timestamp.
+  /// Most recent timestamp for configuration modification.
   updated_at DateTime
   
-  /// Soft deletion timestamp.
+  /// Optional expiration date for temporary or seasonal configuration settings.
+  active_until DateTime?
+  
+  /// Timestamp for configuration soft deletion for audit trail purposes.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  
-  @@unique([key, shopping_mall_channel_id])
-  @@index([category, scope])
-  @@index([shopping_mall_channel_id])
-  @@index([key])
+  @@unique([configuration_key, environment])
+  @@index([configuration_type])
+  @@index([category])
+  @@index([environment])
+  @@index([scope])
   @@index([is_encrypted])
+  @@index([created_by])
+}
+
+/// Product category taxonomy providing hierarchical classification system
+/// for organizing products across all marketplace channels and sections.
+///
+/// Categories enable consistent product discovery across multiple sellers
+/// while supporting SEO optimization and marketing campaign targeting
+/// through standardized classification systems.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent category for hierarchical structure. {@link
+  /// ecommerce_mall_categories}
+  parent_id String?
+  
+  /// Platform section that contains this category. {@link
+  /// ecommerce_mall_sections}
+  ecommerce_mall_section_id String
+  
+  /// Unique technical identifier for category in taxonomy hierarchy.
+  code String
+  
+  /// Display name for the product category following standard taxonomy
+  /// conventions.
+  name String
+  
+  /// Comprehensive category description including product scope and typical
+  /// examples.
+  description String?
+  
+  /// Complete hierarchical path representing category ancestry for navigation
+  /// breadcrumbs.
+  full_path String
+  
+  /// Hierarchical level within category tree structure starting from 0 for
+  /// root categories.
+  level Int
+  
+  /// Dot-separated string showing complete category hierarchy (e.g.,
+  /// 'Fashion.Clothing.Mens').
+  level_path String
+  
+  /// Numeric priority for category display order within parent or section
+  /// grouping.
+  sort_order Int
+  
+  /// SEO-optimized page title for category landing pages.
+  meta_title String
+  
+  /// SEO meta description text for search engine optimization and social media
+  /// sharing.
+  meta_description String
+  
+  /// Comma-separated list of SEO keywords relevant to the category.
+  meta_keywords String?
+  
+  /// URL-friendly category identifier for clean navigation paths and SEO
+  /// benefits.
+  slug String
+  
+  /// Primary category image URL for navigation and marketing displays.
+  image_url String?
+  
+  /// CSS icon class for visual representation in navigation and category
+  /// browsing.
+  icon_class String?
+  
+  /// Whether the category is currently available for product assignment and
+  /// visible to customers.
+  active Boolean
+  
+  /// Featured status for priority placement in navigation and promotional
+  /// displays.
+  featured Boolean
+  
+  /// Whether to display this category in primary navigation menus.
+  show_in_navigation Boolean
+  
+  /// Cached count of active products directly assigned to this specific
+  /// category, updated through triggers or background processes.
+  product_count Int
+  
+  /// When the category was established in the platform taxonomy.
+  created_at DateTime
+  
+  /// Most recent modification timestamp for category properties or
+  /// relationships.
+  updated_at DateTime
+  
+  /// Timestamp for category soft deletion allowing maintenance without
+  /// permanent data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  section ecommerce_mall_sections @relation(fields: [ecommerce_mall_section_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_categories[] @relation("recursive")
+  ecommerce_mall_products ecommerce_mall_products[]
+  
+  @@unique([code])
+  @@unique([slug])
+  @@index([parent_id])
+  @@index([ecommerce_mall_section_id])
+  @@index([level])
+  @@index([level_path])
+  @@index([active])
+  @@index([featured])
+  @@index([show_in_navigation])
 }

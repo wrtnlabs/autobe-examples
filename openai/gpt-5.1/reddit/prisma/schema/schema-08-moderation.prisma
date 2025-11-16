@@ -1,0 +1,804 @@
+/// Post-level user and admin reports for suspected policy violations on
+/// individual posts.
+///
+/// This table stores each report filed against a specific post, capturing
+/// who reported it, why, and how severe it is considered. Reports can be
+/// created by member users or administrators and may later be associated
+/// with a higher-level moderation case.
+///
+/// The model supports enforcement of cooldown rules so that the same
+/// reporter cannot spam identical reports for the same post. It also exposes
+/// status and severity fields so moderation tooling can triage and process
+/// reports efficiently.
+///
+/// Each report may optionally be assigned to an admin for review and may be
+/// linked to a moderation case once triaged. Soft deletion is available for
+/// internal cleanup without losing audit history entirely.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the post report record.
+  id String @id
+  
+  /// Target post that is being reported. {@link community_platform_posts.id}.
+  post_id String
+  
+  /// Reporting member user when the reporter is a regular member. Nullable to
+  /// allow admin-initiated or system-initiated reports. {@link
+  /// community_platform_memberusers.id}.
+  reporter_memberuser_id String?
+  
+  /// Reporting administrator when the report is created from an admin workflow
+  /// or internal review. {@link community_platform_adminusers.id}.
+  reporter_adminuser_id String?
+  
+  /// Admin user currently responsible for reviewing this report, if any.
+  /// {@link community_platform_adminusers.id}.
+  assigned_adminuser_id String?
+  
+  /// Optional link to the moderation case that aggregates this report with
+  /// other related reports or investigations. {@link
+  /// community_platform_moderation_cases.id}.
+  moderation_case_id String?
+  
+  /// Primary reason category chosen by the reporter, such as spam, harassment,
+  /// hate, sexual, self-harm, illegal, or other.
+  reason_category String
+  
+  /// Optional free-text explanation from the reporter providing more context
+  /// about why the post is being reported.
+  reason_detail String?
+  
+  /// Current status of the report in its lifecycle. Typical values include
+  /// open, in_review, resolved, and dismissed.
+  status String
+  
+  /// Severity classification used for moderation triage such as low, medium,
+  /// high, or critical.
+  severity String
+  
+  /// Timestamp when the report was first created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this report, including status or
+  /// assignment changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the report is no longer active in
+  /// normal workflows but may be retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  reporterMember community_platform_memberusers? @relation(fields: [reporter_memberuser_id], references: [id], onDelete: Cascade)
+  reporterAdmin community_platform_adminusers? @relation("community_platform_post_reports_of_reporter_adminuser_id", fields: [reporter_adminuser_id], references: [id], onDelete: Cascade)
+  assignedAdmin community_platform_adminusers? @relation("community_platform_post_reports_of_assigned_adminuser_id", fields: [assigned_adminuser_id], references: [id], onDelete: Cascade)
+  moderationCase community_platform_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_adminuser_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporter_memberuser_id, post_id, reason_category, status], map: "community_platform_post_reports_reporter_memberuser_id_6b42cdb1")
+  @@index([post_id, status, severity])
+  @@index([moderation_case_id, status])
+  // spellchecker: ignore-next-line
+  @@index([assigned_adminuser_id, status], map: "community_platform_post_reports_assigned_adminuser_id__2dd0d872")
+}
+
+/// Comment-level reports capturing suspected policy violations on individual
+/// comments.
+///
+/// This table records each report submitted against a particular comment,
+/// including the reporter identity, the reason category, and any optional
+/// description. It mirrors the semantics of post reports but targets comment
+/// entities.
+///
+/// The model supports deduplication of repeated reports from the same user
+/// for the same comment and reason, status tracking across the moderation
+/// lifecycle, and optional linkage to moderation cases and assigned
+/// administrators for review.
+///
+/// Soft deletion is available for internal cleanup while preserving the
+/// historical shape of moderation flows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment report record.
+  id String @id
+  
+  /// Target comment that is being reported. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Reporting member user when the reporter is a regular member. {@link
+  /// community_platform_memberusers.id}.
+  reporter_memberuser_id String?
+  
+  /// Reporting administrator when the report originates from an internal
+  /// moderation review. {@link community_platform_adminusers.id}.
+  reporter_adminuser_id String?
+  
+  /// Admin user assigned to handle this comment report, if any. {@link
+  /// community_platform_adminusers.id}.
+  assigned_adminuser_id String?
+  
+  /// Optional reference to the moderation case that groups this comment report
+  /// with other related reports or investigations. {@link
+  /// community_platform_moderation_cases.id}.
+  moderation_case_id String?
+  
+  /// Primary reason category for reporting the comment, chosen from the
+  /// controlled set such as spam, harassment, hate, sexual, self-harm,
+  /// illegal, or other.
+  reason_category String
+  
+  /// Optional free-text explanation describing why the comment is believed to
+  /// violate policies.
+  reason_detail String?
+  
+  /// Lifecycle status of the report, typically open, in_review, resolved, or
+  /// dismissed.
+  status String
+  
+  /// Severity classification assigned for triage purposes such as low, medium,
+  /// high, or critical.
+  severity String
+  
+  /// Timestamp when the comment report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated, including status or
+  /// assignment changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When present, the report is excluded from normal
+  /// queues but retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reporterMember community_platform_memberusers? @relation(fields: [reporter_memberuser_id], references: [id], onDelete: Cascade)
+  reporterAdmin community_platform_adminusers? @relation("community_platform_comment_reports_of_reporter_adminuser_id", fields: [reporter_adminuser_id], references: [id], onDelete: Cascade)
+  assignedAdmin community_platform_adminusers? @relation("community_platform_comment_reports_of_assigned_adminuser_id", fields: [assigned_adminuser_id], references: [id], onDelete: Cascade)
+  moderationCase community_platform_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_adminuser_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporter_memberuser_id, comment_id, reason_category, status], map: "community_platform_comment_reports_reporter_memberuser_bc339461")
+  // spellchecker: ignore-next-line
+  @@index([comment_id, status, severity], map: "community_platform_comment_reports_comment_id_status_s_17184c90")
+  // spellchecker: ignore-next-line
+  @@index([moderation_case_id, status], map: "community_platform_comment_reports_moderation_case_id__df3fb2e9")
+  // spellchecker: ignore-next-line
+  @@index([assigned_adminuser_id, status], map: "community_platform_comment_reports_assigned_adminuser__dbbf78da")
+}
+
+/// Reports targeting entire communities for suspected policy or rule
+/// violations.
+///
+/// This table stores reports where the reported object is a community rather
+/// than a specific post or comment. It enables members or admins to flag
+/// entire communities for issues such as systemic rule violations, spam, or
+/// abusive behavior.
+///
+/// Each report captures the reporter identity, the community in question,
+/// reason category, optional detail text, severity, and status across its
+/// lifecycle. Reports can be linked into moderation cases and assigned to
+/// administrators for review.
+///
+/// Soft deletion is supported for internal cleanup without immediately
+/// removing historical moderation context.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community report record.
+  id String @id
+  
+  /// Community that is being reported for potential policy violations. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Member user who submitted the report. {@link
+  /// community_platform_memberusers.id}.
+  reporter_memberuser_id String?
+  
+  /// Administrator who created the report during proactive or follow-up
+  /// review. {@link community_platform_adminusers.id}.
+  reporter_adminuser_id String?
+  
+  /// Admin currently responsible for handling this community-level report.
+  /// {@link community_platform_adminusers.id}.
+  assigned_adminuser_id String?
+  
+  /// Optional link to a moderation case that aggregates this community report
+  /// with related items. {@link community_platform_moderation_cases.id}.
+  moderation_case_id String?
+  
+  /// Primary reason category describing the concern about the community, such
+  /// as spam, hate, illegal, or other policy-oriented categories.
+  reason_category String
+  
+  /// Optional free-text description providing additional context about why the
+  /// community is reported.
+  reason_detail String?
+  
+  /// Lifecycle status of the report such as open, in_review, resolved, or
+  /// dismissed.
+  status String
+  
+  /// Severity classification used for triage, for example low, medium, high,
+  /// or critical.
+  severity String
+  
+  /// Timestamp when the community report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logically removing the report from active
+  /// workflows while preserving audit data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  reporterMember community_platform_memberusers? @relation(fields: [reporter_memberuser_id], references: [id], onDelete: Cascade)
+  reporterAdmin community_platform_adminusers? @relation("community_platform_community_reports_of_reporter_adminuser_id", fields: [reporter_adminuser_id], references: [id], onDelete: Cascade)
+  assignedAdmin community_platform_adminusers? @relation("community_platform_community_reports_of_assigned_adminuser_id", fields: [assigned_adminuser_id], references: [id], onDelete: Cascade)
+  moderationCase community_platform_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_adminuser_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporter_memberuser_id, community_id, reason_category, status], map: "community_platform_community_reports_reporter_memberus_b2eb0439")
+  // spellchecker: ignore-next-line
+  @@index([community_id, status, severity], map: "community_platform_community_reports_community_id_stat_bf85e5c5")
+  // spellchecker: ignore-next-line
+  @@index([moderation_case_id, status], map: "community_platform_community_reports_moderation_case_i_cf6ddc2e")
+  // spellchecker: ignore-next-line
+  @@index([assigned_adminuser_id, status], map: "community_platform_community_reports_assigned_adminuse_eb2a901a")
+}
+
+/// Reports against individual user accounts for problematic behavior across
+/// one or more pieces of content.
+///
+/// This table records reports where the reported object is a user account
+/// rather than a single post, comment, or community. It allows members and
+/// admins to flag users for harassment, hate, spam, or other systemic
+/// issues.
+///
+/// Each report captures the reporter identity, the reported member user,
+/// reason category, optional description, severity, and lifecycle status.
+/// Reports can be associated with moderation cases and assigned to specific
+/// administrators for review.
+///
+/// Soft deletion is provided so that obsolete or merged reports can be
+/// removed from active workflows while the system preserves sufficient audit
+/// data for compliance and abuse analysis.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the user report record.
+  id String @id
+  
+  /// User account that is being reported for problematic behavior. {@link
+  /// community_platform_memberusers.id}.
+  reported_memberuser_id String
+  
+  /// Member user who submitted the report, when the reporter is a regular
+  /// user. {@link community_platform_memberusers.id}.
+  reporter_memberuser_id String?
+  
+  /// Admin user who created the report based on internal review or automated
+  /// signals. {@link community_platform_adminusers.id}.
+  reporter_adminuser_id String?
+  
+  /// Admin currently responsible for handling this user report, if any. {@link
+  /// community_platform_adminusers.id}.
+  assigned_adminuser_id String?
+  
+  /// Optional link to a moderation case that aggregates this user report with
+  /// other related reports or actions. {@link
+  /// community_platform_moderation_cases.id}.
+  moderation_case_id String?
+  
+  /// Primary reason category for reporting the user, such as harassment, hate,
+  /// spam, or other policy categories.
+  reason_category String
+  
+  /// Optional free-text description giving additional context about the user’s
+  /// behavior and why it is considered problematic.
+  reason_detail String?
+  
+  /// Current status of the report lifecycle, for example open, in_review,
+  /// resolved, or dismissed.
+  status String
+  
+  /// Severity classification used for triage such as low, medium, high, or
+  /// critical.
+  severity String
+  
+  /// Timestamp when the user report was created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this report, such as status or
+  /// assignment changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logically removing the report from active
+  /// consideration while retaining audit data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reportedMember community_platform_memberusers @relation("community_platform_user_reports_of_reported_memberuser_id", fields: [reported_memberuser_id], references: [id], onDelete: Cascade)
+  reporterMember community_platform_memberusers? @relation("community_platform_user_reports_of_reporter_memberuser_id", fields: [reporter_memberuser_id], references: [id], onDelete: Cascade)
+  reporterAdmin community_platform_adminusers? @relation("community_platform_user_reports_of_reporter_adminuser_id", fields: [reporter_adminuser_id], references: [id], onDelete: Cascade)
+  assignedAdmin community_platform_adminusers? @relation("community_platform_user_reports_of_assigned_adminuser_id", fields: [assigned_adminuser_id], references: [id], onDelete: Cascade)
+  moderationCase community_platform_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_adminuser_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporter_memberuser_id, reported_memberuser_id, reason_category, status], map: "community_platform_user_reports_reporter_memberuser_id_e66543fa")
+  // spellchecker: ignore-next-line
+  @@index([reported_memberuser_id, status, severity], map: "community_platform_user_reports_reported_memberuser_id_00265b8f")
+  @@index([moderation_case_id, status])
+  // spellchecker: ignore-next-line
+  @@index([assigned_adminuser_id, status], map: "community_platform_user_reports_assigned_adminuser_id__9d198200")
+}
+
+/// Higher-level moderation cases that group related reports, context, and
+/// decisions.
+///
+/// This table represents the primary unit of work for moderators. A case can
+/// aggregate multiple reports across posts, comments, communities, or users
+/// that share a common context, allowing administrators to review the full
+/// picture before taking actions.
+///
+/// Each case stores a human-readable title or summary, a status and
+/// priority, and references to the admin who created the case and the admin
+/// currently assigned to it. Reports from the various report tables can link
+/// back to a case via their moderation_case_id fields.
+///
+/// Cases provide a durable audit spine for moderation workflows, enabling
+/// consistent review, discussion, and resolution tracking across complex
+/// scenarios. Soft deletion allows decommissioning legacy cases while
+/// preserving an audit trail if required.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the moderation case.
+  id String @id
+  
+  /// Admin user who originally created the moderation case. {@link
+  /// community_platform_adminusers.id}.
+  creator_adminuser_id String
+  
+  /// Admin user currently assigned to manage this case, if any. {@link
+  /// community_platform_adminusers.id}.
+  assigned_adminuser_id String?
+  
+  /// Business-level case identifier or human-friendly key that can be used to
+  /// reference the case in tools and communications. Must be unique across all
+  /// cases.
+  case_key String
+  
+  /// Short summary or title describing the main concern or subject of the
+  /// moderation case.
+  title String
+  
+  /// Optional detailed description outlining the context, evidence, or
+  /// rationale for opening the case.
+  description String?
+  
+  /// Current state of the case, for example open, in_review, resolved, or
+  /// archived.
+  status String
+  
+  /// Priority assigned for triage and workload management, such as low,
+  /// medium, high, or urgent.
+  priority String
+  
+  /// Timestamp when the moderation case was created.
+  created_at DateTime
+  
+  /// Timestamp when the case metadata was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the case is considered archived or
+  /// decommissioned from active workflows.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creatorAdmin community_platform_adminusers @relation("community_platform_moderation_cases_of_creator_adminuser_id", fields: [creator_adminuser_id], references: [id], onDelete: Cascade)
+  assignedAdmin community_platform_adminusers? @relation("community_platform_moderation_cases_of_assigned_adminuser_id", fields: [assigned_adminuser_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_reports community_platform_post_reports[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_community_reports community_platform_community_reports[]
+  community_platform_user_reports community_platform_user_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  
+  @@index([creator_adminuser_id])
+  
+  @@unique([case_key])
+  @@index([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([assigned_adminuser_id, status], map: "community_platform_moderation_cases_assigned_adminuser_ba586d62")
+}
+
+/// Atomic moderation actions applied as part of enforcement, modeled as the
+/// main action header with shared semantics.
+///
+/// This table records each specific moderation decision such as hiding
+/// content, removing posts or comments, locking threads, restricting user
+/// accounts, or closing communities. It captures the action type, high-level
+/// scope, policy category, rationale text, and references to the moderation
+/// case and acting admin.
+///
+/// Concrete targets (post, comment, community, or member user) are stored in
+/// dedicated subtype tables that each reference this main action record.
+/// This avoids the polymorphic nullable foreign key anti-pattern, enforces
+/// proper referential integrity for each target type, and keeps the main
+/// action entity focused on shared business semantics.
+///
+/// Actions are append-only business events for audit purposes. Soft deletion
+/// is available only for exceptional internal cleanup scenarios; normal
+/// workflows treat these records as immutable history.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the moderation action record.
+  id String @id
+  
+  /// Moderation case that this action belongs to, providing context and
+  /// grouping with related reports and actions. {@link
+  /// community_platform_moderation_cases.id}.
+  moderation_case_id String
+  
+  /// Admin user who performed the moderation action. {@link
+  /// community_platform_adminusers.id}.
+  actor_adminuser_id String
+  
+  /// Optional link to an account restriction entity that encodes technical
+  /// enforcement details such as posting or voting bans. {@link
+  /// community_platform_account_restrictions.id}.
+  account_restriction_id String?
+  
+  /// Type of moderation action performed, such as hide_content,
+  /// remove_content, lock_thread, warn_user, restrict_account, ban_account,
+  /// close_community, or similar values defined by policy.
+  action_type String
+  
+  /// High-level scope of the action, for example content, user, community, or
+  /// platform. Used for reporting, analytics, and routing to the appropriate
+  /// target subtype table.
+  scope String
+  
+  /// Primary policy category under which the action was taken, such as spam,
+  /// harassment, hate, sexual, self-harm, illegal, or other defined
+  /// enforcement categories.
+  reason_category String
+  
+  /// Optional free-text explanation written by the admin describing why the
+  /// action was necessary and how it relates to policies, reports, or other
+  /// context.
+  reason_detail String?
+  
+  /// Timestamp when the moderation action was recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when the action record was last updated, for example to correct
+  /// metadata or attach additional rationale text.
+  updated_at DateTime
+  
+  /// Timestamp when this action was effectively reverted or superseded, if an
+  /// appeal or follow-up decision rolled it back or nullified its effects.
+  reverted_at DateTime?
+  
+  /// Soft deletion timestamp. Normally null, but can be used for rare internal
+  /// cleanup while preserving audit trace elsewhere in the platform.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationCase community_platform_moderation_cases @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  actorAdmin community_platform_adminusers @relation(fields: [actor_adminuser_id], references: [id], onDelete: Cascade)
+  accountRestriction community_platform_account_restrictions? @relation(fields: [account_restriction_id], references: [id], onDelete: Cascade)
+  
+  community_platform_appeals community_platform_appeals[]
+  community_platform_moderation_actions_on_content community_platform_moderation_actions_on_content?
+  community_platform_moderation_actions_on_communities community_platform_moderation_actions_on_communities?
+  community_platform_moderation_actions_on_users community_platform_moderation_actions_on_users?
+  
+  // spellchecker: ignore-next-line
+  @@index([account_restriction_id], map: "community_platform_moderation_actions_account_restrict_827992d1")
+  
+  // spellchecker: ignore-next-line
+  @@index([moderation_case_id, created_at], map: "community_platform_moderation_actions_moderation_case__c8a477d7")
+  // spellchecker: ignore-next-line
+  @@index([actor_adminuser_id, created_at], map: "community_platform_moderation_actions_actor_adminuser__ed51dae7")
+  @@index([scope, created_at])
+}
+
+/// Appeals submitted by users in response to moderation actions that affect
+/// their content or accounts.
+///
+/// This table tracks formal appeals where a member user asks for
+/// reconsideration of a specific moderation action, such as a content
+/// removal or an account restriction. Each appeal references the action
+/// being appealed and the user who filed it.
+///
+/// The model captures the appeal justification, the appeal status, any
+/// decision rationale provided by reviewing admins, and relevant timestamps
+/// for submission and resolution. Appeals provide an auditable trail for
+/// dispute handling and support moderation quality review.
+///
+/// Soft deletion is available to retire appeals from active workflows after
+/// retention windows, while preserving essential audit information elsewhere
+/// as required.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the appeal record.
+  id String @id
+  
+  /// Moderation action that the user is appealing. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Member user who submitted the appeal. {@link
+  /// community_platform_memberusers.id}.
+  appellant_memberuser_id String
+  
+  /// Admin user who reviewed and decided the appeal, if it has been processed.
+  /// {@link community_platform_adminusers.id}.
+  reviewer_adminuser_id String?
+  
+  /// Current state of the appeal, such as pending, approved, rejected, or
+  /// withdrawn.
+  status String
+  
+  /// Text provided by the appellant explaining why they believe the moderation
+  /// action should be changed or reversed.
+  justification String
+  
+  /// Optional explanation from the reviewing admin describing why the appeal
+  /// was approved or rejected.
+  decision_reason String?
+  
+  /// Timestamp when the appeal was submitted by the member user.
+  created_at DateTime
+  
+  /// Timestamp when the appeal record was last updated, for example when
+  /// status or decision_reason changed.
+  updated_at DateTime
+  
+  /// Timestamp when a final decision was recorded for the appeal.
+  resolved_at DateTime?
+  
+  /// Soft deletion timestamp for retiring the appeal from active workflows
+  /// while preserving audit history where necessary.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  appellantMember community_platform_memberusers @relation(fields: [appellant_memberuser_id], references: [id], onDelete: Cascade)
+  reviewerAdmin community_platform_adminusers? @relation(fields: [reviewer_adminuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id, appellant_memberuser_id], map: "community_platform_appeals_moderation_action_id_appell_27ca5b19")
+  @@index([appellant_memberuser_id, status])
+  @@index([moderation_action_id, status])
+  @@index([reviewer_adminuser_id, status])
+}
+
+/// Content-targeted moderation actions that apply to specific posts or
+/// comments.
+///
+/// This subsidiary table models the concrete targets for moderation actions
+/// whose scope is content. Each row references exactly one moderation action
+/// header and links it to either a post or a comment.
+///
+/// Using a dedicated table prevents the polymorphic nullable foreign key
+/// anti-pattern in the main action entity. It ensures that only
+/// content-scoped actions reference posts or comments, and it allows the
+/// database schema to evolve for content-specific metadata without impacting
+/// other action types.
+///
+/// Application logic should enforce that the parent action has a
+/// content-oriented scope value when a row is inserted here, and that at
+/// least one of target_post_id or target_comment_id is non-null depending on
+/// the action semantics.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions_on_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the content-targeted moderation action record.
+  id String @id
+  
+  /// Parent moderation action that this content-targeted record specializes.
+  /// Enforces a 1:1 relationship between the action header and its
+  /// content-specific targeting. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Post directly affected by this action, when the action targets a single
+  /// post. {@link community_platform_posts.id}.
+  target_post_id String?
+  
+  /// Comment directly affected by this action, when the action targets a
+  /// single comment or comment thread. {@link community_platform_comments.id}.
+  target_comment_id String?
+  
+  /// Timestamp when this content-target specialization row was created,
+  /// typically matching or shortly after the parent action creation time.
+  created_at DateTime
+  
+  /// Soft deletion timestamp for retiring this specialization record without
+  /// removing the parent action header, used only for exceptional cleanup
+  /// scenarios.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "community_platform_moderation_actions_on_content_moder_e638f494")
+  // spellchecker: ignore-next-line
+  @@index([target_post_id, created_at], map: "community_platform_moderation_actions_on_content_targe_94eba766")
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id, created_at], map: "community_platform_moderation_actions_on_content_targe_ae261380")
+}
+
+/// Community-targeted moderation actions that apply at the community level.
+///
+/// This subsidiary table stores the concrete community target for moderation
+/// actions whose scope is community. Each row links a moderation action
+/// header to a specific community.
+///
+/// By isolating community targeting into its own table, the design avoids
+/// multiple nullable foreign keys on the main action entity and keeps
+/// community-scoped metadata decoupled from other target types. This also
+/// allows future community-specific attributes to be added without affecting
+/// unrelated actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions_on_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community-targeted moderation action record.
+  id String @id
+  
+  /// Parent moderation action that this community-targeted record specializes.
+  /// Enforces a 1:1 relationship between the action header and its
+  /// community-specific targeting. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Community directly affected by this action, for example closing a
+  /// community or changing its visibility. {@link
+  /// community_platform_communities.id}.
+  target_community_id String
+  
+  /// Timestamp when this community-target specialization row was created.
+  created_at DateTime
+  
+  /// Soft deletion timestamp for logically retiring this specialization record
+  /// while retaining the parent action for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  targetCommunity community_platform_communities @relation(fields: [target_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "community_platform_moderation_actions_on_communities_m_9dee53ab")
+  // spellchecker: ignore-next-line
+  @@index([target_community_id, created_at], map: "community_platform_moderation_actions_on_communities_t_0db5a17f")
+}
+
+/// User-targeted moderation actions that apply to individual member accounts.
+///
+/// This subsidiary table models the concrete user target for moderation
+/// actions whose scope is user. Each row links a moderation action header to
+/// the member user account affected by the action, such as warnings,
+/// restrictions, or bans.
+///
+/// Separating user-targeted actions into their own table avoids overloading
+/// the main action entity with nullable foreign keys and aligns the design
+/// with the platform’s polymorphic target guidelines. It also makes it easy
+/// to add user-specific metadata for enforcement without impacting other
+/// action types.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions_on_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the user-targeted moderation action record.
+  id String @id
+  
+  /// Parent moderation action that this user-targeted record specializes.
+  /// Enforces a 1:1 relationship between the action header and its
+  /// user-specific targeting. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Member user account directly affected by this action, for example
+  /// warnings, temporary restrictions, or permanent bans. {@link
+  /// community_platform_memberusers.id}.
+  target_memberuser_id String
+  
+  /// Timestamp when this user-target specialization record was created.
+  created_at DateTime
+  
+  /// Soft deletion timestamp to logically retire this specialization while
+  /// preserving the main action header for audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  targetMember community_platform_memberusers @relation(fields: [target_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "community_platform_moderation_actions_on_users_moderat_a4a8895d")
+  // spellchecker: ignore-next-line
+  @@index([target_memberuser_id, created_at], map: "community_platform_moderation_actions_on_users_target__995f1587")
+}

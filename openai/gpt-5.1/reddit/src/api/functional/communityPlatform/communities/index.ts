@@ -5,64 +5,61 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ICommunityPlatformCommunity } from "../../../structures/ICommunityPlatformCommunity";
 import { IPageICommunityPlatformCommunity } from "../../../structures/IPageICommunityPlatformCommunity";
-export * as rules from "./rules/index";
-export * as tags from "./tags/index";
-export * as search from "./search/index";
-export * as overview from "./overview/index";
-export * as governance from "./governance/index";
+export * as subscribers from "./subscribers/index";
 
 /**
- * Search and retrieve a paginated list of communities from
- * community_platform_communities.
+ * Search communities in the community_platform_communities table with
+ * filtering, sorting, and pagination.
  *
- * Retrieve a filtered and paginated list of communities from the
- * `community_platform_communities` table, supporting discovery, browsing, and
- * administrative overview use cases.
+ * Search and retrieve a paginated list of communities from the
+ * community_platform_communities table according to flexible filter and sort
+ * criteria.
  *
- * The underlying Prisma model `community_platform_communities` represents
- * topic-based communities that group posts and discussions on the platform.
- * Each community has attributes such as a human-readable name, a unique slug or
- * code used in URLs, a description, a visibility level (linked via
- * `community_platform_community_visibility_levels`), and relationships to
- * memberships, subscriptions, tags, and rules. This operation exposes only a
- * summary view of these attributes, designed for efficient listing and search
- * rather than full detail editing.
+ * This operation targets the community_platform_communities Prisma model, which
+ * defines each community as a primary container for posts, comments,
+ * subscriptions, and moderation structures within the platform. The model’s
+ * fields typically include identifiers, human-readable names, descriptions,
+ * visibility flags, creation timestamps, and possibly status indicators (for
+ * example, active, archived, or restricted). The search request DTO
+ * ICommunityPlatformCommunity.IRequest encapsulates filterable fields and query
+ * options such as free-text name search, category or tag filters (if modeled in
+ * related tables), visibility filters (e.g., only public communities), creation
+ * date ranges, and explicit sort ordering (e.g., by creation date, member
+ * count, or activity).
  *
- * From an access control perspective, communities are largely public-facing
- * entities, so this search endpoint can be exposed without restricting it to a
- * specific authenticated actor type. The implementation must still respect the
- * visibility level for each community as defined in
- * `community_platform_community_visibility_levels`, ensuring that private or
- * restricted communities are either excluded or only shown in appropriately
- * redacted form according to the business rules. Additionally, if
- * community-level bans or platform policies require hiding certain communities
- * from specific users, the provider logic may further filter results based on
- * the caller context even though the API is not actor-restricted at the
- * interface level.
+ * From an authorization and exposure standpoint, this PATCH /communities
+ * endpoint is primarily used for discovery and browsing of communities. It is
+ * therefore modeled as a read-only search operation that can be publicly
+ * callable (authorizationActors is an empty array), while internal provider
+ * logic remains responsible for enforcing business rules about which
+ * communities are visible to which users. For example, private or restricted
+ * communities may only be included if the requester is an authenticated member,
+ * while banned or hidden communities should be excluded except for
+ * administrative tools using separate, admin-restricted endpoints.
  *
- * The request DTO `ICommunityPlatformCommunity.IRequest` should support rich
- * filtering capabilities, including partial text search on community names and
- * descriptions, tag-based filtering via `community_platform_community_tags`,
- * visibility filters, and sorting options such as by creation time, subscriber
- * count, or activity metrics. It should also carry standard pagination
- * parameters like page size and cursor or offset tokens. The implementation
- * must validate these parameters to avoid excessively large pages or
- * unsupported sort keys, returning clear validation errors when necessary.
- * Results are returned as `IPageICommunityPlatformCommunity.ISummary`, where
- * each summary includes key display fields like name, slug/code, primary
- * visibility label, and basic metrics needed for list presentations.
+ * The response uses the IPageICommunityPlatformCommunity.ISummary DTO, which
+ * provides a paginated list of community summary objects optimized for index
+ * views. Each summary entry may include fields like community identifier, name,
+ * short description, primary visual icon or banner URLs, high-level visibility
+ * or status flags, and core engagement metrics (such as approximate member
+ * count or recent activity indicator), as defined in the Prisma schema and
+ * mapping layer. Pagination metadata (such as current page, page size, and
+ * total count) is included in the IPage wrapper so clients can implement
+ * infinite scroll or paged browsing.
  *
- * This operation is typically used by multiple client-side features: generic
- * community discovery pages, search boxes that suggest communities by name, and
- * admin dashboards that need to browse or audit the current set of communities.
- * For workflows that require detailed community configuration or moderation
- * data, a separate detail retrieval endpoint would be used in combination with
- * this search/index operation.
+ * This operation is intended to be used together with a detail endpoint such as
+ * GET /communities/{communityId}, where clients first call PATCH /communities
+ * to obtain a list of relevant communities and then follow up with detail
+ * retrieval for a specific community. Error handling should follow the
+ * platform’s standard conventions for validation failures in search criteria
+ * (e.g., invalid sort keys or out-of-range pagination parameters) and for
+ * general server errors. Because the endpoint is read-only and search-oriented,
+ * it must not create, update, or delete any rows in the
+ * community_platform_communities table.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for querying
- *   communities, including name/description search, visibility filters, tag
- *   filters, and sort options.
+ * @param props.body Search filters, sorting options, and pagination parameters
+ *   for querying communities
  * @path /communityPlatform/communities
  * @accessor api.functional.communityPlatform.communities.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -92,9 +89,8 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for querying communities,
-     * including name/description search, visibility filters, tag filters,
-     * and sort options.
+     * Search filters, sorting options, and pagination parameters for
+     * querying communities
      */
     body: ICommunityPlatformCommunity.IRequest;
   };
@@ -143,54 +139,43 @@ export namespace index {
 }
 
 /**
- * Get a single community_platform_communities record by communityIdentifier.
+ * Get a single community_platform_communities record by its global slug as
+ * ICommunityPlatformCommunity.
  *
- * Retrieve the public metadata and configuration for a single community
- * identified by a stable identifier.
+ * Retrieve a single community resource identified by a human-readable slug from
+ * the community_platform_communities table.
  *
- * This endpoint exposes a read-only view over the
- * community_platform_communities table, which stores the core identity and
- * descriptive fields of each community such as its name, slug, description, and
- * creation timestamps. It is expected that the Prisma schema defines a unique
- * business identifier for communities, typically a slug or code field, and may
- * also include a UUID primary key field. The {communityIdentifier} path
- * parameter is interpreted by the implementation to resolve the correct row
- * based on these uniqueness constraints, ensuring that the correct community is
- * loaded without ambiguity.
+ * This operation is designed for loading the main page for a specific
+ * community. Instead of exposing an internal numeric or UUID identifier, the
+ * API uses a slug string which is intended to be globally unique across all
+ * communities and stable over time for bookmarking and sharing. The handler
+ * must query the community_platform_communities model by this slug and return a
+ * detailed ICommunityPlatformCommunity representation, including fields such as
+ * the community name, slug, description, creation time, basic visibility flags,
+ * and any other non-sensitive metadata defined on the model.
  *
- * From a security perspective, this operation is intentionally public and sets
- * authorizationActors to an empty array, which means both anonymous guests and
- * authenticated users can call it. Any restrictions on viewing certain
- * communities (for example, private or restricted communities) should be
- * implemented by checking visibility level fields and related records such as
- * community_platform_community_visibility_levels,
- * community_platform_community_memberships, or
- * community_platform_community_bans. When a community is not visible to the
- * caller, the implementation may return a suitable error such as 404 Not Found
- * or 403 Forbidden according to the platform's business rules.
+ * From a security perspective, this endpoint is public and does not require
+ * authentication, so authorizationActors is set to an empty array. However, the
+ * implementation should still respect any visibility or status fields on
+ * community_platform_communities. For example, communities that are marked as
+ * removed, hidden, or restricted according to the schema and business rules
+ * should either not be returned or should cause a well-defined error such as a
+ * 404 Not Found. The endpoint should never leak internal-only flags or
+ * administrative notes that are not meant for general users.
  *
- * The response body is modeled as ICommunityPlatformCommunities, a DTO that
- * mirrors the community_platform_communities schema and may embed selected
- * related data such as visibility information, rule summaries, or community
- * tags in a denormalized form. This DTO should avoid exposing sensitive
- * internal fields that are not meant for client consumption while still
- * providing all information required to render a standard community header and
- * settings overview in client applications.
- *
- * Related endpoints include the community creation API (POST /communities),
- * which uses the same underlying table to create new rows, and potential future
- * operations for updating community settings or listing communities. Error
- * handling should clearly distinguish between “community not found”, “community
- * exists but is not visible”, and general server errors, following the
- * error-handling principles specified in the platform requirements documents.
+ * This operation is closely related to list and discovery endpoints that return
+ * summaries of multiple communities, but here the focus is on one specific
+ * community. Client applications will typically call this endpoint immediately
+ * after resolving or selecting a community slug (for example, when navigating
+ * to /r/{slug}-style routes) to obtain full details required to render the
+ * community header, description, and basic configuration. Error handling should
+ * include clear behavior for the case where no community with the provided slug
+ * exists, treating it as a missing resource rather than a server error.
  *
  * @param props.connection
- * @param props.communityIdentifier Stable identifier of the target community,
- *   typically its unique code or slug (global scope). The implementation
- *   resolves this identifier against the unique fields defined on the
- *   community_platform_communities table, such as a slug/code field or the
- *   primary key id when an UUID-like value is provided.
- * @path /communityPlatform/communities/:communityIdentifier
+ * @param props.communitySlug Human-readable slug of the target community,
+ *   assumed to be globally unique across all communities (global scope).
+ * @path /communityPlatform/communities/:communitySlug
  * @accessor api.functional.communityPlatform.communities.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -218,19 +203,16 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Stable identifier of the target community, typically its unique code
-     * or slug (global scope). The implementation resolves this identifier
-     * against the unique fields defined on the
-     * community_platform_communities table, such as a slug/code field or
-     * the primary key id when an UUID-like value is provided.
+     * Human-readable slug of the target community, assumed to be globally
+     * unique across all communities (global scope).
      */
-    communityIdentifier: string;
+    communitySlug: string;
   };
   export type Response = ICommunityPlatformCommunity;
 
   export const METADATA = {
     method: "GET",
-    path: "/communityPlatform/communities/:communityIdentifier",
+    path: "/communityPlatform/communities/:communitySlug",
     request: null,
     response: {
       type: "application/json",
@@ -239,7 +221,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/communityPlatform/communities/${encodeURIComponent(props.communityIdentifier ?? "null")}`;
+    `/communityPlatform/communities/${encodeURIComponent(props.communitySlug ?? "null")}`;
   export const random = (): ICommunityPlatformCommunity =>
     typia.random<ICommunityPlatformCommunity>();
   export const simulate = (
@@ -253,9 +235,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("communityIdentifier")(() =>
-        typia.assert(props.communityIdentifier),
-      );
+      assert.param("communitySlug")(() => typia.assert(props.communitySlug));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

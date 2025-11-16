@@ -6,87 +6,66 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberuser } from "../../../structures/ICommunityPlatformMemberuser";
 
 /**
- * Register a new memberUser using community_platform_memberusers and return
- * ICommunityPlatformMemberUser.IAuthorized with initial tokens.
+ * Register a new memberUser row in community_platform_memberusers and create an
+ * initial session in community_platform_memberuser_sessions while returning
+ * authorized tokens.
  *
- * Registers a new member user account in the community platform using the
- * community_platform_memberusers table and returns an authorization envelope
- * that includes initial JWT tokens.
+ * This operation registers a new community platform member user by inserting a
+ * record into the community_platform_memberusers table and then creating an
+ * associated session in community_platform_memberuser_sessions.
  *
- * This operation writes a new row into community_platform_memberusers,
- * populating the mandatory identity and credential columns username, email, and
- * password_hash. The password is never stored in plain text; instead the
- * service hashes the provided password from the request body and persists it to
- * the password_hash column as described in the schema comment. It also
- * initializes created_at and updated_at with the current timestamp and leaves
- * deleted_at as null to indicate an active, non-deleted account. The
- * account_status_id foreign key is set to an appropriate status row from
- * community_platform_account_statuses, such as the entry whose key represents
- * an active or pending verification state, tying the new member to its
- * lifecycle status definition.
+ * At the database layer, it persists username, email, and password_hash into
+ * community_platform_memberusers together with defaulted status fields
+ * is_email_verified, is_suspended, is_banned, failed_login_count, locked_until,
+ * created_at, updated_at, and deleted_at, following the table comment that this
+ * model "stores authentication credentials, core account state, and basic
+ * status flags required for enforcing permissions, bans, suspensions, and
+ * rate-limit related policies." The username and email columns are enforced
+ * unique via the declared unique indexes, so the provider must check for
+ * existing rows before insertion and treat conflicts as validation failures as
+ * described in the business rules document.
  *
- * From a security perspective, this endpoint is public (authorizationActor is
- * null) but still critical. It must enforce uniqueness constraints aligned with
- * the uniqueIndexes on username and email, returning appropriate error
- * responses when a conflicting username or email already exists. In addition,
- * it must follow password policy guidance from the requirements, rejecting weak
- * passwords before attempting to hash and store them in password_hash. All
- * validation and error reporting should be designed so that it does not leak
- * sensitive information about existing accounts beyond what is acceptable in
- * the platform's security model.
+ * For authentication behavior, immediately after successfully creating the
+ * member account it writes a new row into
+ * community_platform_memberuser_sessions, linking
+ * community_platform_memberuser_id to the owning
+ * community_platform_memberusers.id. It also stores the ip, href, and referrer
+ * fields to capture minimal connection context as specified by the session
+ * schema comment, and fills created_at while leaving expired_at null to
+ * indicate an active session. This session record underpins JWT issuance, where
+ * access and refresh tokens are returned in the response DTO
+ * ICommunityPlatformMemberUser.IAuthorized.
  *
- * The join operation is tightly integrated with session management and security
- * event tracking. Upon successfully writing the member record, the service must
- * create a corresponding session row in community_platform_memberuser_sessions,
- * populating community_platform_memberuser_id to reference the new member user,
- * along with ip, href, referrer, created_at, and an initial expired_at null
- * value to represent an active session. In parallel, it records a security
- * event row in community_platform_user_security_events with actor_type set to
- * "memberuser", an event_type such as "join_success", and any contextual
- * details captured in metadata_json. If the platform wishes to store a
- * resulting account_status_id transition, that foreign key can be used to
- * highlight the status associated with this security-relevant event.
+ * From an actor perspective this implements the registration flow for the
+ * memberUser kind described in the user-actors document: upon success the
+ * identity subsystem treats the new account as memberUser, creating a valid
+ * authenticated session so that access-control can attach the memberUser role
+ * to subsequent requests. It must also respect account security rules by
+ * initializing is_suspended and is_banned as false, failed_login_count as 0,
+ * and locked_until as null so that lockout and abuse detection can evolve from
+ * a clean baseline.
  *
- * The endpoint fits into the overall authentication workflow together with the
- * login and refresh endpoints for memberUser. After this join operation is
- * called, typical clients will next call the login endpoint only when
- * necessary; however, in many flows the join endpoint will directly mint an
- * access token and refresh token pair, so the user is effectively logged in
- * immediately. The response body uses the
- * ICommunityPlatformMemberUser.IAuthorized DTO, which encapsulates the issued
- * tokens, selected member user profile fields from
- * community_platform_memberusers such as id, username, email, and display_name,
- * and may embed information about the active session created in
- * community_platform_memberuser_sessions.
+ * In terms of validation and error handling, this endpoint must enforce
+ * username and email business rules from the validation requirements, including
+ * normalization, prohibited word checks, and uniqueness, and must reject weak
+ * or malformed password inputs before computing password_hash. When the insert
+ * fails due to unique constraint violations or other validation problems it
+ * returns a structured validation error rather than creating partial records;
+ * when underlying storage fails it returns an internal error as per the
+ * error-handling specification.
  *
- * Error handling must cover validation failures (duplicate username/email, weak
- * password, invalid email format) and internal issues such as failures to
- * create a session or security event. If downstream writes to
- * community_platform_memberuser_sessions or
- * community_platform_user_security_events fail after inserting the main member
- * row, the implementation should log these inconsistencies—potentially using
- * community_platform_audit_logs or error logging tables described elsewhere—but
- * still avoid leaving the account in a partially configured security state. All
- * writes related to the new account, its initial status, session, and security
- * event should ideally occur in a single transaction to maintain consistency
- * across community_platform_memberusers,
- * community_platform_memberuser_sessions, community_platform_account_statuses,
- * and community_platform_user_security_events.
- *
- * This join endpoint is complemented by the memberUser login and refresh
- * endpoints that operate on existing rows in community_platform_memberusers and
- * community_platform_memberuser_sessions. Clients typically call join once per
- * email and username combination, then rely on login to obtain new tokens or
- * refresh to cycle tokens without re-supplying credentials. Together, these
- * operations form the core authentication surface for the memberUser actor and
- * rely on the fields and relationships defined in the Prisma models to ensure
- * secure, auditable registration flows.
+ * Related operations in the authentication family include the memberUser login
+ * endpoint, which authenticates existing rows in
+ * community_platform_memberusers, and the memberUser refresh endpoint, which
+ * uses existing community_platform_memberuser_sessions to issue new tokens
+ * without revalidating credentials. Those endpoints should be called in later
+ * sessions whereas this join operation is the initial entry point for
+ * converting a guestUser into a memberUser.
  *
  * @param props.connection
- * @param props.body Registration payload for creating a new member user
- *   account, including username, email, and password plus any additional
- *   attributes needed to initialize community_platform_memberusers and related
- *   entities.
+ * @param props.body Registration data required to create a community platform
+ *   memberUser account and initial session context such as IP and referrer
+ *   information.
  * @setHeader token.access Authorization
  *
  * @path /auth/memberUser/join
@@ -122,14 +101,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Registration payload for creating a new member user account,
-     * including username, email, and password plus any additional
-     * attributes needed to initialize community_platform_memberusers and
-     * related entities.
+     * Registration data required to create a community platform memberUser
+     * account and initial session context such as IP and referrer
+     * information.
      */
-    body: ICommunityPlatformMemberuser.IJoinRequest;
+    body: ICommunityPlatformMemberuser.IJoin;
   };
-  export type Body = ICommunityPlatformMemberuser.IJoinRequest;
+  export type Body = ICommunityPlatformMemberuser.IJoin;
   export type Response = ICommunityPlatformMemberuser.IAuthorized;
 
   export const METADATA = {
@@ -174,70 +152,70 @@ export namespace join {
 }
 
 /**
- * Authenticate memberUser credentials using community_platform_memberusers and
- * return ICommunityPlatformMemberUser.IAuthorized on success.
+ * Authenticate an existing memberUser using community_platform_memberusers and
+ * create a new session row in community_platform_memberuser_sessions while
+ * logging the attempt in community_platform_login_attempts.
  *
- * Authenticates a member user against stored credentials in
- * community_platform_memberusers and returns a new authorization envelope with
- * JWT tokens on success.
+ * This operation implements the primary login flow for the memberUser actor by
+ * validating submitted credentials against rows in the
+ * community_platform_memberusers table, enforcing account state and lockout
+ * rules, recording the attempt in community_platform_login_attempts, and
+ * establishing a new session in community_platform_memberuser_sessions when
+ * authentication succeeds.
  *
- * This endpoint queries community_platform_memberusers by provided login
- * identifier—commonly email, potentially username depending on the
- * ICommunityPlatformMemberUser.ILoginRequest schema—and verifies the provided
- * password against the password_hash column. The verification must use a secure
- * hashing algorithm consistent with how password_hash was generated at
- * registration time. If no matching row is found or the hash comparison fails,
- * the operation must treat the attempt as a login failure and MUST NOT reveal
- * whether the email or username exists, to avoid account enumeration
- * vulnerabilities.
+ * From the perspective of community_platform_memberusers, it locates the
+ * candidate account by normalized username or email and compares the submitted
+ * secret with the stored password_hash column, which is documented as a hashed
+ * representation where plain-text passwords must never be stored. It must also
+ * read is_suspended and is_banned to determine whether the account is allowed
+ * to sign in, using the table’s description that these flags "indicate whether
+ * the account is temporarily suspended" or "permanently banned". The
+ * failed_login_count and locked_until columns are used to implement the
+ * business rules from the authentication requirements: on repeated
+ * was_successful=false attempts this endpoint increments failed_login_count and
+ * may set locked_until to a future timestamp, while on a successful login it
+ * resets failed_login_count and clears locked_until.
  *
- * Security-wise, the endpoint is public (authorizationActor is null) but
- * processes highly sensitive credential data. It must enforce rate limiting and
- * intrusion detection policies as described in the broader requirements,
- * potentially in conjunction with voting rate limit or security-related tables,
- * though at minimum it must ensure that repeated login failures can be tracked
- * through community_platform_user_security_events with event_type such as
- * "login_failure". The account_status_id foreign key from
- * community_platform_memberusers to community_platform_account_statuses must be
- * honored; for example, accounts in a suspended or banned status (as defined by
- * the key column in community_platform_account_statuses) should be denied
- * authentication even if password_hash matches.
+ * To support auditability and abuse detection, every invocation writes a row
+ * into community_platform_login_attempts containing identifier, was_successful,
+ * source_ip, user_agent, occurred_at, created_at, updated_at, and deleted_at.
+ * The identifier column captures the username or email exactly as provided by
+ * the client, while source_ip and user_agent record security-relevant metadata
+ * as described by the schema comment. Rate-limit and abuse-prevention logic can
+ * later use the plain indexes on identifier and source_ip, and the gin index on
+ * identifier, to query recent attempts and decide whether to throttle or lock
+ * out further logins.
  *
- * On successful authentication, the login operation establishes a new session
- * by inserting a row into community_platform_memberuser_sessions. It sets
- * community_platform_memberuser_id to the authenticated user id, copies the
- * current ip, href, and referrer from the request context, records created_at
- * as the login timestamp, and initially leaves expired_at as null. The
- * implementation may later update expired_at when a logout occurs or when the
- * session naturally expires. A security event row is then stored in
- * community_platform_user_security_events for the successful login with
- * actor_type = "memberuser", event_type = "login_success", and optional
- * metadata_json for additional context, such as whether multi-factor
- * authentication was used if supported.
+ * When authentication is successful and the member account is not in a
+ * restricted state, the endpoint creates a new
+ * community_platform_memberuser_sessions record linking
+ * community_platform_memberuser_id to the account’s id and capturing ip, href,
+ * referrer, created_at, and expired_at (initially null). This aligns with the
+ * session table’s description of representing login sessions created after
+ * successful authentication. The session row is the durable backing for the JWT
+ * access and refresh tokens returned in the
+ * ICommunityPlatformMemberUser.IAuthorized response body.
  *
- * The response payload is defined by ICommunityPlatformMemberUser.IAuthorized,
- * which includes newly generated access and refresh tokens along with essential
- * identity details extracted from community_platform_memberusers such as id,
- * username, email, display_name, and any status-related attributes the DTO
- * chooses to expose. This DTO gives the client enough data to establish an
- * authenticated context and display user-facing information while ensuring that
- * sensitive fields like password_hash are never exposed.
+ * Security-wise this operation must satisfy the error-handling requirements by
+ * not revealing whether the username or password was incorrect, collapsing all
+ * credential mismatches into a generic authentication error. It must also deny
+ * login for accounts where is_banned is true or where is_suspended indicates a
+ * restricted state, returning authorization failures instead of validation
+ * errors. Lockout states driven by failed_login_count and locked_until must be
+ * enforced so that attempts during a lockout window are rejected without
+ * checking the password_hash.
  *
- * Error handling includes authentication failures, status-based denials (e.g.,
- * banned accounts), and internal errors when writing to
- * community_platform_memberuser_sessions or
- * community_platform_user_security_events. Failures to persist the session or
- * event must be treated seriously; implementations should log them using
- * appropriate audit tables while ensuring that the issuance of tokens does not
- * proceed when session creation fails, to avoid having untracked authenticated
- * contexts. This operation, together with join and refresh, forms the heart of
- * the memberUser authentication workflow, all backed by the fields and
- * constraints of the related Prisma models.
+ * This login endpoint is part of a cohesive authentication set that also
+ * includes the memberUser join endpoint, which creates initial
+ * community_platform_memberusers and session records, and the memberUser
+ * refresh endpoint, which issues new tokens for an existing
+ * community_platform_memberuser_sessions entry without revalidating
+ * credentials. Together they implement the memberUser authentication lifecycle
+ * required by the identity and permissions requirements.
  *
  * @param props.connection
- * @param props.body Login payload containing the member user's credential
- *   information, such as email or username plus password, used to authenticate
- *   against community_platform_memberusers.password_hash.
+ * @param props.body Login credentials and client context for authenticating a
+ *   memberUser and recording a login attempt.
  * @setHeader token.access Authorization
  *
  * @path /auth/memberUser/login
@@ -273,13 +251,12 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Login payload containing the member user's credential information,
-     * such as email or username plus password, used to authenticate against
-     * community_platform_memberusers.password_hash.
+     * Login credentials and client context for authenticating a memberUser
+     * and recording a login attempt.
      */
-    body: ICommunityPlatformMemberuser.ILoginRequest;
+    body: ICommunityPlatformMemberuser.ILogin;
   };
-  export type Body = ICommunityPlatformMemberuser.ILoginRequest;
+  export type Body = ICommunityPlatformMemberuser.ILogin;
   export type Response = ICommunityPlatformMemberuser.IAuthorized;
 
   export const METADATA = {
@@ -324,62 +301,64 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for memberUser using existing active sessions in
- * community_platform_memberuser_sessions and return
- * ICommunityPlatformMemberUser.IAuthorized.
+ * Refresh JWT tokens for a valid memberUser session in
+ * community_platform_memberuser_sessions after verifying the owning row in
+ * community_platform_memberusers is still allowed to authenticate.
  *
- * Issues new JWT tokens for a member user based on a valid refresh token and
- * existing session records in community_platform_memberuser_sessions, without
- * re-supplying credentials.
+ * This operation renews the JWT-based authentication context for a memberUser
+ * by validating an existing session row in
+ * community_platform_memberuser_sessions and its associated account state in
+ * community_platform_memberusers, then issuing a new token bundle described by
+ * ICommunityPlatformMemberUser.IAuthorized without re-checking password_hash.
  *
- * This endpoint accepts a refresh token payload defined by
- * ICommunityPlatformMemberUser.IRefreshRequest and validates it against the
- * platform's token storage and session tracking logic backed by
- * community_platform_memberuser_sessions. The implementation typically resolves
- * the refresh token to a concrete session and member user, ensuring that the
- * corresponding community_platform_memberuser_sessions row is still
- * active—represented by a null or future expired_at—and that the linked
- * community_platform_memberusers row has a non-null account_status_id
- * referencing an allowed status in community_platform_account_statuses.
+ * At the session layer it accepts a refresh token that encodes or references a
+ * specific session identifier in community_platform_memberuser_sessions.id and
+ * loads that row to ensure the session is still active. The session schema
+ * describes created_at and expired_at timestamps, where expired_at being null
+ * represents an active session; this endpoint must enforce that expired_at is
+ * null and that created_at plus configured lifetime has not passed before
+ * refreshing. If the session has been invalidated or has naturally expired, the
+ * operation denies the refresh according to the error-handling requirements and
+ * treats the request as an authentication error rather than a validation
+ * failure.
  *
- * From a security viewpoint, the refresh endpoint is public (authorizationActor
- * is null) but operates only on tokens that were previously issued and are
- * still valid. It must enforce strict checks on token integrity and revocation
- * state and must confirm that the underlying member account has not
- * transitioned into a disallowed status (for example, a status whose key in
- * community_platform_account_statuses indicates banned or suspended). Any
- * attempt to use a revoked, expired, or malformed refresh token should be
- * rejected and logged as a security event.
+ * After locating a valid session, the operation reads the linked
+ * community_platform_memberusers row using the community_platform_memberuser_id
+ * foreign key to ensure the underlying account is still in good standing. It
+ * checks is_suspended and is_banned flags and may also consult locked_until and
+ * failed_login_count as part of broader security policy. If the account is now
+ * banned, suspended, or otherwise restricted, the operation must refuse to
+ * issue new tokens so that account status changes take effect even for
+ * previously issued refresh tokens.
  *
- * Upon successful validation, the service generates a new pair of access and
- * refresh tokens associated with the same or a newly rotated session. It may
- * update the existing row in community_platform_memberuser_sessions by
- * adjusting created_at and expired_at or insert a new session row linked
- * through community_platform_memberuser_id, ip, href, and referrer according to
- * current request context. In either case, it records a security event in
- * community_platform_user_security_events with actor_type = "memberuser",
- * event_type such as "token_refresh", and any supplementary metadata_json that
- * captures details of the rotation.
+ * The operation then generates a new set of access and refresh tokens bound to
+ * the same or a rotated session record, updating
+ * community_platform_memberuser_sessions as necessary. For example it may
+ * update expired_at on the old session and create a fresh session row capturing
+ * new ip, href, and referrer, or it may simply extend the lifetime associated
+ * with the existing session while keeping a complete audit trail of session
+ * activity through the created_at and expired_at columns as described in the
+ * session table comment.
  *
- * The response uses ICommunityPlatformMemberUser.IAuthorized to return the new
- * tokens and refreshed identity snapshot for the member user, including fields
- * such as id, username, email, display_name, and possibly summary account
- * status information derived from the join to
- * community_platform_account_statuses. This keeps client applications in sync
- * with any recent changes to the user's status or profile while maintaining a
- * seamless authentication experience.
+ * This refresh endpoint is invoked only for authenticated memberUser actors, so
+ * authorizationActor is set to "memberUser" in the interface layer even though
+ * authorizationType is "refresh". It directly supports the session lifetime and
+ * renewal requirements in the authentication specification, where the system
+ * enforces finite maximum lifetimes but allows long-lived access through
+ * renewal when the refresh token remains valid and the account state is
+ * unchanged.
  *
- * Error handling focuses on invalid or expired refresh tokens, sessions whose
- * expired_at is set or otherwise invalid, and account status transitions that
- * forbid token renewal. Any such failure should result in a clear but
- * security-conscious error response and the recording of a security event in
- * community_platform_user_security_events. Together with the join and login
- * endpoints, this refresh operation leverages the Prisma models to provide a
- * robust, token-based authentication lifecycle for the memberUser actor.
+ * Other related operations include the join endpoint for initial
+ * community_platform_memberusers creation and session establishment, and the
+ * login endpoint that validates credentials against password_hash and records
+ * raw attempts into community_platform_login_attempts. Together, these
+ * operations satisfy the full lifecycle of memberUser authentication, from
+ * registration through repeated logins and session renewals, while respecting
+ * the business rules for account restrictions, lockouts, and audit logging.
  *
  * @param props.connection
- * @param props.body Refresh token payload used to request new JWT tokens for a
- *   member user session without re-entering credentials.
+ * @param props.body Refresh token and related context used to identify and
+ *   validate an existing memberUser session before issuing new tokens.
  * @setHeader token.access Authorization
  *
  * @path /auth/memberUser/refresh
@@ -415,12 +394,12 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token payload used to request new JWT tokens for a member
-     * user session without re-entering credentials.
+     * Refresh token and related context used to identify and validate an
+     * existing memberUser session before issuing new tokens.
      */
-    body: ICommunityPlatformMemberuser.IRefreshRequest;
+    body: ICommunityPlatformMemberuser.IRefresh;
   };
-  export type Body = ICommunityPlatformMemberuser.IRefreshRequest;
+  export type Body = ICommunityPlatformMemberuser.IRefresh;
   export type Response = ICommunityPlatformMemberuser.IAuthorized;
 
   export const METADATA = {

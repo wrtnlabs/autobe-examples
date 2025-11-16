@@ -4,27 +4,24 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IRedditCommunityCommunityModerator } from "../../../structures/IRedditCommunityCommunityModerator";
+import { IRefreshToken } from "../../../structures/IRefreshToken";
 
 /**
- * Register a new community moderator account and issue authentication tokens.
+ * Register a new community moderator account and issue initial tokens.
  *
- * Creates a new community moderator account with secure credential management
- * and issues initial JWT access and refresh tokens. This operation validates
- * email uniqueness against existing community moderators and platform
- * moderators to prevent duplicate accounts. The registration process securely
- * hashes passwords using industry-standard algorithms and creates audit
- * timestamps for account tracking. Community moderators have elevated
- * permissions to moderate specific communities they manage, including removing
- * posts/comments, banning users, and managing community settings. The operation
- * ensures nickname uniqueness across all moderator accounts and establishes the
- * foundation for secure authentication throughout the platform. Account
- * creation includes proper error handling for duplicate emails or nicknames,
- * and the system maintains referential integrity with related session
- * management tables.
+ * Create a new community moderator account with initial JWT token issuance.
+ * This operation enables community moderator registration by collecting email
+ * and password information. The system validates email uniqueness and securely
+ * stores hashed passwords. Upon successful registration, the system issues
+ * initial JWT access and refresh tokens for immediate use. The email field
+ * serves as the primary identifier for authentication purposes. Password
+ * hashing is performed using bcrypt for security. This operation establishes
+ * the foundation for community moderator authentication and access control
+ * within the community moderation system.
  *
  * @param props.connection
- * @param props.body Community moderator registration credentials including
- *   email, password, and display nickname
+ * @param props.body Community moderator registration information including
+ *   email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/communityModerator/join
@@ -60,8 +57,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Community moderator registration credentials including email,
-     * password, and display nickname
+     * Community moderator registration information including email and
+     * password
      */
     body: IRedditCommunityCommunityModerator.ICreate;
   };
@@ -112,18 +109,15 @@ export namespace join {
 /**
  * Authenticate community moderator and issue access tokens.
  *
- * Authenticates community moderators using email and password credentials to
- * issue secure JWT access and refresh tokens. The operation validates
- * credentials against stored password hashes in the
- * reddit_community_community_moderators table and verifies account status
- * including soft deletion checks. Upon successful authentication, the system
- * generates cryptographically secure tokens with appropriate expiration times
- * and scopes for moderator operations. Community moderators gain access to
- * elevated permissions for managing their assigned communities, including
- * content moderation, user management, and community configuration. The login
- * process includes comprehensive error handling for invalid credentials,
- * inactive accounts, and security validation to protect against unauthorized
- * access attempts.
+ * Authenticate community moderator with email and password credentials. This
+ * operation validates the provided email address against registered community
+ * moderators and verifies the password hash matches the stored hash. Upon
+ * successful authentication, the system generates new JWT access and refresh
+ * tokens for secure session management. The operation checks for account status
+ * and validates credentials against the community moderators table. Failed
+ * authentication attempts are logged for security monitoring. The email field
+ * acts as the username for login purposes, and password verification uses
+ * bcrypt comparison for security.
  *
  * @param props.connection
  * @param props.body Community moderator login credentials with email and
@@ -210,24 +204,21 @@ export namespace login {
 }
 
 /**
- * Refresh authentication tokens for community moderator session.
+ * Refresh JWT access tokens for community moderators.
  *
- * Refreshes JWT access and refresh tokens for authenticated community moderator
- * sessions to maintain continuous access without re-authentication. The
- * operation validates the provided refresh token against active sessions in the
- * reddit_community_community_moderator_sessions table and verifies token
- * expiration and session validity. Upon successful validation, the system
- * issues new authentication tokens with updated expiration times while
- * maintaining the existing session context. Community moderators can continue
- * managing their communities without interruption, ensuring seamless access to
- * moderation tools and community management features. The refresh process
- * includes security validation of session metadata including IP address
- * tracking and maintains comprehensive audit trails for administrative
- * oversight and security monitoring.
+ * Refresh JWT access tokens using valid refresh tokens for community
+ * moderators. This operation enables persistent authentication sessions by
+ * allowing community moderators to obtain new access tokens without
+ * re-authenticating with credentials. The system validates the provided refresh
+ * token against the community moderator's session records and issues a new
+ * access token if the refresh token is valid and unexpired. This operation is
+ * essential for maintaining seamless user experience while ensuring security
+ * through token rotation. The refresh token mechanism provides secure session
+ * management while minimizing authentication fatigue for active community
+ * moderators.
  *
  * @param props.connection
- * @param props.body Refresh token for extending authenticated community
- *   moderator session
+ * @param props.body Refresh token for renewing community moderator access
  * @setHeader token.access Authorization
  *
  * @path /auth/communityModerator/refresh
@@ -262,10 +253,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for extending authenticated community moderator session */
-    body: IRedditCommunityCommunityModerator.IRefresh;
+    /** Refresh token for renewing community moderator access */
+    body: IRefreshToken;
   };
-  export type Body = IRedditCommunityCommunityModerator.IRefresh;
+  export type Body = IRefreshToken;
   export type Response = IRedditCommunityCommunityModerator.IAuthorized;
 
   export const METADATA = {

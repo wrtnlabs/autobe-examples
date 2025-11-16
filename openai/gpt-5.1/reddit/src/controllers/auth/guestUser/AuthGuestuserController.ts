@@ -7,132 +7,159 @@ import { ICommunityPlatformGuestuser } from "../../../api/structures/ICommunityP
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Register or resolve a guest actor in community_platform_guestusers and
-   * issue an authorized guestUser payload.
+   * Create a new community_platform_guestusers surrogate record and issue
+   * guestUser authorization tokens via a public join endpoint.
    *
-   * This operation registers or resolves a minimal guest actor record in the
-   * community_platform_guestusers table and returns an authorized guest
-   * session payload for subsequent anonymous browsing.
+   * This operation creates a new surrogate guestUser record in the
+   * `community_platform_guestusers` table and returns an authorized context
+   * for an unauthenticated visitor. The underlying Prisma model defines `id`
+   * as the primary key with type UUID, serving as a surrogate identifier that
+   * uniquely represents a conceptual guestUser pseudo-account. When this
+   * endpoint is called, the system inserts a new row with a freshly generated
+   * UUID for `id`, and initializes the `created_at` and `updated_at`
+   * timestamps to the current server time, while leaving `deleted_at` as null
+   * to indicate that the guestUser surrogate is active.
    *
-   * From a data perspective, it works exclusively with the
-   * community_platform_guestusers entity, which is designed to store only the
-   * minimum attributes needed to correlate repeated anonymous activity. The
-   * primary key field id uniquely identifies each guest record, while
-   * anonymous_handle (when provided) enables stable correlation across visits
-   * and is enforced by a unique index. The user_agent field captures the last
-   * observed user agent string to support security and abuse analysis, and
-   * the created_at/updated_at timestamps track lifecycle changes of the guest
-   * record. The deleted_at field is a soft deletion marker: when set, the
-   * guest record is considered logically removed and should not typically be
-   * reused for new sessions or joins.
+   * From a security perspective, this endpoint does not collect or verify any
+   * credentials, which is consistent with the schema comment that
+   * `community_platform_guestusers` "does not participate in authentication
+   * and does not store credentials". Instead, it focuses on returning a
+   * signed JWT that embeds the `id` of the newly created guestUser record,
+   * allowing subsequent requests to be associated with this pseudo-identity.
+   * Because no secrets or passwords are involved, the endpoint is exposed
+   * publicly without prior authentication, and the `authorizationActor`
+   * remains null. However, the description must emphasize that the issued
+   * token is still cryptographically protected and should be treated as a
+   * bearer token by clients.
    *
-   * Security-wise, this endpoint does not authenticate with credentials but
-   * still must be treated as an entry point for issuing a JWT or similar
-   * token bound to the guest user id. The response type
-   * ICommunityPlatformGuestUser.IAuthorized represents the authorized state
-   * of a guestUser actor, encapsulating whatever token and session metadata
-   * the implementation generates. The implementation must ensure that
-   * logically deleted guests (deleted_at not null) are not revived
-   * implicitly; instead, a new guest record should be created in such cases,
-   * optionally with a new anonymous_handle if necessary.
+   * At the database layer, the `created_at` field provides an age indicator
+   * for the guestUser surrogate record, enabling analytics such as cohort
+   * analysis or churn estimation, while the `updated_at` field reflects the
+   * last time higher-level systems attached or modified metadata for this
+   * guestUser. Although this operation itself may not modify any additional
+   * metadata fields beyond the timestamps, it should clearly state that any
+   * future updates to guest-scoped state must respect the semantics of these
+   * columns. The `deleted_at` column, when non-null, marks the guestUser
+   * surrogate as inactive; this operation must therefore ensure that only
+   * rows with `deleted_at` equal to null are considered active when issuing
+   * tokens, and that it creates new rows with `deleted_at` set to null.
    *
-   * The relationship to other entities is limited and controlled through the
-   * optional account_status_id foreign key pointing to
-   * community_platform_account_statuses. When present, this link allows the
-   * platform to enforce status-based restrictions on guest activity (for
-   * example, flagging a guest entity as blocked for abuse). Although this
-   * join operation focuses on creating or resolving the guest record, it must
-   * still respect any account status semantics defined elsewhere in the
-   * system, such as preventing new authorized tokens for blocked guests.
+   * In the broader guestUser workflow, this join endpoint typically runs the
+   * first time an unauthenticated visitor needs a stable pseudo-identity, for
+   * example to support rate limiting, A/B testing, or pre-registration
+   * analytics. Subsequent page views and read-only interactions can then
+   * reference the same guestUser `id` via the JWT, even though the user still
+   * cannot create posts, comments, votes, or reports. The documentation
+   * should highlight that this surrogate identity is a conceptual anchor and
+   * not a full account, aligning with the actor definition that guestUser
+   * remains a read-only visitor.
    *
-   * Validation rules derive directly from the schema: if an anonymous_handle
-   * is provided, it must be unique among non-deleted guest records according
-   * to the unique index defined on anonymous_handle. The implementation
-   * should capture user_agent when provided for security analytics and must
-   * always set created_at and updated_at to appropriate timestamps. It must
-   * never override deleted_at for existing records during a normal join;
-   * instead, it should treat deleted rows as non-eligible for reuse.
+   * From an error-handling standpoint, the operation must document that
+   * attempts to reuse tokens whose corresponding guestUser record has a
+   * non-null `deleted_at` value should result in authorization failures at
+   * higher layers, prompting clients to call this join endpoint again to
+   * obtain a fresh pseudo-identity. It should also mention that database
+   * insertion failures (for example, due to infrastructure issues) will
+   * result in standard 5xx error responses and that no token will be issued
+   * in such cases. This makes the lifecycle of guestUser surrogates explicit
+   * and consistent with the soft deletion semantics implied by the
+   * `deleted_at` column.
    *
-   * This operation participates in the broader guest browsing lifecycle by
-   * being the first step before creating entries in
-   * community_platform_guestuser_sessions through other APIs. The authorized
-   * payload returned here will be used to correlate future requests,
-   * including session creation and security event logging. Errors should be
-   * returned when constraints such as anonymous_handle uniqueness are
-   * violated in ways that prevent either reuse or creation of a new guest
-   * record, or when platform-level status rules prohibit issuing a new
-   * authorized state.
+   * Finally, this join operation forms the foundation for other
+   * guestUser-related authorization endpoints, such as token refresh. Clients
+   * are expected to call this endpoint once per browser or device context to
+   * receive their initial `ICommunityPlatformGuestUser.IAuthorized` payload,
+   * then rely on refresh and other auth endpoints to maintain continuity. The
+   * description should make clear that while the actor is a guestUser with
+   * read-only capabilities, the authorization envelope and tokens follow the
+   * same structural conventions as member or admin flows, simplifying client
+   * integrations.
    *
    * @param connection
-   * @param body Optional correlation information for creating or resolving a
-   *   guest user record in community_platform_guestusers.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post("join")
-  public async join(
-    @TypedBody()
-    body: ICommunityPlatformGuestuser.IJoin,
-  ): Promise<ICommunityPlatformGuestuser.IAuthorized> {
-    body;
+  public async join(): Promise<ICommunityPlatformGuestuser.IAuthorized> {
     return typia.random<ICommunityPlatformGuestuser.IAuthorized>();
   }
 
   /**
-   * Refresh an existing guestUser authorization using guest session data from
-   * community_platform_guestuser_sessions and identity from
-   * community_platform_guestusers.
+   * Refresh guestUser authorization tokens for an existing active surrogate
+   * record in community_platform_guestusers.
    *
-   * This operation renews an existing guestUser authorization by validating a
-   * previously issued refresh context and issuing a new authorized guest
-   * payload tied to the same underlying guest identity.
+   * This operation refreshes the authorization tokens for a guestUser
+   * pseudo-account backed by the `community_platform_guestusers` table. When
+   * a client presents a valid refresh token, the system extracts the
+   * guestUser `id` embedded in that token and loads the corresponding row
+   * from `community_platform_guestusers`, where `id` is defined as the UUID
+   * primary key that uniquely identifies the conceptual guestUser surrogate.
+   * The implementation must verify that the row exists and that the
+   * `deleted_at` column is null, indicating that the surrogate record is
+   * still active and allowed to be used for new tokens.
    *
-   * The guest identity is stored in the community_platform_guestusers table,
-   * where the id primary key uniquely identifies each guest actor. Since
-   * guest records are minimal and do not contain credentials, the refresh
-   * flow relies on higher-level token structures that indirectly reference
-   * this id, rather than passwords or long-lived secrets. The
-   * anonymous_handle and user_agent fields remain static correlation and
-   * security attributes and are not directly altered by this operation, which
-   * focuses on renewing authorization rather than mutating guest metadata.
+   * From a security standpoint, this endpoint is classified as a token-based
+   * refresh operation and does not accept credentials such as passwords,
+   * which is consistent with the schema comment that guestUser does not
+   * participate in authentication. The `authorizationType` is set to
+   * "refresh" to signal to the authorization layer that this is a token
+   * renewal flow. Although the endpoint is technically public in the sense
+   * that it does not require a prior authenticated session, it requires
+   * possession of a valid refresh token, and all invalid, expired, or
+   * tampered tokens must be rejected. The documentation should emphasize that
+   * refresh tokens are long-lived secrets and must be stored securely by
+   * clients, even for guest users.
    *
-   * The temporal and contextual aspects of the guest's browsing session are
-   * modeled in the community_platform_guestuser_sessions table. Fields such
-   * as ip, href, and referrer capture where and how the session originated,
-   * while created_at records when the session was established and expired_at
-   * indicates when it was closed or timed out. A correct refresh
-   * implementation uses these fields to determine if the session associated
-   * with the refresh context is still valid, denying refresh attempts when
-   * expired_at is set and falls before the current time, thereby preventing
-   * unauthorized extension of obsolete sessions.
+   * On the database side, the `created_at` and `updated_at` fields of
+   * `community_platform_guestusers` provide temporal context for analytics
+   * and lifecycle management. While this refresh operation does not create
+   * new rows, it may update the `updated_at` timestamp to reflect the most
+   * recent time the guestUser surrogate record was actively used. This
+   * behavior aligns with the schema description that `updated_at` "typically
+   * changes when metadata is attached by higher-level systems" and allows
+   * operators to distinguish active from dormant guest pseudo-identities. The
+   * `deleted_at` column, when non-null, indicates that the guestUser
+   * surrogate should no longer be referenced; in such cases, the refresh
+   * operation must refuse to issue new tokens and surface an appropriate
+   * authorization error.
    *
-   * Security considerations are critical: the operation must ensure that no
-   * new ICommunityPlatformGuestUser.IAuthorized payload is issued if the
-   * underlying guest record has a deleted_at timestamp, signalling logical
-   * removal for audit or abuse reasons. Additionally, if the optional
-   * account_status_id foreign key points to an account status that represents
-   * a blocked or restricted state, the implementation must treat this as a
-   * hard stop for refresh attempts. This ensures that platform-level safety
-   * decisions made elsewhere are enforced consistently at the authorization
-   * boundary.
+   * Within the overall guestUser workflow, this refresh endpoint is intended
+   * to be called whenever the access token for a guestUser nears expiration,
+   * avoiding the need to call the join endpoint repeatedly and thereby
+   * preventing unnecessary proliferation of rows in
+   * `community_platform_guestusers`. Clients should first obtain an
+   * authorized payload via the join endpoint, then use this refresh endpoint
+   * to maintain a continuous pseudo-identity over time. The response returns
+   * an `ICommunityPlatformGuestUser.IAuthorized` structure mirroring the join
+   * response, ensuring consistent token shape and simplifying client-side
+   * handling.
    *
-   * In the broader authentication workflow, this refresh endpoint complements
-   * the /auth/guestUser/join operation. Clients first call join to obtain an
-   * initial ICommunityPlatformGuestUser.IAuthorized payload, then later call
-   * this refresh endpoint to rotate or renew that authorization without
-   * creating a new guest identity. Errors should be returned for invalid or
-   * expired refresh contexts, mismatches between token data and stored
-   * guest/session records, or when business rules derived from
-   * community_platform_guestusers and community_platform_guestuser_sessions
-   * indicate that the guest is no longer eligible for continued browsing
-   * authorization.
+   * Error handling for this operation must clearly outline how the system
+   * responds when the referenced guestUser record cannot be found, has a
+   * non-null `deleted_at`, or when the refresh token is invalid for
+   * cryptographic or policy reasons. In these scenarios, the operation should
+   * not modify any database fields and should not issue new tokens, prompting
+   * the client either to treat the session as terminated or to invoke the
+   * join endpoint to establish a new surrogate identity. This behavior keeps
+   * the lifecycle of guestUser surrogates aligned with the data semantics
+   * implied by the `community_platform_guestusers` schema.
+   *
+   * Finally, the documentation should describe how this refresh operation
+   * interacts with other authorization endpoints in the ecosystem. For
+   * guestUser, it forms a two-step model with join: join provisions the
+   * initial surrogate record and tokens, while refresh prolongs their usable
+   * lifetime as long as the underlying `community_platform_guestusers` row
+   * remains active. The shared use of
+   * `ICommunityPlatformGuestUser.IAuthorized` in responses ensures that
+   * downstream services and clients can treat both operations uniformly from
+   * a data-contract perspective, even though one creates database rows and
+   * the other reuses them.
    *
    * @param connection
-   * @param body Refresh context for renewing a guestUser authorization,
-   *   typically including a refresh token bound to
-   *   community_platform_guestusers and community_platform_guestuser_sessions
-   *   records.
+   * @param body Refresh token payload required to renew guestUser
+   *   authorization; contains the token originally issued for a
+   *   community_platform_guestusers surrogate record.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

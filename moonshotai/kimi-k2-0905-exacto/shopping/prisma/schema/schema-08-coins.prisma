@@ -1,0 +1,308 @@
+/// Customer loyalty point balances and digital coin balances representing
+/// earned rewards, promotional credits, and greenlight currencies managed
+/// within the platform's loyalty ecosystem. These points operate as
+/// platform-specific financial instruments separate from actual payment
+/// transactions and provide customers with transaction capacity, rewards,
+/// and promotional benefits throughout their shopping experience.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_points {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link ecommerce_mall_customers.id} who owns these loyalty
+  /// points.
+  ecommerce_mall_customer_id String
+  
+  /// Type of customer points including standard loyalty points, promotional
+  /// coins, referral credits, campaign rewards, and bonus currencies that
+  /// customers earn through various platform activities and engagement
+  /// behaviors.
+  type String
+  
+  /// Current point balance representing available spendable points for the
+  /// customer. Positive values indicate available points for redemption while
+  /// zeros or negative values show depleted or utilized point reserves for
+  /// loyalty program participation.
+  balance Int
+  
+  /// Expiry policy governing point validity including rolling expiration,
+  /// fixed term expiration, lifetime validity, and campaign-specific
+  /// expiration rules that determine point availability duration and
+  /// redemption windows.
+  expiry_policy String?
+  
+  /// Source or acquisition method including earn by shopping, referral
+  /// rewards, promotional credits, level-based bonuses, and administrative
+  /// allocations that show how citizens obtained their point balances through
+  /// platform engagement activities.
+  source_type String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail maintenance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_point_transactions ecommerce_mall_point_transactions[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_customer_id, type], map: "ecommerce_mall_customer_points_ecommerce_mall_customer_15f76728")
+  @@index([balance])
+  @@index([type])
+  @@index([created_at])
+}
+
+/// Seller loyalty point balances and digital coin reserves representing
+/// merchant incentives, performance rewards, promotional credits, and
+/// platform engagement rewards earned through successful seller activities.
+/// These points provide merchants with transaction capacity reductions,
+/// platform fee discounts, and promotional opportunities within the loyalty
+/// ecosystem.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_points {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link ecommerce_mall_sellers.id} who owns these loyalty points.
+  ecommerce_mall_seller_id String
+  
+  /// Type of seller points including performance bonuses, fee reduction
+  /// credits, promotional escrows, loyalty rewards, and achievement-based
+  /// incentives that sellers earn through platform activities and business
+  /// performance metrics.
+  type String
+  
+  /// Current point balance representing available spendable points for the
+  /// seller. These points can be used for fee reductions, promotional campaign
+  /// funding, commission discounts, and other merchant-specific loyalty
+  /// program benefits.
+  balance Int
+  
+  /// Expiry policy governing point validity including seasonal expiration,
+  /// performance-based expiry, campaign-specific timing, and rolling validity
+  /// windows that determine merchant point availability duration for business
+  /// utilization.
+  expiry_policy String?
+  
+  /// Source or acquisition method including sales performance, customer
+  /// satisfaction bonuses, promotional campaign participation, and
+  /// administrative allocations that demonstrate how merchants earned their
+  /// loyalty point balances.
+  source_type String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail maintenance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_point_transactions ecommerce_mall_point_transactions[]
+  
+  @@unique([ecommerce_mall_seller_id, type])
+  @@index([balance])
+  @@index([type])
+  @@index([created_at])
+}
+
+/// Comprehensive ledger recording all point movements, redemption
+/// activities, and balance changes within the digital coin loyalty
+/// ecosystem. This transaction history provides complete audit trails for
+/// point earning, spending, expiration, transfer, and redemption activities
+/// while supporting financial reporting and compliance requirements for the
+/// loyalty management system. Transactions are operational records
+/// supporting active business processes rather than purely historical
+/// snapshots.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_point_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related customer point balance's {@link
+  /// ecommerce_mall_customer_points.id} for customer-side transactions when
+  /// available.
+  ecommerce_mall_customer_point_id String?
+  
+  /// Related seller point balance's {@link ecommerce_mall_seller_points.id}
+  /// for seller-side transactions when available.
+  ecommerce_mall_seller_point_id String?
+  
+  /// Reference to a related transaction within the same system for linking
+  /// multiple point movements or redemption chains.
+  related_transaction_id String?
+  
+  /// Related loyalty program's {@link ecommerce_mall_loyalty_programs.id} when
+  /// transaction occurs within loyalty campaign context.
+  ecommerce_mall_loyalty_program_id String?
+  
+  /// Type of point transaction including earn by purchase, redemption for
+  /// discounts, transfers between accounts, expiry processing, adjustment
+  /// corrections, and promotional allocation showing the specific point
+  /// movement activity within the loyalty ecosystem.
+  transaction_type String
+  
+  /// Positive amount for point additions or negative amount for reductions
+  /// within the transactions. This field represents the net point change
+  /// impact on involved point balances and supports both credit and debit
+  /// transaction types.
+  amount Int
+  
+  /// Point balance before this transaction execution showing the account state
+  /// snapshot prior to current point movement for audit trail accuracy and
+  /// balance verification.
+  balance_before Int
+  
+  /// Point balance after transaction completion showing the resulting account
+  /// state following execution of current point movement verification
+  /// calculations accuracy.
+  balance_after Int
+  
+  /// Detailed description or reason for the point transaction including
+  /// purchase references, redemption details, expiration explanations,
+  /// campaign names, and adjustment justifications that explain transaction
+  /// business context comprehensively.
+  concept String?
+  
+  /// Transaction processing status including pending verification, completed
+  /// successfully, failed validation, reversed cancellation, and expired
+  /// processing showing the current state of point movement within processing
+  /// workflows.
+  status String
+  
+  /// JSON metadata containing additional transaction context including related
+  /// order IDs, campaign details, expiration dates, reward tiers, promotional
+  /// criteria, and other relevant transaction attributes supporting complex
+  /// loyalty program implementations.
+  metadata String?
+  
+  /// Transaction processing timestamp when the point movement was actually
+  /// executed and point balance was updated.
+  processed_at DateTime
+  
+  /// Record creation timestamp for audit trail maintenance.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customerPoint ecommerce_mall_customer_points? @relation(fields: [ecommerce_mall_customer_point_id], references: [id], onDelete: Cascade)
+  sellerPoint ecommerce_mall_seller_points? @relation(fields: [ecommerce_mall_seller_point_id], references: [id], onDelete: Cascade)
+  relatedTransaction ecommerce_mall_point_transactions? @relation("recursive", fields: [related_transaction_id], references: [id], onDelete: Cascade)
+  loyaltyProgram ecommerce_mall_loyalty_programs? @relation(fields: [ecommerce_mall_loyalty_program_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_point_transactions[] @relation("recursive")
+  
+  @@index([related_transaction_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_loyalty_program_id], map: "ecommerce_mall_point_transactions_ecommerce_mall_loyal_407d8ddf")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_point_id, processed_at], map: "ecommerce_mall_point_transactions_ecommerce_mall_custo_7a769fab")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_point_id, processed_at], map: "ecommerce_mall_point_transactions_ecommerce_mall_selle_b01aee2f")
+  @@index([transaction_type])
+  @@index([status])
+  @@index([processed_at])
+}
+
+/// Loyalty program campaigns and promotional drives that govern how points
+/// are earned, spent, and managed within the platform's digital currency
+/// ecosystem. These programs define earning rules, redemption mechanics,
+/// qualification criteria, and campaign-specific policies that orchestrate
+/// point distribution and utilization across customer and seller accounts
+/// throughout promotional periods.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_loyalty_programs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Program type including earning campaigns, redemption drives, promotional
+  /// events, seasonal programs, and tier-based loyalty initiatives that define
+  /// specific operational mechanics for how points are distributed and
+  /// utilized within the ecosystem.
+  type String
+  
+  /// Descriptive program name showing the loyalty campaign or promotional
+  /// drive identity for customer and seller recognition throughout platform
+  /// engagement activities.
+  name String
+  
+  /// Detailed description explaining program objectives, benefits,
+  /// qualification requirements, earning mechanics, redemption methods, and
+  /// campaign duration specifics that help participants understand program
+  /// value and participation requirements.
+  description String?
+  
+  /// Program activation date when loyalty campaign begins accepting
+  /// participations and point earning activities.
+  start_date DateTime
+  
+  /// Program conclusion date when loyalty campaign ceases accepting new
+  /// participations and point earning activities.
+  end_date DateTime?
+  
+  /// Whether the loyalty program is currently active and accepting new
+  /// participations for point earning and redemption activities.
+  is_active Boolean
+  
+  /// JSON configuration containing detailed program rules including earning
+  /// rates per transaction, minimum spend thresholds, category restrictions,
+  /// redemption multipliers, bonus conditions, and qualification criteria
+  /// defining operational mechanics.
+  rules String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for campaign archive management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  ecommerce_mall_point_transactions ecommerce_mall_point_transactions[]
+  
+  @@unique([type, is_active])
+  @@index([start_date])
+  @@index([end_date])
+  @@index([is_active])
+  @@index([type])
+}

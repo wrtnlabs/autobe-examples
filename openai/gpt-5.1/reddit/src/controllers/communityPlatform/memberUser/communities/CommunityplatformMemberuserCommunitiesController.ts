@@ -7,47 +7,48 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/memberUser/communities")
 export class CommunityplatformMemberuserCommunitiesController {
   /**
-   * Create a new community_platform_communities record.
+   * Create a new community_platform_communities record using
+   * ICommunityPlatformCommunity.ICreate and return it as
+   * ICommunityPlatformCommunity.
    *
-   * Create a new community on the platform by inserting a row into the
-   * community_platform_communities table with validated identity and
-   * configuration data.
+   * Create a new community record in the community_platform_communities table
+   * using client-supplied attributes.
    *
-   * The request body, typed as ICommunityPlatformCommunities.ICreate,
-   * represents the client-facing creation DTO that is derived from the
-   * community_platform_communities Prisma model. It includes only those
-   * fields that callers are allowed to set at creation time, such as the
-   * community slug/code, human-readable name, description text, and initial
-   * visibility selection that references valid values from
-   * community_platform_community_visibility_levels. Fields that are derived
-   * or system-managed, such as auto-generated identifiers, audit timestamps,
-   * or aggregate counters, are not accepted from the client and are set by
-   * the backend.
+   * This operation allows an authenticated member user to establish a new
+   * community on the platform. The request body follows the
+   * ICommunityPlatformCommunity.ICreate DTO contract and should include
+   * business-required fields such as the community name, candidate slug,
+   * initial description, and any other properties that the schema and
+   * business rules permit to be set at creation time. Fields that are
+   * system-managed, such as creation timestamps or derived counters, must be
+   * ignored in the input and populated automatically by the backend when
+   * inserting into community_platform_communities.
    *
-   * Security and authorization requirements dictate that only authenticated
-   * users may create communities. Accordingly, authorizationActors is set to
-   * ["memberUser"], reflecting that the actor table
-   * community_platform_memberusers represents the primary user type who can
-   * own or moderate communities. The implementation must also enforce
-   * additional policy checks described in the requirements, such as minimum
-   * account age, sufficient karma from community_platform_user_total_karmas,
-   * and absence of active sanctions from community_platform_user_sanctions.
+   * From an authorization perspective, only authenticated memberUser actors
+   * are allowed to create communities, so authorizationActors is set to
+   * ["memberUser"]. The underlying implementation should read the
+   * authenticated user identity from the session or token context and use it
+   * to populate any creator-related foreign keys or audit fields in
+   * community_platform_communities, ensuring that the community creator can
+   * later be identified and used for moderation or ownership rules. Attempts
+   * by unauthenticated callers must be rejected with an appropriate
+   * authentication error before reaching business logic.
    *
-   * On success, the operation returns a representation of the newly created
-   * community serialized as ICommunityPlatformCommunities. This DTO mirrors
-   * the created row in community_platform_communities and may optionally
-   * include preloaded related information required by clients, such as
-   * resolved visibility-level metadata or initial rule summaries. Error
-   * handling should cover uniqueness violations on the community code/slug,
-   * validation errors on required fields, and authorization failures when the
-   * caller does not meet community creation criteria. These errors should be
-   * mapped to appropriate HTTP status codes and error payloads consistent
-   * with the platform’s error-handling guidelines.
+   * The operation must enforce all relevant business rules tied to community
+   * creation. This includes validating that the requested slug is unique
+   * across existing rows in community_platform_communities, checking length
+   * and character constraints for the name and slug, and verifying that any
+   * optional settings included in ICommunityPlatformCommunity.ICreate comply
+   * with allowed ranges or enumerations. If validation fails or a uniqueness
+   * conflict is detected, the handler should respond with a clear validation
+   * error rather than partially creating a record. On success, the newly
+   * created community row is returned as a full ICommunityPlatformCommunity
+   * object so clients can immediately route to or display the new community
+   * detail view.
    *
    * @param connection
-   * @param body Community creation payload containing the fields required to
-   *   create a new record in the community_platform_communities table and any
-   *   allowed initial configuration options.
+   * @param body Attributes required to create a new community in
+   *   community_platform_communities.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()

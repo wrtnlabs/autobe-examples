@@ -7,50 +7,52 @@ import { ICommunityPlatformCommunitySubscription } from "../../../../structures/
 import { IPageICommunityPlatformCommunitySubscription } from "../../../../structures/IPageICommunityPlatformCommunitySubscription";
 
 /**
- * Create a new communityPlatform community subscription in
- * community_platform_community_subscriptions.
+ * Create a new community_platform_community_subscriptions record for a member
+ * user subscribing to a community.
  *
- * Create a new community subscription record in the
- * `community_platform_community_subscriptions` table so that a member user
- * follows a community.
+ * Create a new community subscription entry in the
+ * community_platform_community_subscriptions table for the authenticated member
+ * user.
  *
- * This endpoint accepts a JSON request body described by
- * `ICommunityPlatformCommunitySubscription.ICreate`, which encapsulates the
- * data needed to establish a subscription between a member user and a specific
- * community. Typical fields include the target community identifier and
- * optional metadata defined in the Prisma model. The authenticated member user
- * is usually derived from the session or token context rather than being
- * supplied directly in the request body, and the provider implementation must
- * enforce that the caller is allowed to subscribe (for example, ensuring they
- * are not banned from the community and that the community is open or that any
- * membership prerequisites have been satisfied).
+ * This operation serves as the primary way for a member user to subscribe to or
+ * follow a community. The client submits a payload conforming to
+ * ICommunityPlatformCommunitySubscription.ICreate, which contains the necessary
+ * identifiers and configuration for the subscription, such as the community
+ * being followed and any optional subscription‑level settings defined by the
+ * business rules. The backend validates the request against the underlying
+ * Prisma model community_platform_community_subscriptions and ensures that
+ * referenced entities such as community_platform_memberusers and
+ * community_platform_communities exist and are in a state that permits new
+ * subscriptions.
  *
- * From a security and authorization standpoint, this operation is restricted to
- * authenticated member users, modeled here with `authorizationActors:
- * ["memberUser"]`. Within the business logic, additional checks should prevent
- * misuse, such as a member user attempting to create subscriptions on behalf of
- * another user. Rate limiting may be applied to avoid abusive patterns where a
- * user repeatedly subscribes and unsubscribes to manipulate feed ranking or
- * notification behavior.
+ * Security and authorization are critical for this endpoint. Only authenticated
+ * memberUser actors are allowed to create subscriptions. The service layer
+ * should bind the subscription’s member user reference to the authenticated
+ * principal, rather than trusting client‑supplied identifiers, to prevent
+ * escalation or impersonation. Additionally, the implementation must respect
+ * restrictions indicated in related tables such as
+ * community_platform_account_restrictions or
+ * community_platform_community_rules, ensuring that users who are banned from a
+ * community or under platform‑level restrictions cannot create new
+ * subscriptions that would circumvent moderation decisions.
  *
- * The operation is tightly coupled to the
- * `community_platform_community_subscriptions` Prisma model. The service
- * implementation must respect unique constraints on the combination of member
- * user and community identifiers, returning a clear validation error if a
- * logically duplicate subscription is attempted while one already exists under
- * the model's rules. On success, the created subscription is returned using the
- * `ICommunityPlatformCommunitySubscription` DTO, ensuring full alignment with
- * the current schema fields and providing clients all necessary information
- * about the new subscription state.
- *
- * This creation endpoint is typically used alongside a corresponding
- * subscription search endpoint (PATCH /subscriptions) and any future
- * unsubscribe or subscription update operations, giving client applications a
- * complete set of tools for managing which communities a member user follows.
+ * On successful validation, the system inserts a new record into
+ * community_platform_community_subscriptions and returns an
+ * ICommunityPlatformCommunitySubscription DTO reflecting the persisted state,
+ * including its server‑generated subscriptionId and any defaulted fields. If a
+ * unique constraint in the Prisma schema prevents multiple active subscriptions
+ * for the same member user and community pair, attempts to create a duplicate
+ * subscription should be handled gracefully. Implementations may either surface
+ * a clear conflict response or, if business rules dictate idempotent behavior,
+ * return the existing subscription record instead of creating a new one. This
+ * endpoint complements read operations on subscriptions, such as fetching a
+ * single subscription or listing all subscriptions for a user, to provide
+ * complete subscription lifecycle management.
  *
  * @param props.connection
- * @param props.body Data required to create a new community subscription
- *   record.
+ * @param props.body Payload containing the information required to create a new
+ *   community subscription record in
+ *   community_platform_community_subscriptions.
  * @path /communityPlatform/memberUser/subscriptions
  * @accessor api.functional.communityPlatform.memberUser.subscriptions.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,7 +81,10 @@ export async function create(
 }
 export namespace create {
   export type Props = {
-    /** Data required to create a new community subscription record. */
+    /**
+     * Payload containing the information required to create a new community
+     * subscription record in community_platform_community_subscriptions.
+     */
     body: ICommunityPlatformCommunitySubscription.ICreate;
   };
   export type Body = ICommunityPlatformCommunitySubscription.ICreate;
@@ -127,55 +132,42 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of communityPlatform community
- * subscriptions from community_platform_community_subscriptions.
+ * Search and retrieve paginated community subscription summaries based on
+ * `community_platform_community_subscriptions`.
  *
- * Retrieve a filtered and paginated list of community subscriptions from the
- * `community_platform_community_subscriptions` table.
+ * Search and retrieve community subscription records using flexible filters
+ * backed by the `community_platform_community_subscriptions` table and related
+ * community and membership models.
  *
- * This operation exposes the subscription relationships that link member users
- * to specific communities they follow. Each record in
- * `community_platform_community_subscriptions` represents one logical
- * subscription, including fields such as the subscribing member user
- * identifier, the target community identifier, timestamps for creation and
- * potential cancellation, and flags that describe whether the subscription is
- * currently active. The PATCH verb is used because the operation accepts a
- * structured JSON request body to express complex filtering and sorting
+ * This operation provides a paginated listing of subscriptions with support for
+ * complex filters, including the subscribing member user, target community
+ * identifiers, subscription status (active, muted, pending, etc., as defined in
+ * the Prisma schema), and possibly notification preference flags. These filters
+ * are expressed via the `ICommunityPlatformCommunitySubscription.IRequest` DTO,
+ * which encapsulates pagination settings, sorting options, and domain-specific
  * criteria.
  *
- * From a security perspective, this endpoint should normally be called by
- * authenticated member users in order to view their own subscriptions, or by
- * administrative actors and background services that need broader visibility
- * across the platform. The `authorizationActors` value is set to
- * ["memberUser"], matching the dedicated Prisma actor table for registered
- * members. The provider-level business logic must enforce any additional
- * constraints, such as preventing a member user from enumerating other users'
- * subscriptions. Rate limiting should be considered if the platform expects
- * frequent polling of subscription lists, especially in user interfaces that
- * refresh feeds often.
+ * Security-wise, the endpoint is scoped to authenticated member users,
+ * represented by the `memberUser` actor. Typical usage allows a member user to
+ * retrieve their own subscriptions, while administrative interfaces may be
+ * allowed to search across multiple users depending on the authorization rules
+ * implemented in the service. The actual access control, including ownership
+ * checks, should be implemented using the authenticated principal rather than
+ * additional path parameters.
  *
- * This endpoint is tightly aligned with the
- * `community_platform_community_subscriptions` Prisma model. The request body
- * is typed as `ICommunityPlatformCommunitySubscription.IRequest`, which is
- * designed to carry filter fields (such as member user ID, community ID,
- * status, and date ranges), pagination properties (page, pageSize), and sorting
- * options. The response body uses
- * `IPageICommunityPlatformCommunitySubscription.ISummary` to return a page of
- * summary records. Developers implementing this operation must ensure that the
- * filtering logic operates only on fields that actually exist in the Prisma
- * model, and that the summary DTO remains consistent with the underlying
- * schema.
- *
- * This search operation is often used together with other APIs: for example, a
- * member user may first query their subscriptions via this endpoint and then
- * call a separate feed-construction API that uses the subscription list as an
- * input. Error handling should cover invalid filter combinations, out-of-range
- * pagination parameters, and authorization failures, returning clear validation
- * messages so clients can correct their requests.
+ * The response body type
+ * `IPageICommunityPlatformCommunitySubscription.ISummary` returns a paginated
+ * collection of subscription summaries optimized for list and UI rendering,
+ * including key fields such as community name, subscription state, and basic
+ * metadata. Errors may occur when invalid filters are supplied, pagination
+ * parameters are out of range, or the caller lacks permission to view the
+ * requested subscriptions. This endpoint complements community, membership, and
+ * feed APIs by providing a focused search interface over subscription
+ * relationships.
  *
  * @param props.connection
  * @param props.body Search criteria, pagination, and sorting options for
- *   listing community subscriptions.
+ *   querying community subscription records.
  * @path /communityPlatform/memberUser/subscriptions
  * @accessor api.functional.communityPlatform.memberUser.subscriptions.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -205,8 +197,8 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, pagination, and sorting options for listing
-     * community subscriptions.
+     * Search criteria, pagination, and sorting options for querying
+     * community subscription records.
      */
     body: ICommunityPlatformCommunitySubscription.IRequest;
   };
@@ -256,41 +248,48 @@ export namespace index {
 }
 
 /**
- * Get a community_platform_community_subscriptions record by subscriptionId.
+ * Get a single community_platform_community_subscriptions record by
+ * subscriptionId.
  *
- * Retrieve detailed information about a single community subscription
- * identified by its unique `subscriptionId`.
+ * Retrieve detailed information about a single community subscription from the
+ * community_platform_community_subscriptions table by its unique identifier.
  *
- * The `community_platform_community_subscriptions` Prisma model represents
- * subscription relationships between member users and communities. Each row
- * typically contains references to the member user actor, the community entity,
- * and metadata such as creation timestamp, current active state, and any flags
- * or options that affect how the subscription is used when constructing feeds
- * or notifications. This endpoint loads exactly one such row by its primary key
- * and maps it into the `ICommunityPlatformCommunitySubscription` response type
- * for consumption by API clients.
+ * This operation reads a specific row from the
+ * community_platform_community_subscriptions Prisma model, which represents the
+ * relationship between a member user and a community for purposes such as
+ * personalized feeds, notification delivery, and engagement tracking. The
+ * subscriptionId path parameter maps directly to the primary key of this model,
+ * typically a string identifier such as a UUID. The resulting
+ * ICommunityPlatformCommunitySubscription DTO exposes all relevant business
+ * fields, including references to the subscribing member user and the target
+ * community, as well as any flags or timestamps that describe the
+ * subscription’s lifecycle state.
  *
- * From an authorization and privacy perspective, subscription data can reveal
- * which communities a user follows. Therefore, this endpoint should not be
- * treated as fully public. Platform administrators (`platformAdmin`) are
- * generally allowed to access any subscription, while community moderators
- * (`communityModerator`) may be allowed to read subscriptions scoped to their
- * communities for moderation and troubleshooting. Regular member users
- * (`memberUser`) should only be allowed to access a subscription record if they
- * are the owner of that subscription, which is enforced in the service layer
- * using the authenticated principal.
+ * From a security perspective, this endpoint is intended for authenticated
+ * memberUser actors to retrieve their own subscription records. The service
+ * layer is responsible for enforcing that the member user associated with the
+ * subscription matches the authenticated principal before returning data.
  *
- * The operation is read-only and idempotent. If the provided `subscriptionId`
- * does not match any record in `community_platform_community_subscriptions`,
- * the service must return a standardized not-found error without leaking
- * information about other records. This endpoint is typically used in
- * conjunction with list or search endpoints over subscriptions, where a client
- * first discovers candidate subscription IDs and then calls this detail
- * endpoint to inspect a specific record more closely.
+ * At the database level, the community_platform_community_subscriptions model
+ * links to community_platform_memberusers and community_platform_communities
+ * through foreign keys. The implementation should leverage these relationships
+ * to enforce referential integrity and to ensure that the subscription cannot
+ * point to non‑existent communities or users. If the provided subscriptionId
+ * does not correspond to any existing record, the API should respond with a
+ * standard not‑found error. If the caller is authenticated but not authorized
+ * to see the requested subscription, the API should return an authorization
+ * error.
+ *
+ * Related operations that typically accompany this endpoint include a list or
+ * search operation over subscriptions (for fetching all subscriptions of a
+ * member user) and a creation endpoint for subscribing to a community.
+ * Together, these operations allow clients to manage and introspect the
+ * member’s relationship to communities across the platform.
  *
  * @param props.connection
- * @param props.subscriptionId Unique identifier of the target subscription
- *   record in the community_platform_community_subscriptions table.
+ * @param props.subscriptionId Unique identifier of the target community
+ *   subscription record in the community_platform_community_subscriptions
+ *   table.
  * @path /communityPlatform/memberUser/subscriptions/:subscriptionId
  * @accessor api.functional.communityPlatform.memberUser.subscriptions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -319,7 +318,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target subscription record in the
+     * Unique identifier of the target community subscription record in the
      * community_platform_community_subscriptions table.
      */
     subscriptionId: string & tags.Format<"uuid">;
@@ -366,43 +365,60 @@ export namespace at {
 }
 
 /**
- * Update a community_platform_community_subscriptions record by subscriptionId.
+ * Update a community platform subscription record in the
+ * community_platform_community_subscriptions table by subscriptionId.
  *
- * Update mutable properties of an existing community subscription record
- * identified by `subscriptionId`.
+ * Update a single community subscription record for the community platform,
+ * using its unique subscription identifier as the primary lookup key.
  *
- * This endpoint targets the `community_platform_community_subscriptions` Prisma
- * model, which holds relationships between member users and communities and any
- * subscription-level settings. Clients send an
- * `ICommunityPlatformCommunitySubscription.IUpdate` payload describing the new
- * desired state for fields that are allowed to change, such as enabling or
- * disabling the subscription, adjusting per-community visibility options, or
- * tweaking other subscription preferences represented on the model. The service
- * retrieves the matching row using the `subscriptionId` path parameter,
- * verifies that the authenticated actor is authorized to modify this
- * subscription, validates the update payload, and then persists the changes.
+ * This operation targets the `community_platform_community_subscriptions`
+ * Prisma model, which represents the relationship between a member user and a
+ * community specifically for feed delivery and engagement purposes. While the
+ * exact field set is defined in the Prisma schema, typical fields on this table
+ * may include foreign keys to a member user and community, status or state
+ * flags indicating whether the user is actively subscribed, and various
+ * notification or delivery preference columns. The update DTO
+ * `ICommunityPlatformCommunitySubscription.IUpdate` must mirror those mutable
+ * fields and adhere strictly to their types and constraints as defined in the
+ * schema.
  *
- * Authorization is actor-aware. A `memberUser` may update only their own
- * subscription records; a `communityModerator` may be allowed to update
- * subscriptions pertaining to communities they moderate as part of moderation
- * workflows; and a `platformAdmin` holds global authority to adjust any
- * subscription when necessary for support or enforcement. Immutable identifiers
- * linking the subscription to its user or community must not be modifiable,
- * even if present in the DTO, and attempts to change them should result in
- * validation errors rather than silent mutation.
+ * From a security perspective, only authenticated member users should be
+ * allowed to update their own subscription records through this endpoint, and
+ * administrators may also be allowed depending on business policy. The
+ * `authorizationActors` value of `["memberUser"]` reflects that the primary
+ * caller is a logged-in community member; additional enforcement such as
+ * ownership checks (ensuring the subscription belongs to the calling user) and
+ * potentially admin override behavior should be implemented in the service
+ * layer. Sensitive aspects such as community-level bans or moderation-induced
+ * restrictions must not be alterable via this endpoint and should instead be
+ * managed through dedicated moderation workflows in other APIs.
  *
- * On success, the endpoint returns the fully updated subscription as
- * `ICommunityPlatformCommunitySubscription`, allowing clients or administrative
- * tools to immediately display the new state. If the `subscriptionId` does not
- * exist, the service must return a not-found error. If validation fails for
- * business-rule reasons, an appropriate validation error response is returned
- * and no partial updates are committed.
+ * In relation to the database entity, this operation performs a standard update
+ * against `community_platform_community_subscriptions`, without creating new
+ * records or deleting existing ones. Validation should ensure that any
+ * enum-like fields receive one of the allowed values, that boolean flags are
+ * used consistently (for example, a user cannot be simultaneously muted and
+ * configured for real-time notifications if the business rules disallow it),
+ * and that no referential integrity rules are violated. If the requested
+ * subscription does not exist, the service should respond with a not-found
+ * error; if the user attempts to modify fields outside their permission scope,
+ * a suitable authorization error should be returned.
+ *
+ * Clients typically use this endpoint together with subscription creation and
+ * listing operations; for instance, a user might first subscribe to a community
+ * via a `POST /subscriptions` endpoint, then later adjust notification settings
+ * via this `PUT /subscriptions/{subscriptionId}` operation. Error handling
+ * should clearly distinguish between validation problems (e.g., invalid
+ * preference combinations) and permission issues so that client applications
+ * can provide appropriate feedback to end users.
  *
  * @param props.connection
- * @param props.subscriptionId Unique identifier of the subscription record in
- *   the community_platform_community_subscriptions table to update.
- * @param props.body Fields to update on the target community subscription
- *   record.
+ * @param props.subscriptionId Unique identifier of the target community
+ *   platform subscription record in the
+ *   `community_platform_community_subscriptions` table.
+ * @param props.body Fields to update on the community platform community
+ *   subscription record, constrained to mutable preference and state fields as
+ *   defined in the Prisma schema.
  * @path /communityPlatform/memberUser/subscriptions/:subscriptionId
  * @accessor api.functional.communityPlatform.memberUser.subscriptions.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -432,12 +448,16 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the subscription record in the
-     * community_platform_community_subscriptions table to update.
+     * Unique identifier of the target community platform subscription
+     * record in the `community_platform_community_subscriptions` table.
      */
     subscriptionId: string & tags.Format<"uuid">;
 
-    /** Fields to update on the target community subscription record. */
+    /**
+     * Fields to update on the community platform community subscription
+     * record, constrained to mutable preference and state fields as defined
+     * in the Prisma schema.
+     */
     body: ICommunityPlatformCommunitySubscription.IUpdate;
   };
   export type Body = ICommunityPlatformCommunitySubscription.IUpdate;
@@ -487,50 +507,48 @@ export namespace update {
 }
 
 /**
- * Erase a community_platform_community_subscriptions record by subscriptionId.
+ * Delete a community platform subscription record from the
+ * community_platform_community_subscriptions table by subscriptionId.
  *
- * Erase an existing community subscription entry identified by subscriptionId
- * from the community_platform_community_subscriptions table.
+ * Delete a single community subscription record in the community platform,
+ * effectively unsubscribing the associated member user from the target
+ * community.
  *
- * This operation targets the community_platform_community_subscriptions model,
- * which represents subscription relationships between member users and
- * communities. Each record links a member user to a specific community,
- * enabling that user to receive that community's posts in personalized feeds
- * and other subscription-based features. When this API is called, it attempts
- * to locate the subscription row by its unique identifier provided as
- * subscriptionId in the path and then permanently removes that row from the
- * database.
+ * This endpoint operates on the `community_platform_community_subscriptions`
+ * Prisma model, which encapsulates the explicit subscription relationship
+ * between a member user and a community. Each row in this table represents one
+ * such subscription, and deleting the row removes that relationship from the
+ * system. The path parameter `subscriptionId` is treated as the primary key or
+ * canonical unique identifier for the subscription row and is required to
+ * locate the specific record to remove.
  *
- * From a security perspective, the implementation must ensure that only
- * appropriately authorized actors can remove a subscription. In the most common
- * case, the authenticated member user who owns the subscription should be
- * allowed to unsubscribe themselves. Additionally, certain elevated actors such
- * as platform administrators might be permitted to erase subscriptions on
- * behalf of users for policy enforcement or abuse mitigation scenarios. The
- * concrete authorization checks will be implemented in the service layer using
- * the authenticated user context, even though this specification focuses solely
- * on the endpoint contract.
+ * Security and authorization expectations dictate that only the owner of a
+ * subscription (the member user referenced by the row) or an appropriately
+ * privileged administrative or moderation actor is allowed to perform this
+ * deletion. In this specification, `authorizationActors` is set to
+ * `["memberUser"]` to express the primary self-service use case where a
+ * logged-in member unsubscribes from a community. Ownership verification and
+ * any additional administrative override logic must be implemented in the
+ * service layer; for example, the system should prevent users from deleting
+ * subscription records they do not own.
  *
- * The operation does not require a request body because all identifying
- * information comes from the subscriptionId path parameter and the
- * authenticated user context. If the subscription record does not exist, the
- * service should respond with an appropriate error such as 404 Not Found. If
- * the caller lacks permission to modify the subscription, a 403 Forbidden
- * response should be returned. Successful execution results in the subscription
- * record being fully removed so that future subscription-based behaviors such
- * as feed construction or subscription listing no longer consider it.
- *
- * This endpoint is typically used together with subscription listing operations
- * such as PATCH /memberUsers/{memberUserId}/subscriptions, where a client can
- * first retrieve a list of the user's current subscriptions and then call this
- * DELETE endpoint for a specific subscriptionId the user chooses to cancel. The
- * combination of these APIs supports full management of community subscriptions
- * from the client side without exposing any system-generated logging or
- * auditing tables through write operations.
+ * In terms of business behavior, deleting a subscription should immediately
+ * affect the user’s personalized content experience. The user’s home feed and
+ * any community-specific feeds should stop including content that relies on an
+ * explicit subscription, and future notifications tied to this subscription
+ * should cease. If the Prisma schema or related models maintain aggregate
+ * statistics such as subscriber counts or engagement indexes at the community
+ * level, the service should ensure those are updated consistently around this
+ * operation. When the specified subscription cannot be found, the API should
+ * return a not-found error; when the caller lacks permission to delete it, an
+ * appropriate authorization error should be returned. No response body is
+ * returned upon successful deletion, keeping the contract simple and focused on
+ * the side effect of removing the subscription.
  *
  * @param props.connection
  * @param props.subscriptionId Unique identifier of the target community
- *   subscription in the community_platform_community_subscriptions table.
+ *   platform subscription record in the
+ *   `community_platform_community_subscriptions` table to be deleted.
  * @path /communityPlatform/memberUser/subscriptions/:subscriptionId
  * @accessor api.functional.communityPlatform.memberUser.subscriptions.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -559,10 +577,11 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the target community subscription in the
-     * community_platform_community_subscriptions table.
+     * Unique identifier of the target community platform subscription
+     * record in the `community_platform_community_subscriptions` table to
+     * be deleted.
      */
-    subscriptionId: string;
+    subscriptionId: string & tags.Format<"uuid">;
   };
 
   export const METADATA = {

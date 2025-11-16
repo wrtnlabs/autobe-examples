@@ -1,0 +1,530 @@
+/// Seller-specific product listings that represent active sales offers in
+/// the marketplace.
+///
+/// These listings connect sellers to individual products or product
+/// variants, establishing the commercial relationship between merchants and
+/// their inventory. Each sale listing represents a specific seller's
+/// offering of a product with their unique pricing, inventory levels, and
+/// business policies.
+///
+/// The listing system enables sellers to maintain separate business
+/// relationships with the same underlying products, supporting competitive
+/// dynamics and market segmentation strategies. Sale listings track the
+/// complete lifecycle from creation through archival, providing audit trails
+/// for business analysis and seller performance evaluation.
+///
+/// Sale listings serve as the primary interface between sellers and the
+/// marketplace, containing all seller-specific business logic including
+/// pricing strategies, inventory management, and promotional activities. The
+/// system supports both active and paused listing states, allowing sellers
+/// to manage their market presence while maintaining historical records.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_listings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller's {\@link ecommerce_mall_sellers.id} who owns this listing.
+  ecommerce_mall_seller_id String
+  
+  /// The product variant's {\@link ecommerce_mall_product_variants.id} being
+  /// listed for sale.
+  ecommerce_mall_product_variant_id String
+  
+  /// Seller-specific title for the listing, which may differ from the base
+  /// product title to highlight key selling points or promotional messaging.
+  title String
+  
+  /// Seller's detailed description of the listing, including unique selling
+  /// propositions, warranty information, or special service offerings not
+  /// covered in the base product description.
+  description String
+  
+  /// Seller's offering price for this product variant, which may differ from
+  /// manufacturer suggested retail pricing and reflects the seller's specific
+  /// pricing strategy.
+  price Float
+  
+  /// Optional comparison price showing the original or competitor price,
+  /// enabling sellers to demonstrate discount value or market competitiveness.
+  compare_at_price Float?
+  
+  /// Seller's internal cost basis for profitability analysis and margin
+  /// calculations, used for business intelligence and performance reporting.
+  cost_basis Float?
+  
+  /// Current status of the sale listing indicating whether it's active,
+  /// paused, or disabled with business rules governing transitions between
+  /// states.
+  status String
+  
+  /// Target percentage used for calculating platform commissions on this
+  /// listing, which may vary by category or seller agreement.
+  commission_target String
+  
+  /// Service used for order fulfillment, indicating whether the seller manages
+  /// fulfillment directly or uses third-party logistics services.
+  fulfillment_service String
+  
+  /// Policy governing inventory tracking for this listing, supporting options
+  /// for continuous tracking, manual updates, or no inventory management.
+  inventory_policy String
+  
+  /// Threshold at which the seller receives low inventory alerts, enabling
+  /// proactive restocking and preventing stockout situations.
+  inventory_warning_level Int?
+  
+  /// Whether to actively track inventory levels for this listing, supporting
+  /// sellers who manage their own inventory outside the platform.
+  track_inventory Boolean
+  
+  /// Whether this listing requires physical shipping, distinguishing between
+  /// digital and physical products with different fulfillment workflows.
+  requires_shipping Boolean
+  
+  /// Product weight in relevant units used for shipping cost calculations and
+  /// carrier rate determinations.
+  weight Float?
+  
+  /// Unit of measurement for weight values (kg, g, lb, oz) ensuring consistent
+  /// shipping calculations across different measurement systems.
+  weight_unit String?
+  
+  /// Type of barcode used for this product variant (UPC, EAN, ISBN, etc.)
+  /// enabling inventory scanning and product identification systems.
+  barcode_type String?
+  
+  /// Barcode number for this specific product variant used in inventory
+  /// management and point-of-sale integration across retail channels.
+  barcode String?
+  
+  /// Quantity of inventory reserved for security stock, preventing the sale
+  /// listing from showing inventory below this threshold to maintain service
+  /// levels.
+  safety_quantity Int?
+  
+  /// Whether inventory must increase before sale when drops below minimum
+  /// threshold, ensuring sellers don't commit to sales with insufficient
+  /// stock.
+  must_increase Boolean
+  
+  /// Minimum quantity of this product that customers can order, supporting
+  /// bulk sales requirements and inventory management strategies.
+  minimum_order_quantity Int
+  
+  /// Maximum quantity limits per customer order, helping sellers control
+  /// inventory exposure and manage large purchase requests appropriately.
+  maximum_order_quantity Int?
+  
+  /// Special business rules or notes regarding this listing that sellers
+  /// communicate to the platform, supporting unique requirements or
+  /// constraints.
+  special_notes String?
+  
+  /// Whether customers can specify multiple shipping addresses for this
+  /// listing, supporting gift purchases and splitting order fulfillment.
+  allow_multi_addresses Boolean
+  
+  /// Timestamp when the listing was created, establishing the audit trail for
+  /// seller activity tracking and business analysis.
+  created_at DateTime
+  
+  /// Timestamp when the listing was last modified, tracking change evolution
+  /// and version control for seller business logic.
+  updated_at DateTime
+  
+  /// Timestamp when the listing was deactivated or removed, supporting soft
+  /// deletion for audit trail maintenance and historical analysis.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_sale_snapshots ecommerce_mall_sale_snapshots[]
+  ecommerce_mall_seller_inventory ecommerce_mall_seller_inventory?
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_sale_listings_ecommerce_mall_product_va_7d9e8127")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_sale_listings_ecommerce_mall_seller_id__3033bb1d")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_sale_listings_ecommerce_mall_seller_id__04aeee39")
+  @@index([status])
+  @@index([price])
+}
+
+/// Historical snapshots capturing the state of sale listings at specific
+/// points in time for audit trails and business intelligence.
+///
+/// This snapshot system maintains comprehensive records of seller listing
+/// changes over time, providing essential audit trails for business
+/// analysis, seller performance evaluation, and historical data
+/// preservation. The snapshot architecture enables tracking of pricing
+/// changes, inventory adjustments, policy modifications, and other listing
+/// lifecycle events.
+///
+/// Sale snapshots serve multiple critical business functions including trend
+/// analysis for market research, seller performance monitoring for
+/// commission calculations, dispute resolution support with historical
+/// evidence, and marketing analytics for promotional effectiveness
+/// measurement. The system captures complete listing states ensuring no
+/// information is lost during business process evolution.
+///
+/// The snapshots preserve data integrity and support regulatory compliance
+/// requirements while providing rich datasets for machine learning
+/// algorithms and business intelligence reporting. This historical
+/// documentation is essential for understanding market dynamics, seller
+/// behavior patterns, and platform ecosystem performance.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sale listing's {\@link ecommerce_mall_sale_listings.id} being
+  /// captured in this historical snapshot.
+  ecommerce_mall_sale_listing_id String
+  
+  /// Snapshot of the listing title at the time of capture, preserving the
+  /// seller's specific marketing messaging and promotional positioning.
+  title String
+  
+  /// Historical record of the listing description, maintaining seller
+  /// rationale, warranty terms, and service offerings as they existed at
+  /// snapshot time.
+  description String
+  
+  /// Preserved price value at time of snapshot, essential for commission
+  /// calculations, dispute resolution, and business analysis of seller pricing
+  /// strategies.
+  price Float
+  
+  /// Historical comparison price used for discount calculations, showing
+  /// market positioning and promotional value messaging during the snapshot
+  /// period.
+  compare_at_price Float?
+  
+  /// Cost basis information as it existed at snapshot time, supporting
+  /// business intelligence analysis and seller profitability tracking across
+  /// time periods.
+  cost_basis Float?
+  
+  /// Listing status at time of snapshot, documenting the business state
+  /// including active, paused, or disabled conditions during specific
+  /// historical periods.
+  status String
+  
+  /// Commission percentage snapshot for accurate historical business
+  /// calculation and regulatory compliance documentation across fiscal
+  /// periods.
+  commission_target String
+  
+  /// Historical fulfillment service configuration showing how sellers managed
+  /// order processing during specific periods, supporting business model
+  /// evolution tracking.
+  fulfillment_service String
+  
+  /// Inventory tracking policy as configured at snapshot time, documenting
+  /// seller operational preferences and supporting business process evolution
+  /// analysis.
+  inventory_policy String
+  
+  /// Historical inventory tracking configuration showing whether sellers
+  /// actively monitored inventory during the snapshot period for business
+  /// trend analysis.
+  track_inventory Boolean
+  
+  /// Physical shipping requirement snapshot showing seller business model
+  /// classification during specific periods, supporting operational analysis.
+  requires_shipping Boolean
+  
+  /// Product weight information as it existed historically, supporting
+  /// business analysis of shipping cost changes and operational evolution.
+  weight Float?
+  
+  /// Weight measurement unit snapshot maintaining consistency in historical
+  /// analysis and supporting evolution of measurement standards over time.
+  weight_unit String?
+  
+  /// Barcode configuration snapshot showing product code standards and retail
+  /// integration requirements during specific historical periods.
+  barcode_type String?
+  
+  /// Product barcode value preserved historically for audit trail maintenance
+  /// and regulatory compliance documentation requirements.
+  barcode String?
+  
+  /// Historical safety stock configuration showing inventory management
+  /// strategies during specific periods for business analysis purposes.
+  safety_quantity Int?
+  
+  /// Timestamp when the snapshot was created, establishing the historical
+  /// record point and enabling chronological analysis of seller business
+  /// evolution.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  saleListing ecommerce_mall_sale_listings @relation(fields: [ecommerce_mall_sale_listing_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_listing_id, created_at], map: "ecommerce_mall_sale_snapshots_ecommerce_mall_sale_list_91bfd9c9")
+}
+
+/// Seller-specific inventory tracking system maintaining real-time stock
+/// levels and availability status for individual sale listings.
+///
+/// This inventory system provides sellers with comprehensive tools for
+/// managing their stock levels across different products and variants while
+/// maintaining accurate availability information for customers. The system
+/// supports various inventory policies including continuous tracking, manual
+/// updates, and no-inventory management modes based on seller business
+/// models.
+///
+/// The inventory tracking enables accurate order processing by preventing
+/// overselling while providing sellers with tools for stock management, low
+/// inventory alerts, and business intelligence reporting. The system
+/// integrates with the broader marketplace infrastructure to maintain
+/// real-time availability across all customer-facing interfaces.
+///
+/// Seller inventory maintains detailed historical records of stock movements
+/// supporting audit trails for dispute resolution, business analysis for
+/// performance optimization, and reporting for financial reconciliation. The
+/// system accommodates different seller operational models including those
+/// managing inventory externally and those requiring comprehensive tracking
+/// capabilities.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sale listing's {\@link ecommerce_mall_sale_listings.id} that this
+  /// inventory record supports.
+  ecommerce_mall_sale_listing_id String
+  
+  /// The seller's {\@link ecommerce_mall_sellers.id} who owns this inventory.
+  ecommerce_mall_seller_id String
+  
+  /// Current available inventory quantity for customer purchase, representing
+  /// the immediately saleable stock levels.
+  available_quantity Int
+  
+  /// Quantity reserved for pending orders that have not yet completed
+  /// fulfillment, preventing overselling while maintaining accurate
+  /// availability information.
+  reserved_quantity Int
+  
+  /// Total inventory quantity including available, reserved, and other stock
+  /// categories, providing comprehensive view of seller inventory holdings.
+  total_quantity Int
+  
+  /// Quantity scheduled for restocking or currently in transit to seller,
+  /// enabling accurate future stock projections and customer availability
+  /// expectations.
+  pending_restock_quantity Int?
+  
+  /// Timestamp of most recent inventory restocking activity, supporting
+  /// business analysis of inventory turnover and supply chain efficiency
+  /// metrics.
+  last_restock_date DateTime?
+  
+  /// Expected delivery date for pending inventory orders, enabling customer
+  /// communication about restock timelines and supporting seller planning.
+  next_restock_expected DateTime?
+  
+  /// Inventory level that triggers automatic reorder alerts to sellers,
+  /// preventing stockouts through proactive inventory management.
+  reorder_point Int?
+  
+  /// Recommended restocking quantity when reorder alerts are triggered,
+  /// supporting sellers inventory planning and reducing restocking decision
+  /// complexity.
+  reorder_quantity Int?
+  
+  /// Calculated estimated days until inventory depletion based on current
+  /// sales velocity, enabling proactive inventory management.
+  days_of_inventory_remaining Int?
+  
+  /// Calculated risk assessment categorizing inventory levels as low, medium,
+  /// or high risk, supporting seller decision-making and platform
+  /// recommendations.
+  stockout_risk_level String?
+  
+  /// Batch identifier for products requiring tracking for regulatory
+  /// compliance or quality control, ensuring traceability requirements.
+  lot_number String?
+  
+  /// Product expiration date for perishable inventory, enabling proper stock
+  /// rotation and expiration-based removal from availability.
+  expiration_date DateTime?
+  
+  /// Quality classification of inventory such as new, refurbished, or damaged,
+  /// enabling accurate product condition representation for customers.
+  quality_grade String?
+  
+  /// Cost basis per unit for seller financial tracking and profit margin
+  /// calculations.
+  cost_per_unit Float?
+  
+  /// Physical warehouse identifier where inventory is maintained, supporting
+  /// multi-location seller operations.
+  warehouse_location String?
+  
+  /// Additional notes regarding inventory status or management for seller
+  /// reference and operational documentation.
+  notes String?
+  
+  /// Timestamp when the inventory record was established, creating audit trail
+  /// for inventory management system.
+  created_at DateTime
+  
+  /// Timestamp when the inventory record was last modified, tracking all
+  /// changes for audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp of most recent synchronization with external inventory systems,
+  /// ensuring data accuracy.
+  last_synced_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  saleListing ecommerce_mall_sale_listings @relation(fields: [ecommerce_mall_sale_listing_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_listing_id], map: "ecommerce_mall_seller_inventory_ecommerce_mall_sale_li_dab78d96")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, available_quantity], map: "ecommerce_mall_seller_inventory_ecommerce_mall_seller__deaa8fd7")
+  @@index([available_quantity])
+  @@index([stockout_risk_level])
+}
+
+/// Promotional campaigns and special offers managed by sellers to increase
+/// sales performance and customer engagement.
+///
+/// The promotion system enables sellers to create sophisticated marketing
+/// campaigns including percentage discounts, fixed amount reductions, bulk
+/// purchase incentives, and time-limited offers. These promotional tools
+/// support sellers in driving sales velocity, inventory clearance, and
+/// competitive positioning within the marketplace.
+///
+/// Promotions integrate seamlessly with the broader sales ecosystem,
+/// automatically adjusting listing prices while tracking promotional
+/// effectiveness through conversion analytics. The system accommodates
+/// various promotional strategies from simple percentage discounts to
+/// complex multi-tier discount structures.
+///
+/// The promotion management tools provide sellers with comprehensive
+/// campaign control including scheduling, customer targeting, and
+/// performance measurement capabilities. The system maintains historical
+/// records supporting business intelligence analysis and seller performance
+/// evaluation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller's {\@link ecommerce_mall_sellers.id} who created this
+  /// promotion.
+  ecommerce_mall_seller_id String
+  
+  /// Promotional campaign title displayed to customers, summarizing the offer
+  /// terms and creating compelling marketing messaging.
+  title String
+  
+  /// Detailed promotional description explaining offer terms, eligibility, and
+  /// customer benefits.
+  description String
+  
+  /// Type of promotional discount applied including percentage, fixed amount,
+  /// or quantity-based offers.
+  promotion_type String
+  
+  /// Numerical discount amount according to promotion type, representing
+  /// customer savings provided.
+  discount_value Float
+  
+  /// Minimum order value required to qualify for the promotion, enabling
+  /// sellers to control profitability.
+  minimum_purchase_amount Float?
+  
+  /// Maximum discount cap regardless of promotion type, allowing sellers to
+  /// limit liability.
+  maximum_discount_amount Float?
+  
+  /// Date and time when the promotion becomes available to customers.
+  start_date DateTime
+  
+  /// Date and time when the promotion expires stopping customer eligibility.
+  end_date DateTime
+  
+  /// Total number of times the promotion can be used across all customers.
+  usage_limit Int?
+  
+  /// Maximum number of times individual customers can redeem the promotion.
+  usage_per_customer Int?
+  
+  /// Current promotional campaign status including active, paused, or
+  /// scheduled states.
+  status String
+  
+  /// Display priority ranking for promotions when multiple offers are active.
+  priority Int
+  
+  /// Optional promotional code customers enter to activate the discount.
+  coupon_code String?
+  
+  /// Whether the promotion automatically applies to eligible purchases.
+  auto_applied Boolean
+  
+  /// Whether this promotion can combine with other active promotions.
+  stackable_with_other_promotions Boolean
+  
+  /// Specific customer segments eligible for the promotion including new or
+  /// repeat customers.
+  customer_segment_targeting String?
+  
+  /// Timestamp when the promotion was created for audit trail.
+  created_at DateTime
+  
+  /// Timestamp when the promotion was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the promotion was deactivated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, start_date], map: "ecommerce_mall_sale_promotions_ecommerce_mall_seller_i_c5f7981a")
+  @@index([start_date, end_date])
+  @@index([status])
+}
