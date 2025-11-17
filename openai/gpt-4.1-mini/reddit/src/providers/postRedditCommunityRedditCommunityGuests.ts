@@ -12,12 +12,11 @@ import { IRedditCommunityGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/
 export async function postRedditCommunityRedditCommunityGuests(props: {
   body: IRedditCommunityGuest.ICreate;
 }): Promise<IRedditCommunityGuest> {
-  const id = v4();
-  const session_id = v4();
-  const now = new Date();
-  const createdAt = toISOStringSafe(now);
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const id: string & tags.Format<"uuid"> = v4();
 
-  const created = await MyGlobal.prisma.reddit_community_guests.create({
+  // Create with valid properties only
+  await MyGlobal.prisma.reddit_community_guests.create({
     data: {
       id,
       created_at: now,
@@ -25,15 +24,23 @@ export async function postRedditCommunityRedditCommunityGuests(props: {
     },
   });
 
+  // Fetch full created record with existing fields only
+  const created = await MyGlobal.prisma.reddit_community_guests.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+
+  if (!created) throw new Error("RedditCommunityGuest creation failed.");
+
   return {
     id: created.id,
-    session_id,
-    ip_address: props.body.ip_address ?? "",
-    user_agent: props.body.user_agent ?? undefined,
-    device_type: props.body.device_type ?? undefined,
-    created_at: createdAt,
-    updated_at: created.updated_at
-      ? toISOStringSafe(created.updated_at)
-      : undefined,
-  };
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
+    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
+  } satisfies IRedditCommunityGuest;
 }

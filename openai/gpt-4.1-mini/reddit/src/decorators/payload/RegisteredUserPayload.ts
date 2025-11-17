@@ -1,12 +1,12 @@
 import { tags } from "typia";
 
-export interface RegisteredUserPayload {
-  /** Top-level user ID in the registered users table. */
+export interface RegistereduserPayload {
+  /** Top-level registered user ID (UUID format). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID for the current user session. */
+  /** Session ID associated with the registered user. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Role discriminator. */
-  type: "registeredUser";
+  /** Discriminator for the registered user role. */
+  type: "registereduser";
 }

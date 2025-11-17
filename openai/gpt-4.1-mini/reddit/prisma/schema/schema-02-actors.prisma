@@ -1,9 +1,10 @@
-/// Guest user records representing unauthenticated visitors browsing the
-/// platform.
+/// Guest users represent unauthenticated visitors with read-only access to
+/// public content.
 ///
-/// Guests can only read public content and have no posting or voting
-/// privileges. This table stores basic metadata about guest connections and
-/// sessions for tracking purposes.
+/// This table stores minimal identity data for guests primarily for auditing
+/// and rate limiting purposes.
+/// Guests have no login credentials but are tracked via session management.
+/// Soft deletion is supported to exclude guests from processing when necessary.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -19,97 +20,110 @@ model reddit_community_guests {
   
   /// Record last update timestamp.
   updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_guest_sessions reddit_community_guest_sessions[]
 }
 
-/// Registered user accounts enabling platform participation including
-/// posting, voting, commenting, and community creation.
+/// Registered users who can create communities, post content, comment, vote,
+/// subscribe, and report.
 ///
-/// Registered users have unique email addresses and securely stored password
-/// hashes. They verify their emails before full access is granted. Soft
-/// deletion allows account deactivation without physical removal.
+/// Includes authentication related fields and user metadata. Passwords must
+/// be stored securely (hashed).
+/// Soft deletion supported for account deactivation.
+/// Tracks timestamps for auditing and account history.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_registered_users {
+model reddit_community_registeredusers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address used for authentication and notification.
+  /// Unique user email address for login and notifications.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Securely hashed password for authentication.
   password_hash String
   
-  /// Record creation timestamp.
+  /// Account creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Account last update timestamp.
   updated_at DateTime
   
-  /// Timestamp marking soft deletion (account deactivation). Null if active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_community_registered_user_sessions reddit_community_registered_user_sessions[]
+  reddit_community_registereduser_sessions reddit_community_registereduser_sessions[]
   reddit_community_communities reddit_community_communities[]
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
   reddit_community_posts reddit_community_posts[]
   reddit_community_comments reddit_community_comments[]
   reddit_community_post_votes reddit_community_post_votes[]
   reddit_community_comment_votes reddit_community_comment_votes[]
-  reddit_community_subscriptions reddit_community_subscriptions[]
-  reddit_community_user_karma reddit_community_user_karma?
-  reddit_community_reports reddit_community_reports[]
+  reddit_community_post_reports reddit_community_post_reports[]
+  reddit_community_comment_reports reddit_community_comment_reports[]
   
   @@unique([email])
 }
 
-/// Community moderator accounts authorized to manage content and enforce
-/// rules within assigned communities.
+/// Moderators are users with privileges to manage content and reports within
+/// specific communities.
 ///
-/// Moderators can moderate posts and comments, manage settings, and ban
-/// users within their communities. Each moderator has a unique identifier
-/// and associated email for authentication.
+/// This table stores moderator identity and authentication info, linking
+/// them to their moderation scope is handled outside.
+/// Includes password hash and timestamps for audit and management.
+/// Supports soft deletion for role revocation.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_community_moderators {
+model reddit_community_moderators {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address for moderator authentication and notifications.
+  /// Moderator's unique email address for login and notifications.
   email String
   
-  /// Record creation timestamp.
+  /// Secure password hash for authentication.
+  password_hash String
+  
+  /// Moderator account creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Moderator account last update timestamp.
   updated_at DateTime
   
-  /// Timestamp marking soft deletion. Null if moderator is active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_community_community_moderator_sessions reddit_community_community_moderator_sessions[]
-  reddit_community_community_moderator_assignments reddit_community_community_moderator_assignments[]
+  reddit_community_moderator_sessions reddit_community_moderator_sessions[]
   
   @@unique([email])
 }
 
-/// Administrative user accounts with full platform privileges for managing
-/// users, content, and system settings.
+/// Administrators have full system-wide privileges including user and
+/// content management.
 ///
-/// Admins have unique emails and secure password hashes for authentication.
-/// Soft delete functionality supports deactivation without data loss.
+/// This table stores admin user identities with authentication data.
+/// Includes password hashes and timestamps for auditing and control.
+/// Supports soft deletion for administrative account management.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -120,19 +134,19 @@ model reddit_community_admins {
   /// Primary Key.
   id String @id
   
-  /// Unique email address used for admin authentication and communication.
+  /// Admin's unique email address for login and notification purposes.
   email String
   
-  /// Hashed password for secure admin authentication.
+  /// Hashed password for secure authentication.
   password_hash String
   
-  /// Record creation timestamp.
+  /// Timestamp when admin account was created.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Timestamp when admin account was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp indicating deactivation state.
+  /// Soft deletion timestamp marking account deactivation.
   deleted_at DateTime?
   
   //----
@@ -143,29 +157,72 @@ model reddit_community_admins {
   @@unique([email])
 }
 
-/// Session records for registered users to track login sessions and
-/// connection metadata.
+/// Sessions table for guest users, tracking connection context and session
+/// lifecycle.
 ///
-/// Sessions maintain IP address, request URL, and referrer headers along
-/// with creation and optional expiry timestamps.
+/// Stores IP address, accessed URL, referrer, creation and expiry timestamps.
+/// Foreign key references guest user entity.
+/// Supports indexing for efficient session lookup.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_registered_user_sessions {
+model reddit_community_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Registered user associated with this session. {@link
-  /// reddit_community_registered_users.id}.
-  reddit_community_registered_user_id String
+  /// Guest user foreign key. {@link reddit_community_guests.id}.
+  reddit_community_guest_id String
   
-  /// IP address of the user connection.
+  /// IP address of the guest connection.
   ip String
   
-  /// URL accessed during the session.
+  /// Connection URL requested by guest.
+  href String
+  
+  /// Referrer URL from which the guest arrived.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiry timestamp; null if session is active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityGuest reddit_community_guests @relation(fields: [reddit_community_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_guest_id, created_at], map: "reddit_community_guest_sessions_reddit_community_guest_5d5f834a")
+}
+
+/// Sessions table for registered users managing login sessions and
+/// connection metadata.
+///
+/// Includes IP, connection URLs, creation and expiry timestamps.
+/// References registered user foreign key.
+/// Indexed for fast session lookups per user and creation timestamp.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_registereduser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Registered user foreign key. {@link reddit_community_registeredusers.id}.
+  reddit_community_registereduser_id String
+  
+  /// IP address of the user session.
+  ip String
+  
+  /// Connection URL requested.
   href String
   
   /// Referrer URL for the session.
@@ -174,66 +231,74 @@ model reddit_community_registered_user_sessions {
   /// Session creation timestamp.
   created_at DateTime
   
-  /// Session expiration timestamp. Null indicates active session.
+  /// Expiry timestamp of the session; null if active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  registeredUser reddit_community_registered_users @relation(fields: [reddit_community_registered_user_id], references: [id], onDelete: Cascade)
+  redditCommunityRegistereduser reddit_community_registeredusers @relation(fields: [reddit_community_registereduser_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_post_reports reddit_community_post_reports[]
+  reddit_community_comment_reports reddit_community_comment_reports[]
   
   // spellchecker: ignore-next-line
-  @@index([reddit_community_registered_user_id, created_at], map: "reddit_community_registered_user_sessions_reddit_commu_bca117de")
+  @@index([reddit_community_registereduser_id, created_at], map: "reddit_community_registereduser_sessions_reddit_commun_94547521")
 }
 
-/// Session records for community moderators tracking login metadata and
-/// activity.
+/// Session records for moderator accounts, tracking connection details and
+/// session lifecycle.
 ///
-/// Includes IP, URL, referrer, creation, and optional expiry to manage
-/// active sessions securely.
+/// Foreign keys link to moderator entities.
+/// Includes IP, connection href, referrer, creation and expiry timestamps.
+/// Indexed by moderator and timestamp for efficient querying.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_community_moderator_sessions {
+model reddit_community_moderator_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community moderator associated with this session. {@link
-  /// reddit_community_community_moderators.id}.
-  reddit_community_community_moderator_id String
+  /// Moderator foreign key. {@link reddit_community_moderators.id}.
+  reddit_community_moderator_id String
   
-  /// IP address of the moderator session.
+  /// Moderator session IP address.
   ip String
   
-  /// URL accessed during the session.
+  /// Moderator session connection URL.
   href String
   
-  /// Referrer URL during the session.
+  /// Moderator session referrer URL.
   referrer String
   
-  /// Session creation timestamp.
+  /// Moderator session creation timestamp.
   created_at DateTime
   
-  /// Optional expiration timestamp for session validity.
+  /// Moderator session expiry timestamp; null if active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  communityModerator reddit_community_community_moderators @relation(fields: [reddit_community_community_moderator_id], references: [id], onDelete: Cascade)
+  redditCommunityModerator reddit_community_moderators @relation(fields: [reddit_community_moderator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([reddit_community_community_moderator_id, created_at], map: "reddit_community_community_moderator_sessions_reddit_c_ea5cda94")
+  @@index([reddit_community_moderator_id, created_at], map: "reddit_community_moderator_sessions_reddit_community_m_d8858d02")
 }
 
-/// Session information for admin users to manage authentication state and
-/// activity details.
+/// Session table for admin accounts handling authentication metadata and
+/// connection context.
 ///
-/// Session records track IP, URL, referrer, creation, and optional
-/// expiration timestamps to allow secure and manageable logins.
+/// Links to admin actor table via foreign key.
+/// Records IP, href, referrer, creation and expiry times.
+/// Indexed for fast access by admin and session creation date.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -244,29 +309,28 @@ model reddit_community_admin_sessions {
   /// Primary Key.
   id String @id
   
-  /// Admin user associated with this session. {@link
-  /// reddit_community_admins.id}.
+  /// Admin user foreign key. {@link reddit_community_admins.id}.
   reddit_community_admin_id String
   
-  /// IP address of the admin session.
+  /// IP address for the admin session.
   ip String
   
-  /// URL accessed during the session.
+  /// Connection URL for the admin session.
   href String
   
-  /// Referrer URL tracked during the session.
+  /// Referrer URL for the session.
   referrer String
   
-  /// Session creation timestamp.
+  /// Timestamp when session was created.
   created_at DateTime
   
-  /// Optional expiration timestamp indicating session end.
+  /// Timestamp when session expired; null if active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin reddit_community_admins @relation(fields: [reddit_community_admin_id], references: [id], onDelete: Cascade)
+  redditCommunityAdmin reddit_community_admins @relation(fields: [reddit_community_admin_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
   @@index([reddit_community_admin_id, created_at], map: "reddit_community_admin_sessions_reddit_community_admin_14a73f9a")

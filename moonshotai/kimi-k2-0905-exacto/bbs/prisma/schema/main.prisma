@@ -1,0 +1,12 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+datasource db {
+  provider = "sqlite"
+  url      = "file:../db.sqlite"
+}
+generator markdown {
+  provider = "prisma-markdown"
+  output   = "../../docs/ERD.md"
+}

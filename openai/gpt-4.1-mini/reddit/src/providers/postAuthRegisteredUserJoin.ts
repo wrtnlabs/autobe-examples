@@ -9,17 +9,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityRegisteredUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { RegisteredUserPayload } from "../decorators/payload/RegisteredUserPayload";
+import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
 
 export async function postAuthRegisteredUserJoin(props: {
-  registeredUser: RegisteredUserPayload;
-  body: IRedditCommunityRegisteredUser.IJoin;
+  registeredUser: RegistereduserPayload;
+  body: IRedditCommunityRegisteredUser.ICreate;
 }): Promise<IRedditCommunityRegisteredUser.IAuthorized> {
   const existingUser =
-    await MyGlobal.prisma.reddit_community_registered_users.findFirst({
+    await MyGlobal.prisma.reddit_community_registeredusers.findFirst({
       where: { email: props.body.email },
     });
-
   if (existingUser !== null) {
     throw new HttpException("Email already registered", 409);
   }
@@ -27,50 +26,51 @@ export async function postAuthRegisteredUserJoin(props: {
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
   const nowDate = new Date();
-  const now = toISOStringSafe(nowDate) satisfies string &
-    tags.Format<"date-time"> as string & tags.Format<"date-time">;
-  const newUserId = v4() satisfies string & tags.Format<"uuid"> as string &
-    tags.Format<"uuid">;
-  const newSessionId = v4() satisfies string & tags.Format<"uuid"> as string &
-    tags.Format<"uuid">;
+  const now = toISOStringSafe(nowDate);
+
+  const newUserId = v4() as string & tags.Format<"uuid">;
 
   const createdUser =
-    await MyGlobal.prisma.reddit_community_registered_users.create({
+    await MyGlobal.prisma.reddit_community_registeredusers.create({
       data: {
         id: newUserId,
         email: props.body.email,
         password_hash: hashedPassword,
         created_at: now,
         updated_at: now,
+        deleted_at: null,
       },
     });
 
-  const accessExpiredDate = new Date(Date.now() + 3600 * 1000);
-  const accessExpiredAt = toISOStringSafe(accessExpiredDate) satisfies string &
-    tags.Format<"date-time"> as string & tags.Format<"date-time">;
-  const refreshExpiredDate = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+  const accessExpireMs = 60 * 60 * 1000; // 1 hour
+  const refreshExpireMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + accessExpireMs),
+  );
   const refreshExpiredAt = toISOStringSafe(
-    refreshExpiredDate,
-  ) satisfies string & tags.Format<"date-time"> as string &
-    tags.Format<"date-time">;
+    new Date(Date.now() + refreshExpireMs),
+  );
+
+  const newSessionId = v4() as string & tags.Format<"uuid">;
 
   const createdSession =
-    await MyGlobal.prisma.reddit_community_registered_user_sessions.create({
+    await MyGlobal.prisma.reddit_community_registereduser_sessions.create({
       data: {
         id: newSessionId,
-        reddit_community_registered_user_id: newUserId,
-        ip: props.body.ip ?? "",
-        href: props.body.href,
-        referrer: props.body.referrer,
+        reddit_community_registereduser_id: createdUser.id,
         created_at: now,
         expired_at: accessExpiredAt,
+        ip: "",
+        href: "",
+        referrer: "",
       },
     });
 
   const token = {
     access: jwt.sign(
       {
-        type: "registeredUser",
+        type: "registereduser",
         id: createdUser.id,
         session_id: createdSession.id,
         created_at: now,
@@ -83,7 +83,7 @@ export async function postAuthRegisteredUserJoin(props: {
     ),
     refresh: jwt.sign(
       {
-        type: "registeredUser",
+        type: "registereduser",
         id: createdUser.id,
         session_id: createdSession.id,
         tokenType: "refresh",
@@ -100,19 +100,14 @@ export async function postAuthRegisteredUserJoin(props: {
   };
 
   return {
-    id: createdUser.id satisfies string & tags.Format<"uuid"> as string &
-      tags.Format<"uuid">,
+    id: createdUser.id,
     email: createdUser.email,
-    display_name: null,
-    bio: null,
-    avatar_url: null,
-    status: "active",
-    role: "user",
-    registered_at: now,
-    last_login_at: null,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
-    token: token,
-  } satisfies IRedditCommunityRegisteredUser.IAuthorized;
+    created_at: toISOStringSafe(createdUser.created_at),
+    updated_at: toISOStringSafe(createdUser.updated_at),
+    deleted_at:
+      createdUser.deleted_at !== null
+        ? toISOStringSafe(createdUser.deleted_at)
+        : null,
+    token,
+  };
 }

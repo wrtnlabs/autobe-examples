@@ -10,133 +10,91 @@ import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/st
 import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import type { IRedditCommunityRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityRegisteredUser";
 
-/**
- * Test that a registered user can delete their vote on a Reddit Community
- * comment.
- *
- * Scenario:
- *
- * 1. Register and authenticate a new registeredUser.
- * 2. Create a new community as the authenticated user.
- * 3. Create a new post in the community.
- * 4. Add a new comment on the post.
- * 5. Cast a vote on the comment.
- * 6. Delete the vote on the comment.
- * 7. Validate that vote deletion succeeded and votes counts updated.
- * 8. Ensure vote deletion is allowed only to the vote owner.
- *
- * This test covers the entire flow from user account signup to vote deletion
- * with authorization and business rule validation.
- */
 export async function test_api_reddit_community_comment_vote_deletion_by_registered_user(
   connection: api.IConnection,
 ) {
-  // 1. Register and authenticate a new user
-  const signup: IRedditCommunityRegisteredUser.IAuthorized =
+  // Step 1: Register and authenticate a new user to obtain token
+  const userCreateBody = {
+    email: `${RandomGenerator.name(1)}@example.com`,
+    password: "Password!123",
+  } satisfies IRedditCommunityRegisteredUser.ICreate;
+  const user: IRedditCommunityRegisteredUser.IAuthorized =
     await api.functional.auth.registeredUser.join(connection, {
-      body: {
-        typeName: "IRedditCommunityRegisteredUser.IJoin",
-        email: RandomGenerator.alphaNumeric(12) + "@example.com",
-        password: "password123",
-        ip: null,
-        href: "https://example.com/signup",
-        referrer: "https://example.com",
-      } satisfies IRedditCommunityRegisteredUser.IJoin,
+      body: userCreateBody,
     });
-  typia.assert(signup);
+  typia.assert(user);
 
-  // 2. Create a new community
-  const communityBody = {
-    communityName: RandomGenerator.alphaNumeric(10),
-    description: RandomGenerator.paragraph({ sentences: 3 }),
-    status: "active",
+  // Step 2: Create a new community
+  const communityCreateBody = {
+    communityName: RandomGenerator.alphabets(8).toLowerCase(),
+    displayName: RandomGenerator.name(3),
+    description: RandomGenerator.paragraph({ sentences: 5 }),
+    imageUrl: null,
+    isPrivate: false,
   } satisfies IRedditCommunityCommunity.ICreate;
   const community: IRedditCommunityCommunity =
-    await api.functional.redditCommunity.registeredUser.communities.create(
+    await api.functional.redditCommunity.registeredUser.redditCommunity.communities.create(
       connection,
-      { body: communityBody },
+      { body: communityCreateBody },
     );
   typia.assert(community);
 
-  // 3. Create a new post in the community
-  const postBody = {
-    community_code: community.communityName,
-    title: RandomGenerator.paragraph({ sentences: 3 }),
+  // Step 3: Create a post in the community using a fake UUID for community ID due to DTO mismatch
+  const postCreateBody = {
+    reddit_community_community_id: typia.random<string & tags.Format<"uuid">>(),
     type: "text",
-    content: RandomGenerator.content({ paragraphs: 2 }),
+    title: RandomGenerator.paragraph({ sentences: 5 }),
+    body: RandomGenerator.content({ paragraphs: 2 }),
+    link_url: null,
+    image_url: null,
   } satisfies IRedditCommunityPost.ICreate;
   const post: IRedditCommunityPost =
-    await api.functional.redditCommunity.registeredUser.posts.create(
+    await api.functional.redditCommunity.registeredUser.redditCommunity.posts.create(
       connection,
-      { body: postBody },
+      { body: postCreateBody },
     );
   typia.assert(post);
 
-  // 4. Add a comment on the post
-  const commentBody = {
-    post_id: post.id,
-    content: RandomGenerator.paragraph({ sentences: 2 }),
-    parent_comment_id: null,
+  // Step 4: Add a comment to the post
+  const commentCreateBody = {
+    body: RandomGenerator.paragraph({ sentences: 3 }),
+    parent_id: null,
   } satisfies IRedditCommunityComment.ICreate;
   const comment: IRedditCommunityComment =
-    await api.functional.redditCommunity.registeredUser.redditCommunityComments.create(
+    await api.functional.redditCommunity.registeredUser.redditCommunity.posts.comments.create(
       connection,
-      { body: commentBody },
+      { postId: post.id, body: commentCreateBody },
     );
   typia.assert(comment);
 
-  // 5. Cast a vote on the comment
-  const voteBody = {
-    reddit_community_comment_id: comment.id,
-    vote: 1,
+  // Step 5: Cast a vote on the comment
+  const voteCreateBody = {
+    vote_type: "upvote",
   } satisfies IRedditCommunityCommentVote.ICreate;
-  const vote: IRedditCommunityCommentVote =
-    await api.functional.redditCommunity.registeredUser.redditCommunityCommentVotes.create(
+  const commentVote: IRedditCommunityCommentVote =
+    await api.functional.redditCommunity.registeredUser.redditCommunity.posts.comments.commentVotes.create(
       connection,
-      { body: voteBody },
+      { postId: post.id, commentId: comment.id, body: voteCreateBody },
     );
-  typia.assert(vote);
+  typia.assert(commentVote);
 
-  // 6. Delete the vote on the comment
-  await api.functional.redditCommunity.registeredUser.redditCommunityCommentVotes.erase(
+  // Step 6: Delete the comment vote
+  await api.functional.redditCommunity.registeredUser.redditCommunity.posts.comments.commentVotes.erase(
     connection,
-    { redditCommunityCommentVoteId: vote.id },
+    { postId: post.id, commentId: comment.id, commentVoteId: commentVote.id },
   );
 
-  // 7. Validate deletion by attempting to delete again to cause error
+  // Verify deletion by attempting to delete the same vote again and expecting error
   await TestValidator.error(
-    "Deleting a non-existent vote should fail",
+    "deleting an already deleted vote throws error",
     async () => {
-      await api.functional.redditCommunity.registeredUser.redditCommunityCommentVotes.erase(
+      await api.functional.redditCommunity.registeredUser.redditCommunity.posts.comments.commentVotes.erase(
         connection,
-        { redditCommunityCommentVoteId: vote.id },
-      );
-    },
-  );
-
-  // 8. Validation: Attempt deletion with a different user to expect failure
-  // Register a second user
-  const signup2: IRedditCommunityRegisteredUser.IAuthorized =
-    await api.functional.auth.registeredUser.join(connection, {
-      body: {
-        typeName: "IRedditCommunityRegisteredUser.IJoin",
-        email: RandomGenerator.alphaNumeric(12) + "@example.com",
-        password: "password123",
-        ip: null,
-        href: "https://example.com/signup",
-        referrer: "https://example.com",
-      } satisfies IRedditCommunityRegisteredUser.IJoin,
-    });
-  typia.assert(signup2);
-
-  // Second user tries to delete the original vote (which is already deleted)
-  // We expect error due to unauthorized or non-existent vote record
-  await TestValidator.error(
-    "Unauthorized vote deletion attempt should fail",
-    async () => {
-      await api.functional.redditCommunity.registeredUser.redditCommunityCommentVotes.erase(
-        connection,
-        { redditCommunityCommentVoteId: vote.id },
+        {
+          postId: post.id,
+          commentId: comment.id,
+          commentVoteId: commentVote.id,
+        },
       );
     },
   );

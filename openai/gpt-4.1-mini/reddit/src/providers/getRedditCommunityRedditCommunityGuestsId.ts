@@ -14,24 +14,16 @@ export async function getRedditCommunityRedditCommunityGuestsId(props: {
 }): Promise<IRedditCommunityGuest> {
   const guest = await MyGlobal.prisma.reddit_community_guests.findUnique({
     where: { id: props.id },
-    select: {
-      id: true,
-      created_at: true,
-      updated_at: true,
-    },
   });
 
   if (!guest) {
-    throw new HttpException("Guest user not found", 404);
+    throw new HttpException("Reddit community guest not found", 404);
   }
 
   return {
     id: guest.id,
-    session_id: "",
-    ip_address: "",
     created_at: toISOStringSafe(guest.created_at),
-    updated_at: guest.updated_at
-      ? toISOStringSafe(guest.updated_at)
-      : undefined,
+    updated_at: toISOStringSafe(guest.updated_at),
+    deleted_at: guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null,
   };
 }

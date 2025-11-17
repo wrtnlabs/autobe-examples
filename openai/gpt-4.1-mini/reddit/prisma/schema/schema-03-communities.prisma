@@ -1,16 +1,13 @@
-/// Communities represent thematic groups created by registered users to
-/// organize discussions and content postings.
+/// Community metadata representing user-created communities within the
+/// redditCommunity platform.
 ///
-/// Each community has a unique and immutable name serving as its primary
-/// business identifier. Communities track creation and update timestamps,
-/// support soft deletion for audit trails, and have a status to reflect if
-/// they are active or inactive.
+/// Each community has a unique name, descriptive information, and timestamps
+/// for creation, update, and optional soft deletion. Communities serve as
+/// containers for posts and discussions, and form the basis for subscription
+/// and moderation.
 ///
-/// Community moderators are assigned separately via the community moderator
-/// assignments table, enabling flexible governance.
-///
-/// Users interact with communities by subscribing, posting, commenting, and
-/// voting within the community scope.
+/// The model references existing users as creators (owners) and enforces
+/// unique community names for integrity.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -21,90 +18,81 @@ model reddit_community_communities {
   /// Primary Key.
   id String @id
   
-  /// The registered user who created the community. {@link
-  /// reddit_community_registered_users.id}.
+  /// Reference to the registered user who created (owns) the community. {@link
+  /// reddit_community_registeredusers.id}.
   creator_id String
   
-  /// Unique community name, immutable after creation.
+  /// Unique name of the community used as an identifier and in URLs.
   name String
   
-  /// Optional detailed description to inform users about the community's
+  /// Human-readable title of the community.
+  title String
+  
+  /// Optional textual description providing details about the community's
   /// purpose and rules.
   description String?
   
-  /// Current status of the community (e.g., 'active', 'inactive') indicating
-  /// availability or suspension.
-  status String
-  
-  /// Community creation timestamp.
+  /// Timestamp when the community was created.
   created_at DateTime
   
-  /// Timestamp of last update to the community.
+  /// Timestamp when the community was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp to allow recovery and audit trails.
+  /// Soft deletion timestamp to allow recovery or audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  creator reddit_community_registered_users @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  creator reddit_community_registeredusers @relation(fields: [creator_id], references: [id], onDelete: Cascade)
   
-  reddit_community_community_moderator_assignments reddit_community_community_moderator_assignments[]
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
   reddit_community_posts reddit_community_posts[]
-  reddit_community_subscriptions reddit_community_subscriptions[]
-  
-  @@index([creator_id])
   
   @@unique([name])
-  @@index([status])
+  @@index([creator_id, created_at])
 }
 
-/// Links registered community moderators to the communities they manage,
-/// establishing governance and administration relationships.
+/// Subscription records linking registered users to communities they follow.
 ///
-/// Each assignment associates one moderator with one community, supporting
-/// multiple moderators per community and multiple community assignments per
-/// moderator.
+/// This junction table normalizes the many-to-many relationship between
+/// users and communities, enabling users to subscribe or unsubscribe from
+/// multiple communities.
 ///
-/// This table enforces referential integrity and supports auditing with
-/// timestamps for assignment creation and update.
-///
-/// Assignments are managed indirectly through community and moderator
-/// management functions.
+/// Subscriptions include timestamps for creation and optional soft deletion
+/// for audit and recovery purposes.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_community_moderator_assignments {
+model reddit_community_community_subscriptions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the community managed. {@link
+  /// Reference to the registered user subscribing to the community. {@link
+  /// reddit_community_registeredusers.id}.
+  registereduser_id String
+  
+  /// Reference to the target community being subscribed to. {@link
   /// reddit_community_communities.id}.
   community_id String
   
-  /// Reference to the moderator assigned. {@link
-  /// reddit_community_community_moderators.id}.
-  community_moderator_id String
-  
-  /// Assignment creation timestamp.
+  /// Timestamp when the subscription was created.
   created_at DateTime
   
-  /// Timestamp of last update to the assignment.
-  updated_at DateTime
+  /// Soft deletion timestamp for subscription cancellation or audit.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
+  registereduser reddit_community_registeredusers @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
   community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  communityModerator reddit_community_community_moderators @relation(fields: [community_moderator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([community_moderator_id], map: "reddit_community_community_moderator_assignments_commu_6ab90078")
-  
+  @@unique([registereduser_id, community_id], map: "reddit_community_community_subscriptions_registereduse_0c52e83a")
   // spellchecker: ignore-next-line
-  @@index([community_id, community_moderator_id], map: "reddit_community_community_moderator_assignments_commu_bdabfc35")
+  @@index([community_id, created_at], map: "reddit_community_community_subscriptions_community_id__f4028def")
 }

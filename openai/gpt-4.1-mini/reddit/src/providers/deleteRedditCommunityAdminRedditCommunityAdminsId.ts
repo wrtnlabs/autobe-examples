@@ -17,8 +17,8 @@ export async function deleteRedditCommunityAdminRedditCommunityAdminsId(props: {
     where: { id: props.id },
   });
 
-  if (existing === null || existing.deleted_at !== null) {
-    throw new HttpException("Admin user not found", 404);
+  if (!existing || existing.deleted_at !== null) {
+    throw new HttpException("Reddit community administrator not found", 404);
   }
 
   await MyGlobal.prisma.reddit_community_admins.delete({

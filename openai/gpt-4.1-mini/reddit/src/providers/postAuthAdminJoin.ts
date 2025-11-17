@@ -8,33 +8,29 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
-import { IRedditCommunityAdminSettings } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdminSettings";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
   admin: AdminPayload;
-  body: IRedditCommunityAdmin.ICreate;
+  body: IRedditCommunityAdmin.IJoin;
 }): Promise<IRedditCommunityAdmin.IAuthorized> {
-  // Check for existing admin by email
-  const existing = await MyGlobal.prisma.reddit_community_admins.findUnique({
-    where: { email: props.body.email },
-  });
-
-  if (existing !== null) {
+  const existingAdmin = await MyGlobal.prisma.reddit_community_admins.findFirst(
+    {
+      where: { email: props.body.email, deleted_at: null },
+    },
+  );
+  if (existingAdmin !== null) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Current datetime in ISO string format
-  const now = toISOStringSafe(new Date());
+  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
 
-  // Create new admin record without non-existent "is_active" property
-  const newAdmin = await MyGlobal.prisma.reddit_community_admins.create({
+  const admin = await MyGlobal.prisma.reddit_community_admins.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: hashedPassword,
       created_at: now,
@@ -43,69 +39,59 @@ export async function postAuthAdminJoin(props: {
     },
   });
 
-  // Define expiration dates
-  const accessExpiration = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpires = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
 
-  // Create session record for admin
   const session = await MyGlobal.prisma.reddit_community_admin_sessions.create({
     data: {
-      id: v4(),
-      reddit_community_admin_id: newAdmin.id,
-      ip: "",
-      href: "",
-      referrer: "",
+      id: v4() as string & tags.Format<"uuid">,
+      reddit_community_admin_id: admin.id,
+      href: props.body.href,
+      referrer: props.body.referrer,
+      ip: "0.0.0.0",
       created_at: now,
-      expired_at: toISOStringSafe(accessExpiration),
+      expired_at: accessExpires,
     },
   });
 
-  // Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "admin",
-      id: newAdmin.id,
-      session_id: session.id,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
-  const refreshToken = jwt.sign(
-    {
-      type: "admin",
-      id: newAdmin.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Return the authorized admin object
   return {
-    id: newAdmin.id,
-    email: newAdmin.email,
-    name: "",
-    role: "admin",
-    is_active: true,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
-    permissions: [],
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpiration),
-      refreshable_until: toISOStringSafe(refreshExpiration),
-    },
-  } satisfies IRedditCommunityAdmin.IAuthorized;
+    id: admin.id,
+    token: token,
+  };
 }

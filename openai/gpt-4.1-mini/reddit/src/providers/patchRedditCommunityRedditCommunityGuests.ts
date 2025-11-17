@@ -14,45 +14,60 @@ import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 export async function patchRedditCommunityRedditCommunityGuests(props: {
   body: IRedditCommunityGuest.IRequest;
 }): Promise<IPageIRedditCommunityGuest.ISummary> {
-  const page = (props.body.page ?? 1) satisfies number as number;
-  const limit = (props.body.limit ?? 100) satisfies number as number;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
 
-  const whereConditions = {} satisfies Prisma.reddit_community_guestsWhereInput;
+  const createdAtCondition = {
+    ...(props.body.filterStartDate ? { gte: props.body.filterStartDate } : {}),
+    ...(props.body.filterEndDate ? { lte: props.body.filterEndDate } : {}),
+  };
 
-  const orderBy = props.body.sort_by
-    ? ({
-        [props.body.sort_by]: props.body.order === "asc" ? "asc" : "desc",
-      } satisfies Prisma.reddit_community_guestsOrderByWithRelationInput)
-    : ({
-        created_at: "desc",
-      } satisfies Prisma.reddit_community_guestsOrderByWithRelationInput);
+  const where = {
+    deleted_at: null as null,
+    ...(Object.keys(createdAtCondition).length > 0
+      ? { created_at: createdAtCondition }
+      : {}),
+  };
+
+  const sortDirection = (props.body.sortDirection ?? "asc") satisfies
+    | "asc"
+    | "desc";
+
+  const orderBy = props.body.sortBy
+    ? { [props.body.sortBy]: sortDirection }
+    : { created_at: "desc" as "desc" };
 
   const [data, total] = await Promise.all([
     MyGlobal.prisma.reddit_community_guests.findMany({
-      where: whereConditions,
-      orderBy,
+      where,
       skip,
       take: limit,
+      orderBy,
       select: {
         id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     }),
-    MyGlobal.prisma.reddit_community_guests.count({ where: whereConditions }),
+    MyGlobal.prisma.reddit_community_guests.count({ where }),
   ]);
 
   return {
-    data: data.map((guest) => ({
-      id: guest.id,
-      nickname: "",
+    data: data.map((item) => ({
+      id: item.id as string & tags.Format<"uuid">,
+      ip_address: "",
+      user_agent: "",
+      created_at: toISOStringSafe(item.created_at),
+      last_seen: toISOStringSafe(item.updated_at),
+      session_count: 0,
+      is_banned: false,
+      ban_reason: null,
     })),
     pagination: {
-      current: page satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      limit: limit satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     },

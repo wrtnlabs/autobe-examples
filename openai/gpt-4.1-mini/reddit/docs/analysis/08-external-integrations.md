@@ -1,111 +1,81 @@
-# Requirements Analysis Report for a Reddit-like Community Platform
+# External Integrations Requirements for Reddit-like Community Platform
 
 ## 1. Introduction
 
-This document defines comprehensive business requirements for the development of a Reddit-like community platform enabling users to create communities, share content, interact through voting and commenting, and participate in community moderation. The requirements outlined here serve as precise, unambiguous guidance for backend developers.
+This document specifies all external third-party integrations required for the backend of the Reddit-like community platform. The integrations empower key functionalities such as user authentication via social login, optimized content delivery, user notifications, operational analytics, and spam protection. Backend developers shall implement these integrations strictly according to the requirements herein to ensure robust, secure, and maintainable system behavior.
 
-## 2. Business Model
+## 2. Authentication Providers
 
-The platform facilitates interest-based communities, empowering users to create and engage in topic-specific groups sharing text, links, and images. Revenue may derive from advertising, premium memberships, or sponsored content. Growth strategies include community creation incentives, social sharing, and active moderation to retain users and foster engagement. Success is measured by user activity, community growth, content volume, voting frequency, and moderation effectiveness.
+### Overview
+Authentication providers allow users to log in using external identity providers via OAuth 2.0 or similar protocols. This enhances ease of access and reduces friction in account creation.
 
-## 3. User Actors
+### Requirements
+- THE system SHALL support integration with the following OAuth 2.0 providers: Google, Facebook, Twitter.
+- WHEN a user triggers login through an external provider, THE system SHALL redirect the user to the provider's authorization endpoint.
+- WHEN the provider returns a callback with an authorization code, THE system SHALL exchange the code securely for access and refresh tokens.
+- THE system SHALL create a new user or update an existing user account linked to the external provider's unique user identifier.
+- THE system SHALL securely store tokens related to authentication providers and use them only for session validation and user profile synchronization.
+- THE system SHALL provide meaningful error responses for authentication failures, including user denial of permissions and expired tokens.
+- WHERE an external provider is disabled via configuration, THE system SHALL disallow login attempts using that provider.
 
-- **Guest:** Unauthenticated users with read-only access to public communities and content.
-- **Registered User:** Authenticated users able to register, log in, create communities, post content, vote, comment with nested replies, subscribe, view profiles, and report content.
-- **Community Moderator:** Users granted moderation privileges within specific communities, managing content and community settings.
-- **Admin:** System administrators with platform-wide control over users, content, and settings.
+### Error Handling
+- IF the external authentication process fails, THEN THE system SHALL log the failure and return an error message indicating the failure reason to the user.
 
-## 4. Functional Requirements
+## 3. Content Delivery Networks (CDN)
 
-### 4.1 User Registration and Login
-- WHEN a user submits valid registration details, THE system SHALL create an account and send a verification email.
-- WHEN a user logs in with valid credentials, THE system SHALL authenticate and establish a session.
-- IF login credentials are invalid, THEN THE system SHALL return an appropriate error message.
-- THE system SHALL support logout and session termination.
+### Overview
+CDNs speed up content delivery by caching and serving static assets closer to users, reducing latency.
 
-### 4.2 Community Creation and Management
-- WHEN a registered user requests to create a community, THE system SHALL validate uniqueness of community name and process creation.
-- Community moderators SHALL have permissions to update community settings and manage content.
-- Users SHALL be able to subscribe and unsubscribe to communities.
+### Requirements
+- THE system SHALL integrate with a CDN to serve images and static files uploaded by users.
+- WHEN a user uploads an image, THE system SHALL upload the image file to the origin server of the CDN.
+- THE system SHALL store the CDN URL reference in the post metadata for retrieval.
+- THE system SHALL support invalidating cached content on the CDN when content is updated or deleted.
+- THE CDN integration SHALL enforce HTTPS for all asset delivery.
 
-### 4.3 Posting Content
-- WHEN a registered user creates a post with text, link, or image content, THE system SHALL validate and associate the post with the target community.
-- Image uploads SHALL be restricted to accepted formats (JPEG, PNG) and a maximum size of 5MB.
-- Post authors SHALL be able to edit posts within 24 hours.
+### Performance
+- THE system SHALL ensure uploaded images are served from the CDN with minimal delay, targeting delivery within 2 seconds of upload confirmation.
 
-### 4.4 Voting System
-- Users SHALL be able to upvote or downvote posts and comments once per item.
-- THE system SHALL update vote totals and prevent duplicate votes.
+## 4. Notification Services
 
-### 4.5 Commenting System
-- Users SHALL be able to comment on posts and reply with nested replies up to 5 levels deep.
-- Comments SHALL be limited to 1000 characters.
+### Overview
+Notifications keep users informed of relevant events such as replies, community activity, or moderation actions.
 
-### 4.6 User Karma System
-- THE system SHALL calculate karma based on votes received on posts and comments.
-- Karma SHALL update appropriately with vote changes.
+### Requirements
+- THE system SHALL integrate with push notification services capable of sending real-time notifications to web and mobile clients.
+- THE system SHALL integrate with an email service provider for sending transactional emails.
+- WHEN sending notifications, THE system SHALL track delivery status and retry failed deliveries up to 3 times with exponentially increasing intervals.
+- THE system SHALL honor user preferences regarding notification types (push, email) and subscribed frequencies.
 
-### 4.7 Post Sorting
-- THE system SHALL support sorting posts by "hot", "new", "top", and "controversial".
-- Sorting SHALL update dynamically based on post activity.
+### Error Handling
+- IF notification delivery fails after retries, THEN THE system SHALL log the failure and mark the notification status accordingly.
 
-### 4.8 Subscription Management
-- Users SHALL be able to subscribe or unsubscribe from communities.
-- THE system SHALL maintain a list of user subscriptions for personalized feeds.
+## 5. Analytics and Monitoring
 
-### 4.9 User Profiles
-- User profiles SHALL display posts, comments, karma, and subscription summaries.
+### Overview
+Analytics and monitoring services provide visibility into platform usage and system health.
 
-### 4.10 Reporting Inappropriate Content
-- Users SHALL be able to report content with a reason.
-- Reports SHALL notify moderators and admins.
-- THE system SHALL provide a process to track report status and resolution.
+### Requirements
+- THE system SHALL send user engagement and content interaction metrics to a designated analytics platform.
+- THE system SHALL send system health metrics such as uptime, response times, and error rates to a monitoring system.
+- WHEN the system detects critical errors or abnormal trends, THE system SHALL trigger alerts through the monitoring integration.
 
-## 5. Business Rules
+## 6. Spam Detection Services
 
-- Content flagged as inappropriate SHALL be reviewed before visibility.
-- Users violating rules MAY be restricted or banned.
-- Karma thresholds SHALL unlock certain privileges.
-- Posting and commenting rates SHALL be limited to mitigate spam.
+### Overview
+Spam detection services analyze user-generated content to identify spam or abusive behavior.
 
-## 6. Error Handling
+### Requirements
+- THE system SHALL integrate with one or more recognized spam detection APIs.
+- WHEN a post or comment is submitted, THE system SHALL submit its content to the spam detection service for analysis before publishing.
+- IF the content is flagged as spam or potentially abusive, THEN THE system SHALL mark it for moderation review.
+- THE system SHALL allow configuration of spam sensitivity settings to adjust thresholds of detection.
+- THE system SHALL store spam analysis results (flags, score, timestamp) as metadata linked to the content.
 
-- Invalid inputs SHALL generate descriptive validation errors.
-- Unauthorized actions SHALL be denied with appropriate errors.
-- Content exceeding size or format constraints SHALL be rejected.
+### Error Handling
+- IF the spam detection service is unavailable, THEN THE system SHALL temporarily defer spam checks and queue content for later analysis.
 
-## 7. Performance Requirements
 
-- Authentication responses SHALL be within 2 seconds.
-- Post listings SHALL paginate at 20 items per page and load within 1 second.
-- Vote and karma updates SHALL reflect within 5 seconds.
+---
 
-## 8. Mermaid Diagrams
-
-### User Registration and Login Flow
-```mermaid
-graph LR
-  A["User Registration Start"] --> B["Submit Registration Data"]
-  B --> C{"Is data valid?"}
-  C -->|"Yes"| D["Create Account"]
-  C -->|"No"| E["Return Validation Errors"]
-  D --> F["Send Verification Email"]
-  F --> G["Registration Complete"]
-```
-
-### Posting and Voting Flow
-```mermaid
-graph LR
-  A["Create Post"] --> B["Validate Content"]
-  B --> C{"Content Valid?"}
-  C -->|"Yes"| D["Save Post"]
-  C -->|"No"| E["Return Error"]
-  D --> F["Display Post in Community"]
-  F --> G["User Votes"]
-  G --> H["Update Vote Counts"]
-  H --> I["Update Karma"]
-```
-
-## 9. Summary
-
-This document provides detailed business requirements for the redditCommunity platform backend development. All functional needs are specified in natural language with measurable criteria to ensure clarity and implementation readiness. Backend developers shall refer to this for precise guidance without assumptions about technical implementation details.
+**This document specifies business requirements only. All technical implementation decisions, including choice of specific third-party providers, API designs, data storage, and security configurations are within the full autonomy of backend developers. This document describes WHAT to implement, not HOW.**

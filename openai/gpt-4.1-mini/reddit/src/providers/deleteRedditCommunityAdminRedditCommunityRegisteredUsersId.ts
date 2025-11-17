@@ -9,20 +9,20 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
-export async function deleteRedditCommunityAdminRedditCommunityRegisteredUsersId(props: {
+export async function deleteRedditCommunityAdminRedditCommunityRegisteredusersId(props: {
   admin: AdminPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const existing =
-    await MyGlobal.prisma.reddit_community_registered_users.findUnique({
+  const user =
+    await MyGlobal.prisma.reddit_community_registeredusers.findUnique({
       where: { id: props.id },
     });
 
-  if (!existing) {
+  if (user === null) {
     throw new HttpException("Registered user not found", 404);
   }
 
-  await MyGlobal.prisma.reddit_community_registered_users.delete({
+  await MyGlobal.prisma.reddit_community_registeredusers.delete({
     where: { id: props.id },
   });
 }

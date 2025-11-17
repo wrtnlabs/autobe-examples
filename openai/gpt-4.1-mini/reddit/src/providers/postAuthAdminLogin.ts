@@ -8,7 +8,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
-import { IRedditCommunityAdminSettings } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdminSettings";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
@@ -17,98 +16,68 @@ export async function postAuthAdminLogin(props: {
   body: IRedditCommunityAdmin.ILogin;
 }): Promise<IRedditCommunityAdmin.IAuthorized> {
   const admin = await MyGlobal.prisma.reddit_community_admins.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      email: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      password_hash: true,
-    },
+    where: { deleted_at: null },
   });
-
-  if (admin === null) {
+  if (!admin) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const validPassword = await PasswordUtil.verify(
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
   );
-
-  if (!validPassword) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const accessExpireAt = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
+  const now = toISOStringSafe(new Date());
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
   const session = await MyGlobal.prisma.reddit_community_admin_sessions.create({
     data: {
-      id: sessionId as string & tags.Format<"uuid">,
+      id: v4(),
       reddit_community_admin_id: admin.id,
       ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpireAt),
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
 
-  const tokenAccess = jwt.sign(
-    {
-      type: "admin",
-      id: admin.id,
-      session_id: session.id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const tokenRefresh = jwt.sign(
-    {
-      type: "admin",
-      id: admin.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
     id: admin.id,
-    email: admin.email,
-    name: "",
-    role: "",
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-    is_active: false,
-    last_login_at: "",
-    last_login_ip: "",
-    permissions: [],
-    notes: "",
-    avatar_url: "",
-    settings: undefined,
-    token: {
-      access: tokenAccess,
-      refresh: tokenRefresh,
-      expired_at: toISOStringSafe(accessExpireAt),
-      refreshable_until: toISOStringSafe(refreshExpireAt),
-    },
+    token,
   };
 }

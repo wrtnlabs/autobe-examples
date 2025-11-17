@@ -6,7 +6,7 @@ AI Model | Score | FCSR | Status
 :--------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 100 | 92% | 🟢
 [`openai/gpt-4.1`](#openaigpt-41) | 100 | 89% | 🟢
-[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 97.5 | 80% | 🟢
+[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 100 | 83% | 🟢
 [`openai/gpt-5.1`](#openaigpt-51) | 87.5 | 80% | 🟡
 [`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 77.5 | 82% | 🟡
 [`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 75 | 68% | 🟡
@@ -184,7 +184,7 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./openai/gpt-4.1-mini/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./openai/gpt-4.1-mini/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./openai/gpt-4.1-mini/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`reddit`](./openai/gpt-4.1-mini/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-4.1-mini/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 
 ### `openai/gpt-4.1-mini` - `todo`
@@ -224,18 +224,18 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `openai/gpt-4.1-mini` - `reddit`
 
 - Source Code: [`openai/gpt-4.1-mini/reddit`](./openai/gpt-4.1-mini/reddit/)
-- Score: 90
-- Elapsed Time: 1h 59m 12s
-- Token Usage: 85.56M
-- Function Calling Success Rate: 77.54%
+- Score: 100
+- Elapsed Time: 2h 26m 39s
+- Token Usage: 68.97M
+- Function Calling Success Rate: 85.70%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 11 | 531.5K | 2m 43s | 100%
-🟢 Prisma | `namespaces`: 9, `models`: 18 | 921.9K | 2m 49s | 70%
-🟢 Interface | `operations`: 111, `schemas`: 126 | 45.97M | 57m 6s | 57%
-🟢 Test | `functions`: 109 | 14.95M | 6m 18s | 91%
-🔴 Realize | `functions`: 111, `errors`: 3 | 23.18M | 50m 14s | 95%
+🟢 Analyze | `actors`: 4, `documents`: 12 | 568.0K | 3m 55s | 100%
+🟢 Prisma | `namespaces`: 5, `models`: 17 | 497.7K | 2m 25s | 78%
+🟢 Interface | `operations`: 105, `schemas`: 118 | 38.20M | 59m 4s | 76%
+🟢 Test | `functions`: 94 | 13.66M | 27m 51s | 88%
+🟢 Realize | `functions`: 105 | 16.04M | 53m 21s | 94%
 
 
 ### `openai/gpt-4.1-mini` - `shopping`

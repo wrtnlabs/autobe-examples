@@ -15,87 +15,109 @@ export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
   body: IRedditCommunityGuest.IRefresh;
 }): Promise<IRedditCommunityGuest.IAuthorized> {
-  interface DecodedRefreshToken {
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
+  let decoded: {
+    id: string;
+    session_id: string;
     type: "guest";
-    tokenType?: string;
-    created_at?: string & tags.Format<"date-time">;
+  };
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as {
+      id: string;
+      session_id: string;
+      type: "guest";
+    };
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-
-  const decodedToken = jwt.verify(
-    props.body.refreshToken,
-    MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe" },
-  ) as unknown;
-
-  const decoded = decodedToken as DecodedRefreshToken;
 
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  const guest = await MyGlobal.prisma.reddit_community_guests.findFirst({
-    where: {
-      id: decoded.id,
-    },
-  });
+  const session =
+    await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        redditCommunityGuest: {
+          id: decoded.id,
+          deleted_at: null,
+        },
+        expired_at: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        redditCommunityGuest: true,
+      },
+    });
 
-  if (!guest) {
-    throw new HttpException("Guest session not found or expired", 403);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
-  const accessExpireAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const refreshExpireAt = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
+  const guest = session.redditCommunityGuest;
+  if (!guest) {
+    throw new HttpException("Guest user not found", 401);
+  }
 
-  const accessToken = jwt.sign(
-    {
-      type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
+  if (guest.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  const nowISO = toISOStringSafe(new Date());
+  const accessExpiresISO = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresISO = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  const refreshToken = jwt.sign(
+  const access = jwt.sign(
     {
-      type: "guest",
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowISO,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now,
+      created_at: nowISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
+    { expiresIn: "7d", issuer: "autobe" },
   );
 
+  await MyGlobal.prisma.reddit_community_guest_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpiresISO },
+  });
+
   return {
-    id: guest.id,
-    session_id: (guest as any).session_id ?? null,
-    ip_address: (guest as any).ip_address ?? null,
-    created_at: toISOStringSafe(guest.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: guest.updated_at
-      ? (toISOStringSafe(guest.updated_at) as string & tags.Format<"date-time">)
-      : undefined,
+    id: guest.id as string & tags.Format<"uuid">,
+    ip: undefined,
+    href: session.href,
+    referrer: session.referrer,
+    session_id: decoded.session_id as string & tags.Format<"uuid">,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at:
+      guest.updated_at === null ? undefined : toISOStringSafe(guest.updated_at),
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpireAt,
-      refreshable_until: refreshExpireAt,
+      access: access,
+      refresh: refresh,
+      expired_at: accessExpiresISO,
+      refreshable_until: refreshExpiresISO,
     },
   };
 }

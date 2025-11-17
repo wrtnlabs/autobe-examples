@@ -1,1 +1,2 @@
-export * as registeredUsers from "./registeredUsers/index";
+export * as communities from "./communities/index";
+export * as posts from "./posts/index";

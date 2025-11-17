@@ -12,82 +12,65 @@ import { IPageIRedditCommunityRegisteredUser } from "@ORGANIZATION/PROJECT-api/l
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
-export async function patchRedditCommunityAdminRedditCommunityRegisteredUsers(props: {
+export async function patchRedditCommunityAdminRedditCommunityRegisteredusers(props: {
   admin: AdminPayload;
   body: IRedditCommunityRegisteredUser.IRequest;
 }): Promise<IPageIRedditCommunityRegisteredUser.ISummary> {
-  const {
-    username,
-    email,
-    status,
-    registered_since,
-    registered_until,
-    page = 1,
-    limit = 100,
-    sort_by = "created_at",
-    sort_order = "asc",
-    search,
-    role,
-    my_items_only,
-    include_archived,
-    referrer,
-    ip,
-  } = props.body;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
 
-  const registeredSinceStr = registered_since
-    ? toISOStringSafe(registered_since)
-    : undefined;
-  const registeredUntilStr = registered_until
-    ? toISOStringSafe(registered_until)
-    : undefined;
+  const whereCondition: Record<string, unknown> = {};
 
-  const take = limit;
-  const skip = (page - 1) * take;
+  if (props.body.filterByStatus === "active") {
+    whereCondition.deleted_at = null;
+  } else if (props.body.filterByStatus === "inactive") {
+    whereCondition.deleted_at = { not: null };
+  } else if (props.body.filterByStatus === "deleted") {
+    whereCondition.deleted_at = { not: null };
+  }
 
-  const whereCondition = {
-    deleted_at: include_archived === true ? undefined : null,
-    ...(email ? { email } : {}),
-    ...(registeredSinceStr || registeredUntilStr
-      ? {
-          created_at: {
-            ...(registeredSinceStr ? { gte: registeredSinceStr } : {}),
-            ...(registeredUntilStr ? { lte: registeredUntilStr } : {}),
-          },
-        }
-      : {}),
-  } as const;
+  if (props.body.search) {
+    // We will search in email with contains mode as sample
+    whereCondition.email = { contains: props.body.search };
+  }
 
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.reddit_community_registered_users.findMany({
+  const orderByCondition: Record<string, "asc" | "desc"> = {};
+
+  if (props.body.sortBy) {
+    const sortOrder = props.body.sortOrder ?? "asc";
+    orderByCondition[props.body.sortBy] = sortOrder;
+  } else {
+    orderByCondition.created_at = "desc";
+  }
+
+  const [users, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_registeredusers.findMany({
       where: whereCondition,
       skip,
-      take,
-      orderBy: { [sort_by]: sort_order },
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-      },
+      take: limit,
+      orderBy: orderByCondition,
     }),
-    MyGlobal.prisma.reddit_community_registered_users.count({
+    MyGlobal.prisma.reddit_community_registeredusers.count({
       where: whereCondition,
     }),
   ]);
 
-  const mappedData = data.map((user) => ({
+  const data = users.map((user) => ({
     id: user.id,
-    username: "", // Provide empty string as placeholder for missing required property 'username'
     email: user.email,
-    registered_at: toISOStringSafe(user.created_at),
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
   }));
 
   return {
-    data: mappedData,
     pagination: {
-      current: page,
-      limit,
+      current: page satisfies number as number,
+      limit: limit satisfies number as number,
       records: total,
       pages: Math.ceil(total / limit),
     },
+    data,
   };
 }

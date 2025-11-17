@@ -1,44 +1,41 @@
-/// System-wide configuration settings for the redditCommunity platform.
+/// System configuration settings for the Reddit-like community platform.
 ///
-/// This table stores individual configuration entries that govern
-/// platform-wide behaviors and parameters. Each setting is uniquely
-/// identified by a name and holds a string value representing the
-/// configuration. Optional description provides human-readable explanation.
+/// Stores key-value pairs representing configurable options affecting system
+/// behavior and performance.
+/// Each configuration entry includes a unique name, string value, optional
+/// description, and timestamps for auditing changes.
+/// Soft deletion is supported to allow temporary disabling of configurations
+/// without removal.
 ///
-/// These settings are used by backend services to customize behavior without
-/// hardcoding values. While typically few in number, enforcing uniqueness on
-/// setting names prevents duplication.
-///
-/// Timestamps track creation and update times for auditability and change
-/// tracking. No soft deletion is supported as settings are expected to be
-/// actively maintained.
-///
-/// This model has a primary stance as a main business entity for platform
-/// configuration management and API access.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_system_settings {
+model reddit_community_system_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique name identifying the system setting. Used as a configuration key.
+  /// Unique configuration key name identifying the setting.
   name String
   
-  /// String value associated with the system setting.
+  /// String value of the configuration setting.
   value String
   
-  /// Optional human-readable explanation of the setting's purpose or usage.
+  /// Optional detailed description of the configuration setting's purpose and
+  /// usage.
   description String?
   
-  /// Creation timestamp of the configuration record.
+  /// Timestamp when the configuration entry was created.
   created_at DateTime
   
-  /// Last update timestamp of the configuration record.
+  /// Timestamp when the configuration entry was last updated.
   updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the configuration entry. Null if
+  /// active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS

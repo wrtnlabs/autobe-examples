@@ -6,34 +6,31 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityRegisteredUser } from "../../../structures/IRedditCommunityRegisteredUser";
 
 /**
- * Register a new account for registeredUser actor in the redditCommunity
- * schema.
+ * Create a new registeredUser account and issue initial tokens.
  *
- * This API endpoint enables new registered users to join the reddit community
- * platform by creating their accounts. It fully complies with the Prisma schema
- * of the registeredUser actor, validating and storing essential authentication
- * credentials such as email and password securely. Upon successful
- * registration, the system issues JWT tokens for immediate authenticated
- * access. This operation serves as the foundation for all subsequent
- * authenticated user interactions.
+ * This operation enables new registered users to create accounts within the
+ * redditCommunity platform. It accepts user registration data including unique
+ * email and password, which is securely stored in the password_hash field in
+ * the reddit_community_registeredusers table. This endpoint returns an
+ * authorization token encapsulated in the
+ * IRedditCommunityRegisteredUser.IAuthorized type. The password is never
+ * returned in the response.
  *
- * The registration process handles validation of unique identifiers such as
- * email and enforces password security rules as defined in database schema
- * constraints and business policies. It ensures new user records align with the
- * schema's structural and security requirements.
+ * Security is enforced by hashing stored passwords and ensuring email
+ * uniqueness prior to account creation.
  *
- * This operation is publicly accessible and does not require prior
- * authentication, allowing anonymous users to create accounts.
+ * Related operations include login and token refresh, which authenticate users
+ * and renew their authorization respectively.
  *
- * Security considerations include safe handling of sensitive data, prevention
- * of duplicate accounts, and issuance of secure JWT tokens.
+ * A successful call results in a new active user ready to access protected
+ * community features.
  *
- * Related endpoints include /auth/registeredUser/login for user authentication
- * and /auth/registeredUser/refresh for token renewal, forming a complete
- * authentication lifecycle.
+ * The operation has no prerequisites as it is publicly accessible for new
+ * registrations.
  *
  * @param props.connection
- * @param props.body Request body for creating a new registeredUser account.
+ * @param props.body User registration data for a registeredUser account
+ *   creation.
  * @setHeader token.access Authorization
  *
  * @path /auth/registeredUser/join
@@ -68,10 +65,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Request body for creating a new registeredUser account. */
-    body: IRedditCommunityRegisteredUser.IJoin;
+    /** User registration data for a registeredUser account creation. */
+    body: IRedditCommunityRegisteredUser.ICreate;
   };
-  export type Body = IRedditCommunityRegisteredUser.IJoin;
+  export type Body = IRedditCommunityRegisteredUser.ICreate;
   export type Response = IRedditCommunityRegisteredUser.IAuthorized;
 
   export const METADATA = {
@@ -116,27 +113,25 @@ export namespace join {
 }
 
 /**
- * Login for registeredUser actor in the redditCommunity schema.
+ * Authenticate registeredUser credentials and issue JWT tokens.
  *
- * Authenticate an existing registeredUser by validating login credentials using
- * fields such as email and password extracted from registeredUser Prisma
- * schema. This endpoint returns JWT tokens for session management upon
- * successful authentication.
+ * This operation enables registered users to authenticate their identity and
+ * obtain JWT authorization tokens allowing access to protected endpoints.
+ * Credentials are validated against the email and password_hash fields in the
+ * 'reddit_community_registeredusers' schema table.
  *
- * The login process ensures secure verification against hashed passwords stored
- * in the database and issues proper authorization tokens for accessing
- * protected resources.
+ * Secure password hashing and verification is performed to ensure user
+ * confidentiality.
  *
- * It is publicly accessible for all users attempting to sign in.
+ * Related operations include account registration and token refresh.
  *
- * Security considerations include rate limiting, account lockout on multiple
- * failed attempts, and secure transmission of credentials.
+ * Failed login attempts are handled securely with appropriate error responses
+ * to prevent information leakage.
  *
- * Related endpoints include /auth/registeredUser/join and
- * /auth/registeredUser/refresh.
+ * This operation has no prerequisites and is publicly accessible.
  *
  * @param props.connection
- * @param props.body Request body for authenticating a registeredUser.
+ * @param props.body User login credentials containing email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/registeredUser/login
@@ -171,7 +166,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Request body for authenticating a registeredUser. */
+    /** User login credentials containing email and password. */
     body: IRedditCommunityRegisteredUser.ILogin;
   };
   export type Body = IRedditCommunityRegisteredUser.ILogin;
@@ -219,28 +214,25 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for registeredUser actor in the redditCommunity schema.
+ * Refresh JWT tokens for registeredUser to maintain authentication.
  *
- * Refresh JWT tokens for registeredUser actor by validating existing refresh
- * token associated with the user session as recorded in registeredUser Prisma
- * model. This operation ensures seamless token renewal maintaining secure
+ * This operation refreshes JWT access tokens for registered users using a valid
+ * refresh token. This process maintains active session continuity without
+ * requiring re-login.
+ *
+ * The operation verifies the refresh token, checks user status from the
+ * 'reddit_community_registeredusers' table, and issues a new access token.
+ *
+ * Security measures are enforced to prevent token reuse and unauthorized
  * access.
  *
- * The refresh mechanism verifies token validity, user status, and session
- * integrity as per schema fields.
+ * Related operations are user login and registration.
  *
- * Accessible only to authenticated registered users possessing a valid refresh
+ * This operation requires the user to be authenticated via a valid refresh
  * token.
  *
- * Security considerations include token revocation upon logout or suspicious
- * activity and short token lifetimes.
- *
- * Related endpoints include /auth/registeredUser/join and
- * /auth/registeredUser/login.
- *
  * @param props.connection
- * @param props.body Request body containing the refresh token to renew
- *   authentication tokens.
+ * @param props.body Refresh token request to obtain new access tokens.
  * @setHeader token.access Authorization
  *
  * @path /auth/registeredUser/refresh
@@ -275,13 +267,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Request body containing the refresh token to renew authentication
-     * tokens.
-     */
-    body: IRedditCommunityRegisteredUser.IRefresh;
+    /** Refresh token request to obtain new access tokens. */
+    body: IRedditCommunityRegisteredUser.IRequestRefresh;
   };
-  export type Body = IRedditCommunityRegisteredUser.IRefresh;
+  export type Body = IRedditCommunityRegisteredUser.IRequestRefresh;
   export type Response = IRedditCommunityRegisteredUser.IAuthorized;
 
   export const METADATA = {

@@ -1,7 +1,7 @@
 import { IPage } from "./IPage";
-import { IRedditCommunityRegisteredUserSession } from "./IRedditCommunityRegisteredUserSession";
+import { IRedditCommunityRegistereduserSession } from "./IRedditCommunityRegistereduserSession";
 
-export namespace IPageIRedditCommunityRegisteredUserSession {
+export namespace IPageIRedditCommunityRegistereduserSession {
   /**
    * A page.
    *
@@ -12,6 +12,6 @@ export namespace IPageIRedditCommunityRegisteredUserSession {
     pagination: IPage.IPagination;
 
     /** List of records. */
-    data: IRedditCommunityRegisteredUserSession.ISummary[];
+    data: IRedditCommunityRegistereduserSession.ISummary[];
   };
 }

@@ -4,34 +4,35 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IRedditCommunityAdmin } from "../../../structures/IRedditCommunityAdmin";
+import { IRefreshTokenRequest } from "../../../structures/IRefreshTokenRequest";
 
 /**
- * Register a new admin user account in the reddit_community_admins table.
+ * Register a new admin account and issue JWT tokens (reddit_community_admins).
  *
- * This API operation provides registration capabilities for an admin user in
- * the reddit_community_admins table. It securely accepts and stores a unique
- * email along with a hashed password, establishing credentials for system
- * administrators who have full access to platform management features. The
- * registration process enforces email uniqueness and ensures the admin can be
- * authenticated in subsequent login operations.
+ * This operation allows system administrators to register new admin accounts
+ * within the redditCommunity platform. It creates an admin user record in the
+ * 'reddit_community_admins' table, initializing authentication credentials and
+ * JWT issuance. Only essential fields such as username, email, and password are
+ * required, as per schema specifications. Security best practices ensure that
+ * the password is stored encrypted and never exposed in responses. This
+ * endpoint is public as it's the entry point for admin registration.
  *
- * The operation is public and does not require prior authentication,
- * facilitating new admin account creation during platform setup or user
- * onboarding.
+ * Administrators can use this endpoint to create additional admin accounts,
+ * enabling decentralized management. Validation ensures unique usernames and
+ * emails to prevent duplication. This operation precedes all other
+ * admin-specific authentication interactions.
  *
- * Related operations include `login` for authenticating admin credentials and
- * `refresh` for renewing access tokens.
+ * The outcome is a JWT token pair enabling session management. This operation
+ * integrates smoothly with login and token refresh endpoints.
  *
- * The operation strictly requires validation of the email uniqueness and proper
- * hashing of the password according to the Prisma schema fields `email` and
- * `password_hash`.
+ * Strict security measures prevent abuse, including rate limiting and input
+ * sanitation.
  *
- * Error handling covers duplicate emails and input validation failures
- * according to underlying Prisma constraints.
+ * Related operations include admin login and token refresh to maintain session
+ * continuity.
  *
  * @param props.connection
- * @param props.body Request body to create a new admin user account with
- *   required credentials.
+ * @param props.body Request body for creating a new admin user account
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -66,13 +67,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Request body to create a new admin user account with required
-     * credentials.
-     */
-    body: IRedditCommunityAdmin.ICreate;
+    /** Request body for creating a new admin user account */
+    body: IRedditCommunityAdmin.IJoin;
   };
-  export type Body = IRedditCommunityAdmin.ICreate;
+  export type Body = IRedditCommunityAdmin.IJoin;
   export type Response = IRedditCommunityAdmin.IAuthorized;
 
   export const METADATA = {
@@ -117,25 +115,29 @@ export namespace join {
 }
 
 /**
- * Authenticate an admin user and issue JWT tokens using reddit_community_admins
- * fields.
+ * Authenticate admin user and issue JWT tokens (reddit_community_admins).
  *
- * Authenticate an admin user by validating login credentials against the
- * reddit_community_admins table.
+ * This operation allows system administrators to authenticate by providing
+ * valid credentials. It verifies the username/email and password against
+ * records in the 'reddit_community_admins' table. Upon successful validation,
+ * the endpoint issues JWT access and refresh tokens wrapped in a secure
+ * response.
  *
- * This operation checks the unique email and hashed password, issuing JWT
- * tokens upon successful authentication.
+ * This login workflow is essential for secure access to admin functionalities
+ * within the redditCommunity platform. It is public for credential submission
+ * but issues tokens that must be protected thereafter.
  *
- * It respects account deactivation by verifying that the `deleted_at` field is
- * null.
+ * The operation ensures that only authenticated admins gain access to protected
+ * routes and capabilities.
  *
- * The operation is public and does not require a JWT.
+ * Security considerations include brute force protection, auditing, and
+ * logging.
  *
- * Related operations: `join`, `refresh`.
+ * Related operations include admin registration and token refresh endpoints for
+ * lifecycle management.
  *
  * @param props.connection
- * @param props.body Request body for admin login credentials with email and
- *   password.
+ * @param props.body Request body for admin login credentials
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -170,7 +172,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Request body for admin login credentials with email and password. */
+    /** Request body for admin login credentials */
     body: IRedditCommunityAdmin.ILogin;
   };
   export type Body = IRedditCommunityAdmin.ILogin;
@@ -218,24 +220,28 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for authenticated admin users using
- * reddit_community_admins fields.
+ * Refresh JWT tokens for admin user (reddit_community_admins).
  *
- * Allow authenticated admin users to refresh their access and refresh tokens
- * using a valid token.
+ * This endpoint facilitates JWT token renewal for system administrators. It
+ * accepts a valid refresh token and, upon validation, issues new access and
+ * refresh tokens to extend session duration.
  *
- * This operation ensures session continuity and secure token lifecycle
- * management.
+ * Designed to maintain continuous authenticated sessions without re-login, this
+ * operation aligns with the 'reddit_community_admins' table that stores the
+ * identity data.
  *
- * It requires a valid refresh token and enforces authorization.
+ * Refresh tokens are securely stored and managed to prevent misuse. The
+ * operation includes validation checks against revocation and expiry.
  *
- * Related operations include `join` and `login`.
+ * This operation complements admin join and login flows, enabling seamless
+ * security lifecycle management.
  *
- * It utilizes the reddit_community_admins table to verify token legitimacy.
+ * Proper error reporting and logging ensure traceability.
+ *
+ * Related endpoints are admin login and join operations.
  *
  * @param props.connection
- * @param props.body Request body containing the refresh token for token
- *   renewal.
+ * @param props.body Request body containing refresh token
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -270,10 +276,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Request body containing the refresh token for token renewal. */
-    body: IRedditCommunityAdmin.IRefresh;
+    /** Request body containing refresh token */
+    body: IRefreshTokenRequest;
   };
-  export type Body = IRedditCommunityAdmin.IRefresh;
+  export type Body = IRefreshTokenRequest;
   export type Response = IRedditCommunityAdmin.IAuthorized;
 
   export const METADATA = {

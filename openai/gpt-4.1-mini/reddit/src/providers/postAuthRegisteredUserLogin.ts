@@ -9,90 +9,81 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityRegisteredUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { RegisteredUserPayload } from "../decorators/payload/RegisteredUserPayload";
+import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
 
 export async function postAuthRegisteredUserLogin(props: {
-  registeredUser: RegisteredUserPayload;
+  registeredUser: RegistereduserPayload;
   body: IRedditCommunityRegisteredUser.ILogin;
 }): Promise<IRedditCommunityRegisteredUser.IAuthorized> {
-  const user =
-    await MyGlobal.prisma.reddit_community_registered_users.findFirst({
-      where: { email: props.body.email },
-    });
+  const user = await MyGlobal.prisma.reddit_community_registeredusers.findFirst(
+    {
+      where: { email: props.body.email, deleted_at: null },
+    },
+  );
+
   if (user === null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const validPassword = await PasswordUtil.verify(
+
+  const isPasswordValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-  if (!validPassword) {
+  if (!isPasswordValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const nowIso = toISOStringSafe(new Date());
-  const accessExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const now = new Date();
+  const nowIso = toISOStringSafe(now);
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const session =
-    await MyGlobal.prisma.reddit_community_registered_user_sessions.create({
+    await MyGlobal.prisma.reddit_community_registereduser_sessions.create({
       data: {
-        id: v4() as string & tags.Format<"uuid">,
-        reddit_community_registered_user_id: user.id,
-        ip: props.body.ip ?? "",
+        id: v4(),
+        reddit_community_registereduser_id: user.id,
+        ip: (props.body.ip ?? "") satisfies string as string,
         href: props.body.href,
         referrer: props.body.referrer,
         created_at: nowIso,
-        expired_at: accessExpiresIso,
+        expired_at: toISOStringSafe(accessExpires),
       },
     });
 
   const token = {
     access: jwt.sign(
       {
-        type: "registeredUser",
+        type: "registereduser",
         id: user.id,
         session_id: session.id,
         created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
-        type: "registeredUser",
+        type: "registereduser",
         id: user.id,
         session_id: session.id,
         tokenType: "refresh",
         created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
 
   return {
     id: user.id,
     email: user.email,
-    registered_at: toISOStringSafe(user.created_at),
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
     deleted_at:
-      user.deleted_at !== null ? toISOStringSafe(user.deleted_at) : null,
+      user.deleted_at === null ? null : toISOStringSafe(user.deleted_at),
     token,
-    status: "active" as "active" | "inactive" | "banned",
-    role: "registeredUser" as "registeredUser" | "admin" | "moderator",
-  } satisfies IRedditCommunityRegisteredUser.IAuthorized;
+  };
 }

@@ -5,55 +5,48 @@
 - [Systematic](#systematic)
 - [Actors](#actors)
 - [Communities](#communities)
-- [Posts](#posts)
-- [Comments](#comments)
-- [Votes](#votes)
-- [Subscriptions](#subscriptions)
-- [Karma](#karma)
-- [Inquiries](#inquiries)
+- [Content](#content)
+- [Moderation](#moderation)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"reddit_community_system_settings" {
+"reddit_community_system_configurations" {
   String id PK
   String name UK
   String value
   String description "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 ```
 
-### `reddit_community_system_settings`
+### `reddit_community_system_configurations`
 
-System-wide configuration settings for the redditCommunity platform.
+System configuration settings for the Reddit-like community platform.
 
-This table stores individual configuration entries that govern
-platform-wide behaviors and parameters. Each setting is uniquely
-identified by a name and holds a string value representing the
-configuration. Optional description provides human-readable explanation.
-
-These settings are used by backend services to customize behavior without
-hardcoding values. While typically few in number, enforcing uniqueness on
-setting names prevents duplication.
-
-Timestamps track creation and update times for auditability and change
-tracking. No soft deletion is supported as settings are expected to be
-actively maintained.
-
-This model has a primary stance as a main business entity for platform
-configuration management and API access.
+Stores key-value pairs representing configurable options affecting system
+behavior and performance.
+Each configuration entry includes a unique name, string value, optional
+description, and timestamps for auditing changes.
+Soft deletion is supported to allow temporary disabling of configurations
+without removal.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`: Unique name identifying the system setting. Used as a configuration key.
-- `value`: String value associated with the system setting.
-- `description`: Optional human-readable explanation of the setting's purpose or usage.
-- `created_at`: Creation timestamp of the configuration record.
-- `updated_at`: Last update timestamp of the configuration record.
+- `name`: Unique configuration key name identifying the setting.
+- `value`: String value of the configuration setting.
+- `description`
+  > Optional detailed description of the configuration setting's purpose and
+  > usage.
+- `created_at`: Timestamp when the configuration entry was created.
+- `updated_at`: Timestamp when the configuration entry was last updated.
+- `deleted_at`
+  > Timestamp marking soft deletion of the configuration entry. Null if
+  > active.
 
 ## Actors
 
@@ -63,8 +56,9 @@ erDiagram
   String id PK
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"reddit_community_registered_users" {
+"reddit_community_registeredusers" {
   String id PK
   String email UK
   String password_hash
@@ -72,9 +66,10 @@ erDiagram
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_community_community_moderators" {
+"reddit_community_moderators" {
   String id PK
   String email UK
+  String password_hash
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -87,18 +82,27 @@ erDiagram
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_community_registered_user_sessions" {
+"reddit_community_guest_sessions" {
   String id PK
-  String reddit_community_registered_user_id FK
+  String reddit_community_guest_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"reddit_community_community_moderator_sessions" {
+"reddit_community_registereduser_sessions" {
   String id PK
-  String reddit_community_community_moderator_id FK
+  String reddit_community_registereduser_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"reddit_community_moderator_sessions" {
+  String id PK
+  String reddit_community_moderator_id FK
   String ip
   String href
   String referrer
@@ -114,137 +118,160 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"reddit_community_registered_user_sessions" }o--|| "reddit_community_registered_users" : registeredUser
-"reddit_community_community_moderator_sessions" }o--|| "reddit_community_community_moderators" : communityModerator
-"reddit_community_admin_sessions" }o--|| "reddit_community_admins" : admin
+"reddit_community_guest_sessions" }o--|| "reddit_community_guests" : redditCommunityGuest
+"reddit_community_registereduser_sessions" }o--|| "reddit_community_registeredusers" : redditCommunityRegistereduser
+"reddit_community_moderator_sessions" }o--|| "reddit_community_moderators" : redditCommunityModerator
+"reddit_community_admin_sessions" }o--|| "reddit_community_admins" : redditCommunityAdmin
 ```
 
 ### `reddit_community_guests`
 
-Guest user records representing unauthenticated visitors browsing the
-platform.
+Guest users represent unauthenticated visitors with read-only access to
+public content.
 
-Guests can only read public content and have no posting or voting
-privileges. This table stores basic metadata about guest connections and
-sessions for tracking purposes.
+This table stores minimal identity data for guests primarily for auditing
+and rate limiting purposes.
+Guests have no login credentials but are tracked via session management.
+Soft deletion is supported to exclude guests from processing when necessary.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `created_at`: Record creation timestamp.
 - `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
-### `reddit_community_registered_users`
+### `reddit_community_registeredusers`
 
-Registered user accounts enabling platform participation including
-posting, voting, commenting, and community creation.
+Registered users who can create communities, post content, comment, vote,
+subscribe, and report.
 
-Registered users have unique email addresses and securely stored password
-hashes. They verify their emails before full access is granted. Soft
-deletion allows account deactivation without physical removal.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Unique email address used for authentication and notification.
-- `password_hash`: Hashed password for secure authentication.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Timestamp marking soft deletion (account deactivation). Null if active.
-
-### `reddit_community_community_moderators`
-
-Community moderator accounts authorized to manage content and enforce
-rules within assigned communities.
-
-Moderators can moderate posts and comments, manage settings, and ban
-users within their communities. Each moderator has a unique identifier
-and associated email for authentication.
+Includes authentication related fields and user metadata. Passwords must
+be stored securely (hashed).
+Soft deletion supported for account deactivation.
+Tracks timestamps for auditing and account history.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Unique email address for moderator authentication and notifications.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Timestamp marking soft deletion. Null if moderator is active.
+- `email`: Unique user email address for login and notifications.
+- `password_hash`: Securely hashed password for authentication.
+- `created_at`: Account creation timestamp.
+- `updated_at`: Account last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
+
+### `reddit_community_moderators`
+
+Moderators are users with privileges to manage content and reports within
+specific communities.
+
+This table stores moderator identity and authentication info, linking
+them to their moderation scope is handled outside.
+Includes password hash and timestamps for audit and management.
+Supports soft deletion for role revocation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`: Moderator's unique email address for login and notifications.
+- `password_hash`: Secure password hash for authentication.
+- `created_at`: Moderator account creation timestamp.
+- `updated_at`: Moderator account last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
 ### `reddit_community_admins`
 
-Administrative user accounts with full platform privileges for managing
-users, content, and system settings.
+Administrators have full system-wide privileges including user and
+content management.
 
-Admins have unique emails and secure password hashes for authentication.
-Soft delete functionality supports deactivation without data loss.
+This table stores admin user identities with authentication data.
+Includes password hashes and timestamps for auditing and control.
+Supports soft deletion for administrative account management.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Unique email address used for admin authentication and communication.
-- `password_hash`: Hashed password for secure admin authentication.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft deletion timestamp indicating deactivation state.
+- `email`: Admin's unique email address for login and notification purposes.
+- `password_hash`: Hashed password for secure authentication.
+- `created_at`: Timestamp when admin account was created.
+- `updated_at`: Timestamp when admin account was last updated.
+- `deleted_at`: Soft deletion timestamp marking account deactivation.
 
-### `reddit_community_registered_user_sessions`
+### `reddit_community_guest_sessions`
 
-Session records for registered users to track login sessions and
+Sessions table for guest users, tracking connection context and session
+lifecycle.
+
+Stores IP address, accessed URL, referrer, creation and expiry timestamps.
+Foreign key references guest user entity.
+Supports indexing for efficient session lookup.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `reddit_community_guest_id`: Guest user foreign key. [reddit_community_guests.id](#reddit_community_guests).
+- `ip`: IP address of the guest connection.
+- `href`: Connection URL requested by guest.
+- `referrer`: Referrer URL from which the guest arrived.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiry timestamp; null if session is active.
+
+### `reddit_community_registereduser_sessions`
+
+Sessions table for registered users managing login sessions and
 connection metadata.
 
-Sessions maintain IP address, request URL, and referrer headers along
-with creation and optional expiry timestamps.
+Includes IP, connection URLs, creation and expiry timestamps.
+References registered user foreign key.
+Indexed for fast session lookups per user and creation timestamp.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_registered_user_id`
-  > Registered user associated with this session. {@link
-  > reddit_community_registered_users.id}.
-- `ip`: IP address of the user connection.
-- `href`: URL accessed during the session.
+- `reddit_community_registereduser_id`: Registered user foreign key. [reddit_community_registeredusers.id](#reddit_community_registeredusers).
+- `ip`: IP address of the user session.
+- `href`: Connection URL requested.
 - `referrer`: Referrer URL for the session.
 - `created_at`: Session creation timestamp.
-- `expired_at`: Session expiration timestamp. Null indicates active session.
+- `expired_at`: Expiry timestamp of the session; null if active.
 
-### `reddit_community_community_moderator_sessions`
+### `reddit_community_moderator_sessions`
 
-Session records for community moderators tracking login metadata and
-activity.
+Session records for moderator accounts, tracking connection details and
+session lifecycle.
 
-Includes IP, URL, referrer, creation, and optional expiry to manage
-active sessions securely.
+Foreign keys link to moderator entities.
+Includes IP, connection href, referrer, creation and expiry timestamps.
+Indexed by moderator and timestamp for efficient querying.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_community_moderator_id`
-  > Community moderator associated with this session. {@link
-  > reddit_community_community_moderators.id}.
-- `ip`: IP address of the moderator session.
-- `href`: URL accessed during the session.
-- `referrer`: Referrer URL during the session.
-- `created_at`: Session creation timestamp.
-- `expired_at`: Optional expiration timestamp for session validity.
+- `reddit_community_moderator_id`: Moderator foreign key. [reddit_community_moderators.id](#reddit_community_moderators).
+- `ip`: Moderator session IP address.
+- `href`: Moderator session connection URL.
+- `referrer`: Moderator session referrer URL.
+- `created_at`: Moderator session creation timestamp.
+- `expired_at`: Moderator session expiry timestamp; null if active.
 
 ### `reddit_community_admin_sessions`
 
-Session information for admin users to manage authentication state and
-activity details.
+Session table for admin accounts handling authentication metadata and
+connection context.
 
-Session records track IP, URL, referrer, creation, and optional
-expiration timestamps to allow secure and manageable logins.
+Links to admin actor table via foreign key.
+Records IP, href, referrer, creation and expiry times.
+Indexed for fast access by admin and session creation date.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_admin_id`
-  > Admin user associated with this session. {@link
-  > reddit_community_admins.id}.
-- `ip`: IP address of the admin session.
-- `href`: URL accessed during the session.
-- `referrer`: Referrer URL tracked during the session.
-- `created_at`: Session creation timestamp.
-- `expired_at`: Optional expiration timestamp indicating session end.
+- `reddit_community_admin_id`: Admin user foreign key. [reddit_community_admins.id](#reddit_community_admins).
+- `ip`: IP address for the admin session.
+- `href`: Connection URL for the admin session.
+- `referrer`: Referrer URL for the session.
+- `created_at`: Timestamp when session was created.
+- `expired_at`: Timestamp when session expired; null if active.
 
 ## Communities
 
@@ -254,426 +281,332 @@ erDiagram
   String id PK
   String creator_id FK
   String name UK
+  String title
   String description "nullable"
-  String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_community_community_moderator_assignments" {
+"reddit_community_community_subscriptions" {
   String id PK
+  String registereduser_id FK
   String community_id FK
-  String community_moderator_id FK
   DateTime created_at
-  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"reddit_community_community_moderator_assignments" }o--|| "reddit_community_communities" : community
+"reddit_community_community_subscriptions" }o--|| "reddit_community_communities" : community
 ```
 
 ### `reddit_community_communities`
 
-Communities represent thematic groups created by registered users to
-organize discussions and content postings.
+Community metadata representing user-created communities within the
+redditCommunity platform.
 
-Each community has a unique and immutable name serving as its primary
-business identifier. Communities track creation and update timestamps,
-support soft deletion for audit trails, and have a status to reflect if
-they are active or inactive.
+Each community has a unique name, descriptive information, and timestamps
+for creation, update, and optional soft deletion. Communities serve as
+containers for posts and discussions, and form the basis for subscription
+and moderation.
 
-Community moderators are assigned separately via the community moderator
-assignments table, enabling flexible governance.
-
-Users interact with communities by subscribing, posting, commenting, and
-voting within the community scope.
+The model references existing users as creators (owners) and enforces
+unique community names for integrity.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `creator_id`
-  > The registered user who created the community. {@link
-  > reddit_community_registered_users.id}.
-- `name`: Unique community name, immutable after creation.
+  > Reference to the registered user who created (owns) the community. {@link
+  > reddit_community_registeredusers.id}.
+- `name`: Unique name of the community used as an identifier and in URLs.
+- `title`: Human-readable title of the community.
 - `description`
-  > Optional detailed description to inform users about the community's
+  > Optional textual description providing details about the community's
   > purpose and rules.
-- `status`
-  > Current status of the community (e.g., 'active', 'inactive') indicating
-  > availability or suspension.
-- `created_at`: Community creation timestamp.
-- `updated_at`: Timestamp of last update to the community.
-- `deleted_at`: Soft deletion timestamp to allow recovery and audit trails.
+- `created_at`: Timestamp when the community was created.
+- `updated_at`: Timestamp when the community was last updated.
+- `deleted_at`: Soft deletion timestamp to allow recovery or audit trails.
 
-### `reddit_community_community_moderator_assignments`
+### `reddit_community_community_subscriptions`
 
-Links registered community moderators to the communities they manage,
-establishing governance and administration relationships.
+Subscription records linking registered users to communities they follow.
 
-Each assignment associates one moderator with one community, supporting
-multiple moderators per community and multiple community assignments per
-moderator.
+This junction table normalizes the many-to-many relationship between
+users and communities, enabling users to subscribe or unsubscribe from
+multiple communities.
 
-This table enforces referential integrity and supports auditing with
-timestamps for assignment creation and update.
-
-Assignments are managed indirectly through community and moderator
-management functions.
+Subscriptions include timestamps for creation and optional soft deletion
+for audit and recovery purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `registereduser_id`
+  > Reference to the registered user subscribing to the community. {@link
+  > reddit_community_registeredusers.id}.
 - `community_id`
-  > Reference to the community managed. {@link
+  > Reference to the target community being subscribed to. {@link
   > reddit_community_communities.id}.
-- `community_moderator_id`
-  > Reference to the moderator assigned. {@link
-  > reddit_community_community_moderators.id}.
-- `created_at`: Assignment creation timestamp.
-- `updated_at`: Timestamp of last update to the assignment.
+- `created_at`: Timestamp when the subscription was created.
+- `deleted_at`: Soft deletion timestamp for subscription cancellation or audit.
 
-## Posts
+## Content
 
 ```mermaid
 erDiagram
 "reddit_community_posts" {
   String id PK
-  String reddit_community_id FK
-  String reddit_registered_user_id FK
-  String post_type
+  String reddit_community_registereduser_id FK
+  String reddit_community_community_id FK
+  String reddit_community_registereduser_session_id FK
+  String type
   String title
-  String content "nullable"
+  String body "nullable"
+  String link_url "nullable"
+  String image_url "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_community_post_images" {
-  String id PK
-  String reddit_community_post_id FK
-  String mime_type
-  String(80000) url
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_community_post_images" }o--|| "reddit_community_posts" : post
-```
-
-### `reddit_community_posts`
-
-Community posts containing text, link, or image content contributed by
-registered users.
-
-Each post belongs to a subreddit community and attributed to an author
-(registered user). Posts support soft deletion for moderation and include
-timestamps to support audit trails and user activity tracking.
-
-Posts are core content entities within the redditCommunity platform,
-referenced by comments, votes, subscriptions, and reports.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_community_id`
-  > Reference to the community this post belongs. {@link
-  > reddit_community_communities.id}.
-- `reddit_registered_user_id`
-  > Reference to the registered user who authored the post. {@link
-  > reddit_community_registered_users.id}.
-- `post_type`: Type of the post content: text, link, or image.
-- `title`: Title of the post.
-- `content`: Optional content for text or link posts; nullable for image-only posts.
-- `created_at`: Timestamp when the post was created.
-- `updated_at`: Timestamp when the post was last updated.
-- `deleted_at`: Timestamp when the post was soft deleted; null if active.
-
-### `reddit_community_post_images`
-
-Images associated with posts, supporting multiple images per post.
-
-This table supports media handling separate from textual post content,
-maintaining data normalization and compliance with size and format
-constraints.
-
-Each image record links to a post and includes the MIME type and URL for
-retrieving the image. Soft deletion and timestamp tracking ensure audit
-and moderation capabilities.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_community_post_id`
-  > Reference to the post owning this image. {@link
-  > reddit_community_posts.id}.
-- `mime_type`: MIME type of the image (e.g., image/jpeg, image/png).
-- `url`: URL where the image is stored and accessible.
-- `created_at`: Timestamp when the image was uploaded.
-- `updated_at`: Timestamp when the image metadata was last updated.
-- `deleted_at`: Timestamp when the image was soft deleted; null if active.
-
-## Comments
-
-```mermaid
-erDiagram
 "reddit_community_comments" {
   String id PK
   String reddit_community_post_id FK
-  String reddit_community_registered_user_id FK
+  String reddit_community_registereduser_id FK
+  String reddit_community_registereduser_session_id FK
   String parent_id FK "nullable"
-  String content
+  String body
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_community_comments" }o--o| "reddit_community_comments" : parent
-```
-
-### `reddit_community_comments`
-
-User comments on posts within communities, supporting nested replies up
-to 5 levels.
-
-This model stores text comments made by registered users on posts.
-Comments support optional parent comment nesting to allow threaded
-discussion up to 5 levels deep.
-
-Comments belong to a single post and a single registered user, with
-temporal tracking for creation, update, and soft delete capabilities.
-
-Content length is limited to 1000 characters to ensure concise
-communication.
-
-The model enforces referential integrity with the posts and registered
-users already defined in other components, and self-referential integrity
-for comment nesting.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_community_post_id`
-  > Reference to the post that this comment belongs to. {@link
-  > reddit_community_posts.id}.
-- `reddit_community_registered_user_id`
-  > Reference to the registered user who authored the comment. {@link
-  > reddit_community_registered_users.id}.
-- `parent_id`
-  > Optional reference to a parent comment for nested replies, supporting up
-  > to 5 levels. [reddit_community_comments.id](#reddit_community_comments).
-- `content`
-  > The text content of the comment, limited to 1000 characters for concise
-  > replies.
-- `created_at`: Timestamp when the comment was created.
-- `updated_at`: Timestamp when the comment was last updated.
-- `deleted_at`
-  > Soft delete timestamp to mark comments as deleted without permanently
-  > removing them.
-
-## Votes
-
-```mermaid
-erDiagram
 "reddit_community_post_votes" {
   String id PK
   String reddit_community_post_id FK
-  String reddit_community_registered_user_id FK
+  String reddit_community_registereduser_id FK
+  String reddit_community_registereduser_session_id FK
   String vote_type
   DateTime created_at
+  DateTime deleted_at "nullable"
 }
 "reddit_community_comment_votes" {
   String id PK
   String reddit_community_comment_id FK
-  String reddit_community_registered_user_id FK
+  String reddit_community_registereduser_id FK
+  String reddit_community_registereduser_session_id FK
   String vote_type
   DateTime created_at
+  DateTime deleted_at "nullable"
 }
+"reddit_community_comments" }o--|| "reddit_community_posts" : post
+"reddit_community_comments" }o--o| "reddit_community_comments" : parent
+"reddit_community_post_votes" }o--|| "reddit_community_posts" : post
+"reddit_community_comment_votes" }o--|| "reddit_community_comments" : comment
 ```
+
+### `reddit_community_posts`
+
+Posts created by registered users within specific communities.
+
+Each post is associated with its author and the community it belongs to.
+Posts support text, link, or image content types.
+
+Soft deletion is supported to allow moderation without data loss.
+Temporal fields track creation and modification times.
+
+Posts have unique identifiers and references to user sessions to support
+audit trails and accountability.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `reddit_community_registereduser_id`
+  > Reference to the registered user who created the post. {@link
+  > reddit_community_registeredusers.id}.
+- `reddit_community_community_id`
+  > Reference to the community in which the post was created. {@link
+  > reddit_community_communities.id}.
+- `reddit_community_registereduser_session_id`
+  > Reference to the registered user's session during post creation. {@link
+  > reddit_community_registereduser_sessions.id}.
+- `type`: Type of the post content: text, link, or image.
+- `title`: Title of the post.
+- `body`: Body content for text posts; nullable for non-text posts.
+- `link_url`: URL for link posts; nullable for non-link posts.
+- `image_url`: URL for image posts; nullable for non-image posts.
+- `created_at`: Post creation timestamp.
+- `updated_at`: Post last update timestamp.
+- `deleted_at`: Soft deletion timestamp for audit and moderation.
+
+### `reddit_community_comments`
+
+Comments and nested replies made by registered users on posts or other
+comments.
+
+Supports unlimited nesting depth through parent comment references.
+
+Each comment is linked to its author, the post it belongs to, and user
+session for audit.
+
+Soft deletion enabled for moderation and audit purposes.
+
+Allows rich interactions and supports hierarchical comment threads.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `reddit_community_post_id`: Reference to the parent post. [reddit_community_posts.id](#reddit_community_posts).
+- `reddit_community_registereduser_id`
+  > Reference to the registered user who authored the comment. {@link
+  > reddit_community_registeredusers.id}.
+- `reddit_community_registereduser_session_id`
+  > Reference to the registered user's session during comment creation.
+  > [reddit_community_registereduser_sessions.id](#reddit_community_registereduser_sessions).
+- `parent_id`
+  > Reference to parent comment for nested replies; null for top-level
+  > comments. [reddit_community_comments.id](#reddit_community_comments).
+- `body`: Content of the comment.
+- `created_at`: Comment creation timestamp.
+- `updated_at`: Comment last update timestamp.
+- `deleted_at`: Soft deletion timestamp for audit and moderation.
 
 ### `reddit_community_post_votes`
 
-Post votes represent the upvote or downvote cast by registered users on
-posts within communities.
+Votes cast by registered users on posts.
 
-Each vote references a specific post and the registered user who cast the
-vote, along with the creation timestamp.
+Each vote records the user who voted, their session, the post voted on,
+and the type of vote (e.g., upvote or downvote).
 
-The unique constraint ensures a user can vote on a post only once.
+Used to enforce single vote per user per post and support karma calculation.
 
-This model supports the calculation of vote counts and user karma updates
-based on post votes.
+Supports efficient querying and aggregation of post vote totals.
+
+Soft deletion allows audit and moderation of vote records.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_post_id`: The post that received the vote. [reddit_community_posts.id](#reddit_community_posts).
-- `reddit_community_registered_user_id`
-  > The registered user who cast the vote. {@link
-  > reddit_community_registered_users.id}.
-- `vote_type`: Type of vote, either upvote or downvote, indicating vote direction.
-- `created_at`: Timestamp when the vote was created.
+- `reddit_community_post_id`
+  > Reference to the post receiving the vote. {@link
+  > reddit_community_posts.id}.
+- `reddit_community_registereduser_id`
+  > Reference to the registered user who cast the vote. {@link
+  > reddit_community_registeredusers.id}.
+- `reddit_community_registereduser_session_id`
+  > Reference to the registered user's session when voting. {@link
+  > reddit_community_registereduser_sessions.id}.
+- `vote_type`: Vote type indicating upvote or downvote.
+- `created_at`: Vote creation timestamp.
+- `deleted_at`: Soft deletion timestamp to invalidate votes for audit.
 
 ### `reddit_community_comment_votes`
 
-Comment votes represent the upvote or downvote cast by registered users
-on comments within communities.
+Votes cast by registered users on comments.
 
-Each vote references a specific comment and the registered user who cast
-the vote, along with the creation timestamp.
+Each vote records the user, their session, the comment voted on, and the
+vote type (upvote or downvote).
 
-The unique constraint prevents multiple votes by the same user on the
-same comment.
+Supports constraints to enforce one vote per user per comment.
 
-This model supports community engagement tracking and karma calculation
-based on comment votes.
+Enables efficient aggregation and audit of comment votes.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_community_comment_id`: The comment that received the vote. [reddit_community_comments.id](#reddit_community_comments).
-- `reddit_community_registered_user_id`
-  > The registered user who cast the vote. {@link
-  > reddit_community_registered_users.id}.
-- `vote_type`: Type of vote, either upvote or downvote, indicating vote direction.
-- `created_at`: Timestamp when the vote was created.
-
-## Subscriptions
-
-```mermaid
-erDiagram
-"reddit_community_subscriptions" {
-  String id PK
-  String reddit_community_registered_user_id FK
-  String reddit_community_community_id FK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-```
-
-### `reddit_community_subscriptions`
-
-Subscription records linking registered users to communities they have
-subscribed to.
-
-This table manages the many-to-many relationship between users and
-communities, enabling personalized content delivery based on
-subscriptions.
-Each record associates one user with one community and tracks
-subscription timing and deletion status for soft delete and auditing
-purposes.
-
-Subscriptions allow users to curate their feeds and receive content
-updates from selected communities.
-
-A unique composite constraint on user and community enforces that each
-subscription is unique per user-community pair.
+Soft deletion supports vote invalidation and moderation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_registered_user_id`
-  > Reference to the registered user who subscribes. {@link
-  > reddit_community_registered_users.id}.
-- `reddit_community_community_id`
-  > Reference to the subscribed community. {@link
-  > reddit_community_communities.id}.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft delete timestamp; null if active.
+- `reddit_community_comment_id`
+  > Reference to the comment receiving the vote. {@link
+  > reddit_community_comments.id}.
+- `reddit_community_registereduser_id`
+  > Reference to the registered user who cast the vote. {@link
+  > reddit_community_registeredusers.id}.
+- `reddit_community_registereduser_session_id`
+  > Reference to the registered user's session when voting. {@link
+  > reddit_community_registereduser_sessions.id}.
+- `vote_type`: Vote type indicating upvote or downvote.
+- `created_at`: Vote creation timestamp.
+- `deleted_at`: Soft deletion timestamp to invalidate votes for audit.
 
-## Karma
-
-```mermaid
-erDiagram
-"reddit_community_user_karma" {
-  String id PK
-  String registered_user_id FK,UK
-  Int karma
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-```
-
-### `reddit_community_user_karma`
-
-User karma tracking for registered users within the reddit community
-platform.
-
-This table stores the aggregated karma score representing the reputation
-of each registered user based on votes received on their posts and
-comments.
-
-Each record is associated with exactly one registered user and maintains
-timestamps for creation, updates, and soft deletion to support audit
-trails and business logic related to user reputation management.
-
-Karma values reflect the net total of upvotes minus downvotes and
-influence user privileges such as community creation eligibility.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `registered_user_id`
-  > Reference to the registered user. {@link
-  > reddit_community_registered_users.id}.
-- `karma`
-  > Aggregated karma points representing the user's reputation calculated
-  > from votes on posts and comments.
-- `created_at`: Timestamp when this karma record was created.
-- `updated_at`: Timestamp when this karma record was last updated.
-- `deleted_at`
-  > Soft deletion timestamp allows marking records as deleted without
-  > physical removal, supporting audit trails.
-
-## Inquiries
+## Moderation
 
 ```mermaid
 erDiagram
-"reddit_community_reports" {
+"reddit_community_post_reports" {
   String id PK
-  String reddit_community_registered_user_id FK
-  String reddit_community_posts_id FK "nullable"
-  String reddit_community_comments_id FK "nullable"
+  String reddit_community_post_id FK
+  String reddit_community_registereduser_id FK
+  String reddit_community_registereduser_session_id FK
   String reason
-  String description "nullable"
-  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"reddit_community_comment_reports" {
+  String id PK
+  String reddit_community_comment_id FK
+  String reddit_community_registereduser_id FK
+  String reddit_community_registereduser_session_id FK
+  String reason
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 ```
 
-### `reddit_community_reports`
+### `reddit_community_post_reports`
 
-Reports submitted by users to flag inappropriate or rule-violating
-content within communities.
+Reports on posts within the redditCommunity platform.
 
-Each report identifies the reporting user, the target content (either a
-post or a comment), and includes metadata such as reason, detailed
-description, current status in the moderation workflow, and timestamps.
-Soft deletion is supported to allow audit and recovery of reports.
+Each report is submitted by a registered user regarding a specific post
+and includes details such as report reason and timestamps. The reports
+enable moderators to efficiently review and moderate content that users
+flag as inappropriate or violating community standards.
 
-This table enables focused auditing and complaint handling without
-polluting primary content tables, supporting robust moderation and
-platform integrity.
+Reports reference the post being reported, the registered user who
+created the report, and the session from which the report was made for
+audit traceability.
+
+Soft deletion is supported to maintain historical audit trails while
+allowing content moderation and recovery.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_community_registered_user_id`
-  > The registered user who submitted the report. {@link
-  > reddit_community_registered_users.id}.
-- `reddit_community_posts_id`
-  > The post reported as inappropriate. Nullable if the report targets a
-  > comment. [reddit_community_posts.id](#reddit_community_posts).
-- `reddit_community_comments_id`
-  > The comment reported as inappropriate. Nullable if the report targets a
-  > post. [reddit_community_comments.id](#reddit_community_comments).
-- `reason`
-  > Short coded reason for reporting, e.g., spam, harassment, or rule
-  > violation.
-- `description`: Detailed explanation or additional context provided by the reporter.
-- `status`
-  > Current moderation status of the report, e.g., pending, reviewed,
-  > resolved.
-- `created_at`: Report creation date and time.
-- `updated_at`: Date and time of last report update.
-- `deleted_at`: Soft delete timestamp; null if active.
+- `reddit_community_post_id`: Reference to the post being reported. [reddit_community_posts.id](#reddit_community_posts).
+- `reddit_community_registereduser_id`: User who created the report. [reddit_community_registeredusers.id](#reddit_community_registeredusers).
+- `reddit_community_registereduser_session_id`
+  > Session during which the report was created. {@link
+  > reddit_community_registereduser_sessions.id}.
+- `reason`: Reason provided by the user for reporting the post.
+- `created_at`: Timestamp when the report was created.
+- `updated_at`: Timestamp when the report was last updated.
+- `deleted_at`: Soft delete timestamp for moderation audit and recovery.
+
+### `reddit_community_comment_reports`
+
+Reports on comments within the redditCommunity platform.
+
+Each report is submitted by a registered user regarding a specific
+comment and includes details such as report reason and timestamps. The
+reports enable moderators to efficiently review and moderate content that
+users flag as inappropriate or violating community standards.
+
+Reports reference the comment being reported, the registered user who
+filed the report, and the session from which the report was created for
+audit traceability.
+
+Soft deletion is supported to maintain historical audit trails while
+allowing content moderation and recovery.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `reddit_community_comment_id`
+  > Reference to the comment being reported. {@link
+  > reddit_community_comments.id}.
+- `reddit_community_registereduser_id`: User who created the report. [reddit_community_registeredusers.id](#reddit_community_registeredusers).
+- `reddit_community_registereduser_session_id`
+  > Session during which the report was created. {@link
+  > reddit_community_registereduser_sessions.id}.
+- `reason`: Reason provided by the user for reporting the comment.
+- `created_at`: Timestamp when the report was created.
+- `updated_at`: Timestamp when the report was last updated.
+- `deleted_at`: Soft delete timestamp for moderation audit and recovery.
