@@ -13,8 +13,8 @@ AI Model | Score | FCSR | Status
 [`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 72.5 | 42% | 🟡
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 92% | 🟡
 [`mistralai/codestral-2508`](#mistralaicodestral-2508) | 30 | 100% | ❌
+[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 30 | 55% | 🟡
 [`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 30 | 99% | ❌
-[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 27.5 | 56% | 🟡
 [`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 22.5 | 99% | ❌
 [`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 7.5 | 94% | ❌
 
@@ -717,6 +717,49 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Realize |  |  |  | 
 
 
+## `qwen/qwen3-coder-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+[`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `qwen/qwen3-coder-exacto` - `bbs`
+
+- Source Code: [`qwen/qwen3-coder-exacto/bbs`](./qwen/qwen3-coder-exacto/bbs/)
+- Score: 30
+- Elapsed Time: 17m 12s
+- Token Usage: 2.36M
+- Function Calling Success Rate: 53.97%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 10 | 1.48M | 12m 31s | 51%
+🟢 Prisma | `namespaces`: 5, `models`: 11 | 876.2K | 4m 41s | 59%
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `qwen/qwen3-coder-exacto` - `reddit`
+
+- Source Code: [`qwen/qwen3-coder-exacto/reddit`](./qwen/qwen3-coder-exacto/reddit/)
+- Score: 90
+- Elapsed Time: 3h 0m 49s
+- Token Usage: 110.78M
+- Function Calling Success Rate: 55.68%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.53M | 12m 18s | 62%
+🟢 Prisma | `namespaces`: 7, `models`: 21 | 1.63M | 5m 42s | 54%
+🟢 Interface | `operations`: 72, `schemas`: 71 | 55.74M | 1h 2m 18s | 54%
+🟢 Test | `functions`: 118 | 29.21M | 36m 30s | 61%
+🔴 Realize | `functions`: 72, `errors`: 1 | 22.68M | 1h 3m 59s | 53%
+
+
 ## `x-ai/grok-code-fast-1`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -791,49 +834,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Prisma | `namespaces`: 8, `models`: 22 | 1.14M | 2m 49s | 95%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-## `qwen/qwen3-coder-exacto`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-[`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-[`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
-`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-
-### `qwen/qwen3-coder-exacto` - `bbs`
-
-- Source Code: [`qwen/qwen3-coder-exacto/bbs`](./qwen/qwen3-coder-exacto/bbs/)
-- Score: 30
-- Elapsed Time: 17m 12s
-- Token Usage: 2.36M
-- Function Calling Success Rate: 53.97%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 10 | 1.48M | 12m 31s | 51%
-🟢 Prisma | `namespaces`: 5, `models`: 11 | 876.2K | 4m 41s | 59%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-### `qwen/qwen3-coder-exacto` - `reddit`
-
-- Source Code: [`qwen/qwen3-coder-exacto/reddit`](./qwen/qwen3-coder-exacto/reddit/)
-- Score: 80
-- Elapsed Time: 1h 56m 50s
-- Token Usage: 88.10M
-- Function Calling Success Rate: 56.80%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 12 | 1.53M | 12m 18s | 62%
-🟢 Prisma | `namespaces`: 7, `models`: 21 | 1.63M | 5m 42s | 54%
-🟢 Interface | `operations`: 72, `schemas`: 71 | 55.74M | 1h 2m 18s | 54%
-🟢 Test | `functions`: 118 | 29.21M | 36m 30s | 61%
 ⚪ Realize |  |  |  | 
 
 
