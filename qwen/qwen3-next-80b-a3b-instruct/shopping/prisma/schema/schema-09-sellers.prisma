@@ -1,0 +1,509 @@
+/// Seller application records submitted by new business entities seeking to
+/// join the marketplace.
+///
+/// Tracks the complete lifecycle of seller registration, from initial
+/// application submission through admin review and approval/rejection.
+/// Applications must be approved before sellers can list products or access
+/// financial systems. Each application links to corresponding verification
+/// documents and creates a seller profile upon approval.
+///
+/// Integration with identity services for independent authentication.
+/// Applications maintain audit trails with timestamps and admin review
+/// history. Soft deletion preserves data for compliance while allowing
+/// administrative cleanup.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_applications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Applying customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Legal business name as registered with government authorities.
+  business_name String
+  
+  /// Government-issued tax identification number for business validation.
+  tax_id String
+  
+  /// Current status of the application: pending_review, approved, rejected.
+  application_status String
+  
+  /// Admin-provided reason for application rejection. Required when status is
+  /// 'rejected'.
+  rejection_reason String?
+  
+  /// Timestamp when the application was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the application status was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the application was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_verification_documents shopping_mall_seller_verification_documents[]
+  
+  @@index([shopping_mall_customer_id])
+  @@index([application_status])
+  @@index([created_at])
+}
+
+/// Documents submitted by sellers to verify their business identity and
+/// legitimacy.
+///
+/// Contains scanned copies of government-issued documents including business
+/// license, tax documentation, and bank account verification. Each document
+/// is linked to a seller application and must be approved before seller
+/// account activation. Documents are stored securely with encrypted access
+/// controls.
+///
+/// The document upload process is managed through the seller application
+/// workflow. All documents have an expiration date and require periodic
+/// re-verification. Documents are only accessible to approved admin staff
+/// and are archived when the seller account is terminated.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_verification_documents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated seller application {@link
+  /// shopping_mall_seller_applications.id}.
+  shopping_mall_seller_application_id String
+  
+  /// Type of document: business_license, tax_certificate, bank_statement,
+  /// government_id.
+  document_type String
+  
+  /// Secure URL to the uploaded document file in object storage.
+  document_url String
+  
+  /// Original filename uploaded by the seller.
+  document_name String
+  
+  /// Expiry date of the document when re-verification will be required.
+  document_expires_at DateTime?
+  
+  /// Admin user who reviewed and approved the document {@link
+  /// shopping_mall_administrators.id}.
+  verified_by String?
+  
+  /// Timestamp when the document was verified by an admin.
+  verified_at DateTime?
+  
+  /// Timestamp when the document was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the document metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the document was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  application shopping_mall_seller_applications @relation(fields: [shopping_mall_seller_application_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_application_id, document_type], map: "shopping_mall_seller_verification_documents_shopping_m_67b4e627")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_application_id], map: "shopping_mall_seller_verification_documents_shopping_m_b01588a9")
+  @@index([document_type])
+  @@index([verified_at])
+  // spellchecker: ignore-next-line
+  @@index([document_expires_at], map: "shopping_mall_seller_verification_documents_document_e_32b4d15c")
+}
+
+/// Bank account information for sellers to receive payout disbursements.
+///
+/// Stores secure banking details for each approved seller to enable
+/// automated payments. Account information is retrieved through tokenized
+/// payment system integration to ensure PCI compliance. Each seller can have
+/// one or more bank accounts for different currencies or financial
+/// institutions.
+///
+/// Bank accounts are verified through micro-deposits before being enabled
+/// for payouts. Account details are never stored in plaintext and are only
+/// accessible to treasury and accounting departments. Account changes
+/// require admin approval and audit logging.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_bank_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated seller profile {@link shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Name of the financial institution holding the account.
+  bank_name String
+  
+  /// Last four digits of the bank account for user identification.
+  account_number_last_four String
+  
+  /// Bank routing number for domestic transfers.
+  routing_number String
+  
+  /// Type of account: checking, savings, business.
+  account_type String
+  
+  /// Currency of the bank account (ISO 4217 code).
+  currency String
+  
+  /// Full legal name of the account holder as it appears on bank records.
+  account_holder_name String
+  
+  /// Status of bank account verification: pending, verified, failed.
+  verification_status String
+  
+  /// Indicates if this is the default payout account for the seller.
+  is_default Boolean
+  
+  /// Timestamp when the bank account was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when the bank account information was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the bank account was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  profile shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_profile_id, is_default], map: "shopping_mall_seller_bank_accounts_shopping_mall_selle_cf489db4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id], map: "shopping_mall_seller_bank_accounts_shopping_mall_selle_47e3ac2b")
+  @@index([verification_status])
+  @@index([currency])
+}
+
+/// Core seller identity and business profile information.
+///
+/// Represents the main entity that stores the seller's personalized
+/// information including business name, description, logo, and contact
+/// details. Each seller has exactly one profile that serves as their public
+/// presence on the marketplace. Profiles are continuously updated by sellers
+/// and contain both public-facing and administrative data.
+///
+/// Profiles are linked to applications during onboarding and to bank
+/// accounts for financial operations. Profile information controls
+/// storefront appearance and determines which seller-related features are
+/// available. Profile updates are audited for security and compliance.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original customer account from which seller status was granted {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Public-facing name of the seller's business.
+  business_name String
+  
+  /// Detailed description of the seller's business, products, and values.
+  /// Limited to 500 characters.
+  business_description String
+  
+  /// Secure URL to the seller's logo image file in object storage.
+  logo_url String?
+  
+  /// Business contact email for customer inquiries.
+  contact_email String
+  
+  /// Business contact phone number.
+  contact_phone String?
+  
+  /// Legal business address matching government verification documents.
+  business_address String
+  
+  /// Seller account status: active, inactive, suspended, terminated.
+  status String
+  
+  /// Composite performance rating based on customer feedback, shipping speed,
+  /// and dispute rates.
+  performance_score Float
+  
+  /// Timestamp when the seller profile was activated.
+  created_at DateTime
+  
+  /// Timestamp when the seller profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller profile was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_review_replies shopping_mall_product_review_replies[]
+  shopping_mall_seller_bank_accounts shopping_mall_seller_bank_accounts[]
+  shopping_mall_seller_settings shopping_mall_seller_settings?
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  shopping_mall_seller_sales_reports shopping_mall_seller_sales_reports?
+  
+  @@unique([shopping_mall_customer_id])
+  @@unique([business_name])
+  @@index([status])
+  @@index([performance_score])
+  @@index([created_at])
+}
+
+/// Configuration preferences and operational settings for seller accounts.
+///
+/// Stores user-defined preferences and configuration options that control
+/// seller behavior on the platform. Settings include notification
+/// preferences, payout thresholds, currency display options, and display
+/// settings for storefronts. Settings are applied at the seller profile
+/// level and may have defaults inherited from system configuration.
+///
+/// Settings are modified through a self-service interface and should not
+/// affect other sellers. Setting changes trigger audit logging for security.
+/// The profile of this table is subsidiary because it is always managed
+/// through the seller profile interface, not independently.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated seller profile {@link shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Whether email notifications are enabled for order, payment, and review
+  /// updates.
+  notification_email_enabled Boolean
+  
+  /// Whether push notifications are enabled for critical alerts.
+  notification_push_enabled Boolean
+  
+  /// Minimum balance required to request a payout (in local currency).
+  payout_threshold Float
+  
+  /// Preferred currency for display in seller dashboard (ISO 4217 code).
+  currency_display String
+  
+  /// Whether reviews should be auto-approved without admin moderation.
+  auto_approve_reviews Boolean
+  
+  /// Whether to display the feedback button to customers on storefront.
+  show_feedback_button Boolean
+  
+  /// Timestamp when the settings were created for this seller profile.
+  created_at DateTime
+  
+  /// Timestamp when the settings were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the settings were soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  profile shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_profile_id], map: "shopping_mall_seller_settings_shopping_mall_seller_pro_b07928a7")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id], map: "shopping_mall_seller_settings_shopping_mall_seller_pro_7bb2ecc3")
+  @@index([payout_threshold])
+  @@index([notification_email_enabled])
+}
+
+/// Financial disbursements sent to sellers for their sales revenue.
+///
+/// Tracks all payout transactions from the platform to seller bank accounts.
+/// Each payout represents a payment to a seller for accumulated sales
+/// revenue, after deducting platform fees. Payouts are batched daily and
+/// processed through the payment gateway system.
+///
+/// Payouts have distinct status states based on processing stage. Payouts
+/// can be canceled if initiated in error. Payout history is critical for
+/// accounting and tax compliance. Timestamps include creation, processing,
+/// and completion times for full auditability.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving the payout {@link shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Bank account receiving the payout {@link
+  /// shopping_mall_seller_bank_accounts.id}.
+  shopping_mall_seller_bank_account_id String
+  
+  /// Payout status: requested, processing, completed, failed, canceled.
+  status String
+  
+  /// Total payout amount in local currency before platform fees.
+  amount Float
+  
+  /// Platform's service fee deducted from payout amount.
+  platform_fee Float
+  
+  /// Net amount credited to seller's bank account (amount - platform_fee).
+  net_amount Float
+  
+  /// Currency of the payout (ISO 4217 code).
+  currency String
+  
+  /// Identifier for the batch of payouts processed together in the payment
+  /// gateway.
+  batch_id String?
+  
+  /// Timestamp when funds were successfully transferred to the bank account.
+  paid_at DateTime?
+  
+  /// Timestamp when the payout request was initiated.
+  created_at DateTime
+  
+  /// Timestamp when the payout status was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the payout was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  bankAccount shopping_mall_seller_bank_accounts @relation(fields: [shopping_mall_seller_bank_account_id], references: [id], onDelete: Cascade)
+  
+  @@unique([batch_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id], map: "shopping_mall_seller_payouts_shopping_mall_seller_prof_f5259f74")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_bank_account_id], map: "shopping_mall_seller_payouts_shopping_mall_seller_bank_9b7c0b2e")
+  @@index([status])
+  @@index([paid_at])
+  @@index([created_at])
+}
+
+/// Accumulated sales data and financial metrics for seller performance
+/// analysis.
+///
+/// Contains aggregated, read-only sales data generated from seller
+/// transactions. This table serves as a materialized view for performance
+/// metrics and includes daily, weekly, monthly, and year-to-date summaries.
+/// Reports are automatically generated and referenced by sellers through
+/// their dashboard interface.
+///
+/// All data in this table is derived from other transactions and should not
+/// be modified directly. The table is structured as a subsidiary entity
+/// since it's generated by the system and never created by users. All fields
+/// are read-only and updated by scheduled jobs.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sales_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller for whom the sales report is generated {@link
+  /// shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Start date of the reporting period (usually the first day of the period).
+  period_start DateTime
+  
+  /// End date of the reporting period (usually the last day of the period).
+  period_end DateTime
+  
+  /// Total gross sales amount for the period before platform fees.
+  total_sales Float
+  
+  /// Total number of completed orders during the period.
+  total_orders Int
+  
+  /// Total number of product units sold during the period.
+  total_items_sold Int
+  
+  /// Average value of orders during the period (total_sales / total_orders).
+  average_order_value Float
+  
+  /// Total amount of refunds processed during the period.
+  refund_amount Float
+  
+  /// Total platform fees collected from seller sales during the period.
+  platform_fee_total Float
+  
+  /// Total amount paid out to seller during the period.
+  payout_amount Float
+  
+  /// Total number of product listing views during the period.
+  product_views Int
+  
+  /// Customer conversion rate calculated as (total_orders / product_views) *
+  /// 100.
+  conversion_rate Float
+  
+  /// Timestamp when this report snapshot was generated.
+  created_at DateTime
+  
+  /// Timestamp when this report was last recalculated.
+  updated_at DateTime
+  
+  /// Timestamp when this report was soft-deleted by admin action.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_profile_id], map: "shopping_mall_seller_sales_reports_shopping_mall_selle_40782879")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_profile_id, period_start, period_end], map: "shopping_mall_seller_sales_reports_shopping_mall_selle_a58bf64f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id], map: "shopping_mall_seller_sales_reports_shopping_mall_selle_61e09a16")
+  @@index([period_start])
+  @@index([period_end])
+}

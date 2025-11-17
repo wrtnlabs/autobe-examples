@@ -1,0 +1,239 @@
+/// Guest users who can browse public content but cannot create posts or
+/// participate in discussions.
+///
+/// These users represent unauthenticated visitors who have read-only access
+/// to the discussion board.
+/// Guest users provide content discoverability for search engines and casual
+/// visitors while protecting contribution
+/// capabilities for registered users. They do not require authentication or
+/// session management as they are not
+/// logged in.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address used by the guest for tracking and rate limiting purposes.
+  ip_address String?
+  
+  /// Browser user agent string for device and browser identification.
+  user_agent String?
+  
+  /// Timestamp when the guest session was first recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp of the guest's last activity on the platform.
+  last_seen_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([last_seen_at])
+}
+
+/// Authenticated member users who can create posts with images and file
+/// attachments, comment on posts, and manage their own content.
+///
+/// These users represent the core community that drives discussion activity
+/// on the platform.
+/// Members have full participation rights after registration and email
+/// verification. They can create
+/// content, engage with other users, and manage their contributions with
+/// appropriate permissions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name chosen by the member for identification in
+  /// discussions.
+  username String
+  
+  /// Email address used for authentication, notifications, and account
+  /// recovery.
+  email String
+  
+  /// Securely hashed password for user authentication.
+  password_hash String
+  
+  /// Whether the member has verified their email address to activate full
+  /// platform features.
+  is_verified Boolean
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_member_sessions discussion_board_member_sessions[]
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_comments discussion_board_comments[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([is_verified])
+}
+
+/// Administrative users who can review and approve posts, manage user
+/// accounts, delete inappropriate content, and configure system settings.
+///
+/// These users provide oversight capabilities necessary to maintain
+/// community standards and platform quality.
+/// Moderators have elevated privileges to perform content review, user
+/// management, and system administration
+/// tasks. They are responsible for enforcing community guidelines and
+/// ensuring appropriate content quality.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name for the moderator in administrative contexts.
+  username String
+  
+  /// Email address used for authentication and administrative notifications.
+  email String
+  
+  /// Securely hashed password for moderator authentication.
+  password_hash String
+  
+  /// Authorization level determining which administrative functions this
+  /// moderator can perform.
+  permissions_level String
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator account was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_system_settings discussion_board_system_settings[]
+  discussion_board_moderator_sessions discussion_board_moderator_sessions[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([permissions_level])
+}
+
+/// Authentication sessions for member users.
+///
+/// Tracks login sessions for registered members to maintain authentication
+/// state and provide audit trails.
+/// Each session is associated with a specific member and captures connection
+/// context for security monitoring.
+/// This table supports the platform's authentication system for member users
+/// and enables session management
+/// features such as logout and session expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated member account. {@link discussion_board_member.id}.
+  discussion_board_member_id String
+  
+  /// IP address used during the session for security monitoring.
+  ip String
+  
+  /// Connection URL that initiated the session.
+  href String
+  
+  /// Referrer URL that led to the session initiation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or will expire (null if active).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_member @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
+}
+
+/// Authentication sessions for moderator users.
+///
+/// Tracks login sessions for administrative moderators to maintain
+/// authentication state and provide audit trails.
+/// Each session is associated with a specific moderator and captures
+/// connection context for security monitoring.
+/// This table supports the platform's authentication system for moderator
+/// users and enables session management
+/// features such as logout and session expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated moderator account. {@link discussion_board_moderator.id}.
+  discussion_board_moderator_id String
+  
+  /// IP address used during the session for security monitoring.
+  ip String
+  
+  /// Connection URL that initiated the session.
+  href String
+  
+  /// Referrer URL that led to the session initiation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or will expire (null if active).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderator_sessions_discussion_board_m_086f6f8b")
+}

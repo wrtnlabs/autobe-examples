@@ -1,21 +1,22 @@
-/// Cart entity for authenticated customers that represents a collection of
-/// items being considered for purchase.
+/// Primary shopping cart container for each customer.
 ///
-/// This table stores all cart metadata for registered customers, including
-/// total item count, total value, status, and timestamps.
+/// Represents the user's active shopping cart that holds multiple cart items
+/// before checkout.
+/// Each cart is associated with exactly one customer and contains a
+/// collection of cart items with product variants, quantities, and prices at
+/// the time they were added.
 ///
-/// Each record is associated with exactly one customer through the
-/// customer_id foreign key.
+/// Carts remain active until the user checks out or explicitly empties their
+/// cart. Cart items can be added, removed, or have their quantities
+/// modified. The cart itself does not store product prices directly but
+/// references cart_items which capture the price snapshot at addition time.
 ///
-/// The cart can exist in one of three states: 'active', 'abandoned', or
-/// 'converted'. It persists for up to 30 days after last access.
+/// Carts are retained for active sessions and can be restored across devices
+/// via authenticated sessions. When a cart is checked out, its items are
+/// moved to order_items and the cart is cleared but not deleted.
 ///
-/// This is a primary entity because authenticated customers directly
-/// interact with their cart (add, remove, update items) and require
-/// independent API operations.
-///
-/// Due to direct specification requirement, this table is maintained
-/// independently from guest carts even though structure is duplicated.
+/// Soft delete capability allows users to restore accidentally deleted carts
+/// within a limited time window for customer experience purposes.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -26,79 +27,53 @@ model shopping_mall_carts {
   /// Primary Key.
   id String @id
   
-  /// The authenticated customer who owns this cart. References {@link
-  /// shopping_mall_customer.id} (in otherTables).
-  customer_id String
+  /// Customer's primary key. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Total number of items currently in this cart. Updated when items are
-  /// added or removed.
-  total_items Int
-  
-  /// Total monetary value of all items in this cart. Calculated as sum of
-  /// (item quantity * unit price at addition). Excludes discounts and taxes.
-  total_value Float
-  
-  /// Current state of the cart. Valid values: 'active', 'abandoned',
-  /// 'converted'.
-  ///
-  /// - 'active': User has interacted recently and items are still valid.
-  /// - 'abandoned': User has not interacted for a defined period (7-30 days).
-  /// Items remain valid but may be deleted by cleanup job.
-  /// - 'converted': Cart has been successfully converted to an order. Items
-  /// are sealed and no longer modifiable.
-  status String
-  
-  /// Timestamp of the last user interaction with this cart. Used for automatic
-  /// cleanup jobs to identify expired carts.
-  last_accessed DateTime
-  
-  /// Timestamp when this cart was initially created.
+  /// Timestamp when the shopping cart was created.
   created_at DateTime
   
-  /// Timestamp when this cart was last modified.
+  /// Timestamp when the shopping cart was last modified (items added/removed).
   updated_at DateTime
   
-  /// Timestamp when this cart was logically deleted. Null if cart is active.
-  /// Used for soft delete to preserve audit trails and allow for cart
-  /// recovery.
+  /// Soft delete timestamp. If null, cart is active. If set, cart is marked
+  /// for deletion but record preserved for audit.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
   shopping_mall_cart_items shopping_mall_cart_items[]
   
-  @@unique([customer_id])
-  
-  @@index([status, last_accessed])
-  @@index([deleted_at])
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([shopping_mall_customer_id, created_at])
 }
 
-/// Individual product items added to a cart by a user.
+/// Individual items within a customer's shopping cart with price snapshot.
 ///
-/// Each cart item represents one instance of a product variant (SKU) being
-/// considered for purchase. It contains a snapshot of the product's price
-/// and inventory state at the moment of addition to the cart, ensuring
-/// transactional consistency regardless of future price or stock changes.
+/// Represents a specific product variant added to a shopping cart with its
+/// quantity and price as it was at the time of addition.
 ///
-/// Cart items are primary entities because users can independently modify
-/// them (add, remove, change quantity) even within the cart context, and
-/// these operations require independent API endpoints for accurate state
-/// management.
+/// Each cart item is linked to a specific shopping_mall_carts record and a
+/// shopping_mall_product_variants record. The price is stored as a snapshot
+/// to ensure the customer pays the correct price even if the product's price
+/// changes later.
 ///
-/// A cart item has a parent association to either shopping_mall_carts or
-/// shopping_mall_guest_carts via cart_id, indicating which cart it belongs
-/// to. It must reference a valid product variant from
-/// shopping_mall_product_variants.
+/// This table follows the snapshot pattern to record state at time of cart
+/// addition, preserving historical pricing and variant details for accurate
+/// billing and audit trails.
 ///
-/// The status field indicates whether the item is still available or if its
-/// inventory has been depleted. Users can see this status and manually
-/// remove items marked as stale.
+/// Cart items can be removed from the cart (soft delete) but are retained in
+/// the database for order history and return purposes. Quantity can be
+/// modified while the item remains in the cart, but the price snapshot is
+/// immutable once item is added.
 ///
-///
-///
+/// The combination of cart_id and product_variant_id must be unique to
+/// prevent duplicate items in the same cart.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -109,373 +84,165 @@ model shopping_mall_cart_items {
   /// Primary Key.
   id String @id
   
-  /// The cart this item belongs to. References {@link shopping_mall_carts.id}
-  /// (for authenticated users) or {@link shopping_mall_guest_carts.id} (for
-  /// guests).
-  cart_id String
+  /// Shopping cart that contains this item. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
   
-  /// The specific product variant (SKU) being added. References {@link
+  /// Product variant that was added to cart. {@link
   /// shopping_mall_product_variants.id}.
-  product_variant_id String
+  shopping_mall_product_variant_id String
   
-  /// Number of units of this product variant in the cart. Minimum value is 1,
-  /// maximum is 100.
+  /// Number of units of this variant added to the cart. Must be at least 1.
   quantity Int
   
-  /// The exact price of the product variant at the moment it was added to the
-  /// cart. Persisted to ensure consistent pricing during checkout, independent
-  /// of future price changes.
-  unit_price_at_addition Float
-  
-  /// The available inventory count of this product variant at the moment it
-  /// was added to the cart. Used to validate availability during checkout.
-  inventory_at_addition Int
-  
-  /// Current availability status of this cart item. Valid values: 'available',
-  /// 'out_of_stock', 'removed_by_user'.
-  ///
-  /// - 'available': Item is in stock and the cart item is valid.
-  /// - 'out_of_stock': The product variant's inventory has dropped to 0 since
-  /// this item was added.
-  /// - 'removed_by_user': User manually removed this item from cart.
-  status String
+  /// Unit price of the product variant at the time it was added to the cart.
+  /// This is a snapshot value to preserve pricing accuracy for billing, even
+  /// if the product price changes later.
+  price Float
   
   /// Timestamp when this cart item was added to the cart.
   created_at DateTime
   
-  /// Timestamp when this cart item was last updated (e.g., quantity changed).
+  /// Timestamp when this cart item's quantity was last modified.
   updated_at DateTime
   
-  /// Timestamp when this cart item was logically deleted. Null if the item
-  /// still exist in cart. Used for soft delete to preserve audit trails.
+  /// Soft delete timestamp. If null, item is in cart. If set, item has been
+  /// removed from cart but record preserved for audit and order history.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  cart shopping_mall_carts @relation(fields: [cart_id], references: [id], onDelete: Cascade)
-  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_cart_promotions shopping_mall_cart_promotions?
-  shopping_mall_cart_promotion_applications shopping_mall_cart_promotion_applications[]
-  
-  @@index([cart_id, product_variant_id])
-  @@index([status, deleted_at])
-  @@index([product_variant_id])
-}
-
-/// Cart entity for guest users that represents a collection of items being
-/// considered for purchase.
-///
-/// This table stores all cart metadata for unauthenticated guests, including
-/// total item count, total value, status, and timestamps.
-///
-/// Each record is associated with exactly one guest session through the
-/// guest_session_id foreign key.
-///
-/// The cart can exist in one of three states: 'active', 'abandoned', or
-/// 'converted'. It persists for up to 7 days after last access.
-///
-/// This is a primary entity because guest users directly interact with their
-/// cart (add, remove, update items) and require independent API operations
-/// for guest session management.
-///
-/// Due to direct specification requirement, this table is maintained
-/// independently from customer carts even though structure is duplicated.
-///
-/// @namespace Carts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_guest_carts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The session identifier for the guest user. References {@link
-  /// shopping_mall_guest.id} (in otherTables). This defines which browser
-  /// session this cart belongs to.
-  guest_session_id String
-  
-  /// Total number of items currently in this cart. Updated when items are
-  /// added or removed.
-  total_items Int
-  
-  /// Total monetary value of all items in this cart. Calculated as sum of
-  /// (item quantity * unit price at addition). Excludes discounts and taxes.
-  total_value Float
-  
-  /// Current state of the cart. Valid values: 'active', 'abandoned',
-  /// 'converted'.
-  ///
-  /// - 'active': User has interacted recently and items are still valid.
-  /// - 'abandoned': User has not interacted for a defined period (7-30 days).
-  /// Items remain valid but may be deleted by cleanup job.
-  /// - 'converted': Cart has been successfully converted to an order. Items
-  /// are sealed and no longer modifiable.
-  status String
-  
-  /// Timestamp of the last user interaction with this cart. Used for automatic
-  /// cleanup jobs to identify expired carts.
-  last_accessed DateTime
-  
-  /// Timestamp when this cart was initially created.
-  created_at DateTime
-  
-  /// Timestamp when this cart was last modified.
-  updated_at DateTime
-  
-  /// Timestamp when this cart was logically deleted. Null if cart is active.
-  /// Used for soft delete to preserve audit trails and allow for cart
-  /// recovery.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  guest shopping_mall_guest @relation(fields: [guest_session_id], references: [id], onDelete: Cascade)
-  
-  @@unique([guest_session_id])
-  
-  @@index([status, last_accessed])
-  @@index([deleted_at])
-}
-
-/// Promotional discount codes applied to cart items.
-///
-/// This table represents specific promotional discounts applied to
-/// individual cart items. Each record links a promotion code (e.g.,
-/// 'SAVE10') to a specific cart_item, enabling item-level discounts.
-///
-/// This design supports promotions such as 'Buy one, get one 50% off' or
-/// 'Apply coupon to specific items' rather than cart-wide discounts, which
-/// allows for precise calculation and audit.
-///
-/// The promotion code value is stored as a string and referenced from an
-/// external promo registry (not modeled here, per complexity). This table
-/// only captures the application instance.
-///
-/// This table is subsidiary because its existence is entirely dependent on
-/// the cart item. It has no standalone meaning and is managed entirely
-/// through the cart item context.
-///
-/// @namespace Carts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_promotions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The cart item to which this promotion is applied. References {@link
-  /// shopping_mall_cart_items.id}.
-  cart_item_id String
-  
-  /// The ID or code name of the promotion being applied (e.g., 'SAVE10'). Must
-  /// be a valid promotion code as defined by admin. This links to an external
-  /// promotion system.
-  promo_code String
-  
-  /// The exact discount amount (in USD) applied to this cart item. This
-  /// represents the value reduced from the item's unit price_at_addition.
-  discount_amount Float
-  
-  /// Type of discount applied. Valid values: 'percentage', 'fixed_amount'.
-  ///
-  /// - 'percentage': discount_amount represents a percentage of the item's
-  /// unit price.
-  /// - 'fixed_amount': discount_amount is a fixed USD value deducted from the
-  /// item.
-  discount_type String
-  
-  /// Timestamp when this promotion code was applied to this cart item.
-  applied_at DateTime
-  
-  /// Expiration timestamp for this specific promotion application. Used to
-  /// validate if discount is still valid during checkout.
-  valid_until DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  cartItem shopping_mall_cart_items @relation(fields: [cart_item_id], references: [id], onDelete: Cascade)
-  
-  @@unique([cart_item_id])
-  
-  @@index([cart_item_id])
-  @@index([valid_until])
-}
-
-/// Central registry of promotional codes used across the shoppingMall platform.
-///
-/// This table stores the definition of promotion codes and their parameters,
-/// such as discount type, amount, validity period, and usage limits.
-///
-/// This is a subsidiary entity because promotion codes are defined by
-/// administrators and applied to cart items through the
-/// promotion_applications table, but are not independently managed by users.
-///
-/// This table will replace the original shopping_mall_cart_promotions table
-/// which incorrectly used a 1:1 relationship with cart items. Separating the
-/// promotion definition from its application allows for the same promotion
-/// to be reused across multiple cart items (e.g., buy one get one discount)
-/// while maintaining data integrity.
-///
-/// Discouraging use of the original approach where promotion code was
-/// duplicated on every cart item application - this would lead to data
-/// inconsistency when promotion details changed.
-///
-/// When a promotion is modified, the definition in this table is updated,
-/// and existing applications remain correct (they reference a snapshot of
-/// the discount rules at time of application). This supports accurate audit
-/// trails for financial reconciliation.
-///
-///
-///
-/// @namespace Carts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_promotions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier for the promotion (e.g., 'SAVE10', 'FREESHIP'). Must be
-  /// globally unique across all active promotions.
-  promo_code String
-  
-  /// The discount amount or percentage based on discount_type. For
-  /// fixed_amount, this represents USD value to deduct. For percentage, this
-  /// represents percentage of unit price to discount. All values expressed in
-  /// USD.
-  discount_amount Float
-  
-  /// Type of discount applied. Valid values: 'percentage', 'fixed_amount'.
-  ///
-  /// - 'percentage': discount_amount represents a percentage of the cart
-  /// item's unit_price_at_addition to deduct.
-  /// - 'fixed_amount': discount_amount is a fixed USD amount to deduct from
-  /// the cart item's unit_price_at_addition.
-  discount_type String
-  
-  /// Timestamp when this promotion becomes active. Promotions before this time
-  /// are not applicable.
-  valid_from DateTime
-  
-  /// Timestamp when this promotion expires. Promotions after this time are not
-  /// applicable.
-  valid_until DateTime
-  
-  /// Maximum number of times this promotion can be applied across all cart
-  /// items. Null indicates unlimited usage.
-  usage_limit Int?
-  
-  /// Current number of times this promotion has been applied to cart items.
-  /// Incremented when a cart_promotion_application is created.
-  used_count Int
-  
-  /// Whether this promotion is currently available for application. Set to
-  /// false to archive promotion without deletion.
-  is_active Boolean
-  
-  /// Timestamp when this promotion was created.
-  created_at DateTime
-  
-  /// Timestamp when this promotion was last modified.
-  updated_at DateTime
-  
-  /// Timestamp when this promotion was logically deleted. Null if promotion is
-  /// active. Used for soft delete to preserve audit trails for financial
-  /// reporting.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_cart_promotion_applications shopping_mall_cart_promotion_applications[]
-  
-  @@index([valid_until])
-  @@index([is_active, used_count, usage_limit])
-}
-
-/// Instances of promotional codes applied to specific cart items.
-///
-/// This table represents the application of a promotion to a specific cart
-/// item. Each record establishes the relationship between a promotion and a
-/// cart item, storing the actual discount amount applied at time of
-/// application.
-///
-/// This is a subsidiary entity because it has no standalone meaning and
-/// exists only to connect cart items with promotions. It cannot be created,
-/// updated, or deleted independently of its parent cart item.
-///
-/// This table replaces the incorrect 1:1 relationship between cart_items and
-/// shopping_mall_cart_promotions, allowing multiple cart items to be
-/// associated with the same promotion (e.g., buy one get one discount),
-/// while still recording the exact discount applied to each item.
-///
-/// By separating the promotion definition (shopping_mall_promotions) from
-/// its application (this table), we maintain normalization and ensure
-/// financial accuracy even when promotions are modified after being applied.
-///
-///
-///
-/// @namespace Carts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_promotion_applications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The cart item to which this promotion is applied. References {@link
-  /// shopping_mall_cart_items.id}.
-  cart_item_id String
-  
-  /// The promotion definition being applied. References {@link
-  /// shopping_mall_promotions.id}.
-  promotion_id String
-  
-  /// The exact discount amount (in USD) actually applied to this cart item.
-  /// Calculated as: promotion.discount_amount * (if percentage:
-  /// unit_price_at_addition / 100) or promotion.discount_amount (if
-  /// fixed_amount). This record is the immutable snapshot of discount applied
-  /// at time of application, even if the promotion definition changes later.
-  final_discount_amount Float
-  
-  /// Timestamp when this promotion code was applied to this cart item.
-  applied_at DateTime
-  
-  /// Current application status. Valid values: 'active', 'expired', 'invalid'.
-  ///
-  /// - 'active': The promotion is still valid and discount applies.
-  /// - 'expired': The promotion's valid_until has passed.
-  /// - 'invalid': The promotion's usage_limit has been reached or is inactive.
-  status String
-  
-  /// Timestamp when this promotion application was created.
-  created_at DateTime
-  
-  /// Timestamp when this promotion application was last updated (e.g., status
-  /// changed).
-  updated_at DateTime
-  
-  /// Timestamp when this promotion application was logically deleted. Null if
-  /// still active. Used for soft delete to preserve audit trails.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  cartItem shopping_mall_cart_items @relation(fields: [cart_item_id], references: [id], onDelete: Cascade)
-  promotion shopping_mall_promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
-  
-  @@index([promotion_id])
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([cart_item_id, promotion_id], map: "shopping_mall_cart_promotion_applications_cart_item_id_59dad869")
-  @@index([status])
+  @@unique([shopping_mall_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_0bb750f8")
+  @@index([shopping_mall_cart_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_cart_items_shopping_mall_product_variant_b9df5a64")
+  @@index([shopping_mall_cart_id, deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, deleted_at], map: "shopping_mall_cart_items_shopping_mall_product_variant_a1f62184")
+}
+
+/// Primary wishlist container for each customer.
+///
+/// Represents the user's personal list of products they are interested in
+/// purchasing in the future.
+///
+/// Each wishlist is associated with exactly one customer and contains a
+/// collection of wishlist items with product variants.
+///
+/// Wishlists remain active indefinitely unless the user explicitly deletes
+/// them. Items in the wishlist do not imply intent to purchase but indicate
+/// interest for future consideration.
+///
+/// Wishlists can be shared with others in some contexts (as per business
+/// policy, not implemented in this schema) but are primarily private to the
+/// user. Users can move items between wishlist and cart.
+///
+/// Soft delete capability allows users to restore accidentally deleted
+/// wishlists within a limited time window for customer experience purposes.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's primary key. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last modified (items added/removed).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, wishlist is active. If set, wishlist is
+  /// marked for deletion but record preserved for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at])
+  @@index([updated_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_crea_13b2d35f")
+}
+
+/// Individual items within a customer's wishlist.
+///
+/// Represents a specific product variant added to a wishlist with its
+/// timestamp.
+///
+/// Each wishlist item is linked to a specific shopping_mall_wishlists record
+/// and a shopping_mall_product_variants record.
+///
+/// This table follows a snapshot pattern to record the variant state at time
+/// of addition for consistency in gift suggestions and future purchase
+/// intent tracking.
+///
+/// Wishlist items can be removed from the wishlist (soft delete) but are
+/// retained in the database for audit trails and to support "restored from
+/// wishlist" functionality.
+///
+/// Unlike cart items, wishlist items do not store price information since
+/// they don't represent immediate purchase intent. The price is always read
+/// from the current product variant when the wishlist item is viewed.
+///
+/// The combination of wishlist_id and product_variant_id must be unique to
+/// prevent duplicate items in the same wishlist.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist that contains this item. {@link shopping_mall_wishlists.id}.
+  shopping_mall_wishlist_id String
+  
+  /// Product variant that was added to wishlist. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Timestamp when this wishlist item was added to the wishlist.
+  created_at DateTime
+  
+  /// Timestamp when this wishlist item was last modified (reordered or moved).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, item is in wishlist. If set, item has
+  /// been removed from wishlist but record preserved for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_e2467ce3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_wishlist_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57e5e679")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_product_var_6de79db4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_wishlist_id, deleted_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_1cf3d84c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, deleted_at], map: "shopping_mall_wishlist_items_shopping_mall_product_var_dcfdb0d5")
 }

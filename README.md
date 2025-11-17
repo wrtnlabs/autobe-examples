@@ -14,6 +14,7 @@ AI Model | Score | FCSR | Status
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 92% | 🟡
 [`mistralai/codestral-2508`](#mistralaicodestral-2508) | 30 | 100% | ❌
 [`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 30 | 99% | ❌
+[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 27.5 | 56% | 🟡
 [`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 22.5 | 99% | ❌
 [`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 7.5 | 94% | ❌
 
@@ -472,14 +473,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`qwen/qwen3-next-80b-a3b-instruct/shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/)
 - Score: 30
-- Elapsed Time: 13m 5s
-- Token Usage: 2.34M
-- Function Calling Success Rate: 93.10%
+- Elapsed Time: 4m 25s
+- Token Usage: 1.91M
+- Function Calling Success Rate: 95.92%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 13 | 874.2K | 2m 31s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 72 | 1.47M | 10m 34s | 87%
+🟢 Analyze | `actors`: 3, `documents`: 11 | 715.5K | 1m 32s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 56 | 1.20M | 2m 52s | 92%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
@@ -790,6 +791,49 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Prisma | `namespaces`: 8, `models`: 22 | 1.14M | 2m 49s | 95%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+## `qwen/qwen3-coder-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+[`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `qwen/qwen3-coder-exacto` - `bbs`
+
+- Source Code: [`qwen/qwen3-coder-exacto/bbs`](./qwen/qwen3-coder-exacto/bbs/)
+- Score: 30
+- Elapsed Time: 17m 12s
+- Token Usage: 2.36M
+- Function Calling Success Rate: 53.97%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 10 | 1.48M | 12m 31s | 51%
+🟢 Prisma | `namespaces`: 5, `models`: 11 | 876.2K | 4m 41s | 59%
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `qwen/qwen3-coder-exacto` - `reddit`
+
+- Source Code: [`qwen/qwen3-coder-exacto/reddit`](./qwen/qwen3-coder-exacto/reddit/)
+- Score: 80
+- Elapsed Time: 1h 56m 50s
+- Token Usage: 88.10M
+- Function Calling Success Rate: 56.80%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.53M | 12m 18s | 62%
+🟢 Prisma | `namespaces`: 7, `models`: 21 | 1.63M | 5m 42s | 54%
+🟢 Interface | `operations`: 72, `schemas`: 71 | 55.74M | 1h 2m 18s | 54%
+🟢 Test | `functions`: 118 | 29.21M | 36m 30s | 61%
 ⚪ Realize |  |  |  | 
 
 

@@ -1,0 +1,113 @@
+/// Discussion board categories that organize articles by topic.
+///
+/// This table defines the available categories that can be assigned to
+/// articles. The system
+/// is designed with exactly two categories as specified in requirements:
+/// economic and political.
+/// Each category has a unique name and can be associated with multiple
+/// articles through the
+/// article_categories junction table.
+///
+/// Categories support soft deletion to maintain historical references while
+/// allowing for
+/// administrative management. The system can be extended with additional
+/// categories in
+/// the future without requiring schema changes.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The name of the category (e.g., economic, political). Must be unique
+  /// across all categories.
+  name String
+  
+  /// A detailed description of what type of content belongs in this category.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_article_categories discussion_board_article_categories[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([name, deleted_at])
+}
+
+/// Junction table linking articles to their assigned categories.
+///
+/// This table establishes the many-to-many relationship between articles and
+/// categories,
+/// allowing articles to be classified under one or more categories. Each
+/// record represents
+/// an association between a single article and a single category.
+///
+/// The table includes temporal fields to track when associations were
+/// created, supporting
+/// audit trails and historical analysis of content categorization. Soft
+/// deletion is
+/// implemented to preserve historical data while allowing for
+/// re-categorization.
+///
+/// This entity has primary stance because users need to independently manage
+/// these
+/// associations, search across articles by category, and perform
+/// administrative operations
+/// on category assignments regardless of parent context.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article. {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Reference to the category. {@link discussion_board_categories.id}.
+  discussion_board_category_id String
+  
+  /// Timestamp when the article-category association was created.
+  created_at DateTime
+  
+  /// Timestamp when the article-category association was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the article-category association was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_category_id], map: "discussion_board_article_categories_discussion_board_a_d24a46b3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_categories_discussion_board_a_cdfd5f09")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_category_id], map: "discussion_board_article_categories_discussion_board_c_82b730fc")
+  @@index([created_at])
+  @@index([deleted_at])
+}

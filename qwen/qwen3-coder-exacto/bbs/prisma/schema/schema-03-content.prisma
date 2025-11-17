@@ -1,0 +1,114 @@
+/// Articles created by users on economic or political topics.
+///
+/// This table stores the primary content pieces in the discussion board
+/// system. Articles can be created by members or moderators and must go
+/// through an approval process before becoming publicly visible. Each
+/// article is associated with one or more categories and can include file
+/// attachments.
+///
+/// Articles have a lifecycle managed through their status field, starting as
+/// 'pending' and moving to 'approved' or 'rejected' based on moderator
+/// review. The system maintains full audit trails of article changes through
+/// snapshot tables and preserves deleted content for compliance purposes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member or moderator who created this article. {@link
+  /// discussion_board_member.id} or {@link discussion_board_moderator.id}.
+  author_id String
+  
+  /// The primary category this article belongs to. {@link
+  /// discussion_board_categories.id}.
+  category_id String
+  
+  /// The title of the article. Must be between 5-200 characters.
+  title String
+  
+  /// The main content body of the article. Must be between 10-10,000
+  /// characters.
+  content String
+  
+  /// The current approval status of the article. Valid values: 'pending',
+  /// 'approved', 'rejected'.
+  status String
+  
+  /// Timestamp when the article was first created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the article was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author discussion_board_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_article_categories discussion_board_article_categories[]
+  
+  @@index([author_id, created_at])
+  @@index([category_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Comments made by users on discussion board articles.
+///
+/// This table stores user comments on articles. Comments can be made by any
+/// authenticated user (member or moderator) and are associated with a
+/// specific article. Each comment includes text content and maintains
+/// timestamps for creation and modification.
+///
+/// Comments support the core engagement functionality of the discussion
+/// board, allowing users to respond to articles and participate in
+/// discussions. Like articles, comments support soft deletion to preserve
+/// discussion context while allowing inappropriate content to be removed.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article this comment belongs to. {@link discussion_board_articles.id}.
+  article_id String
+  
+  /// The member or moderator who created this comment. {@link
+  /// discussion_board_member.id} or {@link discussion_board_moderator.id}.
+  author_id String
+  
+  /// The comment text content. Must be between 1-2,000 characters.
+  content String
+  
+  /// Timestamp when the comment was first created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  author discussion_board_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  @@index([article_id, created_at])
+  @@index([author_id, created_at])
+}

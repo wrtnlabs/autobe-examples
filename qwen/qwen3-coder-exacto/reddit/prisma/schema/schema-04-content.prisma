@@ -1,0 +1,158 @@
+/// Content posts created by users in community forums.
+///
+/// Posts represent the primary content units in the forum platform,
+/// supporting multiple content types including text posts, link posts, and
+/// image posts. Each post is associated with a specific community and
+/// author, and can receive votes and comments from other users.
+///
+/// Posts maintain their content type identity for the entire lifecycle, with
+/// type-specific fields being populated based on the post type. Text posts
+/// contain body content, link posts contain URLs, and image posts may
+/// reference uploaded media.
+///
+/// The platform supports post editing within a time window (6 hours) and
+/// provides full audit trail through creation, modification, and deletion
+/// timestamps. Soft deletion is implemented to maintain content integrity
+/// for moderation purposes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this post belongs to. {@link
+  /// community_forum_communities.id}.
+  community_forum_community_id String
+  
+  /// The user who created this post. {@link community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// The session when this post was created. {@link
+  /// community_forum_user_sessions.id}.
+  community_forum_user_session_id String
+  
+  /// The title of the post, displayed in post listings and as the main header.
+  /// Limited to 300 characters to ensure concise, scannable titles.
+  title String
+  
+  /// The content type of this post, determining which content fields are
+  /// populated. Valid values are 'text', 'link', or 'image'.
+  type String
+  
+  /// The main content body of text posts. Can contain up to 40,000 characters
+  /// for detailed discussions. Only populated for text posts.
+  body String?
+  
+  /// The URL for link posts. Must be a valid, accessible web address. Only
+  /// populated for link posts.
+  url String?
+  
+  /// The URI reference to the uploaded image for image posts. Points to stored
+  /// media content. Only populated for image posts.
+  image_uri String?
+  
+  /// The timestamp when this post was originally created.
+  created_at DateTime
+  
+  /// The timestamp when this post was last modified.
+  updated_at DateTime
+  
+  /// The timestamp when this post was deleted, if applicable. Null indicates
+  /// active post.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_forum_communities @relation(fields: [community_forum_community_id], references: [id], onDelete: Cascade)
+  author community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  session community_forum_user_sessions @relation(fields: [community_forum_user_session_id], references: [id], onDelete: Cascade)
+  
+  community_forum_comments community_forum_comments[]
+  community_forum_post_votes community_forum_post_votes[]
+  community_forum_report_on_posts community_forum_report_on_posts[]
+  community_forum_post_karma community_forum_post_karma[]
+  
+  @@index([community_forum_user_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_community_id, created_at], map: "community_forum_posts_community_forum_community_id_cre_23e4d612")
+  @@index([community_forum_user_id, created_at])
+}
+
+/// Comments on forum posts with support for nested replies.
+///
+/// Comments enable discussion threads on posts, with support for direct
+/// replies to posts and nested replies to other comments. Each comment
+/// maintains a clear relationship to its parent post and can optionally
+/// reference a parent comment for threaded conversations.
+///
+/// The nested structure supports up to 10 levels of indentation as per
+/// requirements, with visual presentation managed by the frontend. Comments
+/// can be edited by their authors within a limited time window (15 minutes)
+/// and support full audit tracking.
+///
+/// Comments contribute to user karma when upvoted and can be reported for
+/// inappropriate content. The system preserves comment hierarchies even when
+/// intermediate comments are deleted, maintaining conversation context.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment belongs to. {@link community_forum_posts.id}.
+  community_forum_post_id String
+  
+  /// The user who created this comment. {@link community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// The session when this comment was created. {@link
+  /// community_forum_user_sessions.id}.
+  community_forum_user_session_id String
+  
+  /// The parent comment this is a reply to, for threaded discussions. {@link
+  /// community_forum_comments.id}.
+  parent_id String?
+  
+  /// The content of the comment, limited to 10,000 characters for detailed
+  /// responses while preventing excessive length.
+  body String
+  
+  /// The timestamp when this comment was originally created.
+  created_at DateTime
+  
+  /// The timestamp when this comment was last modified.
+  updated_at DateTime
+  
+  /// The timestamp when this comment was deleted, if applicable. Null
+  /// indicates active comment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_forum_posts @relation(fields: [community_forum_post_id], references: [id], onDelete: Cascade)
+  author community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  session community_forum_user_sessions @relation(fields: [community_forum_user_session_id], references: [id], onDelete: Cascade)
+  parent community_forum_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive community_forum_comments[] @relation("recursive")
+  community_forum_comment_votes community_forum_comment_votes[]
+  community_forum_report_on_comments community_forum_report_on_comments[]
+  community_forum_comment_karma community_forum_comment_karma[]
+  
+  @@index([community_forum_user_session_id])
+  
+  @@index([community_forum_post_id, created_at])
+  @@index([community_forum_user_id, created_at])
+  @@index([parent_id, created_at])
+}

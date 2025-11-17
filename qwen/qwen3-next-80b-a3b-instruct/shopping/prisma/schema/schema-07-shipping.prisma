@@ -1,0 +1,347 @@
+/// Core shipment entity that links orders to carrier logistics and tracking.
+///
+/// Represents the physical transportation of purchased goods from seller to
+/// customer. Each shipment is tied to a specific order and carrier, with
+/// tracking information managed separately in shipment_tracking and
+/// delivery_attempts tables.
+///
+/// Important for audit trails during delivery disputes and logistics
+/// performance analysis. Soft deletion is supported to maintain historical
+/// records even if shipments are cancelled or voided.
+///
+/// Relates to orders via order_id and to carriers via carrier_id. The status
+/// field reflects order lifecycle state, while tracking and delivery
+/// attempts are handled as separate entities for real-time carrier updates.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated order this shipment belongs to. {@link
+  /// shopping_mall_orders.id}.
+  order_id String
+  
+  /// The shipping carrier responsible for this shipment. {@link
+  /// shopping_mall_shipping_carriers.id}.
+  carrier_id String
+  
+  /// Current status of the shipment. Valid values: pending, shipped,
+  /// out_for_delivery, delivered, returned_to_sender, cancelled. Follows order
+  /// lifecycle transitions.
+  status String
+  
+  /// The carrier's unique tracking identifier for this shipment. Format varies
+  /// by carrier (e.g., 123456789012, 9400110200000000000000). Used to link to
+  /// carrier's tracking system.
+  tracking_number String?
+  
+  /// Predicted date and time of delivery based on carrier's service level and
+  /// origin/destination.
+  estimated_delivery_date DateTime?
+  
+  /// Type of shipping service selected (e.g., standard, express, overnight).
+  shipping_method String
+  
+  /// Timestamp when this shipment record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this shipment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this shipment was soft-deleted (e.g., cancelled). NULL if
+  /// still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_shipping_carriers @relation(fields: [carrier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipment_tracking shopping_mall_shipment_tracking[]
+  shopping_mall_delivery_attempts shopping_mall_delivery_attempts[]
+  
+  @@index([order_id])
+  @@index([carrier_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Event log of carrier-provided tracking status updates for each shipment.
+///
+/// Represents discrete, timestamped status events from external carriers
+/// (e.g., "shipped", "in transit", "out for delivery", "delivered"). Unlike
+/// the main shipment status field (which reflects business state), this
+/// table captures granular carrier updates in real time.
+///
+/// This is a subsidiary table managed exclusively through its parent
+/// shipment. Each tracking event is immutable once created and cannot be
+/// modified or deleted. The status field is critical for accurate delivery
+/// predictions, customer notifications, and dispute resolution.
+///
+/// Historical tracking data helps evaluate carrier performance and
+/// investigate delivery issues. This table enables real-time customer
+/// tracking pages without coupling system state to carrier API responses.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipment this tracking event belongs to. {@link
+  /// shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// Specific carrier-provided status event (e.g., shipped, delivered,
+  /// delivery_attempt_failed, customs_clearance_completed). Follows carrier's
+  /// standard status codes.
+  status String
+  
+  /// Geographical location (city, region, country) where this status update
+  /// was recorded by the carrier.
+  location String?
+  
+  /// Additional carrier-provided details about this status update (e.g., 'Left
+  /// at front door', 'Attempted delivery - no one home', 'Delayed by
+  /// weather').
+  details String?
+  
+  /// The exact timestamp when this status update was received from the
+  /// carrier's system. This may differ significantly from system.timestamp.
+  event_timestamp DateTime
+  
+  /// Timestamp when this tracking event was recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when this tracking event was last updated (if applicable).
+  updated_at DateTime
+  
+  /// Timestamp when this tracking record was soft-deleted. Should always be
+  /// NULL as tracking events are immutable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  @@index([shipment_id, event_timestamp])
+}
+
+/// Record of every delivery attempt made on a shipment, including outcomes
+/// and customer interactions.
+///
+/// Captures specific delivery event details such as time attempted, outcome
+/// (success/failure), delivery personnel actions, and customer responses.
+/// Each delivery attempt during a shipment's lifecycle is logged as a
+/// separate record.
+///
+/// The status field categorizes the result of each attempt: delivered,
+/// failed, refused, partial_delivery. This table is essential for
+/// investigating delivery failures, documenting proof of attempt, and
+/// managing re-delivery requests.
+///
+/// This is a subsidiary table managed through its parent shipment. Attempt
+/// records are append-only and immutable, preserving an audit trail of
+/// delivery efforts that corresponds to tracking events.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_delivery_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipment this delivery attempt belongs to. {@link
+  /// shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// Outcome of the delivery attempt. Valid values: delivered, failed,
+  /// refused, partial_delivery, attempted_but_not_handled.
+  status String
+  
+  /// The exact date and time when the delivery attempt occurred.
+  attempted_at DateTime
+  
+  /// Name of the delivery person who attempted delivery (if available from
+  /// carrier).
+  delivery_person_name String?
+  
+  /// Unique identifier assigned by the carrier to the delivery personnel.
+  delivery_person_id String?
+  
+  /// Digital signature collected from customer (base64-encoded or link to
+  /// image). NULL if no signature was required or collected.
+  signature String?
+  
+  /// Additional context from driver (e.g., 'Left with neighbor', 'Doorbell
+  /// rang but no answer', 'Customer requested to leave at back door').
+  notes String?
+  
+  /// Timestamp when this delivery attempt record was created.
+  created_at DateTime
+  
+  /// Timestamp when this delivery attempt record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this delivery attempt was soft-deleted. Should always be
+  /// NULL as delivery attempts are immutable historical records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  @@index([shipment_id, attempted_at])
+}
+
+/// Geographic regions used by the platform to define shipping rate
+/// boundaries and service availability.
+///
+/// Defines standardized shipping zones (geographic areas) that determine
+/// applicable rates based on origin and destination. Zones can represent
+/// cities, states, countries, or custom regions defined by the
+/// platform/operator.
+///
+/// This is a primary entity because it serves as a reference table used by
+/// the shipping_rates table to correlate prices with destinations. Zones are
+/// manually managed by platform admins and are not tied to specific user
+/// data.
+///
+/// Useful for excluding certain areas from delivery, defining service tiers,
+/// and calculating shipping costs accurately.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_zones {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name of the zone (e.g., 'Zone 1: Seoul Metropolitan Area',
+  /// 'International: Europe'). Must be unique within the system.
+  name String
+  
+  /// Detailed description of boundaries, included regions, and any special
+  /// rules for this zone.
+  description String?
+  
+  /// Whether this zone is currently active for shipping. Inactive zones cannot
+  /// be selected for new rates.
+  is_active Boolean
+  
+  /// Timestamp when this zone was created.
+  created_at DateTime
+  
+  /// Timestamp when this zone was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this zone was soft-deleted. NULL if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_shipping_rates_of_origin_zone_id shopping_mall_shipping_rates[] @relation("shopping_mall_shipping_rates_of_origin_zone_id")
+  shopping_mall_shipping_rates_of_destination_zone_id shopping_mall_shipping_rates[] @relation("shopping_mall_shipping_rates_of_destination_zone_id")
+  
+  @@unique([name])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Pricing rules for shipping based on zones, weights, and service levels.
+///
+/// Defines the cost structure for shipping based on origin zone, destination
+/// zone, package weight, and requested service (standard, express, etc.).
+/// These rates are established by platform administrators or derived from
+/// carrier agreements and used during checkout to calculate shipping fees.
+///
+/// A primary entity because it represents a core business rule that
+/// customers directly interact with when choosing shipping options. Rates
+/// are ruled by the platform rather than the seller and can be updated
+/// globally. Each rate record is associated with a specific origin and
+/// destination zone combination.
+///
+/// The flat rate or weight-based pricing is stored as a double precision
+/// value. This table is referenced during cart calculations to determine
+/// final shipping cost presented to the customer.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipping zone from which this shipment originates. Typically the
+  /// seller's location. {@link shopping_mall_shipping_zones.id}.
+  origin_zone_id String
+  
+  /// The shipping zone where this shipment is being delivered. Typically the
+  /// buyer's location. {@link shopping_mall_shipping_zones.id}.
+  destination_zone_id String
+  
+  /// Type of shipping service this rate applies to. Valid values: standard,
+  /// express, overnight, same_day, economy. Must be aligned with carrier
+  /// offerings.
+  service_level String
+  
+  /// Minimum weight (in kg) for this rate tier. For example, if weight_from=0
+  /// and weight_to=1, this rate applies to items weighing 0 to 1 kg.
+  weight_from Float
+  
+  /// Maximum weight (in kg) for this rate tier. For example, if weight_from=0
+  /// and weight_to=1, this rate applies to items weighing 0 to 1 kg.
+  weight_to Float
+  
+  /// If true, the rate applies regardless of weight within the defined range.
+  /// If false, the rate is calculated based on weight and rate per kg.
+  is_flat_rate Boolean
+  
+  /// The shipping cost in USD for this rate. When is_flat_rate=true, this is
+  /// the fixed fee. When false, this is the cost per kilogram.
+  rate Float
+  
+  /// Whether this rate is currently active for use during checkout.
+  is_active Boolean
+  
+  /// Timestamp when this rate was created.
+  created_at DateTime
+  
+  /// Timestamp when this rate was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this rate was soft-deleted. NULL if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  originZone shopping_mall_shipping_zones @relation("shopping_mall_shipping_rates_of_origin_zone_id", fields: [origin_zone_id], references: [id], onDelete: Cascade)
+  destinationZone shopping_mall_shipping_zones @relation("shopping_mall_shipping_rates_of_destination_zone_id", fields: [destination_zone_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([origin_zone_id, destination_zone_id, service_level, weight_from, weight_to], map: "shopping_mall_shipping_rates_origin_zone_id_destinatio_40f817fa")
+  @@index([origin_zone_id])
+  @@index([destination_zone_id])
+  @@index([service_level])
+  @@index([is_active])
+  @@index([created_at])
+}

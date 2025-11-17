@@ -1,0 +1,294 @@
+/// Registered users of the community forum platform.
+///
+/// This table stores the core identity information for users who have
+/// registered on the platform. Each user has a unique email address and
+/// password hash for authentication. Users can create posts, comments, vote
+/// on content, and participate in communities.
+///
+/// Users are the primary actors on the platform and have the most basic
+/// level of permissions. They can participate in all standard community
+/// activities but cannot perform moderation or administrative functions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and communication. Must be
+  /// unique across all users.
+  email String
+  
+  /// Hashed password for user authentication. Uses bcrypt with minimum 12
+  /// rounds for security.
+  password_hash String
+  
+  /// User's chosen display name within the community. Must be unique and
+  /// follow naming conventions (3-21 characters, alphanumeric and
+  /// underscores).
+  username String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_forum_user_sessions community_forum_user_sessions[]
+  community_forum_moderators community_forum_moderators?
+  community_forum_administrators community_forum_administrators?
+  community_forum_communities_of_created_by_id community_forum_communities[] @relation("community_forum_communities_of_created_by_id")
+  community_forum_communities_of_updated_by_id community_forum_communities[] @relation("community_forum_communities_of_updated_by_id")
+  community_forum_community_memberships_of_user_id community_forum_community_memberships[] @relation("community_forum_community_memberships_of_user_id")
+  community_forum_community_memberships_of_created_by_id community_forum_community_memberships[] @relation("community_forum_community_memberships_of_created_by_id")
+  community_forum_community_memberships_of_updated_by_id community_forum_community_memberships[] @relation("community_forum_community_memberships_of_updated_by_id")
+  community_forum_posts community_forum_posts[]
+  community_forum_comments community_forum_comments[]
+  community_forum_post_votes community_forum_post_votes[]
+  community_forum_comment_votes community_forum_comment_votes[]
+  community_forum_subscriptions community_forum_subscriptions[]
+  community_forum_reports community_forum_reports[]
+  community_forum_user_karma community_forum_user_karma?
+  community_forum_post_karma community_forum_post_karma[]
+  community_forum_comment_karma community_forum_comment_karma[]
+  
+  @@unique([email])
+  @@unique([username])
+}
+
+/// Authentication sessions for community forum users.
+///
+/// This table tracks all active and expired sessions for users who have
+/// logged into the platform. Each session record is associated with a
+/// specific user and contains connection context information.
+///
+/// Sessions provide security by limiting the scope and duration of user
+/// authentication. They also enable audit trails by recording when and how
+/// users access the platform. Session management allows users to view and
+/// revoke active sessions from their account settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns this session. {@link
+  /// community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// Connection URL used to establish the session.
+  href String
+  
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or expired. Null indicates an active
+  /// session.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  community_forum_posts community_forum_posts[]
+  community_forum_comments community_forum_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_user_id, created_at], map: "community_forum_user_sessions_community_forum_user_id__c8b95620")
+}
+
+/// Users with elevated permissions to manage communities and moderate content.
+///
+/// This table stores information for users who have been granted moderator
+/// privileges. Moderators can perform additional functions beyond standard
+/// user capabilities, including managing community settings, reviewing
+/// reported content, and taking moderation actions.
+///
+/// Moderators may be assigned to specific communities or have broader
+/// platform-wide moderation privileges. Their actions are logged for
+/// accountability and review by administrators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user account. {@link community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// Timestamp when moderator privileges were granted.
+  created_at DateTime
+  
+  /// Timestamp when moderator information was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  community_forum_moderator_sessions community_forum_moderator_sessions[]
+  community_forum_reports community_forum_reports[]
+  community_forum_moderation_actions community_forum_moderation_actions[]
+  
+  @@unique([community_forum_user_id])
+}
+
+/// Authentication sessions for community forum moderators.
+///
+/// This table tracks authentication sessions for users with moderator
+/// privileges. Each session record contains connection context information
+/// specific to moderator activities.
+///
+/// Moderator sessions provide the same security and audit trail benefits as
+/// user sessions, with the added capability to perform moderation actions
+/// during the session. The session management allows moderators to track
+/// their moderation activities by session.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator who owns this session. {@link
+  /// community_forum_moderators.id}.
+  community_forum_moderator_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// Connection URL used to establish the session.
+  href String
+  
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or expired. Null indicates an active
+  /// session.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_forum_moderators @relation(fields: [community_forum_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_moderator_id, created_at], map: "community_forum_moderator_sessions_community_forum_mod_d5801827")
+}
+
+/// System administrators with full access to manage all aspects of the
+/// platform.
+///
+/// This table stores information for users with the highest level of
+/// permissions on the platform. Administrators can manage all user accounts,
+/// communities, system settings, and have oversight of all platform
+/// activities.
+///
+/// Administrator accounts are typically reserved for platform operators and
+/// have unrestricted access to all system functions. Their actions are
+/// comprehensively logged for security and compliance purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user account. {@link community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// Timestamp when administrator privileges were granted.
+  created_at DateTime
+  
+  /// Timestamp when administrator information was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  community_forum_administrator_sessions community_forum_administrator_sessions[]
+  
+  @@unique([community_forum_user_id])
+}
+
+/// Authentication sessions for community forum administrators.
+///
+/// This table tracks authentication sessions for users with administrator
+/// privileges. Each session record contains connection context information
+/// specific to administrative activities.
+///
+/// Administrator sessions provide enhanced security monitoring as they grant
+/// access to all platform functions. All actions performed during
+/// administrator sessions are logged with heightened scrutiny for security
+/// auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who owns this session. {@link
+  /// community_forum_administrators.id}.
+  community_forum_administrator_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// Connection URL used to establish the session.
+  href String
+  
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or expired. Null indicates an active
+  /// session.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator community_forum_administrators @relation(fields: [community_forum_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_administrator_id, created_at], map: "community_forum_administrator_sessions_community_forum_133dfcbf")
+}

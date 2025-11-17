@@ -1,0 +1,177 @@
+/// User karma tracking for the community forum platform.
+///
+/// This table maintains the overall karma score for each user, aggregating
+/// post karma and comment karma. The karma system serves as the core
+/// reputation mechanism for the community platform, quantifying user
+/// contributions and engagement to establish trust, credibility, and
+/// community standing. This system incentivizes quality contributions by
+/// rewarding valuable content while discouraging spam or harmful behavior.
+///
+/// The total karma score is calculated as the sum of post karma and comment
+/// karma. This table also includes timestamps for tracking when the karma
+/// was last updated, enabling karma decay calculations and historical
+/// analysis.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user this karma record belongs to. {@link
+  /// community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// The user's post karma score, representing upvotes received on their posts.
+  post_karma Int
+  
+  /// The user's comment karma score, representing upvotes received on their
+  /// comments.
+  comment_karma Int
+  
+  /// Timestamp when this karma record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this karma record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this karma record was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_forum_user_id])
+  @@index([post_karma, updated_at])
+  @@index([created_at])
+  @@index([comment_karma])
+}
+
+/// Post-specific karma tracking for the community forum platform.
+///
+/// This table tracks karma changes for individual posts, allowing for
+/// detailed analysis of which posts contribute to a user's overall
+/// reputation. When a user's post receives an upvote, a record is created in
+/// this table to increment the post author's post karma by 1 point. When a
+/// user's post receives a downvote, a record is created to decrement the
+/// post author's post karma by 1 point.
+///
+/// This detailed tracking enables features like karma history logs and helps
+/// prevent karma farming through repetitive voting patterns by monitoring
+/// for suspicious activity. When a user deletes a post that has received
+/// upvotes, the system reverses all karma points awarded for those upvotes.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_post_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post this karma record is associated with. {@link
+  /// community_forum_posts.id}.
+  community_forum_post_id String
+  
+  /// Reference to the user who owns this post and receives the karma. {@link
+  /// community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// The karma value awarded or deducted for this post (typically +1 for
+  /// upvote, -1 for downvote).
+  value Int
+  
+  /// Timestamp when this karma change was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this karma change was reversed (e.g., when a post is
+  /// deleted).
+  reversed_at DateTime?
+  
+  /// Timestamp when this karma record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this karma record was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_forum_posts @relation(fields: [community_forum_post_id], references: [id], onDelete: Cascade)
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_user_id, created_at], map: "community_forum_post_karma_community_forum_user_id_cre_5ed74155")
+  // spellchecker: ignore-next-line
+  @@index([community_forum_post_id, created_at], map: "community_forum_post_karma_community_forum_post_id_cre_a7ecffe4")
+  @@index([created_at])
+  @@index([value])
+}
+
+/// Comment-specific karma tracking for the community forum platform.
+///
+/// This table tracks karma changes for individual comments, allowing for
+/// detailed analysis of which comments contribute to a user's overall
+/// reputation. When a user's comment receives an upvote, a record is created
+/// in this table to increment the comment author's comment karma by 1 point.
+/// When a user's comment receives a downvote, a record is created to
+/// decrement the comment author's comment karma by 1 point.
+///
+/// This detailed tracking enables features like karma history logs and helps
+/// prevent karma farming through repetitive voting patterns by monitoring
+/// for suspicious activity. When a user deletes a comment that has received
+/// upvotes, the system reverses all karma points awarded for those upvotes.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_forum_comment_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment this karma record is associated with. {@link
+  /// community_forum_comments.id}.
+  community_forum_comment_id String
+  
+  /// Reference to the user who owns this comment and receives the karma.
+  /// {@link community_forum_users.id}.
+  community_forum_user_id String
+  
+  /// The karma value awarded or deducted for this comment (typically +1 for
+  /// upvote, -1 for downvote).
+  value Int
+  
+  /// Timestamp when this karma change was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this karma change was reversed (e.g., when a comment is
+  /// deleted).
+  reversed_at DateTime?
+  
+  /// Timestamp when this karma record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this karma record was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_forum_comments @relation(fields: [community_forum_comment_id], references: [id], onDelete: Cascade)
+  user community_forum_users @relation(fields: [community_forum_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_forum_user_id, created_at], map: "community_forum_comment_karma_community_forum_user_id__7a8256e6")
+  // spellchecker: ignore-next-line
+  @@index([community_forum_comment_id, created_at], map: "community_forum_comment_karma_community_forum_comment__0b9cdb1b")
+  @@index([created_at])
+  @@index([value])
+}

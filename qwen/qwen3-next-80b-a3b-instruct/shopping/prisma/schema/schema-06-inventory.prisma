@@ -1,0 +1,284 @@
+/// Tracks current stock levels for each product variant.
+///
+/// Maintains the real-time inventory count for every product variant in the
+/// system. This table is the single source of truth for available stock
+/// quantities that are used during order processing, cart additions, and
+/// checkout validations.
+///
+/// Each record corresponds to one product variant and must always have a
+/// non-negative quantity. Stock levels are atomic and updated through
+/// transactions to prevent overselling. The quantity field is modified by
+/// order confirmations (decrease), cancellations (increase), and manual
+/// corrections.
+///
+/// This entity is referenced by shopping_mall_inventory_audit for change
+/// tracking and shopping_mall_inventory_alerts for threshold monitoring.
+/// Foreign keys link to product_variants and sellers to maintain
+/// accountability.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant whose inventory is being tracked. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The seller who owns this inventory. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Current available stock quantity. Must be 0 or greater. This is the
+  /// primary source of truth for inventory availability during purchases.
+  quantity Int
+  
+  /// Minimum quantity threshold that triggers low-stock alerts. When inventory
+  /// falls below this value, an alert is generated to notify the seller.
+  reorder_threshold Int
+  
+  /// Timestamp when this inventory record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated (quantity or
+  /// threshold changed).
+  updated_at DateTime
+  
+  /// Timestamp when this inventory record was logically deleted (archived).
+  /// Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_audit shopping_mall_inventory_audit[]
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts?
+  
+  @@unique([shopping_mall_product_variant_id])
+  @@index([shopping_mall_seller_id])
+  @@index([quantity])
+  @@index([reorder_threshold])
+}
+
+/// Records all historical changes to inventory quantities with context.
+///
+/// An immutable audit trail that captures every inventory adjustment event.
+/// Each record represents a delta change to inventory quantity, including
+/// the user who made the change, the reason, previous and new quantities,
+/// and timestamps.
+///
+/// This table is essential for compliance, reconciliation, and
+/// troubleshooting inventory discrepancies. It supports detailed forensic
+/// analysis of stock movements. Changes are made through system events
+/// (order confirmations), manual corrections, or sync operations.
+///
+/// The table links to the modified inventory record, the acting user (seller
+/// or admin), and includes a change type category for filtering. The notes
+/// field can contain detailed descriptions of the adjustment reason.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_audit {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record that was modified. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The seller who made this inventory adjustment (if applicable). {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// The admin who made this inventory adjustment (if applicable). {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String?
+  
+  /// Inventory quantity before this change. Allows calculation of delta
+  /// (current - previous) for audit purposes.
+  previous_quantity Int
+  
+  /// Inventory quantity after this change. This represents the new state after
+  /// the adjustment.
+  new_quantity Int
+  
+  /// Category describing why this change occurred. Valid values:
+  /// "order_confirmation", "order_cancellation", "manual_correction",
+  /// "sync_receipt", "sync_adjustment", "system_reset".
+  change_type String
+  
+  /// Additional context about this inventory change. May include reasons like
+  /// "Restocked after vendor delivery" or "Q3 inventory adjustment - count
+  /// verified." Used for searchable audit trail.
+  notes String?
+  
+  /// Timestamp when this audit record was created.
+  created_at DateTime
+  
+  /// Timestamp when this audit record was last updated (typically not changed
+  /// after creation).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_id])
+  @@index([shopping_mall_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_inventory_audit_shopping_mall_administra_9df57b97")
+  @@index([change_type])
+  @@index([created_at])
+}
+
+/// Tracks automated low-stock alerts for product variants.
+///
+/// Automatically generated records that notify sellers when their inventory
+/// falls below the defined reorder threshold. Each alert represents a single
+/// monitoring event and is marked as either active, resolved, or suppressed.
+///
+/// Alerts are created when inventory quantity drops to or below the
+/// threshold set in shopping_mall_inventory. Each alert is resolved when
+/// inventory is replenished above the threshold. Alerts help ensure sellers
+/// maintain optimal stock levels and avoid lost sales.
+///
+/// Alerts can be manually suppressed if inventory is known to be temporarily
+/// unavailable but remains correct in the system. Each alert is linked to
+/// the specific inventory record and the seller who owns it.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record that triggered this alert. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The seller who is notified by this alert. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// The inventory quantity at the time the alert was triggered. This is the
+  /// exact value that fell below the threshold.
+  triggered_quantity Int
+  
+  /// Timestamp when the inventory quantity first fell below the reorder
+  /// threshold and the alert was generated.
+  triggered_at DateTime
+  
+  /// Timestamp when the alert was resolved (inventory replenished above
+  /// threshold). Null if active.
+  resolved_at DateTime?
+  
+  /// Current status of the alert. Valid values: "active", "resolved",
+  /// "suppressed". Active = inventory still below threshold. Resolved =
+  /// inventory restored. Suppressed = alert manually suspended.
+  status String
+  
+  /// Optional notes when an alert is manually suppressed. For example:
+  /// "Inventory down due to maintenance, expected restock in 2 days".
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_inventory_id])
+  @@index([shopping_mall_seller_id])
+  @@index([status])
+  @@index([triggered_at])
+  @@index([resolved_at])
+}
+
+/// Logs synchronization events between external warehouse systems and the
+/// platform's inventory.
+///
+/// Maintains a record of all automated inventory sync operations from
+/// external logistics partners, warehouse management systems, or physical
+/// counting devices. Each entry represents a batch sync operation that may
+/// update multiple inventory records.
+///
+/// This table is critical for reconciling system inventory with external
+/// sources. Sync logs capture the source system, sync method, timing,
+/// success status, and processed quantity changes. They allow administrators
+/// to trace inventory discrepancies back to external sync events.
+///
+/// Each sync operation may involve hundreds of inventory updates, all
+/// tracked through this log entry and linked to corresponding
+/// inventory_audit entries via common timestamp ranges.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_sync_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The external system from which inventory data was synced. Examples:
+  /// "WarehouseHub-PROD", "VendoraAPI", "ManualCount_20240515".
+  source_system String
+  
+  /// How the sync was performed. Valid values: "api_polling", "webhook_push",
+  /// "bulk_csv_upload", "manual_import".
+  sync_method String
+  
+  /// Timestamp when this sync operation began and the data was received by the
+  /// platform.
+  synced_at DateTime
+  
+  /// Timestamp when this sync operation completed processing. Null if still in
+  /// progress.
+  completed_at DateTime?
+  
+  /// Total number of inventory records affected by this sync operation.
+  total_records_processed Int
+  
+  /// Indicates whether the sync operation completed successfully without
+  /// errors.
+  success Boolean
+  
+  /// Detailed description of any error that occurred during the sync. Null if
+  /// success = true.
+  error_message String?
+  
+  /// Additional context about this sync operation, such as batch ID from
+  /// external system or filename of uploaded CSV.
+  notes String?
+  
+  /// Timestamp when this log record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this log record was last updated (when updated from
+  /// pending to completed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([source_system])
+  @@index([sync_method])
+  @@index([synced_at])
+  @@index([completed_at])
+  @@index([success])
+}
