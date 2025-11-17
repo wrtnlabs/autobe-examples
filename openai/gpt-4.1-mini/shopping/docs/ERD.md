@@ -4,155 +4,116 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Sales](#sales)
+- [Catalog](#catalog)
 - [Carts](#carts)
 - [Orders](#orders)
-- [Coupons](#coupons)
-- [Coins](#coins)
+- [Promotions](#promotions)
+- [Reviews](#reviews)
 - [Inquiries](#inquiries)
-- [Favorites](#favorites)
-- [Articles](#articles)
+- [Admin](#admin)
+- [default](#default)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"shopping_mall_channels" {
-  String id PK
-  String code UK
-  String name
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_sections" {
-  String id PK
-  String shopping_mall_channel_id FK
-  String code UK
-  String name
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_channel_categories" {
-  String id PK
-  String shopping_mall_channel_id FK
-  String shopping_mall_product_category_id FK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_configurations" {
+"shopping_mall_system_configurations" {
   String id PK
   String key UK
   String value
+  String description
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_sections" }o--|| "shopping_mall_channels" : channel
-"shopping_mall_channel_categories" }o--|| "shopping_mall_channels" : channel
+"shopping_mall_categories" {
+  String id PK
+  String name UK
+  String description "nullable"
+  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_category_hierarchies" {
+  String id PK
+  String parent_category_id FK
+  String child_category_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"shopping_mall_category_hierarchies" }o--|| "shopping_mall_categories" : parentCategory
+"shopping_mall_category_hierarchies" }o--|| "shopping_mall_categories" : childCategory
 ```
 
-### `shopping_mall_channels`
+### `shopping_mall_system_configurations`
 
-Channels represent the main entry points or marketplaces within the
-e-commerce platform.
+System configuration parameters and settings.
 
-Each channel defines its unique code and display name, enabling clear
-identification and management within the system.
+Stores key-value pairs representing global system behaviors, feature
+toggles, and operational parameters.
+Configurations affect platform-wide features and can be edited by
+authorized administrators.
 
-Channels serve as organizational units that link to specific sections and
-categories to structure the shopping experience.
-
-Soft deletion is supported to retain historical records while allowing
-content moderation and administrative control.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `code`
-  > Unique code identifying the channel, used for internal system references
-  > and API routing.
-- `name`: Display name of the channel as presented to customers and administrators.
-- `created_at`: Timestamp when the channel record was created.
-- `updated_at`: Timestamp when the channel record was last updated.
-- `deleted_at`: Timestamp when the channel record was soft deleted; null if active.
-
-### `shopping_mall_sections`
-
-Sections represent subdivisions or areas within a channel that group
-related categories and products.
-
-Each section belongs to a single channel and serves to organize offerings
-logically for improved navigation and management.
-
-Sections have unique codes within the system and support soft deletion
-for administrative purposes.
-
-They track creation and update timestamps to support auditing and
-operational history.
+Each configuration has a unique key, a value string, a description, and
+temporal fields to track changes.
+Soft delete supported to allow reversible disabling of settings.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_channel_id`
-  > Reference to the channel to which this section belongs. {@link
-  > shopping_mall_channels.id}.
-- `code`: Unique code identifying the section for internal use and API access.
-- `name`
-  > Display name of the section to show in the administrative interfaces and
-  > to customers.
-- `created_at`: Timestamp when the section was created.
-- `updated_at`: Timestamp when the section was last updated.
-- `deleted_at`: Soft delete timestamp; null when the section is active.
+- `key`: Unique configuration key identifying the setting.
+- `value`: Configuration value stored as a string.
+- `description`
+  > Detailed description explaining the purpose and usage of this
+  > configuration setting.
+- `created_at`: Timestamp when the configuration was created.
+- `updated_at`: Timestamp when the configuration was last updated.
+- `deleted_at`: Timestamp when the configuration was soft deleted; null if active.
 
-### `shopping_mall_channel_categories`
+### `shopping_mall_categories`
 
-Channel categories link specific categories to channels, defining the
-category organization within a particular channel context.
+Product categories used for organizing the catalog.
 
-Each category linked to a channel may influence navigation, filtering,
-and presentation of products within that channel.
+Represents business entities grouping products into meaningful hierarchies.
+Categories have names, parent relationship references implicit via
+hierarchy table, status for activation, and timestamps.
+Soft deletion supported to maintain historical integrity.
 
-This table supports soft deletion to allow removal without losing
-historical relationships.
-
-Timestamps track creation and update events for audit trails and system
-operations.
+Independent entity managed by users and sellers to classify products.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_channel_id`: Reference to the shopping mall channel. [shopping_mall_channels.id](#shopping_mall_channels).
-- `shopping_mall_product_category_id`
-  > Reference to product category associated with this channel category.
-  > [shopping_mall_product_categories.id](#shopping_mall_product_categories).
-- `created_at`: Timestamp when the channel category record was created.
-- `updated_at`: Timestamp of last update to this record.
-- `deleted_at`: Soft deletion timestamp; null means active.
+- `name`: Category name for business display and filtering.
+- `description`: Optional detailed description of the category.
+- `status`: Current category status indicating active or inactive state.
+- `created_at`: Timestamp when the category was created.
+- `updated_at`: Timestamp when the category was last updated.
+- `deleted_at`: Timestamp marking soft deletion; null if active.
 
-### `shopping_mall_configurations`
+### `shopping_mall_category_hierarchies`
 
-Configurations store key-value pairs representing system-wide settings
-and preferences.
+Links representing hierarchical relationships between categories.
 
-Each configuration entry has a unique key to prevent duplicates and
-ensure unambiguous retrieval.
+Supports multi-level category trees by connecting parent categories to
+child categories.
+Maintains referential integrity to ensure the tree structure integrity.
 
-Configurations can be soft deleted to allow deactivation without data loss.
-
-Timestamps for creation and updates are maintained for auditing and
-change tracking.
+This table is subsidiary and managed via category operations but has its
+own record for relationship tracking.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`: Unique identifier key for the configuration setting.
-- `value`: Configuration value as a string. Interpretation is context-dependent.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Last modification timestamp.
-- `deleted_at`: Soft delete timestamp; null when configuration is active.
+- `parent_category_id`
+  > Reference to the parent category in the hierarchy. {@link
+  > shopping_mall_categories.id}.
+- `child_category_id`
+  > Reference to the child category in the hierarchy. {@link
+  > shopping_mall_categories.id}.
+- `created_at`: Timestamp when the hierarchy record was created.
+- `updated_at`: Timestamp when the hierarchy record was last updated.
 
 ## Actors
 
@@ -162,7 +123,27 @@ erDiagram
   String id PK
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
+}
+"shopping_mall_customers" {
+  String id PK
+  String email UK
+  String password_hash
+  DateTime created_at
+  DateTime updated_at
+}
+"shopping_mall_sellers" {
+  String id PK
+  String email UK
+  String password_hash
+  DateTime created_at
+  DateTime updated_at
+}
+"shopping_mall_admins" {
+  String id PK
+  String email UK
+  String password_hash
+  DateTime created_at
+  DateTime updated_at
 }
 "shopping_mall_guest_sessions" {
   String id PK
@@ -173,15 +154,6 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_customers" {
-  String id PK
-  String email UK
-  String password_hash
-  String name
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
 "shopping_mall_customer_sessions" {
   String id PK
   String shopping_mall_customer_id FK
@@ -190,17 +162,6 @@ erDiagram
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
-}
-"shopping_mall_sellers" {
-  String id PK
-  String email UK
-  String password_hash
-  String name
-  String status
-  String business_status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
 "shopping_mall_seller_sessions" {
   String id PK
@@ -211,17 +172,6 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_admins" {
-  String id PK
-  String email UK
-  String password_hash
-  String name
-  String status
-  String business_status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
 "shopping_mall_admin_sessions" {
   String id PK
   String shopping_mall_admin_id FK
@@ -231,482 +181,307 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_guest_sessions" }o--|| "shopping_mall_guests" : guest
-"shopping_mall_customer_sessions" }o--|| "shopping_mall_customers" : customer
-"shopping_mall_seller_sessions" }o--|| "shopping_mall_sellers" : seller
-"shopping_mall_admin_sessions" }o--|| "shopping_mall_admins" : admin
+"shopping_mall_guest_sessions" }o--|| "shopping_mall_guests" : shoppingMallGuest
+"shopping_mall_customer_sessions" }o--|| "shopping_mall_customers" : shoppingMallCustomer
+"shopping_mall_seller_sessions" }o--|| "shopping_mall_sellers" : shoppingMallSeller
+"shopping_mall_admin_sessions" }o--|| "shopping_mall_admins" : shoppingMallAdmin
 ```
 
 ### `shopping_mall_guests`
 
-Guest users who browse the platform without requiring authentication.
+Guest users browsing the e-commerce mall without authentication.
 
-They have a minimal profile and are tracked primarily for session
-management and audit purposes.
-
-Guest entities do not have login credentials and are intended for
-transient or anonymous usage.
-
-Soft deletion is supported to allow recording of guest removal without
-losing historic session data.
+This table stores basic guest session information without login
+credentials, enabling temporary tracking and session management.
+Guests can browse the catalog but cannot place orders or access personal
+data.
+Sessions relate to this table for connection tracking.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `created_at`: Timestamp when the guest record was created.
-- `updated_at`: Timestamp when the guest record was last updated.
-- `deleted_at`: Soft deletion timestamp; null if not deleted.
-
-### `shopping_mall_guest_sessions`
-
-Session records for guest users.
-
-These track individual guest sessions including connection context such
-as IP address, referrer, and connection URL.
-
-Sessions allow monitoring guest activity anonymously.
-
-Sessions have a foreign key reference to the guest user.
-
-Session expiry information is recorded for session lifecycle management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_guest_id`: Reference to the guest user. [shopping_mall_guests.id](#shopping_mall_guests).
-- `ip`: IP address of the guest session connection.
-- `href`: URL of the connection origin.
-- `referrer`: Referrer URL from which the guest arrived.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired; null if still active.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last record update timestamp.
 
 ### `shopping_mall_customers`
 
-Registered customer users who have accounts to purchase products and
-manage their profiles.
+Registered customer users with login credentials for authentication and
+shopping.
 
-Customers can manage multiple shipping addresses, perform purchases,
-submit reviews, and track order history.
-
-Customer accounts include authentication credentials for login purposes.
-
-Accounts support soft deletion for audit trails and historical integrity.
+Customers can manage profiles, multiple shipping addresses, orders,
+reviews, and wishlists.
+Contains login-related fields with secure password hashing.
+Supports session relations to track active logins.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Unique email address for customer login and communication.
-- `password_hash`: Hashed password for customer authentication.
-- `name`: Customer's full name.
-- `created_at`: Timestamp when the customer account was created.
-- `updated_at`: Timestamp when the customer account was last updated.
-- `deleted_at`: Soft deletion timestamp; null if account is active.
-
-### `shopping_mall_customer_sessions`
-
-Session records for authenticated customer users.
-
-Each session tracks login information with IP, referrer, and connection URL.
-
-Sessions help in managing multiple concurrent logins and auditing user
-activity.
-
-Sessions reference the customer user via a foreign key.
-
-Session expiry supports session lifecycle management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_customer_id`: Reference to the customer user. [shopping_mall_customers.id](#shopping_mall_customers).
-- `ip`: IP address of the customer session connection.
-- `href`: URL of the connection origin.
-- `referrer`: Referrer URL from which the customer arrived.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired; null if still active.
+- `email`: Unique email address for customer authentication.
+- `password_hash`: Hashed password used for customer login.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last record update timestamp.
 
 ### `shopping_mall_sellers`
 
-Seller users who manage product listings and inventory.
+Registered seller users managing product listings and order fulfillment.
 
-Sellers have authentication credentials for platform login and operation.
-
-Accounts track statuses such as active or suspended to control
-operational rights.
-
-Soft deletion is supported to maintain historical data legally and
-operationally.
+Sellers authenticate via secure login credentials.
+They manage inventories at SKU level and process orders related to their
+products.
+Sessions track seller login states.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Unique email address for seller login and communication.
+- `email`: Unique email address for seller login authentication.
 - `password_hash`: Hashed password for seller authentication.
-- `name`: Seller's registered business or personal name.
-- `status`: Current status of the seller account (e.g., active, suspended).
-- `business_status`: Business workflow status to track seller lifecycle.
-- `created_at`: Timestamp when the seller account was created.
-- `updated_at`: Timestamp when the seller account was last updated.
-- `deleted_at`: Soft deletion timestamp; null if active.
-
-### `shopping_mall_seller_sessions`
-
-Session records for authenticated seller users.
-
-Each session captures connection context for seller authentication and
-activity tracking.
-
-Sessions are linked to the corresponding seller user.
-
-Expiration timestamps are used for session lifecycle management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`: Reference to the seller user. [shopping_mall_sellers.id](#shopping_mall_sellers).
-- `ip`: IP address of the seller session connection.
-- `href`: URL of the connection origin.
-- `referrer`: Referrer URL from which the seller arrived.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired; null if still active.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last record update timestamp.
 
 ### `shopping_mall_admins`
 
-Administrative users who manage the platform and oversee operational
-aspects.
+Platform administrators with full permissions to manage users, products,
+orders, and platform settings.
 
-Admins have authentication credentials and full access rights.
-
-Their accounts track lifecycle statuses and support soft deletion for
-auditing.
-
-Admin data supports enforcement of high-level access control policies.
+Admins have their own login credentials and sessions for audit and security.
+Administrators oversee system health, order management, and user moderation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Unique email address for admin login and communication.
-- `password_hash`: Hashed password for admin authentication.
-- `name`: Admin user's full name.
-- `status`: Current status of the admin account (e.g., active, suspended).
-- `business_status`: Business workflow status to track admin lifecycle.
-- `created_at`: Timestamp when the admin account was created.
-- `updated_at`: Timestamp when the admin account was last updated.
-- `deleted_at`: Soft deletion timestamp; null if active.
+- `email`: Unique email address for administrator login.
+- `password_hash`: Hashed password for administrator authentication.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last record update timestamp.
+
+### `shopping_mall_guest_sessions`
+
+Session records for guest users connecting to the platform.
+
+Stores connection context such as IP, referrer, and URL for auditing and
+diagnostics.
+Sessions link to guest users to track multiple concurrent sessions per
+guest.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_guest_id`: Foreign key to guests table. [shopping_mall_guests.id](#shopping_mall_guests)
+- `ip`: IP address of the session.
+- `href`: Connection URL of the session.
+- `referrer`: HTTP referrer header value.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiration timestamp, nullable if session is active.
+
+### `shopping_mall_customer_sessions`
+
+Session records for customer users managing authenticated connections.
+
+Sessions include IP, referrer, and URL for auditing.
+Allows tracking multiple active sessions per customer for security and
+analytics.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_customer_id`: Foreign key to customers table. [shopping_mall_customers.id](#shopping_mall_customers)
+- `ip`: IP address of the session.
+- `href`: Connection URL of the session.
+- `referrer`: HTTP referrer header value.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiration timestamp, nullable if session is active.
+
+### `shopping_mall_seller_sessions`
+
+Session records for seller users managing authenticated connections.
+
+Contains connection context for auditing.
+Supports multiple concurrent seller sessions for security management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_seller_id`: Foreign key to sellers table. [shopping_mall_sellers.id](#shopping_mall_sellers)
+- `ip`: IP address of the session.
+- `href`: Connection URL of the session.
+- `referrer`: HTTP referrer header value.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiration timestamp, nullable if session is active.
 
 ### `shopping_mall_admin_sessions`
 
-Session records for authenticated administrative users.
+Session records for administrator users managing platform access.
 
-Sessions track login activity and connection details for administrators.
-
-Foreign key references ensure session linkage to the admin account.
-
-Expiration timestamps indicate session validity periods.
+Sessions track connection context for auditing purposes.
+Supports multiple concurrent admin sessions to enhance security and
+administration monitoring.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_admin_id`: Reference to the admin user. [shopping_mall_admins.id](#shopping_mall_admins).
-- `ip`: IP address of the admin session connection.
-- `href`: URL of the connection origin.
-- `referrer`: Referrer URL from which the admin arrived.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired; null if still active.
+- `shopping_mall_admin_id`: Foreign key to admins table. [shopping_mall_admins.id](#shopping_mall_admins)
+- `ip`: IP address of the session.
+- `href`: Connection URL of the session.
+- `referrer`: HTTP referrer header value.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiration timestamp, nullable if session is active.
 
-## Sales
+## Catalog
 
 ```mermaid
 erDiagram
 "shopping_mall_products" {
   String id PK
-  String shopping_mall_seller_id FK
+  String shopping_mall_category_id FK
   String code UK
-  String name
+  String title
   String description "nullable"
-  Boolean is_active
+  String brand "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_product_categories" {
-  String id PK
-  String parent_id FK "nullable"
-  String name
-  String code UK
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_product_skus" {
+"shopping_mall_product_variants" {
   String id PK
   String shopping_mall_product_id FK
   String sku_code UK
+  String color "nullable"
+  String size "nullable"
+  String option "nullable"
   Float price
-  Int inventory
-  Boolean is_active
+  String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_sku_attributes" {
+"shopping_mall_inventories" {
   String id PK
-  String name
-  String code UK
-  String description "nullable"
+  String shopping_mall_product_variant_id FK
+  Int quantity
+  Int reserved_quantity
+  DateTime restock_date "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_sku_attribute_values" {
-  String id PK
-  String shopping_mall_sku_attribute_id FK
-  String value
-  String code
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_sku_option_groups" {
-  String id PK
-  String name
-  String code UK
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_sku_options" {
-  String id PK
-  String shopping_mall_sku_option_group_id FK
-  String name
-  String code UK
-  Float price_adjustment
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_sales_snapshots" {
+"shopping_mall_product_snapshots" {
   String id PK
   String shopping_mall_product_id FK
-  String shopping_mall_product_sku_id FK
-  Float price_at_snapshot
-  Int inventory_at_snapshot
+  String code
+  String title
+  String description "nullable"
+  String brand "nullable"
+  DateTime snapshot_at
   DateTime created_at
 }
-"shopping_mall_product_categories" }o--o| "shopping_mall_product_categories" : parentCategory
-"shopping_mall_product_skus" }o--|| "shopping_mall_products" : product
-"shopping_mall_sku_attribute_values" }o--|| "shopping_mall_sku_attributes" : attribute
-"shopping_mall_sku_options" }o--|| "shopping_mall_sku_option_groups" : optionGroup
-"shopping_mall_sales_snapshots" }o--|| "shopping_mall_products" : product
-"shopping_mall_sales_snapshots" }o--|| "shopping_mall_product_skus" : sku
+"shopping_mall_product_variants" }o--|| "shopping_mall_products" : product
+"shopping_mall_inventories" }o--|| "shopping_mall_product_variants" : productVariant
+"shopping_mall_product_snapshots" }o--|| "shopping_mall_products" : product
 ```
 
 ### `shopping_mall_products`
 
-Products available in the shopping mall marketplace.
+Product entity representing items offered for sale in the shopping mall.
 
-Represents the main catalog entries created and managed by sellers. Each
-product belongs to one or more categories, supports multiple SKUs as
-variants, and can be tracked through sales snapshots.
+This table contains basic product information managed by sellers,
+including title, description, category reference, and brand details. Each
+product may have multiple variants (SKUs) represented in
+shopping_mall_product_variants. Soft delete functionality is supported
+via deleted_at. Products are linked to categories existing in the catalog
+domain.
 
-Includes essential metadata for display, grouping, and status management.
-Products may be soft-deleted.
-
-References seller entities and category relationship via foreign keys
-from other components.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Reference to the seller entity who owns the product. {@link
-  > shopping_mall_sellers.id}.
-- `code`
-  > Unique business code identifying the product, used in UI and backend
-  > operations.
-- `name`: Product name displayed to customers.
-- `description`: Detailed product description.
-- `is_active`: Indicates if the product is currently active and visible in the catalog.
-- `created_at`: Timestamp when the product was created.
-- `updated_at`: Timestamp when the product was last updated.
-- `deleted_at`: Timestamp marking when the product was soft-deleted, if applicable.
-
-### `shopping_mall_product_categories`
-
-Product categories used to organize and classify products in the shopping
-mall.
-
-Supports hierarchical categorization for browsing and filtering.
-
-Categories can have parent categories to form category trees.
-
-Soft deletion is supported.
-
-Primarily used to group products and facilitate search and navigation.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `parent_id`
-  > Optional reference to the parent category for hierarchical
-  > categorization. [shopping_mall_product_categories.id](#shopping_mall_product_categories).
-- `name`: Category name displayed to users.
-- `code`: Unique category code used in business operations.
-- `description`: Detailed description of the category's purpose.
-- `created_at`: Timestamp when the category was created.
-- `updated_at`: Timestamp when the category was last updated.
-- `deleted_at`: Timestamp marking when the category was soft-deleted.
-
-### `shopping_mall_product_skus`
-
-Stock Keeping Units representing specific variants of products.
-
-Each SKU uniquely identifies a variant defined by a combination of
-attribute values, price, and inventory quantity.
-
-SKUs are directly linked to products and manage seller-specific pricing
-and stock levels.
-
-Supports soft deletion and auditing timestamps.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_id`: Reference to the parent product. [shopping_mall_products.id](#shopping_mall_products).
-- `sku_code`: Unique SKU code used for inventory and order processing.
-- `price`: Sales price of this SKU variant.
-- `inventory`: Current inventory count for the SKU.
-- `is_active`: Indicates if the SKU is currently active and available for sale.
-- `created_at`: Timestamp when the SKU was created.
-- `updated_at`: Timestamp when the SKU was last updated.
-- `deleted_at`: Timestamp marking when the SKU was soft-deleted.
-
-### `shopping_mall_sku_attributes`
-
-SKU attribute definitions representing types of variant attributes.
-
-Defines attributes like color, size, material, etc., which can be used in
-SKU options and values.
-
-Attributes support soft deletion and auditing timestamps.
-
-This supports extensible variant attribute management for products.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`: Name of the attribute type, e.g., 'Color' or 'Size'.
-- `code`: Unique code of the attribute for system reference.
-- `description`: Detailed explanation of the attribute's use cases.
-- `created_at`: Timestamp when the attribute was created.
-- `updated_at`: Timestamp when the attribute was last updated.
-- `deleted_at`: Timestamp when the attribute was soft-deleted.
-
-### `shopping_mall_sku_attribute_values`
-
-Individual values for SKU attributes.
-
-Represents the selectable values for attribute types such as 'Red',
-'Blue' for 'Color' or 'S', 'M', 'L' for 'Size'.
-
-Links each value to an attribute and supports soft deletion and audit
+Consistent temporal tracking is maintained via created_at and updated_at
 timestamps.
 
-Used to define variants in SKUs consistently.
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_category_id`: Reference to product category. [shopping_mall_categories.id](#shopping_mall_categories).
+- `code`: Unique product code for business identification.
+- `title`: Product title descriptive name.
+- `description`: Detailed product description for customers.
+- `brand`: Brand or manufacturer name.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
+
+### `shopping_mall_product_variants`
+
+Represents distinct SKUs (product variants) with unique combinations of
+attributes such as color, size, and options.
+
+Each variant has its own inventory, pricing, and status independent of
+the parent product. The variant references its parent product and
+supports soft deletion. Detailed attributes allow for precise customer
+selection and inventory management.
+
+This model enables the platform to handle complex product variant
+hierarchies consistently.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_sku_attribute_id`
-  > Reference to the SKU attribute this value belongs to. {@link
-  > shopping_mall_sku_attributes.id}.
-- `value`: The specific value of the attribute, e.g., "Red", "XL".
-- `code`: Unique code representing this attribute value.
-- `description`: Additional details about this attribute value.
-- `created_at`: Timestamp when the value was created.
-- `updated_at`: Timestamp of last update to this value.
-- `deleted_at`: Timestamp marking the soft deletion of this attribute value.
+- `shopping_mall_product_id`: Reference to parent product. [shopping_mall_products.id](#shopping_mall_products).
+- `sku_code`: Unique SKU code per product variant.
+- `color`: Color attribute of the variant.
+- `size`: Size attribute of the variant.
+- `option`: Additional options (customizable features).
+- `price`: Price for this variant.
+- `status`: Current availability status (e.g., in stock, discontinued).
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
-### `shopping_mall_sku_option_groups`
+### `shopping_mall_inventories`
 
-Groups of SKU options that allow multiple selections under a variant.
+Inventory records tracking SKU stock levels and availability.
 
-Used to organize SKU options for complex variants with grouped choices.
+Each inventory entry is associated with a specific product variant (SKU)
+and monitors stock quantities, reserved quantities, and restock dates.
+Supports soft deletion and temporal tracking for audit purposes.
 
-Supports soft deletion and auditing timestamps.
-
-Facilitates variant customization and pricing differentiation.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`: Name of the option group, e.g., "Accessories", "Add-ons".
-- `code`: Unique code identifying the group.
-- `description`: Detailed explanation of the option group's purpose.
-- `created_at`: Timestamp of the group's creation.
-- `updated_at`: Timestamp of the last update.
-- `deleted_at`: Soft deletion timestamp.
-
-### `shopping_mall_sku_options`
-
-Individual SKU options belonging to option groups.
-
-Represents selectable options that can be chosen under an option group,
-affecting SKU variation.
-
-Supports soft deletion, indexing, and auditing timestamps.
+The inventory system is critical for enforcing stock constraints and
+preventing overselling.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_sku_option_group_id`
-  > Reference to the SKU option group this option belongs to. {@link
-  > shopping_mall_sku_option_groups.id}.
-- `name`: Name of the option, e.g., "Gift Wrap", "Extended Warranty".
-- `code`: Unique code for the SKU option.
-- `price_adjustment`
-  > Price adjustment amount applied when this option is selected; can be
-  > positive or negative.
-- `created_at`: Timestamp when the option was created.
-- `updated_at`: Timestamp of last update to the option.
-- `deleted_at`: Soft deletion timestamp.
+- `shopping_mall_product_variant_id`: Reference to product variant. [shopping_mall_product_variants.id](#shopping_mall_product_variants).
+- `quantity`: Total stock available.
+- `reserved_quantity`: Quantity reserved for pending orders.
+- `restock_date`: Expected date of next restock.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
-### `shopping_mall_sales_snapshots`
+### `shopping_mall_product_snapshots`
 
-Historical snapshots capturing the state of products and sales at points
-in time.
+Historical snapshots capturing product data at specific points in time
+for audit and versioning.
 
-Used for auditing, reporting, and trend analysis.
+Stores complete denormalized state of shopping mall products enabling
+retrieval of past product details. Snapshots are append-only and
+immutable, supporting audit trails and rollback functionality.
 
-Denormalized to preserve exact historic state including product, SKU,
-pricing and inventory data at snapshot time.
-
-Snapshot entities are append-only with created_at denoting the snapshot
-timestamp.
-
-Do not modify snapshots after creation to ensure data integrity.
+This table follows snapshot stance and does not support updates or
+deletions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product at snapshot time. {@link
-  > shopping_mall_products.id}.
-- `shopping_mall_product_sku_id`
-  > Reference to the SKU at snapshot time. {@link
-  > shopping_mall_product_skus.id}.
-- `price_at_snapshot`: Sales price of the SKU at the snapshot time.
-- `inventory_at_snapshot`: Inventory count of the SKU at the snapshot time.
-- `created_at`: Timestamp when the snapshot was taken.
+- `shopping_mall_product_id`: Reference to original product. [shopping_mall_products.id](#shopping_mall_products).
+- `code`: Product code at snapshot moment.
+- `title`: Product title at snapshot moment.
+- `description`: Product description at snapshot moment.
+- `brand`: Product brand at snapshot moment.
+- `snapshot_at`: Timestamp when snapshot was created.
+- `created_at`: Record creation timestamp.
 
 ## Carts
 
 ```mermaid
 erDiagram
-"shopping_mall_shopping_carts" {
+"shopping_mall_carts" {
   String id PK
   String shopping_mall_customer_id FK
   String shopping_mall_customer_session_id FK "nullable"
@@ -716,9 +491,8 @@ erDiagram
 }
 "shopping_mall_cart_items" {
   String id PK
-  String shopping_mall_shopping_cart_id FK
-  String shopping_mall_product_id FK
-  String shopping_mall_product_sku_id FK
+  String shopping_mall_cart_id FK
+  String shopping_mall_product_variant_id FK
   Int quantity
   DateTime created_at
   DateTime updated_at
@@ -726,9 +500,7 @@ erDiagram
 }
 "shopping_mall_wishlists" {
   String id PK
-  String shopping_mall_customer_id FK
-  String shopping_mall_customer_session_id FK "nullable"
-  String name
+  String shopping_mall_customer_id FK,UK
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -736,115 +508,91 @@ erDiagram
 "shopping_mall_wishlist_items" {
   String id PK
   String shopping_mall_wishlist_id FK
-  String shopping_mall_product_id FK
-  String shopping_mall_product_sku_id FK
+  String shopping_mall_product_variant_id FK
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_cart_items" }o--|| "shopping_mall_shopping_carts" : shoppingCart
+"shopping_mall_cart_items" }o--|| "shopping_mall_carts" : cart
 "shopping_mall_wishlist_items" }o--|| "shopping_mall_wishlists" : wishlist
 ```
 
-### `shopping_mall_shopping_carts`
+### `shopping_mall_carts`
 
-Customer shopping carts storing active shopping sessions and associated
-customer references.
+Shopping carts representing persistent customer or guest selections of
+SKUs intended for purchase.
 
-Each shopping cart belongs to exactly one authenticated customer, linking
-to their active customer session. The cart maintains creation and update
-timestamps.
-Soft deletion is supported to allow retention of historical cart data
-without user visibility.
-
-This entity serves as the primary container for items customers intend to
-purchase and supports multiple items per cart.
+Each cart belongs to a customer, allowing multiple concurrent carts for
+different sessions.
+Carts persist across sessions and support soft deletion for audit purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_customer_id`: Reference to the owning customer. [shopping_mall_customers.id](#shopping_mall_customers).
 - `shopping_mall_customer_session_id`
-  > Reference to the customer's active session during cart activity. Nullable
-  > if session expired or unknown. {@link
+  > Reference to the specific customer session. {@link
   > shopping_mall_customer_sessions.id}.
-- `created_at`: Timestamp when cart was created.
-- `updated_at`: Timestamp when cart was last updated.
-- `deleted_at`: Timestamp marking soft deletion; NULL if active.
+- `created_at`: Timestamp when the cart was created.
+- `updated_at`: Timestamp when the cart was last updated.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
 ### `shopping_mall_cart_items`
 
-Items contained within a customer's shopping cart.
+Individual items within a shopping cart representing specific product
+SKUs selected by the customer.
 
-Each cart item references the parent shopping cart, the product, and the
-specific SKU variant selected for purchase.
-Quantities are positive integers reflecting the desired purchase amount.
-
-Timestamps track creation and updates for audit and synchronization.
+Each item references one cart and one product variant. Quantity tracks
+the amount desired.
+This subsidiary table enables efficient many-to-one relationship from
+items to carts.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_shopping_cart_id`
-  > Reference to the parent shopping cart. {@link
-  > shopping_mall_shopping_carts.id}.
-- `shopping_mall_product_id`: Reference to the product selected. [shopping_mall_products.id](#shopping_mall_products).
-- `shopping_mall_product_sku_id`
-  > Reference to the specific SKU variant of the product. {@link
-  > shopping_mall_product_skus.id}.
-- `quantity`: Quantity of the product SKU in the cart item.
+- `shopping_mall_cart_id`: Reference to the owning shopping cart. [shopping_mall_carts.id](#shopping_mall_carts).
+- `shopping_mall_product_variant_id`
+  > Reference to the selected product variant (SKU). {@link
+  > shopping_mall_product_variants.id}.
+- `quantity`: Quantity of the SKU selected by the customer.
 - `created_at`: Timestamp when the cart item was created.
 - `updated_at`: Timestamp when the cart item was last updated.
-- `deleted_at`: Soft deletion timestamp; NULL if active.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
 ### `shopping_mall_wishlists`
 
-Customer wishlists storing products customers are interested in
-purchasing later.
+Wishlists representing private collections of desired product SKUs saved
+by customers for future purchase consideration.
 
-Each wishlist belongs to one authenticated customer and manages multiple
-wishlist items.
-Soft deletion is supported to hide inactive wishlists but retain
-historical data.
-
-Wishlists facilitate personalized shopping experiences and user engagement.
+Each wishlist belongs to exactly one customer and can be soft deleted
+while maintaining historical records.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_customer_id`: Reference to the owning customer. [shopping_mall_customers.id](#shopping_mall_customers).
-- `shopping_mall_customer_session_id`
-  > Reference to the customer's active session at the time of wishlist
-  > activity. Nullable if unknown. {@link
-  > shopping_mall_customer_sessions.id}.
-- `name`: User-defined name for the wishlist to identify it.
-- `created_at`: Timestamp when wishlist was created.
-- `updated_at`: Timestamp of last update to the wishlist.
-- `deleted_at`: Soft deletion timestamp; NULL if active.
+- `created_at`: Timestamp when the wishlist was created.
+- `updated_at`: Timestamp when the wishlist was last updated.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
 ### `shopping_mall_wishlist_items`
 
-Items contained within customer wishlists.
+Individual items within a wishlist representing customer-selected product
+SKUs saved for future purchase.
 
-Each wishlist item references the parent wishlist, the product, and the
-specific SKU variant selected.
-
-Timestamps track creation and updates, and soft deletion supports data
-lifecycle management.
+Each item references one wishlist and one product variant to support
+many-to-one normalized relationships.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_wishlist_id`: Reference to the parent wishlist. [shopping_mall_wishlists.id](#shopping_mall_wishlists).
-- `shopping_mall_product_id`
-  > Reference to the product in the wishlist item. {@link
-  > shopping_mall_products.id}.
-- `shopping_mall_product_sku_id`
-  > Reference to the specific SKU variant. {@link
-  > shopping_mall_product_skus.id}.
+- `shopping_mall_wishlist_id`: Reference to the owning wishlist. [shopping_mall_wishlists.id](#shopping_mall_wishlists).
+- `shopping_mall_product_variant_id`
+  > Reference to the selected product variant (SKU). {@link
+  > shopping_mall_product_variants.id}.
 - `created_at`: Timestamp when the wishlist item was created.
 - `updated_at`: Timestamp when the wishlist item was last updated.
-- `deleted_at`: Soft deletion timestamp; NULL if active.
+- `deleted_at`: Soft deletion timestamp; null if active.
 
 ## Orders
 
@@ -853,10 +601,12 @@ erDiagram
 "shopping_mall_orders" {
   String id PK
   String shopping_mall_customer_id FK
+  String shopping_mall_seller_id FK
   String order_number UK
-  String status
+  String order_status
   String payment_status
   Float total_amount
+  String shipping_address
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -864,663 +614,749 @@ erDiagram
 "shopping_mall_order_items" {
   String id PK
   String shopping_mall_order_id FK
-  String shopping_mall_product_sku_id FK
+  String shopping_mall_product_variant_id FK
   Int quantity
   Float unit_price
-  String status
-  DateTime created_at
-  DateTime updated_at
+  Float total_price
 }
 "shopping_mall_payments" {
   String id PK
-  String shopping_mall_order_id FK
+  String shopping_mall_order_id FK,UK
   String payment_method
-  Float amount
-  String status
-  String transaction_id "nullable"
+  String payment_status
+  Float payment_amount
+  String transaction_id UK
+  DateTime payment_date
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_mall_shipments" {
   String id PK
-  String shopping_mall_order_id FK
-  String shipping_method
-  String tracking_number "nullable"
-  String status
+  String shopping_mall_order_id FK,UK
+  String shipping_carrier
+  String tracking_number UK
+  String shipment_status
+  DateTime shipped_at "nullable"
+  DateTime delivered_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_mall_order_cancellations" {
   String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_customer_id FK
-  String reason "nullable"
-  String status
+  String shopping_mall_order_id FK,UK
+  String cancellation_reason
+  String cancellation_status
+  DateTime requested_at
+  DateTime processed_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_order_refunds" {
+"shopping_mall_refund_requests" {
   String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_customer_id FK
-  Float amount
-  String status
-  String reason "nullable"
+  String shopping_mall_order_id FK,UK
+  Float refund_amount
+  String refund_reason
+  String refund_status
+  DateTime requested_at
+  DateTime processed_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_mall_order_items" }o--|| "shopping_mall_orders" : order
-"shopping_mall_payments" }o--|| "shopping_mall_orders" : order
-"shopping_mall_shipments" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_cancellations" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_refunds" }o--|| "shopping_mall_orders" : order
+"shopping_mall_payments" |o--|| "shopping_mall_orders" : order
+"shopping_mall_shipments" |o--|| "shopping_mall_orders" : order
+"shopping_mall_order_cancellations" |o--|| "shopping_mall_orders" : order
+"shopping_mall_refund_requests" |o--|| "shopping_mall_orders" : order
 ```
 
 ### `shopping_mall_orders`
 
-Orders placed by customers in the e-commerce shopping mall.
+Order entities representing customer purchase transactions.
 
-This model represents the main order entity containing customer
-references, order metadata, status, and amounts.
-Orders are linked to customers and include totals, order numbers, and
-lifecycle timestamps.
-Soft delete is supported to enable audit and moderation.
-
-Business-critical fields cover order status transitions, payment status,
-and shipment tracking indicators.
+Stores key business data such as customer, seller, payment, and order
+status with lifecycle timestamps.
+Each order references the customer placing it and the seller fulfilling it.
+Includes soft delete support to maintain audit trail integrity.
 
 Properties as follows:
 
-- `id`: Primary key of the order.
-- `shopping_mall_customer_id`
-  > Reference to the customer who placed the order. {@link
-  > shopping_mall_customers.id}.
-- `order_number`: Unique business order number for external reference.
-- `status`
-  > Current order status such as pending, processing, shipped, delivered,
-  > cancelled.
-- `payment_status`
-  > Payment status indicating whether payment is pending, completed, or
-  > failed.
-- `total_amount`: Total amount of the order including taxes, fees, and discounts.
-- `created_at`: Timestamp when the order was created.
-- `updated_at`: Timestamp when the order was last updated.
-- `deleted_at`: Soft delete timestamp for logical deletion.
+- `id`: Primary Key.
+- `shopping_mall_customer_id`: Customer who placed the order. [shopping_mall_customers.id](#shopping_mall_customers).
+- `shopping_mall_seller_id`: Seller responsible for fulfillment. [shopping_mall_sellers.id](#shopping_mall_sellers).
+- `order_number`: Unique order reference number for business tracking.
+- `order_status`: Current status of the order indicating lifecycle phase.
+- `payment_status`: Status of the payment associated with the order.
+- `total_amount`: Total monetary amount of the order including taxes and shipping.
+- `shipping_address`: Serialized shipping address at the time of order placement.
+- `created_at`: Order creation timestamp.
+- `updated_at`: Last update timestamp for the order.
+- `deleted_at`: Optional soft delete timestamp to mark order as deleted.
 
 ### `shopping_mall_order_items`
 
-Individual items included in customer orders.
+Order items representing purchased product variants (SKUs) within an order.
 
-Each record represents a SKU included in an order with quantity, price,
-and status.
-Order items are dependent entities managed through the parent order.
-
-Manages detailed product SKU references, quantities, and prices at the
-time of ordering.
+Each item links to the product variant and the parent order.
+Captures quantity and pricing information used for fulfillment and
+invoicing.
 
 Properties as follows:
 
-- `id`: Primary key of the order item.
+- `id`: Primary Key.
 - `shopping_mall_order_id`: Reference to the parent order. [shopping_mall_orders.id](#shopping_mall_orders).
-- `shopping_mall_product_sku_id`: Reference to the product SKU. [shopping_mall_product_skus.id](#shopping_mall_product_skus).
-- `quantity`: Number of units for the SKU in this order item.
-- `unit_price`: Unit price of the SKU at order time.
-- `status`: Status of the order item, e.g., pending, shipped, returned.
-- `created_at`: Timestamp when the order item was created.
-- `updated_at`: Timestamp when the order item was last updated.
+- `shopping_mall_product_variant_id`
+  > Purchased product variant (SKU). {@link
+  > shopping_mall_product_variants.id}.
+- `quantity`: Quantity of the product variant purchased.
+- `unit_price`: Price per unit for this SKU at purchase time.
+- `total_price`: Total price for this line item (quantity multiplied by unit price).
 
 ### `shopping_mall_payments`
 
-Payments made for orders in the shopping mall platform.
+Payment records associated with orders.
 
-Tracks payment transactions including amounts, payment methods, statuses,
-and timestamps.
-Payments link to orders and manage success or failure details.
-Soft delete supported for audit and rollback.
+Tracks payment method, status, amounts, and timestamps.
+Payments are linked uniquely to orders ensuring one-to-one relationship.
 
 Properties as follows:
 
-- `id`: Primary key of the payment.
-- `shopping_mall_order_id`: Reference to the related order. [shopping_mall_orders.id](#shopping_mall_orders).
-- `payment_method`: Payment method used, e.g., credit card, bank transfer, digital wallet.
-- `amount`: Amount paid in this transaction.
-- `status`: Payment status such as pending, completed, failed, refunded.
-- `transaction_id`: External payment transaction identifier from gateway.
-- `created_at`: Timestamp when the payment record was created.
-- `updated_at`: Timestamp when the payment record was last updated.
-- `deleted_at`: Soft delete timestamp for payment record.
+- `id`: Primary Key.
+- `shopping_mall_order_id`: Order associated with this payment. [shopping_mall_orders.id](#shopping_mall_orders).
+- `payment_method`: Method of payment used by the customer (e.g., credit card, PayPal).
+- `payment_status`: Status of the payment transaction.
+- `payment_amount`: Amount paid in this transaction.
+- `transaction_id`: External payment gateway transaction identifier.
+- `payment_date`: Timestamp of when the payment was processed.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft delete timestamp.
 
 ### `shopping_mall_shipments`
 
-Shipment records for orders in the shopping mall platform.
+Shipment records tracking the shipping process of orders.
 
-Tracks shipment status, shipping method, tracking numbers, and timestamps.
-Shipments are linked to orders and enable shipment lifecycle tracking.
-Soft deletion supported for shipment data management.
+Stores shipping carrier, tracking codes, delivery status, and timestamps.
+Each shipment relates to a single order for lifecycle tracking.
 
 Properties as follows:
 
-- `id`: Primary key of the shipment.
-- `shopping_mall_order_id`: Reference to the order being shipped. [shopping_mall_orders.id](#shopping_mall_orders).
-- `shipping_method`: Shipping method or carrier name.
-- `tracking_number`: Shipment tracking number provided by the carrier.
-- `status`: Shipment status such as pending, shipped, in_transit, delivered.
-- `created_at`: Timestamp when the shipment record was created.
-- `updated_at`: Timestamp of last update on shipment record.
-- `deleted_at`: Soft delete timestamp for shipment.
+- `id`: Primary Key.
+- `shopping_mall_order_id`: Order being shipped. [shopping_mall_orders.id](#shopping_mall_orders).
+- `shipping_carrier`: Name of the shipping carrier handling delivery.
+- `tracking_number`: Carrier tracking number for shipment.
+- `shipment_status`: Current status of the shipment.
+- `shipped_at`: Timestamp when the shipment was dispatched.
+- `delivered_at`: Timestamp when the shipment was delivered.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft delete timestamp.
 
 ### `shopping_mall_order_cancellations`
 
 Order cancellation requests submitted by customers.
 
-Tracks cancellation reasons, statuses, and timestamps.
-Related to orders and managed independently for audit and processing.
-Supports soft delete for audit trail.
+Tracks request status and reasons with timestamps.
+Referenced orders are those that customers want to cancel before
+fulfillment.
 
 Properties as follows:
 
-- `id`: Primary key of the cancellation request.
-- `shopping_mall_order_id`: Reference to the related order. [shopping_mall_orders.id](#shopping_mall_orders).
-- `shopping_mall_customer_id`
-  > Reference to the customer requesting cancellation. {@link
-  > shopping_mall_customers.id}.
-- `reason`: Reason provided for cancellation by the customer.
-- `status`: Cancellation request status such as pending, approved, rejected.
-- `created_at`: Timestamp when the cancellation request was created.
-- `updated_at`: Timestamp when the cancellation request was last updated.
-- `deleted_at`: Soft delete timestamp for cancellation request.
+- `id`: Primary Key.
+- `shopping_mall_order_id`
+  > Order for which cancellation is requested. {@link
+  > shopping_mall_orders.id}.
+- `cancellation_reason`: Customer-provided reason for cancellation.
+- `cancellation_status`: Status of the cancellation request.
+- `requested_at`: Timestamp when cancellation was requested.
+- `processed_at`: Timestamp when cancellation was processed.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft delete timestamp.
 
-### `shopping_mall_order_refunds`
+### `shopping_mall_refund_requests`
 
-Refund requests and processing related to customer orders.
+Refund requests made by customers for orders post-payment.
 
-Tracks refund amounts, statuses, and administrative approval workflows.
-Linked to orders and customers for complete audit and payment
-reconciliation.
-Supports soft deletion for audit purposes.
+Tracks refund amount, reason, status, and related timestamps.
+Linked to orders that have completed payment but may require refund
+processing.
 
 Properties as follows:
 
-- `id`: Primary key of the refund request.
-- `shopping_mall_order_id`: Reference to the related order. [shopping_mall_orders.id](#shopping_mall_orders).
-- `shopping_mall_customer_id`
-  > Reference to the customer requesting refund. {@link
-  > shopping_mall_customers.id}.
-- `amount`: Amount requested for refund.
-- `status`: Refund status such as requested, approved, rejected, completed.
-- `reason`: Reason for the refund request provided by the customer.
-- `created_at`: Timestamp when the refund request was created.
-- `updated_at`: Timestamp when the refund request was last updated.
-- `deleted_at`: Soft delete timestamp for refund request.
+- `id`: Primary Key.
+- `shopping_mall_order_id`: Order associated with the refund request. [shopping_mall_orders.id](#shopping_mall_orders).
+- `refund_amount`: Amount requested for refund.
+- `refund_reason`: Reason provided for requesting refund.
+- `refund_status`: Current status of the refund request.
+- `requested_at`: Timestamp when refund was requested.
+- `processed_at`: Timestamp when refund was processed.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft delete timestamp.
 
-## Coupons
+## Promotions
 
 ```mermaid
 erDiagram
 "shopping_mall_coupons" {
   String id PK
   String code UK
-  String description "nullable"
-  String discount_type
+  String type
   Float discount_value
-  Float minimum_order_amount "nullable"
-  Float maximum_discount_amount "nullable"
-  DateTime start_at
-  DateTime end_at
-  Int usage_limit "nullable"
-  String status
+  DateTime start_date
+  DateTime end_date
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_coupon_redemptions" {
+"shopping_mall_coupon_usages" {
   String id PK
   String shopping_mall_coupon_id FK
   String shopping_mall_customer_id FK
-  String shopping_mall_order_id FK
-  Float redeemed_amount
-  DateTime redeemed_at
+  String shopping_mall_customer_session_id FK
+  DateTime used_at
+  String order_id "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_coupon_redemptions" }o--|| "shopping_mall_coupons" : coupon
+"shopping_mall_mileages" {
+  String id PK
+  String shopping_mall_customer_id FK
+  Int points
+  DateTime expiration_date "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_points" {
+  String id PK
+  String shopping_mall_customer_id FK
+  Int balance
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_coupon_usages" }o--|| "shopping_mall_coupons" : coupon
 ```
 
 ### `shopping_mall_coupons`
 
-Defines marketing coupons for the shopping mall platform.
+Coupon definitions for promotional campaigns.
 
-Each coupon includes its unique code, discount information, validity
-periods, and restrictions. Coupons are centrally managed to control
-promotional offers and marketing campaigns.
+Represents coupons issued by the shopping mall platform to provide
+discounts or benefits to customers. Each coupon has unique code, type,
+discount details and validity period. Coupons can be standalone or
+associated with certain product categories or sellers.
 
-This table stores raw coupon data without usage logs, supporting
-creation, update, and deactivation. Soft deletion tracks removed coupons
-while preserving history for auditing.
-
-Uniqueness is enforced on coupon code for quick lookup during order
-processing and validation.
+Coupons support soft deletion to allow recovery and auditing.
 
 Properties as follows:
 
 - `id`: Primary key.
-- `code`: Unique coupon code used by customers during checkout for discounts.
-- `description`
-  > Optional detailed description of the coupon's promotion and usage
-  > conditions.
-- `discount_type`: Type of discount applied by the coupon (e.g., percentage, fixed amount).
-- `discount_value`
-  > Value of the discount. Represents percentage or fixed amount depending on
-  > discount type.
-- `minimum_order_amount`: Optional minimum order amount required to apply this coupon.
-- `maximum_discount_amount`: Optional cap on the maximum discount given by this coupon.
-- `start_at`: Date and time when the coupon becomes valid and can be used.
-- `end_at`: Date and time after which the coupon expires and cannot be used.
-- `usage_limit`
-  > Optional maximum number of total times this coupon can be redeemed across
-  > all customers.
-- `status`
-  > Current status of the coupon, indicating if it is active, expired, or
-  > disabled.
-- `created_at`: Timestamp when the coupon was created.
-- `updated_at`: Timestamp when the coupon was last updated.
-- `deleted_at`
-  > Soft delete timestamp to indicate logical deletion without physical
-  > removal.
+- `code`: Unique code identifying the coupon for redemption.
+- `type`: Type of coupon, e.g., percentage discount, fixed amount, free shipping.
+- `discount_value`: Value of the discount applied when the coupon is used.
+- `start_date`: Start date and time from which the coupon is valid.
+- `end_date`: End date and time until which the coupon is valid.
+- `created_at`: Timestamp when this coupon was created.
+- `updated_at`: Timestamp when this coupon was last updated.
+- `deleted_at`: Timestamp marking soft deletion of the coupon; null if active.
 
-### `shopping_mall_coupon_redemptions`
+### `shopping_mall_coupon_usages`
 
-Records each redemption of a coupon by a customer on an order.
+Records each usage of coupons by customers.
 
-Tracks which customer redeemed which coupon, tied to a specific order,
-with timestamps and redeemed discount amount.
+Tracks coupon redemptions by customers, including associated customer and
+session information, usage timestamp, and any order linkage. Ensures
+auditability of coupon consumption and prevents abuse.
 
-This table supports audit trails and prevents reuse where restrictions
-apply. Logical deletion is supported for maintaining data integrity and
-compliance.
+Supports soft deletion for historical correction and auditing.
 
 Properties as follows:
 
 - `id`: Primary key.
-- `shopping_mall_coupon_id`: Reference to the coupon being redeemed. [shopping_mall_coupons.id](#shopping_mall_coupons).
+- `shopping_mall_coupon_id`: Reference to the coupon that was used. [shopping_mall_coupons.id](#shopping_mall_coupons).
 - `shopping_mall_customer_id`
-  > Reference to the customer redeeming the coupon. {@link
+  > Reference to the customer who used the coupon. {@link
   > shopping_mall_customers.id}.
-- `shopping_mall_order_id`
-  > Reference to the order where the coupon was applied. {@link
-  > shopping_mall_orders.id}.
-- `redeemed_amount`: The actual discount amount applied during this redemption.
-- `redeemed_at`: Timestamp when this coupon redemption occurred.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft delete timestamp for logical removal of the redemption record.
+- `shopping_mall_customer_session_id`
+  > Reference to the customer's session during coupon usage. {@link
+  > shopping_mall_customer_sessions.id}.
+- `used_at`: Timestamp when the coupon usage occurred.
+- `order_id`
+  > Associated order ID if coupon usage is linked to a specific order; null
+  > otherwise.
+- `created_at`: Timestamp when the usage record was created.
+- `updated_at`: Timestamp when the usage record was last updated.
+- `deleted_at`: Timestamp marking soft deletion of the usage; null if active.
 
-## Coins
+### `shopping_mall_mileages`
+
+Tracks customer mileage points for reward programs.
+
+Stores mileage points accumulated by customers through purchases and
+activities. Mileages can be redeemed for discounts or benefits. Supports
+expiration tracking and audit trail.
+
+Supports soft deletion for records management and auditing.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `shopping_mall_customer_id`
+  > Reference to the customer owning the mileage. {@link
+  > shopping_mall_customers.id}.
+- `points`: Number of mileage points accumulated.
+- `expiration_date`: Optional expiration date for this mileage; null if no expiration.
+- `created_at`: Timestamp when this mileage record was created.
+- `updated_at`: Timestamp when this mileage record was last updated.
+- `deleted_at`: Timestamp marking soft deletion; null if active.
+
+### `shopping_mall_points`
+
+Tracks customer point balances for loyalty rewards.
+
+Represents points credited to customers as part of loyalty or promotional
+programs. Points can be redeemed or adjusted. Maintains audit trail and
+soft deletion for management.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `shopping_mall_customer_id`
+  > Reference to the customer owning these points. {@link
+  > shopping_mall_customers.id}.
+- `balance`: Current point balance for the customer.
+- `created_at`: Timestamp when this point record was created.
+- `updated_at`: Timestamp when this point record was last updated.
+- `deleted_at`: Timestamp marking soft deletion; null if active.
+
+## Reviews
 
 ```mermaid
 erDiagram
-"shopping_mall_coins" {
+"shopping_mall_product_reviews" {
   String id PK
-  String shopping_mall_channel_id FK
+  String shopping_mall_product_id FK
   String shopping_mall_customer_id FK
-  Int amount
+  String shopping_mall_customer_session_id FK
+  Int rating
+  String title
+  String body
+  String moderation_status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_mileage_transactions" {
+"shopping_mall_review_moderations" {
   String id PK
-  String shopping_mall_customer_id FK
-  String type
-  Int amount
-  String memo "nullable"
+  String shopping_mall_product_review_id FK
+  String shopping_mall_admin_id FK
+  String action
+  String comment "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"shopping_mall_review_moderations" }o--|| "shopping_mall_product_reviews" : productReview
 ```
 
-### `shopping_mall_coins`
+### `shopping_mall_product_reviews`
 
-Customer coin balances within the shopping mall platform.
+Customer-submitted product reviews capturing star ratings and textual
+feedback.
 
-This model tracks the current balance of digital coins associated with
-each customer in a specific mall channel. It provides essential
-information for loyalty and reward programs that utilize coins as a
-currency.
+Each review is linked to a specific product and authoring customer
+through their active session to ensure authenticity and auditability.
+Moderation status is tracked to control review publication.
 
-Each coin record is linked to a specific customer and mall channel,
-enabling accurate allocation and querying across multiple marketplaces or
-sales channels. The balance field represents the current amount of coins
-the customer holds.
-
-Soft deletion is supported via the deleted_at field to allow reversible
-removal and auditing. Temporal fields track creation and update
-timestamps to support audit trails and synchronization.
+Soft deletion is supported to enable content management and compliance
+without data loss.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_channel_id`: References the shopping mall channel. [shopping_mall_channels.id](#shopping_mall_channels).
-- `shopping_mall_customer_id`
-  > References the customer owning these coins. {@link
-  > shopping_mall_customers.id}.
-- `amount`: Current coin balance amount.
-- `created_at`: Timestamp when the record was created.
-- `updated_at`: Timestamp when the record was last updated.
-- `deleted_at`: Timestamp when the record was soft-deleted, if applicable.
+- `shopping_mall_product_id`: Reviewed product. [shopping_mall_products.id](#shopping_mall_products).
+- `shopping_mall_customer_id`: Review author customer. [shopping_mall_customers.id](#shopping_mall_customers).
+- `shopping_mall_customer_session_id`
+  > Author customer session at review time. {@link
+  > shopping_mall_customer_sessions.id}.
+- `rating`: Star rating given by the customer, typically 1 to 5 stars.
+- `title`: Short summary headline describing the review content.
+- `body`: Detailed textual review provided by the customer.
+- `moderation_status`: Current moderation status: pending, approved, rejected.
+- `created_at`: Review creation timestamp.
+- `updated_at`: Last modification timestamp of the review.
+- `deleted_at`: Soft deletion timestamp, null if not deleted.
 
-### `shopping_mall_mileage_transactions`
+### `shopping_mall_review_moderations`
 
-Mileage transactions recording all changes to customer mileage accounts.
+Moderation records for product reviews to enforce content guidelines and
+compliance.
 
-This model captures every transaction related to mileage points within
-the shopping mall platform. Each transaction links to the customer
-involved and includes transaction type, amount, and references to related
-entities like orders or payments when applicable.
+Each entry references a specific review and records the moderator admin
+who performed the action, the action taken, and any relevant comments.
 
-Temporal fields ensure accurate logging of transaction creation and
-updates, while soft deletion via deleted_at supports audit and recovery.
-
-Transaction types include earning, spending, cancellations, and
-administrative adjustments, allowing robust tracking and reporting of
-mileage point flows.
+Soft deletion is supported to allow audit trails while maintaining
+historical data integrity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_customer_id`
-  > References the customer involved in the transaction. {@link
-  > shopping_mall_customers.id}.
-- `type`: Type of mileage transaction, e.g., earn, spend, cancel.
-- `amount`: Quantity of mileage points changed in this transaction.
-- `memo`: Optional descriptive memo for the transaction.
-- `created_at`: Timestamp when the transaction was created.
-- `updated_at`: Timestamp when the transaction was last updated.
-- `deleted_at`: Timestamp when the transaction was soft-deleted, if applicable.
+- `shopping_mall_product_review_id`
+  > The product review being moderated. {@link
+  > shopping_mall_product_reviews.id}.
+- `shopping_mall_admin_id`
+  > Admin who performed the moderation action. {@link
+  > shopping_mall_admins.id}.
+- `action`: Moderation action taken, e.g., approved, rejected, flagged.
+- `comment`: Optional comment explaining the moderation decision.
+- `created_at`: Timestamp when the moderation action was performed.
+- `updated_at`: Timestamp of the last update on this moderation record.
+- `deleted_at`: Soft deletion timestamp, null if not deleted.
 
 ## Inquiries
 
 ```mermaid
 erDiagram
-"shopping_mall_customer_inquiries" {
+"shopping_mall_customer_questions" {
   String id PK
   String shopping_mall_customer_id FK
   String shopping_mall_customer_session_id FK
   String title
   String body
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_question_answers" {
+  String id PK
+  String shopping_mall_customer_question_id FK,UK
+  String shopping_mall_seller_id FK
+  String shopping_mall_seller_session_id FK
+  String title
+  String body
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_support_tickets" {
+  String id PK
+  String shopping_mall_customer_id FK "nullable"
+  String shopping_mall_seller_id FK "nullable"
+  String shopping_mall_customer_session_id FK "nullable"
+  String shopping_mall_seller_session_id FK "nullable"
+  String title
+  String description
   String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_faqs" {
-  String id PK
-  String question UK
-  String answer
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
+"shopping_mall_question_answers" |o--|| "shopping_mall_customer_questions" : customerQuestion
 ```
 
-### `shopping_mall_customer_inquiries`
+### `shopping_mall_customer_questions`
 
-Customer inquiries submitted for support and resolution.
+Customer questions related to shopping mall products and orders.
 
-This table records all inquiries raised by registered customers. Each
-inquiry is linked to the customer who created it and their active session
-at the time of submission. The inquiries represent independent support
-tickets requiring management, tracking, and resolution workflows.
+Stores inquiries submitted by customers seeking information about
+products or orders. Each question is linked to the customer who asked it
+and their active session.
 
-The table supports soft deletion for audit trails and includes status
-fields to track inquiry lifecycle stages such as open, pending, resolved,
-and closed. Timestamps indicate creation and modification.
+Questions can have one associated answer from sellers, maintained
+separately for independent lifecycle tracking.
+Soft deletion is supported to facilitate moderation and auditing.
 
-Status indexing allows efficient retrieval and filtering by inquiry state.
+This entity enables customer support workflows and Q&A content management.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary key.
 - `shopping_mall_customer_id`
-  > Reference to the customer who created the inquiry. {@link
+  > Reference to the customer who asked the question. {@link
   > shopping_mall_customers.id}.
 - `shopping_mall_customer_session_id`
-  > Reference to customer's active session at inquiry submission. {@link
-  > shopping_mall_customer_sessions.id}.
-- `title`: Brief summary title of the inquiry for quick identification.
-- `body`: Detailed inquiry content submitted by the customer.
-- `status`
-  > Current status of the inquiry, e.g., 'open', 'pending', 'resolved',
-  > 'closed' to indicate lifecycle state.
-- `created_at`: Timestamp when the inquiry was created.
-- `updated_at`: Timestamp when the inquiry was last updated.
-- `deleted_at`: Soft delete timestamp to indicate logical deletion without data loss.
+  > Reference to the customer's active session when asking the question.
+  > [shopping_mall_customer_sessions.id](#shopping_mall_customer_sessions)
+- `title`: The title or summary of the question content.
+- `body`: Detailed body text of the customer's question.
+- `created_at`: Timestamp when the question was created.
+- `updated_at`: Timestamp when the question was last updated.
+- `deleted_at`: Timestamp when the question was soft deleted, if applicable.
 
-### `shopping_mall_faqs`
+### `shopping_mall_question_answers`
 
-Frequently Asked Questions for customer self-service support.
+Answers provided by sellers in response to customer questions.
 
-This table stores static FAQ entries to address common customer queries
-and reduce direct support load. Each FAQ entry contains a question title
-and an answer body with detailed explanations.
+Each answer is linked to a specific customer question and created by an
+authenticated seller. This separation allows independent lifecycle
+management, including creation, updates, and soft deletion.
 
-FAQs are independently searchable and manageable entities with no direct
-user ownership but serve as valuable reference articles.
+One-to-one relationship enforced by unique foreign key to the question.
 
-Entries support soft deletion and auditing through timestamps.
+Supports audit trails and enables efficient moderation of seller responses.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `question`: FAQ question title succinctly summarizing the issue or topic.
-- `answer`: Comprehensive answer providing solutions or instructions for the question.
-- `created_at`: Timestamp when the FAQ entry was created.
-- `updated_at`: Timestamp when the FAQ entry was last updated.
-- `deleted_at`: Soft delete timestamp to indicate logical removal without data loss.
+- `id`: Primary key.
+- `shopping_mall_customer_question_id`
+  > Reference to the customer question answered. {@link
+  > shopping_mall_customer_questions.id}.
+- `shopping_mall_seller_id`
+  > Reference to the seller who answered the question. {@link
+  > shopping_mall_sellers.id}.
+- `shopping_mall_seller_session_id`
+  > Reference to the seller's active session when providing the answer.
+  > [shopping_mall_seller_sessions.id](#shopping_mall_seller_sessions)
+- `title`: The title or headline of the answer.
+- `body`: Detailed body text of the seller's answer.
+- `created_at`: Timestamp when the answer was created.
+- `updated_at`: Timestamp when the answer was last updated.
+- `deleted_at`: Timestamp when the answer was soft deleted, if applicable.
 
-## Favorites
+### `shopping_mall_support_tickets`
+
+Support tickets submitted by customers or sellers regarding various issues.
+
+This entity tracks support requests including their status and handling
+workflow. Tickets are associated with the submitter, either customer or
+seller, and include session context.
+
+Supports status management for ticket tracking, audit for responses, and
+soft deletion for moderation.
+
+Enables customer support management and resolution tracking within the
+shopping mall platform.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `shopping_mall_customer_id`
+  > Reference to the customer who submitted the ticket, if applicable. {@link
+  > shopping_mall_customers.id}.
+- `shopping_mall_seller_id`
+  > Reference to the seller who submitted the ticket, if applicable. {@link
+  > shopping_mall_sellers.id}.
+- `shopping_mall_customer_session_id`
+  > Customer session during ticket submission, if applicable. {@link
+  > shopping_mall_customer_sessions.id}.
+- `shopping_mall_seller_session_id`
+  > Seller session during ticket submission, if applicable. {@link
+  > shopping_mall_seller_sessions.id}
+- `title`: Subject or summary of the support ticket.
+- `description`: Detailed explanation of the issue or request.
+- `status`: Current status of the ticket (e.g. open, in_progress, resolved, closed).
+- `created_at`: Timestamp when the ticket was created.
+- `updated_at`: Timestamp when the ticket was last updated.
+- `deleted_at`: Timestamp when the ticket was soft deleted, if applicable.
+
+## Admin
 
 ```mermaid
 erDiagram
-"shopping_mall_favorite_products" {
+"shopping_mall_admin_audit_logs" {
   String id PK
-  String shopping_mall_customer_id FK
-  String shopping_mall_customer_session_id FK "nullable"
-  String shopping_mall_product_id FK
+  String shopping_mall_admin_id FK
+  String action_type
+  String resource_type
+  String resource_id "nullable"
+  Boolean success
+  String details "nullable"
   DateTime created_at
-  DateTime updated_at
 }
-"shopping_mall_favorite_sellers" {
+"shopping_mall_roles" {
   String id PK
-  String shopping_mall_customer_id FK
-  String shopping_mall_customer_session_id FK "nullable"
-  String shopping_mall_seller_id FK
-  DateTime created_at
-  DateTime updated_at
-}
-```
-
-### `shopping_mall_favorite_products`
-
-User favorite products in the shopping mall platform.
-
-This table captures the relationship between customers and their favorite
-products. Each record links a customer to a specific product they have
-marked as favorite. The table tracks the customer session when the
-favorite was marked or updated.
-
-Created_at and updated_at timestamps allow auditing and sorting by
-recency. This supports personalized user experiences by enabling
-efficient retrieval of favorite products.
-
-The model has a primary stance as users independently manage their
-favorite products with dedicated CRUD operations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_customer_id`
-  > Customer who marked the product as favorite. {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_customer_session_id`
-  > Customer session during which the favorite action took place. {@link
-  > shopping_mall_customer_sessions.id}.
-- `shopping_mall_product_id`: Product marked as favorite. [shopping_mall_products.id](#shopping_mall_products).
-- `created_at`: Timestamp when the favorite was created.
-- `updated_at`: Timestamp when the favorite was last updated.
-
-### `shopping_mall_favorite_sellers`
-
-User favorite sellers in the shopping mall platform.
-
-This table records the relationship between customers and their favorite
-sellers. Each record associates a customer with a seller they prefer or
-follow. The customer session capturing the favorite addition or update is
-kept for auditing.
-
-Timestamps for creation and last update support sorting favorites by
-recency and audit tracking.
-
-As a primary stance model, favorite seller relationships are managed
-independently with dedicated endpoints.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_customer_id`
-  > Customer who marked the seller as favorite. {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_customer_session_id`
-  > Customer session during which the favorite was marked. {@link
-  > shopping_mall_customer_sessions.id}.
-- `shopping_mall_seller_id`: Seller marked as favorite. [shopping_mall_sellers.id](#shopping_mall_sellers).
-- `created_at`: Timestamp when the favorite was created.
-- `updated_at`: Timestamp when the favorite was last updated.
-
-## Articles
-
-```mermaid
-erDiagram
-"shopping_mall_articles" {
-  String id PK
-  String shopping_mall_customer_id FK
-  String shopping_mall_article_category_id FK
-  String title
-  String body
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_article_categories" {
-  String id PK
-  String parent_id FK "nullable"
   String name UK
+  String label
   String description "nullable"
   DateTime created_at
   DateTime updated_at
+}
+"shopping_mall_user_roles" {
+  String id PK
+  String shopping_mall_admin_id FK
+  String shopping_mall_role_id FK
+  DateTime created_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_article_comments" {
+"shopping_mall_permissions" {
   String id PK
-  String shopping_mall_customer_id FK
-  String shopping_mall_article_id FK
-  String shopping_mall_customer_session_id FK
-  String body
+  String name UK
+  String label
+  String description "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"shopping_mall_articles" }o--|| "shopping_mall_article_categories" : category
-"shopping_mall_article_categories" }o--o| "shopping_mall_article_categories" : parent
-"shopping_mall_article_comments" }o--|| "shopping_mall_articles" : article
+"shopping_mall_user_roles" }o--|| "shopping_mall_roles" : role
 ```
 
-### `shopping_mall_articles`
+### `shopping_mall_admin_audit_logs`
 
-Articles posted in the shopping mall platform by registered users.
+Administrator actions audit logs capturing detailed, immutable records of
+administrative operations for security, compliance, and traceability.
 
-This model represents user-generated content allowing customers to
-publish articles on various topics. Articles are organized by categories
-and contain titles and text bodies.
+Each log entry records the acting admin, the type of action performed,
+affected resources, success or failure status, and timestamps. This
+facilitates forensic analysis and audit trails across the platform.
 
-Each article tracks creation, update, and soft deletion timestamps for
-audit and moderation purposes.
-
-Articles maintain relationships to customers and categories and support
-moderation workflows through comment relationships.
+The model ensures historical integrity by disallowing updates or
+deletions of log entries.
 
 Properties as follows:
 
-- `id`: Primary key.
-- `shopping_mall_customer_id`
-  > Reference to the customer who authored the article. {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_article_category_id`
-  > Reference to the category that the article belongs to. {@link
-  > shopping_mall_article_categories.id}.
-- `title`: The article's title summarizing the content.
-- `body`: The main textual content of the article.
-- `created_at`: Timestamp when the article was created.
-- `updated_at`: Timestamp when the article was last updated.
-- `deleted_at`: Timestamp when the article was soft-deleted; null if not deleted.
+- `id`: Primary Key.
+- `shopping_mall_admin_id`
+  > Reference to the administrator who performed the action. {@link
+  > shopping_mall_admins.id}.
+- `action_type`
+  > The type of action performed by the admin (e.g., CREATE_USER,
+  > DELETE_PRODUCT).
+- `resource_type`: Type of resource affected by the action (e.g., user, product, order).
+- `resource_id`: Identifier of the affected resource, if applicable.
+- `success`: Indicates whether the action was successful.
+- `details`
+  > Additional JSON-formatted details about the action for context and
+  > diagnostics.
+- `created_at`: Timestamp when the audit log entry was created.
 
-### `shopping_mall_article_categories`
+### `shopping_mall_roles`
 
-Hierarchical categories to organize articles within the shopping mall
-platform.
+System roles defining sets of permissions for access control within the
+shopping mall platform.
 
-Categories can have parent-child relationships enabling nested structures.
-Each category has a unique name within the platform.
+Roles enable grouping of privileges and facilitate scalable management of
+user rights and administrative capabilities.
 
-The model supports creation, update, and soft deletion timestamps for
-lifecycle management.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `parent_id`
-  > Optional reference to the parent category. {@link
-  > shopping_mall_article_categories.id}.
-- `name`: The category name, unique within the platform.
-- `description`: Optional detailed description of the category.
-- `created_at`: Timestamp when the category was created.
-- `updated_at`: Timestamp when the category was last updated.
-- `deleted_at`: Timestamp when the category was soft-deleted; null if not deleted.
-
-### `shopping_mall_article_comments`
-
-User comments on articles within the shopping mall platform.
-
-Comments enable customer interaction on articles and support moderation
-workflows.
-
-Each comment is linked to a customer, an article, and a specific customer
-session to track the origin.
-
-Comments include content, creation, update, and soft deletion timestamps.
-
-Moderation and searchability are supported through indexing on content
-fields.
+Roles have unique names and descriptive labels to clearly denote their
+purpose and scope.
 
 Properties as follows:
 
-- `id`: Primary key.
-- `shopping_mall_customer_id`
-  > Reference to the customer who made the comment. {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_article_id`
-  > Reference to the article being commented on. {@link
-  > shopping_mall_articles.id}.
-- `shopping_mall_customer_session_id`
-  > Reference to the customer session during which the comment was made.
-  > [shopping_mall_customer_sessions.id](#shopping_mall_customer_sessions).
-- `body`: Comment textual content, supporting detailed feedback or discussion.
-- `created_at`: Timestamp when the comment was created.
-- `updated_at`: Timestamp when the comment was last updated.
-- `deleted_at`: Timestamp when the comment was soft-deleted, null if active.
+- `id`: Primary Key.
+- `name`: Unique role identifier name used internally.
+- `label`: Human-readable label describing the role's purpose.
+- `description`: Detailed description of the role's permissions and context.
+- `created_at`: Timestamp when the role was created.
+- `updated_at`: Timestamp when the role was last updated.
+
+### `shopping_mall_user_roles`
+
+Mapping of users to roles establishing user permissions within the
+shopping mall platform.
+
+Each record indicates a specific role assigned to a user (administrator).
+
+Supports the management of multiple roles per user and enables effective
+role-based access control.
+
+Soft deletion allows temporary deactivation of role assignments without
+losing history.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_admin_id`: Reference to the administrator user. [shopping_mall_admins.id](#shopping_mall_admins).
+- `shopping_mall_role_id`: Reference to the role assigned. [shopping_mall_roles.id](#shopping_mall_roles).
+- `created_at`: Timestamp when the role was assigned.
+- `deleted_at`: Soft deletion timestamp to mark inactive role assignments.
+
+### `shopping_mall_permissions`
+
+Permissions defining granular access rights within the shopping mall
+backend.
+
+Each permission entry includes a unique name, label, and detailed
+description.
+
+Permissions are assigned to roles or users to enforce access control
+policies consistently and flexibly.
+
+This enables fine-grained authorization across the platform's
+administrative functions.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `name`: Unique permission identifier for internal use.
+- `label`: Human-readable label describing the permission.
+- `description`: Detailed description about the scope and usage of the permission.
+- `created_at`: Timestamp when the permission was created.
+- `updated_at`: Timestamp when the permission was last updated.
+
+## default
+
+```mermaid
+erDiagram
+"mv_shopping_mall_daily_sales" {
+  String id PK
+  DateTime sales_date
+  Int total_orders
+  Float total_sales_amount
+  Int total_items_sold
+}
+"mv_shopping_mall_inventory_status" {
+  String id PK
+  String category_id
+  Int total_sku_count
+  Int total_inventory_quantity
+  Int low_stock_threshold
+  Int low_stock_sku_count
+  DateTime last_refreshed_at
+}
+```
+
+### `mv_shopping_mall_daily_sales`
+
+Daily sales summary materialized view for the entire shopping mall platform.
+
+Provides aggregated transactional sales data including total sales
+amounts, number of orders, and total items sold per day. This view
+enables fast analytics and reporting on daily performance trends,
+supporting business decision making and operational monitoring.
+
+This table is automatically refreshed regularly and optimized for
+read-heavy queries. It is a read-only materialized view that denormalizes
+multiple transactional tables into a single snapshot for speed.
+
+Properties as follows:
+
+- `id`: Primary key unique to each daily sales summary record.
+- `sales_date`: The date representing the sales reporting day in ISO 8601 format.
+- `total_orders`: Total number of orders placed on the sales date.
+- `total_sales_amount`: Sum of all sales amounts (currency units) for the day.
+- `total_items_sold`: Total count of product items sold across all orders on that day.
+
+### `mv_shopping_mall_inventory_status`
+
+Current inventory status materialized view providing aggregated SKU
+inventory information across the entire mall.
+
+This view consolidates inventory levels, low stock alerts, and SKU counts
+per product category to facilitate monitoring and stock management
+decisions. It enables efficient querying of inventory health and trends
+without requiring joins to multiple base tables.
+
+As a materialized view, it is optimized for fast read operations and is
+periodically refreshed from transactional inventory data.
+
+Properties as follows:
+
+- `id`: Primary key unique to individual inventory status records.
+- `category_id`
+  > Identifier of the product category this inventory summary record belongs
+  > to. [shopping_mall_categories.id](#shopping_mall_categories).
+- `total_sku_count`: Total number of distinct SKUs under the product category.
+- `total_inventory_quantity`
+  > Aggregate quantity of all SKU items available in stock within the
+  > category.
+- `low_stock_threshold`: SKU inventory level considered low stock threshold for alerting.
+- `low_stock_sku_count`
+  > Number of SKUs currently below the low stock threshold within this
+  > category.
+- `last_refreshed_at`: Timestamp when this materialized view was last refreshed.

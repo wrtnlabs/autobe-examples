@@ -5,104 +5,110 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShoppingMallCategory";
 
-/**
- * Test the update functionality of an existing shopping mall product by an
- * authenticated admin user.
- *
- * This test follows a sequence:
- *
- * 1. Register a new admin user to obtain authentication.
- * 2. Create a new shopping mall product with valid details.
- * 3. Update the created product's details including name, description (cleared),
- *    and active status.
- * 4. Validate that the product information has been correctly updated.
- */
 export async function test_api_shopping_mall_product_update_by_admin(
   connection: api.IConnection,
 ) {
-  // Register and authenticate as admin user
-  const adminCreateBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    name: RandomGenerator.name(),
-    password: "1234",
-    phone_number: null,
-    role: "admin",
-  } satisfies IShoppingMallAdmin.ICreate;
-
-  const createdAdmin: IShoppingMallAdmin.IAuthorized =
+  // 1. Admin join - create admin user
+  const adminEmail = typia.random<string & tags.Format<"email">>();
+  const admin: IShoppingMallAdmin.IAuthorized =
     await api.functional.auth.admin.join(connection, {
-      body: adminCreateBody,
+      body: {
+        email: adminEmail,
+        password: "1234",
+        ip: null,
+        href: "https://localhost/",
+        referrer: "https://localhost/referrer",
+      } satisfies IShoppingMallAdmin.IJoin,
     });
-  typia.assert(createdAdmin);
+  typia.assert(admin);
 
-  // Create a new product to update
-  const productCreateBody = {
-    code: RandomGenerator.alphaNumeric(10).toUpperCase(),
-    name: RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 8 }),
-    description: RandomGenerator.content({
-      paragraphs: 2,
-      sentenceMin: 5,
-      sentenceMax: 10,
-      wordMin: 5,
-      wordMax: 10,
-    }),
-    is_active: true,
-  } satisfies IShoppingMallProduct.ICreate;
+  // 2. Admin login to ensure session
+  await api.functional.auth.admin.login(connection, {
+    body: {
+      email: adminEmail,
+      password: "1234",
+      ip: null,
+      href: "https://localhost/",
+      referrer: "https://localhost/referrer",
+    } satisfies IShoppingMallAdmin.ILogin,
+  });
 
-  const createdProduct: IShoppingMallProduct =
-    await api.functional.shoppingMall.admin.shoppingMallProducts.create(
+  // 3. Create a valid category for product update
+  const categoryName = RandomGenerator.alphaNumeric(8);
+  const categoryDescription = RandomGenerator.content({ paragraphs: 1 });
+  const categoryStatus = "active";
+
+  const category: IShoppingMallShoppingMallCategory =
+    await api.functional.shoppingMall.customer.shoppingMallCategories.create(
       connection,
       {
-        body: productCreateBody,
+        body: {
+          name: categoryName,
+          description: categoryDescription,
+          status: categoryStatus,
+        } satisfies IShoppingMallShoppingMallCategory.ICreate,
       },
     );
-  typia.assert(createdProduct);
+  typia.assert(category);
 
-  TestValidator.equals(
-    "created and returned product code matches",
-    createdProduct.code,
-    productCreateBody.code,
-  );
+  // 4. Update product by productCode
+  // Generate dummy productCode string
+  const productCode = RandomGenerator.alphaNumeric(12);
 
-  // Prepare update data
-  const updateBody = {
-    name: RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 8 }),
-    description: null, // explicitly clear the description
-    is_active: false,
+  // Product update details
+  const productTitle = RandomGenerator.paragraph({ sentences: 3 });
+  const productDescription = RandomGenerator.content({ paragraphs: 2 });
+  const productBrand = RandomGenerator.name(1);
+  const productUpdateBody = {
+    title: productTitle,
+    description: productDescription,
+    brand: productBrand,
+    shopping_mall_category_id: category.id,
   } satisfies IShoppingMallProduct.IUpdate;
 
-  // Update the created product
   const updatedProduct: IShoppingMallProduct =
     await api.functional.shoppingMall.admin.shoppingMallProducts.update(
       connection,
       {
-        productCode: createdProduct.code,
-        body: updateBody,
+        productCode: productCode,
+        body: productUpdateBody,
       },
     );
   typia.assert(updatedProduct);
 
-  // Validate updated product properties
+  // 5. Validate updated product's properties
   TestValidator.equals(
-    "product code remains unchanged",
+    "updated product code",
     updatedProduct.code,
-    createdProduct.code,
+    productCode,
   );
   TestValidator.equals(
-    "product name updated",
-    updatedProduct.name,
-    updateBody.name,
+    "updated product title",
+    updatedProduct.title,
+    productTitle,
   );
   TestValidator.equals(
-    "product description removed (null)",
-    updatedProduct.description,
-    null,
+    "updated product description",
+    updatedProduct.description ?? null,
+    productDescription,
   );
   TestValidator.equals(
-    "product active status updated",
-    updatedProduct.is_active,
-    false,
+    "updated product brand",
+    updatedProduct.brand ?? null,
+    productBrand,
+  );
+  TestValidator.equals(
+    "updated product category id",
+    updatedProduct.shopping_mall_category.id,
+    category.id,
+  );
+  TestValidator.equals(
+    "updated product category name",
+    updatedProduct.shopping_mall_category.name,
+    category.name,
   );
 }

@@ -1,6 +1,10 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia, { tags } from "typia";
+import typia from "typia";
+import { patchEconomicBoardModeratorModerationActions } from "../../../../../providers/patchEconomicBoardModeratorModerationActions";
+import { ModeratorAuth } from "../../../../../decorators/ModeratorAuth";
+import { ModeratorPayload } from "../../../../../decorators/payload/ModeratorPayload";
+import { getEconomicBoardModeratorModerationActionsActionId } from "../../../../../providers/getEconomicBoardModeratorModerationActionsActionId";
 
 import { IPageIEconomicBoardModerationAction } from "../../../../../api/structures/IPageIEconomicBoardModerationAction";
 import { IEconomicBoardModerationAction } from "../../../../../api/structures/IEconomicBoardModerationAction";
@@ -8,150 +12,110 @@ import { IEconomicBoardModerationAction } from "../../../../../api/structures/IE
 @Controller("/economicBoard/moderator/moderation/actions")
 export class EconomicboardModeratorModerationActionsController {
   /**
-   * Search and retrieve a filtered, paginated list of economic board
-   * moderation actions.
+   * Search and retrieve a filtered, paginated list of moderation actions.
    *
-   * This operation provides comprehensive access to the audit trail of all
-   * moderation actions performed on the economic board. It queries the
-   * economic_board_moderation_actions table to retrieve records of moderation
-   * activities including warnings, deletions, and locks, along with their
-   * associated metadata.
+   * Retrieve a filtered and paginated list of moderation actions from the
+   * system. This operation provides advanced search capabilities for finding
+   * moderation events based on multiple criteria including targeted citizens,
+   * acting moderators, time ranges, and action types. It supports sorting by
+   * creation date in ascending or descending order and configurable page sizes
+   * for performance optimization.
    *
-   * Moderators and administrators can filter actions by multiple criteria:
-   * target citizen (citizen_id), acting moderator (moderator_id), creation
-   * date range, and action status (active vs. deleted). The operation
-   * supports pagination to handle large volumes of audit records efficiently.
-   * The response provides complete metadata for each action including
-   * timestamps, references to the affected user and moderator, and the
-   * deletion status.
+   * The operation integrates with the economic_board_moderation_actions table
+   * as defined in the Prisma schema, incorporating all available fields and
+   * relationships. Users can filter by citizen_id to find actions against
+   * specific users, by moderator_id to review actions performed by specific
+   * moderators, and by created_at ranges to audit activity during specific
+   * periods.
    *
-   * The operation does not include details of the specific action type
-   * (warning, deletion, lock) in the base response. These details are stored
-   * in subordinate tables (economic_board_moderation_warnings,
-   * economic_board_moderation_deletions, economic_board_moderation_locks) and
-   * must be retrieved separately using the moderation_action_id as a
-   * reference. This design ensures database integrity and allows for
-   * extensible action types while maintaining a single audit trail.
+   * Security considerations include rate limiting for search operations and
+   * appropriate filtering of sensitive moderation event information based on
+   * the requesting user's authorization level. Only authenticated moderators
+   * can access detailed moderation action information, while basic action lists
+   * may be limited to administrative oversight.
    *
-   * The system permanently retains all moderation actions in the database.
-   * Even when actions are marked as deleted (via deleted_at field), they
-   * remain available for audit and compliance purposes. Only the deleted_at
-   * field is modified to reflect logical deletion, ensuring complete audit
-   * history.
-   *
-   * This operation is critical for the moderator dashboard, enabling
-   * oversight of moderation patterns, identification of potential moderator
-   * abuse, and generation of compliance reports. It is restricted to
-   * moderator roles since moderation logs contain sensitive information about
-   * citizen interactions and system enforcement actions.
+   * The response includes moderation action summary information optimized for
+   * dashboard displays, with pagination controls to handle large result sets
+   * efficiently. This operation is essential for auditable compliance and
+   * routine community governance tasks.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for retrieving
-   *   moderation actions. Includes filters for citizen_id, moderator_id,
-   *   created_at date range, and search by deletion status.
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @param body Search criteria and pagination parameters for moderation action
+   *   filtering
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async search(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
     @TypedBody()
     body: IEconomicBoardModerationAction.IRequest,
-  ): Promise<IPageIEconomicBoardModerationAction> {
-    body;
-    return typia.random<IPageIEconomicBoardModerationAction>();
+  ): Promise<IPageIEconomicBoardModerationAction.ISummary> {
+    try {
+      return await patchEconomicBoardModeratorModerationActions({
+        moderator,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Retrieve a specific moderation action by unique code.
+   * Retrieve a specific moderation action by its unique ID.
    *
-   * Retrieve a single moderation action by its unique code for detailed audit
-   * review.
+   * Retrieve detailed information about a specific moderation action by its
+   * unique identifier from the economic_board_moderation_actions table.
    *
-   * This operation allows moderators to inspect the complete context of a
-   * specific moderation decision, including who performed the action, which
-   * citizen was targeted, when it occurred, and the type of action taken
-   * (warning, deletion, or lock). The operation returns detailed information
-   * about the moderation event based on a human-readable action code rather
-   * than a UUID, improving usability for human operators reviewing audit
-   * logs.
+   * This operation returns comprehensive details about a single moderation
+   * event initiated by a moderator. The action record includes identity of the
+   * moderator who performed the action, the citizen who was targeted, the
+   * timestamp of the action, and the type of action taken (warning, deletion,
+   * or lock). While the base action record provides metadata, the actual action
+   * details are stored in subtype tables linked by the action's ID.
    *
-   * The action code is a unique, case-sensitive identifier derived from the
-   * moderation action's timestamp, actor ID, and target ID, ensuring each
-   * code maps to exactly one audit record. This avoids exposing internal UUID
-   * identifiers to users while maintaining uniqueness in the system.
+   * The operation returns detailed metadata about the moderation event. This
+   * includes why and how the action was performed, which may involve
+   * referencing associated records in the individual moderation action subtype
+   * tables.
    *
-   * Security: Only authenticated moderators can access moderation action
-   * details. The system prevents access to actions involving policy
-   * violations that have been archived or deleted for privacy/compliance.
+   * Security is enforced through authorization, allowing only authenticated
+   * moderators to retrieve records. The operation ensures that participants
+   * cannot access moderation records for actions taken against them,
+   * maintaining the integrity of the moderation process and preventing
+   * retaliation.
    *
-   * This operation relies on the economic_board_moderation_actions table as
-   * the authoritative source, with its direct relationship to
-   * economic_board_citizens and economic_board_moderators tables for field
-   * context. For actions implemented as subtype records
-   * (economic_board_moderation_warnings, economic_board_moderation_deletions,
-   * economic_board_moderation_locks), the system resolves the action type and
-   * retrieves the specific subtype data through joined relations.
+   * This operation supports the audit and review workflow for moderators. It
+   * provides the foundational data layer that enables comprehensive review of
+   * individual moderation cases, which is essential for maintaining platform
+   * integrity and accountability.
    *
-   * Related operations: PATCH /moderation/actions (index) for listing recent
-   * actions, DELETE /moderation/actions/{actionCode} for reversibility.
-   *
-   * @param connection
-   * @param actionCode Unique, case-sensitive code identifying the specific
-   *   moderation action (e.g., 'M-20251115-0001'). This code is derived from
-   *   the action's timestamp, moderator, and target and is used instead of
-   *   UUID for human-readable audit access.
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
-   */
-  @TypedRoute.Get(":actionCode")
-  public async getByActioncode(
-    @TypedParam("actionCode")
-    actionCode: string,
-  ): Promise<IEconomicBoardModerationAction> {
-    actionCode;
-    return typia.random<IEconomicBoardModerationAction>();
-  }
-
-  /**
-   * Retrieve a specific moderation action by unique UUID.
-   *
-   * Retrieve a single moderation action by its unique UUID for detailed audit
-   * review.
-   *
-   * This operation allows moderators to inspect the complete context of a
-   * specific moderation decision, including who performed the action, which
-   * citizen was targeted, when it occurred, and the type of action taken
-   * (warning, deletion, or lock). The operation returns detailed information
-   * about the moderation event based on the system's internal UUID identifier
-   * as defined in the Prisma schema.
-   *
-   * The UUID is a globally unique identifier assigned by the system during
-   * action creation, ensuring each record is uniquely identifiable without
-   * exposing business logic or timestamps in the identifier.
-   *
-   * Security: Only authenticated moderators can access moderation action
-   * details. The system prevents access to actions involving policy
-   * violations that have been archived or deleted for privacy/compliance.
-   *
-   * This operation relies on the economic_board_moderation_actions table as
-   * the authoritative source, with its direct relationship to
-   * economic_board_citizens and economic_board_moderators tables for field
-   * context. For actions implemented as subtype records
-   * (economic_board_moderation_warnings, economic_board_moderation_deletions,
-   * economic_board_moderation_locks), the system resolves the action type and
-   * retrieves the specific subtype data through joined relations.
-   *
-   * Related operations: PATCH /moderation/actions (index) for listing recent
-   * actions, DELETE /moderation/actions/{id} for reversibility.
+   * Related operations include retrieving all moderation actions by citizen
+   * (PATCH /moderation/actions?citizenId=...) or by moderator (PATCH
+   * /moderation/actions?moderatorId=...).
    *
    * @param connection
-   * @param id Unique UUID identifier of the moderation action record
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @param actionId Unique identifier of the moderation action being retrieved.
+   *   This corresponds directly to the id field in the
+   *   economic_board_moderation_actions table.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":id")
-  public async getById(
-    @TypedParam("id")
-    id: string & tags.Format<"uuid">,
+  @TypedRoute.Get(":actionId")
+  public async at(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
+    @TypedParam("actionId")
+    actionId: string,
   ): Promise<IEconomicBoardModerationAction> {
-    id;
-    return typia.random<IEconomicBoardModerationAction>();
+    try {
+      return await getEconomicBoardModeratorModerationActionsActionId({
+        moderator,
+        actionId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

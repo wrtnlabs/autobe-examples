@@ -1,2 +1,1 @@
-export * as customers from "./customers/index";
-export * as shoppingMallProducts from "./shoppingMallProducts/index";
+export * as shoppingMallGuests from "./shoppingMallGuests/index";

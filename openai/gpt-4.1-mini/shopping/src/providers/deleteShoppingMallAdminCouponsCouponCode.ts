@@ -13,14 +13,12 @@ export async function deleteShoppingMallAdminCouponsCouponCode(props: {
   admin: AdminPayload;
   couponCode: string;
 }): Promise<void> {
-  const existing = await MyGlobal.prisma.shopping_mall_coupons.findUnique({
+  const coupon = await MyGlobal.prisma.shopping_mall_coupons.findUnique({
     where: { code: props.couponCode },
   });
-
-  if (!existing) {
+  if (!coupon) {
     throw new HttpException("Coupon not found", 404);
   }
-
   await MyGlobal.prisma.shopping_mall_coupons.delete({
     where: { code: props.couponCode },
   });

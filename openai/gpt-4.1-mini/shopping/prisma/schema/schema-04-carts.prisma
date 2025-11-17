@@ -1,18 +1,13 @@
-/// Customer shopping carts storing active shopping sessions and associated
-/// customer references.
+/// Shopping carts representing persistent customer or guest selections of
+/// SKUs intended for purchase.
 ///
-/// Each shopping cart belongs to exactly one authenticated customer, linking
-/// to their active customer session. The cart maintains creation and update
-/// timestamps.
-/// Soft deletion is supported to allow retention of historical cart data
-/// without user visibility.
-///
-/// This entity serves as the primary container for items customers intend to
-/// purchase and supports multiple items per cart.
+/// Each cart belongs to a customer, allowing multiple concurrent carts for
+/// different sessions.
+/// Carts persist across sessions and support soft deletion for audit purposes.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shopping_carts {
+model shopping_mall_carts {
   //----
   // COLUMNS
   //----
@@ -22,18 +17,17 @@ model shopping_mall_shopping_carts {
   /// Reference to the owning customer. {@link shopping_mall_customers.id}.
   shopping_mall_customer_id String
   
-  /// Reference to the customer's active session during cart activity. Nullable
-  /// if session expired or unknown. {@link
+  /// Reference to the specific customer session. {@link
   /// shopping_mall_customer_sessions.id}.
   shopping_mall_customer_session_id String?
   
-  /// Timestamp when cart was created.
+  /// Timestamp when the cart was created.
   created_at DateTime
   
-  /// Timestamp when cart was last updated.
+  /// Timestamp when the cart was last updated.
   updated_at DateTime
   
-  /// Timestamp marking soft deletion; NULL if active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
@@ -44,19 +38,20 @@ model shopping_mall_shopping_carts {
   
   shopping_mall_cart_items shopping_mall_cart_items[]
   
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_session_id], map: "shopping_mall_shopping_carts_shopping_mall_customer_se_93ab6fa9")
+  @@index([shopping_mall_customer_session_id])
   
-  @@index([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_customer_session_id], map: "shopping_mall_carts_shopping_mall_customer_id_shopping_2992cbd5")
+  @@index([created_at, updated_at])
 }
 
-/// Items contained within a customer's shopping cart.
+/// Individual items within a shopping cart representing specific product
+/// SKUs selected by the customer.
 ///
-/// Each cart item references the parent shopping cart, the product, and the
-/// specific SKU variant selected for purchase.
-/// Quantities are positive integers reflecting the desired purchase amount.
-///
-/// Timestamps track creation and updates for audit and synchronization.
+/// Each item references one cart and one product variant. Quantity tracks
+/// the amount desired.
+/// This subsidiary table enables efficient many-to-one relationship from
+/// items to carts.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -67,18 +62,14 @@ model shopping_mall_cart_items {
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent shopping cart. {@link
-  /// shopping_mall_shopping_carts.id}.
-  shopping_mall_shopping_cart_id String
+  /// Reference to the owning shopping cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
   
-  /// Reference to the product selected. {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// Reference to the selected product variant (SKU). {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
   
-  /// Reference to the specific SKU variant of the product. {@link
-  /// shopping_mall_product_skus.id}.
-  shopping_mall_product_sku_id String
-  
-  /// Quantity of the product SKU in the cart item.
+  /// Quantity of the SKU selected by the customer.
   quantity Int
   
   /// Timestamp when the cart item was created.
@@ -87,32 +78,26 @@ model shopping_mall_cart_items {
   /// Timestamp when the cart item was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp; NULL if active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_product_sku_id])
+  @@index([shopping_mall_cart_id])
+  @@index([shopping_mall_product_variant_id])
   
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_shopping_cart_id, shopping_mall_product_sku_id], map: "shopping_mall_cart_items_shopping_mall_shopping_cart_i_34ac97b1")
-  @@index([shopping_mall_product_id, quantity])
+  @@index([quantity])
 }
 
-/// Customer wishlists storing products customers are interested in
-/// purchasing later.
+/// Wishlists representing private collections of desired product SKUs saved
+/// by customers for future purchase consideration.
 ///
-/// Each wishlist belongs to one authenticated customer and manages multiple
-/// wishlist items.
-/// Soft deletion is supported to hide inactive wishlists but retain
-/// historical data.
-///
-/// Wishlists facilitate personalized shopping experiences and user engagement.
+/// Each wishlist belongs to exactly one customer and can be soft deleted
+/// while maintaining historical records.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -126,43 +111,31 @@ model shopping_mall_wishlists {
   /// Reference to the owning customer. {@link shopping_mall_customers.id}.
   shopping_mall_customer_id String
   
-  /// Reference to the customer's active session at the time of wishlist
-  /// activity. Nullable if unknown. {@link
-  /// shopping_mall_customer_sessions.id}.
-  shopping_mall_customer_session_id String?
-  
-  /// User-defined name for the wishlist to identify it.
-  name String
-  
-  /// Timestamp when wishlist was created.
+  /// Timestamp when the wishlist was created.
   created_at DateTime
   
-  /// Timestamp of last update to the wishlist.
+  /// Timestamp when the wishlist was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp; NULL if active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
   
   shopping_mall_wishlist_items shopping_mall_wishlist_items[]
   
-  @@index([shopping_mall_customer_session_id])
-  
-  @@index([shopping_mall_customer_id])
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at, updated_at])
 }
 
-/// Items contained within customer wishlists.
+/// Individual items within a wishlist representing customer-selected product
+/// SKUs saved for future purchase.
 ///
-/// Each wishlist item references the parent wishlist, the product, and the
-/// specific SKU variant selected.
-///
-/// Timestamps track creation and updates, and soft deletion supports data
-/// lifecycle management.
+/// Each item references one wishlist and one product variant to support
+/// many-to-one normalized relationships.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -173,16 +146,12 @@ model shopping_mall_wishlist_items {
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent wishlist. {@link shopping_mall_wishlists.id}.
+  /// Reference to the owning wishlist. {@link shopping_mall_wishlists.id}.
   shopping_mall_wishlist_id String
   
-  /// Reference to the product in the wishlist item. {@link
-  /// shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Reference to the specific SKU variant. {@link
-  /// shopping_mall_product_skus.id}.
-  shopping_mall_product_sku_id String
+  /// Reference to the selected product variant (SKU). {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
   
   /// Timestamp when the wishlist item was created.
   created_at DateTime
@@ -190,19 +159,16 @@ model shopping_mall_wishlist_items {
   /// Timestamp when the wishlist item was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp; NULL if active.
+  /// Soft deletion timestamp; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_product_sku_id])
-  
+  @@index([shopping_mall_wishlist_id])
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_wishlist_id, shopping_mall_product_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_22da2d8e")
-  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_product_var_964c74eb")
 }

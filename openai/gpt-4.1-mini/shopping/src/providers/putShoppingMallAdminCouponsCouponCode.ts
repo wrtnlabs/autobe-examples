@@ -15,54 +15,38 @@ export async function putShoppingMallAdminCouponsCouponCode(props: {
   couponCode: string;
   body: IShoppingMallCoupon.IUpdate;
 }): Promise<IShoppingMallCoupon> {
-  const existing = await MyGlobal.prisma.shopping_mall_coupons.findUnique({
-    where: { code: props.couponCode },
+  const existingCoupon = await MyGlobal.prisma.shopping_mall_coupons.findFirst({
+    where: { code: props.couponCode, deleted_at: null },
   });
 
-  if (!existing) {
-    throw new HttpException("Coupon not found", 404);
+  if (!existingCoupon) {
+    throw new HttpException(
+      `Coupon with code ${props.couponCode} not found`,
+      404,
+    );
+  }
+
+  if (props.body.code !== props.couponCode) {
+    const codeConflict = await MyGlobal.prisma.shopping_mall_coupons.findFirst({
+      where: { code: props.body.code, deleted_at: null },
+    });
+
+    if (codeConflict) {
+      throw new HttpException(
+        `Coupon code ${props.body.code} already exists`,
+        400,
+      );
+    }
   }
 
   const updated = await MyGlobal.prisma.shopping_mall_coupons.update({
     where: { code: props.couponCode },
     data: {
-      discount_type: props.body.discount_type,
+      code: props.body.code,
+      type: props.body.type,
       discount_value: props.body.discount_value,
-      minimum_order_amount: Object.prototype.hasOwnProperty.call(
-        props.body,
-        "minimum_order_amount",
-      )
-        ? props.body.minimum_order_amount
-        : undefined,
-      maximum_discount_amount: Object.prototype.hasOwnProperty.call(
-        props.body,
-        "maximum_discount_amount",
-      )
-        ? props.body.maximum_discount_amount
-        : undefined,
-      start_at: Object.prototype.hasOwnProperty.call(props.body, "start_at")
-        ? props.body.start_at === null
-          ? undefined
-          : props.body.start_at
-        : undefined,
-      end_at: Object.prototype.hasOwnProperty.call(props.body, "end_at")
-        ? props.body.end_at === null
-          ? undefined
-          : props.body.end_at
-        : undefined,
-      usage_limit: Object.prototype.hasOwnProperty.call(
-        props.body,
-        "usage_limit",
-      )
-        ? props.body.usage_limit
-        : undefined,
-      status: props.body.status,
-      description: Object.prototype.hasOwnProperty.call(
-        props.body,
-        "description",
-      )
-        ? props.body.description
-        : undefined,
+      start_date: props.body.start_date,
+      end_date: props.body.end_date,
       updated_at: toISOStringSafe(new Date()),
     },
   });
@@ -70,29 +54,20 @@ export async function putShoppingMallAdminCouponsCouponCode(props: {
   return {
     id: updated.id,
     code: updated.code,
-    description: updated.description === null ? "" : updated.description,
-    discount_type: typia.assert<"fixed" | "percentage">(updated.discount_type),
+    type: updated.type,
     discount_value: updated.discount_value,
-    minimum_order_amount:
-      updated.minimum_order_amount === null
-        ? null
-        : updated.minimum_order_amount,
-    maximum_discount_amount:
-      updated.maximum_discount_amount === null
-        ? null
-        : updated.maximum_discount_amount,
-    start_at: toISOStringSafe(updated.start_at),
-    end_at: toISOStringSafe(updated.end_at),
-    usage_limit: updated.usage_limit === null ? null : updated.usage_limit,
-    per_customer_limit: null,
-    status: updated.status,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
+    start_date: toISOStringSafe(updated.start_date) as string &
+      tags.Format<"date-time">,
+    end_date: toISOStringSafe(updated.end_date) as string &
+      tags.Format<"date-time">,
+    created_at: toISOStringSafe(updated.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(updated.updated_at) as string &
+      tags.Format<"date-time">,
     deleted_at:
-      updated.deleted_at === undefined
-        ? undefined
-        : updated.deleted_at === null
-          ? null
-          : toISOStringSafe(updated.deleted_at),
-  } satisfies IShoppingMallCoupon;
+      updated.deleted_at !== null && updated.deleted_at !== undefined
+        ? (toISOStringSafe(updated.deleted_at) as string &
+            tags.Format<"date-time">)
+        : null,
+  };
 }

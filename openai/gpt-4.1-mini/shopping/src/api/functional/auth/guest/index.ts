@@ -6,29 +6,30 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallGuest } from "../../../structures/IShoppingMallGuest";
 
 /**
- * Register a temporary guest account and issue temporary JWT tokens, related to
- * the guests table.
+ * Register a temporary guest account and issue authorization tokens.
  *
- * This operation creates a new guest account. It issues temporary JWT tokens
- * that enable guests to maintain session state without full membership. The
- * schema for guests supports necessary fields to create and manage temporary
- * guests. Guest users do not provide typical login credentials but receive a
- * lightweight token for limited interaction.
+ * Enables unauthenticated users (guest) to register temporary guest accounts.
+ * The operation uses the 'shopping_mall_guests' Prisma table for storing guest
+ * user records with minimal required fields. Upon successful registration, the
+ * system returns JWT authorization tokens for access control during the guest
+ * session.
  *
- * Implementation relies on fields available in the guest schema for session
- * identification and token issuance.
+ * The operation facilitates limited access to protected resources without
+ * traditional login credentials, ensuring secure temporary sessions and
+ * prevention of abuse via token management.
  *
- * Guest users benefit from immediate access to browsing features with minimal
- * authentication overhead.
+ * It integrates with the refresh token operation to maintain session continuity
+ * and is a critical step in the guest user authentication lifecycle.
  *
- * Security is handled through token expiration and validation mechanisms
- * appropriate for temporary access.
+ * Security policies include rate limiting and session expiration to protect the
+ * platform.
  *
- * This operation works alongside refresh to maintain guest sessions without
- * requiring full re-registration.
+ * Related operations include '/auth/guest/refresh' and logout endpoints for
+ * session management.
  *
  * @param props.connection
- * @param props.body Guest registration request payload.
+ * @param props.body Payload for guest registration; conforms to
+ *   IShoppingMallGuest.IJoin schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -63,7 +64,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Guest registration request payload. */
+    /**
+     * Payload for guest registration; conforms to IShoppingMallGuest.IJoin
+     * schema.
+     */
     body: IShoppingMallGuest.IJoin;
   };
   export type Body = IShoppingMallGuest.IJoin;
@@ -111,21 +115,27 @@ export namespace join {
 }
 
 /**
- * Refresh temporary JWT tokens for the guest user, related to the guests table.
+ * Refresh temporary authorization tokens for guest users.
  *
- * This operation refreshes the guest user's temporary JWT tokens.
+ * Allows guest users to obtain new JWT authorization tokens by submitting valid
+ * refresh tokens. Validates refresh tokens against the
+ * 'shopping_mall_guest_sessions' table to ensure session validity.
  *
- * It requires a valid refresh token from the guest and returns new tokens to
- * maintain session continuity.
+ * Access requires a valid refresh token assigned during registration or a prior
+ * refresh.
  *
- * Security policies enforce refresh token validation and expiration handling.
+ * Security policies enforce token revocation and expiration to safeguard guest
+ * sessions.
  *
- * This supports short-lived token strategies common for guest access.
+ * This operation works alongside the join process to support continuous guest
+ * authentication.
  *
- * Works in tandem with join for a full guest authentication lifecycle.
+ * It is essential for maintaining secure, persistent guest access to protected
+ * resources.
  *
  * @param props.connection
- * @param props.body Guest token refresh request payload.
+ * @param props.body Payload containing a valid refresh token; conforms to
+ *   IShoppingMallGuest.IRefresh schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -160,7 +170,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Guest token refresh request payload. */
+    /**
+     * Payload containing a valid refresh token; conforms to
+     * IShoppingMallGuest.IRefresh schema.
+     */
     body: IShoppingMallGuest.IRefresh;
   };
   export type Body = IShoppingMallGuest.IRefresh;

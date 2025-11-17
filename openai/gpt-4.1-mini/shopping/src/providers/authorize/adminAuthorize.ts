@@ -10,15 +10,26 @@ export async function adminAuthorize(request: { headers: { authorization?: strin
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null
-    },
+      id: payload.session_id,
+      shopping_mall_admin_id: payload.id,
+      expired_at: null
+    }
   });
 
-  if (admin === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (!session) {
+    throw new ForbiddenException("Invalid or expired admin session.");
+  }
+
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: {
+      id: payload.id
+    }
+  });
+
+  if (!admin) {
+    throw new ForbiddenException("Admin account not found or inactive.");
   }
 
   return payload;

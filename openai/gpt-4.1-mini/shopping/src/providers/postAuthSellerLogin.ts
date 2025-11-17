@@ -23,88 +23,68 @@ export async function postAuthSellerLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  if (seller.status !== "active" || seller.business_status !== "approved") {
-    throw new HttpException("Account inactive or unapproved", 403);
-  }
-
-  const isPasswordValid = await PasswordUtil.verify(
+  const validPassword = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
   );
-  if (!isPasswordValid) {
+
+  if (!validPassword) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const sessionId: string & tags.Format<"uuid"> = v4();
-
-  const nowISO: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  const accessExpireISO: string & tags.Format<"date-time"> = toISOStringSafe(
+  const nowIsoString: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
+  );
+  const accessExpiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
   );
-  const refreshExpireISO: string & tags.Format<"date-time"> = toISOStringSafe(
+  const refreshExpiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
-      id: sessionId,
+      id: v4(),
       shopping_mall_seller_id: seller.id,
-      ip: (props.body.ip ?? "") satisfies string as string,
+      ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: nowISO,
-      expired_at: accessExpireISO,
+      created_at: nowIsoString,
+      expired_at: accessExpiredAt,
     },
   });
 
-  const accessToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: session.id,
-      created_at: nowISO,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: nowISO,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: nowIsoString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: nowIsoString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshExpiredAt,
+  };
 
   return {
     id: seller.id,
     email: seller.email,
-    name: seller.name,
-    status: seller.status,
-    business_status: seller.business_status,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at:
-      seller.deleted_at === undefined
-        ? undefined
-        : seller.deleted_at === null
-          ? null
-          : toISOStringSafe(seller.deleted_at),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpireISO,
-      refreshable_until: refreshExpireISO,
-    },
+    token,
   };
 }

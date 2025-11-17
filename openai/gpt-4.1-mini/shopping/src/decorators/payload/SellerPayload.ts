@@ -1,12 +1,12 @@
 import { tags } from "typia";
 
 export interface SellerPayload {
-  /** Top-level seller user ID. */
+  /** Top-level user table ID (the fundamental user identifier in the system). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the seller. */
+  /** Session ID associated with the authenticated seller. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator type for seller role. */
+  /** Discriminator for the discriminated union type. */
   type: "seller";
 }

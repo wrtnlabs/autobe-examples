@@ -8,44 +8,29 @@ import type { IShoppingMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structure
 export async function test_api_shopping_mall_guest_creation(
   connection: api.IConnection,
 ) {
-  // 1. Prepare the guest creation request body
-  const requestBody = {
-    session_id: RandomGenerator.alphaNumeric(20),
-    device_info: `Browser XYZ on OS ${RandomGenerator.alphaNumeric(5)}`,
-    ip_address: typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IShoppingMallGuest.ICreate;
-
-  // 2. Call the create guest API endpoint
+  // Create a new guest user record with empty creation body as per IShoppingMallGuest.ICreate
   const guest: IShoppingMallGuest =
-    await api.functional.shoppingMall.guests.create(connection, {
-      body: requestBody,
+    await api.functional.shoppingMall.shoppingMallGuests.create(connection, {
+      body: {} satisfies IShoppingMallGuest.ICreate,
     });
-
-  // 3. Use typia to assert the guest response data structure
+  // Validate the response type and existence of required properties
   typia.assert(guest);
-
-  // 4. Additional checks for required fields
+  // Check that 'id' is a valid UUID
   TestValidator.predicate(
-    "guest id format is uuid",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    "guest id is UUID",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       guest.id,
     ),
   );
-
+  // Check that created_at and updated_at are valid ISO 8601 date-time strings
   TestValidator.predicate(
-    "guest created_at is ISO date-time string",
+    "created_at is ISO 8601 date-time",
     typeof guest.created_at === "string" &&
-      !Number.isNaN(Date.parse(guest.created_at)),
+      !isNaN(Date.parse(guest.created_at)),
   );
-
   TestValidator.predicate(
-    "guest updated_at is ISO date-time string",
+    "updated_at is ISO 8601 date-time",
     typeof guest.updated_at === "string" &&
-      !Number.isNaN(Date.parse(guest.updated_at)),
-  );
-
-  TestValidator.predicate(
-    "guest deleted_at is null or undefined",
-    guest.deleted_at === null || guest.deleted_at === undefined,
+      !isNaN(Date.parse(guest.updated_at)),
   );
 }

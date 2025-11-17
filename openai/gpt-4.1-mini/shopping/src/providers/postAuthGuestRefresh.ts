@@ -15,15 +15,20 @@ export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
   body: IShoppingMallGuest.IRefresh;
 }): Promise<IShoppingMallGuest.IAuthorized> {
-  const jwtSecret = MyGlobal.env.JWT_SECRET_KEY;
-  let decoded: { id: string; session_id: string; type: "guest" };
+  let decoded: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "guest";
+  };
 
   try {
-    decoded = jwt.verify(props.body.refresh_token, jwtSecret, {
-      issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as {
+      id: string & tags.Format<"uuid">;
+      session_id: string & tags.Format<"uuid">;
       type: "guest";
     };
   } catch {
@@ -46,19 +51,21 @@ export async function postAuthGuestRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  // No guest object in session, so check only deleted_at via separate query is not possible.
-  // We cannot access session.shopping_mall_guest.deleted_at as it does not exist.
-  // Therefore we skip this deletion check or alternatively throw if session null.
+  const guest = await MyGlobal.prisma.shopping_mall_guests.findUnique({
+    where: { id: decoded.id },
+  });
 
-  // Current timestamp as string with correct format tag
-  const nowISOString = toISOStringSafe(new Date());
+  if (!guest) {
+    throw new HttpException("Guest not found", 403);
+  }
 
-  // Compute expiration timestamps as ISO strings
-  const accessExpiresAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresAt = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  const now = new Date();
+  const accessExpiresTimestamp = now.getTime() + 60 * 60 * 1000;
+  const refreshExpiresTimestamp = now.getTime() + 7 * 24 * 60 * 60 * 1000;
+
+  const accessExpiresString = toISOStringSafe(new Date(accessExpiresTimestamp));
+  const refreshExpiresString = toISOStringSafe(
+    new Date(refreshExpiresTimestamp),
   );
 
   const token = {
@@ -67,9 +74,9 @@ export async function postAuthGuestRefresh(props: {
         type: decoded.type,
         id: decoded.id,
         session_id: decoded.session_id,
-        created_at: nowISOString,
+        created_at: toISOStringSafe(now),
       },
-      jwtSecret,
+      MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
@@ -78,25 +85,24 @@ export async function postAuthGuestRefresh(props: {
         id: decoded.id,
         session_id: decoded.session_id,
         tokenType: "refresh",
-        created_at: nowISOString,
+        created_at: toISOStringSafe(now),
       },
-      jwtSecret,
+      MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpiresAt,
-    refreshable_until: refreshExpiresAt,
+    expired_at: accessExpiresString,
+    refreshable_until: refreshExpiresString,
   };
 
   await MyGlobal.prisma.shopping_mall_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresAt },
+    data: { expired_at: new Date(refreshExpiresTimestamp) },
   });
 
   return {
-    id: session.shopping_mall_guest_id,
-    created_at: toISOStringSafe(new Date(0)),
-    updated_at: toISOStringSafe(new Date(0)),
-    deleted_at: toISOStringSafe(new Date(0)),
+    id: guest.id,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
     token,
-  } satisfies IShoppingMallGuest.IAuthorized;
+  };
 }

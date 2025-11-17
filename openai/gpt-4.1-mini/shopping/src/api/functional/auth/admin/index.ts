@@ -6,27 +6,23 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
 
 /**
- * Register a new admin user in 'shopping_mall_admins' table.
+ * Create a new admin account and issue JWT authorization tokens, relating to
+ * shopping_mall_admins.
  *
- * This API endpoint allows new admin users to register and obtain JWT tokens
- * for authenticated access.
- *
- * It securely creates a new admin record in the 'shopping_mall_admins' table,
- * verifying that all mandatory fields such as email and password_hash are
- * captured and hashed properly according to the schema.
- *
- * Admin actors represent system administrators with full platform control, so
- * this registration enables access to management features.
- *
- * Security considerations include unique email enforcement, password hashing,
- * and account status management as per 'status', 'business_status', and
- * timestamps.
- *
- * This operation pairs with login and refresh endpoints to deliver a complete
- * authentication system for admin users.
+ * This API operation handles administrator account registration for the
+ * shopping mall platform. It uses the shopping_mall_admins table wherein each
+ * admin has a unique email used as their login ID and a hashed password stored
+ * securely. The endpoint registers new admins, stores their credentials
+ * securely, and issues JWT token pairs for immediate authorized access.
+ * Security measures include validation of input, password hashing, and
+ * prevention of duplicate registrations via unique email enforcement. This
+ * operation is publicly accessible as it is the entry point for new
+ * administrators on the platform. Related operations include login and refresh
+ * token renewal.
  *
  * @param props.connection
- * @param props.body Registration data for a new admin user
+ * @param props.body Administrator registration input data including email and
+ *   plaintext password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -61,10 +57,13 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Registration data for a new admin user */
-    body: IShoppingMallAdmin.ICreate;
+    /**
+     * Administrator registration input data including email and plaintext
+     * password.
+     */
+    body: IShoppingMallAdmin.IJoin;
   };
-  export type Body = IShoppingMallAdmin.ICreate;
+  export type Body = IShoppingMallAdmin.IJoin;
   export type Response = IShoppingMallAdmin.IAuthorized;
 
   export const METADATA = {
@@ -109,26 +108,21 @@ export namespace join {
 }
 
 /**
- * Authenticate admin user and issue JWT token.
+ * Authenticate admin credentials and issue JWT authorization tokens, relating
+ * to shopping_mall_admins.
  *
- * Authenticate admin users by verifying credentials against the
- * 'shopping_mall_admins' table.
- *
- * This login endpoint checks the email and password hash, enforces unique email
- * constraints, and validates account status fields ('status',
- * 'business_status') to ensure only active admins can access the system.
- *
- * Admin actors are trusted users with high-level access. Security involves
- * robust password hashing and secure token issuance.
- *
- * This operation complements registration and token refresh endpoints,
- * completing the authentication lifecycle for admin users.
- *
- * Errors for failed login attempts are handled gracefully, with appropriate
- * messages and security logging.
+ * This API operation enables administrators to login to the shopping mall
+ * platform. It verifies the admin's email and password against hashed
+ * credentials in the shopping_mall_admins table. Upon successful
+ * authentication, a JWT authorized token pair is issued for platform access.
+ * Security best practices including rate limiting, account lockout on repeated
+ * failed attempts, and secure token handling are implemented. The endpoint is
+ * public for credential submission. Related operations include registration
+ * (join) and token refresh.
  *
  * @param props.connection
- * @param props.body Login credentials for admin user
+ * @param props.body Administrator login credentials including email and
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -163,7 +157,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Login credentials for admin user */
+    /** Administrator login credentials including email and password. */
     body: IShoppingMallAdmin.ILogin;
   };
   export type Body = IShoppingMallAdmin.ILogin;
@@ -211,24 +205,18 @@ export namespace login {
 }
 
 /**
- * Refresh admin JWT access token.
+ * Refresh JWT tokens for admin users to maintain authorized access, relating to
+ * shopping_mall_admins.
  *
- * Allows admin users to refresh their JWT access tokens using a valid refresh
- * token.
- *
- * This endpoint validates the provided refresh token's integrity and
- * expiration.
- *
- * By interacting with the 'shopping_mall_admins' table, it ensures the token
- * corresponds to an active admin user.
- *
- * Refreshing tokens sustains session persistence without forcing frequent
- * logins.
- *
- * This operation works in conjunction with join and login endpoints to maintain
- * continuous authentication.
+ * This API operation refreshes JWT tokens for authenticated administrators on
+ * the shopping mall platform. Using a valid refresh token, it issues a new set
+ * of access and refresh tokens for continued secure access. The operation
+ * mandates valid token validation routines and is accessible only to
+ * authenticated admin actors. Related operations include login and join for
+ * full authentication lifecycle management.
  *
  * @param props.connection
+ * @param props.body Refresh token submission for JWT renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -237,10 +225,11 @@ export namespace login {
  */
 export async function refresh(
   connection: IConnection,
+  props: refresh.Props,
 ): Promise<refresh.Response> {
   const output: refresh.Response =
     true === connection.simulate
-      ? refresh.simulate(connection)
+      ? refresh.simulate(connection, props)
       : await PlainFetcher.fetch(
           {
             ...connection,
@@ -254,18 +243,27 @@ export async function refresh(
             path: refresh.path(),
             status: null,
           },
+          props.body,
         );
   connection.headers ??= {};
   connection.headers.Authorization = output.token.access;
   return output;
 }
 export namespace refresh {
+  export type Props = {
+    /** Refresh token submission for JWT renewal. */
+    body: IShoppingMallAdmin.IRefresh;
+  };
+  export type Body = IShoppingMallAdmin.IRefresh;
   export type Response = IShoppingMallAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
     path: "/auth/admin/refresh",
-    request: null,
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
     response: {
       type: "application/json",
       encrypted: false,
@@ -275,7 +273,27 @@ export namespace refresh {
   export const path = () => "/auth/admin/refresh";
   export const random = (): IShoppingMallAdmin.IAuthorized =>
     typia.random<IShoppingMallAdmin.IAuthorized>();
-  export const simulate = (_connection: IConnection): Response => {
+  export const simulate = (
+    connection: IConnection,
+    props: refresh.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: refresh.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
     return random();
   };
 }

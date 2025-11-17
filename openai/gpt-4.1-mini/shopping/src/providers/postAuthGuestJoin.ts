@@ -15,56 +15,51 @@ export async function postAuthGuestJoin(props: {
   guest: GuestPayload;
   body: IShoppingMallGuest.IJoin;
 }): Promise<IShoppingMallGuest.IAuthorized> {
-  const guestId = v4();
-  const nowDate = new Date();
+  // Hash password
+  const hashedPassword = (await PasswordUtil.hash(
+    props.body.password,
+  )) satisfies string as string;
 
-  const guestIdTyped: string & tags.Format<"uuid"> = guestId;
-  const nowTyped: string & tags.Format<"date-time"> = toISOStringSafe(nowDate);
+  // Generate IDs and timestamps
+  const guestId: string & tags.Format<"uuid"> = v4();
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
 
+  // Create guest actor
   const guest = await MyGlobal.prisma.shopping_mall_guests.create({
     data: {
-      id: guestIdTyped,
-      // Removed 'name' property because it does not exist in Prisma shopping_mall_guests model
-      created_at: nowTyped,
-      updated_at: nowTyped,
-      deleted_at: null,
+      id: guestId,
+      created_at: now,
+      updated_at: now,
     },
   });
 
-  // Calculate token expiration
-  const accessExpireDateRaw = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpireDateRaw = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Calculate expiration timestamps
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
-  const accessExpireTyped: string & tags.Format<"date-time"> =
-    toISOStringSafe(accessExpireDateRaw);
-  const refreshExpireTyped: string & tags.Format<"date-time"> =
-    toISOStringSafe(refreshExpireDateRaw);
-
-  // Resolve IP, fallback to empty string if not present because Prisma expects string not null
-  const clientIp: string = props.body.ip ?? "";
-
-  const sessionId = v4();
-  const sessionIdTyped: string & tags.Format<"uuid"> = sessionId;
-
+  // Create session record
   const session = await MyGlobal.prisma.shopping_mall_guest_sessions.create({
     data: {
-      id: sessionIdTyped,
-      shopping_mall_guest_id: guestIdTyped,
-      ip: clientIp,
+      id: v4(),
+      shopping_mall_guest_id: guest.id,
+      ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: nowTyped,
-      expired_at: accessExpireTyped,
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
 
+  // Generate JWT tokens
   const token = {
     access: jwt.sign(
       {
         type: "guest",
-        id: guestIdTyped,
-        session_id: sessionIdTyped,
-        created_at: nowTyped,
+        id: guest.id,
+        session_id: session.id,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -75,10 +70,10 @@ export async function postAuthGuestJoin(props: {
     refresh: jwt.sign(
       {
         type: "guest",
-        id: guestIdTyped,
-        session_id: sessionIdTyped,
+        id: guest.id,
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: nowTyped,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -86,15 +81,14 @@ export async function postAuthGuestJoin(props: {
         issuer: "autobe",
       },
     ),
-    expired_at: accessExpireTyped,
-    refreshable_until: refreshExpireTyped,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
   return {
-    id: guestIdTyped,
-    created_at: nowTyped,
-    updated_at: nowTyped,
-    deleted_at: null,
+    id: guest.id,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
     token,
   };
 }

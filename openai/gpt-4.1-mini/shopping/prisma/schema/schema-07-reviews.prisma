@@ -1,0 +1,121 @@
+/// Customer-submitted product reviews capturing star ratings and textual
+/// feedback.
+///
+/// Each review is linked to a specific product and authoring customer
+/// through their active session to ensure authenticity and auditability.
+/// Moderation status is tracked to control review publication.
+///
+/// Soft deletion is supported to enable content management and compliance
+/// without data loss.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reviewed product. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Review author customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Author customer session at review time. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Star rating given by the customer, typically 1 to 5 stars.
+  rating Int
+  
+  /// Short summary headline describing the review content.
+  title String
+  
+  /// Detailed textual review provided by the customer.
+  body String
+  
+  /// Current moderation status: pending, approved, rejected.
+  moderation_status String
+  
+  /// Review creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp of the review.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_moderations shopping_mall_review_moderations[]
+  
+  @@index([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_product_reviews_shopping_mall_customer_s_929c1df8")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_customer_id], map: "shopping_mall_product_reviews_shopping_mall_product_id_6b3d4c97")
+  @@index([rating, moderation_status])
+}
+
+/// Moderation records for product reviews to enforce content guidelines and
+/// compliance.
+///
+/// Each entry references a specific review and records the moderator admin
+/// who performed the action, the action taken, and any relevant comments.
+///
+/// Soft deletion is supported to allow audit trails while maintaining
+/// historical data integrity.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product review being moderated. {@link
+  /// shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Admin who performed the moderation action. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// Moderation action taken, e.g., approved, rejected, flagged.
+  action String
+  
+  /// Optional comment explaining the moderation decision.
+  comment String?
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp of the last update on this moderation record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productReview shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id], map: "shopping_mall_review_moderations_shopping_mall_product_af279a77")
+  @@index([shopping_mall_admin_id])
+  
+  @@index([action])
+}

@@ -8,6 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShoppingMallCategory";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
 export async function putShoppingMallSellerShoppingMallProductsProductCode(props: {
@@ -15,8 +16,11 @@ export async function putShoppingMallSellerShoppingMallProductsProductCode(props
   productCode: string;
   body: IShoppingMallProduct.IUpdate;
 }): Promise<IShoppingMallProduct> {
-  const existing = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { code: props.productCode, deleted_at: null },
+  const existing = await MyGlobal.prisma.shopping_mall_products.findFirst({
+    where: {
+      code: props.productCode,
+      deleted_at: null,
+    },
   });
 
   if (!existing) {
@@ -24,31 +28,35 @@ export async function putShoppingMallSellerShoppingMallProductsProductCode(props
   }
 
   const updated = await MyGlobal.prisma.shopping_mall_products.update({
-    where: { code: props.productCode },
+    where: {
+      id: existing.id,
+    },
     data: {
-      name: props.body.name ?? existing.name,
+      title: props.body.title,
       description:
-        props.body.description !== undefined
-          ? props.body.description
-          : existing.description,
-      is_active: props.body.is_active ?? existing.is_active,
+        props.body.description === undefined
+          ? existing.description
+          : props.body.description,
+      brand: props.body.brand === undefined ? existing.brand : props.body.brand,
+      shopping_mall_category_id: props.body.shopping_mall_category_id,
       updated_at: toISOStringSafe(new Date()),
     },
   });
 
   return {
+    id: updated.id,
     code: updated.code,
-    name: updated.name,
+    title: updated.title,
     description:
       updated.description === null ? null : (updated.description ?? undefined),
-    is_active: updated.is_active,
+    brand: updated.brand === null ? null : (updated.brand ?? undefined),
+    shopping_mall_category: {
+      id: existing.shopping_mall_category_id satisfies string as string,
+      name: "",
+    },
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at:
-      updated.deleted_at === null
-        ? null
-        : updated.deleted_at === undefined
-          ? undefined
-          : toISOStringSafe(updated.deleted_at),
-  };
+      updated.deleted_at === null ? null : toISOStringSafe(updated.deleted_at),
+  } satisfies IShoppingMallProduct;
 }

@@ -9,113 +9,85 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 
 export async function postAuthCustomerJoin(props: {
+  customer: CustomerPayload;
   body: IShoppingMallCustomer.ICreate;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // 1. Check if email already registered and not soft deleted
   const existingCustomer =
-    await MyGlobal.prisma.shopping_mall_customers.findFirst({
-      where: {
-        email: props.body.email,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.shopping_mall_customers.findUnique({
+      where: { email: props.body.email },
     });
-
-  if (existingCustomer) {
+  if (existingCustomer !== null) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // 2. Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // 3. Create customer actor record
-  const now = new Date();
-  const nowIso = toISOStringSafe(now);
+  const nowISOString = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
   const customerId = v4();
-
-  const dataToCreate = {
-    id: customerId,
-    email: props.body.email,
-    password_hash: hashedPassword,
-    name: props.body.full_name, // changed full_name to name per Prisma field
-    status: "active",
-    phone_number: null,
-    created_at: nowIso,
-    updated_at: nowIso,
-    deleted_at: null,
-  };
-
-  // 3. Create shopping_mall_customer record
-  const created = await MyGlobal.prisma.shopping_mall_customers.create({
-    data: dataToCreate,
-  });
-
-  // 4. Create customer session record
-  const accessExpireDate = new Date(Date.now() + 3600000);
-  const refreshExpireDate = new Date(Date.now() + 604800000);
-  const accessExpires = toISOStringSafe(accessExpireDate);
-  const refreshExpires = toISOStringSafe(refreshExpireDate);
-
   const sessionId = v4();
 
-  // ip must not be null, so if null or undefined, use empty string
-  const ipAddress: string = props.body.ip ?? "";
-
-  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+  const newCustomer = await MyGlobal.prisma.shopping_mall_customers.create({
     data: {
-      id: sessionId,
-      shopping_mall_customer_id: customerId,
-      ip: ipAddress,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: nowIso,
-      expired_at: accessExpires,
+      id: customerId,
+      email: props.body.email,
+      password_hash: hashedPassword,
+      created_at: nowISOString,
+      updated_at: nowISOString,
     },
   });
 
-  // 5. Generate JWT tokens
+  const newSession =
+    await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+      data: {
+        id: sessionId,
+        shopping_mall_customer_id: customerId,
+        ip: "",
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: nowISOString,
+        expired_at: accessExpires,
+      },
+    });
+
   const token = {
     access: jwt.sign(
       {
         type: "customer",
-        id: created.id,
-        session_id: session.id,
-        created_at: nowIso,
+        id: customerId,
+        session_id: sessionId,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "customer",
-        id: created.id,
-        session_id: session.id,
+        id: customerId,
+        session_id: sessionId,
         tokenType: "refresh",
-        created_at: nowIso,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
     expired_at: accessExpires,
     refreshable_until: refreshExpires,
   };
 
-  // 6. Return result
   return {
-    id: created.id,
-    email: created.email,
-    name: dataToCreate.name,
-    phone_number: null,
-    status: dataToCreate.status,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
+    id: newCustomer.id,
+    email: newCustomer.email,
+    created_at: nowISOString,
+    updated_at: nowISOString,
     token,
   };
 }

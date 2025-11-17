@@ -15,16 +15,16 @@ export async function postAuthCustomerRefresh(props: {
   customer: CustomerPayload;
   body: IShoppingMallCustomer.IRefresh;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  let decoded: {
+  let decoded!: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "customer";
   };
   try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
+    decoded = typia.assert(
+      jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+        issuer: "autobe",
+      }),
     ) as {
       id: string & tags.Format<"uuid">;
       session_id: string & tags.Format<"uuid">;
@@ -43,9 +43,10 @@ export async function postAuthCustomerRefresh(props: {
       where: {
         id: decoded.session_id,
         shopping_mall_customer_id: decoded.id,
+        expired_at: null,
       },
       include: {
-        customer: true,
+        shoppingMallCustomer: true,
       },
     });
 
@@ -53,62 +54,69 @@ export async function postAuthCustomerRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (session.customer.deleted_at !== null) {
+  const customer = session.shoppingMallCustomer;
+
+  if (((customer as any).deleted_at ?? null) !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  const nowIso = toISOStringSafe(new Date());
-  const accessExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpiresTimestamp = Date.now() + 60 * 60 * 1000;
+  const refreshExpiresTimestamp = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
-  const access = jwt.sign(
+  const accessExpires = toISOStringSafe(new Date(accessExpiresTimestamp));
+  const refreshExpires = toISOStringSafe(new Date(refreshExpiresTimestamp));
+
+  const nowISOString = toISOStringSafe(new Date(Date.now()));
+
+  const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: nowIso,
+      created_at: nowISOString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
   );
 
-  const refresh = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: nowIso,
+      created_at: nowISOString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
   );
 
   await MyGlobal.prisma.shopping_mall_customer_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresIso },
+    data: { expired_at: refreshExpires },
   });
 
   return {
-    id: session.customer.id,
-    email: session.customer.email,
-    name: session.customer.name,
-    status: typia.assert<"active" | "inactive" | "banned">(
-      (session.customer as any).status ?? "active",
-    ),
-    created_at: toISOStringSafe(session.customer.created_at),
-    updated_at: session.customer.updated_at
-      ? toISOStringSafe(session.customer.updated_at)
-      : null,
+    id: customer.id,
+    email: customer.email,
+    created_at: toISOStringSafe(customer.created_at),
+    updated_at: toISOStringSafe(customer.updated_at),
     token: {
-      access: access,
-      refresh: refresh,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
+    customer: {
+      id: customer.id,
+      email: customer.email,
+      name: (customer as any).name,
     },
   };
 }

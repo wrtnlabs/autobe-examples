@@ -1,50 +1,54 @@
 import { Module } from "@nestjs/common";
 
 import { AuthCitizenController } from "./controllers/auth/citizen/AuthCitizenController";
-import { AuthModeratorController } from "./controllers/auth/moderator/refresh/AuthModeratorController";
-import { EconomicboardCategoriesController } from "./controllers/economicBoard/categories/EconomicboardCategoriesController";
-import { EconomicboardModeratorCategoriesController } from "./controllers/economicBoard/moderator/categories/EconomicboardModeratorCategoriesController";
-import { EconomicboardCitizensController } from "./controllers/economicBoard/citizens/EconomicboardCitizensController";
-import { EconomicboardCitizenCitizensController } from "./controllers/economicBoard/citizen/citizens/EconomicboardCitizenCitizensController";
-import { Economic_boardCitizensController } from "./controllers/economic-board/citizens/Economic_boardCitizensController";
+import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
+import { EconomicboardSettingsCategoriesController } from "./controllers/economicBoard/settings/categories/EconomicboardSettingsCategoriesController";
+import { EconomicboardModeratorSettingsConfigController } from "./controllers/economicBoard/moderator/settings/config/EconomicboardModeratorSettingsConfigController";
+import { EconomicboardSettingsTimezonesController } from "./controllers/economicBoard/settings/timezones/EconomicboardSettingsTimezonesController";
+import { EconomicboardModeratorSettingsContentflagsController } from "./controllers/economicBoard/moderator/settings/contentFlags/EconomicboardModeratorSettingsContentflagsController";
 import { EconomicboardModeratorCitizensController } from "./controllers/economicBoard/moderator/citizens/EconomicboardModeratorCitizensController";
 import { EconomicboardModeratorModeratorsController } from "./controllers/economicBoard/moderator/moderators/EconomicboardModeratorModeratorsController";
+import { EconomicboardPostsController } from "./controllers/economicBoard/posts/EconomicboardPostsController";
 import { EconomicboardCitizenPostsController } from "./controllers/economicBoard/citizen/posts/EconomicboardCitizenPostsController";
 import { EconomicboardModeratorPostsController } from "./controllers/economicBoard/moderator/posts/EconomicboardModeratorPostsController";
-import { EconomicboardPostsController } from "./controllers/economicBoard/posts/EconomicboardPostsController";
-import { EconomicboardCitizenPostsCommentsController } from "./controllers/economicBoard/citizen/posts/comments/EconomicboardCitizenPostsCommentsController";
+import { EconomicboardCitizenPostsAttachmentsController } from "./controllers/economicBoard/citizen/posts/attachments/EconomicboardCitizenPostsAttachmentsController";
+import { EconomicboardModeratorPostsAttachmentsController } from "./controllers/economicBoard/moderator/posts/attachments/EconomicboardModeratorPostsAttachmentsController";
+import { PostsAttachmentsController } from "./controllers/posts/attachments/PostsAttachmentsController";
+import { EconomicboardPostsAttachmentsController } from "./controllers/economicBoard/posts/attachments/EconomicboardPostsAttachmentsController";
 import { EconomicboardPostsCommentsController } from "./controllers/economicBoard/posts/comments/EconomicboardPostsCommentsController";
+import { EconomicboardCitizenPostsCommentsController } from "./controllers/economicBoard/citizen/posts/comments/EconomicboardCitizenPostsCommentsController";
 import { EconomicboardModeratorPostsCommentsController } from "./controllers/economicBoard/moderator/posts/comments/EconomicboardModeratorPostsCommentsController";
-import { EconomicboardCitizenAttachmentfilesController } from "./controllers/economicBoard/citizen/attachmentFiles/EconomicboardCitizenAttachmentfilesController";
-import { EconomicboardAttachmentfilesController } from "./controllers/economicBoard/attachmentFiles/EconomicboardAttachmentfilesController";
-import { EconomicboardModeratorAttachmentfilesController } from "./controllers/economicBoard/moderator/attachmentFiles/EconomicboardModeratorAttachmentfilesController";
+import { EconomicboardCommentsController } from "./controllers/economicBoard/comments/EconomicboardCommentsController";
+import { EconomicboardCitizenCommentsController } from "./controllers/economicBoard/citizen/comments/EconomicboardCitizenCommentsController";
+import { EconomicboardModeratorCommentsController } from "./controllers/economicBoard/moderator/comments/EconomicboardModeratorCommentsController";
 import { EconomicboardModeratorModerationActionsController } from "./controllers/economicBoard/moderator/moderation/actions/EconomicboardModeratorModerationActionsController";
 import { EconomicboardController } from "./controllers/economicBoard/search/EconomicboardController";
-import { Economicboard_searchCategoriesController } from "./controllers/economicBoard/search/categories/Economicboard_searchCategoriesController";
 
 @Module({
   controllers: [
     AuthCitizenController,
     AuthModeratorController,
-    EconomicboardCategoriesController,
-    EconomicboardModeratorCategoriesController,
-    EconomicboardCitizensController,
-    EconomicboardCitizenCitizensController,
-    Economic_boardCitizensController,
+    EconomicboardSettingsCategoriesController,
+    EconomicboardModeratorSettingsConfigController,
+    EconomicboardSettingsTimezonesController,
+    EconomicboardModeratorSettingsContentflagsController,
     EconomicboardModeratorCitizensController,
     EconomicboardModeratorModeratorsController,
+    EconomicboardPostsController,
     EconomicboardCitizenPostsController,
     EconomicboardModeratorPostsController,
-    EconomicboardPostsController,
-    EconomicboardCitizenPostsCommentsController,
+    EconomicboardCitizenPostsAttachmentsController,
+    EconomicboardModeratorPostsAttachmentsController,
+    PostsAttachmentsController,
+    EconomicboardPostsAttachmentsController,
     EconomicboardPostsCommentsController,
+    EconomicboardCitizenPostsCommentsController,
     EconomicboardModeratorPostsCommentsController,
-    EconomicboardCitizenAttachmentfilesController,
-    EconomicboardAttachmentfilesController,
-    EconomicboardModeratorAttachmentfilesController,
+    EconomicboardCommentsController,
+    EconomicboardCitizenCommentsController,
+    EconomicboardModeratorCommentsController,
     EconomicboardModeratorModerationActionsController,
     EconomicboardController,
-    Economicboard_searchCategoriesController,
   ],
 })
 export class MyModule {}

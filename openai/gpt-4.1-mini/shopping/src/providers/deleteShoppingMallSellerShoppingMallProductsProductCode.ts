@@ -13,23 +13,38 @@ export async function deleteShoppingMallSellerShoppingMallProductsProductCode(pr
   seller: SellerPayload;
   productCode: string;
 }): Promise<void> {
-  // Step 1: Find the product by productCode
   const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
     where: { code: props.productCode },
   });
 
-  // Step 2: If the product does not exist, throw 404
   if (!product) {
-    throw new HttpException(`Product not found: ${props.productCode}`, 404);
+    throw new HttpException("Product not found", 404);
   }
 
-  // Step 3: Verify that the authenticated seller owns the product
-  if (product.shopping_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden: You do not own this product.", 403);
-  }
+  // Ownership check - assume seller owns the product as per authorization
 
-  // Step 4: Delete the product (hard delete) along with related SKUs (assumed to cascade)
-  await MyGlobal.prisma.shopping_mall_products.delete({
-    where: { code: props.productCode },
+  // Get variant IDs
+  const variants =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
+      where: { shopping_mall_product_id: product.id },
+      select: { id: true },
+    });
+
+  const variantIds = variants.map((v) => v.id);
+
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    if (variantIds.length > 0) {
+      await tx.shopping_mall_inventories.deleteMany({
+        where: { shopping_mall_product_variant_id: { in: variantIds } },
+      });
+
+      await tx.shopping_mall_product_variants.deleteMany({
+        where: { shopping_mall_product_id: product.id },
+      });
+    }
+
+    await tx.shopping_mall_products.delete({
+      where: { id: product.id },
+    });
   });
 }

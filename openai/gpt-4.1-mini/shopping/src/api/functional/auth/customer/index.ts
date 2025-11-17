@@ -6,32 +6,30 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCustomer } from "../../../structures/IShoppingMallCustomer";
 
 /**
- * Register new customer account and issue JWT token for authentication.
+ * Register new customer account in shopping_mall_customers.
  *
- * This API operation enables new customers to register by providing their email
- * and password. It corresponds to the shopping_mall_customers table's email and
- * password_hash fields which store the secure login credentials. Upon
- * successful registration, an authorization token is issued to the customer to
- * enable authenticated interactions within the shopping mall platform.
+ * Customer registration operation enabling new customers to create accounts.
+ * This API securely collects and stores email and hashed password fields as
+ * defined in the shopping_mall_customers Prisma schema. It integrates tightly
+ * with the customer authentication system to issue JWT tokens upon successful
+ * account creation, enabling authenticated sessions. This operation is publicly
+ * accessible and critical for onboarding new customers.
  *
- * The customer's full name can also be registered. The created_at and
- * updated_at fields are set automatically to track record timestamps. If a
- * customer account is soft deleted (deleted_at not null), it will not allow
- * login or interactions.
+ * The API expect strict validation of unique email constraints and secure
+ * password hashing as per schema requirements. Throttling and anti-abuse
+ * controls are recommended in deployment.
  *
- * This operation requires no authentication and is public, allowing new users
- * to join the service by creating an account. Password hashing and validation
- * occur internally.
+ * Interaction with shopping_mall_customers table ensures data consistency and
+ * referential integrity.
  *
- * The response returns an IShoppingMallCustomer.IAuthorized type containing the
- * authorization tokens and basic user info.
+ * Token issuance follows JWT standards applicable for customer actor.
  *
- * Related operations include login, refresh, and password management endpoints
- * that work together to handle authentication life cycle.
+ * Related operations include login and token refresh endpoints to complete the
+ * authentication lifecycle.
  *
  * @param props.connection
- * @param props.body Request body for customer registration, including email,
- *   password, and name.
+ * @param props.body New customer registration data conforming to
+ *   IShoppingMallCustomer.ICreate schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/join
@@ -67,8 +65,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Request body for customer registration, including email, password,
-     * and name.
+     * New customer registration data conforming to
+     * IShoppingMallCustomer.ICreate schema.
      */
     body: IShoppingMallCustomer.ICreate;
   };
@@ -117,26 +115,27 @@ export namespace join {
 }
 
 /**
- * Authenticate customer credentials and issue JWT token.
+ * Authenticate customer and issue JWT tokens.
  *
- * This API operation allows registered customers to log in by providing their
- * email and password. It authenticates against the shopping_mall_customers
- * table's email and password_hash fields.
+ * Customer login operation validating email and password against stored hashed
+ * password as defined in shopping_mall_customers Prisma schema. Successful
+ * authentication results in issuance of JWT tokens granting access to secured
+ * APIs.
  *
- * Successful authentication yields a JWT token for session management. Login
- * failures due to incorrect credentials are handled with proper error
- * messages.
+ * Requires robust handling of authentication failures and protection against
+ * common security threats such as brute force attacks and session hijacking.
  *
- * This is a public endpoint and does not require an existing token. It is part
- * of the overall authentication flow along with join and refresh operations.
+ * Tightly coupled with the shopping_mall_customers table to maintain user
+ * credential integrity.
  *
- * Clients should use the issued token for subsequent authenticated requests.
+ * Facilitates full authentication lifecycle alongside join and refresh tokens.
  *
- * Related endpoints include join for registration and refresh for token
- * renewal.
+ * This operation is publicly accessible to unauthenticated users needing
+ * sign-in capabilities.
  *
  * @param props.connection
- * @param props.body Request body for customer login with email and password.
+ * @param props.body Customer login credentials conforming to
+ *   IShoppingMallCustomer.ILogin schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/login
@@ -171,7 +170,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Request body for customer login with email and password. */
+    /**
+     * Customer login credentials conforming to IShoppingMallCustomer.ILogin
+     * schema.
+     */
     body: IShoppingMallCustomer.ILogin;
   };
   export type Body = IShoppingMallCustomer.ILogin;
@@ -219,26 +221,25 @@ export namespace login {
 }
 
 /**
- * Refresh JWT token for authenticated customer.
+ * Refresh customer access tokens via refresh token.
  *
- * This API operation allows customers to refresh their JWT tokens using a valid
- * refresh token. It interacts with the shopping_mall_customers table to
- * validate the existing refresh token and issue a new one.
+ * Customer token refresh endpoint allowing renewal of access tokens using a
+ * valid refresh token. This API enhances session longevity without requiring
+ * re-authentication via credentials.
  *
- * Refresh tokens extend the validity of the user's authentication session
- * without forcing a full login.
+ * Ensures refresh token validation and revocation support per security
+ * standards.
  *
- * This endpoint requires authentication with a valid refresh token and returns
- * a new authorized token set.
+ * Operates in conjunction with join and login to fully support the customer
+ * authentication workflow.
  *
- * It supports session continuity and security management.
+ * Tied to shopping_mall_customers actor and their session management.
  *
- * Related operations are join for initial registration and login for credential
- * authentication.
+ * Essential for maintaining secure, seamless user sessions.
  *
  * @param props.connection
- * @param props.body Request body containing refresh token for session
- *   continuation.
+ * @param props.body Token refresh request data conforming to
+ *   IShoppingMallCustomer.IRefresh schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/refresh
@@ -273,7 +274,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Request body containing refresh token for session continuation. */
+    /**
+     * Token refresh request data conforming to
+     * IShoppingMallCustomer.IRefresh schema.
+     */
     body: IShoppingMallCustomer.IRefresh;
   };
   export type Body = IShoppingMallCustomer.IRefresh;

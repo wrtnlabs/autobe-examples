@@ -15,95 +15,93 @@ export async function postAuthSellerJoin(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.ICreate;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  const existing = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+  const existing = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
     where: { email: props.body.email },
   });
-  if (existing) {
+
+  if (existing !== null) {
     throw new HttpException("Email already registered", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
 
-  const nowISOString = toISOStringSafe(new Date());
-  const newSellerId = v4();
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+
+  const id: string & tags.Format<"uuid"> = v4();
 
   const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
     data: {
-      id: newSellerId,
+      id,
       email: props.body.email,
       password_hash: hashedPassword,
-      name: props.body.name,
-      status: "active",
-      business_status: "pending",
-      created_at: nowISOString,
-      updated_at: nowISOString,
+      created_at: now,
+      updated_at: now,
     },
   });
 
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  const accessExpiresISOString = toISOStringSafe(accessExpires);
-  const refreshExpiresISOString = toISOStringSafe(refreshExpires);
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
       shopping_mall_seller_id: seller.id,
-      created_at: nowISOString,
-      expired_at: accessExpiresISOString,
+      created_at: now,
+      expired_at: accessExpires,
       ip: "",
       href: "",
       referrer: "",
     },
   });
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        created_at: nowISOString,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: nowISOString,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpiresISOString,
-    refreshable_until: refreshExpiresISOString,
-  };
+  const nowForToken: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
+  );
+
+  const accessToken: string = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: session.id,
+      created_at: nowForToken,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refreshToken: string = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: nowForToken,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
 
   return {
     id: seller.id,
     email: seller.email,
-    name: seller.name,
-    status: typia.assert<"active" | "inactive" | "suspended">(seller.status),
-    business_status: typia.assert<"approved" | "pending" | "rejected">(
-      seller.business_status,
-    ),
+    password_hash: null,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at:
-      seller.deleted_at !== null && seller.deleted_at !== undefined
-        ? toISOStringSafe(seller.deleted_at)
-        : undefined,
-    token,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
 }

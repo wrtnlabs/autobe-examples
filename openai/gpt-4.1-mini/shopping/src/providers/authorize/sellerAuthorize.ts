@@ -1,4 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
+
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { SellerPayload } from "../../decorators/payload/SellerPayload";
@@ -10,17 +11,18 @@ export async function sellerAuthorize(request: { headers: { authorization?: stri
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-      status: "active",
-      business_status: "active"
+      id: payload.session_id,
+      shoppingMallSeller: {
+        id: payload.id
+      },
+      expired_at: null
     },
   });
 
-  if (seller === null) {
-    throw new ForbiddenException("You're not enrolled or inactive");
+  if (session === null) {
+    throw new ForbiddenException("Session is invalid or expired, or seller does not exist");
   }
 
   return payload;
