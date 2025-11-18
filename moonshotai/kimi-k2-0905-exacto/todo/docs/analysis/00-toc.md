@@ -1,136 +1,159 @@
-# Todo List Application
-## Requirements Analysis Report
-
-### Executive Summary
-
-The Todo list application is designed to provide the minimum viable task management solution for individuals who need to organize their daily responsibilities. Unlike complex project management tools, this application focuses exclusively on the essential functionality of creating, managing, and tracking personal tasks without overwhelming users with advanced features. The value proposition is simplicity itself - users get exactly what they need to stay organized without any unnecessary complexity.
-
-### Business Model
-
-#### Why This Service Exists
-
-In today's fast-paced world, individuals need reliable tools to manage their daily responsibilities, commitments, and goals. Current solutions often fall into two extremes: overly simplistic note apps that lack basic task management or complex project management tools designed for teams. This creates a significant market gap for individuals who need straightforward task management without team collaboration features or overwhelming configuration options.
-
-#### Market Opportunity
-
-The personal productivity market consistently grows as more people recognize the importance of organized task management. Students, professionals, freelancers, and busy parents represent the primary target market - all sharing a common need for simple, reliable task organization without unnecessary features that complicate their workflow. By focusing exclusively on essential functionality, this application can quickly gain adoption among users frustrated with current options.
-
-#### Revenue Strategy
-
-The application operates under a freemium model, offering core task management features free to individual users. Revenue generation comes through optional premium features like enhanced analytics, advanced filtering, or cloud synchronization across multiple devices. This approach ensures broad user adoption through free functionality while monetizing users who need additional capabilities.
-
-#### Success Metrics
-
-Key performance indicators include monthly active users (target: 10,000 within six months), task completion rates (target: 75% of active tasks completed), user retention rates (target: 60% of registrations become active users), and feature engagement metrics (tasks per user, average session duration, and feature utilization patterns).
-
-### User Actors and Authentication
-
-#### User Actor Definition
-
-THE system SHALL support authenticated users who can create, view, edit, delete, and mark their own todo tasks as complete. Each user has their own private todo list and can only access tasks they created. Users authenticate using email and password credentials, with session management ensuring secure access to their personal task lists.
-
-#### Authentication Requirements
-
-THE system SHALL require user authentication before allowing access to task management features. WHEN a user attempts to access any task functionality, THE system SHALL verify proper authentication credentials. IF authentication fails, THEN THE system SHALL return the user to the login screen with appropriate error messaging.
-
-#### Authorization Rules
-
-THE user SHALL maintain complete control over their personal task list and associated data. THE system SHALL enforce strict task ownership - users can only view, edit, delete, or mark complete tasks they personally created. No sharing or delegation functionality exists, maintaining complete privacy and control for each user.
-
-### Core Functional Requirements
-
-#### Task Creation Requirements
-
-THE system SHALL allow authenticated users to create new tasks with a required title field. WHEN a user creates a task, THE system SHALL automatically save it and immediately display it in their task list. IF the task title is empty or contains only whitespace, THEN THE system SHALL prevent creation and display an error message requiring content.
-
-WHEN creating a task, THE system SHALL accept optional longer descriptions to provide additional context but SHALL NOT require them. THE task creation SHALL complete within two seconds, providing immediate feedback that the task has been added successfully.
-
-#### Task Viewing and Management
-
-THE user SHALL view all their tasks presented chronologically by creation date, with newest tasks appearing first. THE system SHALL clearly display each task's title, status (complete/incomplete), and creation timestamp. WHILE viewing tasks, THE user SHALL have immediate access to complete, edit, and delete actions for each specific task.
-
-WHEN viewing tasks, THE system SHALL support filtering to show all tasks, only incomplete tasks, or only complete tasks based on user preference. The default view SHALL show all tasks, maintaining user awareness of both active and completed items without hiding information they might need.
-
-#### Task Status Management
-
-THE user SHALL mark any task as complete or incomplete with a single action. WHEN a task status changes, THE system SHALL immediately update the display and persist the change. THE system SHALL visually differentiate completed tasks from incomplete ones using strikethrough text or other clear visual indicators.
-
-IF the user marks a complete task as incomplete, THE system SHALL restore full visibility and functionality of that task within their active task list. No permanent deletion occurs when completing tasks - users can always reverse completion status if they accidentally mark tasks wrong.
-
-#### Task Modification Requirements
-
-THE user SHALL edit existing tasks to update titles or descriptions. WHEN editing, THE system SHALL preserve all task properties including creation date, completion status, and task ownership. THE system SHALL prevent edits that result in empty or whitespace-only titles, displaying appropriate error messages for invalid updates.
-
-THE user SHALL delete tasks they no longer need. WHEN deleting, THE system SHALL require confirmation before permanent removal. IF deletion is confirmed, THE task SHALL be permanently removed from the user's task list with no recovery option available.
-
-### Business Rules and Validation
-
-#### Data Validation Rules
-
-THE task title SHALL contain at minimum one non-whitespace character. THE system SHALL reject titles exceeding 200 characters in length. THE task description SHALL be optional but limited to 1000 characters when provided. THE system SHALL store creation timestamps accurately, preventing backdating or future dating of tasks.
-
-THE user account SHALL require a unique email address for authentication. Passwords SHALL meet minimum security requirements including eight character length with mixed case letters, numbers, and special characters. The system SHALL lock user accounts after five consecutive failed login attempts, requiring email verification for reactivation.
-
-#### Task Ownership Rules
-
-THE system SHALL associate every task with exactly one user account. No sharing, collaboration, or task delegation functionality exists. THE user can only view, edit, delete, or complete their own tasks. THE system SHALL prevent any form of cross-user task access or manipulation.
-
-#### Performance Expectations
-
-WHEN performing any task operation, THE system SHALL respond within two seconds under normal load conditions. List viewing and filtering operations SHALL complete within one second for users with fewer than 1000 tasks. The application SHALL maintain full functionality even with basic internet connectivity, performing offline updates that synchronize when connectivity returns.
-
-### User Workflows
-
-#### New User Registration
-
-WHEN a new user wants to use the todo list, THE system SHALL present a simple registration form requesting email address and password. THE system SHALL verify email uniqueness. IF email already exists, THE system SHALL redirect to login and suggest password recovery options. UPON successful registration, THE system SHALL automatically log in the user to their empty task list.
-
-#### Daily Task Management Flow
-
-Typical users follow this sequence: Login to access personal task list, review incomplete tasks from previous sessions, add new tasks as they arise during the day, mark tasks complete as finished, occasionally edit existing tasks for accuracy, and securely log out when finished managing tasks for the session.
-
-#### Task Completion Workflow
-
-Users work through their lists systematically, marking items complete as they accomplish them. THE system maintains running totals showing remaining incomplete tasks versus completed tasks. This provides psychological encouragement and clear progress tracking throughout the day or work session.
-
-### Error Handling Requirements
-
-#### User-Friendly Error Messages
-
-WHEN providing error messages, THE system SHALL use clear, understandable language that suggests specific corrective actions. Error messages SHALL avoid technical jargon, providing human-readable explanations. For example, instead of "Validation error on field 'title'" the system shall say "Please enter a task title to continue."
-
-#### Authentication Error Handling
-
-IF login fails due to incorrect credentials, THE system SHALL provide specific feedback distinguishing between incorrect email and incorrect password while maintaining security. THE system SHALL offer password reset functionality clearly visible on the login form. When account lockout occurs, clear instructions guide users through the email verification recovery process.
-
-#### Validation Error Recovery
-
-WHEN task creation fails validation, THE system SHALL retain the user's input data allowing correction rather than requiring complete re-entry. Clear inline error messaging appears near the form field requiring correction, providing immediate feedback without requiring page reloads or complex navigation.
-
-### Success Criteria
-
-#### Functionality Goals
-
-THE application SHALL successfully create, view, edit, delete, and complete tasks without errors 99% of the time during normal operation. Task operations SHALL complete within two seconds for 95% of operations. User authentication SHALL work correctly with security measures preventing unauthorized access to personal task lists.
-
-#### User Experience Targets
-
-New users SHALL successfully create their first task within 30 seconds of registration. Returning users SHALL access their task lists within 10 seconds of login. Users complete at least 50% more tasks using the application compared to their previous organization method. System downtime SHALL not exceed one hour per month, maintaining reliability.
-
-#### Performance Benchmarks
-
-The application supports concurrent usage by at least 100 active users without performance degradation. Data persistence SHALL maintain task history for active users without loss over at least one year of operation. System resources SHALl scale appropriately to support growing user bases without major architectural changes.
-
-### Future Considerations
-
-#### Potential Enhancements
-
-While maintaining simplicity as the core principle, future iterations might add optional features like due dates for tasks prioritizing urgent items, basic color coding for visual task organization, search functionality for quickly finding specific tasks, or mobile application availability expanding device compatibility beyond web browsers.
-
-These enhancements remain intentionally secondary to the core experience that prioritizes immediate usability over feature complexity. Any additions must undergo careful analysis ensuring they maintain the application's fundamental simplicity and accessibility for all users regardless of technical expertise.
-
-#### Scalability Evolution
-
-As user adoption grows, the system can expand gradually while maintaining its essential character. Features like task history tracking, basic statistics about task completion patterns, or simple recurring task functionality could enhance the value proposition without introducing complexity that alienates users seeking simple task management solutions.
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+# Functional Requirements for Todo List Service
+
+## 1. Introduction
+
+The Todo List service ("todoList") is a minimalistic application designed for recording, organizing, and managing personal tasks ("todos") as well as enabling essential administrative oversight. The backend must support all business rules and user flows required for end-to-end todo management. This specification outlines functional requirements using EARS format and covers standard use, error, administrative, and compliance scenarios. All requirements are actionable, measurable, and fully implementable by software engineers.
+
+### 1.1 Scope and Objective
+
+The goal is to enable users to manage their own todo items—create, read, update, delete, and mark as completed or incomplete—while maintaining strict authentication and permissioning. Administrative features are included solely for service maintenance and troubleshooting. Any functionality or rule not explicitly required for minimal viable operations is excluded.
+
+## 2. Functional Requirement List
+
+| ID   | EARS Requirement                                                                                  |
+|------|--------------------------------------------------------------------------------------------------|
+| FR1  | THE service SHALL allow a user to register, log in, and authenticate via secure API.              |
+| FR2  | WHEN a registered user is authenticated, THE service SHALL allow the user to create a todo.       |
+| FR3  | WHEN a user creates a todo, THE service SHALL store the todo with a description and state.        |
+| FR4  | THE service SHALL allow a user to view all their todos.                                           |
+| FR5  | WHEN a user views their todos, THE service SHALL return a list of their current todos.            |
+| FR6  | THE service SHALL allow a user to edit the description of their own todo.                         |
+| FR7  | THE service SHALL allow a user to delete their own todo.                                          |
+| FR8  | WHEN a user marks a todo as completed, THE service SHALL update the todo state accordingly.       |
+| FR9  | THE service SHALL allow a user to mark a todo as incomplete.                                      |
+| FR10 | THE service SHALL allow a user to filter their todos by completion state.                         |
+| FR11 | IF a user attempts to access, modify, or delete another user's todo, THEN THE service SHALL deny the action. |
+| FR12 | THE service SHALL prevent unauthenticated users from accessing user todos.                        |
+| FR13 | THE service SHALL record the creation and last modification timestamp for each todo.              |
+| FR14 | THE service SHALL limit each todo description to 255 characters.                                  |
+| FR15 | THE service SHALL allow an admin to view, edit, or delete any user's todo.                        |
+| FR16 | THE service SHALL allow an admin to view and manage all user accounts.                            |
+| FR17 | THE service SHALL allow a user to log out and end their session.                                  |
+
+All requirements above are mandatory and must be implemented as described without deviation.
+
+## 3. Feature Descriptions
+
+### 3.1 User Registration and Authentication
+- Users SHALL register with a unique email and password for secure identification.
+- WHEN a user logs in, THE service SHALL authenticate credentials and establish a user session through API.
+- WHEN a user is logged out (voluntarily or by session expiry), THEN all further access to user or admin endpoints SHALL require login.
+
+### 3.2 Todo Ownership and Basic Task Management
+- Authenticated users SHALL create todos, each with a required text description (max 255 characters).
+- Each todo owned by a user SHALL only be visible, modifiable, or removable by that user or an admin.
+- Todos SHALL default to "incomplete" state; users may toggle between completed and incomplete at any time while authenticated.
+- WHEN listing todos, THE service SHALL support filtering by all, completed, or incomplete status.
+- Each todo SHALL feature an immutable creation timestamp and an updatable last modified timestamp, both following ISO 8601.
+
+### 3.3 Admin Features
+- Admins SHALL have authority to view, edit, and delete any user's todos as needed for operational support.
+- Admins SHALL access a dashboard providing overview of all users and their todos (with filtering by user optional).
+- Admins SHALL manage user accounts: view details, disable accounts, or delete users entirely.
+- Admin-related actions SHALL be fully auditable in compliance logs.
+- Admins SHALL not be allowed to create personal todos for themselves; their role is restricted to oversight and support.
+
+### 3.4 Constraints and Validations
+- User authentication is a prerequisite for all actions except registration and login.
+- Unauthorized access (unauthenticated or lacking permission) SHALL yield denial with a clear, actionable error message.
+- Todos with empty, whitespace-only, or oversized descriptions SHALL be rejected and an explicit validation error returned.
+- Users SHALL only perform CRUD (create, read, update, delete) on their own todos.
+- All timestamps for creation and modification SHALL be automatically set and maintained by the service backend.
+
+## 4. Business Rules and Validation Criteria
+
+### Todo Data Structure
+- Every todo SHALL contain a system-generated unique ID, descriptive text (max 255 length), completion state (boolean), creation timestamp, and last modified timestamp.
+- Descriptions are mandatory, non-empty, and may not consist of whitespace only.
+- Completion state is strictly boolean (complete/incomplete).
+
+### Permission Matrix (Summarized)
+| Action                 | User (Authenticated) | Admin                     | Unauthenticated |
+|------------------------|---------------------|---------------------------|-----------------|
+| Register/Login/Logout  | ✅                  | ✅                        | ✅              |
+| Create Todo            | ✅                  | 🚫                        | 🚫              |
+| View Own Todos         | ✅                  | 🚫 (N/A)                  | 🚫              |
+| View Any Todo          | 🚫                  | ✅                        | 🚫              |
+| Edit Own Todo          | ✅                  | 🚫 (N/A)                  | 🚫              |
+| Edit Any Todo          | 🚫                  | ✅                        | 🚫              |
+| Delete Own Todo        | ✅                  | 🚫 (N/A)                  | 🚫              |
+| Delete Any Todo        | 🚫                  | ✅                        | 🚫              |
+| Manage Users           | 🚫                  | ✅                        | 🚫              |
+
+### Ownership Enforcement
+- Users SHALL never be able to view, edit, or delete todos belonging to other users.
+- Admins SHALL have full access for oversight, but may not create their own todos.
+
+### Input Constraints
+- Descriptions exceeding 255 characters, or inputs with only whitespace, SHALL be invalid and rejected.
+- Each user action (other than registration/login) REQUIRES a valid, authenticated session.
+
+### Auditing and Compliance
+- All admin access and actions affecting user or todo data SHALL be logged for audit and compliance purposes.
+- Service SHALL maintain immutable audit trails for all destructive or privilege-elevated operations.
+
+## 5. Success Metrics & Service Validation
+- Users can reliably and consistently create, view, update, and delete only their own todos, with all edge cases and business rules enforced.
+- Unauthorized or invalid actions generate immediate and clear denial or error feedback, with no data leakage or corruption.
+- Admins have complete oversight and management power over todos and users, solely for service support.
+- Standard user operations (CRUD) SHALL complete within 2 seconds in normal load.
+- Service SHALL demonstrate at least 99% uptime outside scheduled maintenance.
+- All audit logs and administrative actions are available for review, supporting traceability and regulatory demands.
+
+## 6. User and Admin Workflows (Mermaid Diagrams)
+
+### 6.1 User Todo Management Workflow
+
+```mermaid
+graph LR
+  subgraph "User Todo Workflow"
+    UA["User Authenticated?"] -->|"No"| RL["Redirect to Login/Register"]
+    UA -->|"Yes"| DSH["Display User Todo List"]
+    DSH --> ADD["Create New Todo"]
+    DSH --> FLT["Filter Todos by State"]
+    DSH --> SEL["Select Todo for Action"]
+    ADD --> SUCC["Todo Created"]
+    FLT --> DSH
+    SEL --> EDD["Edit Todo Description"]
+    SEL --> MDC["Mark Complete/Incomplete"]
+    SEL --> DEL["Delete Todo"]
+    EDD --> SUCC
+    MDC --> SUCC
+    DEL --> SUCC
+  end
+  SUCC --> DSH
+```
+
+### 6.2 Admin Oversight and Management Workflow
+
+```mermaid
+graph LR
+  subgraph "Admin Workflow"
+    AUA["Admin Authenticated?"] -->|"No"| RL2["Redirect to Login/Denied"]
+    AUA -->|"Yes"| ADASH["Admin Dashboard"]
+    ADASH --> ATV["View Any User's Todos"]
+    ADASH --> AED["Edit/Delete Any Todo"]
+    ADASH --> AUAC["Manage User Accounts"]
+    ATV --> ADASH
+    AED --> ADASH
+    AUAC --> ADASH
+  end
+```
+
+## 7. Error and Edge Case Handling
+
+- IF a user requests access to any function while unauthenticated, THEN THE service SHALL return an informative access denied error within 2 seconds.
+- IF a user attempts to manipulate todos not owned by them, THEN THE service SHALL return an actionable error and prevent data disclosure or update.
+- IF an admin attempts to create their own personal todo, THEN THE service SHALL deny the request and log the event for audit purposes.
+- IF user input fails validation (empty/oversized description), THEN THE service SHALL reject the operation, returning precise error feedback, and take no destructive action.
+- IF an unexpected server/system error occurs, THEN THE service SHALL respond with a generic message containing a unique error reference for support inquiry.
+
+## 8. Performance and Reliability Expectations
+
+- Every user and admin operation (including authentication, CRUD, account management) SHALL complete within 2 seconds under standard conditions and typical load.
+- Service SHALL be available at least 99% of the time, exclusive of maintenance windows.
+- In cases of system error, high load, or downtime, THE service SHALL provide clear and actionable feedback to the user and suggest an appropriate retry or support contact avenue.
+
+---
+
+All requirements must be interpreted as mandatory and sustained for the lifetime of the Todo List service. Backend implementers are expected to enforce all business rules herein, without introducing any features or assumptions beyond those explicitly specified. This enhanced requirements document forms the production contract against which system implementation and acceptance testing SHALL be performed.

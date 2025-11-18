@@ -13,19 +13,29 @@ export async function deleteTodoListUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Authorization check - only the user can delete themselves
+  // Only allow users to delete their own accounts
   if (props.user.id !== props.userId) {
     throw new HttpException(
-      "Forbidden: You can only delete your own account.",
+      "You are not permitted to delete another user's account.",
       403,
     );
   }
 
-  // Step 2: Hard delete of user account
-  const deletedUser = await MyGlobal.prisma.todo_list_users.delete({
-    where: { id: props.userId },
+  // Ensure the user exists and is not already deleted
+  const existing = await MyGlobal.prisma.todo_list_users.findUnique({
+    where: {
+      id: props.userId,
+      deleted_at: null,
+    },
   });
+  if (!existing) {
+    throw new HttpException("User not found or already deleted.", 404);
+  }
 
-  // Step 3: Confirm deletion (if user did not exist, Prisma would throw, so no need to check null)
-  // Operation complete, return void
+  // Hard delete the user; schema-level cascade cleans up related records
+  await MyGlobal.prisma.todo_list_users.delete({
+    where: {
+      id: props.userId,
+    },
+  });
 }

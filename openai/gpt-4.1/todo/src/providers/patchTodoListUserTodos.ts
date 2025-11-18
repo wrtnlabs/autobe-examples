@@ -10,78 +10,72 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 import { IPageITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoListTodo";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoListUserTodos(props: {
   user: UserPayload;
   body: ITodoListTodo.IRequest;
 }): Promise<IPageITodoListTodo.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const sortField = props.body.sort_by ?? "created_at";
-  const sortOrder = props.body.sort_order ?? "desc";
+  const {
+    keyword,
+    status,
+    created_from,
+    created_to,
+    page = 1,
+    limit = 20,
+    order = "created_at:desc",
+  } = props.body || {};
 
-  const where = {
-    todo_list_user_id: props.user.id,
-    ...(props.body.is_completed !== undefined && {
-      is_completed: props.body.is_completed,
+  const take = Math.max(Math.min(limit, 100), 1);
+  const skip = (Math.max(page, 1) - 1) * take;
+
+  // Build where condition, handling all optional filters
+  const where: Record<string, unknown> = {
+    user_id: props.user.id,
+    ...(status && { status }),
+    ...(keyword && {
+      OR: [
+        { title: { contains: keyword } },
+        { description: { contains: keyword } },
+      ],
     }),
-    ...(props.body.title && {
-      title: {
-        contains: props.body.title,
-        mode: "insensitive" as Prisma.QueryMode,
-      },
-    }),
-    ...(props.body.created_from || props.body.created_to
-      ? {
-          created_at: {
-            ...(props.body.created_from && { gte: props.body.created_from }),
-            ...(props.body.created_to && { lte: props.body.created_to }),
-          },
-        }
-      : {}),
-    ...(props.body.updated_from || props.body.updated_to
-      ? {
-          updated_at: {
-            ...(props.body.updated_from && { gte: props.body.updated_from }),
-            ...(props.body.updated_to && { lte: props.body.updated_to }),
-          },
-        }
-      : {}),
+    ...(created_from && created_to
+      ? { created_at: { gte: created_from, lte: created_to } }
+      : created_from
+        ? { created_at: { gte: created_from } }
+        : created_to
+          ? { created_at: { lte: created_to } }
+          : {}),
   };
 
-  const [todos, total] = await Promise.all([
+  const parts = order.split(":");
+  const orderBy = {
+    [parts[0]]: parts[1] === "asc" ? "asc" : "desc",
+  } as { [key: string]: Prisma.SortOrder };
+
+  const [rows, total] = await Promise.all([
     MyGlobal.prisma.todo_list_todos.findMany({
       where,
       skip,
-      take: limit,
-      orderBy: { [sortField]: sortOrder },
-      include: { user: true },
+      take,
+      orderBy,
     }),
     MyGlobal.prisma.todo_list_todos.count({ where }),
   ]);
 
-  const data = todos.map((todo) => ({
-    id: todo.id,
-    user: {
-      id: todo.user.id,
-      email: todo.user.email,
-    },
-    title: todo.title,
-    is_completed: todo.is_completed,
-    created_at: toISOStringSafe(todo.created_at),
-    updated_at: toISOStringSafe(todo.updated_at),
-  }));
-
   return {
-    data,
     pagination: {
       current: page,
-      limit: limit,
+      limit: take,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / take),
     },
+    data: rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      status: typia.assert<"incomplete" | "complete">(row.status),
+      completed_at: row.completed_at ? toISOStringSafe(row.completed_at) : null,
+      created_at: toISOStringSafe(row.created_at),
+    })),
   };
 }

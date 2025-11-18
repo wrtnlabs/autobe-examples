@@ -1,0 +1,92 @@
+/// Unique record of every end-user registered within the Todo List service.
+///
+/// Serves as the single actor/identity table for business logic,
+/// authentication, and ownership of todos. Each user has a unique email
+/// address and securely hashed password for authentication. Only
+/// authenticated users may access or manipulate their own todos; system
+/// supports soft deletion and audit of all account events. All user data is
+/// distinct, unshareable, and not visible to others. This entity underpins
+/// all privacy and security guarantees for the application.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Uniquely identifies each user account.
+  id String @id
+  
+  /// Unique email address for login. Enforced as case-insensitive unique
+  /// index. Required for authentication and account recovery.
+  email String
+  
+  /// Hashed password string for user authentication. Never plain text.
+  /// Computed using secure, industry-standard algorithms.
+  password_hash String
+  
+  /// Timestamp for when the user account was first created.
+  created_at DateTime
+  
+  /// Timestamp of last modification (e.g., password or profile changes).
+  updated_at DateTime
+  
+  /// Soft deletion marker. If set, account is marked for removal and excluded
+  /// from normal access.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at, deleted_at])
+}
+
+/// Login session records supporting secure, auditable user authentication
+/// workflows.
+///
+/// Each session tracks one authenticated connection for a user with
+/// essential forensic information. Required fields include IP, connection
+/// URLs, and start/expiry times. Sessions provide complete audit context for
+/// all sensitive account actions and enable secure concurrent logins.
+/// Managed strictly as subsidiary data for the parent user; direct
+/// independent CRUD is not needed, but indexed for audit and investigation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Uniquely identifies each authentication session.
+  id String @id
+  
+  /// Foreign key to owning user. Links session to unique user account. {@link
+  /// todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// IP address used for this session. For audit and security tracing.
+  ip String
+  
+  /// Full connection URL for originating request.
+  href String
+  
+  /// Referrer URL captured at session start.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session termination or expiration timestamp. Nullable for active sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}

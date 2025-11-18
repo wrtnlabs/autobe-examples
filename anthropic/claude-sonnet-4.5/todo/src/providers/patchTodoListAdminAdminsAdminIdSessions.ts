@@ -17,98 +17,88 @@ export async function patchTodoListAdminAdminsAdminIdSessions(props: {
   adminId: string & tags.Format<"uuid">;
   body: ITodoListAdminSession.IRequest;
 }): Promise<IPageITodoListAdminSession.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  // 1. Verify that the target admin exists and is enabled
+  const admin = await MyGlobal.prisma.todo_list_admins.findUnique({
+    where: {
+      id: props.adminId,
+      disabled_at: null,
+    },
+  });
+  if (!admin) {
+    throw new HttpException("Administrator not found or disabled.", 404);
+  }
+
+  // 2. Parse pagination and sorting parameters
+  const page = props.body.page !== undefined ? props.body.page : 1;
+  const limit = props.body.limit !== undefined ? props.body.limit : 100;
   const skip = (page - 1) * limit;
 
-  const buildWhereCondition = () => {
-    const conditions: Record<string, unknown> = {
-      todo_list_admin_id: props.adminId,
-    };
-
-    if (props.body.created_at_after || props.body.created_at_before) {
-      conditions.created_at = {};
-      if (props.body.created_at_after) {
-        (conditions.created_at as Record<string, unknown>).gte = new Date(
-          props.body.created_at_after,
-        );
-      }
-      if (props.body.created_at_before) {
-        (conditions.created_at as Record<string, unknown>).lte = new Date(
-          props.body.created_at_before,
-        );
-      }
-    }
-
-    if (props.body.expired_at_after || props.body.expired_at_before) {
-      conditions.expired_at = {};
-      if (props.body.expired_at_after) {
-        (conditions.expired_at as Record<string, unknown>).gte = new Date(
-          props.body.expired_at_after,
-        );
-      }
-      if (props.body.expired_at_before) {
-        (conditions.expired_at as Record<string, unknown>).lte = new Date(
-          props.body.expired_at_before,
-        );
-      }
-    }
-
-    if (props.body.ip) {
-      conditions.ip = props.body.ip;
-    }
-
-    if (props.body.search) {
-      conditions.OR = [
-        { ip: { contains: props.body.search } },
-        { href: { contains: props.body.search } },
-        { referrer: { contains: props.body.search } },
-      ];
-    }
-
-    return conditions;
+  // 3. Parse filter parameters
+  const where: Record<string, any> = {
+    todo_list_admin_id: props.adminId,
+    ...(props.body.ip && { ip: { contains: props.body.ip } }),
+    ...(props.body.href && { href: { contains: props.body.href } }),
+    ...(props.body.referrer && { referrer: { contains: props.body.referrer } }),
+    ...(props.body.created_from || props.body.created_to
+      ? {
+          created_at: {
+            ...(props.body.created_from && { gte: props.body.created_from }),
+            ...(props.body.created_to && { lte: props.body.created_to }),
+          },
+        }
+      : {}),
+    ...(props.body.expired !== undefined
+      ? props.body.expired === true
+        ? { expired_at: { not: null } }
+        : { expired_at: null }
+      : {}),
   };
 
-  const whereCondition = buildWhereCondition();
+  // 4. Sorting
+  const validSortFields = ["created_at", "expired_at", "ip"] as const;
+  const sortByRaw = props.body.sort_by;
+  const sortBy: "created_at" | "expired_at" | "ip" = validSortFields.includes(
+    sortByRaw as any,
+  )
+    ? (sortByRaw as "created_at" | "expired_at" | "ip")
+    : "created_at";
+  const orderBy = props.body.order_by === "asc" ? "asc" : "desc";
 
-  const buildOrderBy = () => {
-    if (!props.body.sort || props.body.sort.length === 0) {
-      return undefined;
-    }
-
-    return props.body.sort.map((field) => {
-      const isDescending = field.startsWith("-");
-      const fieldName = isDescending ? field.substring(1) : field;
-      return { [fieldName]: isDescending ? "desc" : "asc" };
-    });
-  };
-
-  const [data, total] = await Promise.all([
+  // 5. Query sessions and total count in parallel
+  const [sessions, total] = await Promise.all([
     MyGlobal.prisma.todo_list_admin_sessions.findMany({
-      where: whereCondition,
+      where,
       skip,
       take: limit,
-      orderBy: buildOrderBy(),
+      orderBy: {
+        [sortBy]: orderBy,
+      },
     }),
-    MyGlobal.prisma.todo_list_admin_sessions.count({
-      where: whereCondition,
-    }),
+    MyGlobal.prisma.todo_list_admin_sessions.count({ where }),
   ]);
 
+  // 6. Session summaries
+  const data = sessions.map((session) => ({
+    id: session.id,
+    admin_id: session.todo_list_admin_id,
+    created_at: toISOStringSafe(session.created_at),
+    expired_at: session.expired_at
+      ? toISOStringSafe(session.expired_at)
+      : undefined,
+    ip: session.ip,
+    href: session.href,
+    referrer: session.referrer,
+  }));
+
+  // 7. Pagination info
+  const pages = Math.ceil(total / limit);
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages,
     },
-    data: data.map((session) => ({
-      id: session.id,
-      todo_list_admin_id: session.todo_list_admin_id,
-      ip: session.ip,
-      href: session.href,
-      referrer: session.referrer,
-      created_at: toISOStringSafe(session.created_at),
-    })),
+    data,
   };
 }

@@ -1,120 +1,92 @@
-/// Guest users who access the system without authentication.
+/// Authenticated user account for the Todo List system.
 ///
-/// Stores minimal identifying information for tracking purposes.
-/// Guests do not have sessions since they are unauthenticated.
+/// Represents a natural person who registers, logs in, and manages their own
+/// private todo items. Each account is uniquely identified by email, which
+/// is required for login and password recovery. All authentication and data
+/// ownership are strictly scoped to this actor – there is no account sharing
+/// or joint access.
 ///
-/// Used for analytics, monitoring, and optionally restricting access based
-/// on IP or device.
+/// Password information is stored as a cryptographically secure hash—never
+/// in plain text. Sessions are managed in a separate table, providing audit
+/// trails and session control. User accounts support full account deletion
+/// with immediate and permanent removal of all data. There are no
+/// administrative roles or collaborative features in this minimal model.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_guests {
+model todo_list_todolistmembers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// IP address of the guest user for tracking and access control.
-  ip String
-  
-  /// User agent string of the guest browser or client device.
-  user_agent String
-  
-  /// Time when the guest record was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@index([ip])
-}
-
-/// Authenticated users of the Todo List application.
-///
-/// Users must register with a unique email and password hash.
-///
-/// Manages user identity, authentication credentials, and account metadata.
-///
-/// Supports authentication workflows and user-specific todo data access
-/// controls.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique email address for user login and communication.
+  /// Unique user email address for authentication and communication. Must
+  /// follow proper email format and is used for login and password reset.
   email String
   
-  /// Hashed password string for user authentication. Never store plain text
-  /// passwords.
+  /// Cryptographically secure hash of the user's password. Never stored in
+  /// plain text and required for authentication.
   password_hash String
   
-  /// User account creation timestamp.
+  /// Timestamp of account creation. Used for audit and compliance purposes.
   created_at DateTime
-  
-  /// Timestamp of last account update.
-  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_todolistmember_sessions todo_list_todolistmember_sessions[]
   todo_list_todos todo_list_todos[]
   
   @@unique([email])
-  @@index([created_at, updated_at])
 }
 
-/// Sessions for authenticated users of the Todo List application.
+/// Authentication sessions for a todoListMember.
 ///
-/// Tracks active and historical login sessions for users.
-///
-/// Records connection context such as IP, referrer, and access URL.
-///
-/// Supports session expiration and audit logging.
-///
-/// Each session links to its owning user.
-///
-/// This table has a composite index on user_id and created_at to optimize
-/// session queries.
+/// This table records session activity including IP, href, referrer, and
+/// session timeline. Each session is linked to one todoListMember and
+/// represents a unique browser or device login instance. Used for securing
+/// API access and providing audit records. Sessions may expire or be
+/// invalidated by the system or user action. No sensitive auth credentials
+/// are stored here; only association and activity context.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user_sessions {
+model todo_list_todolistmember_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the owning user. {@link todo_list_users.id}.
-  todo_list_user_id String
+  /// References the todoListTodolistmember who owns this session. {@link
+  /// todo_list_todolistmembers.id}.
+  todo_list_todolistmember_id String
   
-  /// IP address from which the session was established.
+  /// IP address from which the session was created or last accessed. Used for
+  /// audit and security.
   ip String
   
-  /// URL accessed during the session.
+  /// Connection URL or origin used when session was initialized. Provides
+  /// context on session creation.
   href String
   
-  /// Referrer URL for the session.
+  /// Referrer value (if present) at time of login; commonly HTTP referer
+  /// header.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session was initially created.
   created_at DateTime
   
-  /// Timestamp when the session expired or was terminated.
+  /// Timestamp marking when the session was invalidated, closed by user, or
+  /// expired. Null if session is still active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  todoListTodolistmember todo_list_todolistmembers @relation(fields: [todo_list_todolistmember_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_list_todolistmember_id, created_at], map: "todo_list_todolistmember_sessions_todo_list_todolistme_2a5647c1")
 }

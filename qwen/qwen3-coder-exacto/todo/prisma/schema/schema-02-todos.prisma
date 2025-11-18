@@ -1,0 +1,53 @@
+/// Represents a single todo item owned and managed by an authenticated user.
+///
+/// Each row stores a unique, user-owned task with a required, non-empty
+/// title (up to 255 characters), an optional description (up to 1000
+/// characters), and a boolean indicating completion. Timestamps for creation
+/// and last update track lifecycle changes; no soft deletion or history is
+/// recorded, as per business requirements.
+///
+/// Every todo must belong to an existing user in the system, enforced via a
+/// mandatory foreign key (user_id) reference to the identity component. Only
+/// the owning user can access, update, or delete this row. All fields follow
+/// strict normalization and privacy guarantees—no other business entities,
+/// roles, or polymorphic ownership structures exist. This model represents
+/// the entirety of domain-scope CRUD operations for the MVP.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The owner of this todo. References the primary key of the authenticated
+  /// user. {@link todo_list_users.id}.
+  user_id String
+  
+  /// The title of the todo item. Required and limited to 255 characters. Must
+  /// not be blank.
+  title String
+  
+  /// Optional description for the todo item. Limited to 1000 characters if
+  /// provided.
+  description String?
+  
+  /// Completion status of the todo. True when marked complete, false otherwise.
+  completed Boolean
+  
+  /// Timestamp of todo creation (set automatically when the todo is first
+  /// created).
+  created_at DateTime
+  
+  /// Timestamp of last modification of the todo (updated on each change).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}

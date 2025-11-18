@@ -14,48 +14,53 @@ export async function putTodoListAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
   body: ITodoListAdmin.IUpdate;
-}): Promise<ITodoListAdmin.ISummary> {
-  const existing = await MyGlobal.prisma.todo_list_admins.findFirst({
-    where: {
-      id: props.adminId,
-      deleted_at: null,
-    },
+}): Promise<ITodoListAdmin> {
+  // Find the target admin (to be updated)
+  const target = await MyGlobal.prisma.todo_list_admins.findUnique({
+    where: { id: props.adminId },
   });
-
-  if (!existing) {
+  if (!target) {
     throw new HttpException("Administrator not found", 404);
   }
 
-  if (props.body.email !== undefined && props.body.email !== existing.email) {
-    const emailExists = await MyGlobal.prisma.todo_list_admins.findFirst({
+  // Check email uniqueness if updating email
+  if (props.body.email !== undefined && props.body.email !== target.email) {
+    const conflict = await MyGlobal.prisma.todo_list_admins.findFirst({
       where: {
         email: props.body.email,
-        deleted_at: null,
         id: { not: props.adminId },
       },
     });
-
-    if (emailExists) {
-      throw new HttpException("Email already in use", 400);
+    if (conflict) {
+      throw new HttpException("Admin email must be unique", 409);
     }
   }
 
-  const updated = await MyGlobal.prisma.todo_list_admins.update({
+  // Prepare update object immutably
+  const updateData = {
+    ...(props.body.email !== undefined && { email: props.body.email }),
+    ...(props.body.password !== undefined && {
+      password_hash: await PasswordUtil.hash(props.body.password),
+    }),
+    ...(props.body.disabled_at !== undefined && {
+      disabled_at: props.body.disabled_at,
+    }),
+    updated_at: toISOStringSafe(new Date()),
+  };
+
+  const admin = await MyGlobal.prisma.todo_list_admins.update({
     where: { id: props.adminId },
-    data: {
-      ...(props.body.email !== undefined && { email: props.body.email }),
-      ...(props.body.password !== undefined && {
-        password_hash: await PasswordUtil.hash(props.body.password),
-      }),
-      updated_at: new Date(),
-    },
+    data: updateData,
   });
 
   return {
-    id: updated.id,
-    email: updated.email,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    id: admin.id,
+    email: admin.email,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    disabled_at:
+      admin.disabled_at !== null
+        ? toISOStringSafe(admin.disabled_at)
+        : undefined,
   };
 }

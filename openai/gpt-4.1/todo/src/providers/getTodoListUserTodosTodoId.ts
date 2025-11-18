@@ -8,34 +8,36 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function getTodoListUserTodosTodoId(props: {
   user: UserPayload;
-  todoId: string & tags.Format<"uuid">;
+  todoId: string;
 }): Promise<ITodoListTodo> {
-  const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
-    where: { id: props.todoId },
+  const todo = await MyGlobal.prisma.todo_list_todos.findFirst({
+    where: {
+      id: props.todoId,
+      user_id: props.user.id,
+    },
+    include: {
+      user: true,
+    },
   });
-
-  if (!todo) {
+  if (!todo || !todo.user) {
     throw new HttpException("Todo not found", 404);
   }
-
-  if (todo.todo_list_user_id !== props.user.id) {
-    throw new HttpException("Forbidden: You do not own this todo", 403);
-  }
-
   return {
     id: todo.id,
+    user: {
+      id: todo.user.id,
+      email: todo.user.email,
+    },
     title: todo.title,
-    description:
-      todo.description === undefined
-        ? undefined
-        : todo.description === null
-          ? null
-          : todo.description,
-    is_completed: todo.is_completed,
+    description: todo.description === null ? null : todo.description,
+    status: todo.status === "complete" ? "complete" : "incomplete",
+    completed_at:
+      todo.completed_at === null ? null : toISOStringSafe(todo.completed_at),
     created_at: toISOStringSafe(todo.created_at),
     updated_at: toISOStringSafe(todo.updated_at),
   };

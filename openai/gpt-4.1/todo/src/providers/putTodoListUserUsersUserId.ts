@@ -15,64 +15,87 @@ export async function putTodoListUserUsersUserId(props: {
   userId: string & tags.Format<"uuid">;
   body: ITodoListUser.IUpdate;
 }): Promise<ITodoListUser> {
-  // 1. Auth: Only the authenticated user can update themselves
+  // Step 1: Enforce ownership - user can update only their own account
   if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "Forbidden: You can only update your own account.",
-      403,
-    );
+    throw new HttpException("You can only update your own profile.", 403);
   }
 
-  // 2. Find existing user
-  const existing = await MyGlobal.prisma.todo_list_users.findUnique({
-    where: { id: props.userId },
+  // Step 2: Fetch user
+  const existing = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      id: props.userId,
+      deleted_at: null,
+    },
   });
+
   if (!existing) {
     throw new HttpException("User not found.", 404);
   }
 
-  // 3. Ensure at least one updatable field is present
-  const wantsToUpdateEmail = typeof props.body.email !== "undefined";
-  const wantsToUpdatePassword = typeof props.body.password !== "undefined";
-  if (!wantsToUpdateEmail && !wantsToUpdatePassword) {
-    throw new HttpException(
-      "Must provide email and/or password to update.",
-      400,
-    );
-  }
-
-  // 4. If updating email, check uniqueness
-  if (wantsToUpdateEmail) {
-    const emailConflict = await MyGlobal.prisma.todo_list_users.findFirst({
+  // Step 3: Uniqueness check if updating email
+  let updateData: Record<string, unknown> = {};
+  if (props.body.email && props.body.email !== existing.email) {
+    const dup = await MyGlobal.prisma.todo_list_users.findFirst({
       where: {
-        email: props.body.email!,
-        id: { not: props.userId },
+        email: props.body.email,
+        deleted_at: null,
+        NOT: { id: props.userId },
       },
-      select: { id: true },
     });
-    if (emailConflict) {
-      throw new HttpException("Email already in use.", 409);
+    if (dup) {
+      throw new HttpException("Email already exists.", 409);
     }
-  }
-
-  // 5. Prepare update data
-  const updateData: Record<string, unknown> = {};
-  if (wantsToUpdateEmail) {
     updateData.email = props.body.email;
   }
-  if (wantsToUpdatePassword) {
-    updateData.password_hash = await PasswordUtil.hash(props.body.password!);
-  }
 
-  // 6. Write update
+  // Always update audit timestamp
+  updateData.updated_at = toISOStringSafe(new Date());
+
+  // Step 4: Perform update
   const updated = await MyGlobal.prisma.todo_list_users.update({
     where: { id: props.userId },
     data: updateData,
   });
 
-  // 7. Return only id and email as per ITodoListUser definition
+  // Step 5: Compose response (correct handling of null/undefined)
   return {
     id: updated.id,
     email: updated.email,
+    is_verified: updated.is_verified,
+    locked: updated.locked,
+    locked_at:
+      typeof updated.locked_at === "string"
+        ? updated.locked_at
+        : updated.locked_at
+          ? toISOStringSafe(updated.locked_at)
+          : undefined,
+    email_verification_token: updated.email_verification_token ?? undefined,
+    email_verification_sent_at:
+      typeof updated.email_verification_sent_at === "string"
+        ? updated.email_verification_sent_at
+        : updated.email_verification_sent_at
+          ? toISOStringSafe(updated.email_verification_sent_at)
+          : undefined,
+    reset_password_token: updated.reset_password_token ?? undefined,
+    reset_password_sent_at:
+      typeof updated.reset_password_sent_at === "string"
+        ? updated.reset_password_sent_at
+        : updated.reset_password_sent_at
+          ? toISOStringSafe(updated.reset_password_sent_at)
+          : undefined,
+    created_at:
+      typeof updated.created_at === "string"
+        ? updated.created_at
+        : toISOStringSafe(updated.created_at),
+    updated_at:
+      typeof updated.updated_at === "string"
+        ? updated.updated_at
+        : toISOStringSafe(updated.updated_at),
+    deleted_at:
+      typeof updated.deleted_at === "string"
+        ? updated.deleted_at
+        : updated.deleted_at
+          ? toISOStringSafe(updated.deleted_at)
+          : undefined,
   };
 }

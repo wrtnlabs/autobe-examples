@@ -7,91 +7,84 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoAppUser.ICredentials;
-}): Promise<ITodoAppUser.IAuthorized> {
-  // Step 1: Find user by email
-  const user = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: { email: props.body.email },
+  body: ITodoListUser.ILogin;
+}): Promise<ITodoListUser.IAuthorized> {
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      email: props.body.email,
+      locked: false,
+      deleted_at: null,
+    },
   });
-
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
-
-  // Step 2: Check account status before password verification for security
-  if (user.status === "suspended") {
-    throw new HttpException("Account is suspended", 403);
-  }
-  if (user.status === "pending") {
-    throw new HttpException("Account pending verification", 403);
-  }
-
-  // Step 3: Verify password
-  const isValid = await PasswordUtil.verify(
+  const isPasswordValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-
-  if (!isValid) {
+  if (!isPasswordValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-
-  // Step 4: Create session record using string timestamps
-  const currentTime = new Date().toISOString();
-  const accessExpiresMs = Date.now() + 60 * 60 * 1000;
-  const refreshExpiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
-
-  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
+  const accessExpireISO = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpireISO = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const sessionId = v4();
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4(),
-      todo_app_user_id: user.id,
-      ip: props.body.ip ?? "", // Schema shows ip is required string, so use empty string as fallback
+      id: sessionId,
+      user_id: user.id,
+      ip:
+        props.body.ip === undefined || props.body.ip === null
+          ? ""
+          : (props.body.ip satisfies string as string),
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: currentTime,
-      expired_at: new Date(accessExpiresMs).toISOString(),
+      created_at: toISOStringSafe(new Date()),
+      expired_at: accessExpireISO,
     },
   });
-
-  // Step 5: Generate JWT tokens with proper payload structure
-  const tokenPayload = {
-    type: "user" as const,
-    id: user.id,
-    session_id: session.id,
-    created_at: currentTime,
+  const issuedAt = toISOStringSafe(new Date());
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: issuedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: issuedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpireISO,
+    refreshable_until: refreshExpireISO,
   };
-
-  const refreshPayload = {
-    ...tokenPayload,
-    tokenType: "refresh" as const,
-  };
-
-  const token = {
-    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
-      issuer: "autobe",
-    }),
-    refresh: jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-      issuer: "autobe",
-    }),
-    expired_at: new Date(accessExpiresMs).toISOString(),
-    refreshable_until: new Date(refreshExpiresMs).toISOString(),
-  };
-
-  // Step 6: Return authorized user information with proper type conversions
   return {
     id: user.id,
     email: user.email,
-    password_hash: user.password_hash,
-    status: typia.assert<"pending" | "active" | "suspended">(user.status),
+    locked: user.locked,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
+    deleted_at:
+      user.deleted_at === null ? null : toISOStringSafe(user.deleted_at),
     token,
   };
 }

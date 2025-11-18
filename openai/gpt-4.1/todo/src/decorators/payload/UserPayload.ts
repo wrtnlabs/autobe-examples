@@ -1,13 +1,10 @@
 import { tags } from "typia";
-
-/** Payload for authenticated Todo List app user session. */
+/** Authenticated payload for Todo List application user. */
 export interface UserPayload {
-  /** Top-level user account ID (uuid) */
+  /** System-wide User ID (todo_list_users.id). */
   id: string & tags.Format<"uuid">;
-
-  /** Session ID associated with the user's current log-in */
+  /** Session ID (todo_list_user_sessions.id). */
   session_id: string & tags.Format<"uuid">;
-
-  /** Discriminator for verified union type */
+  /** Discriminator for user role. */
   type: "user";
 }

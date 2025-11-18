@@ -1,48 +1,93 @@
-# Todo List Application - Requirements Analysis Report
+# Todo List Application: Requirements
 
-## 1. Service Vision and Objectives
+## Functional Requirements (EARS Format)
 
-The Todo List application delivers a minimalistic yet powerful backend service enabling users to effectively manage their daily tasks. The vision is to empower individual users with intuitive and reliable task management capabilities that enhance productivity and simplify their daily routines.
+- THE service SHALL enable each authenticated user (todoListMember) to create a new todo item with a title and optional details.
+- THE service SHALL allow users to view a list of all their own todo items, showing whether each is complete or incomplete.
+- THE service SHALL allow users to edit the title, details, or completion status of their own todo items at any time.
+- THE service SHALL allow users to delete any of their own todo items when they are no longer needed.
+- THE service SHALL ensure that todo items are persistently stored and are not lost between user sessions or due to unexpected logouts.
+- WHEN a user logs in, THE service SHALL present only that user's todo items immediately and with no delay.
+- IF an unauthenticated request to view, add, edit, or delete todos is made, THEN THE service SHALL prompt the user to log in first and deny the operation until authentication is confirmed.
+- IF a user attempts to access a todo not owned by them, THEN THE service SHALL deny access and return a clear error message indicating lack of permissions.
+- WHEN a user marks a todo as complete, THE service SHALL update its state to complete and record the last updated time.
+- WHEN a user marks a todo as incomplete, THE service SHALL update its state to incomplete and record the last updated time.
+- THE service SHALL restrict every user to accessing or modifying only their own todo data at all times; there is no access to other users' todos.
+- WHEN network connectivity is interrupted during use, THE service SHALL provide an appropriate error message and attempt to resynchronize as soon as connectivity is restored.
+- WHEN a session expires, THE service SHALL require the user to log in again before allowing access to any todo features.
+- IF required fields are missing when creating or updating a todo, THEN THE service SHALL reject the request and clearly indicate which fields must be provided.
 
-The key objectives include:
-- Providing a secure and dependable backend to handle authenticated user todo items.
-- Supporting essential CRUD operations on personal todo lists.
-- Ensuring fast response times to foster a seamless user experience.
+## User Authentication and Authorization
 
-## 2. Market Needs and Problem
+- THE service SHALL require a user to authenticate with a valid account (email or supported provider) before accessing or modifying any todos.
+- THE service SHALL persist user sessions using secure mechanisms and ensure users remain logged in until they explicitly log out or the session expires due to inactivity.
+- WHEN a user logs out, THE service SHALL ensure no further access to todo data is possible until a new authentication occurs.
+- THE service SHALL securely identify the current user for every operation by verifying session credentials.
 
-There is an evident requirement for simple and lightweight task management solutions for individuals who prefer straightforward tools without the complexities of feature-heavy applications. Many existing solutions on the market can overwhelm users with excess options, detracting from basic task tracking.
+## System Actors
 
-The problem addressed by this service is the lack of a reliable backend that enables minimalistic yet fully functional todo item management, including secure user authentication and personalized data handling.
+**todoListMember** — an authenticated user who owns, creates, views, updates, and deletes only their own todo items. No other roles (admin, manager, guest, etc.) exist in the minimal application.
 
-## 3. Business Model and Strategy
+## Permission Matrix
 
-### Why This Service Exists
+| Actor            | View Own Todos | Create Todo | Update Own Todo | Delete Own Todo | View/Edit Others' Todos |
+|------------------|:-------------:|:-----------:|:---------------:|:---------------:|:----------------------:|
+| todoListMember   |      Yes      |     Yes     |      Yes        |      Yes        |          No            |
 
-The Todo List backend service exists to fill the niche for minimalistic yet complete todo management functionality optimized for simplicity and user-focused design.
+## Error and Exception Scenarios
 
-### Revenue Strategy
+- IF any operation fails due to server error, THEN THE service SHALL notify the user with a descriptive message and suggest to retry.
+- IF a user attempts a forbidden operation (such as editing another user's todo), THEN THE service SHALL log the attempt and show a friendly error notification without revealing any information about other users or their data.
+- IF a user's session has expired or is invalid, THEN THE service SHALL require immediate re-authentication.
 
-Initially, the service is offered for free to gain user adoption. Future monetization strategies may include premium feature sets, integrations with other productivity tools, and subscription-based offerings.
+## Key User Workflows
 
-### Growth Plan
+1. **Sign In**: User opens the application, signs in, and is shown only their personal todo list.
+2. **Create Todo**: User adds a new todo, filling required fields, which is immediately shown in their list.
+3. **Edit Todo**: User edits the content or completion status of an existing todo they own.
+4. **Delete Todo**: User deletes a todo they no longer need, removing it from their list instantly.
+5. **Logout**: User logs out; further todo operations are blocked until a new login.
 
-Growth will be driven by organic outreach, user satisfaction, and ease of integration with frontend clients. Incremental improvements will be guided by user feedback to maintain simplicity without feature bloat.
+## Business Rule Constraints
 
-## 4. Core Value Proposition
+- Each user's todo data is strictly private and cannot be viewed or modified by others under any circumstances.
+- There are no collaborative todo features—every operation is single-user and personal.
+- Todo items must have a non-empty title; details/notes are optional.
+- The application is minimal: there are no tags, deadlines, categories, reminders, or sharing functionalities.
+- Data consistency and reliability are mandatory; every operation SHALL ensure user data is never lost due to application or server failure to the extent possible.
 
-The service provides:
-- Secure, user-specific todo item data management.
-- Lightweight, performant backend operations for all users.
-- Essential CRUD capabilities to manage individual task lists with minimal friction.
+## Non-Functional and Success Criteria
 
-## 5. Success Metrics and KPIs
+- THE application SHALL be usable on both desktop and mobile devices.
+- THE application SHALL provide feedback on all user actions (e.g., confirmations, error messages).
+- THE application SHALL retain todo data securely, ensuring privacy in storage and transfer.
+- THE application SHALL respond to user actions within 2 seconds under normal operating conditions.
+- THE system SHALL maintain high availability (target: 99.9% uptime) and zero data loss.
 
-- Active daily users tracked at a minimum threshold reflecting ongoing engagement.
-- Backend API response times targeted to be under 500 milliseconds for create, update, and delete operations.
-- System availability maintained at 99.9% uptime.
-- Security effectiveness measured through zero tolerance for unauthorized access incidents.
+## Minimal User Flow – Mermaid Diagram
 
----
+```mermaid
+graph LR
+  U["User (todoListMember)"] --> S["Sign In"]
+  S --> L["View Personal Todo List"]
+  L --> C["Create Todo Item"]
+  L --> E["Edit Todo Item"]
+  L --> D["Delete Todo Item"]
+  L --> M["Mark Complete/Incomplete"]
+  C --> L
+  E --> L
+  D --> L
+  M --> L
+  S -- "Session Expired" --> X["Re-Authenticate"]
+  L -- "Log Out" --> O["Block Access Until Login"]
+```
 
-This report defines clear business goals and measurable targets to guide backend development without prescribing implementation specifics. It enables focused, efficient work by making business expectations explicit and unambiguous.
+## Summary and Acceptance Criteria
+
+- All user interactions are session-based and private
+- Only minimal CRUD (Create, Read, Update, Delete) for personal todos is supported
+- No collaborative, admin, or multi-user views or edits are possible
+- Only the authenticated user can operate on their own data
+- All requirements and business rules above are strict and complete
+- Application success is measured by privacy, usability, reliability, and clarity—not by feature volume
+- Any proposed feature beyond this specification is intentionally and categorically excluded

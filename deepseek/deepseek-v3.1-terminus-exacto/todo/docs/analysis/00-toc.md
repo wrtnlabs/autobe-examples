@@ -1,88 +1,32 @@
-# Todo List Application - Documentation Overview
+# Table of Contents: Todo List Backend Documentation
 
-## Project Introduction
+Welcome to the comprehensive documentation set for the Todo List backend service. This Table of Contents serves as the gateway to all project documentation required to design, implement, and maintain a robust, production-grade Todo List backend. The structure below enables all stakeholders—business users, developers, and auditors—to quickly find the information necessary for their purposes.
 
-This documentation set provides comprehensive specifications for building a minimal Todo list application. The application focuses on essential functionality for authenticated users to manage their personal todo items efficiently.
+## Document List and Structure
 
-## Documentation Structure
+| Document | Description |
+|----------|-------------|
+| [Service Overview](./01-service-overview.md) | Explains the purpose, background, objectives, scope, target users, competitive differentiation, and business model of the Todo List application. It establishes project vision and key success metrics. |
+| [Problem Definition](./02-problem-definition.md) | Describes primary user pain points regarding task management, current deficiencies in available solutions, and justification for building a minimal Todo List. |
+| [Value Proposition](./03-value-proposition.md) | Outlines unique value delivered by the service, mandatory and optional features, direct benefits to users, and how the application creates business value with simplicity and clarity. |
+| [Service Operation Overview](./04-service-operation-overview.md) | Summarizes overall user experience, the primary workflow of creating, viewing, completing, and deleting todos, and defines critical value delivery paths with success criteria. |
+| [User Actors and Permissions](./05-user-actors-and-permissions.md) | Lists every user actor (e.g., guest, registered user), describes the business rules for authentication and authorization, defines permission boundaries, and provides a business-readable permission matrix. |
+| [Functional Requirements](./06-functional-requirements.md) | Specifies the business and functional requirements necessary for delivering minimal Todo List functionality. All requirements are written in EARS format. Sections cover creation, listing, updating, completion, and deletion of todos, as well as user authentication and session management at a business level. Includes validation and measurable acceptance criteria. |
+| [Business Rules and Validation](./07-business-rules-and-validation.md) | Documents the rules and business-logic validations for todo items and user actions, such as title/content restrictions and allowed state transitions, expressed in clear, non-technical language. |
+| [Non-Functional Requirements](./08-non-functional-requirements.md) | Lists required operational qualities such as performance targets (response times, throughput), security, reliability (uptime goals), and auditability, aligned with industry best practices for web applications. |
+| [Error Handling and Exceptions](./09-error-handling-and-exceptions.md) | Describes business-level error scenarios (e.g., invalid user action, permission denied, missing data), expected user-facing error messages, and business rules for error recovery. |
+| [Data Flow and Lifecycle](./10-data-flow-and-lifecycle.md) | Maps the high-level business data flows (e.g., creation, update, completion, deletion of todos), typical status transitions, and essential lifecycle events of the todo entity, keeping a separation from technical implementation details. |
+| [Special Scenarios and Constraints](./11-special-scenarios-and-constraints.md) | Addresses edge cases, batch operations, regulatory/legal requirements (if any), handling of bulk data, and provides for future scalability needs without overengineering the MVP. |
 
-The documentation follows a logical waterfall development approach, starting with high-level business requirements and progressing through detailed technical specifications. Each document builds upon the previous one, ensuring systematic coverage of all aspects required for implementation.
-
-## Document Navigation Guide
-
-| Document | Description | Primary Audience |
-|----------|-------------|------------------|
-| [Service Overview](./01-service-overview.md) | Defines the business purpose, value proposition, and target market for the Todo application | Business Stakeholders |
-| [Functional Requirements](./02-functional-requirements.md) | Specifies all system functions using EARS format for clarity and testability | Development Team |
-| [User Actors and Authentication](./03-user-actors.md) | Defines user roles, authentication flows, and permission structures | Development Team |
-| [User Scenarios](./04-user-scenarios.md) | Describes primary user journeys and interaction flows with diagrams | Product Managers |
-| [Business Rules](./05-business-rules.md) | Details core business logic, validation rules, and data constraints | Development Team |
-| [Performance Requirements](./06-performance-requirements.md) | Specifies performance expectations and scalability considerations | Development Team |
-| [Error Handling](./07-error-handling.md) | Defines comprehensive error scenarios and recovery processes | Development Team |
-| [Security Requirements](./08-security-requirements.md) | Outlines security measures and data protection requirements | Development Team |
-| [Implementation Roadmap](./09-implementation-roadmap.md) | Provides development priorities and implementation sequence | Project Managers |
-
-## Document Relationships
-
-```mermaid
-graph LR
-    A["Service Overview"] --> B["Functional Requirements"]
-    B --> C["User Actors & Auth"]
-    C --> D["User Scenarios"]
-    D --> E["Business Rules"]
-    E --> F["Performance Requirements"]
-    F --> G["Error Handling"]
-    G --> H["Security Requirements"]
-    H --> I["Implementation Roadmap"]
-```
+### Document Navigation Order
+Start with the [Service Overview](./01-service-overview.md) for context, then work through Problem Definition, Value Proposition, and the rest of the documents in the order shown above. This progression moves from project vision and justification to actionable requirements and operational constraints.
 
 ## How to Use This Documentation
 
-### For Business Stakeholders
-Start with the [Service Overview](./01-service-overview.md) to understand the business context and value proposition.
+- Click any document name above for details on functional, business, or operational requirements.
+- Every document is focused, self-contained, and written for clarity, adhering strictly to business and user needs.
+- **Every requirement is expressed in natural language, using EARS format for functional requirements, and avoids technical/database specifications.**
+- Backend development teams are given autonomy regarding architecture, APIs, and database schemas, provided all business needs are met.
+- Documents are designed to enable full project onboarding, historical auditing, and compliance certification for the Todo List backend service minimal functionality.
 
-### For Product Managers
-Begin with [User Scenarios](./04-user-scenarios.md) to understand user interactions, then review [Functional Requirements](./02-functional-requirements.md) for detailed specifications.
-
-### For Development Teams
-Follow the documentation in sequential order:
-1. [Functional Requirements](./02-functional-requirements.md) - What to build
-2. [User Actors](./03-user-actors.md) - Authentication and permissions
-3. [Business Rules](./05-business-rules.md) - Core logic and validations
-4. [Performance Requirements](./06-performance-requirements.md) - System expectations
-5. [Error Handling](./07-error-handling.md) - Failure scenarios
-6. [Security Requirements](./08-security-requirements.md) - Protection measures
-
-### For Project Managers
-Use the [Implementation Roadmap](./09-implementation-roadmap.md) to plan development phases and prioritize features.
-
-## Document Content Overview
-
-### Core Business Documents
-- **Service Overview**: Business model, target market, competitive analysis
-- **Functional Requirements**: Complete system functionality specifications
-- **User Scenarios**: Real-world usage patterns and workflows
-
-### Technical Specification Documents
-- **User Actors**: Authentication system design and permission structures
-- **Business Rules**: Data validation and business logic specifications
-- **Performance Requirements**: Response time and scalability targets
-- **Error Handling**: Comprehensive error scenarios and recovery processes
-- **Security Requirements**: Data protection and security measures
-
-### Planning Documents
-- **Implementation Roadmap**: Development priorities and sequencing
-
-## Documentation Standards
-
-All documents follow consistent standards:
-- **EARS Format**: Functional requirements use Easy Approach to Requirements Syntax
-- **Mermaid Diagrams**: Visual representations of flows and relationships
-- **Clear Language**: Business-focused descriptions without technical implementation details
-- **Comprehensive Coverage**: Each document contains complete specifications for its domain
-
-## Version Information
-
-This documentation set represents the initial requirements analysis for the Todo list application. All documents are designed to be implementation-ready and provide developers with complete business context.
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+> *Developer Note: This documentation defines business goals and requirements. Implementation details—including architecture, API structures, and storage design—are at the full discretion of backend developers, as long as the business intent and requirements herein are satisfied.*

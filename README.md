@@ -6,17 +6,19 @@ AI Model | Score | FCSR | Status
 :--------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 100 | 92% | 🟢
 [`openai/gpt-4.1`](#openaigpt-41) | 100 | 89% | 🟢
-[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 100 | 83% | 🟢
+[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 100 | 84% | 🟢
 [`openai/gpt-5.1`](#openaigpt-51) | 87.5 | 80% | 🟡
-[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 77.5 | 82% | 🟡
-[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 75 | 68% | 🟡
-[`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 72.5 | 42% | 🟡
-[`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 92% | 🟡
-[`mistralai/codestral-2508`](#mistralaicodestral-2508) | 30 | 100% | ❌
-[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 30 | 55% | 🟡
-[`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 30 | 99% | ❌
-[`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 22.5 | 99% | ❌
-[`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 7.5 | 94% | ❌
+[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 77.5 | 85% | 🟡
+[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 75 | 69% | 🟡
+[`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 72.5 | 43% | 🟡
+[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 55 | 59% | 🟡
+[`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 94% | 🟡
+[`mistralai/codestral-2508`](#mistralaicodestral-2508) | 47.5 | 94% | 🟡
+[`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 47.5 | 96% | 🟡
+[`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 40 | 95% | 🟡
+[`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 32.5 | 95% | 🟡
+[`google/gemini-2.5-pro`](#googlegemini-25-pro) | 25 | 94% | 🟡
+[`z-ai/glm-4.6-exacto`](#z-aiglm-46-exacto) | 25 | 93% | 🟡
 
 - FCSR: Function Calling Success Rate
 - Status:
@@ -37,17 +39,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`anthropic/claude-sonnet-4.5/todo`](./anthropic/claude-sonnet-4.5/todo/)
 - Score: 100
-- Elapsed Time: 59m 10s
-- Token Usage: 49.24M
-- Function Calling Success Rate: 93.52%
+- Elapsed Time: 1h 41m 45s
+- Token Usage: 17.54M
+- Function Calling Success Rate: 90.00%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 1.44M | 9m 4s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 8 | 397.3K | 4m 34s | 100%
-🟢 Interface | `operations`: 47, `schemas`: 57 | 15.82M | 15m 4s | 89%
-🟢 Test | `functions`: 194 | 25.95M | 14m 33s | 98%
-🟢 Realize | `functions`: 47 | 5.64M | 15m 52s | 87%
+🟢 Analyze | `actors`: 2, `documents`: 11 | 438.8K | 6m 41s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 7 | 389.3K | 10m 49s | 50%
+🟢 Interface | `operations`: 29, `schemas`: 41 | 9.89M | 25m 40s | 84%
+🟢 Test | `functions`: 37 | 4.05M | 9m 32s | 100%
+🟢 Realize | `functions`: 29 | 2.77M | 49m 1s | 94%
 
 
 ### `anthropic/claude-sonnet-4.5` - `bbs`
@@ -114,17 +116,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`openai/gpt-4.1/todo`](./openai/gpt-4.1/todo/)
 - Score: 100
-- Elapsed Time: 43m 53s
-- Token Usage: 9.31M
-- Function Calling Success Rate: 93.03%
+- Elapsed Time: 53m 54s
+- Token Usage: 11.79M
+- Function Calling Success Rate: 93.06%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 11 | 510.3K | 4m 12s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 3 | 158.4K | 2m 49s | 100%
-🟢 Interface | `operations`: 15, `schemas`: 21 | 5.35M | 15m 15s | 85%
-🟢 Test | `functions`: 13 | 2.14M | 4m 10s | 100%
-🟢 Realize | `functions`: 15 | 1.15M | 17m 24s | 100%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 432.9K | 4m 6s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 156.8K | 2m 50s | 100%
+🟢 Interface | `operations`: 18, `schemas`: 29 | 6.59M | 27m 44s | 89%
+🟢 Test | `functions`: 23 | 3.28M | 6m 16s | 95%
+🟢 Realize | `functions`: 18 | 1.33M | 12m 56s | 94%
 
 
 ### `openai/gpt-4.1` - `bbs`
@@ -191,17 +193,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`openai/gpt-4.1-mini/todo`](./openai/gpt-4.1-mini/todo/)
 - Score: 100
-- Elapsed Time: 59m 42s
-- Token Usage: 20.16M
-- Function Calling Success Rate: 74.36%
+- Elapsed Time: 1h 14m 33s
+- Token Usage: 8.54M
+- Function Calling Success Rate: 90.81%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 11 | 449.9K | 2m 41s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 4 | 312.9K | 9m 29s | 71%
-🟢 Interface | `operations`: 25, `schemas`: 31 | 11.89M | 16m 17s | 52%
-🟢 Test | `functions`: 22 | 2.57M | 9m 13s | 100%
-🟢 Realize | `functions`: 25 | 4.94M | 22m 0s | 94%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 410.2K | 4m 51s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 157.4K | 3m 7s | 100%
+🟢 Interface | `operations`: 14, `schemas`: 18 | 4.89M | 40m 44s | 82%
+🟢 Test | `functions`: 6 | 1.88M | 5m 5s | 100%
+🟢 Realize | `functions`: 14 | 1.20M | 20m 43s | 95%
 
 
 ### `openai/gpt-4.1-mini` - `bbs`
@@ -268,17 +270,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`openai/gpt-5.1/todo`](./openai/gpt-5.1/todo/)
 - Score: 100
-- Elapsed Time: 1h 2m 43s
-- Token Usage: 41.17M
-- Function Calling Success Rate: 90.54%
+- Elapsed Time: 1h 20m 52s
+- Token Usage: 9.19M
+- Function Calling Success Rate: 93.85%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 959.4K | 6m 40s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 10 | 422.1K | 2m 52s | 87%
-🟢 Interface | `operations`: 48, `schemas`: 67 | 18.28M | 18m 51s | 81%
-🟢 Test | `functions`: 166 | 18.02M | 21m 6s | 97%
-🟢 Realize | `functions`: 48 | 3.49M | 13m 13s | 99%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 437.7K | 5m 23s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 158.2K | 3m 20s | 100%
+🟢 Interface | `operations`: 14, `schemas`: 17 | 4.54M | 36m 31s | 90%
+🟢 Test | `functions`: 14 | 2.91M | 19m 46s | 97%
+🟢 Realize | `functions`: 14 | 1.15M | 15m 51s | 93%
 
 
 ### `openai/gpt-5.1` - `bbs`
@@ -345,17 +347,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`moonshotai/kimi-k2-0905-exacto/todo`](./moonshotai/kimi-k2-0905-exacto/todo/)
 - Score: 100
-- Elapsed Time: 1h 23m 19s
-- Token Usage: 30.24M
-- Function Calling Success Rate: 76.67%
+- Elapsed Time: 1h 19m 27s
+- Token Usage: 17.98M
+- Function Calling Success Rate: 95.66%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 4 | 165.5K | 5m 36s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 5 | 205.1K | 2m 32s | 100%
-🟢 Interface | `operations`: 31, `schemas`: 37 | 18.00M | 42m 14s | 76%
-🟢 Test | `functions`: 67 | 10.15M | 24m 24s | 62%
-🟢 Realize | `functions`: 31 | 1.72M | 8m 31s | 100%
+🟢 Analyze | `actors`: 2, `documents`: 11 | 432.5K | 4m 25s | 100%
+🟢 Prisma | `namespaces`: 3, `models`: 7 | 271.3K | 5m 43s | 87%
+🟢 Interface | `operations`: 35, `schemas`: 44 | 10.28M | 37m 12s | 93%
+🟢 Test | `functions`: 48 | 5.08M | 12m 48s | 98%
+🟢 Realize | `functions`: 35 | 1.92M | 19m 17s | 97%
 
 
 ### `moonshotai/kimi-k2-0905-exacto` - `bbs`
@@ -422,17 +424,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
 - Score: 100
-- Elapsed Time: 1h 5m 50s
-- Token Usage: 11.54M
-- Function Calling Success Rate: 76.96%
+- Elapsed Time: 1h 5m 11s
+- Token Usage: 8.83M
+- Function Calling Success Rate: 94.33%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 11 | 571.4K | 3m 39s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 2 | 459.4K | 8m 41s | 55%
-🟢 Interface | `operations`: 8, `schemas`: 13 | 4.13M | 24m 50s | 71%
-🟢 Test | `functions`: 19 | 4.09M | 16m 34s | 68%
-🟢 Realize | `functions`: 8 | 2.29M | 12m 4s | 82%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 404.6K | 4m 16s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 153.0K | 2m 50s | 100%
+🟢 Interface | `operations`: 14, `schemas`: 21 | 5.07M | 31m 37s | 91%
+🟢 Test | `functions`: 20 | 2.05M | 8m 24s | 100%
+🟢 Realize | `functions`: 14 | 1.15M | 18m 1s | 93%
 
 
 ### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
@@ -499,17 +501,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`anthropic/claude-haiku-4.5/todo`](./anthropic/claude-haiku-4.5/todo/)
 - Score: 100
-- Elapsed Time: 41m 51s
-- Token Usage: 116.75M
-- Function Calling Success Rate: 39.42%
+- Elapsed Time: 54m 3s
+- Token Usage: 8.64M
+- Function Calling Success Rate: 94.44%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 12 | 1.24M | 6m 1s | 100%
-🟢 Prisma | `namespaces`: 4, `models`: 8 | 1.11M | 3m 28s | 100%
-🟢 Interface | `operations`: 24, `schemas`: 41 | 13.73M | 6m 51s | 88%
-🟢 Test | `functions`: 186 | 96.64M | 14m 51s | 24%
-🟢 Realize | `functions`: 24 | 4.03M | 10m 38s | 70%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 409.1K | 6m 49s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 155.7K | 4m 7s | 100%
+🟢 Interface | `operations`: 15, `schemas`: 19 | 4.51M | 21m 27s | 89%
+🟢 Test | `functions`: 23 | 2.40M | 7m 18s | 100%
+🟢 Realize | `functions`: 15 | 1.16M | 14m 20s | 96%
 
 
 ### `anthropic/claude-haiku-4.5` - `bbs`
@@ -563,6 +565,66 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Realize |  |  |  | 
 
 
+## `qwen/qwen3-coder-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./qwen/qwen3-coder-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `qwen/qwen3-coder-exacto` - `todo`
+
+- Source Code: [`qwen/qwen3-coder-exacto/todo`](./qwen/qwen3-coder-exacto/todo/)
+- Score: 100
+- Elapsed Time: 1h 15m 34s
+- Token Usage: 8.56M
+- Function Calling Success Rate: 92.06%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 11 | 406.7K | 4m 12s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 157.3K | 5m 24s | 100%
+🟢 Interface | `operations`: 14, `schemas`: 18 | 4.62M | 27m 45s | 85%
+🟢 Test | `functions`: 20 | 2.12M | 15m 51s | 100%
+🟢 Realize | `functions`: 14 | 1.25M | 22m 19s | 93%
+
+
+### `qwen/qwen3-coder-exacto` - `bbs`
+
+- Source Code: [`qwen/qwen3-coder-exacto/bbs`](./qwen/qwen3-coder-exacto/bbs/)
+- Score: 30
+- Elapsed Time: 17m 12s
+- Token Usage: 2.36M
+- Function Calling Success Rate: 53.97%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 10 | 1.48M | 12m 31s | 51%
+🟢 Prisma | `namespaces`: 5, `models`: 11 | 876.2K | 4m 41s | 59%
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `qwen/qwen3-coder-exacto` - `reddit`
+
+- Source Code: [`qwen/qwen3-coder-exacto/reddit`](./qwen/qwen3-coder-exacto/reddit/)
+- Score: 90
+- Elapsed Time: 3h 0m 49s
+- Token Usage: 110.78M
+- Function Calling Success Rate: 55.68%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.53M | 12m 18s | 62%
+🟢 Prisma | `namespaces`: 7, `models`: 21 | 1.63M | 5m 42s | 54%
+🟢 Interface | `operations`: 72, `schemas`: 71 | 55.74M | 1h 2m 18s | 54%
+🟢 Test | `functions`: 118 | 29.21M | 36m 30s | 61%
+🔴 Realize | `functions`: 72, `errors`: 1 | 22.68M | 1h 3m 59s | 53%
+
+
 ## `deepseek/deepseek-v3.1-terminus-exacto`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -576,17 +638,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/)
 - Score: 100
-- Elapsed Time: 2h 21m 4s
-- Token Usage: 39.08M
-- Function Calling Success Rate: 91.83%
+- Elapsed Time: 1h 46m 27s
+- Token Usage: 22.87M
+- Function Calling Success Rate: 93.91%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 10 | 547.8K | 5m 17s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 8 | 393.7K | 2m 56s | 88%
-🟢 Interface | `operations`: 35, `schemas`: 49 | 22.01M | 59m 54s | 88%
-🟢 Test | `functions`: 52 | 10.84M | 22m 3s | 91%
-🟢 Realize | `functions`: 35 | 5.30M | 50m 52s | 97%
+🟢 Analyze | `actors`: 2, `documents`: 12 | 449.1K | 3m 29s | 100%
+🟢 Prisma | `namespaces`: 4, `models`: 9 | 299.0K | 5m 56s | 100%
+🟢 Interface | `operations`: 39, `schemas`: 50 | 12.84M | 58m 20s | 88%
+🟢 Test | `functions`: 57 | 6.24M | 10m 48s | 100%
+🟢 Realize | `functions`: 39 | 3.03M | 27m 52s | 97%
 
 
 ### `deepseek/deepseek-v3.1-terminus-exacto` - `bbs`
@@ -644,7 +706,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./mistralai/codestral-2508/todo/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`todo`](./mistralai/codestral-2508/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./mistralai/codestral-2508/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./mistralai/codestral-2508/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./mistralai/codestral-2508/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
@@ -652,18 +714,18 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 ### `mistralai/codestral-2508` - `todo`
 
 - Source Code: [`mistralai/codestral-2508/todo`](./mistralai/codestral-2508/todo/)
-- Score: 30
-- Elapsed Time: 16m 45s
-- Token Usage: 335.5K
-- Function Calling Success Rate: 107.69%
+- Score: 100
+- Elapsed Time: 1h 18m 40s
+- Token Usage: 11.56M
+- Function Calling Success Rate: 92.74%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 2 | 100.9K | 29s | 120%
-🟢 Prisma | `namespaces`: 3, `models`: 10 | 234.7K | 16m 15s | 100%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
+🟢 Analyze | `actors`: 1, `documents`: 11 | 425.2K | 5m 13s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 156.2K | 3m 20s | 100%
+🟢 Interface | `operations`: 18, `schemas`: 26 | 6.04M | 28m 11s | 88%
+🟢 Test | `functions`: 29 | 3.01M | 9m 26s | 97%
+🟢 Realize | `functions`: 18 | 1.94M | 32m 29s | 93%
 
 
 ### `mistralai/codestral-2508` - `bbs`
@@ -717,54 +779,11 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Realize |  |  |  | 
 
 
-## `qwen/qwen3-coder-exacto`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-[`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-[`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-
-### `qwen/qwen3-coder-exacto` - `bbs`
-
-- Source Code: [`qwen/qwen3-coder-exacto/bbs`](./qwen/qwen3-coder-exacto/bbs/)
-- Score: 30
-- Elapsed Time: 17m 12s
-- Token Usage: 2.36M
-- Function Calling Success Rate: 53.97%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 10 | 1.48M | 12m 31s | 51%
-🟢 Prisma | `namespaces`: 5, `models`: 11 | 876.2K | 4m 41s | 59%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-### `qwen/qwen3-coder-exacto` - `reddit`
-
-- Source Code: [`qwen/qwen3-coder-exacto/reddit`](./qwen/qwen3-coder-exacto/reddit/)
-- Score: 90
-- Elapsed Time: 3h 0m 49s
-- Token Usage: 110.78M
-- Function Calling Success Rate: 55.68%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 12 | 1.53M | 12m 18s | 62%
-🟢 Prisma | `namespaces`: 7, `models`: 21 | 1.63M | 5m 42s | 54%
-🟢 Interface | `operations`: 72, `schemas`: 71 | 55.74M | 1h 2m 18s | 54%
-🟢 Test | `functions`: 118 | 29.21M | 36m 30s | 61%
-🔴 Realize | `functions`: 72, `errors`: 1 | 22.68M | 1h 3m 59s | 53%
-
-
 ## `x-ai/grok-code-fast-1`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./x-ai/grok-code-fast-1/todo/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`todo`](./x-ai/grok-code-fast-1/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./x-ai/grok-code-fast-1/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./x-ai/grok-code-fast-1/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./x-ai/grok-code-fast-1/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
@@ -772,18 +791,18 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 ### `x-ai/grok-code-fast-1` - `todo`
 
 - Source Code: [`x-ai/grok-code-fast-1/todo`](./x-ai/grok-code-fast-1/todo/)
-- Score: 30
-- Elapsed Time: 3m 52s
-- Token Usage: 703.5K
-- Function Calling Success Rate: 100.00%
+- Score: 100
+- Elapsed Time: 1h 40m 39s
+- Token Usage: 18.72M
+- Function Calling Success Rate: 95.04%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 9 | 430.1K | 2m 0s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 3 | 273.4K | 1m 52s | 100%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
+🟢 Analyze | `actors`: 2, `documents`: 12 | 464.9K | 5m 58s | 100%
+🟢 Prisma | `namespaces`: 4, `models`: 7 | 309.4K | 4m 5s | 100%
+🟢 Interface | `operations`: 34, `schemas`: 40 | 9.41M | 40m 37s | 90%
+🟢 Test | `functions`: 42 | 5.08M | 13m 24s | 98%
+🟢 Realize | `functions`: 34 | 3.45M | 36m 34s | 97%
 
 
 ### `x-ai/grok-code-fast-1` - `bbs`
@@ -841,7 +860,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./meta-llama/llama-4-scout/todo/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+[`todo`](./meta-llama/llama-4-scout/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./meta-llama/llama-4-scout/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./meta-llama/llama-4-scout/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 `shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
@@ -849,18 +868,18 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 ### `meta-llama/llama-4-scout` - `todo`
 
 - Source Code: [`meta-llama/llama-4-scout/todo`](./meta-llama/llama-4-scout/todo/)
-- Score: 30
-- Elapsed Time: 1m 26s
-- Token Usage: 538.2K
-- Function Calling Success Rate: 100.00%
+- Score: 100
+- Elapsed Time: 1h 21m 49s
+- Token Usage: 13.71M
+- Function Calling Success Rate: 94.35%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 407.4K | 54s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 7 | 130.8K | 31s | 100%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
+🟢 Analyze | `actors`: 1, `documents`: 11 | 447.2K | 7m 58s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 5 | 169.7K | 5m 11s | 100%
+🟢 Interface | `operations`: 24, `schemas`: 35 | 8.22M | 36m 51s | 90%
+🟢 Test | `functions`: 33 | 3.44M | 7m 58s | 100%
+🟢 Realize | `functions`: 24 | 1.44M | 23m 49s | 96%
 
 
 ### `meta-llama/llama-4-scout` - `bbs`
@@ -901,10 +920,27 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+[`todo`](./meta-llama/llama-4-maverick/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./meta-llama/llama-4-maverick/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 `reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
 `shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `meta-llama/llama-4-maverick` - `todo`
+
+- Source Code: [`meta-llama/llama-4-maverick/todo`](./meta-llama/llama-4-maverick/todo/)
+- Score: 100
+- Elapsed Time: 55m 18s
+- Token Usage: 6.88M
+- Function Calling Success Rate: 96.10%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 11 | 483.9K | 9m 20s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 156.3K | 3m 15s | 100%
+🟢 Interface | `operations`: 11, `schemas`: 16 | 3.44M | 16m 24s | 95%
+🟢 Test | `functions`: 18 | 1.96M | 11m 11s | 96%
+🟢 Realize | `functions`: 11 | 838.6K | 15m 5s | 94%
+
 
 ### `meta-llama/llama-4-maverick` - `bbs`
 
@@ -921,3 +957,55 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
+
+
+## `google/gemini-2.5-pro`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./google/gemini-2.5-pro/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+`bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `google/gemini-2.5-pro` - `todo`
+
+- Source Code: [`google/gemini-2.5-pro/todo`](./google/gemini-2.5-pro/todo/)
+- Score: 100
+- Elapsed Time: 54m 28s
+- Token Usage: 8.71M
+- Function Calling Success Rate: 94.12%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 12 | 478.1K | 4m 29s | 96%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 162.7K | 4m 5s | 100%
+🟢 Interface | `operations`: 15, `schemas`: 21 | 5.30M | 22m 3s | 88%
+🟢 Test | `functions`: 8 | 1.90M | 5m 39s | 100%
+🟢 Realize | `functions`: 15 | 874.3K | 18m 11s | 100%
+
+
+## `z-ai/glm-4.6-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./z-ai/glm-4.6-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+`bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+### `z-ai/glm-4.6-exacto` - `todo`
+
+- Source Code: [`z-ai/glm-4.6-exacto/todo`](./z-ai/glm-4.6-exacto/todo/)
+- Score: 100
+- Elapsed Time: 1h 27m 40s
+- Token Usage: 16.64M
+- Function Calling Success Rate: 93.37%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 12 | 449.0K | 5m 0s | 100%
+🟢 Prisma | `namespaces`: 2, `models`: 5 | 165.3K | 5m 45s | 100%
+🟢 Interface | `operations`: 28, `schemas`: 37 | 9.32M | 36m 47s | 87%
+🟢 Test | `functions`: 45 | 4.92M | 13m 57s | 96%
+🟢 Realize | `functions`: 28 | 1.79M | 26m 9s | 100%

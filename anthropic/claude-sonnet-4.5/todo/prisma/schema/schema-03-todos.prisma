@@ -1,0 +1,131 @@
+/// User-created task (Todo) entity representing an individual actionable
+/// item in a personal task list.
+///
+/// Each todo belongs to exactly one registered user and records essential
+/// details such as title, optional description, due date, and business
+/// status (pending, completed, or deleted). Provides complete auditability
+/// with timestamps for creation, modification, deletion, and completion
+/// event. This model enforces strict user-only ownership and visibility,
+/// supporting full CRUD lifecycle and compliance audit via foreign
+/// references. Referential integrity protects against orphaned records and
+/// ensures privacy.
+///
+/// Supporting indexes enable fast lookups by owner, status, and due date for
+/// responsive user flows. All behaviors align with minimal, privacy-focused
+/// product requirements and EARS-specified business rules.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Universally unique identifier for each todo record.
+  id String @id
+  
+  /// Reference to the owning user. Must point to an existing user. {@link
+  /// todo_list_users.id}.
+  user_id String
+  
+  /// Todo item title. Required, non-empty text up to 100 characters.
+  /// Validation enforced on creation and update to maintain business
+  /// constraints.
+  title String
+  
+  /// Optional descriptive text (max 500 characters). May be null or omitted if
+  /// not provided by user.
+  description String?
+  
+  /// Todo status: allowed values are 'pending', 'completed', or 'deleted'.
+  /// Used for business workflow, filtering, and access control. Status changes
+  /// follow task lifecycle state machine.
+  status String
+  
+  /// Optional due date for the todo. Must be today or future, if present. Used
+  /// for sorting and reminders.
+  due_date DateTime?
+  
+  /// Timestamp marking the moment the todo was marked as completed by the
+  /// user. Null if not completed.
+  completed_at DateTime?
+  
+  /// Timestamp of initial creation. Immutable after insert.
+  created_at DateTime
+  
+  /// Timestamp of the last update. Modified on every business change or status
+  /// transition.
+  updated_at DateTime
+  
+  /// Timestamp indicating when the todo was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  todo_list_admin_audit_logs todo_list_admin_audit_logs[]
+  
+  @@unique([user_id, title])
+  @@index([user_id, due_date, status])
+}
+
+/// Administrative action and compliance audit log capturing all critical
+/// administrative interactions with user or todo data.
+///
+/// Stores immutable, append-only audit trail entries recording which admin
+/// performed which tracked action (create, update, access, delete, etc.), on
+/// what entity (user, todo), and with what context. Each log links the actor
+/// (admin), optionally impacted user, and target todo (if any), supporting
+/// detailed compliance and accountability reviews. Fields include mandatory
+/// timestamps, request metadata, and detailed action descriptors. Indexes
+/// support rapid security, audit, and compliance queries.
+///
+/// Never contains business entity data itself; provides operational
+/// transparency without cross-contaminating business state.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Universally unique audit log entry identifier.
+  id String @id
+  
+  /// Reference to the admin actor who performed the action. Always points to a
+  /// valid admin. {@link todo_list_admins.id}.
+  admin_id String
+  
+  /// User affected by the action, if applicable. May be null for purely admin
+  /// system operations. {@link todo_list_users.id}.
+  user_id String?
+  
+  /// Related todo item if the action targets a specific task. Null if the
+  /// action does not pertain to a specific todo. {@link todo_list_todos.id}.
+  todo_id String?
+  
+  /// Categorical action label (e.g., 'create', 'update', 'delete', 'access').
+  /// Defines the type of operation performed by admin.
+  action_type String
+  
+  /// Optional extended, machine-readable metadata about the admin request
+  /// context (e.g., IP, session, endpoint). Useful for forensics and
+  /// compliance situations.
+  request_context String?
+  
+  /// Timestamp of when the audit log record was created. Immutable and set
+  /// automatically at write time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  user todo_list_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  todo todo_list_todos? @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+  @@index([user_id])
+  @@index([todo_id])
+}

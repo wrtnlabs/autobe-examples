@@ -3,35 +3,41 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoListUser } from "../../../structures/ITodoListUser";
+import { ITodoUser } from "../../../structures/ITodoUser";
 
 /**
- * Create a new member user account.
+ * Register a new user in todo_user table, enforcing email uniqueness and strong
+ * password policies.
  *
- * This operation handles user registration by creating a new record in the
- * todo_list_users table. The incoming request includes email and plain-text
- * password, which are transformed server-side: the password is hashed using
- * bcrypt before storage, and a unique UUID is generated for the id field. The
- * createdAt timestamp is automatically set to the current date and time in the
- * Asia/Seoul timezone. The email field is validated for unique existence before
- * insertion (as defined by the unique index on todo_list_users.email). The
- * isActive flag is explicitly set to true during creation, as all new users are
- * active by default. The role field defaults to 'member', as defined in the
- * Prisma schema. No additional fields are included in the request body because
- * the todo_list_users schema does not have any other required or nullable
- * fields for registration beyond email and password.
+ * This endpoint supports account registration for new users in the Todo List
+ * Application by creating a new row in the todo_user table.
  *
- * This operation is publicly accessible and does not require authentication
- * since it's for new user account creation. It is the first step in the
- * authentication workflow for member users.
+ * Requests must provide a valid, unique email address (see the 'email' field in
+ * the schema: 'Unique email address for authentication and account recovery.
+ * Must be unique across all users and adhere to standard email formatting.')
+ * and a raw password for hashing and storage in the 'password_hash' field
+ * ('Secure hash of the user's password. Stored using strong cryptographic
+ * practices. Never stores raw passwords.').
  *
- * Associated Prisma schema field: todo_list_users.email (String, unique),
- * todo_list_users.hashedPassword (String), todo_list_users.createdAt
- * (DateTime), todo_list_users.isActive (Boolean), todo_list_users.role (String,
- * enum).
+ * On successful registration, the new user's record is created with associated
+ * timestamps: 'created_at' as the instant of creation, 'updated_at' matching
+ * 'created_at', and a null 'deleted_at' field indicating it is active. All
+ * session management, business rule enforcement, and unique account creation
+ * logic are enforced here as described in the requirements document.
+ *
+ * The endpoint does not integrate social login, phone verification, or
+ * additional roles/profiles. Only direct, per-user sign-up is supported.
+ *
+ * If an email already exists, the endpoint returns a business-level
+ * registration error (no technical leakage of user existence), enforcing the
+ * uniqueness constraint described in the Prisma schema.
+ *
+ * This endpoint is the initial step for account creation; users must
+ * subsequently authenticate via login with issued credentials and may request
+ * token refresh when needed.
  *
  * @param props.connection
- * @param props.body Request payload for user registration
+ * @param props.body Registration data with user email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -66,11 +72,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Request payload for user registration */
-    body: ITodoListUser.ICreate;
+    /** Registration data with user email and password. */
+    body: ITodoUser.IJoin;
   };
-  export type Body = ITodoListUser.ICreate;
-  export type Response = ITodoListUser.IAuthorized;
+  export type Body = ITodoUser.IJoin;
+  export type Response = ITodoUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -86,8 +92,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/user/join";
-  export const random = (): ITodoListUser.IAuthorized =>
-    typia.random<ITodoListUser.IAuthorized>();
+  export const random = (): ITodoUser.IAuthorized =>
+    typia.random<ITodoUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -114,37 +120,33 @@ export namespace join {
 }
 
 /**
- * Authenticate a member user and issue access & refresh tokens.
+ * Authenticate a user from todo_user table and issue a JWT token if credentials
+ * are valid.
  *
- * This operation authenticates an existing member user by validating their
- * email and plain-text password against the records stored in the
- * todo_list_users table. The server looks up the user by email (which is
- * indexed and unique) and compares the provided password against the stored
- * bcrypt hash using a cryptographic comparison function.
+ * This endpoint enables registered users to authenticate by submitting their
+ * email ('email' field, unique, mandatory in todo_user schema) and raw password
+ * (checked against the 'password_hash' field using secure verification).
  *
- * If authentication succeeds, the system generates two tokens: a short-lived
- * access token (valid for 15 minutes) and a long-lived refresh token (valid for
- * 7 days). The access token contains the user's id, email, and role in the
- * payload. The refresh token is stored as a hashed value in the
- * todo_list_users.refreshTokenHash field (and expiresAt timestamp is updated)
- * during this operation, as these fields are part of the user model and
- * explicitly designed for token management.
+ * Upon successful verification, the system issues a JWT token as described in
+ * the requirements, including userId claims and session timing based on
+ * 'created_at'/'updated_at' timestamps. Only users with active, non-deleted
+ * accounts ('deleted_at' must be null) may successfully log in.
  *
- * The operation responds with a success status and the token payload if
- * authentication passes. If the email doesn't exist or the password hash
- * doesn't match, it returns a 401 Unauthorized error.
+ * Failed login attempts for invalid credentials never disclose account
+ * existence or technical errors. Errors are presented as uniform authentication
+ * failures matching security guidelines.
  *
- * This is the core authentication operation for member users, following the
- * principle of stateless authentication with JWT. It is publicly accessible and
- * does not require prior authentication.
+ * On successful authentication, the session follows strict rules: session
+ * expiration after 30 days, log out/invalidation support, and user data
+ * isolation as required by the business processes and permission matrix
+ * documented.
  *
- * Associated Prisma schema field: todo_list_users.email (String, unique),
- * todo_list_users.hashedPassword (String), todo_list_users.refreshTokenHash
- * (String, nullable), todo_list_users.refreshTokenExpiresAt (DateTime,
- * nullable).
+ * No role elevation, admin, or additional attributes are ever exposed via this
+ * endpoint. All logic references the todo_user schema for registration,
+ * credential checking, and session management.
  *
  * @param props.connection
- * @param props.body Login credentials for user authentication
+ * @param props.body User login credentials: email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -179,11 +181,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Login credentials for user authentication */
-    body: ITodoListUser.ILogin;
+    /** User login credentials: email and password. */
+    body: ITodoUser.ILogin;
   };
-  export type Body = ITodoListUser.ILogin;
-  export type Response = ITodoListUser.IAuthorized;
+  export type Body = ITodoUser.ILogin;
+  export type Response = ITodoUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -199,8 +201,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/user/login";
-  export const random = (): ITodoListUser.IAuthorized =>
-    typia.random<ITodoListUser.IAuthorized>();
+  export const random = (): ITodoUser.IAuthorized =>
+    typia.random<ITodoUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -227,37 +229,31 @@ export namespace login {
 }
 
 /**
- * Refresh access token using a valid refresh token.
+ * Refresh JWT authorization token for an authenticated todo_user session.
  *
- * This operation allows a client to obtain a new access token after the current
- * one expires, using a previously issued refresh token. The client submits the
- * refresh token (which is stored as a hashed value in the
- * todo_list_users.refreshTokenHash field) to this endpoint.
+ * This endpoint refreshes the JWT authorization token for an authenticated user
+ * whose current session remains valid. It checks the refresh token's
+ * association in the session system (either via sessions table or token content
+ * referencing the todo_user primary key).
  *
- * The server verifies the refresh token by hashing the submitted value and
- * comparing it to the stored refreshTokenHash in the todo_list_users table. It
- * also checks that the corresponding refreshTokenExpiresAt timestamp has not
- * yet passed.
+ * The system validates session timing constraints (inactivity window, as
+ * enforced by the 'created_at' and 'updated_at' fields of the todo_user schema
+ * and session lifetime rules from requirements). On success, a new JWT and
+ * refresh token are issued, not exposing underlying credential or user
+ * details.
  *
- * If valid, a new access token is generated (valid for 15 minutes), and a new
- * refresh token is created, with its hash stored back to
- * todo_list_users.refreshTokenHash and its expiration time set in
- * todo_list_users.refreshTokenExpiresAt. The old refresh token is effectively
- * invalidated by replacing it.
+ * This endpoint does not permit re-activation of deleted ('deleted_at' not
+ * null) or invalid/expired user accounts. Uniform error responses are given for
+ * expired or invalid tokens.
  *
- * This operation is crucial for maintaining a persistent authentication session
- * without requiring the user to re-enter credentials. The client must securely
- * store and submit the refresh token with each refresh request.
+ * Token refresh operations must precede any attempts to access Todo data if the
+ * original session is expired.
  *
- * This endpoint remains accessible to authenticated users as long as they
- * possess a valid refresh token. It is a stateful operation because it updates
- * the user's record in the database.
- *
- * Associated Prisma schema field: todo_list_users.refreshTokenHash (String,
- * nullable), todo_list_users.refreshTokenExpiresAt (DateTime, nullable).
+ * No account creation, update, or role adjustment occurs here. Solely refreshes
+ * authorization on existing valid sessions per business and schema rules.
  *
  * @param props.connection
- * @param props.body Refresh token to extend the authenticated session
+ * @param props.body Refresh token submission for session renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -292,11 +288,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token to extend the authenticated session */
-    body: ITodoListUser.IRefresh;
+    /** Refresh token submission for session renewal. */
+    body: ITodoUser.IRefresh;
   };
-  export type Body = ITodoListUser.IRefresh;
-  export type Response = ITodoListUser.IAuthorized;
+  export type Body = ITodoUser.IRefresh;
+  export type Response = ITodoUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -312,8 +308,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/user/refresh";
-  export const random = (): ITodoListUser.IAuthorized =>
-    typia.random<ITodoListUser.IAuthorized>();
+  export const random = (): ITodoUser.IAuthorized =>
+    typia.random<ITodoUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

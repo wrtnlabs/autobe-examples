@@ -5,378 +5,412 @@
 - [Systematic](#systematic)
 - [Actors](#actors)
 - [Todos](#todos)
+- [AuditLogs](#auditlogs)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"todo_app_configurations" {
+"todo_list_system_configs" {
   String id PK
   String key UK
   String value
   String description "nullable"
-  String data_type
-  String category
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 ```
 
-### `todo_app_configurations`
+### `todo_list_system_configs`
 
-System-wide configuration settings for the Todo application.
+System-wide configuration and operational parameters for the Todo List
+application.
 
-Stores key-value pairs that control application behavior, feature flags,
-and system parameters. These settings are managed by administrators and
-affect the entire application instance.
+This model stores key-value pairs representing global settings, feature
+toggles, and core system options that govern application-level behavior.
+Each configuration is uniquely identified by its key and may store
+settings such as default timezone, maintenance flags, operational feature
+gates, or reserved identifiers for system processes.
 
-Configuration values can include feature toggles, default settings,
-performance parameters, and business rules. Each configuration item has a
-unique key and can store various data types as string values that are
-parsed by the application.
-
-The table supports documentation of each configuration item through the
-description field, helping administrators understand the purpose and
-impact of each setting. Changes to configuration values are tracked
-through temporal fields for audit purposes.
-
-Configuration settings are loaded at application startup and cached for
-performance. Changes may require application restart or specific refresh
-mechanisms to take effect.
+Configurations in this table are not user- or admin-specific—they apply
+to the entire deployment and provide a foundation for evolving
+operational requirements. All updates are tracked with timestamps, and
+soft deletion is supported for historical audit and safe rotation of
+system configuration elements.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary Key for the system configuration record.
 - `key`
-  > Unique configuration key identifier. Used to reference the configuration
-  > setting in application code. Must follow naming conventions and be unique
-  > across all configuration items.
+  > Unique configuration key identifying the system setting. Examples include
+  > 'default_timezone', 'feature_maintenance_mode', or other core options.
+  > Must be unique within this table.
 - `value`
-  > Configuration value stored as string. The application parses this value
-  > according to the expected data type (boolean, number, string, JSON,
-  > etc.).
+  > Configuration value as a string. Can store serialized data for complex
+  > options but typically represents a scalar system setting relevant to the
+  > business or application.
 - `description`
-  > Human-readable description explaining the purpose, usage, and impact of
-  > this configuration setting. Helps administrators understand what the
-  > setting controls.
-- `data_type`
-  > Expected data type for the value field. Valid values: 'boolean',
-  > 'number', 'string', 'json', 'array'. Helps with validation and proper
-  > parsing.
-- `category`
-  > Configuration category for organizational purposes. Examples:
-  > 'feature-flags', 'performance', 'security', 'ui', 'business-rules'.
-- `created_at`: Timestamp when the configuration item was first created.
-- `updated_at`: Timestamp when the configuration item was last modified.
+  > Optional detailed description of the purpose and business context for
+  > this configuration entry. Useful for documenting intent and supporting
+  > operational maintenance.
+- `created_at`
+  > Timestamp when the configuration entry was created. Used for audit
+  > purposes and operational monitoring.
+- `updated_at`
+  > Timestamp of the last update to the configuration entry. Enables tracking
+  > of modifications for audit and compliance.
+- `deleted_at`
+  > Timestamp indicating soft deletion of the configuration entry. Used for
+  > operational safety and rollback capability.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"todo_app_users" {
+"todo_list_users" {
   String id PK
   String email UK
   String password_hash
-  String status
+  Boolean locked
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"todo_app_user_sessions" {
+"todo_list_user_sessions" {
   String id PK
-  String todo_app_user_id FK
+  String user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_app_user_sessions" }o--|| "todo_app_users" : user
+"todo_list_user_deletion_logs" {
+  String id PK
+  String user_id FK
+  String deleted_by_admin_id "nullable"
+  String reason
+  DateTime deleted_at
+}
+"todo_list_admins" {
+  String id PK
+  String email UK
+  String password_hash
+  Boolean locked
+  String role
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"todo_list_admin_sessions" {
+  String id PK
+  String admin_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"todo_list_admin_deletion_logs" {
+  String id PK
+  String admin_id FK
+  String deleted_by_admin_id "nullable"
+  String reason
+  DateTime deleted_at
+}
+"todo_list_user_sessions" }o--|| "todo_list_users" : user
+"todo_list_user_deletion_logs" }o--|| "todo_list_users" : user
+"todo_list_admin_sessions" }o--|| "todo_list_admins" : admin
+"todo_list_admin_deletion_logs" }o--|| "todo_list_admins" : admin
 ```
 
-### `todo_app_users`
+### `todo_list_users`
 
-User accounts for the Todo application with authentication credentials.
+Represents registered, authenticated individual end users of the Todo
+List service.
 
-Stores user registration information including email, password hash, and
-account status. Each user has their own private todo list and can manage
-their personal tasks independently.
+Each user can create, view, edit, complete, and delete only their own
+todo items. Users are granted no visibility or control over any other
+user's account or related data. This table also stores authentication
+credentials, unique email address, locked status for moderation, and
+timestamps for account lifecycle.
 
-Users are authenticated through email/password combination and can have
-multiple active sessions across different devices. Account status tracks
-whether the user is active, pending verification, or suspended.
-
-User data is isolated from other users' data, maintaining strict privacy
-and security boundaries.
+Audit requirements mandate that all status changes and deletion actions
+are logged in subsidiary tables. Soft deletion is achieved through the
+deleted_at column.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > User's email address used for authentication and communication. Must be
-  > unique across all users.
-- `password_hash`
-  > Securely hashed password for user authentication. Never stored in plain
-  > text.
-- `status`: Current account status. Valid values: pending, active, suspended.
+  > Unique email address of the user. Used for login and system
+  > notifications. Must be unique across all users.
+- `password_hash`: Password hash for secure authentication. Never stores plaintext passwords.
+- `locked`
+  > Account lock status. True if the user is suspended or blocked by admin
+  > for policy or security reasons.
 - `created_at`: Timestamp when the user account was created.
-- `updated_at`: Timestamp when the user account was last updated.
-- `deleted_at`: Timestamp when the user account was soft deleted. Null if active.
+- `updated_at`: Timestamp for the most recent update to the user profile or credentials.
+- `deleted_at`: Timestamp when the user was soft-deleted. Null if active.
 
-### `todo_app_user_sessions`
+### `todo_list_user_sessions`
 
-User authentication sessions for tracking login activity.
+Tracks active and expired authentication sessions for regular users.
 
-Stores session information for authenticated users including connection
-context and timestamps. Each session represents a single login instance
-and is used for audit tracing of user actions.
-
-Sessions are managed through identity flows and are automatically expired
-after a period of inactivity. Multiple concurrent sessions are supported
-per user across different devices.
-
-Connection context includes IP address, URL, and referrer information for
-security monitoring and audit purposes.
+Each session records the user ID, connection details, session creation,
+and expiration times. Enables audit trails of user activity, tracing
+access for security, compliance, and privacy enforcement. Sessions are
+subsidiary and always reference their user owner. No password/token
+fields are stored here; sessions solely track connection context and
+lifecycle.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_app_user_id`: Belonged user's [todo_app_users.id](#todo_app_users).
-- `ip`: IP address of the connection that created this session.
-- `href`: Connection URL where the session was created.
-- `referrer`: Referrer URL that directed to the session creation.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired. Null if still active.
+- `user_id`: References the associated user. [todo_list_users.id](#todo_list_users).
+- `ip`: IP address from which the session was established.
+- `href`: Connection URL or client origin.
+- `referrer`: Referrer URL, if any, for the client establishing the session.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Timestamp when the session ended or was invalidated.
+
+### `todo_list_user_deletion_logs`
+
+Logs events when user accounts are deleted for audit, compliance, or
+privacy purposes.
+
+Captures the user deleted, time of action, reason (e.g., GDPR, user
+request, admin action), and administrative actor if applicable. Used for
+traceability, regulatory audits, and troubleshooting account lifecycle
+events. Deletion logs are managed solely by system or admin workflows –
+users do not interact with this table directly.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`: User who was deleted. [todo_list_users.id](#todo_list_users).
+- `deleted_by_admin_id`
+  > ID of the admin who performed the account deletion. Null if self-deleted.
+  > Used for audit when admin initiated.
+- `reason`: Reason for deletion (GDPR, user request, admin suspension, etc).
+- `deleted_at`: Timestamp when the deletion event occurred.
+
+### `todo_list_admins`
+
+Represents administrators with privileged access to system oversight,
+user management, and moderation.
+
+Admins can view and manage users and any todo in the system, and can
+impose status/actions such as account locking or deletion for compliance
+or support. Authentication credentials, unique email, role flags,
+lifecycle timestamps, and soft deletion status are included. Only
+privileged personnel are represented; regular users are never present in
+this table.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > Unique email address of the admin for login and notification. Must not
+  > overlap normal users.
+- `password_hash`
+  > Hashed password for secure admin authentication. Plain passwords are
+  > never retained.
+- `locked`
+  > Admin account lock status. True if administrator is currently suspended
+  > from system use.
+- `role`
+  > Administrative role or privilege class (e.g., superadmin, moderator).
+  > Determines access boundaries within admin workflows.
+- `created_at`: Account creation timestamp.
+- `updated_at`: Time of last admin profile or credential update.
+- `deleted_at`: Soft deletion timestamp for the admin account. Null if admin is active.
+
+### `todo_list_admin_sessions`
+
+Tracks each login session for administrators, providing traceability for
+privileged access and sensitive actions.
+
+Each record ties to an admin account and logs session metadata including
+connection IP, access URL, referrer, and timestamps. Sessions support
+compliance, intrusion detection, and accountability. This table never
+stores authentication secrets, only session lifecycle information.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `admin_id`: References the admin who owns this session. [todo_list_admins.id](#todo_list_admins).
+- `ip`: IP address of the admin's session origin.
+- `href`: Access URL or service endpoint for this session.
+- `referrer`: Client's referrer for this session connection.
+- `created_at`: Timestamp when the admin session began.
+- `expired_at`: Time when the admin session was closed or expired.
+
+### `todo_list_admin_deletion_logs`
+
+Records administrative account deletions for audit fulfillment and policy
+compliance.
+
+Contains deletion event data: admin whose account was deleted, actor
+executing the deletion (if different), reason code or explanation, and
+timestamp. Supports forensic review, compliance, and user/account
+lifecycle transparency. Entries are generated by system or superadmin
+operations; never directly manipulated by standard admins.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `admin_id`: Admin whose account was deleted. [todo_list_admins.id](#todo_list_admins).
+- `deleted_by_admin_id`
+  > ID of the higher privilege admin who performed this deletion, if any.
+  > Null if self-deleted.
+- `reason`: Narrative or code for the account deletion cause.
+- `deleted_at`: Timestamp the account was deleted.
 
 ## Todos
 
 ```mermaid
 erDiagram
-"todo_app_todos" {
+"todo_list_todos" {
   String id PK
-  String todo_app_user_id FK
-  String todo_app_user_session_id FK
+  String todo_list_user_id FK
   String title
   String description "nullable"
+  String status
   DateTime due_date "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"todo_app_todo_snapshots" {
-  String id PK
-  String todo_app_todo_id FK
-  String todo_app_todo_status_id FK
-  String todo_app_todo_priority_id FK "nullable"
   DateTime completed_at "nullable"
-  DateTime snapshot_created_at
 }
-"todo_app_todo_statuses" {
-  String id PK
-  String code UK
-  String name
-  String description "nullable"
-  Boolean is_active
-  DateTime created_at
-}
-"todo_app_todo_priorities" {
-  String id PK
-  String code UK
-  String name
-  String description "nullable"
-  Int weight
-  Boolean is_active
-  DateTime created_at
-}
-"todo_app_todo_lifecycles" {
-  String id PK
-  String todo_app_todo_id FK,UK
-  String todo_app_todo_snapshot_id FK
-  DateTime updated_at
-}
-"todo_app_todo_snapshots" }o--|| "todo_app_todos" : todo
-"todo_app_todo_snapshots" }o--|| "todo_app_todo_statuses" : status
-"todo_app_todo_snapshots" }o--o| "todo_app_todo_priorities" : priority
-"todo_app_todo_lifecycles" |o--|| "todo_app_todos" : todo
-"todo_app_todo_lifecycles" }o--|| "todo_app_todo_snapshots" : currentSnapshot
 ```
 
-### `todo_app_todos`
+### `todo_list_todos`
 
-Core todo items with immutable attributes and ownership information.
+Business entity representing an individual todo item belonging to a
+single end-user.
 
-Stores the fundamental, immutable attributes of todo items that remain
-constant throughout their lifecycle. This table contains the core
-business data that defines what the todo is, while mutable state
-information is handled through separate lifecycle and snapshot tables.
+Each row records one actionable task with immutable ownership. Enforces
+all business rules for title, description, and allowed state transitions
+(pending, completed, archived). Tracks timestamps for creation, last
+update, and optional completion. Title validation enforced at creation
+and update. Foreign key to the user table ensures todos are always
+associated with a valid owner, but remain private to that user unless
+reviewed by an admin.
 
-Each todo is owned by a specific user and created through an
-authenticated session for audit tracing. The immutable attributes include
-the todo's title, description, and creation context, while status,
-priority, and completion tracking are managed through normalized
-reference tables.
-
-This separation ensures proper normalization and enables comprehensive
-audit trails through the snapshot pattern. Soft deletion is supported
-while maintaining data integrity and recovery capability.
-
-The table serves as the anchor point for todo management, with all
-mutable state tracked through related entities to support robust
-lifecycle management and compliance requirements.
+Supports efficient per-user queries and batch actions within the user's
+scope. No group, tag, or collaborative features are present. Hard
+deletion applies per requirements. State management compliant with audit
+and admin access handled via external tables.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `todo_app_user_id`: Owner user who created this todo. [todo_app_users.id](#todo_app_users)
-- `todo_app_user_session_id`
-  > User session that created this todo for audit tracing. {@link
-  > todo_app_user_sessions.id}
+- `id`: Primary Key. Uniquely identifies each todo item.
+- `todo_list_user_id`
+  > Foreign Key. References the owning user. Must reference an existing user.
+  > [todo_list_users.id](#todo_list_users).
 - `title`
-  > Todo title that briefly describes the task. Required field with maximum
-  > length of 255 characters.
+  > Todo title. Required for creation and update. 1–100 characters, validated
+  > for non-whitespace content.
 - `description`
-  > Detailed description of the todo task. Optional field with maximum length
-  > of 1000 characters.
-- `due_date`: Optional due date for the todo item. Must be in the future if provided.
-- `created_at`: Timestamp when the todo was created.
-- `updated_at`: Timestamp when the todo was last updated.
-- `deleted_at`: Timestamp when the todo was soft deleted. Null for active todos.
-
-### `todo_app_todo_snapshots`
-
-Historical snapshots of todo items for audit trails and version control.
-
-Captures point-in-time states of todo items whenever significant changes
-occur, such as status updates, priority changes, or completion. This
-append-only table provides comprehensive audit trails for compliance,
-debugging, and historical analysis.
-
-Each snapshot references the original todo and includes all mutable state
-information at the time of capture. The system creates new snapshots for
-important state transitions, ensuring complete visibility into the todo's
-lifecycle.
-
-Snapshots are automatically generated by the application when todos are
-modified, providing immutable records of changes. This pattern enables
-features like undo operations, change history viewing, and compliance
-reporting.
-
-The snapshot architecture separates mutable state from immutable todo
-attributes, ensuring proper normalization while maintaining full audit
-capability for business requirements.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `todo_app_todo_id`: Reference to the original todo item. [todo_app_todos.id](#todo_app_todos)
-- `todo_app_todo_status_id`: Status at the time of snapshot creation. [todo_app_todo_statuses.id](#todo_app_todo_statuses)
-- `todo_app_todo_priority_id`
-  > Priority at the time of snapshot creation. {@link
-  > todo_app_todo_priorities.id}
+  > Optional todo description. Maximum 1000 characters. Can be omitted or set
+  > to null on creation/update.
+- `status`
+  > Todo status: permitted values are 'pending', 'completed', or 'archived'.
+  > Enforces business lifecycle transitions.
+- `due_date`
+  > Optional due date in ISO 8601 format. Null if not set. Must not be in the
+  > past for creation/update.
+- `created_at`
+  > Timestamp for when the todo item was created (stored as UTC). Required
+  > for data lifecycle and ordering.
+- `updated_at`
+  > Timestamp for the last time this todo was updated. Maintains user and
+  > admin accountability.
 - `completed_at`
-  > Timestamp when the todo was marked as completed in this snapshot. Null if
-  > not completed.
-- `snapshot_created_at`: Timestamp when this snapshot was created.
+  > Optional timestamp for when the todo was marked as completed. Null unless
+  > status is 'completed'.
 
-### `todo_app_todo_statuses`
+## AuditLogs
 
-Reference table for valid todo status values.
+```mermaid
+erDiagram
+"todo_list_audit_logs" {
+  String id PK
+  String actor_user_id FK "nullable"
+  String actor_admin_id FK "nullable"
+  String actor_user_session_id FK "nullable"
+  String actor_admin_session_id FK "nullable"
+  String affected_todo_id FK "nullable"
+  String event_action
+  String event_status
+  String event_context "nullable"
+  String ip_address "nullable"
+  String user_agent "nullable"
+  DateTime created_at
+}
+```
 
-Defines the possible states a todo item can be in throughout its
-lifecycle. This normalized approach ensures consistent status values
-across the application and enables easy extension of status options
-without schema changes.
+### `todo_list_audit_logs`
 
-Standard status values include: pending (default state), in-progress
-(actively being worked on), and completed (finished). Each status has a
-unique code and descriptive name for user interface display.
+Audit log of security-relevant, admin, and business actions across the
+todo system.
 
-Using a reference table instead of hardcoded enum values provides
-flexibility for future status additions and maintains data integrity
-through foreign key constraints. The table supports internationalization
-and custom status workflows.
+This table records every important operation or event that impacts system
+security, user privacy, admin oversight, or compliance requirements. Log
+entries are immutably written for each actionable event: todo
+create/edit/delete, user/admin login/logout, permission checks, admin
+moderation, authentication failures, and any sensitive business action.
 
-This normalization separates business logic from database schema, making
-the system more maintainable and extensible while ensuring consistent
-status handling across all todo operations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `code`
-  > Unique status code used for system identification. Examples: pending,
-  > in-progress, completed.
-- `name`
-  > Descriptive status name for user interface display. Examples: Pending, In
-  > Progress, Completed.
-- `description`: Detailed explanation of what this status represents.
-- `is_active`: Whether this status is currently available for use.
-- `created_at`: Timestamp when this status was created.
-
-### `todo_app_todo_priorities`
-
-Reference table for valid todo priority levels.
-
-Defines the priority classification system for todo items, enabling
-consistent prioritization across the application. This normalized
-approach separates business logic from database schema and supports
-flexible priority management.
-
-Standard priority levels include: low (non-urgent tasks), medium (normal
-priority), and high (urgent tasks). Each priority has a unique code,
-display name, and optional weighting for sorting.
-
-The reference table pattern allows for easy extension of priority options
-and maintains data integrity through foreign key constraints. It supports
-customization of priority systems for different user preferences or
-organizational needs.
-
-By normalizing priorities, the system achieves better data consistency
-and enables features like priority-based filtering, sorting, and
-notification systems without hardcoded business logic in the schema.
+Each entry references the acting entity (user or admin), affected todo
+(if applicable), session, and includes rich event and context metadata
+for compliance, investigations, and business monitoring. The log supports
+traceability, operational monitoring, security audits, and legal
+reporting. Entries are never deleted or updated: append-only, supporting
+strict historical query and forensics.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `code`
-  > Unique priority code used for system identification. Examples: low,
-  > medium, high.
-- `name`
-  > Descriptive priority name for user interface display. Examples: Low,
-  > Medium, High.
-- `description`: Detailed explanation of what this priority level represents.
-- `weight`: Numerical weight for sorting purposes (lower numbers = higher priority).
-- `is_active`: Whether this priority is currently available for use.
-- `created_at`: Timestamp when this priority was created.
-
-### `todo_app_todo_lifecycles`
-
-Current lifecycle state of todo items for real-time status tracking.
-
-Maintains the present state of each todo item, including current status,
-priority, and completion information. This table represents the mutable
-aspects of todo management while the main todo table contains immutable
-attributes.
-
-Each lifecycle record points to the current snapshot, ensuring data
-consistency between real-time state and historical tracking. The system
-updates this table whenever todo state changes, providing efficient
-access to current todo information without querying historical snapshots.
-
-This separation enables efficient querying for current todo states while
-maintaining comprehensive audit trails through the snapshot pattern. It
-also supports concurrent todo modifications by isolating mutable state
-from immutable attributes.
-
-The lifecycle table serves as the performance-optimized access point for
-most todo operations, with snapshots providing the historical record for
-compliance and analysis purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `todo_app_todo_id`: Reference to the todo item. [todo_app_todos.id](#todo_app_todos)
-- `todo_app_todo_snapshot_id`
-  > Reference to the current snapshot representing this state. {@link
-  > todo_app_todo_snapshots.id}
-- `updated_at`: Timestamp when this lifecycle state was last updated.
+- `id`
+  > Primary key for the audit log entry. Globally unique identifier assigned
+  > at insertion, ensuring each record is immutable and traceable.
+- `actor_user_id`
+  > References the user who performed the action, if a user initiated this
+  > event. Nullable; use actor_admin_id for admin actions. {@link
+  > todo_list_users.id}.
+- `actor_admin_id`
+  > References the admin who performed the action, if admin initiated.
+  > Nullable; use actor_user_id for user-initiated events. {@link
+  > todo_list_admins.id}.
+- `actor_user_session_id`
+  > References the user session tied to the action, if event is linked to a
+  > user session. Nullable. [todo_list_user_sessions.id](#todo_list_user_sessions).
+- `actor_admin_session_id`
+  > References the admin session if the action was performed during an admin
+  > session. Nullable. [todo_list_admin_sessions.id](#todo_list_admin_sessions).
+- `affected_todo_id`
+  > References a specific todo if the action/event affects a todo. Nullable
+  > for global/auth events not linked to a todo. [todo_list_todos.id](#todo_list_todos).
+- `event_action`
+  > Describes the action taken or event type (e.g., 'todo_create',
+  > 'todo_edit', 'user_login', 'admin_lock_user', 'permission_denied').
+  > Application-defined event type for robust filtering and analytics.
+- `event_status`
+  > Result status of the event ('success', 'failure', 'denied', etc). Enables
+  > filtering audit logs by outcome and error/failure reporting in compliance
+  > reviews.
+- `event_context`
+  > Free-form context data (JSON or string) capturing additional
+  > details—affected columns, before/after state, request metadata, error
+  > codes. Used for deep auditing, investigation, or legal review. Can be
+  > null if event has no extra context.
+- `ip_address`
+  > IP address of the actor/session generating the event, if available.
+  > Nullable.
+- `user_agent`
+  > User agent string (browser/app version) from HTTP request, if captured.
+  > Nullable. Supports threat analysis and anomaly detection.
+- `created_at`
+  > Timestamp (UTC) when the audit event was logged. Immutable and required
+  > for all records. Used for temporal queries, trending, and compliance
+  > timelines.

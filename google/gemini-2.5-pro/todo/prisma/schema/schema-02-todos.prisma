@@ -1,0 +1,57 @@
+/// Todo items for individual users.
+///
+/// This table stores all todo entries created by users. Each todo is
+/// strictly owned by a single user, represented by a foreign key reference
+/// to the {@link todo_users} table. The model enforces field level
+/// constraints per requirements: 'title' is always required (1-255 char),
+/// 'description' is optional (up to 1000 chars), and 'status' can only be
+/// 'complete' or 'incomplete'. Each todo includes timestamps for creation,
+/// last update, and (optionally) completion to support rapid lookup,
+/// sorting, and user-facing status. This model provides strong ownership
+/// enforcement—no sharing, delegation, or multi-user association is
+/// possible. All CRUD operations are limited to the owning user. Hard
+/// deletes (no deleted_at) are specified per business requirement. All
+/// business, validation, and ownership rules are enforced at the schema and
+/// API layers.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this todo, referencing a registered user. Foreign key to {@link
+  /// todo_users.id}.
+  todo_user_id String
+  
+  /// Todo title (1-255 characters). Required at all times.
+  title String
+  
+  /// Optional description with maximum 1000 characters.
+  description String?
+  
+  /// Completion status; allowed values are 'incomplete' or 'complete'. Only
+  /// these two string values are valid.
+  status String
+  
+  /// Timestamp of todo creation (UTC, ISO8601).
+  created_at DateTime
+  
+  /// Timestamp of last modification (UTC, ISO8601).
+  updated_at DateTime
+  
+  /// Timestamp when todo was marked as complete (UTC, ISO8601). Null if
+  /// incomplete.
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_user_id, created_at])
+  @@index([todo_user_id, updated_at])
+}

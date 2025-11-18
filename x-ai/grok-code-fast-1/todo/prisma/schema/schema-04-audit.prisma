@@ -1,0 +1,56 @@
+/// System audit log entries for privileged administrative events and
+/// compliance tracking.
+///
+/// Captures every significant admin action or sensitive event affecting user
+/// data or system configuration. Each entry includes the precise actor
+/// (admin or system service), affected target (user or resource), event
+/// type/category, timestamp, and an optional narrative or details for audit
+/// clarity.
+///
+/// Serves as an immutable, append-only history to ensure legal and business
+/// compliance—supporting forensics, investigation, and external audit. No
+/// audit event can be changed or deleted. Foreign keys reference existing
+/// administrator and user tables for actor/target traceability. Optimized
+/// for search and filterability on date, actor, target, and event type.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for each audit event.
+  id String @id
+  
+  /// Administrator responsible for the event. References {@link
+  /// todo_list_admins.id}.
+  admin_id String
+  
+  /// (Optional) User account affected by the event. May be null if event does
+  /// not target a specific user. References {@link todo_list_users.id}.
+  target_user_id String?
+  
+  /// The type or category of event (e.g., 'user_deletion', 'todo_removed',
+  /// 'permission_changed', 'login_failed', 'system_restart'). Must be a short,
+  /// machine-readable string.
+  event_type String
+  
+  /// Precise timestamp of when the event occurred (in UTC ISO8601; required
+  /// for every entry).
+  event_time DateTime
+  
+  /// Optional narrative or context describing the event (who, what, why, and
+  /// business reason for privileged interventions). Up to 2000 characters.
+  details String?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  targetUser todo_list_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_user_id])
+  
+  @@index([event_time, event_type])
+  @@index([admin_id, event_time])
+}

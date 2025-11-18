@@ -1,12 +1,11 @@
 import { tags } from "typia";
 
+/** JWT Payload for authenticated todo list users. */
 export interface UserPayload {
-  /** Top-level user table ID (the fundamental user identifier in the system). */
+  /** Top-level unique user identifier. */
   id: string & tags.Format<"uuid">;
-
-  /** Session ID associated with the user. */
+  /** Session identifier for the user's login session. */
   session_id: string & tags.Format<"uuid">;
-
-  /** Discriminator for the discriminated union type. */
+  /** Discriminator for the user actor type. */
   type: "user";
 }

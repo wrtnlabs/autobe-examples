@@ -13,24 +13,22 @@ import { AdminPayload } from "../decorators/payload/AdminPayload";
 export async function getTodoListAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
-}): Promise<ITodoListAdmin.ISummary> {
-  const targetAdmin = await MyGlobal.prisma.todo_list_admins.findUnique({
-    where: {
-      id: props.adminId,
-    },
+}): Promise<ITodoListAdmin> {
+  const admin = await MyGlobal.prisma.todo_list_admins.findUnique({
+    where: { id: props.adminId },
   });
 
-  if (!targetAdmin) {
-    throw new HttpException("Administrator not found", 404);
+  if (!admin) {
+    throw new HttpException("Administrator account not found.", 404);
   }
 
   return {
-    id: targetAdmin.id,
-    email: targetAdmin.email,
-    created_at: toISOStringSafe(targetAdmin.created_at),
-    updated_at: toISOStringSafe(targetAdmin.updated_at),
-    deleted_at: targetAdmin.deleted_at
-      ? toISOStringSafe(targetAdmin.deleted_at)
-      : null,
+    id: admin.id,
+    email: admin.email,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    disabled_at: admin.disabled_at
+      ? toISOStringSafe(admin.disabled_at)
+      : undefined,
   };
 }

@@ -10,6 +10,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 import { IPageITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoListTodo";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoListUserTodos(props: {
@@ -17,92 +18,80 @@ export async function patchTodoListUserTodos(props: {
   body: ITodoListTodo.IRequest;
 }): Promise<IPageITodoListTodo.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
 
-  const whereCondition: Record<string, unknown> = {
-    todo_list_user_id: props.user.id,
-    deleted_at: null,
+  const where = {
+    user_id: props.user.id,
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.search && {
+      OR: [
+        { title: { contains: props.body.search } },
+        { description: { contains: props.body.search } },
+      ],
+    }),
+    ...(props.body.due_date_from || props.body.due_date_to
+      ? {
+          due_date: {
+            ...(props.body.due_date_from && { gte: props.body.due_date_from }),
+            ...(props.body.due_date_to && { lte: props.body.due_date_to }),
+          },
+        }
+      : {}),
   };
 
-  if (props.body.search) {
-    whereCondition.OR = [
-      { title: { contains: props.body.search, mode: "insensitive" as const } },
-      {
-        description: {
-          contains: props.body.search,
-          mode: "insensitive" as const,
-        },
-      },
-    ];
-  }
-
-  if (props.body.status !== undefined && props.body.status !== null) {
-    whereCondition.status = props.body.status;
-  }
-
-  if (props.body.completed !== undefined && props.body.completed !== null) {
-    whereCondition.completed = props.body.completed;
-  }
-
-  if (props.body.priority !== undefined && props.body.priority !== null) {
-    whereCondition.priority = props.body.priority;
-  }
-
-  if (props.body.due_after || props.body.due_before) {
-    const dueDateCondition: Record<string, unknown> = {};
-    if (props.body.due_after) {
-      dueDateCondition.gte = props.body.due_after;
-    }
-    if (props.body.due_before) {
-      dueDateCondition.lte = props.body.due_before;
-    }
-    whereCondition.due_date = dueDateCondition;
-  }
-
-  const orderByField = props.body.order_by ?? "created_at";
-  const orderByDirection = props.body.order_direction ?? "desc";
-  const orderBy = { [orderByField]: orderByDirection };
-
-  const [data, total] = await Promise.all([
+  const [todos, total] = await Promise.all([
     MyGlobal.prisma.todo_list_todos.findMany({
-      where: whereCondition,
+      where,
       skip,
       take: limit,
-      orderBy,
+      orderBy: { created_at: "desc" },
+      include: { user: true },
     }),
-    MyGlobal.prisma.todo_list_todos.count({
-      where: whereCondition,
-    }),
+    MyGlobal.prisma.todo_list_todos.count({ where }),
   ]);
 
-  const summaries: ITodoListTodo.ISummary[] = data.map((todo) => ({
+  const data = todos.map((todo) => ({
     id: todo.id,
+    user: {
+      id: todo.user.id,
+      email: todo.user.email,
+      created_at: toISOStringSafe(todo.user.created_at),
+      updated_at: toISOStringSafe(todo.user.updated_at),
+      disabled_at: todo.user.disabled_at
+        ? toISOStringSafe(todo.user.disabled_at)
+        : null,
+    },
     title: todo.title,
-    description: todo.description ?? undefined,
-    status: typia.assert<"completed" | "pending" | "in_progress" | "cancelled">(
-      todo.status,
-    ),
-    priority:
-      todo.priority !== null && todo.priority !== undefined
-        ? typia.assert<"low" | "medium" | "high">(todo.priority)
-        : undefined,
-    due_date: todo.due_date ? toISOStringSafe(todo.due_date) : undefined,
-    completed: todo.completed,
-    completed_at: todo.completed_at
-      ? toISOStringSafe(todo.completed_at)
+    description: Object.prototype.hasOwnProperty.call(todo, "description")
+      ? (todo.description ?? null)
+      : undefined,
+    status: typia.assert<"pending" | "completed" | "deleted">(todo.status),
+    due_date: Object.prototype.hasOwnProperty.call(todo, "due_date")
+      ? todo.due_date
+        ? toISOStringSafe(todo.due_date)
+        : null
+      : undefined,
+    completed_at: Object.prototype.hasOwnProperty.call(todo, "completed_at")
+      ? todo.completed_at
+        ? toISOStringSafe(todo.completed_at)
+        : null
       : undefined,
     created_at: toISOStringSafe(todo.created_at),
     updated_at: toISOStringSafe(todo.updated_at),
+    deleted_at: Object.prototype.hasOwnProperty.call(todo, "deleted_at")
+      ? todo.deleted_at
+        ? toISOStringSafe(todo.deleted_at)
+        : null
+      : undefined,
   }));
 
-  return {
-    data: summaries,
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
+  const pagination = {
+    current: page satisfies number as number,
+    limit: limit satisfies number as number,
+    records: total,
+    pages: Math.ceil(total / limit),
   };
+
+  return { pagination, data };
 }

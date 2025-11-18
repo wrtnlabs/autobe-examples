@@ -1,69 +1,185 @@
-/// User accounts for the Todo application.
+/// Registered user accounts for the Todo List application.
 ///
-/// Registered users who can authenticate to the system and manage their
-/// personal todo items.
-/// Each user is identified by email and manages their account independently.
+/// Each user is an independent actor who can manage their own personal
+/// todos. The model stores core identity and authentication details,
+/// including a unique email address and a securely stored password hash.
+/// Profile management features such as display name are provided for
+/// personalization, subject to length constraints. Account lifecycle and
+/// security are handled via soft deletion and timestamp fields. Only this
+/// entity serves as the origin of ownership for user-created data in the
+/// system. Soft deletion supports user-driven deactivation or admin
+/// suspension. User accounts are never accessible by other users, and all
+/// business logic enforces strict isolation of user data across the
+/// application.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_users {
+model todo_list_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address used for authentication and identification.
+  /// Unique email address used for authentication. Must conform to RFC
+  /// standards and be unique across all users.
   email String
   
-  /// Hashed password for user authentication. Never stores plain text
-  /// passwords.
+  /// Secure, one-way hash of the user password. Plain-text passwords are never
+  /// stored.
   password_hash String
+  
+  /// User's visible profile name. Must be 2–50 characters.
+  display_name String
   
   /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp when the user account was last modified.
+  /// Timestamp for the most recent profile change.
   updated_at DateTime
+  
+  /// Timestamp for when the account was soft deleted (voluntary or
+  /// admin-initiated).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_app_user_sessions todo_app_user_sessions[]
-  todo_app_todos todo_app_todos[]
+  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_todos todo_list_todos[]
+  todo_list_audit_logs todo_list_audit_logs[]
   
   @@unique([email])
 }
 
-/// Authentication sessions for tracking user login activities.
+/// Authentication session records for users.
 ///
-/// Sessions are created when users authenticate and track connection details
-/// for security auditing.
-/// Each session is managed through the authentication flow and expires after
-/// configured duration.
+/// Each session represents a single login or authentication event for a
+/// user. Sessions track login context including IP address, connection URL,
+/// and referrer as required for audit and compliance. Unique to each user,
+/// allowing multiple concurrent sessions. Expiration field is provided for
+/// immediate or scheduled logout. All session objects are managed through
+/// this table to maintain strict traceability, session duration control, and
+/// regulatory audit logging. Sessions never store tokens or device
+/// fingerprints, only raw connection context and timestamps.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_sessions {
+model todo_list_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged user's {@link todo_app_users.id}.
-  todo_app_user_id String
+  /// Reference to the owning user account. {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// IP address from which the user authenticated.
+  /// IP address at login.
   ip String
   
-  /// URL where authentication occurred.
+  /// Connection URL at login.
   href String
   
-  /// Referrer information for the authentication request.
+  /// Referrer URL at session start.
   referrer String
   
   /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was explicitly ended.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}
+
+/// Administrative accounts for system management and oversight.
+///
+/// Admins maintain overall system health, enforce business rules, audit user
+/// activity, and respond to support incidents. Each admin account includes
+/// unique identification via email and secure password storage. Admins do
+/// not create personal todos, but their actions are logged for traceability
+/// and compliance. The model supports soft deletion for account revocation
+/// or security purposes. All privileged operations, such as user suspension
+/// and audit log access, are performed under an authenticated admin
+/// identity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for admin authentication. Must conform to RFC
+  /// standards and be unique among admins.
+  email String
+  
+  /// Secure one-way hash of the admin's password. Never stored in plain text.
+  password_hash String
+  
+  /// Visible admin profile name used for identification in audit logs. Must be
+  /// 2–50 characters.
+  display_name String
+  
+  /// Timestamp for account creation.
+  created_at DateTime
+  
+  /// Timestamp for most recent profile or credential update.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion (revocation/suspension/voluntary exit).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_admin_sessions todo_list_admin_sessions[]
+  todo_list_audit_logs todo_list_audit_logs[]
+  
+  @@unique([email])
+}
+
+/// Authentication session records for administrators.
+///
+/// Each record represents a single login session for an admin account,
+/// including IP, connection URL, and referrer details for compliance and
+/// security auditing. Sessions enable tracing of every admin action to an
+/// authenticated session and identity. Expiration datetime supports
+/// scheduled or manual logout. Multiple concurrent sessions are allowed for
+/// administrative flexibility. All privileged system operations are executed
+/// in the context of a session in this table. No personal data beyond
+/// session context and actor reference is stored here.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning admin account. {@link todo_list_admins.id}.
+  todo_list_admin_id String
+  
+  /// IP address at session start.
+  ip String
+  
+  /// Connection URL used by the admin at login.
+  href String
+  
+  /// Referrer URL for audit traceability.
+  referrer String
+  
+  /// Timestamp for session creation.
   created_at DateTime
   
   /// Timestamp when the session expired or was terminated.
@@ -72,7 +188,7 @@ model todo_app_user_sessions {
   //----
   // RELATIONS
   //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_app_user_id, created_at])
+  @@index([todo_list_admin_id, created_at])
 }

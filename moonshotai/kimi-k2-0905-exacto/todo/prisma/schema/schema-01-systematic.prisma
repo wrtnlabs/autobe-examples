@@ -1,57 +1,51 @@
-/// System-wide application configuration settings.
+/// Global system settings and platform-wide configuration parameters.
 ///
-/// Stores key-value pairs for application-wide settings that control system
-/// behavior, features, and operational parameters. These configurations
-/// affect all users and are typically managed by system administrators
-/// rather than individual users.
+/// This table stores platform-level flags, operational options, or dynamic
+/// infrastructure configuration values that affect the overall behavior of
+/// the Todo List service. It allows the backend to flexibly enable, disable,
+/// or adjust global features without redeployment. Each record represents a
+/// uniquely identified setting (by key), with support for versioned values,
+/// clear description, and retrieval metadata.
 ///
-/// Configurations include settings like maximum task limits, session
-/// timeouts, feature flags, and other system-level parameters that maintain
-/// consistent application behavior across all user interactions. Each
-/// configuration entry maintains a unique key with flexible value storage
-/// for different data types.
+/// This is the authoritative source for all service-wide configuration
+/// values. There are no foreign keys; all relationships are internal to this
+/// domain component. Optimized for rapid lookup and extensibility.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_configurations {
+model todo_list_system_settings {
   //----
   // COLUMNS
   //----
-  /// Primary Key
+  /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifier used for lookups and type safety
-  /// validation
+  /// Unique setting identifier. This field acts as a business-meaningful key
+  /// for the configuration parameter (e.g., 'max_login_attempts',
+  /// 'enable_signup'). Maximum length: 100 characters. Index enforced.
   key String
   
-  /// Configuration value stored as string with flexible parsing for different
-  /// data types
+  /// Setting value as a string. Used to store dynamic configuration values in
+  /// string format. Up to 1024 characters. Application responsible for
+  /// type-casting on retrieval.
   value String
   
-  /// Human-readable description explaining the configuration's purpose and
-  /// usage
+  /// Detailed description of the setting. Used for documenting the business
+  /// context, operational semantics, or instructions for each platform option.
+  /// Optional, for service administrator reference.
   description String?
   
-  /// Configuration category grouping for organization and administrative
-  /// management
-  category String?
-  
-  /// Whether this configuration is currently active and enforced by the system
-  is_enabled Boolean
-  
-  /// Timestamp when the configuration was initially created
+  /// Timestamp indicating when the setting was first created. Set by the
+  /// backend upon insertion (ISO 8601 format, UTC).
   created_at DateTime
   
-  /// Timestamp when the configuration was last modified
+  /// Timestamp of the most recent update to this setting. Managed by the
+  /// backend (ISO 8601 format, UTC).
   updated_at DateTime
-  
-  /// Soft deletion timestamp for configuration history
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([category, is_enabled])
-  @@index([created_at])
+  @@index([created_at, updated_at])
 }

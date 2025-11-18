@@ -1,32 +1,30 @@
 import { Module } from "@nestjs/common";
 
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodoappUserAuthSessionsController } from "./controllers/todoApp/user/auth/sessions/TodoappUserAuthSessionsController";
-import { TodoappAuthUsersSessionsController } from "./controllers/todoApp/auth/users/sessions/TodoappAuthUsersSessionsController";
-import { TodoappUserAuthUsersController } from "./controllers/todoApp/user/auth/users/TodoappUserAuthUsersController";
-import { TodoappUserAuthProfileController } from "./controllers/todoApp/user/auth/profile/TodoappUserAuthProfileController";
-import { TodoappUserAuthUsersProfileController } from "./controllers/todoApp/user/auth/users/profile/TodoappUserAuthUsersProfileController";
-import { TodoappUserAuthUsersSecurityController } from "./controllers/todoApp/user/auth/users/security/TodoappUserAuthUsersSecurityController";
-import { TodoappUserAuthUsersActivityController } from "./controllers/todoApp/user/auth/users/activity/TodoappUserAuthUsersActivityController";
-import { TodoappUserTasksController } from "./controllers/todoApp/user/tasks/TodoappUserTasksController";
-import { TodoappUserTasksnapshotsController } from "./controllers/todoApp/user/taskSnapshots/TodoappUserTasksnapshotsController";
-import { TodoappConfigurationsController } from "./controllers/todoApp/configurations/TodoappConfigurationsController";
-import { TodoappUserConfigurationsController } from "./controllers/todoApp/user/configurations/TodoappUserConfigurationsController";
+import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
+import { TodolistAdminSystemsettingsController } from "./controllers/todoList/admin/systemSettings/TodolistAdminSystemsettingsController";
+import { TodolistAdminUsersController } from "./controllers/todoList/admin/users/TodolistAdminUsersController";
+import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
+import { TodolistAdminUsersSessionsController } from "./controllers/todoList/admin/users/sessions/TodolistAdminUsersSessionsController";
+import { TodolistAdminAdminsController } from "./controllers/todoList/admin/admins/TodolistAdminAdminsController";
+import { TodolistAdminAdminsSessionsController } from "./controllers/todoList/admin/admins/sessions/TodolistAdminAdminsSessionsController";
+import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
+import { TodolistAdminTodosController } from "./controllers/todoList/admin/todos/TodolistAdminTodosController";
+import { TodolistAdminTodosAuditlogsController } from "./controllers/todoList/admin/todos/auditLogs/TodolistAdminTodosAuditlogsController";
 
 @Module({
   controllers: [
     AuthUserController,
-    TodoappUserAuthSessionsController,
-    TodoappAuthUsersSessionsController,
-    TodoappUserAuthUsersController,
-    TodoappUserAuthProfileController,
-    TodoappUserAuthUsersProfileController,
-    TodoappUserAuthUsersSecurityController,
-    TodoappUserAuthUsersActivityController,
-    TodoappUserTasksController,
-    TodoappUserTasksnapshotsController,
-    TodoappConfigurationsController,
-    TodoappUserConfigurationsController,
+    AuthAdminController,
+    TodolistAdminSystemsettingsController,
+    TodolistAdminUsersController,
+    TodolistUserUsersController,
+    TodolistAdminUsersSessionsController,
+    TodolistAdminAdminsController,
+    TodolistAdminAdminsSessionsController,
+    TodolistUserTodosController,
+    TodolistAdminTodosController,
+    TodolistAdminTodosAuditlogsController,
   ],
 })
 export class MyModule {}

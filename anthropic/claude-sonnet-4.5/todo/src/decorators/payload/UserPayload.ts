@@ -1,12 +1,16 @@
 import { tags } from "typia";
 
+/**
+ * Payload for authenticated Todo List user via JWT. Contains the top-level user
+ * account ID and session information.
+ */
 export interface UserPayload {
-  /** Top-level user table ID (the fundamental user identifier in the system). */
+  /** Top-level user account UUID (todo_list_users.id). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the authenticated user. */
+  /** The session ID associated with the authenticated session. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the discriminated union type. */
+  /** Discriminator for user authentication type. */
   type: "user";
 }

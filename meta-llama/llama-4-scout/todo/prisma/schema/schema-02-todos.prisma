@@ -1,0 +1,75 @@
+/// Table of actionable todo items for users.
+///
+/// This primary business entity stores each individual task a user creates
+/// in the minimalist todo application. Every todo is strictly owned by a
+/// single user, enforced by a foreign key reference to the user table
+/// ({@link todo_list_users.id}).
+///
+/// The table includes all validated business fields: a required, trimmed
+/// title; an optional extended description; an optional due date; and
+/// completion workflow tracked by 'is_completed' and 'completed_at'.
+///
+/// Temporal columns provide complete auditability for all list operations:
+/// creation, update, and completion are timestamped to ISO 8601 UTC. Each
+/// row may be accessed and managed only by its owning user, with all access
+/// control and CRUD operations enforced at the application/service layer and
+/// indexed for query performance.
+///
+/// This table admits no sharing or collaborative features and holds no
+/// denormalized or calculated fields. All business logic for todo
+/// management, completion toggling, and list UI operations is satisfied via
+/// this model and its comprehensive field set. The design guarantees strict
+/// data privacy, 3NF normalization, and production-grade scalability in a
+/// single-user context.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each todo item, generated as UUID at
+  /// creation.
+  id String @id
+  
+  /// Owning user who created and may access this todo. {@link
+  /// todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Short, required title for the todo item (1–100 characters, trimmed). Must
+  /// be non-empty and unique only within the business context of the user.
+  title String
+  
+  /// Optional extended detail for the todo. Maximum 1000 characters; null or
+  /// empty permitted.
+  description String?
+  
+  /// Optional due date for the todo in ISO 8601 UTC format. Must be present or
+  /// future if set; null is allowed for floating tasks.
+  due_date DateTime?
+  
+  /// Completion status of the todo. True if the item is finished, false for
+  /// pending tasks. Can only be changed by the owner.
+  is_completed Boolean
+  
+  /// Timestamp when the todo was completed. System-managed; set to UTC now
+  /// when is_completed becomes true, cleared when reverted to incomplete. Null
+  /// if never completed.
+  completed_at DateTime?
+  
+  /// System-managed timestamp for todo creation (ISO 8601 UTC). Readonly to
+  /// users.
+  created_at DateTime
+  
+  /// System-managed timestamp for last modification. Always updated on any
+  /// change (ISO 8601 UTC). Readonly to users.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, is_completed, due_date])
+}

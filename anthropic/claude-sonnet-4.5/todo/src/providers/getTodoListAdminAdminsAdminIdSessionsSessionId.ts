@@ -16,38 +16,35 @@ export async function getTodoListAdminAdminsAdminIdSessionsSessionId(props: {
   adminId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<ITodoListAdminSession> {
-  const session = await MyGlobal.prisma.todo_list_admin_sessions.findUnique({
-    where: { id: props.sessionId },
-    include: { admin: true },
+  const record = await MyGlobal.prisma.todo_list_admin_sessions.findFirst({
+    where: {
+      id: props.sessionId,
+      todo_list_admin_id: props.adminId,
+    },
+    include: {
+      admin: true,
+    },
   });
 
-  if (!session) {
-    throw new HttpException("Session not found", 404);
-  }
-
-  if (session.todo_list_admin_id !== props.adminId) {
-    throw new HttpException(
-      "Session does not belong to the specified admin",
-      403,
-    );
+  if (!record || !record.admin) {
+    throw new HttpException("Admin session not found", 404);
   }
 
   return {
-    id: session.id,
-    todo_list_admin_id: session.todo_list_admin_id,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at),
-    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
+    id: record.id,
     admin: {
-      id: session.admin.id,
-      email: session.admin.email,
-      created_at: toISOStringSafe(session.admin.created_at),
-      updated_at: toISOStringSafe(session.admin.updated_at),
-      deleted_at: session.admin.deleted_at
-        ? toISOStringSafe(session.admin.deleted_at)
-        : null,
+      id: record.admin.id,
+      email: record.admin.email,
+      disabled_at: record.admin.disabled_at
+        ? toISOStringSafe(record.admin.disabled_at)
+        : undefined,
     },
+    ip: record.ip,
+    href: record.href,
+    referrer: record.referrer,
+    created_at: toISOStringSafe(record.created_at),
+    expired_at: record.expired_at
+      ? toISOStringSafe(record.expired_at)
+      : undefined,
   };
 }

@@ -17,42 +17,58 @@ export async function postAuthUserLogin(props: {
   const user = await MyGlobal.prisma.todo_list_users.findFirst({
     where: { email: props.body.email },
   });
-  if (!user) {
-    throw new HttpException("Invalid email or password", 401);
+  if (
+    !user ||
+    user.deleted_at !== null ||
+    user.locked === true ||
+    user.is_verified === false
+  ) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 2: Verify password
-  const isValid = await PasswordUtil.verify(
+  // Step 2: Validate password
+  const passwordValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-  if (!isValid) {
-    throw new HttpException("Invalid email or password", 401);
+  if (!passwordValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 3: Create session record
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+  // Step 3: Create session
+  const sessionId = v4();
+  const now = toISOStringSafe(new Date());
+  const accessDurationMs = 60 * 60 * 1000; // 1 hour
+  const refreshDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const accessExpiresAt = toISOStringSafe(
+    new Date(Date.now() + accessDurationMs),
+  );
+  const refreshExpiresAt = toISOStringSafe(
+    new Date(Date.now() + refreshDurationMs),
+  );
+
+  await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4(),
-      user_id: user.id,
-      ip: props.body.ip ?? "", // always provide a string, never null
+      id: sessionId,
+      todo_list_user_id: user.id,
+      ip:
+        props.body.ip !== undefined && props.body.ip !== null
+          ? (props.body.ip satisfies string as string)
+          : "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: toISOStringSafe(now),
-      expired_at: toISOStringSafe(accessExpires),
+      created_at: now,
+      expired_at: accessExpiresAt,
     },
   });
 
-  // Step 4: Create JWT tokens
+  // Step 4: Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "user",
       id: user.id,
-      session_id: session.id,
-      created_at: toISOStringSafe(now),
+      session_id: sessionId,
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -64,9 +80,9 @@ export async function postAuthUserLogin(props: {
     {
       type: "user",
       id: user.id,
-      session_id: session.id,
+      session_id: sessionId,
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -74,14 +90,29 @@ export async function postAuthUserLogin(props: {
       issuer: "autobe",
     },
   );
+
   return {
     id: user.id,
     email: user.email,
+    is_verified: user.is_verified,
+    locked: user.locked,
+    locked_at: user.locked_at ? toISOStringSafe(user.locked_at) : undefined,
+    email_verification_token: user.email_verification_token ?? undefined,
+    email_verification_sent_at: user.email_verification_sent_at
+      ? toISOStringSafe(user.email_verification_sent_at)
+      : undefined,
+    reset_password_token: user.reset_password_token ?? undefined,
+    reset_password_sent_at: user.reset_password_sent_at
+      ? toISOStringSafe(user.reset_password_sent_at)
+      : undefined,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      expired_at: accessExpiresAt,
+      refreshable_until: refreshExpiresAt,
     },
   };
 }

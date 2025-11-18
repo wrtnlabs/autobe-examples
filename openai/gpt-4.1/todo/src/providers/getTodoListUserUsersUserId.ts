@@ -14,21 +14,26 @@ export async function getTodoListUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<ITodoListUser> {
-  if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "You are only permitted to view your own user record.",
-      403,
-    );
-  }
-
   const user = await MyGlobal.prisma.todo_list_users.findUnique({
-    where: { id: props.userId },
+    where: { id: props.userId, deleted_at: null },
   });
-  if (!user) {
-    throw new HttpException("User not found.", 404);
-  }
+  if (!user) throw new HttpException("User not found", 404);
   return {
     id: user.id,
     email: user.email,
+    is_verified: user.is_verified,
+    locked: user.locked,
+    locked_at: user.locked_at ? toISOStringSafe(user.locked_at) : undefined,
+    email_verification_token: user.email_verification_token ?? undefined,
+    email_verification_sent_at: user.email_verification_sent_at
+      ? toISOStringSafe(user.email_verification_sent_at)
+      : undefined,
+    reset_password_token: user.reset_password_token ?? undefined,
+    reset_password_sent_at: user.reset_password_sent_at
+      ? toISOStringSafe(user.reset_password_sent_at)
+      : undefined,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
   };
 }

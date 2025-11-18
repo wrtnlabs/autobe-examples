@@ -4,30 +4,34 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 /**
- * Authenticates a registered user of the Todo List application via JWT and verifies active status.
- *
- * @param request HTTP request containing bearer token in headers
- * @returns Authenticated user payload, if valid; throws otherwise
+ * Authenticate and authorize Todo List user via JWT and database checks.
  */
 export async function userAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string }
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
-
   if (payload.type !== "user") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-
-  // Authenticate that the user exists in the database by primary key
-  const user = await MyGlobal.prisma.todo_list_users.findUnique({
-    where: { id: payload.id },
+  // Validate active session
+  const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      todo_list_user_id: payload.id
+    }
   });
+  if (!session)
+    throw new ForbiddenException("Invalid or expired session");
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
-  }
-
+  // Validate the main user account is active
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      id: payload.id,
+      deleted_at: null,
+      locked: false
+    }
+  });
+  if (!user)
+    throw new ForbiddenException("User not found or access revoked");
   return payload;
 }

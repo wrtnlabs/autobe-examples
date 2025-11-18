@@ -9,21 +9,13 @@
 
 ```mermaid
 erDiagram
-"todo_list_guests" {
-  String id PK
-  String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime visited_at
-  DateTime created_at
-}
 "todo_list_users" {
   String id PK
   String email UK
   String password_hash
-  Boolean email_verified
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
+  DateTime disabled_at "nullable"
 }
 "todo_list_user_sessions" {
   String id PK
@@ -40,7 +32,7 @@ erDiagram
   String password_hash
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
+  DateTime disabled_at "nullable"
 }
 "todo_list_admin_sessions" {
   String id PK
@@ -51,271 +43,148 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_list_email_verifications" {
+"todo_list_password_reset_tokens" {
   String id PK
   String todo_list_user_id FK
   String token UK
-  Boolean verified
   DateTime created_at
   DateTime expires_at
-}
-"todo_list_password_resets" {
-  String id PK
-  String todo_list_user_id FK
-  String token UK
-  Boolean used
-  DateTime created_at
-  DateTime expires_at
+  DateTime used_at "nullable"
 }
 "todo_list_user_sessions" }o--|| "todo_list_users" : user
 "todo_list_admin_sessions" }o--|| "todo_list_admins" : admin
-"todo_list_email_verifications" }o--|| "todo_list_users" : user
-"todo_list_password_resets" }o--|| "todo_list_users" : user
+"todo_list_password_reset_tokens" }o--|| "todo_list_users" : user
 ```
-
-### `todo_list_guests`
-
-Unauthenticated visitor tracking for the Todo list application.
-
-Represents anonymous visitors who have not registered or logged in. This
-table tracks basic interaction data for guests accessing public pages
-such as registration and login screens.
-
-Guests have no access to todo management features and cannot create,
-view, or modify any todo items. The primary purpose is to track visitor
-engagement metrics and pre-registration behavior for analytics.
-
-This is a subsidiary entity managed by the system for tracking purposes
-rather than direct user management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `ip_address`: IP address of the guest visitor for tracking and security purposes.
-- `user_agent`
-  > Browser user agent string identifying the client application and device
-  > type.
-- `visited_at`: Timestamp when the guest first visited the application.
-- `created_at`: Timestamp when this guest record was created in the system.
 
 ### `todo_list_users`
 
-Authenticated user accounts for the Todo list application.
+Registered user accounts for the Todo List application.
 
-Represents registered members who can create, manage, and organize their
-personal todo items. Each user account is identified by a unique email
-address and secured with hashed password authentication.
-
-Users have complete ownership and privacy of their todo data. Each user
-can only access and modify their own todo items, ensuring strict data
-isolation. The system enforces user-level permissions through JWT token
-authentication.
-
-This table stores core identity information including email credentials
-and account status. Related user sessions are tracked in the
-todo_list_user_sessions table for authentication management.
-
-Users are the primary actors in the application, with full access to todo
-creation, updating, completion tracking, filtering, sorting, and deletion
-operations on their owned data.
+Each record uniquely identifies an end user by email and handles all
+authentication, authorization, and session initiation actions. Stores
+password hash for credential validation (never raw password). Designed
+for personal and private account management, ensuring 100% data isolation
+from other users. All user actions against Todos trace back to this
+table. Enforces uniqueness on email and supports audit and compliance
+requirements for minimal user data retention.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary Key. Universally unique identifier for this user account.
 - `email`
-  > User email address used for authentication and account identification.
-  > Must be unique across all user accounts.
+  > Unique email address for user login and correspondence. Must be globally
+  > unique per requirements.
 - `password_hash`
-  > Securely hashed user password using bcrypt with minimum cost factor of
-  > 10. Never store plain text passwords.
-- `email_verified`
-  > Whether the user has verified their email address. Users must verify
-  > email before accessing full application features.
-- `created_at`: Timestamp when the user account was created during registration.
-- `updated_at`: Timestamp when the user account information was last modified.
-- `deleted_at`
-  > Soft deletion timestamp. When set, indicates the user account has been
-  > deleted but preserved for audit purposes.
+  > Bcrypt, Argon2 or similar salted password hash. Never store plaintext
+  > passwords. Used only for login validation.
+- `created_at`: Timestamp of account creation (ISO8601, always present).
+- `updated_at`: Timestamp of most recent account update (ISO8601, always present).
+- `disabled_at`
+  > Timestamp indicating when the account was administratively disabled
+  > (nullable; null means active).
 
 ### `todo_list_user_sessions`
 
-Active authentication sessions for registered users.
+User session records for authenticated access tracking.
 
-Tracks user login sessions with connection context and temporal
-information for security audit trails. Each session represents a distinct
-login event from a specific device or location.
-
-Users can have multiple concurrent sessions across different devices.
-Session data enables tracking of user activity, detecting suspicious
-login patterns, and providing users visibility into their active sessions
-for security management.
-
-Sessions are automatically created upon successful user authentication
-and can be terminated through logout actions. The system invalidates all
-sessions when security-sensitive operations occur, such as password
-changes.
-
-This subsidiary entity is managed through user authentication workflows
-rather than direct user manipulation.
+Each session entry records a specific authenticated connection by a user,
+supporting full audit and security best practices. Tracks creation and
+expiry with environment/context fields for compliance. Sessions can be
+invalidated (expired_at) either by timeout, logout, or security events.
+Only references the user table for data isolation, never other
+session/user types. Auditable for every access as required by system
+policies.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary Key. Unique identifier for this user session record.
 - `todo_list_user_id`
-  > Reference to the authenticated user who owns this session. {@link
-  > todo_list_users.id}
-- `ip`: IP address from which the session connection was established.
-- `href`: Connection URL where the session was initiated.
-- `referrer`: Referrer URL that led to the session creation.
-- `created_at`: Session creation timestamp when the user successfully authenticated.
+  > Reference to the authenticated user for this session. {@link
+  > todo_list_users.id}.
+- `ip`
+  > IP address at session initiation. Captured for audit and anomaly
+  > detection.
+- `href`
+  > Connection URL (origin) for session. Provides traceability for session
+  > context.
+- `referrer`
+  > Client referrer URL at session start. Used for security and compliance
+  > investigation.
+- `created_at`: Timestamp of session creation (ISO8601).
 - `expired_at`
-  > Session expiration timestamp when the session ended or was terminated.
-  > Null for active sessions.
+  > Timestamp when session was terminated, expired, or forcibly ended by
+  > security policy (nullable if still active).
 
 ### `todo_list_admins`
 
-System administrator accounts with elevated privileges.
+Platform administrator accounts with privileged access over all user data
+and Todos.
 
-Represents administrative users who can manage user accounts, monitor
-system health, and perform system-wide operations. Admins have access to
-administrative functions including user management, system statistics,
-and configuration.
-
-For their personal todo management, admins follow the same data ownership
-rules as regular users - they can only access and modify their own todo
-items. Administrative privileges do not grant access to other users'
-private todo data except for legitimate support purposes with audit
-logging.
-
-Admin accounts are created by existing administrators through elevated
-authentication processes. Each admin action is logged for accountability
-and security compliance.
-
-This is a primary entity requiring independent account management and
-authentication workflows separate from regular user accounts.
+Admin records support authentication, credential management, and
+audit/compliance oversight. Each admin account has its own unique email
+and secure password hash; no mixing with user roles is permitted.
+Administrators can log in for support, moderation, or audit functions.
+Disabling of admin accounts is allowed for compliance and incident
+response. All admin actions in the system are attributable to records in
+this table.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `email`
-  > Administrator email address used for authentication. Must be unique
-  > across all admin accounts.
+- `id`: Primary Key. Universally unique identifier for admin account.
+- `email`: Unique admin account email, used for login and audit tracking.
 - `password_hash`
-  > Securely hashed administrator password using bcrypt. Admin passwords
-  > follow the same security requirements as user passwords.
-- `created_at`: Timestamp when the administrator account was created.
-- `updated_at`: Timestamp when the administrator account information was last modified.
-- `deleted_at`
-  > Soft deletion timestamp for admin accounts. Maintains audit trail for
-  > removed administrator access.
+  > Hashed admin password for credential validation. Raw passwords are never
+  > stored.
+- `created_at`: Timestamp recording when admin account was first created.
+- `updated_at`: Timestamp for last admin account update.
+- `disabled_at`
+  > Timestamp when admin account was deactivated or disabled for
+  > compliance/security.
 
 ### `todo_list_admin_sessions`
 
-Active authentication sessions for system administrators.
+Administrator session records for system and data access tracking.
 
-Tracks administrator login sessions with connection metadata for security
-monitoring and audit trails. Admin sessions are managed separately from
-user sessions to enable distinct security policies and monitoring.
-
-All administrative actions are associated with specific sessions for
-accountability. The system logs session creation, activity, and
-termination to maintain comprehensive audit trails of administrator
-access.
-
-Admin sessions follow the same concurrent session support as user
-sessions, allowing administrators to maintain multiple active sessions
-across different devices.
-
-This subsidiary entity is managed through administrative authentication
-workflows.
+Tracks individual admin logins and session histories with context fields
+(IP, href, referrer). Sessions are recorded independently of user
+sessions and only reference admin account table. Full audit trail for all
+administrative access, in support of compliance and incident response
+requirements. Sessions may be rendered inactive via expired_at when
+forcibly terminated or logged out.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary Key. Globally unique identifier for this admin session.
 - `todo_list_admin_id`
-  > Reference to the administrator who owns this session. {@link
-  > todo_list_admins.id}
-- `ip`: IP address from which the admin session connection was established.
-- `href`: Connection URL where the admin session was initiated.
-- `referrer`: Referrer URL that led to the admin session creation.
-- `created_at`: Admin session creation timestamp when authentication succeeded.
-- `expired_at`: Admin session expiration timestamp. Null for currently active sessions.
+  > Reference to the administrator owning this session. {@link
+  > todo_list_admins.id}.
+- `ip`: IP address for audit, risk management, and geo/country tracking.
+- `href`: Session initiation URL for context/audit.
+- `referrer`: Referrer URL at session start for anomaly or attack detection.
+- `created_at`: Session start timestamp.
+- `expired_at`: When session ended/expired. Null means currently active session.
 
-### `todo_list_email_verifications`
+### `todo_list_password_reset_tokens`
 
-Email verification tokens for user account activation.
+Password reset tokens for secure credential recovery flows.
 
-Stores unique verification tokens sent to users during registration to
-confirm email ownership. Each token is associated with a user account and
-has a limited validity period for security.
-
-When a user registers, the system generates a verification token and
-sends it via email. Users must click the verification link containing the
-token to activate their account and gain full access to the application.
-
-Tokens expire after 24 hours to prevent abuse. Expired tokens require
-users to request a new verification email. Once a token is successfully
-used for verification, it becomes invalid to prevent reuse.
-
-This subsidiary entity is managed through the registration and email
-verification workflow rather than direct user interaction.
+Each record stores a per-user, one-time-use token valid for password
+reset. Tokens are securely generated, time-limited, and are tightly
+linked to a specific user. Only valid, unexpired, and unused tokens may
+be applied for recovering access to a user account. Used token records
+remain in the system for audit trail purposes. This table is solely for
+credential reset/recovery and not for login/session flows.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `todo_list_user_id`
-  > Reference to the user account requiring email verification. {@link
-  > todo_list_users.id}
+- `id`: Primary Key. Unique identifier per token record.
+- `todo_list_user_id`: Reference to user who owns this reset token. [todo_list_users.id](#todo_list_users).
 - `token`
-  > Unique verification token sent to the user's email address. Used to
-  > verify email ownership.
-- `verified`
-  > Whether this verification token has been successfully used. Once
-  > verified, the token cannot be reused.
-- `created_at`: Timestamp when the verification token was generated and email was sent.
-- `expires_at`
-  > Timestamp when this verification token expires. Tokens are valid for 24
-  > hours after creation.
-
-### `todo_list_password_resets`
-
-Password reset tokens for account recovery workflows.
-
-Manages secure password reset tokens for users who have forgotten their
-passwords. Each token provides time-limited access to reset account
-credentials.
-
-When a user requests password reset, the system generates a unique token
-and sends it via email. The token is valid for 1 hour, providing a secure
-window for password reset while minimizing exposure risk.
-
-Tokens are single-use - once successfully used to reset a password, they
-become invalid. All active user sessions are terminated when a password
-is reset for security.
-
-The system displays success messages for password reset requests
-regardless of whether the email exists, preventing email enumeration
-attacks.
-
-This subsidiary entity is managed through the password reset workflow and
-is not directly manipulated by users.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `todo_list_user_id`
-  > Reference to the user account requesting password reset. {@link
-  > todo_list_users.id}
-- `token`
-  > Unique password reset token sent to the user's email. Used to
-  > authenticate password reset requests.
-- `used`
-  > Whether this reset token has been used to successfully reset the
-  > password. Prevents token reuse.
-- `created_at`: Timestamp when the password reset token was generated and email was sent.
-- `expires_at`
-  > Timestamp when this password reset token expires. Tokens are valid for 1
-  > hour after creation.
+  > Reset token string. Securely random, used only for password reset
+  > operations.
+- `created_at`: Timestamp when the reset token was created.
+- `expires_at`: Expiration datetime, after which further use is forbidden.
+- `used_at`: Timestamp of use (if any). Null means token unused and active.
 
 ## Todos
 
@@ -323,98 +192,110 @@ Properties as follows:
 erDiagram
 "todo_list_todos" {
   String id PK
-  String todo_list_user_id FK
+  String user_id FK
   String title
   String description "nullable"
   String status
-  String priority "nullable"
   DateTime due_date "nullable"
-  Boolean completed
   DateTime completed_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"todo_list_admin_audit_logs" {
+  String id PK
+  String admin_id FK
+  String user_id FK "nullable"
+  String todo_id FK "nullable"
+  String action_type
+  String request_context "nullable"
+  DateTime created_at
+}
+"todo_list_admin_audit_logs" }o--o| "todo_list_todos" : todo
 ```
 
 ### `todo_list_todos`
 
-Core todo item entity representing user tasks and their management
-lifecycle.
+User-created task (Todo) entity representing an individual actionable
+item in a personal task list.
 
-Stores individual todo items created by authenticated users for personal
-task tracking and productivity management.
-Each todo represents a single actionable task with attributes for
-organization, prioritization, and completion tracking.
+Each todo belongs to exactly one registered user and records essential
+details such as title, optional description, due date, and business
+status (pending, completed, or deleted). Provides complete auditability
+with timestamps for creation, modification, deletion, and completion
+event. This model enforces strict user-only ownership and visibility,
+supporting full CRUD lifecycle and compliance audit via foreign
+references. Referential integrity protects against orphaned records and
+ensures privacy.
 
-Todos are owned by individual users with complete data isolation - users
-can only access and modify their own todo items.
-The system enforces strict ownership boundaries ensuring privacy and data
-security across all operations.
-
-Each todo contains essential task information including title, optional
-description, due date, priority level, and completion status.
-The status field tracks the todo's lifecycle through pending,
-in_progress, completed, and cancelled states.
-Completion tracking uses both a boolean flag and timestamp to record when
-tasks are finished.
-
-Soft deletion is supported through the deleted_at field, allowing todos
-to be removed from active views while preserving data for potential
-recovery and audit purposes.
-All modifications are tracked via updated_at timestamp to maintain
-comprehensive audit trails.
-
-Todos support advanced organization through priority levels (low, medium,
-high) and optional due dates for deadline management.
-The system provides filtering, sorting, and searching capabilities to
-help users efficiently manage large todo lists.
-
-This is the primary business entity of the Todo List application,
-requiring full CRUD API operations and independent user management
-capabilities.
+Supporting indexes enable fast lookups by owner, status, and due date for
+responsive user flows. All behaviors align with minimal, privacy-focused
+product requirements and EARS-specified business rules.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `todo_list_user_id`: Owner user who created this todo item. [todo_list_users.id](#todo_list_users)
+- `id`: Primary Key. Universally unique identifier for each todo record.
+- `user_id`
+  > Reference to the owning user. Must point to an existing user. {@link
+  > todo_list_users.id}.
 - `title`
-  > Todo item title - the primary description of the task. Required field
-  > with maximum 200 characters. This is the main text users see in their
-  > todo list.
+  > Todo item title. Required, non-empty text up to 100 characters.
+  > Validation enforced on creation and update to maintain business
+  > constraints.
 - `description`
-  > Optional detailed description providing additional context, notes, or
-  > instructions for the task. Maximum 2000 characters. Can be empty if the
-  > title is self-explanatory.
+  > Optional descriptive text (max 500 characters). May be null or omitted if
+  > not provided by user.
 - `status`
-  > Current lifecycle status of the todo item. Valid values: pending (initial
-  > state), in_progress (actively working), completed (finished), cancelled
-  > (abandoned). Tracks the todo's workflow state.
-- `priority`
-  > Task priority level for organization and sorting. Valid values: low,
-  > medium, high. Defaults to medium when not specified. Helps users identify
-  > and focus on important tasks.
+  > Todo status: allowed values are 'pending', 'completed', or 'deleted'.
+  > Used for business workflow, filtering, and access control. Status changes
+  > follow task lifecycle state machine.
 - `due_date`
-  > Optional deadline for task completion. Supports past dates for backdating
-  > and future dates for planning. Used for overdue detection and timeline
-  > organization. Null indicates no specific deadline.
-- `completed`
-  > Boolean flag indicating whether the task is completed. True when status
-  > is completed, false otherwise. Provides quick completion status checking
-  > without parsing status field.
+  > Optional due date for the todo. Must be today or future, if present. Used
+  > for sorting and reminders.
 - `completed_at`
-  > Timestamp recording when the todo was marked as completed. Set
-  > automatically when status changes to completed. Cleared when todo is
-  > marked incomplete. Null for incomplete todos.
-- `created_at`
-  > Timestamp when the todo item was created. Set automatically by the system
-  > at creation time. Immutable field used for chronological ordering and
-  > analytics.
+  > Timestamp marking the moment the todo was marked as completed by the
+  > user. Null if not completed.
+- `created_at`: Timestamp of initial creation. Immutable after insert.
 - `updated_at`
-  > Timestamp of the most recent modification to any field of the todo item.
-  > Updated automatically by the system whenever the todo is changed. Used
-  > for tracking recent activity and conflict detection.
-- `deleted_at`
-  > Soft deletion timestamp indicating when the todo was deleted. Null for
-  > active todos. When set, the todo is excluded from normal queries while
-  > preserved for audit trails and potential recovery.
+  > Timestamp of the last update. Modified on every business change or status
+  > transition.
+- `deleted_at`: Timestamp indicating when the todo was soft deleted. Null if not deleted.
+
+### `todo_list_admin_audit_logs`
+
+Administrative action and compliance audit log capturing all critical
+administrative interactions with user or todo data.
+
+Stores immutable, append-only audit trail entries recording which admin
+performed which tracked action (create, update, access, delete, etc.), on
+what entity (user, todo), and with what context. Each log links the actor
+(admin), optionally impacted user, and target todo (if any), supporting
+detailed compliance and accountability reviews. Fields include mandatory
+timestamps, request metadata, and detailed action descriptors. Indexes
+support rapid security, audit, and compliance queries.
+
+Never contains business entity data itself; provides operational
+transparency without cross-contaminating business state.
+
+Properties as follows:
+
+- `id`: Primary Key. Universally unique audit log entry identifier.
+- `admin_id`
+  > Reference to the admin actor who performed the action. Always points to a
+  > valid admin. [todo_list_admins.id](#todo_list_admins).
+- `user_id`
+  > User affected by the action, if applicable. May be null for purely admin
+  > system operations. [todo_list_users.id](#todo_list_users).
+- `todo_id`
+  > Related todo item if the action targets a specific task. Null if the
+  > action does not pertain to a specific todo. [todo_list_todos.id](#todo_list_todos).
+- `action_type`
+  > Categorical action label (e.g., 'create', 'update', 'delete', 'access').
+  > Defines the type of operation performed by admin.
+- `request_context`
+  > Optional extended, machine-readable metadata about the admin request
+  > context (e.g., IP, session, endpoint). Useful for forensics and
+  > compliance situations.
+- `created_at`
+  > Timestamp of when the audit log record was created. Immutable and set
+  > automatically at write time.

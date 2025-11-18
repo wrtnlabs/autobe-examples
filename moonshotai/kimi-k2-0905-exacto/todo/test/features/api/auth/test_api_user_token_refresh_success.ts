@@ -4,70 +4,84 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
 /**
- * Validate successful token refresh operation when a valid refresh token is
- * provided. This test ensures users can seamlessly renew expired access tokens
- * without re-authenticating, supporting continuous todo task management
- * workflow. The operation returns new access and refresh tokens with
- * appropriate expiration timestamps.
+ * Tests the successful JWT token refresh operation for a valid Todo List user
+ * session.
  *
- * Test flow:
+ * This flow sends a request to /auth/user/refresh with a plausible,
+ * minimum-length refresh token string. It expects the backend to issue new JWT
+ * access & refresh tokens and to return a fully-typed IAuthorized object. The
+ * test asserts full type compliance, verifies presence of both token/access and
+ * refresh, ensures all expiry metadata fields are valid ISO dates, and confirms
+ * the token/user payload structure is returned as per spec.
  *
- * 1. Generate valid refresh token for authentication (JWT token, not UUID!)
- * 2. Call token refresh API endpoint
- * 3. Validate response contains new tokens and user information
- * 4. Verify token expiration timestamps are future dates
- * 5. Ensure user identity is preserved through token renewal
+ * No error, negative, or type-violation scenarios are checked in this test; it
+ * is a nominal-path E2E validation only.
  */
 export async function test_api_user_token_refresh_success(
   connection: api.IConnection,
 ) {
-  // Generate random refresh token (JWT token, NOT UUID!)
-  const refreshToken = typia.random<string>();
+  // Step 1: Prepare a plausible refresh token (min length 32 characters as per ITodoListUser.IRefresh)
+  const refreshToken: string & tags.MinLength<32> =
+    RandomGenerator.alphaNumeric(36) as string & tags.MinLength<32>;
+  const requestBody = {
+    refresh_token: refreshToken,
+  } satisfies ITodoListUser.IRefresh;
 
-  // Call token refresh operation
-  const refreshedUser: ITodoAppUser.IAuthorized =
-    await api.functional.auth.user.refresh(connection, {
-      body: {
-        refresh_token: refreshToken,
-      } satisfies ITodoAppUser.IRefresh,
-    });
+  // Step 2: Call the API
+  const response: ITodoListUser.IAuthorized =
+    await api.functional.auth.user.refresh(connection, { body: requestBody });
+  typia.assert(response);
 
-  // Complete type validation of response - typia.assert validates ALL formats automatically
-  typia.assert(refreshedUser);
-
-  // Only validate business logic aspects - typia.assert already handles type validation
-  TestValidator.predicate("user has valid UUID", refreshedUser.id.length > 0);
-
+  // Step 3: Basic presence checks and deep field assertions
   TestValidator.predicate(
-    "email should contain @ symbol",
-    refreshedUser.email.includes("@"),
+    "response.id is a UUID",
+    typeof response.id === "string" && response.id.length > 0,
   );
-
-  // Validate token structure and content
   TestValidator.predicate(
-    "access token must be non-empty string",
-    typeof refreshedUser.token.access === "string" &&
-      refreshedUser.token.access.length > 0,
+    "response.email is a valid string",
+    typeof response.email === "string" && response.email.length > 0,
   );
-
   TestValidator.predicate(
-    "refresh token must be non-empty string",
-    typeof refreshedUser.token.refresh === "string" &&
-      refreshedUser.token.refresh.length > 0,
+    "response token.access present",
+    typeof response.token.access === "string" &&
+      response.token.access.length > 0,
   );
-
-  // Validate token expiration timestamps
-  const now = new Date().toISOString();
   TestValidator.predicate(
-    "access token should expire in future",
-    refreshedUser.token.expired_at > now,
+    "response token.refresh present",
+    typeof response.token.refresh === "string" &&
+      response.token.refresh.length > 0,
   );
-
   TestValidator.predicate(
-    "refresh token should expire in future",
-    refreshedUser.token.refreshable_until > now,
+    "token.expired_at is ISO string",
+    typeof response.token.expired_at === "string" &&
+      !isNaN(Date.parse(response.token.expired_at)),
   );
+  TestValidator.predicate(
+    "token.refreshable_until is ISO string",
+    typeof response.token.refreshable_until === "string" &&
+      !isNaN(Date.parse(response.token.refreshable_until)),
+  );
+  TestValidator.predicate("user is not locked", response.is_locked === false);
+
+  if (response.user !== undefined) {
+    typia.assert(response.user);
+    TestValidator.equals(
+      "nested user id matches",
+      response.user.id,
+      response.id,
+    );
+    TestValidator.equals(
+      "nested user email matches",
+      response.user.email,
+      response.email,
+    );
+    TestValidator.equals(
+      "nested user locked matches",
+      response.user.is_locked,
+      response.is_locked,
+    );
+  }
 }

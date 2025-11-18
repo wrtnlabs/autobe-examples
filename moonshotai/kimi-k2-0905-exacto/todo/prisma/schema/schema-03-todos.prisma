@@ -1,0 +1,119 @@
+/// Main table for user-owned todo items following strict ownership policy.
+///
+/// Defines individual todos with required description, completion status,
+/// timestamps, and ownership linked directly to the user. Enforces business
+/// rules for CRUD, soft/hard delete, and status toggling. Supports API
+/// filtering by completion and deleted state. Titles and descriptions are
+/// validated for length, content, and duplication. Each todo is owned by
+/// exactly one user and cannot be accessed or modified by others except
+/// admins via compliance interfaces. Soft delete logic enforces 2-minute
+/// undo for user deletions, immediate permanent deletion by admins. Temporal
+/// fields track creation, last update, soft deletion, and completion
+/// timestamps. Only users may create todos; admins cannot own personal
+/// tasks.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each todo item.
+  id String @id
+  
+  /// Foreign key referencing the owning user. Associates todo with exactly one
+  /// user. {@link todo_list_users.id}.
+  user_id String
+  
+  /// Todo task description, maximum 255 characters. Cannot be empty or
+  /// whitespace only. Must be unique for user within duplicate suppression
+  /// interval.
+  description String
+  
+  /// Completion state of the todo. True if completed, false if incomplete.
+  completed Boolean
+  
+  /// Timestamp for when the todo was marked as complete, in UTC. Null if
+  /// incomplete.
+  completed_at DateTime?
+  
+  /// Timestamp when the todo was created, in UTC ISO 8601 format.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last updated (description or completed
+  /// status).
+  updated_at DateTime
+  
+  /// Timestamp for when the todo was soft-deleted (for undo window); null if
+  /// not deleted or after hard deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  todo_list_todo_audit_logs todo_list_todo_audit_logs[]
+  
+  @@unique([user_id, description, created_at])
+  @@index([user_id, completed, deleted_at])
+}
+
+/// Audit trail for all privileged or destructive operations on todos,
+/// supporting compliance, traceability, and support review.
+///
+/// Records all user and admin actions affecting todo items, including CRUD
+/// operations, status changes, and admin interventions. Logs actor context
+/// (user or admin), action type, timestamps, affected todo item, and reason
+/// or context messages. This table is append-only; records are immutable and
+/// never deleted. Used exclusively for compliance, security, and recovery
+/// audits; not directly visible to end users. Supports queries by actor,
+/// action, time, and affected todo for post-incident or operational review.
+/// Ensures historical accountability for all todo lifecycle events.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todo_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique audit log entry identifier.
+  id String @id
+  
+  /// Foreign key referencing the affected todo item. {@link
+  /// todo_list_todos.id}.
+  todo_id String
+  
+  /// Foreign key to the acting user involved in the audited operation, if
+  /// applicable. Nullable if action was performed only by an admin. {@link
+  /// todo_list_users.id}.
+  actor_user_id String?
+  
+  /// Foreign key to the acting admin if the operation was performed by an
+  /// administrator. Nullable if actor was a regular user. {@link
+  /// todo_list_admins.id}.
+  actor_admin_id String?
+  
+  /// Action type: created, updated, completed, uncompleted, deleted, restored,
+  /// admin_deleted, admin_edited. Fixed set for audit granularity.
+  action String
+  
+  /// Optional audit details: inputs, reason, API source, context message, etc.
+  /// Allows traceability and user support in incident review.
+  context String?
+  
+  /// Timestamp for when the audit log entry was created, in UTC ISO 8601
+  /// format.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_list_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  actorUser todo_list_users? @relation(fields: [actor_user_id], references: [id], onDelete: Cascade)
+  actorAdmin todo_list_admins? @relation(fields: [actor_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_id, created_at])
+  @@index([actor_admin_id, created_at])
+  @@index([actor_user_id, created_at])
+}

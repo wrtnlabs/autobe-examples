@@ -4,47 +4,37 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ITodoListUser } from "../../../structures/ITodoListUser";
+export * as email from "./email/index";
+export * as password from "./password/index";
 
 /**
- * Register a new user account and receive authentication tokens
- * (todo_list_users table).
+ * Register a new user in the todo_list_users table.
  *
- * This endpoint allows registration and onboarding of a new registered user by
- * inserting a record into the user database table, validating unique fields
- * such as email according to schema constraints, and issuing authentication
- * tokens as described in the user requirements. The registration logic enforces
- * the password policy, field uniqueness, and all validation rules defined in
- * the Prisma schema for the user table. The endpoint is unauthenticated and
- * available for public registration.
+ * This endpoint enables a new user to register for the Todo List application.
+ * The todo_list_users schema requires a unique email (field: email) and a
+ * securely hashed password (field: password_hash). Upon successful creation, a
+ * new user record is stored with is_verified set to false,
+ * email_verification_token generated, and email_verification_sent_at set.
  *
- * Upon success, it returns a token-based authentication DTO
- * (ITodoListUser.IAuthorized) containing the access and refresh tokens, user
- * ID, and any meta-information as described in the schema comments. Any fields
- * returned are strictly those defined in the user schema. Error responses are
- * structured based on unique constraint or validation failures. The
- * authentication workflow is completed on registration: no email verification
- * or multi-factor is enforced unless explicitly described in the schema.
+ * The registration process enforces strict uniqueness on the email field and
+ * adheres to password policy (minimum length, includes letters and numbers).
+ * Immediate email verification is required—users cannot access other system
+ * features until the is_verified flag is true (see is_verified field in
+ * schema).
  *
- * This endpoint is part of the user authentication suite (join, login, refresh)
- * and is distinct from profile or user management APIs. Fields and data
- * provided to this operation are strictly those defined in the user schema.
- * Security policies for registration rate limiting, input sanitation, and
- * auditing are enforced where described in requirements. Related operations
- * include login and refresh, which are needed after registration for continued
- * session management.
+ * Registration details are stored in todo_list_users with lifecycle metadata,
+ * supporting further steps such as email verification.
  *
- * The endpoint aligns with modern public API practices for onboarding and can
- * be integrated into automated registration flows. It does not allow duplicate
- * registrations or bypass field validation rules. All relevant business and
- * validation rules from requirements are enforced.
+ * Significant error cases include duplicate or invalid email (rejected via
+ * unique index and validation), and non-compliant password (explained to
+ * user).
  *
- * It is recommended to review the field requirements in the user schema before
- * implementing client integration or custom UI flows.
+ * After registration, the user should immediately receive an email verification
+ * request; no further actions are allowed until completed.
  *
  * @param props.connection
- * @param props.body Registration data for a new user as defined in the
- *   todo_list_users Prisma schema. Fields must include only those defined for
- *   the user entity.
+ * @param props.body User registration details: valid unique email and strong
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -79,14 +69,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Registration data for a new user as defined in the todo_list_users
-     * Prisma schema. Fields must include only those defined for the user
-     * entity.
-     */
-    body: ITodoListUser.ICreate;
+    /** User registration details: valid unique email and strong password. */
+    body: ITodoListUser.IJoin;
   };
-  export type Body = ITodoListUser.ICreate;
+  export type Body = ITodoListUser.IJoin;
   export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
@@ -131,36 +117,30 @@ export namespace join {
 }
 
 /**
- * Authenticate existing user with credentials and receive tokens
- * (todo_list_users table).
+ * Authenticate user for todo_list_users and create session record.
  *
- * This operation allows a registered user to authenticate by sending their
- * credentials (typically email and password, referencing actual user table
- * fields) to determine access. The endpoint checks the credentials against the
- * stored values in the todo_list_users Prisma schema. On a successful match, a
- * new JWT access/refresh token pair is issued and structured as an
- * ITodoListUser.IAuthorized DTO.
+ * This endpoint processes user login. Credentials are checked by matching the
+ * email (unique, field: email) and secure password (password_hash field, using
+ * secure verification operations). Login is blocked if the user's is_verified
+ * is false, the locked flag is true (with locked_at optionally set), or
+ * deleted_at is non-null.
  *
- * All credential validation and security policies (password hashes, failed
- * login attempts, account status checks) use fields defined in the user schema.
- * The endpoint is part of the user authentication suite and enables further
- * authenticated API use. Security and validation policies (rate limiting, input
- * sanitation) are enforced per requirements and available schema constraints.
+ * Each successful login creates a record in todo_list_user_sessions, capturing
+ * session-related metadata (ip, href, referrer, created_at). All issued JWT
+ * tokens are scoped to the user and session, supporting later revocation.
  *
- * It returns only the tokens and necessary user/session information as defined
- * by requirements and schema, with no exposure of additional PII. The login
- * route is unauthenticated for input but issues tokens only on successful
- * credential match.
+ * Login attempts are audited; repeated failures toggle locked/locked_at
+ * according to business rules from requirements. If a user is locked out
+ * (locked = true), login is denied pending reset/unlock flow.
  *
- * Error responses are clearly defined: invalid combinations receive a generic
- * failure message per best security practices. This endpoint, combined with
- * join and refresh, forms the complete authentication system for the user
- * actor.
+ * This endpoint does not reveal whether email or password was incorrect for
+ * security. All failed responses are generic.
+ *
+ * Login is the sole means of initiating authenticated user sessions; all
+ * further API access requires a valid token from this flow.
  *
  * @param props.connection
- * @param props.body Login credentials for an existing user from todo_list_users
- *   Prisma schema (e.g., email, password). Only use fields that exist in the
- *   schema.
+ * @param props.body User login credentials: email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -195,11 +175,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Login credentials for an existing user from todo_list_users Prisma
-     * schema (e.g., email, password). Only use fields that exist in the
-     * schema.
-     */
+    /** User login credentials: email and password. */
     body: ITodoListUser.ILogin;
   };
   export type Body = ITodoListUser.ILogin;
@@ -247,30 +223,28 @@ export namespace login {
 }
 
 /**
- * Refresh user JWT tokens with a valid refresh token (todo_list_users table).
+ * Refresh access/refresh tokens for authenticated user via session and
+ * todo_list_users.
  *
- * Allows an authenticated user to refresh their access and refresh tokens by
- * presenting a valid (unexpired) refresh token. The endpoint checks token
- * validity and session continuity based on fields and structures supported by
- * the todo_list_users and (optionally) todo_list_user_sessions schemas. It
- * returns a new ITodoListUser.IAuthorized DTO containing refreshed tokens, user
- * identity (as in schema), and meta/session info. Any session management is
- * performed per requirements and schema capability.
+ * This endpoint enables a user to maintain a valid session by refreshing their
+ * JWT tokens. It verifies that the provided refresh token is active and
+ * corresponds to a valid, active session in todo_list_user_sessions.
  *
- * Input and output strictly follow schema field requirements and only use
- * session or user fields that are present. The endpoint is used after login or
- * registration to keep user sessions alive without re-authenticating with
- * credentials. Security, expiration, and session policies are applied per
- * requirements and schema design.
+ * Additional validation checks that the user's account is not locked (locked
+ * field), email is verified (is_verified field), and deleted_at is null. If any
+ * of these conditions fail, refresh is denied.
  *
- * Related endpoints: login, join (for session initiation); this endpoint forms
- * the last leg of the authentication suite. Error responses are generic to
- * prevent token enumeration or abuse. The endpoint cannot be used for other
- * session or account management operations.
+ * Upon success, new tokens are generated and session renewal is logged (session
+ * table fields: created_at, expired_at updated as needed).
+ *
+ * Refresh tokens can only be used as long as the session is active and valid
+ * per expiration policy. Audit compliance is enforced for all refresh actions.
+ *
+ * Token refresh is the sole mechanism for extending active user sessions
+ * without logging in again.
  *
  * @param props.connection
- * @param props.body The refresh token, as defined in requirements and schema.
- *   Only actual fields are accepted.
+ * @param props.body Refresh token and device/session context.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -305,10 +279,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * The refresh token, as defined in requirements and schema. Only actual
-     * fields are accepted.
-     */
+    /** Refresh token and device/session context. */
     body: ITodoListUser.IRefresh;
   };
   export type Body = ITodoListUser.IRefresh;
@@ -338,6 +309,107 @@ export namespace refresh {
       method: METADATA.method,
       host: connection.host,
       path: refresh.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Unlock locked user account in todo_list_users after lockout.
+ *
+ * This endpoint allows an eligible user to restore access to a locked account.
+ * It verifies that the locked field is set (locked = true, locked_at
+ * populated), and the provided unlock process or token matches business rules
+ * (may involve password reset, cooldown, or manual admin action).
+ *
+ * Once verified, the locked flag is cleared, locked_at is set to null, and the
+ * account is eligible for login again.
+ *
+ * All unlock operations are fully audited using fields in the user and session
+ * audit tables (locked, locked_at, and related session records).
+ *
+ * Business rules for unlock are defined in requirements and commonly involve
+ * enforced cooldown or secure validation.
+ *
+ * On success, user may immediately attempt login with their regular
+ * credentials.
+ *
+ * @param props.connection
+ * @param props.body Required data per unlock process (e.g., unlock token,
+ *   validation steps).
+ * @path /auth/user/unlock
+ * @accessor api.functional.auth.user.unlock
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function unlock(
+  connection: IConnection,
+  props: unlock.Props,
+): Promise<unlock.Response> {
+  return true === connection.simulate
+    ? unlock.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...unlock.METADATA,
+          path: unlock.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace unlock {
+  export type Props = {
+    /**
+     * Required data per unlock process (e.g., unlock token, validation
+     * steps).
+     */
+    body: ITodoListUser.IUnlock;
+  };
+  export type Body = ITodoListUser.IUnlock;
+  export type Response = ITodoListUser.IUnlockResult;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/auth/user/unlock",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/auth/user/unlock";
+  export const random = (): ITodoListUser.IUnlockResult =>
+    typia.random<ITodoListUser.IUnlockResult>();
+  export const simulate = (
+    connection: IConnection,
+    props: unlock.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: unlock.path(),
       contentType: "application/json",
     });
     try {

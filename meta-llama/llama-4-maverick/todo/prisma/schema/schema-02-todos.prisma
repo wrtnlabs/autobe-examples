@@ -1,0 +1,65 @@
+/// Individual todo items owned by a specific user.
+///
+/// Represents a single unit of personal task management, strictly scoped to
+/// one authenticated user per business and privacy requirements. A todo
+/// includes a required title, optional description, optional due date,
+/// optional priority, and flags for completion status and completion
+/// timestamp. Each todo is private, never shared, and uniquely associated
+/// via a required foreign key to the owning user (see {@link todo_users}).
+///
+/// All CRUD operations, status toggling, and per-user filtering are
+/// supported directly on this table. Business rule validation (such as
+/// duplicate title/date per user) is enforced at the application logic
+/// level. Deletion is irreversible (no soft delete). Creation and update
+/// metadata support audit and recovery scenarios.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for a todo item.
+  id String @id
+  
+  /// Owner user ID. References the owning authenticated user. {@link
+  /// todo_users.id}.
+  user_id String
+  
+  /// Short descriptive title for the todo item. Required per business rules.
+  /// Maximum length: 255 characters.
+  title String
+  
+  /// Optional longer details or notes for the todo. Maximum length: 1000
+  /// characters. May be null if no description provided.
+  description String?
+  
+  /// Optional due date for the todo in ISO 8601 format. Must be a valid date
+  /// in the future or null if undated.
+  due_date DateTime?
+  
+  /// Optional task priority. Valid values: 'low', 'medium', 'high'. May be
+  /// null if no priority assigned.
+  priority String?
+  
+  /// Completion status of the todo. True if completed, false otherwise.
+  is_completed Boolean
+  
+  /// Timestamp when the todo was marked as completed. Null if incomplete.
+  completed_at DateTime?
+  
+  /// Datetime the todo item was created (UTC, ISO 8601).
+  created_at DateTime
+  
+  /// Datetime the todo item was last modified (UTC, ISO 8601).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, title, due_date])
+  @@index([user_id, is_completed])
+  @@index([user_id, due_date])
+}

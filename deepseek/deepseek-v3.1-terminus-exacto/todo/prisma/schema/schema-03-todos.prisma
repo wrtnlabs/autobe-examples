@@ -1,302 +1,68 @@
-/// Core todo items with immutable attributes and ownership information.
+/// Business entity representing an individual todo item belonging to a
+/// single end-user.
 ///
-/// Stores the fundamental, immutable attributes of todo items that remain
-/// constant throughout their lifecycle. This table contains the core
-/// business data that defines what the todo is, while mutable state
-/// information is handled through separate lifecycle and snapshot tables.
+/// Each row records one actionable task with immutable ownership. Enforces
+/// all business rules for title, description, and allowed state transitions
+/// (pending, completed, archived). Tracks timestamps for creation, last
+/// update, and optional completion. Title validation enforced at creation
+/// and update. Foreign key to the user table ensures todos are always
+/// associated with a valid owner, but remain private to that user unless
+/// reviewed by an admin.
 ///
-/// Each todo is owned by a specific user and created through an
-/// authenticated session for audit tracing. The immutable attributes include
-/// the todo's title, description, and creation context, while status,
-/// priority, and completion tracking are managed through normalized
-/// reference tables.
-///
-/// This separation ensures proper normalization and enables comprehensive
-/// audit trails through the snapshot pattern. Soft deletion is supported
-/// while maintaining data integrity and recovery capability.
-///
-/// The table serves as the anchor point for todo management, with all
-/// mutable state tracked through related entities to support robust
-/// lifecycle management and compliance requirements.
+/// Supports efficient per-user queries and batch actions within the user's
+/// scope. No group, tag, or collaborative features are present. Hard
+/// deletion applies per requirements. State management compliant with audit
+/// and admin access handled via external tables.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todos {
+model todo_list_todos {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Uniquely identifies each todo item.
   id String @id
   
-  /// Owner user who created this todo. {@link todo_app_users.id}
-  todo_app_user_id String
+  /// Foreign Key. References the owning user. Must reference an existing user.
+  /// {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// User session that created this todo for audit tracing. {@link
-  /// todo_app_user_sessions.id}
-  todo_app_user_session_id String
-  
-  /// Todo title that briefly describes the task. Required field with maximum
-  /// length of 255 characters.
+  /// Todo title. Required for creation and update. 1–100 characters, validated
+  /// for non-whitespace content.
   title String
   
-  /// Detailed description of the todo task. Optional field with maximum length
-  /// of 1000 characters.
+  /// Optional todo description. Maximum 1000 characters. Can be omitted or set
+  /// to null on creation/update.
   description String?
   
-  /// Optional due date for the todo item. Must be in the future if provided.
+  /// Todo status: permitted values are 'pending', 'completed', or 'archived'.
+  /// Enforces business lifecycle transitions.
+  status String
+  
+  /// Optional due date in ISO 8601 format. Null if not set. Must not be in the
+  /// past for creation/update.
   due_date DateTime?
   
-  /// Timestamp when the todo was created.
+  /// Timestamp for when the todo item was created (stored as UTC). Required
+  /// for data lifecycle and ordering.
   created_at DateTime
   
-  /// Timestamp when the todo was last updated.
+  /// Timestamp for the last time this todo was updated. Maintains user and
+  /// admin accountability.
   updated_at DateTime
   
-  /// Timestamp when the todo was soft deleted. Null for active todos.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
-  userSession todo_app_user_sessions @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
-  
-  todo_app_todo_snapshots todo_app_todo_snapshots[]
-  todo_app_todo_lifecycles todo_app_todo_lifecycles?
-  
-  @@index([todo_app_user_session_id])
-  
-  @@index([todo_app_user_id, created_at])
-  @@index([todo_app_user_id, due_date])
-  @@index([created_at])
-}
-
-/// Historical snapshots of todo items for audit trails and version control.
-///
-/// Captures point-in-time states of todo items whenever significant changes
-/// occur, such as status updates, priority changes, or completion. This
-/// append-only table provides comprehensive audit trails for compliance,
-/// debugging, and historical analysis.
-///
-/// Each snapshot references the original todo and includes all mutable state
-/// information at the time of capture. The system creates new snapshots for
-/// important state transitions, ensuring complete visibility into the todo's
-/// lifecycle.
-///
-/// Snapshots are automatically generated by the application when todos are
-/// modified, providing immutable records of changes. This pattern enables
-/// features like undo operations, change history viewing, and compliance
-/// reporting.
-///
-/// The snapshot architecture separates mutable state from immutable todo
-/// attributes, ensuring proper normalization while maintaining full audit
-/// capability for business requirements.
-///
-/// @namespace Todos
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todo_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the original todo item. {@link todo_app_todos.id}
-  todo_app_todo_id String
-  
-  /// Status at the time of snapshot creation. {@link todo_app_todo_statuses.id}
-  todo_app_todo_status_id String
-  
-  /// Priority at the time of snapshot creation. {@link
-  /// todo_app_todo_priorities.id}
-  todo_app_todo_priority_id String?
-  
-  /// Timestamp when the todo was marked as completed in this snapshot. Null if
-  /// not completed.
+  /// Optional timestamp for when the todo was marked as completed. Null unless
+  /// status is 'completed'.
   completed_at DateTime?
   
-  /// Timestamp when this snapshot was created.
-  snapshot_created_at DateTime
-  
   //----
   // RELATIONS
   //----
-  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
-  status todo_app_todo_statuses @relation(fields: [todo_app_todo_status_id], references: [id], onDelete: Cascade)
-  priority todo_app_todo_priorities? @relation(fields: [todo_app_todo_priority_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  todo_app_todo_lifecycles todo_app_todo_lifecycles[]
+  todo_list_audit_logs todo_list_audit_logs[]
   
-  @@index([todo_app_todo_priority_id])
-  
-  // spellchecker: ignore-next-line
-  @@index([todo_app_todo_id, snapshot_created_at], map: "todo_app_todo_snapshots_todo_app_todo_id_snapshot_crea_c883d8a3")
-  // spellchecker: ignore-next-line
-  @@index([todo_app_todo_status_id, snapshot_created_at], map: "todo_app_todo_snapshots_todo_app_todo_status_id_snapsh_d0b6ee03")
-}
-
-/// Reference table for valid todo status values.
-///
-/// Defines the possible states a todo item can be in throughout its
-/// lifecycle. This normalized approach ensures consistent status values
-/// across the application and enables easy extension of status options
-/// without schema changes.
-///
-/// Standard status values include: pending (default state), in-progress
-/// (actively being worked on), and completed (finished). Each status has a
-/// unique code and descriptive name for user interface display.
-///
-/// Using a reference table instead of hardcoded enum values provides
-/// flexibility for future status additions and maintains data integrity
-/// through foreign key constraints. The table supports internationalization
-/// and custom status workflows.
-///
-/// This normalization separates business logic from database schema, making
-/// the system more maintainable and extensible while ensuring consistent
-/// status handling across all todo operations.
-///
-/// @namespace Todos
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todo_statuses {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique status code used for system identification. Examples: pending,
-  /// in-progress, completed.
-  code String
-  
-  /// Descriptive status name for user interface display. Examples: Pending, In
-  /// Progress, Completed.
-  name String
-  
-  /// Detailed explanation of what this status represents.
-  description String?
-  
-  /// Whether this status is currently available for use.
-  is_active Boolean
-  
-  /// Timestamp when this status was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  todo_app_todo_snapshots todo_app_todo_snapshots[]
-  
-  @@unique([code])
-  @@index([is_active])
-}
-
-/// Reference table for valid todo priority levels.
-///
-/// Defines the priority classification system for todo items, enabling
-/// consistent prioritization across the application. This normalized
-/// approach separates business logic from database schema and supports
-/// flexible priority management.
-///
-/// Standard priority levels include: low (non-urgent tasks), medium (normal
-/// priority), and high (urgent tasks). Each priority has a unique code,
-/// display name, and optional weighting for sorting.
-///
-/// The reference table pattern allows for easy extension of priority options
-/// and maintains data integrity through foreign key constraints. It supports
-/// customization of priority systems for different user preferences or
-/// organizational needs.
-///
-/// By normalizing priorities, the system achieves better data consistency
-/// and enables features like priority-based filtering, sorting, and
-/// notification systems without hardcoded business logic in the schema.
-///
-/// @namespace Todos
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todo_priorities {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique priority code used for system identification. Examples: low,
-  /// medium, high.
-  code String
-  
-  /// Descriptive priority name for user interface display. Examples: Low,
-  /// Medium, High.
-  name String
-  
-  /// Detailed explanation of what this priority level represents.
-  description String?
-  
-  /// Numerical weight for sorting purposes (lower numbers = higher priority).
-  weight Int
-  
-  /// Whether this priority is currently available for use.
-  is_active Boolean
-  
-  /// Timestamp when this priority was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  todo_app_todo_snapshots todo_app_todo_snapshots[]
-  
-  @@unique([code])
-  @@index([weight])
-  @@index([is_active])
-}
-
-/// Current lifecycle state of todo items for real-time status tracking.
-///
-/// Maintains the present state of each todo item, including current status,
-/// priority, and completion information. This table represents the mutable
-/// aspects of todo management while the main todo table contains immutable
-/// attributes.
-///
-/// Each lifecycle record points to the current snapshot, ensuring data
-/// consistency between real-time state and historical tracking. The system
-/// updates this table whenever todo state changes, providing efficient
-/// access to current todo information without querying historical snapshots.
-///
-/// This separation enables efficient querying for current todo states while
-/// maintaining comprehensive audit trails through the snapshot pattern. It
-/// also supports concurrent todo modifications by isolating mutable state
-/// from immutable attributes.
-///
-/// The lifecycle table serves as the performance-optimized access point for
-/// most todo operations, with snapshots providing the historical record for
-/// compliance and analysis purposes.
-///
-/// @namespace Todos
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todo_lifecycles {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the todo item. {@link todo_app_todos.id}
-  todo_app_todo_id String
-  
-  /// Reference to the current snapshot representing this state. {@link
-  /// todo_app_todo_snapshots.id}
-  todo_app_todo_snapshot_id String
-  
-  /// Timestamp when this lifecycle state was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
-  currentSnapshot todo_app_todo_snapshots @relation(fields: [todo_app_todo_snapshot_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_app_todo_snapshot_id])
-  
-  @@unique([todo_app_todo_id])
-  @@index([updated_at])
+  @@index([todo_list_user_id, created_at])
+  @@index([status, created_at])
+  @@index([todo_list_user_id, status])
 }

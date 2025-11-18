@@ -17,33 +17,61 @@ export async function patchTodoListUserUsers(props: {
   body: ITodoListUser.IRequest;
 }): Promise<IPageITodoListUser.ISummary> {
   const {
+    page,
+    limit,
     email,
-    page = 1,
-    limit = 100,
-    sort_by = "email",
-    sort_order = "asc",
-  } = props.body || {};
-
-  const where = email ? { email: { contains: email } } : {};
-
-  const orderBy: { [key: string]: "asc" | "desc" } = {};
-  if (sort_by === "email") orderBy.email = sort_order;
-  else orderBy.id = sort_order; // No created_at field as per schema
-
+    is_verified,
+    locked,
+    from_date,
+    to_date,
+    sort_by,
+    sort_order,
+  } = props.body;
   const skip = (page - 1) * limit;
 
-  const [total, users] = await Promise.all([
-    MyGlobal.prisma.todo_list_users.count({ where }),
+  // Build Prisma where condition based on optional filters
+  const where = {
+    deleted_at: null,
+    ...(typeof email === "string" ? { email: email } : {}),
+    ...(typeof is_verified === "boolean" ? { is_verified: is_verified } : {}),
+    ...(typeof locked === "boolean" ? { locked: locked } : {}),
+    ...(from_date || to_date
+      ? {
+          created_at: {
+            ...(from_date ? { gte: from_date } : {}),
+            ...(to_date ? { lte: to_date } : {}),
+          },
+        }
+      : {}),
+  };
+
+  // Restrict sort field and order to schema allowed values
+  const sortableColumns = ["created_at", "email"] as const;
+  const usedSortBy = sortableColumns.includes(
+    sort_by as (typeof sortableColumns)[number],
+  )
+    ? sort_by
+    : "created_at";
+  const usedSortOrder =
+    sort_order === "asc" || sort_order === "desc" ? sort_order : "desc";
+  // Prisma expects the sort key to be a plain string, not possibly undefined
+  const orderBy: Record<string, "asc" | "desc"> = {
+    [usedSortBy!]: usedSortOrder,
+  };
+
+  // Query users and count in parallel
+  const [rows, total] = await Promise.all([
     MyGlobal.prisma.todo_list_users.findMany({
       where,
-      orderBy,
       skip,
       take: limit,
+      orderBy,
       select: {
         id: true,
         email: true,
       },
     }),
+    MyGlobal.prisma.todo_list_users.count({ where }),
   ]);
 
   return {
@@ -53,9 +81,9 @@ export async function patchTodoListUserUsers(props: {
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data: users.map((row) => ({
-      id: row.id,
-      email: row.email,
+    data: rows.map((user) => ({
+      id: user.id,
+      email: user.email,
     })),
   };
 }

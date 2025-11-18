@@ -1,36 +1,32 @@
 import { Module } from "@nestjs/common";
 
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodoappUserConfigurationsController } from "./controllers/todoApp/user/configurations/TodoappUserConfigurationsController";
-import { TodoappConfigurationsController } from "./controllers/todoApp/configurations/TodoappConfigurationsController";
-import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
-import { TodoappUserUsersSessionsController } from "./controllers/todoApp/user/users/sessions/TodoappUserUsersSessionsController";
-import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
-import { TodosController } from "./controllers/todos/TodosController";
-import { TodoappUserTodosLifecycleController } from "./controllers/todoApp/user/todos/lifecycle/TodoappUserTodosLifecycleController";
-import { TodoappUserTodosSnapshotsController } from "./controllers/todoApp/user/todos/snapshots/TodoappUserTodosSnapshotsController";
-import { TodoappUserTodosStatusesController } from "./controllers/todoApp/user/todos/statuses/TodoappUserTodosStatusesController";
-import { TodoappTodosPrioritiesController } from "./controllers/todoApp/todos/priorities/TodoappTodosPrioritiesController";
-import { TodoappUserDashboardTodo_overviewController } from "./controllers/todoApp/user/dashboard/todo-overview/TodoappUserDashboardTodo_overviewController";
-import { TodoappUserAnalyticsTodo_completionController } from "./controllers/todoApp/user/analytics/todo-completion/TodoappUserAnalyticsTodo_completionController";
-import { TodoappUserSearchTodosController } from "./controllers/todoApp/user/search/todos/TodoappUserSearchTodosController";
+import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
+import { TodolistAdminSystemconfigsController } from "./controllers/todoList/admin/systemConfigs/TodolistAdminSystemconfigsController";
+import { TodolistAdminUsersController } from "./controllers/todoList/admin/users/TodolistAdminUsersController";
+import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
+import { TodolistAdminUsersSessionsController } from "./controllers/todoList/admin/users/sessions/TodolistAdminUsersSessionsController";
+import { TodolistAdminUsersDeletionlogsController } from "./controllers/todoList/admin/users/deletionLogs/TodolistAdminUsersDeletionlogsController";
+import { TodolistAdminAdminsController } from "./controllers/todoList/admin/admins/TodolistAdminAdminsController";
+import { TodolistAdminAdminsSessionsController } from "./controllers/todoList/admin/admins/sessions/TodolistAdminAdminsSessionsController";
+import { TodolistAdminAdminsDeletionlogsController } from "./controllers/todoList/admin/admins/deletionLogs/TodolistAdminAdminsDeletionlogsController";
+import { TodolistAdminAuditlogsController } from "./controllers/todoList/admin/auditLogs/TodolistAdminAuditlogsController";
+import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
 
 @Module({
   controllers: [
     AuthUserController,
-    TodoappUserConfigurationsController,
-    TodoappConfigurationsController,
-    TodoappUserUsersController,
-    TodoappUserUsersSessionsController,
-    TodoappUserTodosController,
-    TodosController,
-    TodoappUserTodosLifecycleController,
-    TodoappUserTodosSnapshotsController,
-    TodoappUserTodosStatusesController,
-    TodoappTodosPrioritiesController,
-    TodoappUserDashboardTodo_overviewController,
-    TodoappUserAnalyticsTodo_completionController,
-    TodoappUserSearchTodosController,
+    AuthAdminController,
+    TodolistAdminSystemconfigsController,
+    TodolistAdminUsersController,
+    TodolistUserUsersController,
+    TodolistAdminUsersSessionsController,
+    TodolistAdminUsersDeletionlogsController,
+    TodolistAdminAdminsController,
+    TodolistAdminAdminsSessionsController,
+    TodolistAdminAdminsDeletionlogsController,
+    TodolistAdminAuditlogsController,
+    TodolistUserTodosController,
   ],
 })
 export class MyModule {}

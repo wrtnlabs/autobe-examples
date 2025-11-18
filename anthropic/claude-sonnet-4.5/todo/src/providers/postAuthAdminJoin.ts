@@ -9,102 +9,77 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
-  body: ITodoListAdmin.ICreate;
+  admin: AdminPayload;
+  body: ITodoListAdmin.IJoin;
 }): Promise<ITodoListAdmin.IAuthorized> {
   const existing = await MyGlobal.prisma.todo_list_admins.findFirst({
     where: { email: props.body.email },
   });
-
   if (existing) {
-    throw new HttpException("Email already registered", 409);
+    throw new HttpException(
+      "Email is already registered for an administrator account.",
+      409,
+    );
   }
-
-  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
-
-  const adminId: string & tags.Format<"uuid"> = v4();
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-
+  const now = toISOStringSafe(new Date());
+  const adminId = v4();
+  const passwordHash = await PasswordUtil.hash(props.body.password);
   const admin = await MyGlobal.prisma.todo_list_admins.create({
     data: {
       id: adminId,
       email: props.body.email,
-      password_hash: hashedPassword,
+      password_hash: passwordHash,
       created_at: now,
       updated_at: now,
-      deleted_at: null,
+      disabled_at: null,
     },
   });
-
-  const accessExpiresMs: number = Date.now() + 60 * 60 * 1000;
-  const refreshExpiresMs: number = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  const accessExpiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(accessExpiresMs),
-  );
-  const refreshExpiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(refreshExpiresMs),
-  );
-
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const sessionCreatedAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-
+  const sessionId = v4();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.todo_list_admin_sessions.create({
     data: {
       id: sessionId,
       todo_list_admin_id: admin.id,
-      ip: props.body.ip ?? "",
+      ip:
+        props.body.ip != null ? (props.body.ip satisfies string as string) : "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: sessionCreatedAt,
-      expired_at: accessExpiredAt,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
-
-  const tokenCreatedAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
+  const accessToken = jwt.sign(
+    { type: "admin", id: admin.id, session_id: session.id, created_at: now },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
   );
-
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: tokenCreatedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: tokenCreatedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpiredAt,
-    refreshable_until: refreshExpiredAt,
-  };
-
+  const refreshToken = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   return {
     id: admin.id,
     email: admin.email,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-    token,
+    disabled_at:
+      admin.disabled_at === null ? null : toISOStringSafe(admin.disabled_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
   };
 }

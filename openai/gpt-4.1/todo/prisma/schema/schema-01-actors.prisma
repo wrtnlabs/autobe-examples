@@ -1,21 +1,17 @@
-/// User accounts for the Todo List application.
+/// Registered user table for the Todo List application.
 ///
-/// Stores core authentication data for each registered user, supporting
-/// secure, unique identification and credential management. Each user is
-/// uniquely identified by their email address, which is validated for
-/// uniqueness and required at registration.
+/// Represents all end users who register, authenticate, and manage their
+/// personal todos. Each user record contains essential authentication fields
+/// (unique email, securely hashed password) and all metadata for identity
+/// lifecycle events such as registration, email verification, password reset
+/// tokens, and account status flags.
 ///
-/// Password hashes are stored using industry-standard secure
-/// algorithms—never in plaintext—to enforce privacy and security policies.
-/// The table enforces hard deletion to comply with irreversible data removal
-/// business rules. No personal information beyond email and password hash is
-/// retained, following strict data minimization.
-///
-/// This table supports user registration, authentication, and password
-/// management workflows. All todos created in the system are strictly owned
-/// by a single user, and access is limited to each user's personal data
-/// only. No profiles, roles, or external identities are used. No soft delete
-/// or audit trail is maintained for user accounts.
+/// This model enforces unique email addresses, secure credential policy, and
+/// account isolation for each user. It provides necessary fields for
+/// business processes including registration, password reset, email
+/// confirmation, locked/active status, and full account deletion lifecycle.
+/// The table is primary for independent user management, supports full CRUD,
+/// and underpins all authentication and authorization logic.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,19 +19,56 @@ model todo_list_users {
   //----
   // COLUMNS
   //----
-  /// Primary key uniquely identifying each user account.
+  /// Primary Key.
   id String @id
   
-  /// User's unique email address used for registration and authentication.
-  /// Must be unique. Required at account creation. Used for login,
-  /// notifications, and password reset workflows. Max length 254 characters
-  /// per business validation rules.
+  /// User email address, used as the primary login credential. Must be unique
+  /// and conform to email format standards. Required for registration and
+  /// login.
   email String
   
-  /// Bcrypt (or similarly secure) password hash for authentication.
-  /// Never stores plaintext passwords. Only secure cryptographic hashes. Used
-  /// exclusively for login verification and password reset workflows.
+  /// Secure hash of the user's password. Never stores plaintext. Only hash
+  /// output is allowed (e.g., bcrypt, argon2).
   password_hash String
+  
+  /// Flag indicating if the user's email has been successfully verified. True
+  /// when verification process completed.
+  is_verified Boolean
+  
+  /// One-time token used to confirm user email verification. Null if already
+  /// verified or immediately after verification.
+  email_verification_token String?
+  
+  /// UTC datetime when the last verification email was sent to the user. Null
+  /// if never sent or already verified.
+  email_verification_sent_at DateTime?
+  
+  /// Unique token used for user-initiated password resets. Null if not in
+  /// reset flow.
+  reset_password_token String?
+  
+  /// Datetime of when the most recent password reset token was issued (UTC).
+  /// Used for computing expiration.
+  reset_password_sent_at DateTime?
+  
+  /// Flag indicating if the account has been temporarily locked due to
+  /// repeated failed login attempts or security actions. Used to prevent login
+  /// until reset.
+  locked Boolean
+  
+  /// Datetime when user account was locked due to authentication failures or
+  /// administrative actions. Null if not currently locked.
+  locked_at DateTime?
+  
+  /// UTC datetime when the user account was created.
+  created_at DateTime
+  
+  /// UTC datetime when user account was last updated.
+  updated_at DateTime
+  
+  /// UTC datetime when user was deleted (account removal). Null if active.
+  /// Used to ensure full cleanup, may drive future delayed deletion policy.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
@@ -44,23 +77,22 @@ model todo_list_users {
   todo_list_todos todo_list_todos[]
   
   @@unique([email])
+  @@index([created_at])
+  @@index([is_verified, locked])
 }
 
-/// User session tracking for the Todo List application.
+/// Session and login audit table for registered users.
 ///
-/// Records the authenticated session state for each user, allowing secure,
-/// multi-device login, accurate audit of session creation and expiration,
-/// and mandatory session termination scenarios (such as password reset or
-/// logout everywhere).
+/// Each session represents an authenticated login instance, storing
+/// connection context metadata, linkage to user identity, and tracking for
+/// active/expired sessions. Enforces auditing and session lifecycle
+/// management required for compliance, security reviews, and JWT/session
+/// revocation at logout, password reset, or account deletion.
 ///
-/// Each session is associated with a user and contains contextual metadata
-/// (IP, URL, referrer), along with creation and optional expiration time.
-///
-/// Sessions are never independently managed or visible to users except via
-/// authentication flows—they are subsidiary entities for security and
-/// traceability only. There is no soft or hard delete after logout—sessions
-/// are purged per standard clean-up policies. Only one session table is
-/// maintained for the sole actor type (user).
+/// Sessions may support persistent user tokens, device metadata, and are
+/// strictly subsidiary—created and managed through user login and logout
+/// flows. This model does not allow independent CRUD. Essential for
+/// monitoring login activity and enforcing proper security policies.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -68,36 +100,34 @@ model todo_list_user_sessions {
   //----
   // COLUMNS
   //----
-  /// Primary key uniquely identifying each session record.
+  /// Primary Key.
   id String @id
   
-  /// Foreign key referencing the owning user account. {@link
-  /// todo_list_users.id}.
-  user_id String
+  /// Linked user for this session. Foreign key to {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// The IP address from which the session was established. Used for security
-  /// and audit tracing.
+  /// Client IP address from which the session/login was initiated.
   ip String
   
-  /// The full URL of the client connection at session start. Captured to
-  /// provide context for the session's origin.
+  /// URL or endpoint used at login/session creation. Used for audit and
+  /// debugging.
   href String
   
-  /// Referrer URL indicating the previous location before authentication or
-  /// session establishment. Used for session context and debugging.
+  /// Referrer URL at session creation. May be empty but is required for full
+  /// traceability.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// UTC datetime when the session was created.
   created_at DateTime
   
-  /// Optional timestamp marking when the session expired or was terminated.
-  /// Nullable. Used for session lifecycle enforcement.
+  /// Datetime marking when the session expired or was revoked. Null if session
+  /// is currently active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([user_id, created_at])
+  @@index([todo_list_user_id, created_at])
 }

@@ -1,0 +1,55 @@
+/// System-wide application configuration and global settings table.
+///
+/// Provides a centralized location for storing key/value pairs, flags, and
+/// operational parameters used by the todo list application at runtime. Each
+/// row represents a distinct configuration setting. This allows for
+/// reliable, auditable modification and retrieval of system-level options,
+/// feature toggles, and environment variables.
+///
+/// Typical usage includes storing site-wide feature switches, maintenance
+/// flags, version numbers, and other application settings that need to be
+/// referenced by business logic or admin operations. Settings can be updated
+/// as the product evolves or undergoes upgrades, with timestamps preserving
+/// the history of changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies each configuration record.
+  id String @id
+  
+  /// Unique setting identifier. Used by the application code to look up
+  /// configuration or environment variables. Must be unique system-wide and
+  /// limited to ASCII alphanumeric with underscores.
+  key String
+  
+  /// Value assigned to the key. Can be interpreted by business logic as a
+  /// boolean, integer, string, URI, or other serializable data type as needed
+  /// by configuration context.
+  value String
+  
+  /// Optional human-readable explanation describing the business purpose,
+  /// intended usage, and possible values of this setting.
+  description String?
+  
+  /// Monotonic version number incremented with any setting update. Allows
+  /// implementation of configuration reload, rollback, or audit scenarios.
+  version Int
+  
+  /// Timestamp indicating when the setting was created. Used for lifecycle
+  /// tracking and change audits.
+  created_at DateTime
+  
+  /// Timestamp of last update to this configuration record. Reflects
+  /// operational changes to settings or value modifications.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at, updated_at])
+}

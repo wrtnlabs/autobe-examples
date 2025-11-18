@@ -7,56 +7,62 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoAppUser.ILogin;
-}): Promise<ITodoAppUser.IAuthorized> {
-  // Find user by email
-  const user = await MyGlobal.prisma.todo_app_users.findFirst({
+  body: ITodoListUser.ILogin;
+}): Promise<ITodoListUser.IAuthorized> {
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  // Step 1: Find the user by email
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
     where: { email: props.body.email },
   });
 
   if (!user) {
+    // TODO: Insert failed login attempt into audit log here if desired.
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Verify password
-  const isValid = await PasswordUtil.verify(
+  if (user.is_locked) {
+    // Log if necessary; do not reveal locked status
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  // Password verification
+  const isPasswordValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-
-  if (!isValid) {
+  if (!isPasswordValid) {
+    // TODO: Insert failed login attempt into audit log if desired.
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Calculate token expiration times as ISO strings
-  const now = new Date();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  // Create new session record
-  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
+  // Create session record
+  const sessionId = v4();
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      user_id: user.id,
-      ip: props.body.ip ?? "",
-      href: props.body.href,
-      referrer: props.body.referrer,
+      id: sessionId,
+      todo_list_user_id: user.id,
+      ip: "", // Optionally capture from client if available
+      href: "",
+      referrer: "",
       created_at: toISOStringSafe(now),
       expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Generate JWT tokens with ISO timestamps
+  // JWT token generation with exact payload format
   const accessToken = jwt.sign(
     {
       type: "user",
       id: user.id,
       session_id: session.id,
-      created_at: now.toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -64,14 +70,13 @@ export async function postAuthUserLogin(props: {
       issuer: "autobe",
     },
   );
-
   const refreshToken = jwt.sign(
     {
       type: "user",
       id: user.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -80,10 +85,10 @@ export async function postAuthUserLogin(props: {
     },
   );
 
-  // Return authorized user response
   return {
     id: user.id,
     email: user.email,
+    is_locked: user.is_locked,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
     token: {
@@ -92,5 +97,10 @@ export async function postAuthUserLogin(props: {
       expired_at: toISOStringSafe(accessExpires),
       refreshable_until: toISOStringSafe(refreshExpires),
     },
-  } satisfies ITodoAppUser.IAuthorized;
+    user: {
+      id: user.id,
+      email: user.email,
+      is_locked: user.is_locked,
+    },
+  };
 }

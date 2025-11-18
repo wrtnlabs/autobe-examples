@@ -1,38 +1,100 @@
-/// User account records for authentication.
+/// User accounts for the Todo List Application.
 ///
-/// Stores credentials for individual users who create and manage their own
-/// todo items. Each user has exclusive ownership of their todo list and
-/// cannot access others' data. Authentication is stateless using JWT tokens,
-/// so this table contains only the minimum required information to verify
-/// user identity: a unique email address and a bcrypt-hashed password. No
-/// other user metadata is stored to preserve privacy and simplicity.
+/// Each record represents a registered individual who can authenticate with
+/// the system and manage their own personal todos. Users are identified by a
+/// unique email address and secure password hash. All authentication,
+/// ownership, and permission enforcement is anchored to this identity. This
+/// table supports soft deletion for right-to-be-forgotten compliance,
+/// ensuring accounts may be flagged for removal before permanent erasure.
 ///
-/// Users are identified by a system-generated UUID primary key and
-/// authenticated by email/password combination. All todo items reference
-/// this table via user_id foreign key to enforce strict data isolation.
+/// No additional roles, profiles, or social features are present. The model
+/// is designed for maximum data privacy, security, and strict one-to-one
+/// association with todos. All business rules for user isolation and account
+/// uniqueness are enforced here.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
+model todo_user {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// User's unique email address used for authentication. Must be unique
-  /// across all users and match standard email format.
+  /// Unique email address for authentication and account recovery. Must be
+  /// unique across all users and adhere to standard email formatting.
   email String
   
-  /// Bcrypt hash of the user's password. Never stored in plaintext. Required
-  /// for authentication and used to verify login credentials. Generated with
-  /// cost factor 12.
+  /// Secure hash of the user's password. Stored using strong cryptographic
+  /// practices. Never stores raw passwords.
   password_hash String
+  
+  /// Timestamp when the account was created. Immutable.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the user record, including password
+  /// or email changes.
+  updated_at DateTime
+  
+  /// Timestamp marking the account as soft-deleted, used to comply with GDPR
+  /// and right-to-be-forgotten policies. Null if active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_todos todo_list_todos[]
+  todo_user_sessions todo_user_sessions[]
+  todo_todos todo_todos[]
   
   @@unique([email])
+}
+
+/// Authentication sessions for each user account.
+///
+/// Each record logs an authenticated session—such as a login—created by a
+/// specific todo_user. Sessions are used to issue JWT tokens and trace
+/// account activity for audit and security. The table supports tracking
+/// granular user activity over time, including login context. A session is
+/// always related to one user, and is never shared.
+///
+/// Includes required context fields for tracing connection origin and
+/// temporal window. Soft session expiry is managed via the expired_at field.
+/// Sessions are subsidiary—business operations always flow through accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Reference to the owning user account. {@link todo_user.id}.
+  todo_user_id String
+  
+  /// IP address from which the session was established, for audit logging.
+  ip String
+  
+  /// Connection URL at the moment the session was established. Used for
+  /// security context.
+  href String
+  
+  /// Referrer URL when initiating the session. Provides context for session
+  /// tracking and security.
+  referrer String
+  
+  /// Time the session was created. Marks session start.
+  created_at DateTime
+  
+  /// Time when the session expired or was invalidated. Null if session remains
+  /// active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todoUser todo_user @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_user_id, created_at])
 }

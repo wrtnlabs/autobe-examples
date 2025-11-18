@@ -1,53 +1,66 @@
-/// User's personal todo items represent the core functionality of the todo
-/// application.
+/// Main todo item entity for personal task management.
 ///
-/// Each todo item contains a task that an authenticated user wants to track
-/// and complete. Todos are strictly owned by individual users with full CRUD
-/// permissions for their own items. The system maintains separate todo
-/// collections for each user, ensuring complete data privacy.
+/// Represents an individual user-owned task, supporting the full lifecycle
+/// from creation, update, completion, to (soft) deletion. Each todo belongs
+/// exclusively to one authenticated user and is never visible to others
+/// except admins. The entity supports fast retrieval, multi-field filtering,
+/// case-insensitive searching, and provides all audit and business
+/// timestamps required for compliance and lifecycle tracking.
 ///
-/// Todo items support basic task tracking with optional descriptions,
-/// completion status tracking, and timestamp audit trails. Users can create
-/// unlimited personal tasks and manage them independently without
-/// interfering with other users' todo lists.
+/// Field structure enforces domain rules: only non-deleted todos may share
+/// the same title for a user, completion is timestamped, and filtered list
+/// views are optimized by indexes. Temporal fields (created_at, updated_at,
+/// completed_at, deleted_at) allow robust retention, undo, and audit
+/// patterns as needed by the product.
 ///
-/// The main business purpose is to help users organize their daily
-/// responsibilities through a simple, reliable task management system.
+/// Foreign keys, constraints, and indexes ensure data integrity and high
+/// query performance for typical CRUD and search operations.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_todos {
+model todo_list_todos {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Uniquely identifies the todo item.
   id String @id
   
-  /// Owner user's {@link todo_app_users.id}.
-  todo_app_user_id String
+  /// User who owns this todo. References {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// Todo item title (required field). Must be 1-200 characters.
+  /// Short title of the todo item. Required, 1-100 visible UTF-8 characters,
+  /// trimmed of whitespace. Uniqueness enforced per user among non-deleted
+  /// todos.
   title String
   
-  /// Optional description of the todo item. Can be up to 1000 characters.
+  /// Optional extended description of the todo item. Up to 1000 characters.
+  /// May be null or empty.
   description String?
   
-  /// Completion status of the todo item. True when completed, false when
-  /// pending.
-  complete Boolean
+  /// Todo status in business workflow. Allowed values: 'pending', 'completed'.
+  /// Only these two values are valid in minimal version; future states can be
+  /// added with migration.
+  status String
   
-  /// Timestamp when the todo item was first created.
+  /// Timestamp when the todo was marked as completed. Null if not completed.
+  completed_at DateTime?
+  
+  /// Creation timestamp of the todo item. Set when the record is first created.
   created_at DateTime
   
-  /// Timestamp when the todo item was last modified.
+  /// Last modification timestamp. Updated on every change of title,
+  /// description, or status.
   updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted; set when user deletes the
+  /// todo for retention/undo window.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@unique([todo_app_user_id, title, description])
-  @@index([todo_app_user_id])
-  @@index([created_at])
+  @@unique([todo_list_user_id, title, deleted_at])
+  @@index([todo_list_user_id, status, created_at])
 }

@@ -1,0 +1,67 @@
+/// Main business entity representing a single todo item owned by a user.
+///
+/// This table stores the minimal, per-user todo tasks that implement the
+/// entire business workflow for the application. Each row represents a
+/// private task created by one authenticated user and is uniquely identified
+/// by a UUID-based primary key. The model enforces strict user ownership via
+/// a foreign key reference to the users table (todo_list_users), supporting
+/// fast queries and guaranteeing data isolation required by business rules.
+///
+/// Todos include a required title, an optional description, a boolean
+/// completion flag, and an optional completion timestamp (set only when
+/// marked complete). Creation and last-modified audit timestamps are
+/// included to support ordering, filtering, and user audit transparency.
+/// Business logic around quotas, validation, and user-only access is
+/// expected to be handled at the application layer in conjunction with these
+/// schema constraints. No soft deletion is supported—deletion is always
+/// permanent by business mandate. This model implements all production
+/// requirements for the MVP todo management domain.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for unique identification of each todo item.
+  id String @id
+  
+  /// Reference to the owning user. Enforces strict data isolation; each todo
+  /// belongs to exactly one user. {@link todo_list_users.id}.
+  user_id String
+  
+  /// Required, user-defined short label for the todo item. Must be non-empty
+  /// and a maximum of 255 characters. Used for listing and main
+  /// identification.
+  title String
+  
+  /// Optional detailed text field for the todo's additional context. Allows up
+  /// to 1000 characters; may be null if no detail is provided.
+  description String?
+  
+  /// Boolean status indicating whether the todo is marked complete by the
+  /// user. Defaults to false on creation; set true when completed.
+  completed Boolean
+  
+  /// Timestamp for when the todo was marked as complete. Null if todo is not
+  /// completed; set only at moment of completion.
+  completed_at DateTime?
+  
+  /// Timestamp when the todo item was first created. Used for sorting and
+  /// audit trails.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to the todo. Updated on any
+  /// modification, including changes to title, description, or completed
+  /// status.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, title])
+  @@index([user_id, created_at])
+  @@index([user_id, completed])
+}

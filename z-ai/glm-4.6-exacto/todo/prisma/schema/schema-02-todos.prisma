@@ -1,0 +1,71 @@
+/// Primary business entity for all todo tasks in the application.
+///
+/// Represents an individual todo item uniquely owned by a single user
+/// ({@link todo_app_users}). Each todo captures the required title, optional
+/// description, and full set of business lifecycle states (active,
+/// completed, deleted) via the status field and corresponding timestamps.
+/// Enforces unique todo titles among a user's active items, supports
+/// optional due date, and maintains full audit fields for creation,
+/// modification, completion, and soft deletion. Todos are strictly private
+/// and accessible only to the user and system administrators; all visibility
+/// and permissions are managed at the application layer. All state
+/// transitions (completion, deletion, recovery) are reflected in status and
+/// timestamp columns; permanent erasure after retention period is carried
+/// out by application logic. The model allows efficient queries on
+/// ownership, state, and business constraints, and is ready for
+/// enterprise-scale extensions (archiving, snapshot/audit, future features).
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this todo. References the primary key in the users table. {@link
+  /// todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Required, user-defined name of todo item. Must be unique among active
+  /// todos for the same user. Maximum 100 characters.
+  title String
+  
+  /// Optional, user-supplied description of the todo. Maximum 1000 characters.
+  /// May be null if the user chooses not to enter details.
+  description String?
+  
+  /// Current business status of the todo. One of: 'active', 'completed',
+  /// 'deleted'. Transitions controlled by user actions and business rules.
+  status String
+  
+  /// Optional due date for task completion. Null if no due date is set. Must
+  /// be a future date at the time of entry.
+  due_date DateTime?
+  
+  /// Timestamp of todo creation (UTC, immutable). Set once at row insertion.
+  created_at DateTime
+  
+  /// Timestamp of last update to title, description, due date, or other
+  /// editable fields. Updated automatically on modification.
+  updated_at DateTime
+  
+  /// Timestamp when todo was marked as completed. Only set when
+  /// status='completed'; otherwise null.
+  completed_at DateTime?
+  
+  /// Timestamp when todo was deleted (soft delete). Set when status
+  /// transitions to 'deleted', otherwise null. Used for retention/erasure
+  /// rules.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id, title])
+  @@index([todo_app_user_id, status])
+  @@index([status, due_date])
+}

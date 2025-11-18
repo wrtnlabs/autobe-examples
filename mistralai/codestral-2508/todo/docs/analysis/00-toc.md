@@ -1,134 +1,72 @@
 # Functional Requirements for Todo List Application
 
-## User Authentication
+## Introduction
+The Todo List application enables users to manage their personal tasks digitally with a focus on ease of use and minimal required functionality. The core vision is to allow a registered user to securely manage only their own tasks (Todos) in a private, authenticated space. The product's business value is to help users track, complete, and organize their everyday tasks efficiently. Requirements in this document provide the definitive source of truth for backend implementation, written using EARS (Easy Approach to Requirements Syntax) for absolute clarity and enforceability in English.
 
-### Registration
+## Core Functionalities for Todos
+- Users SHALL be able to create new Todos for their personal list.
+- Users SHALL view a list of their own Todos and inspect details of each Todo.
+- Users SHALL update properties of a Todo (title, optional description, status).
+- Users SHALL mark any Todo as completed when a task is done.
+- Users SHALL delete Todos that are no longer needed.
+- All Todo operations must be available only to authenticated users, with no public access.
+- Each Todo SHALL have the following fields: title (required), description (optional), status (completed/not completed), creation timestamp, last modification timestamp, completion timestamp (if completed).
 
-- Users can register with an email address and password.
-- Users must verify their email address before they can log in.
-- Users must provide a unique username.
-- Users must agree to the terms and conditions.
+## Requirement Statements using EARS Format
+All requirements use EARS format for precision and developer testability.
 
-### Login
+### Authentication & User Management
+- THE system SHALL require every user to register an account with a unique identifier (e.g., email).
+- THE system SHALL require valid authentication (e.g., JWT token) for any access to Todo features.
+- WHILE unauthenticated, THE system SHALL restrict access to all Todo operations (create, view, update, delete, complete).
+- WHEN a user’s session expires or token is invalid, THE system SHALL deny Todo access and prompt reauthentication.
+- WHEN a user logs out, THE system SHALL terminate their session and restrict further access until login.
 
-- Users can log in with their email address and password.
-- Users can log in with their username and password.
-- Users can log in with their social media accounts.
-- Users can reset their password if they forget it.
+### Core Todo Operations
+- WHEN a user submits valid registration information, THE system SHALL create a new user account and enable Todo access.
+- WHEN an authenticated user creates a new Todo with all required fields, THE system SHALL add the Todo to their personal list and return its details.
+- WHEN an authenticated user requests their Todo list, THE system SHALL return only those Todos belonging to that user, ordered by newest first.
+- WHEN a user requests details for a specific Todo, THE system SHALL display complete information for that Todo only if it belongs to the requesting user.
+- WHEN a user updates any field of a Todo, THE system SHALL persist the changes, update the modification timestamp, and return the updated Todo.
+- WHEN a user marks a Todo as completed, THE system SHALL update the completion status and store the completion timestamp.
+- WHEN a user deletes a Todo, THE system SHALL permanently remove it from their list and confirm removal.
 
-### Logout
+### Data Isolation & Authorization
+- THE system SHALL prevent users from accessing or modifying Todos owned by other users.
+- IF a user attempts any operation on another user’s Todo, THEN THE system SHALL deny the request and return an authorization error.
 
-- Users can log out of their account.
-- Users are prompted to confirm before logging out.
+### Input Validation & Error Handling
+- IF a user’s request to create or update a Todo is missing the required title, THEN THE system SHALL reject the request and return a clear error message specifying the missing field.
+- IF a user attempts any Todo operation while unauthenticated, THEN THE system SHALL deny the request and return an authentication error.
+- IF a user tries to update or delete a Todo that does not exist, THEN THE system SHALL return a not-found error.
 
-### Password Management
+### Optional and Field Rules
+- WHERE a user provides an optional description for a Todo, THE system SHALL save and display it; otherwise, the field may be empty.
 
-- Users can change their password.
-- Users can reset their password if they forget it.
-- Users must provide their current password to change it.
-- Users must provide a new password and confirm it.
+## Acceptance Criteria
+- All Todo features (create, list, view, update, complete, delete) are available only to users with valid authentication.
+- Users cannot see or modify any Todos owned by other users.
+- On all Todo operations, the system enforces ownership, input validation, and error scenario handling as described above using EARS statements.
+- All error responses must be clear, actionable, and reference the triggering business rule (e.g., missing field, unauthorized, unauthenticated, not found).
+- Session management and authentication align with the requirements for isolation, security, and simplicity as described.
 
-## Todo Item Management
+## Supplementary Diagram
 
-### Create Todo Item
+```mermaid
+graph LR
+  A["User Authenticated"] --> B["Create Todo"]
+  B --> C["View Todo List"]
+  C --> D["View Todo Details"]
+  D --> E["Update Todo"]
+  E --> F["Mark as Complete"]
+  D --> G["Delete Todo"]
+  G --> H["Todo Removed"]
+  F --> I["Todo Completed"]
+```
 
-- Users can create a new todo item.
-- Users must provide a title for the todo item.
-- Users can provide a description for the todo item.
-- Users can set a due date for the todo item.
-- Users can set a priority level for the todo item.
-
-### Read Todo Items
-
-- Users can view a list of their todo items.
-- Users can filter their todo items by status (completed, pending).
-- Users can sort their todo items by due date, priority, or creation date.
-
-### Update Todo Item
-
-- Users can update the title, description, due date, and priority level of a todo item.
-- Users can mark a todo item as completed.
-- Users can unmark a completed todo item.
-
-### Delete Todo Item
-
-- Users can delete a todo item.
-- Users are prompted to confirm before deleting a todo item.
-
-## User Interface
-
-### Home Screen
-
-- The home screen displays a welcome message and a list of recent todo items.
-- The home screen provides quick access to the todo list screen and settings screen.
-
-### Todo List Screen
-
-- The todo list screen displays a list of all todo items.
-- The todo list screen provides options to filter and sort the todo items.
-- The todo list screen provides a button to create a new todo item.
-
-### Todo Item Screen
-
-- The todo item screen displays the details of a todo item.
-- The todo item screen provides options to update and delete the todo item.
-
-### Settings Screen
-
-- The settings screen provides options to manage user account settings.
-- The settings screen provides options to manage application settings.
-
-## Data Storage
-
-### Database Schema
-
-- The database schema includes tables for users, todo items, and user sessions.
-- The database schema includes relationships between users and todo items.
-
-### Data Persistence
-
-- User data is persisted in the database.
-- Todo item data is persisted in the database.
-
-### Data Synchronization
-
-- User data is synchronized across devices.
-- Todo item data is synchronized across devices.
-
-## Error Handling
-
-### Error Types
-
-- Authentication errors (invalid credentials, account locked).
-- Validation errors (invalid input, missing required fields).
-- Database errors (connection issues, query failures).
-
-### Error Messages
-
-- Error messages are displayed to the user in a user-friendly format.
-- Error messages provide guidance on how to resolve the error.
-
-### Error Recovery
-
-- Users can retry failed operations.
-- Users can contact support for assistance.
-
-## Performance Requirements
-
-### Response Time
-
-- The application should respond to user actions within 2 seconds.
-
-### Throughput
-
-- The application should handle 1000 concurrent users.
-
-### Scalability
-
-- The application should scale to handle 1 million users.
-
-## Additional Notes
-
-- This document provides a detailed specification of the Todo list application, including user flows and technical considerations.
-- It serves as a comprehensive guide for the development team to ensure all aspects of the application are covered.
-- The target audience is the development team, who will use this document to guide the development process.
+## Glossary
+- **Todo:** A single task or activity managed by a user, with required title, optional description, and status (completed or not).
+- **User:** An individual account registered in the system, authenticated for personal Todo management.
+- **Authentication:** The process and result of verifying a user's identity for secure system access.
+- **Completed:** The status of a Todo once the user marks it finished; system records the completion time.
+- **Session:** The active, authenticated state of a user, during which all Todo operations are permitted. Ends upon logout or token expiration.

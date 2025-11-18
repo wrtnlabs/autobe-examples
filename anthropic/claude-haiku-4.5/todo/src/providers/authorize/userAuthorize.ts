@@ -4,6 +4,11 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
+/**
+ * Authenticates a user by verifying JWT, role type, and session.
+ * Throws ForbiddenException on mismatch, nonexistence, or invalid session.
+ * Returns the payload if authenticated and session is valid.
+ */
 export async function userAuthorize(request: {
   headers: {
     authorization?: string;
@@ -15,29 +20,16 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query user session to verify authentication
-  const session = await MyGlobal.prisma.todo_app_user_session.findFirst({
+  // Session existence check: payload.id is user id; session_id is the active session
+  const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: payload.session_id,
-      user_id: payload.id,
-      expired_at: null,
-    },
+      todo_list_user_id: payload.id
+    }
   });
 
   if (session === null) {
     throw new ForbiddenException("Session is invalid or expired");
-  }
-
-  // Verify user account is active
-  const user = await MyGlobal.prisma.todo_app_user.findFirst({
-    where: {
-      id: payload.id,
-      deleted_at: null,
-    },
-  });
-
-  if (user === null) {
-    throw new ForbiddenException("User account is not available");
   }
 
   return payload;

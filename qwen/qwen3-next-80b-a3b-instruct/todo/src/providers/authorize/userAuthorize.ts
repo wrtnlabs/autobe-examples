@@ -1,31 +1,33 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
+/**
+ * JWT-based authentication provider for regular users.
+ *
+ * Verifies JWT, checks payload for correct user role, and ensures referenced user is active & not soft-deleted.
+ * Returns the JWT payload if authentication and validation succeed.
+ * Throws ForbiddenException if access is invalid.
+ */
 export async function userAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string }
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
 
-  if (payload.type !== "user") {
+  if (payload.type !== "user")
     throw new ForbiddenException(`You're not ${payload.type}`);
-  }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  // The JWT payload.id is always the top-level user primary key
+  const user = await MyGlobal.prisma.todo_user.findFirst({
     where: {
-      id: payload.id
-    },
+      id: payload.id,
+      deleted_at: null
+    }
   });
 
-  if (user === null) {
+  if (!user)
     throw new ForbiddenException("You're not enrolled");
-  }
 
   return payload;
 }
