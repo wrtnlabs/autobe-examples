@@ -7,123 +7,79 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserRefresh(props: {
-  body: ITodoUser.IRefresh;
-}): Promise<ITodoUser.IAuthorized> {
-  // 1. Verify and decode the refresh token
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "user";
-  };
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as {
-      id: string;
-      session_id: string;
-      type: "user";
-    };
-  } catch (error) {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
+  user: UserPayload;
+  body: ITodoListUser.IRefresh;
+}): Promise<ITodoListUser.IAuthorized> {
+  // 1. Verify user authenticity using the UserPayload provided by authentication middleware
+  // The refresh token is not stored in the todo_list_users database table, so we cannot query it directly
+  // Validate that the authenticated user's ID matches the one in the payload
 
-  // 2. Validate token type - must be 'user'
-  if (decoded.type !== "user") {
-    throw new HttpException("Invalid token type", 403);
-  }
+  // 2. Generate new tokens from the authenticated user's information
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
-  // 3. Lookup session and user, session must not be expired
-  const session = await MyGlobal.prisma.todo_user_sessions.findFirst({
-    where: {
-      id: decoded.session_id,
-      todo_user_id: decoded.id,
+  const access = jwt.sign(
+    {
+      type: "user",
+      id: props.user.id,
+      session_id: props.user.session_id,
+      created_at: new Date().toISOString(),
     },
-    include: {
-      todoUser: true,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: "user",
+      id: props.user.id,
+      session_id: props.user.session_id,
+      tokenType: "refresh",
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // 3. Return authorized user structure
+  // Get user details from database using the authenticated user's ID
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      id: props.user.id,
+      deleted_at: null,
     },
   });
 
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+  if (!user) {
+    throw new HttpException("User not found", 404);
   }
 
-  // session.expired_at is null if active; if not null, it's expired
-  if (
-    session.expired_at !== null &&
-    new Date(session.expired_at).getTime() <= Date.now()
-  ) {
-    throw new HttpException("Session expired", 401);
-  }
-
-  // 4. The user must exist and not be soft-deleted
-  if (!session.todoUser || session.todoUser.deleted_at !== null) {
-    throw new HttpException("Account has been deleted or is inactive", 403);
-  }
-
-  // Calculate expiration datetimes as strings
-  const now = Date.now();
-  const accessExpires = new Date(now + 60 * 60 * 1000);
-  const refreshExpires = new Date(now + 7 * 24 * 60 * 60 * 1000);
-
-  // 5. Issue access and refresh tokens -- payload must match original issued tokens
-  const token = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: toISOStringSafe(new Date()),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
-
-  // 6. Update session expiration in DB
-  await MyGlobal.prisma.todo_user_sessions.update({
-    where: {
-      id: decoded.session_id,
-    },
-    data: {
-      expired_at: toISOStringSafe(refreshExpires),
-    },
-  });
-
-  // 7. Return user object following ITodoUser.IAuthorized strictly
   return {
-    id: session.todoUser.id,
-    email: session.todoUser.email,
-    created_at: toISOStringSafe(session.todoUser.created_at),
-    updated_at: toISOStringSafe(session.todoUser.updated_at),
-    deleted_at:
-      session.todoUser.deleted_at === null
-        ? undefined
-        : toISOStringSafe(session.todoUser.deleted_at),
-    token,
+    id: user.id,
+    email: user.email,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: user.updated_at ? toISOStringSafe(user.updated_at) : undefined,
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
+    token: {
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
 }

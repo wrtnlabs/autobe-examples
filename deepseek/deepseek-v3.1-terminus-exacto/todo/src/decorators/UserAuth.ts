@@ -4,12 +4,6 @@ import { Singleton } from "tstl";
 
 import { userAuthorize } from "../providers/authorize/userAuthorize";
 
-/**
- * Decorator for authenticating regular todo list users.
- *
- * Injects the authenticated UserPayload via method parameter.
- * Adds Bearer token security schema to Swagger docs.
- */
 export const UserAuth =
   (): ParameterDecorator =>
   (

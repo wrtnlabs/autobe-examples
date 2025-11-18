@@ -7,118 +7,99 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoListUser.IJoin;
-}): Promise<ITodoListUser.IAuthorized> {
-  // Step 1: Duplicate email check (exclude soft-deleted)
-  const existing = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: { email: props.body.email, deleted_at: null },
+  body: ITodoUser.IJoin;
+}): Promise<ITodoUser.IAuthorized> {
+  const existing = await MyGlobal.prisma.todo_users.findUnique({
+    where: { email: props.body.email },
   });
   if (existing) {
-    throw new HttpException("Email already registered.", 409);
+    throw new HttpException("Email already registered", 409);
   }
 
-  // Step 2: Prepare all time values and IDs
+  const password: string = props.body.password;
+  const hasLetter = /[A-Za-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  if (password.length < 8 || !hasLetter || !hasNumber) {
+    throw new HttpException(
+      "Password must be at least 8 characters, contain at least one letter and one number.",
+      400,
+    );
+  }
+
+  const passwordHash = await PasswordUtil.hash(password);
+
   const now = toISOStringSafe(new Date());
   const userId = v4();
-  const sessionId = v4();
-  const verificationToken = v4(); // using uuid strategy for OTK
-  const emailVerificationSentAt = now;
-
-  // Step 3: Password hashing
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-
-  // Step 4: User record insert
-  const user = await MyGlobal.prisma.todo_list_users.create({
+  const newUser = await MyGlobal.prisma.todo_users.create({
     data: {
       id: userId,
       email: props.body.email,
       password_hash: passwordHash,
-      is_verified: false,
-      email_verification_token: verificationToken,
-      email_verification_sent_at: emailVerificationSentAt,
-      reset_password_token: null,
-      reset_password_sent_at: null,
-      locked: false,
-      locked_at: null,
       created_at: now,
       updated_at: now,
-      deleted_at: null,
     },
   });
 
-  // Step 5: Session insert
-  const sessionData: any = {
-    id: sessionId,
-    todo_list_user_id: userId,
-    href: props.body.href,
-    referrer: props.body.referrer,
-    created_at: now,
-    expired_at: null,
-  };
-  if (props.body.ip !== null && props.body.ip !== undefined) {
-    sessionData.ip = props.body.ip satisfies string as string;
-  }
-  await MyGlobal.prisma.todo_list_user_sessions.create({
-    data: sessionData,
-  });
-
-  // Step 6: JWT token creation (all issued now)
+  const sessionId = v4();
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: userId,
-        session_id: sessionId,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: userId,
-        session_id: sessionId,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+  const session = await MyGlobal.prisma.todo_user_sessions.create({
+    data: {
+      id: sessionId,
+      todo_user_id: newUser.id,
+      ip:
+        props.body.ip !== null && props.body.ip !== undefined
+          ? (props.body.ip satisfies string as string)
+          : "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpires),
+    },
+  });
 
-  // Step 7: Return - map output strictly to IAuthorized (respect null/undefined)
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: newUser.id,
+      session_id: session.id,
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: newUser.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
   return {
-    id: user.id,
-    email: user.email,
-    is_verified: user.is_verified,
-    locked: user.locked,
-    locked_at: user.locked_at ? toISOStringSafe(user.locked_at) : null,
-    email_verification_token: user.email_verification_token ?? null,
-    email_verification_sent_at: user.email_verification_sent_at
-      ? toISOStringSafe(user.email_verification_sent_at)
-      : null,
-    reset_password_token: user.reset_password_token ?? null,
-    reset_password_sent_at: user.reset_password_sent_at
-      ? toISOStringSafe(user.reset_password_sent_at)
-      : null,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
-    token,
+    id: newUser.id,
+    email: newUser.email,
+    created_at: toISOStringSafe(newUser.created_at),
+    updated_at: toISOStringSafe(newUser.updated_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
   };
 }

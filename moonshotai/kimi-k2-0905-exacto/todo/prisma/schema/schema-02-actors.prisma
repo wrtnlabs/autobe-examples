@@ -1,186 +1,218 @@
-/// Registered end users of the Todo List system.
+/// Authenticated users of the todo application with full access to create
+/// and manage personal tasks.
 ///
-/// Represents any individual who can register, authenticate, and manage
-/// their personal set of todo items. Each user is identified by a unique
-/// email and secures access with a hashed password. Designed for strict
-/// privacy and least-privilege access: users may act only on their own data
-/// and cannot view or alter other users. Status fields support account
-/// locking for abuse or compliance. Auditing is handled via associated
-/// session and audit log tables.
+/// This table represents registered users who have completed the email
+/// verification process and maintain active accounts within the system.
+/// Users receive unique identifiers, store hashed passwords for
+/// authentication, and can access all core todo functionality including task
+/// creation, organization, and completion tracking.
 ///
+/// The table stores essential user credentials including encrypted password
+/// hashes, ensuring security while maintaining usability. Each user account
+/// is independent and maintains strict data isolation preventing cross-user
+/// access or visibility of personal tasks and organizational preferences.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
+model todo_app_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address for login, identity, and communication for this
-  /// user. Must be globally unique across all users.
+  /// User email address used for account authentication and communication.
+  /// Must be unique across all registered users and follow standard email
+  /// format validation.
   email String
   
-  /// Bcrypt or argon2id hash of user's chosen password. Never store a plain
-  /// password; always enforce strong hash.
+  /// Securely hashed password for user authentication. Always stores encrypted
+  /// hash rather than plain text, meeting modern security standards for
+  /// credential protection.
   password_hash String
   
-  /// True if the user account is locked or suspended and should not be allowed
-  /// to authenticate. Used for abuse prevention and compliance.
-  is_locked Boolean
-  
-  /// UTC timestamp when the user account was created.
+  /// Timestamp when user account was created, recorded automatically during
+  /// registration process for audit trail and account management purposes.
   created_at DateTime
   
-  /// UTC timestamp for the latest account modification or status change.
+  /// Timestamp of last user account modification, updated automatically when
+  /// profile information changes for change tracking and audit purposes.
   updated_at DateTime
+  
+  /// Soft delete timestamp for account deactivation. When set, indicates
+  /// account is inactive and user cannot authenticate, but data is preserved
+  /// for recovery or compliance purposes.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_todos todo_list_todos[]
-  todo_list_todo_audit_logs todo_list_todo_audit_logs[]
+  todo_app_user_limits todo_app_user_limits[]
+  todo_app_operation_logs todo_app_operation_logs[]
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_tasks todo_app_tasks[]
+  todo_app_categories todo_app_categories[]
+  todo_app_task_completions todo_app_task_completions[]
+  todo_app_task_audit_logs todo_app_task_audit_logs[]
+  todo_app_user_quotas todo_app_user_quotas?
+  todo_app_rate_limits todo_app_rate_limits[]
+  todo_app_usage_metrics todo_app_usage_metrics[]
   
   @@unique([email])
   @@index([created_at])
 }
 
-/// Authentication sessions for end users of the Todo List system.
+/// Authenticated user sessions tracking login activity and connection
+/// metadata for security and audit purposes.
 ///
-/// Each session tracks login context for a specific user, including
-/// connection IP and access URL. Sessions are used for token validation,
-/// security context, and auditing. Multiple sessions may exist per user,
-/// supporting concurrent device access. Expired sessions are tracked for
-/// compliance and security analysis. Managed via parent user lifecycle. Only
-/// allowed fields per session table standard.
+/// Sessions represent individual authenticated access instances for
+/// registered users, storing connection details like IP addresses, browser
+/// information, and authentication timestamps for security monitoring and
+/// session management.
 ///
+/// This table maintains security audit trails enabling users to view active
+/// sessions, detect potential unauthorized access, and manage their
+/// authentication state across multiple devices or browsers. Sessions
+/// persist according to user preferences with appropriate expiration
+/// mechanisms.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user_sessions {
+model todo_app_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key to session-owning user. Links to {@link todo_list_users.id}.
-  todo_list_user_id String
+  /// Reference to the authenticated user's {@link todo_app_users.id}. Links
+  /// session to specific user account for authentication tracking.
+  user_id String
   
-  /// IP address for the origin of the session, for security auditing.
+  /// IP address from which the user connected, stored for security monitoring
+  /// and session tracking to detect potential unauthorized access attempts.
   ip String
   
-  /// Original connection URL associated with this session, useful for context
-  /// and traceability.
+  /// Connection URL or current page location when session was created, helps
+  /// track user journey and session context for security and debugging
+  /// purposes.
   href String
   
-  /// Referrer URL context for original login or session creation.
+  /// Referrer URL indicating how user arrived at the application, useful for
+  /// understanding user flow and session origination for security and
+  /// analytics.
   referrer String
   
-  /// UTC timestamp of session authentication creation event.
+  /// Session creation timestamp when user successfully authenticated, recorded
+  /// automatically during login process for session duration tracking.
   created_at DateTime
   
-  /// UTC timestamp when this session expired (null means still active).
+  /// Session expiration timestamp when authentication expires according to
+  /// user preferences. Controls access duration and security timeout behavior.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
+  @@index([user_id, created_at])
 }
 
-/// Administrator accounts for privileged operations and oversight in the
-/// Todo List service.
+/// Guest users providing temporary access to explore application features
+/// without full registration commitment.
 ///
-/// Admins have the ability to view, edit, and manage any user's todos as
-/// well as oversee user accounts and system health. Each admin is identified
-/// by a unique email and secures access via a hashed password field. Admin
-/// accounts are strictly separated from regular users for security and
-/// compliance. Includes lock flag for suspensions and audit triggers. Admin
-/// capabilities are managed exclusively by the RBAC patterns of the
-/// application; they do not have their own todo entries.
+/// Guest accounts enable prospective users to experience core functionality
+/// through demonstration content and basic feature exploration while
+/// maintaining clear differentiation from full registered user experiences.
+///
+/// The table provides seamless upgrade pathways when guests decide to
+/// register, supporting data preservation and account conversion workflows
+/// through unified session management patterns.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_admins {
+model todo_app_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Globally unique admin login address for identity and communication.
-  email String
+  /// Unique identifier for guest session tracking, generated automatically for
+  /// session management and upgrade tracking when guests transition to
+  /// registered users.
+  session_identifier String
   
-  /// Strong cryptographic hash of admin password for login authentication.
-  /// Plain password never stored.
-  password_hash String
-  
-  /// True if admin is suspended or access is temporarily revoked. Used for
-  /// security and compliance enforcement.
-  is_locked Boolean
-  
-  /// UTC timestamp for admin account creation.
+  /// Timestamp when guest session was initiated, recorded for session duration
+  /// tracking and analysis of guest engagement patterns.
   created_at DateTime
   
-  /// UTC timestamp for last update to the admin account.
+  /// Last modification timestamp for guest session updates, tracked for
+  /// session management and data export purposes.
   updated_at DateTime
+  
+  /// Guest session expiration timestamp controlling temporary access duration.
+  /// Prevents indefinite guest usage and maintains resource management.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_admin_sessions todo_list_admin_sessions[]
-  todo_list_todo_audit_logs todo_list_todo_audit_logs[]
+  todo_app_guest_sessions todo_app_guest_sessions[]
   
-  @@unique([email])
+  @@unique([session_identifier])
   @@index([created_at])
 }
 
-/// Authentication session records for administrators in the Todo List system.
+/// Guest user sessions maintaining temporary access tracking and connection
+/// metadata for provisional user experiences.
 ///
-/// Each session logs admin login context, including IP and URL reference
-/// chains, for auditing privileged system access. Supports concurrent
-/// sessions per admin (for monitoring concurrent workstations or incident
-/// response). Expired sessions are kept for compliance and future security
-/// analysis. Follows the session table standard for admins as a distinct
-/// actor class. Managed through the parent admin lifecycle only.
+/// Sessions enable guest users to explore demonstrations and temporary
+/// features while collecting audit trails and security information for
+/// system monitoring and potential conversion tracking.
 ///
+/// This table supports clean session termination when temporary access
+/// expires and maintains security standards appropriate for provisional user
+/// management while enabling upgrade workflows to full registered accounts.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_admin_sessions {
+model todo_app_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key to session-owning admin. Links to {@link todo_list_admins.id}.
-  todo_list_admin_id String
+  /// Reference to the guest user's {@link todo_app_guests.id}. Links session
+  /// to specific guest account for access tracking.
+  guest_id String
   
-  /// IP address where admin logged in to begin session.
+  /// IP address from which guest connected, collected for security monitoring
+  /// and session tracking in temporary user experiences.
   ip String
   
-  /// Target URL of session origin, useful for context and audit trail.
+  /// Connection URL or page location during guest session creation, helps
+  /// understand guest engagement patterns and session contexts.
   href String
   
-  /// Upstream URL from which admin accessed this session. Used in audit trails.
+  /// Referrer URL showing how guest arrived at application, useful for
+  /// analyzing guest acquisition sources and session origins.
   referrer String
   
-  /// UTC timestamp of session authentication creation.
+  /// Session creation timestamp when guest access began, recorded for
+  /// temporary session duration management and usage tracking.
   created_at DateTime
   
-  /// UTC time session expired; null for active session.
+  /// Guest session expiration timestamp controlling temporary access duration
+  /// and resource cleanup according to guest policies.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
+  guest todo_app_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_admin_id, created_at])
+  @@index([guest_id, created_at])
 }

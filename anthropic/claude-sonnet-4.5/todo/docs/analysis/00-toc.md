@@ -1,128 +1,204 @@
-# Todo List Application: Comprehensive Business Requirements
+# Todo List Application - Documentation Table of Contents
 
-## Introduction
+## Documentation Overview
 
-These requirements specify the essential backend business logic for a minimal yet functional Todo List application. All content is expressed for backend developers but focuses only on business requirements, user logic, permission control, and error handling (no frontend or API documentation). Requirements are written in natural language, with actionable, testable statements conforming to the EARS methodology. Every scenario is specified such that any backend engineer can implement the system precisely as described, with no reliance on external context.
+This documentation set provides complete business requirements and specifications for building a minimal Todo list application. The documentation is organized to guide you from high-level business context through detailed functional requirements, user workflows, and system constraints.
 
----
+**Purpose**: These documents define WHAT the Todo list application should do from a business and user perspective, providing backend developers with clear, unambiguous requirements to build the system.
 
-## Functional Requirements (EARS format)
+**Target Audience**: Backend developers, product managers, business stakeholders, and anyone involved in understanding or building the Todo list application.
 
-### 1. User Account Registration and Authentication
-- WHEN a new user wishes to use the service, THE system SHALL require successful registration using a unique email and password.
-- IF a user attempts to register with an email already on record, THEN THE system SHALL reject the registration and respond with the reason, "Email already registered." 
-- WHEN a registered user submits the correct credentials, THE system SHALL authenticate the user and initiate a 30-minute active session (tracked server-side).
-- IF a user submits incorrect credentials, THEN THE system SHALL respond with an "Invalid email or password" error and deny access.
-- WHEN any authenticated session times out (after 30 minutes inactivity), THE system SHALL invalidate the session and require the user to re-authenticate for access to protected resources.
-- WHEN a non-authenticated user requests any Todo function, THE system SHALL reject the action and return an authentication error response.
+## Complete Documentation Set
 
-### 2. Todo Creation
-- WHEN an authenticated user creates a Todo by providing a title (required), and optionally a description and due date, THE system SHALL create and associate the Todo with that user.
-- IF the provided title is empty or exceeds 255 characters, THEN THE system SHALL reject the creation and describe the validation error.
-- IF the description is longer than 1,000 characters, THEN THE system SHALL reject the creation and state the validation error.
-- WHEN a due date is provided, THE system SHALL ensure it is today or a future date; if not, THE system SHALL reject the creation and note the date limitation.
+The documentation is organized in recommended reading order, from foundational concepts to detailed specifications:
 
-### 3. Todo Viewing and Listing
-- WHEN an authenticated user requests their Todo list, THE system SHALL return only Todo items belonging to that user, sorted first by due date ascending, then by creation date descending.
-- WHEN a user requests a specific Todo by ID, THE system SHALL allow access only if the Todo is owned by that user.
-- IF a Todo does not exist or belongs to a different user, THEN THE system SHALL respond with a "Not Found" or "Forbidden" error as appropriate.
+### 1. [Service Overview](./01-service-overview.md)
+**Purpose**: Establishes the foundation of the Todo list application  
+**Contains**: Business vision, problem statement, value proposition, target users, key features overview, business model, and success metrics  
+**Read this for**: Understanding why this application exists and what business value it provides  
+**Audience**: Business stakeholders and development team
 
-### 4. Todo Update
-- WHEN a user requests to update their own Todo (title, description, due date), THE system SHALL validate new data against all constraints and, if valid, persist the changes.
-- IF the updated data violates title/description length or uses a due date in the past, THEN THE system SHALL reject the change and return a validation error corresponding to the specific input problem.
+### 2. [User Actors and Authentication](./02-user-actors-and-authentication.md)
+**Purpose**: Defines all user types and the complete authentication system  
+**Contains**: User actor definitions (guest and authenticated user), complete authentication flows, registration process, login/session management, password management, JWT token specifications, permission matrix, and security requirements  
+**Read this for**: Understanding who can use the system, how they authenticate, and what permissions each user type has  
+**Audience**: Development team  
+**Key Requirement**: Must use JWT for token-based authentication
 
-### 5. Todo Deletion
-- WHEN a user requests to delete their own Todo, THE system SHALL remove it from active lists for the user.
-- IF a user attempts to delete a Todo not owned by them, THEN THE system SHALL return a forbidden error.
-- AFTER deletion, THE system SHALL ensure the Todo does not appear in any standard user listings but may remain available to admin for compliance.
+### 3. [Todo Management Requirements](./03-todo-management-requirements.md)
+**Purpose**: Defines the core functionality for managing todo items  
+**Contains**: Todo item data structure, create/read/update/delete operations, complete/incomplete toggle, todo ownership and isolation rules, and validation requirements  
+**Read this for**: Understanding all todo management features and how users interact with their tasks  
+**Audience**: Development team  
+**Key Requirement**: Must ensure complete data isolation between users
 
-### 6. Todo Completion
-- WHEN a user marks their own Todo as "Completed", THE system SHALL update its status and record the completion timestamp, keeping all details for later reference.
-- THE system SHALL let users toggle status between "Completed" and "Not Completed" for their own Todos.
-- IF a user attempts to change the completion status of a Todo they do not own, THEN THE system SHALL reject the request with a forbidden error.
+### 4. [User Workflows](./04-user-workflows.md)
+**Purpose**: Documents complete user journeys through the application  
+**Contains**: New user registration journey, login journey, creating first todo, daily todo management workflow, completing todos, organizing and filtering, and account management  
+**Read this for**: Understanding step-by-step how users accomplish tasks in real-world scenarios  
+**Audience**: Development team and product managers
 
-### 7. Admin Operations
-- WHEN an admin authenticates, THE system SHALL permit access to all Todo items and all user accounts for monitoring and support.
-- THE system SHALL allow admins to view any user's Todos (completed or deleted).
-- WHERE an admin discovers misuse or abusive content, THE system SHALL provide a way to mark, audit, or remove such records, logging all actions.
+### 5. [Business Rules and Validation](./05-business-rules-and-validation.md)
+**Purpose**: Defines all business logic, validation rules, and constraints  
+**Contains**: Todo item validation rules, user data validation, business constraints, data integrity rules, authorization rules, and operational constraints  
+**Read this for**: Understanding what validation and business rules must be enforced  
+**Audience**: Development team  
+**Key Requirement**: All validation rules specified in EARS format
 
-### 8. Data Isolation and Privacy
-- THE system SHALL always isolate each user's data. Under no circumstances can a user access, view, or modify the Todos of another non-admin user.
-- WHERE an admin performs actions on user data, THE system SHALL log each action with identity, action type, target, and timestamp for audit.
+### 6. [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)
+**Purpose**: Documents all error scenarios and exception handling  
+**Contains**: Authentication errors, todo operation errors, validation errors, authorization errors, system errors, edge cases, error message requirements, and recovery processes  
+**Read this for**: Understanding how the system should behave when things go wrong  
+**Audience**: Development team  
+**Key Requirement**: Must cover all error scenarios from user perspective
 
-### 9. Error Handling (Business Perspective)
-- IF required input is missing, malformed, or fails constraint checks, THEN THE system SHALL present a clear, actionable error tied directly to the user's error.
-- WHEN a user performs an unauthorized or out-of-permission action, THE system SHALL deny access and return a forbidden error message.
-- IF the backend experiences an unexpected error (e.g., server or database failure), THEN THE system SHALL provide a generic, non-technical error response to the user, and record full diagnostic details for admins.
-- WHERE an error is fixable by correcting user input, THE system SHALL encourage a retry after remedial action.
+### 7. [Data Lifecycle and Persistence](./07-data-lifecycle-and-persistence.md)
+**Purpose**: Defines how data flows through the system over time  
+**Contains**: Todo item lifecycle, user account lifecycle, data persistence requirements, data retention policies, modification tracking, and deletion policies  
+**Read this for**: Understanding how data is created, modified, and managed throughout its existence  
+**Audience**: Development team
 
-### 10. Consistency and Idempotency
-- THE system SHALL process repeated identical operations idempotently: completing, deleting, or toggling a Todo with same parameters multiple times results in a consistent single effect, never data duplication or corruption.
-- WHEN retries are necessary after network/server failure, THE system SHALL guarantee no duplicate operations or lost data for the user upon safe retry.
+### 8. [Performance and Usability Requirements](./08-performance-and-usability-requirements.md)
+**Purpose**: Specifies performance expectations and usability standards  
+**Contains**: Response time expectations, system performance requirements, data loading performance, concurrent user support, usability requirements, and accessibility considerations  
+**Read this for**: Understanding performance targets and user experience expectations  
+**Audience**: Development team  
+**Key Requirement**: Must specify measurable performance criteria from user perspective
 
----
+### 9. [Security and Privacy](./09-security-and-privacy.md)
+**Purpose**: Defines security requirements and privacy protections  
+**Contains**: Data privacy requirements, user data protection, authentication security, authorization security, data isolation requirements, security best practices, and compliance considerations  
+**Read this for**: Understanding how user data must be protected and security measures required  
+**Audience**: Development team and security stakeholders  
+**Key Requirement**: Must ensure complete data isolation between users
 
-## Non-functional Requirements
+### 10. [Future Considerations](./10-future-considerations.md)
+**Purpose**: Documents potential future enhancements and scalability planning  
+**Contains**: Potential future features, scalability considerations, integration opportunities, enhancement possibilities, architecture future-proofing guidance  
+**Read this for**: Understanding what might be added later and how to avoid limiting future options  
+**Audience**: Development team and product managers
 
-### 1. Performance
-- WHEN a user requests their Todo list (max 100 items), THE system SHALL provide a response in less than 1 second.
-- WHEN a Todo is created, updated, completed, or deleted, THE system SHALL visibly confirm the operation within 1 second.
-- WHEN an admin runs bulk operations or audits (up to 10,000 records), THE system SHALL return results within 3 seconds.
+## How to Navigate This Documentation
 
-### 2. Security
-- THE system SHALL store all user passwords using secure salted hashing algorithms, never in plaintext.
-- THE system SHALL enforce HTTPS/TLS for all backend communications.
-- THE system SHALL authenticate users via JWT tokens with 30-minute access token expiry and maximum 7-day refresh period.
-- THE system SHALL always verify user privileges in backend logic (never via frontend hints).
+### Recommended Reading Order
 
-### 3. Data Integrity and Reliability
-- THE system SHALL never lose, corrupt, or partially commit Todo data, even in case of routine failures (network/server/power).
-- THE system SHALL persist all Todo operations atomically: create, update, complete, delete.
-- THE system SHALL retain complete audit logs of admin actions for at least 90 days.
+**For Business Stakeholders**:
+1. Start with [Service Overview](./01-service-overview.md) to understand the business context
+2. Review [User Workflows](./04-user-workflows.md) to see user journeys
+3. Check [Future Considerations](./10-future-considerations.md) for growth potential
 
-### 4. Compliance
-- THE system SHALL comply with basic privacy standards: minimum required user data retained, no sharing with third parties, all admin actions audit logged.
+**For Backend Developers (First Time)**:
+1. [Service Overview](./01-service-overview.md) - Understand the business context
+2. [User Actors and Authentication](./02-user-actors-and-authentication.md) - Know your users and auth system
+3. [Todo Management Requirements](./03-todo-management-requirements.md) - Core functionality
+4. [Business Rules and Validation](./05-business-rules-and-validation.md) - Validation logic
+5. [User Workflows](./04-user-workflows.md) - See how it all flows together
+6. [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md) - Handle failures
+7. [Data Lifecycle and Persistence](./07-data-lifecycle-and-persistence.md) - Data management
+8. [Performance and Usability Requirements](./08-performance-and-usability-requirements.md) - Performance targets
+9. [Security and Privacy](./09-security-and-privacy.md) - Security requirements
+10. [Future Considerations](./10-future-considerations.md) - Plan for the future
 
----
+**For Quick Reference by Topic**:
+- **Authentication/Users**: [User Actors and Authentication](./02-user-actors-and-authentication.md)
+- **Todo Features**: [Todo Management Requirements](./03-todo-management-requirements.md)
+- **User Experience**: [User Workflows](./04-user-workflows.md)
+- **Validation**: [Business Rules and Validation](./05-business-rules-and-validation.md)
+- **Error Handling**: [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)
+- **Performance**: [Performance and Usability Requirements](./08-performance-and-usability-requirements.md)
+- **Security**: [Security and Privacy](./09-security-and-privacy.md)
 
-## User Experience Expectations
+### Document Categories
 
-- WHEN any valid, permitted action is taken (create, update, complete, delete), THE system SHALL always confirm the result to the user within 1 second.
-- IF a user makes a mistake (invalid input, unauthorized operation), THE system SHALL return instant, detailed feedback explaining the reason and suggested correction.
-- THE system SHALL use user-friendly, jargon-free language in all error and confirmation messages.
-- ON unexpected errors, THE system SHALL prompt users to retry later and record the incident for admin troubleshooting.
+**Foundational Documents** (Read First):
+- [Service Overview](./01-service-overview.md)
+- [User Actors and Authentication](./02-user-actors-and-authentication.md)
 
----
+**Core Requirements** (Essential Reading):
+- [Todo Management Requirements](./03-todo-management-requirements.md)
+- [Business Rules and Validation](./05-business-rules-and-validation.md)
+- [Security and Privacy](./09-security-and-privacy.md)
 
-## Mermaid Diagram: Core User Flows
+**Workflow and UX Documents**:
+- [User Workflows](./04-user-workflows.md)
+- [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)
+
+**System Behavior Documents**:
+- [Data Lifecycle and Persistence](./07-data-lifecycle-and-persistence.md)
+- [Performance and Usability Requirements](./08-performance-and-usability-requirements.md)
+
+**Strategic Planning**:
+- [Future Considerations](./10-future-considerations.md)
+
+## Document Relationships
 
 ```mermaid
 graph LR
-  subgraph "User Operations"
-    A["User Registers"] --> B["User Authenticates"]
-    B --> C["Create Todo"]
-    C --> D["List Todos"]
-    D --> E["View Todo"]
-    E --> F["Update Todo"]
-    F --> G["Complete Todo"]
-    G --> H["Delete Todo"]
-  end
-  subgraph "Admin Operations"
-    X["Admin Authenticates"] --> Y["View All Todos"]
-    Y --> Z["Audit/Delete/Mark Todos"]
-  end
-  H -.-> Y
-  G -.-> Y
+    A["Service Overview"] --> B["User Actors and Authentication"]
+    A --> C["Todo Management Requirements"]
+    B --> C
+    B --> D["User Workflows"]
+    C --> D
+    C --> E["Business Rules and Validation"]
+    B --> E
+    E --> F["Error Handling and Edge Cases"]
+    C --> F
+    D --> F
+    C --> G["Data Lifecycle and Persistence"]
+    E --> G
+    D --> H["Performance and Usability Requirements"]
+    A --> H
+    B --> I["Security and Privacy"]
+    E --> I
+    A --> J["Future Considerations"]
 ```
+
+**Dependency Flow**:
+- **[Service Overview](./01-service-overview.md)** provides context for all other documents
+- **[User Actors and Authentication](./02-user-actors-and-authentication.md)** defines who can access the system
+- **[Todo Management Requirements](./03-todo-management-requirements.md)** builds on authentication to define core features
+- **[Business Rules and Validation](./05-business-rules-and-validation.md)** refines requirements with specific rules
+- **[User Workflows](./04-user-workflows.md)** shows how requirements connect in user journeys
+- **[Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)** addresses failure scenarios
+- **[Data Lifecycle and Persistence](./07-data-lifecycle-and-persistence.md)** defines data management
+- **[Performance and Usability Requirements](./08-performance-and-usability-requirements.md)** sets experience standards
+- **[Security and Privacy](./09-security-and-privacy.md)** ensures data protection
+- **[Future Considerations](./10-future-considerations.md)** plans for growth
+
+## Key Documentation Principles
+
+### Business Requirements Focus
+All documents focus on **business requirements** and **user needs** in natural language. Technical implementation details (database schemas, API designs, architecture decisions) are intentionally excluded to give developers full autonomy in technical solutions.
+
+### EARS Format
+Functional requirements use **EARS (Easy Approach to Requirements Syntax)** format for clarity and precision:
+- **WHEN** [trigger], **THE** [system] **SHALL** [function]
+- **WHILE** [state], **THE** [system] **SHALL** [function]
+- **IF** [condition], **THEN THE** [system] **SHALL** [function]
+- **WHERE** [feature/condition], **THE** [system] **SHALL** [function]
+- **THE** [system] **SHALL** [function] (for always-active requirements)
+
+### Comprehensive Coverage
+Documentation is written to be **complete and production-ready** on first read. All business requirements, validation rules, error scenarios, and user workflows are fully specified without ambiguity.
+
+### User Perspective
+Requirements are written from the **user's perspective**, describing what users can do and how the system should respond to user actions, not how to implement technical solutions.
+
+## Getting Started
+
+1. **New to the project?** Start with [Service Overview](./01-service-overview.md)
+2. **Ready to build?** Read documents 1-9 in order
+3. **Looking for specific information?** Use the Quick Reference section above
+4. **Planning future features?** Check [Future Considerations](./10-future-considerations.md)
+
+## Documentation Standards
+
+- **Minimum Length**: Technical documents contain 5,000-30,000+ characters for comprehensive coverage
+- **Diagrams**: Mermaid diagrams used for flows and relationships (all using left-to-right orientation for readability)
+- **Links**: All document links use descriptive text, never raw filenames
+- **Language**: All content in English with formal, professional tone
+- **Completeness**: Single-pass documentation with no iterations - everything included on first write
 
 ---
 
-## Measurable Success Criteria
-
-- All above requirements (functional, non-functional, experience) SHALL be realized and testable in the final deployed system.
-- All user and admin actions produce clear business-valid results or business-level error messages; no operation results in ambiguity or partial business state.
-- All edge cases and recovery scenarios behave exactly as described above.
-- Performance guarantees (all user and admin actions within strict response windows) are enforced in production.
-- 100% isolation between user datasets with complete audit logging for all admin access or action upon data.
-- No user, under any circumstances, is able to access or modify another user's Todos without admin privileges.
-- Audit logs are clear, unambiguous, and sufficiently detailed to reconstruct any admin action for compliance review.
+Developer Note: This documentation defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.

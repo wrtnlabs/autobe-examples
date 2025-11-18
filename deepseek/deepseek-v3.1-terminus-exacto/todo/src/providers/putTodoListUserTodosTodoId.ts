@@ -15,99 +15,59 @@ export async function putTodoListUserTodosTodoId(props: {
   todoId: string & tags.Format<"uuid">;
   body: ITodoListTodo.IUpdate;
 }): Promise<ITodoListTodo> {
-  // 1. Find and verify todo exists, belongs to user
-  const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
-    where: { id: props.todoId },
+  // Check if any update data is provided
+  if (Object.keys(props.body).length === 0) {
+    throw new HttpException("No update data provided", 400);
+  }
+
+  // Verify todo exists and belongs to user
+  const existingTodo = await MyGlobal.prisma.todo_list_todos.findFirst({
+    where: {
+      id: props.todoId,
+      todo_list_user_id: props.user.id,
+      deleted_at: null,
+    },
   });
-  if (!todo) {
-    throw new HttpException("Todo not found", 404);
-  }
-  if (todo.todo_list_user_id !== props.user.id) {
-    throw new HttpException("Forbidden: Only owner can update this todo", 403);
+
+  if (!existingTodo) {
+    throw new HttpException(
+      "Todo not found or you don't have permission to access it",
+      404,
+    );
   }
 
-  // 2. Build update data and enforce individual field rules
-  const update: Record<string, unknown> = {};
+  // Build update data with proper typing
+  const updateData: {
+    title?: string;
+    description?: string | null;
+    status?: "pending" | "completed";
+    updated_at: string;
+  } = {
+    updated_at: toISOStringSafe(new Date()),
+  };
 
-  // Title: 1–100 chars, non-whitespace (already validated by DTO layer)
+  // Add only the fields that are provided
   if (props.body.title !== undefined) {
-    update.title = props.body.title;
+    updateData.title = props.body.title;
   }
-
-  // Description: string or null, max 1000 (already validated)
-  if (Object.prototype.hasOwnProperty.call(props.body, "description")) {
-    update.description =
-      props.body.description === undefined ? null : props.body.description;
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description ?? null;
   }
-
-  // Due_date: ISO8601 in the future, or null (already validated)
-  if (Object.prototype.hasOwnProperty.call(props.body, "due_date")) {
-    update.due_date =
-      props.body.due_date === undefined ? null : props.body.due_date;
-  }
-
-  // Status with lifecycle & completed_at
-  let shouldSetCompletedAt = false;
   if (props.body.status !== undefined) {
-    // Only allow permitted transitions (from current to next)
-    const current = todo.status;
-    const next = props.body.status;
-    const allowed: Record<string, string[]> = {
-      pending: ["pending", "completed", "archived"],
-      completed: ["completed", "archived"],
-      archived: ["archived"],
-    };
-    if (!allowed[current] || !allowed[current].includes(next)) {
-      throw new HttpException("Invalid status transition", 400);
-    }
-    update.status = next;
-    if (current !== "completed" && next === "completed") {
-      shouldSetCompletedAt = true; // Only set when transitioning to completed
-    }
-    // Clear completed_at if transitioning away from completed
-    if (current === "completed" && next !== "completed") {
-      update.completed_at = null;
-    }
+    updateData.status = props.body.status;
   }
 
-  // completed_at: Set when status transitions to completed
-  if (shouldSetCompletedAt) {
-    update.completed_at = toISOStringSafe(new Date());
-  }
-
-  // Always update updated_at
-  update.updated_at = toISOStringSafe(new Date());
-
-  // Perform update
-  const updated = await MyGlobal.prisma.todo_list_todos.update({
+  // Update the todo
+  const updatedTodo = await MyGlobal.prisma.todo_list_todos.update({
     where: { id: props.todoId },
-    data: update,
+    data: updateData,
   });
 
-  // Return in API format, mapping null/undefined properly per ITodoListTodo
+  // Convert to API response format
   return {
-    id: updated.id,
-    title: updated.title,
-    description: Object.prototype.hasOwnProperty.call(updated, "description")
-      ? updated.description
-      : undefined,
-    status: typia.assert<"pending" | "completed" | "archived">(updated.status),
-    due_date:
-      Object.prototype.hasOwnProperty.call(updated, "due_date") &&
-      updated.due_date !== null
-        ? toISOStringSafe(updated.due_date)
-        : updated.due_date === null
-          ? null
-          : undefined,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    completed_at:
-      Object.prototype.hasOwnProperty.call(updated, "completed_at") &&
-      updated.completed_at !== null
-        ? toISOStringSafe(updated.completed_at)
-        : updated.completed_at === null
-          ? null
-          : undefined,
-    todo_list_user_id: updated.todo_list_user_id,
+    title: updatedTodo.title,
+    description:
+      updatedTodo.description === null ? undefined : updatedTodo.description,
+    status: updatedTodo.status as "pending" | "completed",
   };
 }

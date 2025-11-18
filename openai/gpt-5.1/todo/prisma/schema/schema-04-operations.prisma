@@ -1,0 +1,220 @@
+/// Operational log of authentication attempts for todoApp users.
+///
+/// Stores each login attempt with its login identifier, outcome, and
+/// contextual information such as IP address and user agent. This table is
+/// used to enforce rate limits on failed logins, detect abuse patterns, and
+/// support security investigations.
+///
+/// Records may optionally link to a concrete member or admin account if the
+/// identifier matched an existing account at the time of the attempt.
+/// Successful and failed attempts are tracked with a result flag so
+/// operators can distinguish normal usage from suspicious behavior.
+///
+/// @namespace Operations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_login_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the login attempt record. Uniquely identifies each
+  /// authentication attempt event.
+  id String @id
+  
+  /// Optional reference to the member user account associated with this login
+  /// attempt. {@link todo_app_memberusers.id}. Present when the login
+  /// identifier matched a member user at the time of the attempt.
+  todo_app_memberuser_id String?
+  
+  /// Optional reference to the admin user account associated with this login
+  /// attempt. {@link todo_app_adminusers.id}. Present when the login
+  /// identifier matched an admin user at the time of the attempt.
+  todo_app_adminuser_id String?
+  
+  /// Login identifier supplied by the client, such as email or username.
+  /// Stored exactly as received after normalization rules so that patterns of
+  /// failed attempts can be analyzed.
+  login_identifier String
+  
+  /// High-level actor type that attempted the login. Typical values are
+  /// guestUser, memberUser, or adminUser, determined after authentication
+  /// logic evaluates the identifier.
+  actor_type String
+  
+  /// Indicates whether this login attempt successfully resulted in an
+  /// authenticated session. True for valid credentials, false for invalid
+  /// credentials or blocked accounts.
+  succeeded Boolean
+  
+  /// IP address from which the login attempt originated. Used for abuse
+  /// detection and incident investigation.
+  ip String
+  
+  /// Optional user agent string reported by the client. Helps identify
+  /// automated scripts and unusual client patterns in security reviews.
+  user_agent String?
+  
+  /// Optional high-level category describing why the login failed, such as
+  /// invalid_credentials, account_locked, or rate_limited. Null for successful
+  /// attempts.
+  failure_reason String?
+  
+  /// Timestamp when the login attempt was recorded. Used for rate limiting
+  /// windows, trend analysis, and time-bounded security investigations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser todo_app_memberusers? @relation(fields: [todo_app_memberuser_id], references: [id], onDelete: Cascade)
+  adminUser todo_app_adminusers? @relation(fields: [todo_app_adminuser_id], references: [id], onDelete: Cascade)
+  
+  @@index([login_identifier, created_at])
+  @@index([todo_app_memberuser_id, created_at])
+  @@index([todo_app_adminuser_id, created_at])
+  @@index([ip, created_at])
+}
+
+/// Audit log of administrative actions performed on todo items.
+///
+/// Captures when an admin user intervenes on a member user’s todo, such as
+/// deleting it for policy reasons or performing exceptional modifications.
+/// Each record stores the target todo, the acting admin, a high-level action
+/// type, and a reason category so that compliance and support teams can
+/// review historical decisions.
+///
+/// Entries are append-only and provide a durable trail of who changed what
+/// and when, without affecting the core todo lifecycle models.
+///
+/// @namespace Operations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admin_todo_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the admin todo action log entry. Uniquely identifies each
+  /// administrative action event.
+  id String @id
+  
+  /// Reference to the admin user who performed this action. {@link
+  /// todo_app_adminusers.id}. Identifies the responsible operator for audit
+  /// purposes.
+  todo_app_adminuser_id String
+  
+  /// Reference to the member user who owns the affected todo. {@link
+  /// todo_app_memberusers.id}. Used to analyze impact on a specific account.
+  todo_app_memberuser_id String
+  
+  /// Reference to the todo item that the admin acted upon. {@link
+  /// todo_app_todos.id}. Enables reconstructing which item was removed or
+  /// modified.
+  todo_app_todo_id String
+  
+  /// High-level type of administrative action, such as delete_todo, hide_todo,
+  /// or neutralize_content. Used for categorizing interventions in reports.
+  action_type String
+  
+  /// High-level reason code explaining why this action was taken, for example
+  /// policy_violation, legal_request, abuse_report, or operational_cleanup.
+  reason_category String
+  
+  /// Optional free-form description with additional context about the action,
+  /// written by the admin or system. Should avoid including sensitive personal
+  /// data beyond what is necessary for audit.
+  reason_detail String?
+  
+  /// Optional IP address from which the admin performed this action. Provides
+  /// context for admin security reviews.
+  ip String?
+  
+  /// Timestamp when the administrative action was recorded. Supports
+  /// chronological audit and correlation with user-facing effects.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  adminUser todo_app_adminusers @relation(fields: [todo_app_adminuser_id], references: [id], onDelete: Cascade)
+  memberUser todo_app_memberusers @relation(fields: [todo_app_memberuser_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_memberuser_id, created_at], map: "todo_app_admin_todo_actions_todo_app_memberuser_id_cre_29500e17")
+  // spellchecker: ignore-next-line
+  @@index([todo_app_adminuser_id, created_at], map: "todo_app_admin_todo_actions_todo_app_adminuser_id_crea_b5cdf6b6")
+  @@index([action_type, created_at])
+  @@index([reason_category, created_at])
+}
+
+/// Operational log of rate limit triggers applied to requests in todoApp.
+///
+/// Records when the system enforces rate limiting for a specific actor, IP
+/// address, or logical key. This supports security monitoring, tuning of
+/// rate limits, and debugging of user complaints about temporary blocking.
+///
+/// Each entry includes the limiting key, actor context when known, the type
+/// of limit that was exceeded, and the time window for which the limit
+/// applies.
+///
+/// @namespace Operations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_rate_limit_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the rate limit event record. Uniquely identifies each
+  /// enforcement event.
+  id String @id
+  
+  /// Optional reference to the member user associated with this rate limit
+  /// event. {@link todo_app_memberusers.id}. Present when the limit is tied to
+  /// an authenticated member user.
+  todo_app_memberuser_id String?
+  
+  /// Optional reference to the admin user associated with this rate limit
+  /// event. {@link todo_app_adminusers.id}. Present when the limit is tied to
+  /// an authenticated admin user.
+  todo_app_adminuser_id String?
+  
+  /// Actor type that triggered the rate limit, such as guestUser, memberUser,
+  /// or adminUser. Used to differentiate protections per role.
+  actor_type String
+  
+  /// Optional IP address to which this rate limit event applies. Useful for
+  /// anonymous or guest-based rate limiting where no user account is present.
+  ip String?
+  
+  /// Logical key used by the rate limiting subsystem, such as
+  /// login_identifier, account_id, ip, or a specific endpoint group
+  /// identifier. Enables grouping of events by limit dimension.
+  limit_key String
+  
+  /// Category of rate limit that was exceeded, for example auth_login,
+  /// todo_write, admin_action, or global_client_limit.
+  limit_type String
+  
+  /// Start timestamp of the rate limit window during which the threshold was
+  /// exceeded. Combined with window_end to describe the enforced interval.
+  window_start DateTime
+  
+  /// End timestamp of the rate limit window for this event. Indicates until
+  /// when the client is expected to experience throttling for this key.
+  window_end DateTime
+  
+  /// Timestamp when the rate limit event was recorded. Used to order events
+  /// and correlate with request logs.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser todo_app_memberusers? @relation(fields: [todo_app_memberuser_id], references: [id], onDelete: Cascade)
+  adminUser todo_app_adminusers? @relation(fields: [todo_app_adminuser_id], references: [id], onDelete: Cascade)
+  
+  @@index([limit_key, created_at])
+  @@index([actor_type, created_at])
+  @@index([ip, created_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_memberuser_id, created_at], map: "todo_app_rate_limit_events_todo_app_memberuser_id_crea_e6878e4e")
+  @@index([todo_app_adminuser_id, created_at])
+}

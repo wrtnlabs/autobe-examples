@@ -1,0 +1,309 @@
+/// Guest user identities for conceptual tracking of unauthenticated visitors.
+///
+/// This table represents guest users at a conceptual level so that the
+/// system can attach future data (such as preferences or acceptance of
+/// terms) if business requirements expand. In the minimal version, guest
+/// users do not authenticate and do not own todos, but maintaining a
+/// normalized actor representation keeps the identity model symmetrical.
+///
+/// Each row corresponds to one logical guest identity that may be associated
+/// with browser or device context at the application layer. The table stores
+/// minimal profile and lifecycle fields only; all authentication and todo
+/// ownership is handled by member and admin users in other tables.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guestusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the guest user. Uniquely identifies a conceptual guest
+  /// identity in the system.
+  id String @id
+  
+  /// Optional display name or nickname for the guest user. Used only for
+  /// friendly identification in logs or future features; not used for
+  /// authentication.
+  display_name String?
+  
+  /// Timestamp when this guest user record was created. Represents the first
+  /// time this guest identity was recorded by the system.
+  created_at DateTime
+  
+  /// Timestamp when this guest user record was last updated. Updated whenever
+  /// profile-related fields change.
+  updated_at DateTime
+  
+  /// Timestamp marking when this guest user was logically deleted. Null when
+  /// the record is active; non-null when removed from normal use.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at, id])
+}
+
+/// Member user accounts for authenticated end users who own personal todo
+/// lists.
+///
+/// This table stores the primary identity records for regular users of the
+/// todoApp service. Each member user authenticates with a unique login
+/// identifier and password hash, and owns a private set of todos stored in
+/// {@link todo_app_todos}.
+///
+/// The table holds authentication credentials, account status, and lifecycle
+/// timestamps. Session state is modeled separately in {@link
+/// todo_app_memberuser_sessions}, enabling multiple concurrent sessions per
+/// user while keeping the account data normalized and independent from
+/// connection details.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_memberusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the member user. Uniquely identifies an authenticated user
+  /// within the todoApp service.
+  id String @id
+  
+  /// Unique login identifier for the member user, typically an email-style
+  /// value. Used for authentication and communication; must be unique among
+  /// member users.
+  email String
+  
+  /// Hashed representation of the member user password. The original password
+  /// is never stored; backend logic enforces secure hashing algorithms.
+  password_hash String
+  
+  /// Optional human-friendly display name for the member user. Used in UI or
+  /// logs but not for authentication.
+  display_name String?
+  
+  /// Account status for the member user. Typical values include active,
+  /// inactive, disabled, or deleted; exact semantics are defined at
+  /// application level.
+  status String
+  
+  /// Counter of recent consecutive failed login attempts for this account.
+  /// Used by authentication logic to apply temporary lockouts or additional
+  /// checks.
+  failed_login_count Int
+  
+  /// Timestamp of the last successful login for this member user. Null if the
+  /// user has never logged in successfully.
+  last_login_at DateTime?
+  
+  /// Timestamp when this member user account was created. Represents
+  /// registration time.
+  created_at DateTime
+  
+  /// Timestamp when this member user account record was last updated. Updated
+  /// whenever profile or security-related fields change.
+  updated_at DateTime
+  
+  /// Timestamp marking when this member user account was logically deleted.
+  /// Null while the account is considered active or recoverable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_memberuser_sessions todo_app_memberuser_sessions[]
+  todo_app_todos todo_app_todos[]
+  todo_app_login_attempts todo_app_login_attempts[]
+  todo_app_admin_todo_actions todo_app_admin_todo_actions[]
+  todo_app_rate_limit_events todo_app_rate_limit_events[]
+  
+  @@unique([email])
+  @@index([status, id])
+  @@index([created_at, id])
+}
+
+/// Authentication sessions for member users, capturing connection context
+/// and session lifetime.
+///
+/// This table records individual login sessions for {@link
+/// todo_app_memberusers}. Each session row corresponds to one authenticated
+/// context, such as a browser or device login, and is used for audit and
+/// enforcement of session expiry.
+///
+/// The model follows the global session pattern: it stores only the minimal
+/// required fields (IP address, href, referrer, and temporal data) plus a
+/// foreign key to the owning member user. Business logic manages session
+/// tokens externally while this table provides persistence for tracing and
+/// analysis.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_memberuser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the member user session. Uniquely identifies an
+  /// authenticated session instance.
+  id String @id
+  
+  /// Foreign key referencing the owning member user account. {@link
+  /// todo_app_memberusers.id}.
+  todo_app_memberuser_id String
+  
+  /// IP address from which the member user established this session. Used for
+  /// audit and basic security analysis.
+  ip String
+  
+  /// Full URL (including path) that the member user visited when creating this
+  /// session. Captures entry point context.
+  href String
+  
+  /// Referrer URL reported by the client when the session was established.
+  /// Helps understand navigation paths into the service.
+  referrer String
+  
+  /// Timestamp when this session was created. Represents the time of
+  /// successful authentication.
+  created_at DateTime
+  
+  /// Timestamp when this session became invalid, either due to explicit logout
+  /// or expiration. Null while the session is still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser todo_app_memberusers @relation(fields: [todo_app_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_memberuser_id, created_at], map: "todo_app_memberuser_sessions_todo_app_memberuser_id_cr_4d44579e")
+}
+
+/// Administrative user accounts with elevated privileges for operating and
+/// supervising the todoApp service.
+///
+/// This table stores identity records for admin users who can perform
+/// oversight on member accounts and todos. Admins authenticate similarly to
+/// member users but have separate credentials and status to support stricter
+/// controls and auditing.
+///
+/// Admin users may review or remove todos across users via other components
+/// such as {@link todo_app_admin_todo_actions}. Sessions for admins are
+/// tracked in {@link todo_app_adminuser_sessions}, allowing separation
+/// between account data and connection history.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_adminusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the admin user. Uniquely identifies an administrative
+  /// actor within the todoApp service.
+  id String @id
+  
+  /// Unique login identifier for the admin user, typically an email-style
+  /// value distinct from member user addresses. Used for authentication and
+  /// administrative communication.
+  email String
+  
+  /// Hashed representation of the admin user password. Must follow strong
+  /// security practices and never store raw passwords.
+  password_hash String
+  
+  /// Optional human-friendly display name for the admin user. Used in admin
+  /// consoles and logs for easier recognition.
+  display_name String?
+  
+  /// Account status of the admin user. Typical values include active,
+  /// inactive, disabled, or deleted; application-level rules define allowed
+  /// transitions.
+  status String
+  
+  /// Counter of recent consecutive failed login attempts for this admin
+  /// account. Supports rate limiting and temporary lockouts for security.
+  failed_login_count Int
+  
+  /// Timestamp of the last successful login for this admin user. Null when the
+  /// admin has never logged in successfully.
+  last_login_at DateTime?
+  
+  /// Timestamp when this admin user account was created. Represents the time
+  /// the administrator identity was provisioned.
+  created_at DateTime
+  
+  /// Timestamp when this admin account record was last updated. Updated on
+  /// profile, credential, or status changes.
+  updated_at DateTime
+  
+  /// Timestamp marking when this admin user account was logically deleted or
+  /// deactivated. Null while the account is considered active or recoverable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_adminuser_sessions todo_app_adminuser_sessions[]
+  todo_app_login_attempts todo_app_login_attempts[]
+  todo_app_admin_todo_actions todo_app_admin_todo_actions[]
+  todo_app_rate_limit_events todo_app_rate_limit_events[]
+  
+  @@unique([email])
+  @@index([status, id])
+  @@index([created_at, id])
+}
+
+/// Authentication sessions for admin users, capturing connection context for
+/// oversight and security auditing.
+///
+/// This table stores session records for {@link todo_app_adminusers}. Each
+/// row represents one authenticated admin session, such as an active login
+/// in an operations console.
+///
+/// Following the global session pattern, the table contains only the minimal
+/// fields required to track who connected, from where, and when the session
+/// started and ended. This supports audit trails and detection of suspicious
+/// behavior without storing additional sensitive metadata in the session
+/// itself.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_adminuser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the admin user session. Uniquely identifies a single admin
+  /// authentication session.
+  id String @id
+  
+  /// Foreign key referencing the owning admin user account. {@link
+  /// todo_app_adminusers.id}.
+  todo_app_adminuser_id String
+  
+  /// IP address from which the admin user established this session. Used
+  /// heavily for security monitoring and audit.
+  ip String
+  
+  /// Full URL that the admin user accessed when this session was created.
+  /// Helps understand which admin interface entry point was used.
+  href String
+  
+  /// Referrer URL reported by the client when the admin session was
+  /// established. Useful for tracing navigation paths into admin areas.
+  referrer String
+  
+  /// Timestamp when this admin session was created. Represents the time of
+  /// successful authentication.
+  created_at DateTime
+  
+  /// Timestamp when this admin session was terminated or expired. Null while
+  /// the session remains active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  adminUser todo_app_adminusers @relation(fields: [todo_app_adminuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_adminuser_id, created_at], map: "todo_app_adminuser_sessions_todo_app_adminuser_id_crea_5848ebee")
+}

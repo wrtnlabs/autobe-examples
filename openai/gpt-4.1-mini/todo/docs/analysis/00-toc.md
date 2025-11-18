@@ -1,101 +1,106 @@
-# Requirement Analysis – Todo List Application (Minimal)
+# Todo List Application Requirements Analysis Report
 
-## Introduction and Purpose
+## 1. Introduction
 
-The Todo List application is designed to provide users with a highly accessible, reliable way to record, review, and manage their daily tasks. The primary purpose is to support individual task organization and completion by offering only the core functionality of a classic todo application. Business goals focus strictly on enabling users to create, read, update, and delete (CRUD) todo items without distraction. All requirements are written to support a backend implementation suitable for both web and mobile clients.
+This document provides the complete business requirements analysis for the Todo list application backend service. The application facilitates the creation, management, and completion of personal todo tasks with minimal feature set to ensure rapid development and ease of use. It is intended to guide backend developers with clear, unambiguous, and testable requirements, focusing exclusively on business needs.
 
-## User Types and Roles
+The scope excludes frontend UI specifications, database schema definitions, technical architecture, and API design.
 
-- **User** – The single actor in this minimal version. Each user manages only their own todos, does not interact with other users, and cannot see or modify data belonging to other accounts. 
+## 2. Business Model
 
-## Functional Requirements (Minimal)
+### Why This Service Exists
 
-All functional requirements are structured using EARS (Easy Approach to Requirements Syntax):
+The Todo list application addresses a common need for individuals to organize their daily tasks efficiently. Existing solutions may be complex or bloated; this application fills the niche for a simple, lightweight, and reliable task management system.
 
-### Todo Creation
-- WHEN a user submits valid text for a todo,
-  THE system SHALL create a new todo item associated exclusively with that user's account, defaulting to an incomplete status.
-- WHEN a todo creation request includes only the required description,
-  THE system SHALL use the current timestamp as the creation date.
-- WHEN a user attempts to create an empty or whitespace-only todo,
-  THE system SHALL reject the request and return a clear, actionable error message within 2 seconds.
+### Revenue Strategy
 
-### Viewing Todos
-- WHEN a user requests to view their todo list,
-  THE system SHALL return all current todos for that user, ordered by creation timestamp descending.
-- WHEN a user requests to view todos and none exist,
-  THE system SHALL return an empty list with a success status.
-- WHEN a user requests to view todos,
-  THE system SHALL ensure that no todos belonging to other users are included in the result.
+Currently, the service is planned as a free tool to attract users and can grow into monetization via premium features or ads in future versions.
 
-### Updating Todos
-- WHEN a user provides a valid todo ID and update data (description and/or completion status),
-  THE system SHALL update the matching todo if it belongs to the user, returning the updated item on success.
-- WHEN a user submits an update with an empty or whitespace-only description,
-  THE system SHALL reject the request with a descriptive error message.
-- WHEN a user tries to update a todo that does not exist or does not belong to them,
-  THE system SHALL reject the update and provide a permission denied or not found error within 2 seconds.
+### Growth Plan
 
-### Deleting Todos
-- WHEN a user provides a valid todo ID for deletion,
-  THE system SHALL remove the associated todo belonging to that user.
-- WHEN a user attempts to delete a todo that does not exist or does not belong to them,
-  THE system SHALL reject the action and return a permission denied or not found error within 2 seconds.
+Growth will depend on providing a stable minimal viable product (MVP) and potentially integrating with third-party services later.
 
-## Non-Functional Requirements
+### Success Metrics
 
-- WHEN the service processes any request,
-  THE system SHALL provide a response within 2 seconds under normal network and server conditions.
-- WHEN a user interacts with the backend,
-  THE system SHALL persist all todo data securely and not lose data due to system errors or restarts.
-- WHEN processing multiple simultaneous requests from the same user,
-  THE system SHALL execute operations in the order received (FIFO).
-- WHEN a user session is established,
-  THE system SHALL securely authenticate each request and allow actions only for the authenticated account.
-- WHEN the user signs out or their session expires,
-  THE system SHALL immediately prevent access until valid re-authentication occurs.
+- User adoption measured by the number of registered users
+- Task creation and completion rates
+- System reliability and uptime
 
-## Permission Requirements
+## 3. User Actors
 
-- WHEN any API endpoint for todos is accessed,
-  THE system SHALL require valid authentication by means of session or JWT token.
-- WHEN a user is authenticated,
-  THE system SHALL ensure every operation (create, read, update, delete) is strictly limited to that user’s own data.
-- WHEN invalid or expired credentials are provided,
-  THE system SHALL reject all requests and provide a secure, generic error response without leaking account information.
+### Defined Actors
 
-## Edge Cases and Error Handling
+| Actor Name | Description |
+|------------|-------------|
+| guest | Unauthenticated users who can view the landing page and public information but cannot create or modify tasks |
+| user | Authenticated users who can create, read, update, and delete their own tasks |
 
-- WHEN a user submits a request with missing, malformed, or oversized data (e.g., extremely long text),
-  THE system SHALL reject the request with a specific error message stating the problem.
-- WHEN a user attempts to perform multiple conflicting operations simultaneously (e.g., deleting and updating the same todo),
-  THE system SHALL serialize and execute requests in a predictable order to prevent data corruption.
-- WHEN server resources are temporarily unavailable,
-  THE system SHALL return a retryable error response within 2 seconds and log the incident for future investigation.
+### Authentication and Permissions
 
-## Business Rules and Constraints
+- Guests have read-only access limited to the landing page or public info.
+- Users must authenticate to access personal task management features.
 
-- EACH todo SHALL contain at minimum: description text, creation timestamp, status (complete/incomplete).
-- NO two todos with identical descriptions SHALL be forbidden, but EACH todo SHALL be uniquely identified by an immutable ID.
-- Todo descriptions SHALL NOT exceed 255 characters and SHALL NOT be empty or whitespace only.
-- ALL deletion operations SHALL be irreversible.
-- Todos SHALL be listed in reverse order of creation (most recent first).
+## 4. Functional Requirements
 
-## Success Criteria and Explicit Non-Goals
+### Task Management
 
-- Backend is considered successful WHEN every EARS-formulated requirement is met, persistent across tests, and passes all automated acceptance scenarios for single-user flows.
-- NOT included: user registration, user-to-user sharing, notifications, recurring/repeating tasks, attachments, categories, or labels. These features are out of scope for this minimal version.
+- WHEN a user creates a new todo task, THE system SHALL save the task associated with that user.
+- WHEN a user requests to view their tasks, THE system SHALL retrieve and display only the tasks belonging to that user.
+- WHEN a user updates an existing task, THE system SHALL update the task only if it belongs to that user.
+- WHEN a user deletes a task, THE system SHALL delete the task only if it belongs to that user.
 
-## Minimal Use Case Diagram
+### Task Attributes
+
+- THE system SHALL store for each task: a unique identifier, title, optional description, creation timestamp, completion status (incomplete or complete), and last updated timestamp.
+- WHEN a user marks a task as completed, THE system SHALL update the task's status accordingly.
+
+### User Authentication
+
+- THE system SHALL require users to register with email and password.
+- WHEN a user logs in, THE system SHALL authenticate credentials and establish a session.
+
+## 5. Business Rules
+
+- THE system SHALL ensure that users can only access and modify their own tasks.
+- THE system SHALL validate that task titles are non-empty strings.
+- THE system SHALL limit task descriptions to a maximum length of 1000 characters.
+- THE system SHALL reject operations on tasks that do not exist.
+- THE system SHALL automatically generate unique task IDs.
+
+## 6. Error Handling
+
+- IF a user attempts to create a task with an empty title, THEN THE system SHALL reject the request and return a validation error.
+- IF a user tries to access a task not owned by them, THEN THE system SHALL deny access and return a permission error.
+- IF the system encounters an unexpected failure during task operations, THEN THE system SHALL return an internal server error with a generic error message.
+
+## 7. Performance Requirements
+
+- WHEN a user submits a task creation or update, THE system SHALL respond within 2 seconds.
+- WHEN a user fetches their task list, THE system SHALL return the data within 3 seconds.
+
+## 8. Diagrams
 
 ```mermaid
-flowchart TD
-    USER["User"] --> C["Create Todo"]
-    USER --> V["View Todos"]
-    USER --> U["Update Todo"]
-    USER --> D["Delete Todo"]
+graph LR
+  A["User Authentication"] --> B{"Is Authenticated?"}
+  B -->|"Yes"| C["Access User Tasks"]
+  B -->|"No"| D["Redirect to Login"]
+  C --> E["View Task List"]
+  E --> F["Create Task"]
+  E --> G["Update Task"]
+  E --> H["Delete Task"]
+  F --> I["Validate Task Data"]
+  G --> I
+  H --> J["Confirm Ownership"]
+  I --> K{"Valid Data?"}
+  K -->|"Yes"| L["Persist Task"]
+  K -->|"No"| M["Show Validation Error"]
+  J -->|"Yes"| L
+  J -->|"No"| N["Show Permission Error"]
 ```
 
-## References
-- See [Project Documentation Table of Contents](./00-toc.md)
-- All requirements described above are implementation-ready for backend engineering.
+## 9. Summary
+
+This document defines all minimum functional and non-functional business requirements for a Todo list backend application that supports user authentication, personal task management, and error handling. The requirements are precise and actionable to allow backend developers to implement the service efficiently and correctly.
+
+This document provides business requirements only. All technical implementation decisions, such as architecture, API design, and database schema, are fully at the discretion of the development team. The document specifies what the system should do, not how it should be built.

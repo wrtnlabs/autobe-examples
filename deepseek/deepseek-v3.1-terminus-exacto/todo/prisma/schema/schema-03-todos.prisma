@@ -1,18 +1,21 @@
-/// Business entity representing an individual todo item belonging to a
-/// single end-user.
+/// Core todo items that users create and manage.
 ///
-/// Each row records one actionable task with immutable ownership. Enforces
-/// all business rules for title, description, and allowed state transitions
-/// (pending, completed, archived). Tracks timestamps for creation, last
-/// update, and optional completion. Title validation enforced at creation
-/// and update. Foreign key to the user table ensures todos are always
-/// associated with a valid owner, but remain private to that user unless
-/// reviewed by an admin.
+/// Represents individual tasks that users track for completion. Each todo
+/// has a title, optional description, and status tracking
+/// (pending/completed). Todos are owned by authenticated users and support
+/// full CRUD operations with soft deletion capability.
 ///
-/// Supports efficient per-user queries and batch actions within the user's
-/// scope. No group, tag, or collaborative features are present. Hard
-/// deletion applies per requirements. State management compliant with audit
-/// and admin access handled via external tables.
+/// Todos maintain their own lifecycle independent of users, allowing for
+/// proper task management workflows. The system tracks creation and
+/// modification timestamps for audit purposes and supports status
+/// transitions between pending and completed states.
+///
+/// **Business Rules:**
+/// - Title must be between 1-255 characters
+/// - Description can be up to 1000 characters
+/// - Status must be either 'pending' or 'completed'
+/// - Todos belong to authenticated users
+/// - Soft deletion preserves audit trail
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -20,49 +23,87 @@ model todo_list_todos {
   //----
   // COLUMNS
   //----
-  /// Primary Key. Uniquely identifies each todo item.
+  /// Primary Key.
   id String @id
   
-  /// Foreign Key. References the owning user. Must reference an existing user.
-  /// {@link todo_list_users.id}.
+  /// Owner user reference. {@link todo_list_users.id}
   todo_list_user_id String
   
-  /// Todo title. Required for creation and update. 1–100 characters, validated
-  /// for non-whitespace content.
+  /// Todo item title. Required field with 1-255 character limit as specified
+  /// in requirements.
   title String
   
-  /// Optional todo description. Maximum 1000 characters. Can be omitted or set
-  /// to null on creation/update.
+  /// Optional detailed description of the todo item. Maximum 1000 characters
+  /// as specified.
   description String?
   
-  /// Todo status: permitted values are 'pending', 'completed', or 'archived'.
-  /// Enforces business lifecycle transitions.
+  /// Current status of the todo item. Valid values: 'pending', 'completed'.
+  /// Defaults to 'pending'. Status transitions follow business workflow rules.
   status String
   
-  /// Optional due date in ISO 8601 format. Null if not set. Must not be in the
-  /// past for creation/update.
-  due_date DateTime?
-  
-  /// Timestamp for when the todo item was created (stored as UTC). Required
-  /// for data lifecycle and ordering.
+  /// Timestamp when the todo item was created.
   created_at DateTime
   
-  /// Timestamp for the last time this todo was updated. Maintains user and
-  /// admin accountability.
+  /// Timestamp when the todo item was last modified.
   updated_at DateTime
   
-  /// Optional timestamp for when the todo was marked as completed. Null unless
-  /// status is 'completed'.
-  completed_at DateTime?
+  /// Timestamp when the todo item was soft deleted. Null indicates active item.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  todo_list_audit_logs todo_list_audit_logs[]
+  todo_list_todo_snapshots todo_list_todo_snapshots[]
   
+  @@unique([title, todo_list_user_id])
   @@index([todo_list_user_id, created_at])
   @@index([status, created_at])
   @@index([todo_list_user_id, status])
+  @@index([todo_list_user_id, deleted_at])
+}
+
+/// Historical snapshots of todo items for audit trail and version tracking.
+///
+/// Captures point-in-time states of todo items whenever significant changes
+/// occur (title, description, or status changes). Each snapshot preserves
+/// the complete state of a todo item at a specific moment, enabling
+/// historical tracking and audit capabilities.
+///
+/// Snapshots are created automatically when todo items are modified and
+/// provide an append-only record of changes for compliance and recovery
+/// purposes.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todo_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original todo item. {@link todo_list_todos.id}
+  todo_list_todo_id String
+  
+  /// Todo title at the time of snapshot creation.
+  title String
+  
+  /// Todo description at the time of snapshot creation.
+  description String?
+  
+  /// Todo status at the time of snapshot creation.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_list_todos @relation(fields: [todo_list_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_todo_id, created_at])
+  @@index([created_at])
 }

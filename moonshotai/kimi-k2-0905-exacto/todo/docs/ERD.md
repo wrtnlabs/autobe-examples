@@ -4,296 +4,871 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Todos](#todos)
+- [Tasks](#tasks)
+- [BusinessRules](#businessrules)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"todo_list_system_settings" {
+"todo_app_system_settings" {
   String id PK
-  String key UK
-  String value
-  String description "nullable"
+  String setting_key
+  String setting_value
+  String setting_type
+  String description
+  Boolean is_active
+  String environment_scope
   DateTime created_at
   DateTime updated_at
 }
+"todo_app_validation_rules" {
+  String id PK
+  String rule_key UK
+  String rule_name
+  String validation_type
+  String field_target
+  String constraint_definition
+  String error_message_template
+  Boolean is_active
+  Int priority
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_user_limits" {
+  String id PK
+  String user_id FK "nullable"
+  String constraint_rule_id FK "nullable"
+  String limit_type
+  Int limit_value
+  String period_type
+  String description
+  Boolean is_active
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_operation_logs" {
+  String id PK
+  String user_id FK "nullable"
+  String operation_type
+  String resource_type
+  String resource_id "nullable"
+  String operation_details "nullable"
+  String ip_address "nullable"
+  String user_agent "nullable"
+  String operation_status
+  String error_message "nullable"
+  Int operation_duration_ms "nullable"
+  DateTime timestamp
+}
+"todo_app_user_limits" }o--o| "todo_app_validation_rules" : constraintRule
 ```
 
-### `todo_list_system_settings`
+### `todo_app_system_settings`
 
-Global system settings and platform-wide configuration parameters.
+System configuration and application-wide settings that govern the
+baseline behavior and operational parameters of the todo application.
 
-This table stores platform-level flags, operational options, or dynamic
-infrastructure configuration values that affect the overall behavior of
-the Todo List service. It allows the backend to flexibly enable, disable,
-or adjust global features without redeployment. Each record represents a
-uniquely identified setting (by key), with support for versioned values,
-clear description, and retrieval metadata.
+This table stores critical application settings including rate limits,
+feature toggles, maintenance modes, and global configuration options.
+Settings are typically managed by system administrators and referenced by
+application logic to enforce constraints and control application
+behavior.
 
-This is the authoritative source for all service-wide configuration
-values. There are no foreign keys; all relationships are internal to this
-domain component. Optimized for rapid lookup and extensibility.
+The configuration is designed to be flexible and scalable, supporting
+different deployment environments and operational requirements without
+requiring code changes. Settings include both technical parameters and
+business rule definitions that control the user experience across the
+entire application.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique setting identifier. This field acts as a business-meaningful key
-  > for the configuration parameter (e.g., 'max_login_attempts',
-  > 'enable_signup'). Maximum length: 100 characters. Index enforced.
-- `value`
-  > Setting value as a string. Used to store dynamic configuration values in
-  > string format. Up to 1024 characters. Application responsible for
-  > type-casting on retrieval.
+- `setting_key`
+  > Unique identifier for the configuration setting. Used as a reference key
+  > in application code to retrieve specific configuration values.
+- `setting_value`
+  > The actual configuration value for this setting. Can store various data
+  > types as serialized strings including numbers, JSON objects, or simple
+  > text.
+- `setting_type`
+  > Data type classification for this setting (e.g., 'string', 'number',
+  > 'boolean', 'json'). Used by the application to properly parse and
+  > validate setting values.
 - `description`
-  > Detailed description of the setting. Used for documenting the business
-  > context, operational semantics, or instructions for each platform option.
-  > Optional, for service administrator reference.
+  > Human-readable description explaining the purpose and usage of this
+  > configuration setting. Helps administrators understand what each setting
+  > controls.
+- `is_active`
+  > Whether this configuration setting is currently active and should be
+  > considered by the application. Allows for soft-disabling without
+  > deletion. Default: true.
+- `environment_scope`
+  > Deployment environment where this setting applies (e.g., 'development',
+  > 'staging', 'production'). Supports different configs per environment.
 - `created_at`
-  > Timestamp indicating when the setting was first created. Set by the
-  > backend upon insertion (ISO 8601 format, UTC).
+  > Timestamp when this configuration setting was created. Used for audit
+  > purposes and change tracking.
 - `updated_at`
-  > Timestamp of the most recent update to this setting. Managed by the
-  > backend (ISO 8601 format, UTC).
+  > Timestamp when this configuration setting was last modified. Tracks
+  > configuration changes over time.
+
+### `todo_app_validation_rules`
+
+Validation rules and constraints that enforce data quality and business
+logic across the todo application.
+
+This table defines the validation criteria for various data inputs
+including field length limits, format requirements, and business rule
+constraints. Validation rules are referenced by application logic to
+ensure data integrity and provide consistent error messages to users.
+
+Rules include format validation for emails, data type checks, range
+constraints, and custom business logic validations that apply
+system-wide. The flexible rule definition system allows for easy updates
+and additions as business requirements evolve.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `rule_key`
+  > Unique identifier for this validation rule. Used as a reference key in
+  > application logic to apply specific validation criteria.
+- `rule_name`
+  > Human-readable name for this validation rule. Used for administrative
+  > interfaces and error message generation.
+- `validation_type`
+  > Type of validation rule (e.g., 'length', 'format', 'range', 'custom').
+  > Determines how the rule is applied during validation.
+- `field_target`
+  > Target field or data type this rule applies to (e.g., 'task.title',
+  > 'user.email', 'category.name'). Specifies what the rule validates.
+- `constraint_definition`
+  > JSON definition of the validation constraints including min/max values,
+  > patterns, or custom logic. Defines the actual validation criteria.
+- `error_message_template`
+  > Template for error messages when this rule fails validation. Supports
+  > placeholders for field names and constraint values.
+- `is_active`
+  > Whether this validation rule is currently enforced. Allows disabling
+  > rules without deletion for maintenance or temporary issues. Default:
+  > true.
+- `priority`
+  > Priority order for rule application when multiple rules apply to the same
+  > field. Lower numbers have higher priority (executed first).
+- `created_at`
+  > Timestamp when this validation rule was created. Tracks when rules were
+  > introduced into the system.
+- `updated_at`
+  > Timestamp when this validation rule was last modified. Tracks changes to
+  > validation criteria over time.
+
+### `todo_app_user_limits`
+
+User-specific limits and quotas that control access to system resources
+and prevent abuse of the todo application.
+
+This table defines operational limits such as maximum tasks per user,
+category creation limits, bulk operation constraints, and API rate
+limits. Limits are customizable per user and help ensure fair resource
+usage across all users of the application.
+
+The table supports both system-wide defaults and custom limits for
+specific users or user groups. Limits can be adjusted based on user
+activity patterns, premium features, or administrative decisions to
+optimize system performance and user experience.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`
+  > Reference to the user this limit applies to. Null values indicate
+  > system-wide default limits.
+- `constraint_rule_id`
+  > Reference to the validation rule that defines this limit. Links to
+  > detailed constraint definitions from validation rules table.
+- `limit_type`
+  > Type of limit being enforced (e.g., 'task_count', 'category_count',
+  > 'bulk_operation_size', 'api_rate'). Defines what resource is being
+  > limited.
+- `limit_value`
+  > The maximum allowed value for this limit (e.g., 1000 for max tasks, 50
+  > for max categories). Zero or negative values indicate no limit.
+- `period_type`
+  > Time period for which this limit applies (e.g., 'lifetime', 'daily',
+  > 'weekly', 'monthly'). Determines how limits reset or accumulate.
+- `description`
+  > Human-readable description explaining the purpose and implications of
+  > this user limit. Helps with administrative decisions and user
+  > communication.
+- `is_active`
+  > Whether this user limit is currently enforced. Allows for temporary
+  > relaxation or permanent removal of limits without data deletion. Default:
+  > true.
+- `created_at`
+  > Timestamp when this user limit was created or customized for this user.
+  > Tracks when limits were established.
+- `updated_at`
+  > Timestamp when this user limit was last modified. Tracks changes to
+  > user-specific limits over time.
+
+### `todo_app_operation_logs`
+
+Operational audit log tracking system events, user actions, and
+administrative activities for compliance and troubleshooting purposes.
+
+This table records detailed information about various operations
+including task creation, modification, and deletion events, system
+configuration changes, and administrative actions. Logs support system
+monitoring, usage analytics, and troubleshooting capabilities.
+
+The audit trail includes comprehensive event details, user attribution,
+timing information, and outcome status. Logs are designed for analytical
+purposes and may be archived or rotated based on retention policies to
+manage storage requirements while maintaining necessary audit trails.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`
+  > Reference to the user who initiated this operation. Null for
+  > system-initiated events or operations by guest users.
+- `operation_type`
+  > Type of operation being logged (e.g., 'task.create', 'task.update',
+  > 'system.config_change', 'admin.user_management'). Categorizes events for
+  > filtering and analysis.
+- `resource_type`
+  > Type of resource affected by this operation (e.g., 'task', 'category',
+  > 'user', 'system'). Links operations to application entities.
+- `resource_id`
+  > Identifier of the specific resource affected by this operation. May
+  > reference tasks, users, or other entities depending on resource_type.
+- `operation_details`
+  > JSON structure containing detailed operation information including
+  > before/after states, parameter values, and operation-specific data.
+  > Supports comprehensive audit trails.
+- `ip_address`
+  > IP address from which the operation was initiated. Used for location
+  > analysis and security monitoring. Stored as string to support IPv6.
+- `user_agent`
+  > Browser or client user agent string providing device and software
+  > information. Useful for analytics and troubleshooting.
+- `operation_status`
+  > Outcome of the operation (e.g., 'success', 'failure', 'partial_success').
+  > Tracks whether operations completed successfully.
+- `error_message`
+  > Error details if the operation failed. Stores specific failure
+  > information for debugging and analysis purposes.
+- `operation_duration_ms`
+  > Time taken to complete the operation in milliseconds. Useful for
+  > performance monitoring and optimization analysis.
+- `timestamp`
+  > When this operation was performed. Represents the precise time of the
+  > logged event.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"todo_list_users" {
+"todo_app_users" {
   String id PK
   String email UK
   String password_hash
-  Boolean is_locked
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"todo_list_user_sessions" {
+"todo_app_user_sessions" {
   String id PK
-  String todo_list_user_id FK
+  String user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_list_admins" {
+"todo_app_guests" {
   String id PK
-  String email UK
-  String password_hash
-  Boolean is_locked
+  String session_identifier UK
   DateTime created_at
   DateTime updated_at
+  DateTime expired_at "nullable"
 }
-"todo_list_admin_sessions" {
+"todo_app_guest_sessions" {
   String id PK
-  String todo_list_admin_id FK
+  String guest_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_list_user_sessions" }o--|| "todo_list_users" : user
-"todo_list_admin_sessions" }o--|| "todo_list_admins" : admin
+"todo_app_user_sessions" }o--|| "todo_app_users" : user
+"todo_app_guest_sessions" }o--|| "todo_app_guests" : guest
 ```
 
-### `todo_list_users`
+### `todo_app_users`
 
-Registered end users of the Todo List system.
+Authenticated users of the todo application with full access to create
+and manage personal tasks.
 
-Represents any individual who can register, authenticate, and manage
-their personal set of todo items. Each user is identified by a unique
-email and secures access with a hashed password. Designed for strict
-privacy and least-privilege access: users may act only on their own data
-and cannot view or alter other users. Status fields support account
-locking for abuse or compliance. Auditing is handled via associated
-session and audit log tables.
+This table represents registered users who have completed the email
+verification process and maintain active accounts within the system.
+Users receive unique identifiers, store hashed passwords for
+authentication, and can access all core todo functionality including task
+creation, organization, and completion tracking.
+
+The table stores essential user credentials including encrypted password
+hashes, ensuring security while maintaining usability. Each user account
+is independent and maintains strict data isolation preventing cross-user
+access or visibility of personal tasks and organizational preferences.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address for login, identity, and communication for this
-  > user. Must be globally unique across all users.
+  > User email address used for account authentication and communication.
+  > Must be unique across all registered users and follow standard email
+  > format validation.
 - `password_hash`
-  > Bcrypt or argon2id hash of user's chosen password. Never store a plain
-  > password; always enforce strong hash.
-- `is_locked`
-  > True if the user account is locked or suspended and should not be allowed
-  > to authenticate. Used for abuse prevention and compliance.
-- `created_at`: UTC timestamp when the user account was created.
-- `updated_at`: UTC timestamp for the latest account modification or status change.
+  > Securely hashed password for user authentication. Always stores encrypted
+  > hash rather than plain text, meeting modern security standards for
+  > credential protection.
+- `created_at`
+  > Timestamp when user account was created, recorded automatically during
+  > registration process for audit trail and account management purposes.
+- `updated_at`
+  > Timestamp of last user account modification, updated automatically when
+  > profile information changes for change tracking and audit purposes.
+- `deleted_at`
+  > Soft delete timestamp for account deactivation. When set, indicates
+  > account is inactive and user cannot authenticate, but data is preserved
+  > for recovery or compliance purposes.
 
-### `todo_list_user_sessions`
+### `todo_app_user_sessions`
 
-Authentication sessions for end users of the Todo List system.
+Authenticated user sessions tracking login activity and connection
+metadata for security and audit purposes.
 
-Each session tracks login context for a specific user, including
-connection IP and access URL. Sessions are used for token validation,
-security context, and auditing. Multiple sessions may exist per user,
-supporting concurrent device access. Expired sessions are tracked for
-compliance and security analysis. Managed via parent user lifecycle. Only
-allowed fields per session table standard.
+Sessions represent individual authenticated access instances for
+registered users, storing connection details like IP addresses, browser
+information, and authentication timestamps for security monitoring and
+session management.
+
+This table maintains security audit trails enabling users to view active
+sessions, detect potential unauthorized access, and manage their
+authentication state across multiple devices or browsers. Sessions
+persist according to user preferences with appropriate expiration
+mechanisms.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_user_id`: Foreign key to session-owning user. Links to [todo_list_users.id](#todo_list_users).
-- `ip`: IP address for the origin of the session, for security auditing.
+- `user_id`
+  > Reference to the authenticated user's [todo_app_users.id](#todo_app_users). Links
+  > session to specific user account for authentication tracking.
+- `ip`
+  > IP address from which the user connected, stored for security monitoring
+  > and session tracking to detect potential unauthorized access attempts.
 - `href`
-  > Original connection URL associated with this session, useful for context
-  > and traceability.
-- `referrer`: Referrer URL context for original login or session creation.
-- `created_at`: UTC timestamp of session authentication creation event.
-- `expired_at`: UTC timestamp when this session expired (null means still active).
+  > Connection URL or current page location when session was created, helps
+  > track user journey and session context for security and debugging
+  > purposes.
+- `referrer`
+  > Referrer URL indicating how user arrived at the application, useful for
+  > understanding user flow and session origination for security and
+  > analytics.
+- `created_at`
+  > Session creation timestamp when user successfully authenticated, recorded
+  > automatically during login process for session duration tracking.
+- `expired_at`
+  > Session expiration timestamp when authentication expires according to
+  > user preferences. Controls access duration and security timeout behavior.
 
-### `todo_list_admins`
+### `todo_app_guests`
 
-Administrator accounts for privileged operations and oversight in the
-Todo List service.
+Guest users providing temporary access to explore application features
+without full registration commitment.
 
-Admins have the ability to view, edit, and manage any user's todos as
-well as oversee user accounts and system health. Each admin is identified
-by a unique email and secures access via a hashed password field. Admin
-accounts are strictly separated from regular users for security and
-compliance. Includes lock flag for suspensions and audit triggers. Admin
-capabilities are managed exclusively by the RBAC patterns of the
-application; they do not have their own todo entries.
+Guest accounts enable prospective users to experience core functionality
+through demonstration content and basic feature exploration while
+maintaining clear differentiation from full registered user experiences.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Globally unique admin login address for identity and communication.
-- `password_hash`
-  > Strong cryptographic hash of admin password for login authentication.
-  > Plain password never stored.
-- `is_locked`
-  > True if admin is suspended or access is temporarily revoked. Used for
-  > security and compliance enforcement.
-- `created_at`: UTC timestamp for admin account creation.
-- `updated_at`: UTC timestamp for last update to the admin account.
-
-### `todo_list_admin_sessions`
-
-Authentication session records for administrators in the Todo List system.
-
-Each session logs admin login context, including IP and URL reference
-chains, for auditing privileged system access. Supports concurrent
-sessions per admin (for monitoring concurrent workstations or incident
-response). Expired sessions are kept for compliance and future security
-analysis. Follows the session table standard for admins as a distinct
-actor class. Managed through the parent admin lifecycle only.
+The table provides seamless upgrade pathways when guests decide to
+register, supporting data preservation and account conversion workflows
+through unified session management patterns.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_admin_id`: Foreign key to session-owning admin. Links to [todo_list_admins.id](#todo_list_admins).
-- `ip`: IP address where admin logged in to begin session.
-- `href`: Target URL of session origin, useful for context and audit trail.
-- `referrer`: Upstream URL from which admin accessed this session. Used in audit trails.
-- `created_at`: UTC timestamp of session authentication creation.
-- `expired_at`: UTC time session expired; null for active session.
+- `session_identifier`
+  > Unique identifier for guest session tracking, generated automatically for
+  > session management and upgrade tracking when guests transition to
+  > registered users.
+- `created_at`
+  > Timestamp when guest session was initiated, recorded for session duration
+  > tracking and analysis of guest engagement patterns.
+- `updated_at`
+  > Last modification timestamp for guest session updates, tracked for
+  > session management and data export purposes.
+- `expired_at`
+  > Guest session expiration timestamp controlling temporary access duration.
+  > Prevents indefinite guest usage and maintains resource management.
 
-## Todos
+### `todo_app_guest_sessions`
+
+Guest user sessions maintaining temporary access tracking and connection
+metadata for provisional user experiences.
+
+Sessions enable guest users to explore demonstrations and temporary
+features while collecting audit trails and security information for
+system monitoring and potential conversion tracking.
+
+This table supports clean session termination when temporary access
+expires and maintains security standards appropriate for provisional user
+management while enabling upgrade workflows to full registered accounts.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `guest_id`
+  > Reference to the guest user's [todo_app_guests.id](#todo_app_guests). Links session
+  > to specific guest account for access tracking.
+- `ip`
+  > IP address from which guest connected, collected for security monitoring
+  > and session tracking in temporary user experiences.
+- `href`
+  > Connection URL or page location during guest session creation, helps
+  > understand guest engagement patterns and session contexts.
+- `referrer`
+  > Referrer URL showing how guest arrived at application, useful for
+  > analyzing guest acquisition sources and session origins.
+- `created_at`
+  > Session creation timestamp when guest access began, recorded for
+  > temporary session duration management and usage tracking.
+- `expired_at`
+  > Guest session expiration timestamp controlling temporary access duration
+  > and resource cleanup according to guest policies.
+
+## Tasks
 
 ```mermaid
 erDiagram
-"todo_list_todos" {
+"todo_app_tasks" {
   String id PK
-  String user_id FK
-  String description
-  Boolean completed
-  DateTime completed_at "nullable"
+  String todo_app_user_id FK
+  String todo_app_category_id FK "nullable"
+  String title
+  String description "nullable"
+  String status
+  String priority
+  DateTime due_date "nullable"
+  Int completion_order
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"todo_list_todo_audit_logs" {
+"todo_app_categories" {
   String id PK
-  String todo_id FK
-  String actor_user_id FK "nullable"
-  String actor_admin_id FK "nullable"
+  String todo_app_user_id FK
+  String name
+  String description "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_task_completions" {
+  String id PK
+  String todo_app_task_id FK
+  String todo_app_user_id FK
+  DateTime completed_at
+  String notes "nullable"
+  Int completion_order
+  Boolean reactivated
+  DateTime created_at
+  DateTime reactivated_at "nullable"
+}
+"todo_app_task_audit_logs" {
+  String id PK
+  String todo_app_task_id FK
+  String todo_app_user_id FK
   String action
-  String context "nullable"
+  String field_changes "nullable"
+  String old_value "nullable"
+  String new_value "nullable"
   DateTime created_at
 }
-"todo_list_todo_audit_logs" }o--|| "todo_list_todos" : todo
+"todo_app_tasks" }o--o| "todo_app_categories" : category
+"todo_app_task_completions" }o--|| "todo_app_tasks" : task
+"todo_app_task_audit_logs" }o--|| "todo_app_tasks" : task
 ```
 
-### `todo_list_todos`
+### `todo_app_tasks`
 
-Main table for user-owned todo items following strict ownership policy.
+Core task entity representing individual todo items managed by users.
 
-Defines individual todos with required description, completion status,
-timestamps, and ownership linked directly to the user. Enforces business
-rules for CRUD, soft/hard delete, and status toggling. Supports API
-filtering by completion and deleted state. Titles and descriptions are
-validated for length, content, and duplication. Each todo is owned by
-exactly one user and cannot be accessed or modified by others except
-admins via compliance interfaces. Soft delete logic enforces 2-minute
-undo for user deletions, immediate permanent deletion by admins. Temporal
-fields track creation, last update, soft deletion, and completion
-timestamps. Only users may create todos; admins cannot own personal
-tasks.
+Tasks form the fundamental units of work in the todo application,
+containing essential information needed for task completion tracking and
+organization. Each task belongs to a specific user and can be associated
+with categories and completion records.
+
+The task lifecycle includes states: pending (default), in-progress, and
+completed. Tasks support prioritization through Low, Medium, and High
+levels, with Low as the default priority to minimize decision friction.
+Users can add optional due dates and belong to categories for
+organization.
+
+Task creation emphasizes minimal required information - only a title is
+mandatory - with optional fields for descriptions, due dates, priorities,
+and categories. This design supports rapid task capture while providing
+flexibility for detailed planning when desired.
 
 Properties as follows:
 
-- `id`: Primary Key. Unique identifier for each todo item.
-- `user_id`
-  > Foreign key referencing the owning user. Associates todo with exactly one
-  > user. [todo_list_users.id](#todo_list_users).
+- `id`: Primary Key.
+- `todo_app_user_id`: Task creator's [todo_app_users.id](#todo_app_users)
+- `todo_app_category_id`
+  > Task's [todo_app_categories.id](#todo_app_categories). Links tasks to categories for
+  > organization
+- `title`
+  > Task title between 1-200 characters. The essential task description
+  > required for creation.
 - `description`
-  > Todo task description, maximum 255 characters. Cannot be empty or
-  > whitespace only. Must be unique for user within duplicate suppression
-  > interval.
-- `completed`: Completion state of the todo. True if completed, false if incomplete.
-- `completed_at`
-  > Timestamp for when the todo was marked as complete, in UTC. Null if
-  > incomplete.
-- `created_at`: Timestamp when the todo was created, in UTC ISO 8601 format.
-- `updated_at`
-  > Timestamp when the todo was last updated (description or completed
-  > status).
-- `deleted_at`
-  > Timestamp for when the todo was soft-deleted (for undo window); null if
-  > not deleted or after hard deletion.
+  > Optional task description up to 2,000 characters providing additional
+  > context or instructions
+- `status`: Task lifecycle status: pending (default), in-progress, or completed
+- `priority`
+  > Task priority level: Low (default), Medium, or High used for sorting and
+  > visual distinction
+- `due_date`
+  > Optional due date for task completion. Validates to prevent past dates
+  > and limits to 1 year in future
+- `completion_order`
+  > Manual sort order for task positioning within user's preferred
+  > organization
+- `created_at`: Task creation timestamp
+- `updated_at`: Last modification timestamp
 
-### `todo_list_todo_audit_logs`
+### `todo_app_categories`
 
-Audit trail for all privileged or destructive operations on todos,
-supporting compliance, traceability, and support review.
+User-defined organizational categories for grouping related tasks.
 
-Records all user and admin actions affecting todo items, including CRUD
-operations, status changes, and admin interventions. Logs actor context
-(user or admin), action type, timestamps, affected todo item, and reason
-or context messages. This table is append-only; records are immutable and
-never deleted. Used exclusively for compliance, security, and recovery
-audits; not directly visible to end users. Supports queries by actor,
-action, time, and affected todo for post-incident or operational review.
-Ensures historical accountability for all todo lifecycle events.
+Categories provide a hierarchical organization system enabling users to
+group tasks by project, context, or any classification scheme they
+choose. Each category belongs to a specific user and contains any number
+of associated tasks.
+
+Category names must be unique within user accounts and conform to
+character restrictions to ensure system compatibility. The system limits
+users to 50 categories maximum to prevent over-complexity while providing
+sufficient organizational flexibility.
+
+Categories support flexible organization patterns including work/personal
+divisions, project-based groupings, or contextual organization schemes.
+Users can filter tasks by category and perform bulk operations on all
+tasks within a category.
 
 Properties as follows:
 
-- `id`: Primary Key. Unique audit log entry identifier.
-- `todo_id`
-  > Foreign key referencing the affected todo item. {@link
-  > todo_list_todos.id}.
-- `actor_user_id`
-  > Foreign key to the acting user involved in the audited operation, if
-  > applicable. Nullable if action was performed only by an admin. {@link
-  > todo_list_users.id}.
-- `actor_admin_id`
-  > Foreign key to the acting admin if the operation was performed by an
-  > administrator. Nullable if actor was a regular user. {@link
-  > todo_list_admins.id}.
+- `id`: Primary Key.
+- `todo_app_user_id`: Category creator's [todo_app_users.id](#todo_app_users)
+- `name`
+  > Category name between 2-50 characters using only letters, numbers,
+  > spaces, and hyphens
+- `description`
+  > Optional category description providing context about the category's
+  > purpose
+- `created_at`: Category creation timestamp
+- `updated_at`: Last modification timestamp
+
+### `todo_app_task_completions`
+
+Record of task completion events capturing when tasks are marked complete.
+
+This table tracks the completion lifecycle of tasks, providing
+accountability and enabling completion statistics calculation. Each
+completion record represents a unique completion event with timestamps
+and optional completion notes.
+
+The system supports task reopening by maintaining completion history even
+when tasks are later reactivated. This allows for productivity analytics
+including completion rates, time-to-completion, and streak tracking.
+
+Completion records are created when tasks transition to completed status
+and maintain references back to the original task. Users can add
+completion notes to document how tasks were accomplished or any relevant
+outcomes.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_task_id`: Reference to [todo_app_tasks.id](#todo_app_tasks) for the completed task
+- `todo_app_user_id`: Reference to [todo_app_users.id](#todo_app_users) of the user who completed the task
+- `completed_at`: Timestamp when the task was marked complete
+- `notes`: Optional notes explaining how the task was completed or any outcomes
+- `completion_order`: Order of completion for sorting purposes within user's completion history
+- `reactivated`: Flag indicating if this completion was followed by task reactivation
+- `created_at`: Completion record creation timestamp
+- `reactivated_at`: Timestamp when task was subsequently reactivated if applicable
+
+### `todo_app_task_audit_logs`
+
+Historical audit trail capturing all modifications to tasks for
+accountability and recovery.
+
+This table serves as the complete change log for all task operations
+including creation, updates, completion, category changes, and other
+modifications. Each entry represents a specific action performed on a
+task with detailed change tracking.
+
+Audit logs support compliance requirements, provide change history for
+user reference, and enable system administrators to monitor task
+lifecycle patterns for improvements. The snapshot approach ensures
+historical data integrity even as tasks are modified or deleted.
+
+Every task modification creates a new audit log entry capturing the
+before-and-after state information. This design supports comprehensive
+change tracking while maintaining optimal performance for current task
+operations by separating historical data.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_task_id`: Reference to [todo_app_tasks.id](#todo_app_tasks) being audited
+- `todo_app_user_id`: Reference to [todo_app_users.id](#todo_app_users) who performed the action
 - `action`
-  > Action type: created, updated, completed, uncompleted, deleted, restored,
-  > admin_deleted, admin_edited. Fixed set for audit granularity.
-- `context`
-  > Optional audit details: inputs, reason, API source, context message, etc.
-  > Allows traceability and user support in incident review.
-- `created_at`
-  > Timestamp for when the audit log entry was created, in UTC ISO 8601
-  > format.
+  > Type of action performed: CREATE, UPDATE, DELETE, COMPLETE, REACTIVATE,
+  > MOVE, etc.
+- `field_changes`: JSON representation of field changes made during this action
+- `old_value`: Previous value for fields that changed (for single-field changes)
+- `new_value`: New value for fields that changed (for single-field changes)
+- `created_at`: Audit log entry timestamp when the action occurred
+
+## BusinessRules
+
+```mermaid
+erDiagram
+"todo_app_user_quotas" {
+  String id PK
+  String todo_app_user_id FK,UK
+  Int max_tasks
+  Int max_categories
+  Int max_daily_task_creations
+  Int current_task_count
+  Int current_category_count
+  Int daily_task_creation_count
+  Boolean is_premium
+  DateTime quota_reset_date "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_rate_limits" {
+  String id PK
+  String todo_app_user_id FK "nullable"
+  String limit_name
+  String endpoint_pattern
+  Int request_limit
+  Int time_window_seconds
+  Int current_request_count
+  DateTime window_start_time
+  String identifier_type
+  String identifier_value "nullable"
+  Boolean is_active
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_constraint_definitions" {
+  String id PK
+  String constraint_name UK
+  String constraint_type
+  String applicable_scope
+  String constraint_definition
+  String error_message_template
+  Boolean is_enforced
+  String severity_level
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_usage_metrics" {
+  String id PK
+  String todo_app_user_id FK "nullable"
+  String metric_type
+  String metric_operation
+  Int operation_count
+  Int response_time_ms "nullable"
+  String status_code "nullable"
+  String user_agent "nullable"
+  String ip_address "nullable"
+  Int error_count
+  String metadata "nullable"
+  DateTime created_at
+}
+```
+
+### `todo_app_user_quotas`
+
+Individual user quota limits and usage tracking for business rule
+enforcement.
+
+Tracks each user's consumption against predefined limits like maximum
+tasks (1000), categories (100), and other resource allocations. Supports
+both hard limits that prevent further usage and soft limits that trigger
+warnings.
+
+The quota system prevents system abuse while providing fair resource
+allocation across all users. Usage metrics are updated atomically to
+ensure accuracy during high-concurrency scenarios.
+
+Quotas can be configured per user to provide premium features or
+accommodate special requirements while maintaining system integrity.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_user_id`: User who owns these quota limits. [todo_app_users.id](#todo_app_users)
+- `max_tasks`
+  > Maximum number of tasks allowed for this user. Default 1000 for standard
+  > users.
+- `max_categories`
+  > Maximum number of custom categories allowed. Default 100 for standard
+  > users.
+- `max_daily_task_creations`: Maximum tasks that can be created per day. Default 30 to prevent spam.
+- `current_task_count`
+  > Current number of tasks this user has created. Updated atomically on task
+  > operations.
+- `current_category_count`: Current number of categories created by this user.
+- `daily_task_creation_count`: Number of tasks created today by this user. Resets at midnight.
+- `is_premium`
+  > Whether this user has premium quota allowances. Premium users get higher
+  > limits.
+- `quota_reset_date`: Date when daily quotas will reset. Used for tracking daily limits.
+- `created_at`: When these quota settings were established.
+- `updated_at`: Last modification time for any quota setting.
+
+### `todo_app_rate_limits`
+
+System-wide rate limiting configuration and enforcement tracking.
+
+Manages rate limit rules for different API endpoints and user actions.
+Tracks both global rate limits (per IP, per endpoint) and user-specific
+limits to prevent abuse and ensure fair usage.
+
+The rate limiting system implements sliding window counters with
+automatic reset mechanisms. Different endpoints can have different rate
+limits based on their resource consumption and frequency patterns.
+
+Supports both authenticated user limits and anonymous IP-based
+restrictions to protect the system from various attack vectors while
+maintaining legitimate user access.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_user_id`
+  > Optional user associated with this rate limit. Null for global or
+  > IP-based limits. [todo_app_users.id](#todo_app_users)
+- `limit_name`
+  > Descriptive name for this rate limit rule. Examples: 'task_creation',
+  > 'user_registration', 'guest_access'.
+- `endpoint_pattern`
+  > API endpoint pattern this limit applies to. Supports wildcards for
+  > pattern matching.
+- `request_limit`: Maximum number of requests allowed within the time window.
+- `time_window_seconds`
+  > Time window in seconds for the rate limit. Common values: 60, 300, 3600,
+  > 86400.
+- `current_request_count`
+  > Current request count within the active time window. Resets automatically
+  > when window expires.
+- `window_start_time`
+  > Start time of the current rate limit window. Used for sliding window
+  > calculations.
+- `identifier_type`
+  > Type of identifier for this rate limit. Values: 'user_id', 'ip_address',
+  > 'global'.
+- `identifier_value`: The actual identifier value. Could be user ID, IP address, or 'global'.
+- `is_active`: Whether this rate limit rule is currently active and being enforced.
+- `created_at`: When this rate limit rule was created.
+- `updated_at`: Last modification time for this rate limit rule.
+
+### `todo_app_constraint_definitions`
+
+Business rule and validation constraint definitions for the todo
+application.
+
+Stores the specification for all business rules including data
+validation, format requirements, computational limits, and operational
+constraints applied throughout the system.
+
+Each constraint definition includes validation logic, error messages,
+enforcement mechanisms, and applicability scope. Constraints can be
+global (system-wide) or contextual (applied based on conditions).
+
+This centralized constraint management enables business rules to be
+modified without code changes while maintaining consistency across all
+system operations.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `constraint_name`
+  > Unique name for this business rule constraint. Used for referencing in
+  > code and logs.
+- `constraint_type`
+  > Type of constraint. Values: 'validation', 'limit', 'format',
+  > 'business_rule'.
+- `applicable_scope`
+  > Where this constraint applies. Values: 'global', 'user', 'guest',
+  > 'task_creation', 'authentication'.
+- `constraint_definition`
+  > JSON or structured definition of the constraint rule. Stores validation
+  > logic, format patterns, or business rule specifications.
+- `error_message_template`
+  > Template for error messages when this constraint is violated. Can include
+  > placeholders for context-specific information.
+- `is_enforced`
+  > Whether this constraint is currently being enforced. Allows soft
+  > disabling of rules without deletion.
+- `severity_level`
+  > Severity when violated. Values: 'error' (blocks operation), 'warning'
+  > (allows with notification).
+- `created_at`: When this constraint definition was created.
+- `updated_at`: Last modification time for this constraint definition.
+
+### `todo_app_usage_metrics`
+
+System usage metrics and analytics data for monitoring and business
+intelligence.
+
+Captures operational data about API usage, task operations,
+authentication events, and system performance. This data drives rate
+limiting decisions, quota enforcement, and system optimization.
+
+Usage metrics are collected asynchronously to minimize performance impact
+while providing comprehensive visibility into system operation patterns.
+Data supports both real-time monitoring and historical analysis.
+
+Metrics enable proactive system management by identifying usage patterns,
+potential abuse scenarios, and areas requiring capacity planning or
+optimization.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_user_id`
+  > User associated with this metric. Null for global or guest metrics.
+  > [todo_app_users.id](#todo_app_users)
+- `metric_type`
+  > Type of metric being recorded. Examples: 'api_request', 'task_operation',
+  > 'authentication_event'.
+- `metric_operation`
+  > Specific operation or endpoint. Examples: 'task_create', 'login_attempt',
+  > 'search_query'.
+- `operation_count`
+  > Number of operations captured in this metric record. Used for batching
+  > operations to minimize volume.
+- `response_time_ms`: Average response time in milliseconds for captured operations.
+- `status_code`: HTTP status code or operation result for captured requests.
+- `user_agent`: User agent string for web requests. Used for analytics and debugging.
+- `ip_address`: Client IP address, anonymized for privacy compliance.
+- `error_count`: Number of errors encountered in captured operations.
+- `metadata`: JSON metadata containing additional context relevant to the metric.
+- `created_at`: When this usage metric was recorded.

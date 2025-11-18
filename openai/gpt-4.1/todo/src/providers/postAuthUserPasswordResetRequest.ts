@@ -7,30 +7,23 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 
 export async function postAuthUserPasswordResetRequest(props: {
-  body: ITodoListUser.IResetPasswordRequest;
-}): Promise<ITodoListUser.IResetPasswordRequestResult> {
-  const now = toISOStringSafe(new Date());
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-      locked: false,
-    },
+  body: ITodoUser.IResetPasswordRequest;
+}): Promise<ITodoUser.IResetPasswordResponse> {
+  // For privacy and security, always respond with 'success: true', revealing nothing about the existence of this email.
+  // No state change occurs, and no error is thrown for non-existing users.
+
+  // Lookup user for potential reset token (actual token dispatch is handled out-of-band, not in this function)
+  const user = await MyGlobal.prisma.todo_users.findUnique({
+    where: { email: props.body.email },
+    select: { id: true }, // Only needs to confirm existence if at all
   });
 
-  if (user !== null && user.is_verified) {
-    await MyGlobal.prisma.todo_list_users.update({
-      where: { id: user.id },
-      data: {
-        reset_password_token: v4(),
-        reset_password_sent_at: now,
-      },
-    });
-    // (Optional) Email notification logic is out of scope here.
-  }
+  // If user exists, code to dispatch email with reset token would be placed here (stubbed out for security).
+  // For example: if (user) { await EmailUtil.sendResetToken(user.id, props.body.email); }
 
+  // Always respond generically to avoid account enumeration attacks.
   return { success: true };
 }

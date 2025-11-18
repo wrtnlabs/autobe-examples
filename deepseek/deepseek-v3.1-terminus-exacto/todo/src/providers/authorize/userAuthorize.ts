@@ -4,14 +4,6 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
-/**
- * Authenticate and authorize a regular todo list user via JWT session token.
- *
- * - Verifies JWT using jwtAuthorize utility
- * - Confirms payload is for correct actor type
- * - Checks that user exists and is not deleted/locked
- * - Validates session is linked to user
- */
 export async function userAuthorize(request: {
   headers: {
     authorization?: string;
@@ -23,28 +15,30 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Make sure the user exists, is not locked, and not deleted.
+  // Verify user exists and is active
   const user = await MyGlobal.prisma.todo_list_users.findFirst({
     where: {
       id: payload.id,
-      locked: false,
       deleted_at: null,
+      status: "active",
     },
   });
-  if (!user) {
+
+  if (user === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 
-  // Confirm the session also belongs to the user
+  // Verify session is valid
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: payload.session_id,
-      user_id: payload.id,
+      todo_list_user_id: payload.id,
       expired_at: null,
     },
   });
-  if (!session) {
-    throw new ForbiddenException("Session is invalid or expired");
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired");
   }
 
   return payload;

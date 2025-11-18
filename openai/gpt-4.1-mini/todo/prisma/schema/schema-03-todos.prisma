@@ -1,0 +1,59 @@
+/// Individual todo tasks managed privately by authenticated users.
+///
+/// This table stores all todo tasks created by users with strong ownership
+/// linkage via user ID. Each task has a unique identifier, title, optional
+/// description, timestamps for creation, update, completion, and soft
+/// deletion status. Tasks are always associated with exactly one user,
+/// ensuring data integrity and avoiding shared or public tasks.
+///
+/// The completion status is tracked as a boolean flag, and an optional
+/// completion timestamp records when the task was marked completed. Soft
+/// delete is enabled via nullable deleted_at field for task lifecycle
+/// management and audit.
+///
+/// User sessions and authentication details are handled exclusively in
+/// separate components to ensure modular design and single responsibility.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning user. {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Task title. Must be a non-empty string with a maximum length of 255
+  /// characters.
+  title String
+  
+  /// Optional detailed description of the task. Limited to 1000 characters.
+  description String?
+  
+  /// Flag indicating whether the task has been completed (true) or is still
+  /// pending (false).
+  is_completed Boolean
+  
+  /// Timestamp when the task was marked completed. Null if task is incomplete.
+  completed_at DateTime?
+  
+  /// Task creation timestamp.
+  created_at DateTime
+  
+  /// Timestamp of the last task update.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null indicates the task is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todoListUser todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([is_completed, updated_at])
+}

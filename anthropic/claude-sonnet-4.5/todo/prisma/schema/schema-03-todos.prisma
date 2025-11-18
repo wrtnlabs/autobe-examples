@@ -1,18 +1,27 @@
-/// User-created task (Todo) entity representing an individual actionable
-/// item in a personal task list.
+/// Todo items representing user tasks and action items.
 ///
-/// Each todo belongs to exactly one registered user and records essential
-/// details such as title, optional description, due date, and business
-/// status (pending, completed, or deleted). Provides complete auditability
-/// with timestamps for creation, modification, deletion, and completion
-/// event. This model enforces strict user-only ownership and visibility,
-/// supporting full CRUD lifecycle and compliance audit via foreign
-/// references. Referential integrity protects against orphaned records and
-/// ensures privacy.
+/// Stores individual todo entries created by authenticated users to track
+/// tasks, goals, and action items. Each todo belongs to exactly one user and
+/// maintains complete data isolation between users.
 ///
-/// Supporting indexes enable fast lookups by owner, status, and due date for
-/// responsive user flows. All behaviors align with minimal, privacy-focused
-/// product requirements and EARS-specified business rules.
+/// Todos support rich metadata including titles, descriptions, due dates,
+/// priority levels, and completion status. The status field tracks workflow
+/// progression between pending and completed states, allowing users to mark
+/// tasks as done while preserving the todo for historical reference.
+///
+/// The priority field enforces strict validation at the database level to
+/// ensure only valid priority values (low, medium, high) are stored,
+/// preventing data integrity issues from any data entry method including
+/// direct database access, migrations, or third-party integrations.
+///
+/// Soft deletion is implemented through the deleted_at timestamp, providing
+/// a 30-day recovery period before permanent deletion. Deleted todos remain
+/// in the database but are filtered from normal queries, allowing users to
+/// restore accidentally deleted items.
+///
+/// Categories provide optional organization capabilities, allowing users to
+/// group related todos without requiring categorization for basic
+/// functionality.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -20,112 +29,124 @@ model todo_list_todos {
   //----
   // COLUMNS
   //----
-  /// Primary Key. Universally unique identifier for each todo record.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the owning user. Must point to an existing user. {@link
-  /// todo_list_users.id}.
-  user_id String
+  /// Owner user who created this todo item. {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// Todo item title. Required, non-empty text up to 100 characters.
-  /// Validation enforced on creation and update to maintain business
-  /// constraints.
+  /// Optional category for organizing related todos. {@link
+  /// todo_list_categories.id}.
+  todo_list_category_id String?
+  
+  /// Brief description of the task to be completed. Required field serving as
+  /// the primary identifier users see for each todo item. Maximum length 200
+  /// characters.
   title String
   
-  /// Optional descriptive text (max 500 characters). May be null or omitted if
-  /// not provided by user.
+  /// Detailed notes or additional context about the todo item. Optional field
+  /// supporting longer explanations, instructions, or related information.
+  /// Maximum length 2000 characters.
   description String?
   
-  /// Todo status: allowed values are 'pending', 'completed', or 'deleted'.
-  /// Used for business workflow, filtering, and access control. Status changes
-  /// follow task lifecycle state machine.
-  status String
-  
-  /// Optional due date for the todo. Must be today or future, if present. Used
-  /// for sorting and reminders.
+  /// Optional deadline or target completion date for this todo item. Users can
+  /// set due dates to track time-sensitive tasks and receive reminders.
+  /// Supports past dates for tracking overdue items.
   due_date DateTime?
   
-  /// Timestamp marking the moment the todo was marked as completed by the
-  /// user. Null if not completed.
-  completed_at DateTime?
+  /// Priority level indicating task urgency or importance. Database-enforced
+  /// enum with valid values: low, medium, high. Defaults to medium if not
+  /// specified. Helps users identify which tasks require immediate attention.
+  /// CHECK constraint ensures data integrity at database level.
+  priority String
   
-  /// Timestamp of initial creation. Immutable after insert.
+  /// Current completion status of the todo item. Database-enforced enum with
+  /// valid values: pending (incomplete), completed (finished). Defaults to
+  /// pending for new todos. Status can transition freely between pending and
+  /// completed as users toggle completion state. CHECK constraint ensures data
+  /// integrity at database level.
+  status String
+  
+  /// Timestamp when this todo item was originally created. Automatically set
+  /// by the system upon creation and never modified. Used for displaying
+  /// creation dates and sorting todos chronologically.
   created_at DateTime
   
-  /// Timestamp of the last update. Modified on every business change or status
-  /// transition.
+  /// Timestamp when this todo item was last modified. Automatically updated
+  /// whenever any field changes including status toggles, title edits, or
+  /// metadata updates. Tracks most recent activity on the todo.
   updated_at DateTime
   
-  /// Timestamp indicating when the todo was soft deleted. Null if not deleted.
+  /// Soft deletion timestamp indicating when the user deleted this todo. Null
+  /// for active todos. When set, the todo is hidden from normal views but
+  /// retained for 30 days to support recovery. After 30 days, todos are
+  /// permanently deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  category todo_list_categories? @relation(fields: [todo_list_category_id], references: [id], onDelete: Cascade)
   
-  todo_list_admin_audit_logs todo_list_admin_audit_logs[]
+  @@index([todo_list_category_id])
   
-  @@unique([user_id, title])
-  @@index([user_id, due_date, status])
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, status, due_date])
+  @@index([todo_list_user_id, deleted_at])
 }
 
-/// Administrative action and compliance audit log capturing all critical
-/// administrative interactions with user or todo data.
+/// Categories for organizing and grouping related todo items.
 ///
-/// Stores immutable, append-only audit trail entries recording which admin
-/// performed which tracked action (create, update, access, delete, etc.), on
-/// what entity (user, todo), and with what context. Each log links the actor
-/// (admin), optionally impacted user, and target todo (if any), supporting
-/// detailed compliance and accountability reviews. Fields include mandatory
-/// timestamps, request metadata, and detailed action descriptors. Indexes
-/// support rapid security, audit, and compliance queries.
+/// Provides optional organizational structure allowing users to group
+/// related todos into named categories such as Work, Personal, Shopping, or
+/// Health. Each category belongs to a specific user and maintains data
+/// isolation.
 ///
-/// Never contains business entity data itself; provides operational
-/// transparency without cross-contaminating business state.
+/// Categories are entirely optional - users can manage todos without
+/// categorization. When used, categories help users filter and organize
+/// large todo lists by applying category-based views.
+///
+/// The system supports user-specific categories, meaning each user maintains
+/// their own category list independent of other users. Category names are
+/// validated for uniqueness per user to prevent confusion.
+///
+/// Future enhancements may include category sharing, hierarchical
+/// categories, or default system categories, which this normalized structure
+/// supports without schema modifications.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_admin_audit_logs {
+model todo_list_categories {
   //----
   // COLUMNS
   //----
-  /// Primary Key. Universally unique audit log entry identifier.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the admin actor who performed the action. Always points to a
-  /// valid admin. {@link todo_list_admins.id}.
-  admin_id String
+  /// Owner user who created this category. {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// User affected by the action, if applicable. May be null for purely admin
-  /// system operations. {@link todo_list_users.id}.
-  user_id String?
+  /// Category name for organizing todos. Required field representing the
+  /// user-visible category label such as Work, Personal, Shopping, or Health.
+  /// Maximum length 50 characters. Must be unique per user.
+  name String
   
-  /// Related todo item if the action targets a specific task. Null if the
-  /// action does not pertain to a specific todo. {@link todo_list_todos.id}.
-  todo_id String?
-  
-  /// Categorical action label (e.g., 'create', 'update', 'delete', 'access').
-  /// Defines the type of operation performed by admin.
-  action_type String
-  
-  /// Optional extended, machine-readable metadata about the admin request
-  /// context (e.g., IP, session, endpoint). Useful for forensics and
-  /// compliance situations.
-  request_context String?
-  
-  /// Timestamp of when the audit log record was created. Immutable and set
-  /// automatically at write time.
+  /// Timestamp when this category was originally created. Automatically set by
+  /// the system upon creation.
   created_at DateTime
+  
+  /// Timestamp when this category was last modified. Automatically updated
+  /// whenever the category name or other properties change.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  admin todo_list_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  user todo_list_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  todo todo_list_todos? @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([admin_id, created_at])
-  @@index([user_id])
-  @@index([todo_id])
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([todo_list_user_id, name])
+  @@index([todo_list_user_id, created_at])
 }

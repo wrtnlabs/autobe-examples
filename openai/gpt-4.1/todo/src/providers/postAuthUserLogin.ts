@@ -7,112 +7,90 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoListUser.ILogin;
-}): Promise<ITodoListUser.IAuthorized> {
-  // Step 1: Find user by email
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  body: ITodoUser.ILogin;
+}): Promise<ITodoUser.IAuthorized> {
+  // Step 1: Lookup user by unique email, error if not found
+  const user = await MyGlobal.prisma.todo_users.findUnique({
     where: { email: props.body.email },
   });
-  if (
-    !user ||
-    user.deleted_at !== null ||
-    user.locked === true ||
-    user.is_verified === false
-  ) {
+  if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 2: Validate password
-  const passwordValid = await PasswordUtil.verify(
+  // Step 2: Verify password using PasswordUtil
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-  if (!passwordValid) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 3: Create session
+  // Step 3: Create a new session record in todo_user_sessions
+  // Expirations: access 1h, refresh 7d (as ISO date-times)
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const sessionId = v4();
-  const now = toISOStringSafe(new Date());
-  const accessDurationMs = 60 * 60 * 1000; // 1 hour
-  const refreshDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days
-  const accessExpiresAt = toISOStringSafe(
-    new Date(Date.now() + accessDurationMs),
-  );
-  const refreshExpiresAt = toISOStringSafe(
-    new Date(Date.now() + refreshDurationMs),
-  );
 
-  await MyGlobal.prisma.todo_list_user_sessions.create({
+  const session = await MyGlobal.prisma.todo_user_sessions.create({
     data: {
       id: sessionId,
-      todo_list_user_id: user.id,
+      todo_user_id: user.id,
       ip:
         props.body.ip !== undefined && props.body.ip !== null
           ? (props.body.ip satisfies string as string)
           : "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
-      expired_at: accessExpiresAt,
+      created_at: toISOStringSafe(now),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Step 4: Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: sessionId,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  // Step 4: Issue JWT access and refresh tokens
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(now),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(now),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
+  // Step 5: Return authorized user payload (matching required fields exactly)
   return {
     id: user.id,
     email: user.email,
-    is_verified: user.is_verified,
-    locked: user.locked,
-    locked_at: user.locked_at ? toISOStringSafe(user.locked_at) : undefined,
-    email_verification_token: user.email_verification_token ?? undefined,
-    email_verification_sent_at: user.email_verification_sent_at
-      ? toISOStringSafe(user.email_verification_sent_at)
-      : undefined,
-    reset_password_token: user.reset_password_token ?? undefined,
-    reset_password_sent_at: user.reset_password_sent_at
-      ? toISOStringSafe(user.reset_password_sent_at)
-      : undefined,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresAt,
-      refreshable_until: refreshExpiresAt,
-    },
+    token,
   };
 }

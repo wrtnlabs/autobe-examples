@@ -9,136 +9,121 @@
 
 ```mermaid
 erDiagram
-"todo_list_todolistmembers" {
+"todo_list_users" {
   String id PK
   String email UK
   String password_hash
   DateTime created_at
+  DateTime updated_at
 }
-"todo_list_todolistmember_sessions" {
+"todo_list_user_sessions" {
   String id PK
-  String todo_list_todolistmember_id FK
+  String todo_list_user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_list_todolistmember_sessions" }o--|| "todo_list_todolistmembers" : todoListTodolistmember
+"todo_list_user_sessions" }o--|| "todo_list_users" : todoListUser
 ```
 
-### `todo_list_todolistmembers`
+### `todo_list_users`
 
-Authenticated user account for the Todo List system.
+Registered users of the Todo list application who can authenticate and
+manage their personal tasks.
 
-Represents a natural person who registers, logs in, and manages their own
-private todo items. Each account is uniquely identified by email, which
-is required for login and password recovery. All authentication and data
-ownership are strictly scoped to this actor – there is no account sharing
-or joint access.
+Each user has a unique email address used for login purposes and a hashed
+password for secure authentication.
+The user entity serves as the authentication principal and owner of tasks
+and sessions.
 
-Password information is stored as a cryptographically secure hash—never
-in plain text. Sessions are managed in a separate table, providing audit
-trails and session control. User accounts support full account deletion
-with immediate and permanent removal of all data. There are no
-administrative roles or collaborative features in this minimal model.
+Users cannot be deleted outright; soft deletion is not implemented here.
+User lifecycle primarily includes creation, authentication, and potential
+deactivation handled outside this schema.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`
-  > Unique user email address for authentication and communication. Must
-  > follow proper email format and is used for login and password reset.
+- `email`: Unique email address used for user authentication and communication.
 - `password_hash`
-  > Cryptographically secure hash of the user's password. Never stored in
-  > plain text and required for authentication.
-- `created_at`: Timestamp of account creation. Used for audit and compliance purposes.
+  > Hashed password for secure authentication. Plain passwords are never
+  > stored.
+- `created_at`: Timestamp when the user account was created.
+- `updated_at`: Timestamp when the user account was last updated.
 
-### `todo_list_todolistmember_sessions`
+### `todo_list_user_sessions`
 
-Authentication sessions for a todoListMember.
+Active sessions of the registered users representing authenticated login
+sessions.
 
-This table records session activity including IP, href, referrer, and
-session timeline. Each session is linked to one todoListMember and
-represents a unique browser or device login instance. Used for securing
-API access and providing audit records. Sessions may expire or be
-invalidated by the system or user action. No sensitive auth credentials
-are stored here; only association and activity context.
+This table stores session information including IP address, originating
+URL, and referrer URL to support auditing and session management.
+Sessions have creation and optional expiration timestamps.
+
+Each session is linked to a user, allowing multiple concurrent sessions
+per user.
+
+This is a subsidiary table managed indirectly through user authentication
+and session handling flows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_todolistmember_id`
-  > References the todoListTodolistmember who owns this session. {@link
-  > todo_list_todolistmembers.id}.
-- `ip`
-  > IP address from which the session was created or last accessed. Used for
-  > audit and security.
-- `href`
-  > Connection URL or origin used when session was initialized. Provides
-  > context on session creation.
-- `referrer`
-  > Referrer value (if present) at time of login; commonly HTTP referer
-  > header.
-- `created_at`: Timestamp when the session was initially created.
-- `expired_at`
-  > Timestamp marking when the session was invalidated, closed by user, or
-  > expired. Null if session is still active.
+- `todo_list_user_id`: Reference to the owning user. [todo_list_users.id](#todo_list_users)
+- `ip`: IP address from which the session originated.
+- `href`: URL accessed at session initiation.
+- `referrer`: Referrer URL prior to accessing the session start URL.
+- `created_at`: Timestamp when the session was created.
+- `expired_at`: Optional timestamp when the session expired.
 
 ## Todos
 
 ```mermaid
 erDiagram
-"todo_list_todos" {
+"todo_list_tasks" {
   String id PK
-  String todo_list_todolistmember_id FK
+  String todo_list_user_id FK
   String title
   String description "nullable"
-  Boolean is_complete
+  Boolean is_completed
   DateTime completed_at "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 ```
 
-### `todo_list_todos`
+### `todo_list_tasks`
 
-Todo items managed by each authenticated user in the Todo List application.
+Individual todo tasks managed privately by authenticated users.
 
-This table stores all actionable tasks owned by a single user
-(todolistmember). Each todo is a distinct record with a unique identifier
-and is strictly associated with its creator, preventing access by other
-users. Todos are private and enforce per-user title uniqueness as
-required by business rules.
+This table stores all todo tasks created by users with strong ownership
+linkage via user ID. Each task has a unique identifier, title, optional
+description, timestamps for creation, update, completion, and soft
+deletion status. Tasks are always associated with exactly one user,
+ensuring data integrity and avoiding shared or public tasks.
 
-The model provides minimal yet complete fields to represent task text, an
-optional longer description, a completion status, timestamps for audit
-support, and referential integrity to an existing user. No collaboration,
-sharing, or advanced metadata is present for MVP; only essential CRUD
-operations are supported. All deletions are irreversible as specified.
+The completion status is tracked as a boolean flag, and an optional
+completion timestamp records when the task was marked completed. Soft
+delete is enabled via nullable deleted_at field for task lifecycle
+management and audit.
 
-Each todo can be created, viewed, updated, and deleted by the owner only;
-no user or admin may access other users' data at any time.
+User sessions and authentication details are handled exclusively in
+separate components to ensure modular design and single responsibility.
 
 Properties as follows:
 
-- `id`: Primary Key. Unique identifier for each todo item.
-- `todo_list_todolistmember_id`
-  > Reference to the owning user account. Enforces strict per-user data
-  > isolation. [todo_list_todolistmembers.id](#todo_list_todolistmembers).
+- `id`: Primary Key.
+- `todo_list_user_id`: Reference to the owning user. [todo_list_users.id](#todo_list_users).
 - `title`
-  > Todo title provided by the owner. Must be unique for each user, between 1
-  > and 100 characters, and non-blank.
-- `description`
-  > Optional longer details or notes for the todo. Allows up to 1000
-  > characters. Can be null or empty as needed.
-- `is_complete`
-  > Completion status. True if the todo is marked complete, false if still
-  > pending or in progress.
-- `completed_at`
-  > If set, indicates when the todo was marked complete. Null if not
-  > completed.
-- `created_at`: Timestamp for when the todo was created.
-- `updated_at`
-  > Timestamp for the most recent update to the todo, including status or
-  > field edits.
+  > Task title. Must be a non-empty string with a maximum length of 255
+  > characters.
+- `description`: Optional detailed description of the task. Limited to 1000 characters.
+- `is_completed`
+  > Flag indicating whether the task has been completed (true) or is still
+  > pending (false).
+- `completed_at`: Timestamp when the task was marked completed. Null if task is incomplete.
+- `created_at`: Task creation timestamp.
+- `updated_at`: Timestamp of the last task update.
+- `deleted_at`: Soft deletion timestamp. Null indicates the task is active.

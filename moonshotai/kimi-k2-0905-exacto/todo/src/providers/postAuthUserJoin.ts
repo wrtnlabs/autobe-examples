@@ -7,70 +7,59 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoListUser.ICreate;
-}): Promise<ITodoListUser.IAuthorized> {
-  // 1. Check for existing user by email (duplicate registration not allowed)
-  const duplicate = await MyGlobal.prisma.todo_list_users.findFirst({
+  body: ITodoAppUser.IJoin;
+}): Promise<ITodoAppUser.IAuthorized> {
+  // Check for duplicate email
+  const existing = await MyGlobal.prisma.todo_app_users.findFirst({
     where: { email: props.body.email },
   });
-  if (duplicate) {
-    throw new HttpException("Email is already registered.", 409);
+
+  if (existing) {
+    throw new HttpException("Email already registered", 409);
   }
 
-  // 2. Hash plain password using PasswordUtil
-  let password_hash: string;
-  try {
-    password_hash = await PasswordUtil.hash(props.body.password);
-  } catch (err) {
-    throw new HttpException("Failed to process password.", 500);
-  }
+  // Hash password
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // 3. Create user
-  const now = toISOStringSafe(new Date());
-  const user_id = v4();
-  const user = await MyGlobal.prisma.todo_list_users.create({
+  // Create user
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  const user = await MyGlobal.prisma.todo_app_users.create({
     data: {
-      id: user_id,
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
-      password_hash: password_hash,
-      is_locked: false,
-      created_at: now,
-      updated_at: now,
+      password_hash: hashedPassword,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
     },
   });
 
-  // 4. Create session
-  const session_id = v4();
-  const session_created_at = now;
-  const access_expired_at = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refresh_expired_at = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+  // Create session
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
-      id: session_id,
-      todo_list_user_id: user.id,
-      ip: "",
-      href: "",
-      referrer: "",
-      created_at: session_created_at,
-      expired_at: access_expired_at,
+      id: v4() as string & tags.Format<"uuid">,
+      user_id: user.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: new Date(),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // 5. Issue JWT tokens. Access: 1hr, Refresh: 7d, payload must match type/contract.
-  const access_token = jwt.sign(
+  // Generate JWT tokens
+  const accessToken = jwt.sign(
     {
       type: "user",
       id: user.id,
       session_id: session.id,
-      created_at: session_created_at,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -78,13 +67,14 @@ export async function postAuthUserJoin(props: {
       issuer: "autobe",
     },
   );
-  const refresh_token = jwt.sign(
+
+  const refreshToken = jwt.sign(
     {
       type: "user",
       id: user.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: session_created_at,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -92,25 +82,21 @@ export async function postAuthUserJoin(props: {
       issuer: "autobe",
     },
   );
-  const token = {
-    access: access_token,
-    refresh: refresh_token,
-    expired_at: access_expired_at,
-    refreshable_until: refresh_expired_at,
+
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
 
-  // 6. Return the IAuthorized DTO. user property is summary of just created user.
+  // Return authorized user
   return {
     id: user.id,
     email: user.email,
-    is_locked: user.is_locked,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
     token,
-    user: {
-      id: user.id,
-      email: user.email,
-      is_locked: user.is_locked,
-    },
   };
 }

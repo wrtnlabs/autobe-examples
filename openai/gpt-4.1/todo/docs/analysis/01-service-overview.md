@@ -1,83 +1,83 @@
-# Todo List Application: Requirements Analysis Report
+# Todo Service Requirements Overview
 
-## 1. Purpose and Scope
-The todoList backend serves to enable individuals to manage their personal tasks efficiently and securely through a minimal, easy-to-use digital platform. The scope strictly includes business requirements for a solo user-focused CRUD todo application, omitting all collaborative or extraneous features. The service exists to ensure that users can reliably create, view, update, complete, or delete their own tasks and nothing more, with robust privacy and usability guarantees.
+## Service Vision
+Enhance individual productivity by providing a minimal, focused Todo list application tailored for users who require only the essential functionalities—adding, viewing, editing, and deleting their own tasks. Inspired by simplicity, the service eliminates distractions and avoids feature overload, aiming for the fastest, least-demanding experience for busy users who value reliability and privacy.
 
-## 2. User Actors
+## Problem Statement
+Productivity tools have become excessively complicated, often including unnecessary features that frustrate or confuse users who only need straightforward task tracking. Many users require an application that does not siphon their attention with menus, advanced options, or integrations. Existing alternatives can leak sensitive data or require complex privacy settings. A direct, minimal Todo application fills the gap, ensuring every interaction is purposeful and data security is never in question.
 
-- **Registered User**: An individual who holds a unique authenticated account. Each Registered User interacts solely with their own data; access to other users’ todo items is technically and procedurally prohibited.
+## Core Value Proposition
+- Streamlined user workflows for managing personal todos and daily tasks
+- No superfluous features: restrict core operations to create/read/update/delete (CRUD) for todos
+- All todo data is private; user access to todos is strictly self-only—no sharing, exporting, or publication features in MVP
+- Built-in privacy and security, ensuring compliance with standards and no accidental data exposure
+- Immediate feedback and responsiveness to user actions
+- Minimal registration required: email and password (or modern secure auth provider)
+- All operations strictly authenticated
+- All input validated (see requirements) for completeness, forbidden character sets, excessive length
+- Clear error messages and robust feedback on failures
 
-Permission Matrix (Minimal):
+## Business Model
+**Purpose**: Serve privacy- and simplicity-focused individuals with an essential todo application, designed for high trust with zero distractions. No monetization or premium features at launch; future revenue only considered after user satisfaction with the core experience is proven.
 
-| Actor           | Can Create | Can View | Can Update | Can Delete | Can Mark Complete | Notes                |
-|-----------------|------------|----------|------------|------------|-------------------|----------------------|
-| Registered User | Yes        | Yes      | Yes        | Yes        | Yes               | Only own data access |
+Revenue opportunities (beyond MVP) may include:
+- Subscription-based premium features: reminders, calendar or productivity integrations
+- Optional unobtrusive ads, never violating privacy or depleting minimalism
+- Institutional/Enterprise licensing for organizations seeking simple internal task management
+- For the MVP: zero revenue focus, total prioritization of product-market fit and retention
 
-## 3. Functional Requirements (in EARS format)
+**User Actors**:
+- **User**: Any registered individual, owner of their personal todos. All todos are private by default; no user may access another user’s data for any operation.
 
-### Task Management (CRUD)
-- WHEN a Registered User is authenticated, THE system SHALL allow the user to create new todo items with a text description, optional due date, and completion status.
-- WHEN a Registered User is authenticated, THE system SHALL allow the user to retrieve the complete list of their own todo items, ordered by creation or due date.
-- WHEN a Registered User is authenticated, THE system SHALL allow the user to update the text, due date, or completion status of any of their own todo items.
-- WHEN a Registered User is authenticated, THE system SHALL allow the user to delete any of their own todo items.
-- WHEN a Registered User marks a todo item as complete or incomplete, THE system SHALL persist this state immediately and reflect it on the next retrieval.
-- WHEN a user requests access to another user's todo items, THE system SHALL return a 'Forbidden' error and log the event for audit purposes.
+## Business and Functional Requirements (EARS Format)
+- WHEN a user registers with a valid email and password, THE system SHALL create a new private todo list accessible only to that user.
+- WHEN a user is authenticated, THE system SHALL allow adding new todo items to the user’s personal list.
+- WHEN a user is authenticated, THE system SHALL show only that user's todo items, in chronological order by creation time (or optionally due date if provided).
+- WHEN a user is authenticated, THE system SHALL allow updating the text and completion status of todos they own.
+- WHEN a user is authenticated, THE system SHALL allow deletion of any todo they own.
+- WHEN a user is unauthenticated, THE system SHALL deny all access to any todo data and SHALL display an authentication error message within 1 second.
+- IF a user attempts to access or alter data belonging to another user, THEN THE system SHALL reject the action and respond with a 'forbidden' error within 1 second.
+- THE system SHALL validate todo item text to not exceed 200 characters and to contain no control or script-related characters. Forbidden characters SHALL cause rejection with an explicit error message.
+- WHEN an invalid API request is made (invalid fields, data types, missing authentication/authorization), THE system SHALL respond with validation or authentication errors without altering any data.
+- WHEN a todo is created, modified, or deleted, THE system SHALL return the updated list state within 1 second of submission for optimal responsiveness.
+- THE system SHALL enforce a per-user todo limit of 300 active items to prevent abuse; exceeding the limit SHALL result in a clear, actionable error.
+- WHEN the service experiences a system error, THE system SHALL return a 500 error (internal server error) and SHALL NOT leak any sensitive information about user or system state.
 
-### Task Data Specification
-- WHEN a new todo item is created, THE system SHALL require a non-empty text description and MAY accept an optional due date field that is either empty or a valid calendar date. Completion status SHALL default to 'incomplete' if not specified at creation.
+## Authentication, Privacy, and Authorization Requirements
+- Registration requires only email and password. No public profile or discoverability features are present.
+- All API requests for todos and user data SHALL require authentication (JWT, session, or equivalent proven secure mechanism).
+- User sessions SHALL be invalidated upon logout, credential change, or after 7 days of inactivity.
+- Passwords SHALL be handled using industry-standard secure salting+hashing (e.g., bcrypt or Argon2), never stored or transmitted in plaintext.
+- No actor except the authenticated user may access or view any user's tasks for any reason within the application.
+- Data at rest and in transit SHALL be encrypted using accepted industry best practices (e.g., HTTPS/TLS 1.2+).
+- Error messages SHALL not reveal internal implementation details or any information about other users.
 
-### Viewing and Filtering
-- WHEN listing todo items, THE system SHALL present all of the user’s items with fields: description, optional due date, completion status, and unique identifier.
-- WHEN a user requests, THE system MAY allow sorting by creation date or due date, and MAY allow filtering by completion status.
+## Non-Functional Requirements (NFRs)
+- System SHALL support at least 10,000 concurrent users with 99.9% monthly uptime.
+- UI responses to CRUD operations SHALL be returned in under 1 second, barring network or platform-level incidents outside the application's control.
+- Service SHALL provide clear API error codes and user-friendly error messages.
+- Service SHALL provide full audit logging for authentication, failed access attempts, and any administrative operations (if present in future versions).
+- System SHALL comply with applicable privacy regulations (e.g., GDPR for EU-based users) as appropriate for MVP.
 
-## 4. Authentication Requirements
-
-- WHEN a new user registers, THE system SHALL require a unique email and a password, storing credentials securely using an industry-standard hash function.
-- WHEN a Registered User logs in, THE system SHALL authenticate credentials and issue a secure, expirable session token (such as JWT).
-- WHEN making any API request pertaining to todo items, THE system SHALL require a valid session token; otherwise, a 401 Unauthorized error SHALL be returned.
-- WHEN processing any request, THE system SHALL enforce data ownership, ensuring actions are performed only on resources belonging to the authenticated user.
-
-## 5. Exception and Error Handling
-
-- WHEN a user attempts to perform any operation without authentication, THE system SHALL return 'Unauthorized'.
-- WHEN a data validation error occurs (e.g., missing description field, invalid date), THE system SHALL provide a structured, human-readable error message specifying the issue.
-- WHEN attempting to access or modify a todo item not owned by the user, THE system SHALL respond with a 'Forbidden' error and SHALL NOT reveal the existence or status of that item.
-- WHEN a user attempts to delete or update a non-existent todo item, THE system SHALL reply with 'Not Found'.
-- WHEN database or application errors occur, THE system SHALL provide a generic error message to the end user and log the technical details for support.
-
-## 6. Non-functional Requirements & KPIs
-
-- WHEN responding to any authenticated request, THE system SHALL complete the operation in under 1 second in 99% of cases, under normal load.
-- WHEN storing or retrieving sensitive user data, THE system SHALL use encryption at rest and in transit (e.g., TLS for all network traffic).
-- WHEN handling user information, THE system SHALL comply with standard data retention and deletion practices, including the ability for a user to permanently delete their account and associated data.
-- WHEN the application is in production, THE system SHALL maintain at least 99.9% uptime and track basic KPIs: daily active users, retention rate, and average response time.
-- WHEN monitoring the backend, THE system SHALL collect anonymized metrics for system health and improvement, never storing personal task contents in logs.
-
-## 7. User Workflow Diagram
+## Mermaid Diagram: Essential User Flow
 ```mermaid
-graph LR
-    A["Registered User"] --> B["Register / Login"]
-    B --> C["View Todo List"]
-    C --> D["Create Todo Item"]
-    C --> E["Update Todo Item"]
-    C --> F["Delete Todo Item"]
-    C --> G["Mark Item Complete/Incomplete"]
-    D --> C
-    E --> C
-    F --> C
-    G --> C
+graph TD
+  U["User"] -->|"register"| R["Account Created"]
+  U -->|"login"| S["Authenticated"]
+  S -->|"create todo"| C["Add Item"]
+  S -->|"view todos"| V["View Items"]
+  S -->|"edit todo"| E["Edit Item"]
+  S -->|"delete todo"| D["Delete Item"]
 ```
 
-## 8. Out-of-Scope and Constraints
-- No features for team collaboration, sharing, notifications, tagging, prioritization, or analytics SHALL be implemented in this scope.
-- All operations MUST restrict data strictly to the authenticated user’s scope; no admin or external user roles exist in this minimal version.
+## Success Metrics
+| Key Metric                 | Definition                                                                   |
+|---------------------------|------------------------------------------------------------------------------|
+| Daily Active Users (DAU)   | Number of users logging in and viewing or managing their todos daily          |
+| Task Completion Rate       | Percentage of created tasks successfully marked as complete                   |
+| Retention Rate             | Proportion of users returning after 7 days and after 30 days                 |
+| Error Incident Rate        | Number of failed requests due to validation/authentication per 1,000 sessions |
+| Privacy/Security Breaches  | Number of confirmed privacy/data security incidents (goal: 0)                |
+| User Feedback/NPS          | Direct user rating, survey responses, and overall satisfaction score          |
 
-## 9. References
-- For business context see: Service Overview
-- For user authentication and permission detail see: User Actors and Permissions
-- For exception flows and error handling see: Exception & Error Handling document
-- For task validation details, see: Business Rules and Validation document
-
----
-
-The above requirements comprise an actionable, unambiguous, production-grade specification for developing the backend of a minimal Todo List application, focused strictly on user privacy, core task management, and performance within a single-user paradigm.
+The Todo service establishes a foundation for a secure, reliable, minimal, and distraction-free user experience, prioritizing user privacy and performance above all else. All future additions or expansions must maintain this core ethos and never compromise on simplicity or user trust.

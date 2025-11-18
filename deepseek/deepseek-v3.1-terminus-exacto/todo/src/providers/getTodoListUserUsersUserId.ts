@@ -14,19 +14,8 @@ export async function getTodoListUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<ITodoListUser> {
-  // Only allow user to fetch their own profile
-  if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "You are not authorized to access this resource.",
-      403,
-    );
-  }
-
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: {
-      id: props.userId,
-      deleted_at: null,
-    },
+  const user = await MyGlobal.prisma.todo_list_users.findUnique({
+    where: { id: props.userId },
   });
 
   if (!user) {
@@ -36,10 +25,9 @@ export async function getTodoListUserUsersUserId(props: {
   return {
     id: user.id,
     email: user.email,
-    locked: user.locked,
+    status: user.status,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at:
-      user.deleted_at !== null ? toISOStringSafe(user.deleted_at) : undefined,
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
   };
 }

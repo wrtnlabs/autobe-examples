@@ -1,133 +1,97 @@
-/// Registered user table for the Todo List application.
+/// User account and authentication record for the minimal Todo List
+/// application.
 ///
-/// Represents all end users who register, authenticate, and manage their
-/// personal todos. Each user record contains essential authentication fields
-/// (unique email, securely hashed password) and all metadata for identity
-/// lifecycle events such as registration, email verification, password reset
-/// tokens, and account status flags.
+/// Represents an individual user with private access to their own todo
+/// items. Stores unique email for identity, a securely hashed password for
+/// authentication, and all fields required for secure registration and
+/// sign-in per MVP requirements.
 ///
-/// This model enforces unique email addresses, secure credential policy, and
-/// account isolation for each user. It provides necessary fields for
-/// business processes including registration, password reset, email
-/// confirmation, locked/active status, and full account deletion lifecycle.
-/// The table is primary for independent user management, supports full CRUD,
-/// and underpins all authentication and authorization logic.
+/// Each user entry is isolated to ensure privacy and prevent any cross-user
+/// access. Removal of a user cascades to all dependent sessions and todos
+/// for privacy and compliance. No role or privilege fields: users are always
+/// basic end-users in this system.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
+model todo_users {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the user. Unique, unguessable identifier for user account
+  /// records.
   id String @id
   
-  /// User email address, used as the primary login credential. Must be unique
-  /// and conform to email format standards. Required for registration and
-  /// login.
+  /// User's unique email address for authentication and identity recovery.
+  /// Must be unique in the system per privacy and login requirements.
   email String
   
-  /// Secure hash of the user's password. Never stores plaintext. Only hash
-  /// output is allowed (e.g., bcrypt, argon2).
+  /// BCrypt or Argon2 hash of the user's password. Never stores plain text;
+  /// used solely for authentication and verification.
   password_hash String
   
-  /// Flag indicating if the user's email has been successfully verified. True
-  /// when verification process completed.
-  is_verified Boolean
-  
-  /// One-time token used to confirm user email verification. Null if already
-  /// verified or immediately after verification.
-  email_verification_token String?
-  
-  /// UTC datetime when the last verification email was sent to the user. Null
-  /// if never sent or already verified.
-  email_verification_sent_at DateTime?
-  
-  /// Unique token used for user-initiated password resets. Null if not in
-  /// reset flow.
-  reset_password_token String?
-  
-  /// Datetime of when the most recent password reset token was issued (UTC).
-  /// Used for computing expiration.
-  reset_password_sent_at DateTime?
-  
-  /// Flag indicating if the account has been temporarily locked due to
-  /// repeated failed login attempts or security actions. Used to prevent login
-  /// until reset.
-  locked Boolean
-  
-  /// Datetime when user account was locked due to authentication failures or
-  /// administrative actions. Null if not currently locked.
-  locked_at DateTime?
-  
-  /// UTC datetime when the user account was created.
+  /// Timestamp for when the user account was created.
   created_at DateTime
   
-  /// UTC datetime when user account was last updated.
+  /// Timestamp for the most recent update to this user's account (email,
+  /// password, etc.).
   updated_at DateTime
-  
-  /// UTC datetime when user was deleted (account removal). Null if active.
-  /// Used to ensure full cleanup, may drive future delayed deletion policy.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_todos todo_list_todos[]
+  todo_user_sessions todo_user_sessions[]
+  todo_todos todo_todos[]
   
   @@unique([email])
-  @@index([created_at])
-  @@index([is_verified, locked])
+  @@index([created_at, email])
 }
 
-/// Session and login audit table for registered users.
+/// Audit and security tracking of authentication sessions for each user.
 ///
-/// Each session represents an authenticated login instance, storing
-/// connection context metadata, linkage to user identity, and tracking for
-/// active/expired sessions. Enforces auditing and session lifecycle
-/// management required for compliance, security reviews, and JWT/session
-/// revocation at logout, password reset, or account deletion.
-///
-/// Sessions may support persistent user tokens, device metadata, and are
-/// strictly subsidiary—created and managed through user login and logout
-/// flows. This model does not allow independent CRUD. Essential for
-/// monitoring login activity and enforcing proper security policies.
+/// Stores login session metadata (creation, expiration), and connection
+/// context (IP, referrer, visited URL). Each session references a user and
+/// is removed if the user is deleted. Provides the backbone for
+/// authentication flows, token invalidation, and session management per
+/// privacy, security, and audit requirements. No device or user agent fields
+/// included as MVP requires only essential context for traceability.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user_sessions {
+model todo_user_sessions {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the session. Unique identifier for each authentication
+  /// session instance.
   id String @id
   
-  /// Linked user for this session. Foreign key to {@link todo_list_users.id}.
-  todo_list_user_id String
+  /// Foreign key referencing the owner of this session. Links each session to
+  /// a specific user. {@link todo_users.id}.
+  todo_user_id String
   
-  /// Client IP address from which the session/login was initiated.
+  /// IP address from which the session was initiated for auditing and session
+  /// traceability.
   ip String
   
-  /// URL or endpoint used at login/session creation. Used for audit and
-  /// debugging.
+  /// URL at the time session was created, for security audit and origin
+  /// verification.
   href String
   
-  /// Referrer URL at session creation. May be empty but is required for full
-  /// traceability.
+  /// HTTP referrer when session was created, for basic session tracing and
+  /// anti-abuse context.
   referrer String
   
-  /// UTC datetime when the session was created.
+  /// Timestamp for when the session was established.
   created_at DateTime
   
-  /// Datetime marking when the session expired or was revoked. Null if session
-  /// is currently active.
+  /// Timestamp for when the session expired, was revoked, or logged out. Null
+  /// if session is active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
+  @@index([todo_user_id, created_at])
 }

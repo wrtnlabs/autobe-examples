@@ -4,112 +4,117 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Validate successful login for a registered user.
- *
- * Ensures that when a user with a known valid email and correct password logs
- * in, the system issues a valid JWT token set (access and refresh), associates
- * the correct user context, and exposes all required fields in the returned
- * structure. Verifies correct handling of account lock status, timestamps, and
- * metadata fields. All steps are 100% type safe and assertively validated.
- *
- * 1. Create a user with unique, valid credentials (unique email and a strong
- *    password).
- * 2. Attempt to authenticate using the registered credentials.
- * 3. Assert that the API returns the expected token structure, all required
- *    metadata, and the correct user context.
- * 4. Validate type and business invariants on all returned fields.
+ * Test successful authentication with valid email and password credentials.
+ * Verifies existing users can access their accounts with correct credentials,
+ * receiving fresh JWT tokens for authenticated API access. Validates proper
+ * credential validation, token generation, and session establishment for
+ * ongoing application usage.
  */
 export async function test_api_user_login_success(connection: api.IConnection) {
-  // Step 1: Register a user for testing login
+  // Step 1: Create a test user account (dependency)
   const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12); // at least 8 characters
-  const joinResult: ITodoListUser.IAuthorized =
-    await api.functional.auth.user.join(connection, {
-      body: {
-        email,
-        password,
-      } satisfies ITodoListUser.ICreate,
-    });
-  typia.assert(joinResult);
+  const password = RandomGenerator.alphaNumeric(12);
 
-  // Step 2: Attempt to authenticate with correct credentials
-  const loginResult: ITodoListUser.IAuthorized =
+  const href = `https://todo-app.example.com/login`;
+  const referrer = `https://todo-app.example.com/register`;
+
+  const joinInput = {
+    body: {
+      email: email,
+      password: password,
+      href: href,
+      referrer: referrer,
+    } satisfies ITodoAppUser.IJoin,
+  };
+
+  const joinedUser: ITodoAppUser.IAuthorized =
+    await api.functional.auth.user.join(connection, joinInput);
+  typia.assert(joinedUser);
+
+  // Step 2: Login with the same credentials to test validation
+  const loginInput = {
+    body: {
+      email: email,
+      password: password,
+      href: href,
+      referrer: referrer,
+      ip: "127.0.0.1",
+    } satisfies ITodoAppUser.ILogin,
+  };
+
+  const authorizedUser: ITodoAppUser.IAuthorized =
+    await api.functional.auth.user.login(connection, loginInput);
+  typia.assert(authorizedUser);
+
+  // Step 3: Validate login success with comprehensive assertion
+  TestValidator.equals(
+    "user ID matches between join and login",
+    authorizedUser.id,
+    joinedUser.id,
+  );
+  TestValidator.equals("user email matches", authorizedUser.email, email);
+  TestValidator.predicate(
+    "user has valid ID format",
+    authorizedUser.id.length > 0,
+  );
+  TestValidator.predicate(
+    "user email is provided",
+    authorizedUser.email.length > 0,
+  );
+  TestValidator.predicate(
+    "user created timestamp exists",
+    authorizedUser.created_at.length > 0,
+  );
+
+  // Step 4: Validate authentication token
+  const token = authorizedUser.token;
+  TestValidator.predicate(
+    "authentication token exists",
+    token.access.length > 0,
+  );
+  TestValidator.predicate("refresh token exists", token.refresh.length > 0);
+  TestValidator.predicate(
+    "access token expiration exists",
+    token.expired_at.length > 0,
+  );
+  TestValidator.predicate(
+    "refresh token expiration exists",
+    token.refreshable_until.length > 0,
+  );
+
+  // Step 5: Validate token structures and formats
+  typia.assert(token);
+  const tokenValidation = typia.validate(token);
+  TestValidator.predicate("token validation success", tokenValidation.success);
+
+  // Step 6: Test that connection headers are properly set for authorization
+  TestValidator.predicate(
+    "authorization header set",
+    connection.headers != null,
+  );
+  TestValidator.predicate(
+    "authorization token present",
+    connection.headers?.Authorization === token.access,
+  );
+
+  // Step 7: Verify user can perform operations with valid login credentials
+  TestValidator.predicate(
+    "user status verified",
+    authorizedUser.deleted_at === undefined,
+  );
+
+  // Step 8: Test edge case - failed authentication (wrong credentials)
+  await TestValidator.error("login with wrong password fails", async () => {
     await api.functional.auth.user.login(connection, {
       body: {
-        email,
-        password,
-      } satisfies ITodoListUser.ILogin,
+        email: email,
+        password: "wrong_password_123456",
+        href: href,
+        referrer: referrer,
+      } satisfies ITodoAppUser.ILogin,
     });
-  typia.assert(loginResult);
-
-  // Step 3: Validate contents of login response
-  TestValidator.equals(
-    "user id should match between join and login",
-    loginResult.id,
-    joinResult.id,
-  );
-  TestValidator.equals("user email matches input", loginResult.email, email);
-  TestValidator.equals(
-    "user account is not locked",
-    loginResult.is_locked,
-    false,
-  );
-  TestValidator.predicate(
-    "user id is valid UUID format",
-    typeof loginResult.id === "string" &&
-      /^[0-9a-f-]{36}$/i.test(loginResult.id),
-  );
-  TestValidator.predicate(
-    "user created_at is ISO date-time format",
-    typeof loginResult.created_at === "string" &&
-      !isNaN(Date.parse(loginResult.created_at)),
-  );
-  TestValidator.predicate(
-    "user updated_at is ISO date-time format",
-    typeof loginResult.updated_at === "string" &&
-      !isNaN(Date.parse(loginResult.updated_at)),
-  );
-  // Token validation
-  const token = loginResult.token;
-  typia.assert(token);
-  TestValidator.predicate(
-    "access token is present",
-    typeof token.access === "string" && token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token is present",
-    typeof token.refresh === "string" && token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "access token expired_at is date-time string",
-    typeof token.expired_at === "string" &&
-      !isNaN(Date.parse(token.expired_at)),
-  );
-  TestValidator.predicate(
-    "refresh token refreshable_until is date-time string",
-    typeof token.refreshable_until === "string" &&
-      !isNaN(Date.parse(token.refreshable_until)),
-  );
-  // User context/summary validation (if present)
-  if (loginResult.user !== undefined) {
-    typia.assert(loginResult.user);
-    TestValidator.equals(
-      "user summary id matches",
-      loginResult.user.id,
-      loginResult.id,
-    );
-    TestValidator.equals(
-      "user summary email matches",
-      loginResult.user.email,
-      loginResult.email,
-    );
-    TestValidator.equals(
-      "user summary is_locked matches",
-      loginResult.user.is_locked,
-      loginResult.is_locked,
-    );
-  }
+  });
 }

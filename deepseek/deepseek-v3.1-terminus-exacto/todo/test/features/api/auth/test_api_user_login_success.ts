@@ -7,84 +7,89 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
 /**
- * Validates user login with correct credentials after registration.
+ * Test successful user authentication workflow.
  *
- * 1. Register a new user account (with random, valid email and password).
- * 2. Attempt to login using those same credentials, supplying a random
- *    href/referrer.
- * 3. Assert the login response includes a valid access/refresh token pair, correct
- *    user id/email, locked=false, and correct timestamps (created_at,
- *    updated_at present, deleted_at null/undefined).
- * 4. Assert all returned fields match those from registration and business rules
- *    (active user, not locked or deleted, timestamps present).
+ * This test validates the complete user authentication process by first
+ * registering a new user account and then using the same credentials to log in.
+ * It verifies that the system properly authenticates the user, validates
+ * credentials against stored hashes, generates new authentication tokens, and
+ * returns complete user identity information. The test also validates session
+ * context recording including IP, href, and referrer tracking.
  */
 export async function test_api_user_login_success(connection: api.IConnection) {
-  // 1. Register a new user
-  const email = typia.random<
-    string & tags.MinLength<3> & tags.MaxLength<255> & tags.Format<"email">
-  >();
-  const password = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<72> & tags.Format<"password">
-  >();
-  const createBody = {
-    email,
-    password,
-  } satisfies ITodoListUser.ICreate;
-  const registered = await api.functional.auth.user.join(connection, {
-    body: createBody,
-  });
-  typia.assert(registered);
+  // Step 1: Create user account for login testing
+  const userEmail = typia.random<string & tags.Format<"email">>();
+  const userPassword = RandomGenerator.alphaNumeric(12);
 
-  // 2. Login with correct credentials (using random href/referrer)
-  const loginBody = {
-    email: email as string & tags.Format<"email">,
-    password: password as string & tags.Format<"password">,
-    // Both URIs, required per DTO definition
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-  } satisfies ITodoListUser.ILogin;
-  const loggedIn = await api.functional.auth.user.login(connection, {
-    body: loginBody,
+  const registeredUser = await api.functional.auth.user.join(connection, {
+    body: {
+      email: userEmail,
+      password: userPassword,
+    } satisfies ITodoListUser.ICreate,
   });
-  typia.assert(loggedIn);
+  typia.assert(registeredUser);
 
-  // 3. Assert JWT tokens, user metadata, and session correctness
-  TestValidator.equals("user id matches", loggedIn.id, registered.id);
-  TestValidator.equals("user email matches", loggedIn.email, email);
-  TestValidator.equals("locked is false", loggedIn.locked, false);
+  // Step 2: Login with the same credentials
+  const loginResponse = await api.functional.auth.user.login(connection, {
+    body: {
+      email: userEmail,
+      password: userPassword,
+      ip: "192.168.1.100",
+      href: "https://example.com/auth/login",
+      referrer: "https://example.com/dashboard",
+    } satisfies ITodoListUser.ILogin,
+  });
+  typia.assert(loginResponse);
+
+  // Step 3: Validate user identity information
   TestValidator.equals(
-    "deleted_at is null or undefined",
-    loggedIn.deleted_at,
-    null,
+    "user ID should match registered user",
+    loginResponse.id,
+    registeredUser.id,
   );
-  TestValidator.predicate(
-    "created_at is ISO date-time",
-    typeof loggedIn.created_at === "string" && loggedIn.created_at.length > 10,
+  TestValidator.equals(
+    "user email should match registered email",
+    loginResponse.email,
+    registeredUser.email,
   );
-  TestValidator.predicate(
-    "updated_at is ISO date-time",
-    typeof loggedIn.updated_at === "string" && loggedIn.updated_at.length > 10,
+  TestValidator.equals(
+    "user status should be active",
+    loginResponse.status,
+    "active",
   );
 
-  typia.assert<IAuthorizationToken>(loggedIn.token);
+  // Step 4: Validate authentication tokens
   TestValidator.predicate(
-    "access token non-empty",
-    typeof loggedIn.token.access === "string" &&
-      loggedIn.token.access.length > 0,
+    "access token should be present",
+    loginResponse.token.access.length > 0,
   );
   TestValidator.predicate(
-    "refresh token non-empty",
-    typeof loggedIn.token.refresh === "string" &&
-      loggedIn.token.refresh.length > 0,
+    "refresh token should be present",
+    loginResponse.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "expired_at present",
-    typeof loggedIn.token.expired_at === "string" &&
-      loggedIn.token.expired_at.length > 10,
+    "token expiration should be valid date",
+    new Date(loginResponse.token.expired_at) > new Date(),
   );
   TestValidator.predicate(
-    "refreshable_until present",
-    typeof loggedIn.token.refreshable_until === "string" &&
-      loggedIn.token.refreshable_until.length > 10,
+    "refreshable until should be valid date",
+    new Date(loginResponse.token.refreshable_until) > new Date(),
+  );
+
+  // Step 5: Validate token structure
+  typia.assert<IAuthorizationToken>(loginResponse.token);
+
+  // Step 6: Validate session context recording (indirectly through successful login)
+  TestValidator.predicate(
+    "user should have creation timestamp",
+    loginResponse.created_at.length > 0,
+  );
+  TestValidator.predicate(
+    "user should have update timestamp",
+    loginResponse.updated_at.length > 0,
+  );
+  TestValidator.predicate(
+    "deleted_at should be undefined for active user",
+    loginResponse.deleted_at === undefined,
   );
 }

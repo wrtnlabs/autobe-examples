@@ -1,57 +1,68 @@
-/// System-wide configuration and operational parameters for the Todo List
-/// application.
+/// System-level configuration settings for the Todo List application.
 ///
-/// This model stores key-value pairs representing global settings, feature
-/// toggles, and core system options that govern application-level behavior.
-/// Each configuration is uniquely identified by its key and may store
-/// settings such as default timezone, maintenance flags, operational feature
-/// gates, or reserved identifiers for system processes.
+/// Stores key-value pairs that control application behavior, feature flags,
+/// and system parameters. These configurations are managed at the system
+/// level and affect the entire application rather than individual users.
 ///
-/// Configurations in this table are not user- or admin-specific—they apply
-/// to the entire deployment and provide a foundation for evolving
-/// operational requirements. All updates are tracked with timestamps, and
-/// soft deletion is supported for historical audit and safe rotation of
-/// system configuration elements.
+/// Each configuration entry represents a specific setting that can be
+/// modified to adjust application behavior without code changes. The table
+/// supports flexible key-value storage with proper data typing and
+/// validation.
+///
+/// Configurations are version-controlled through the updated_at timestamp,
+/// allowing tracking of when settings were modified. This provides audit
+/// capability for system changes and configuration management.
+///
+/// Soft deletion is supported through the deleted_at field, allowing
+/// configurations to be disabled without permanent removal. This maintains
+/// historical records while preventing accidental data loss.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_system_configs {
+model todo_list_configurations {
   //----
   // COLUMNS
   //----
-  /// Primary Key for the system configuration record.
+  /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifying the system setting. Examples include
-  /// 'default_timezone', 'feature_maintenance_mode', or other core options.
-  /// Must be unique within this table.
+  /// Unique configuration key identifier. Used to reference specific settings
+  /// throughout the application. Must be unique across all configuration
+  /// entries.
   key String
   
-  /// Configuration value as a string. Can store serialized data for complex
-  /// options but typically represents a scalar system setting relevant to the
-  /// business or application.
+  /// Configuration value stored as string. Can represent various data types
+  /// (boolean, number, text) that are parsed by the application logic.
   value String
   
-  /// Optional detailed description of the purpose and business context for
-  /// this configuration entry. Useful for documenting intent and supporting
-  /// operational maintenance.
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting. Helps administrators understand what the setting
+  /// controls.
   description String?
   
-  /// Timestamp when the configuration entry was created. Used for audit
-  /// purposes and operational monitoring.
+  /// Optional category grouping for organizing related configurations.
+  /// Examples: 'ui', 'performance', 'security', 'features'.
+  category String?
+  
+  /// Timestamp when this configuration was initially created. Tracks when
+  /// settings were first established in the system.
   created_at DateTime
   
-  /// Timestamp of the last update to the configuration entry. Enables tracking
-  /// of modifications for audit and compliance.
+  /// Timestamp when this configuration was last modified. Used for tracking
+  /// configuration changes and version control.
   updated_at DateTime
   
-  /// Timestamp indicating soft deletion of the configuration entry. Used for
-  /// operational safety and rollback capability.
+  /// Timestamp when this configuration was soft-deleted. Allows configurations
+  /// to be disabled without permanent removal, supporting audit trails and
+  /// recovery capabilities.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([created_at, updated_at])
+  @@index([category])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
 }

@@ -1,108 +1,189 @@
-# Business and Functional Requirements – Todo List Application
+# Minimal Todo List Application – Requirements Analysis
 
-## Feature List
-The essential features for the minimal, production-ready Todo list application are:
+## 1. Purpose and Overall Goal
 
-- User registration and secure authentication flow
-- Creation of individual, user-owned todo items (tasks)
-- Display of an authenticated user's personal todo list
-- Update of existing user todo items
-- Deletion of user's own todo items
-- Marking/clearing completion status for todos
-- Filtering todos by completion status (completed/not completed)
-- Secure, unique ownership isolation for all todo data (no sharing, no public access)
+The **todoApp** service helps individual users keep track of their personal tasks in a simple way. The goal is to provide the smallest set of features that still feels useful in everyday life.
 
-## Core Functional Requirements (EARS Format)
+THE todoApp service SHALL allow a person to:
+- Register an account.
+- Log in and log out securely.
+- Create short todo items for themselves.
+- See their own todos.
+- Update, complete, reopen, and delete their own todos.
 
-### User Registration and Authentication
-- THE system SHALL provide user registration via valid email address and password.
-- THE system SHALL require registered users to log in before any access to todos is permitted.
-- WHEN a user submits valid credentials, THE system SHALL grant access and associate all subsequent actions with that user’s identity.
-- IF a user provides invalid credentials during authentication, THEN THE system SHALL deny access and provide an error message without system details.
-- WHEN a user is authenticated, THE system SHALL enable access to the user’s own todos and prohibit access to all others.
+THE first version of todoApp SHALL avoid complex features such as collaboration, reminders, or integrations so that it stays easy to understand and easy to build.
 
-### Todo Item Management
-- WHEN an authenticated user creates a new todo, THE system SHALL create and store the todo, associating it uniquely with the creating user.
-- WHEN an authenticated user requests their todo list, THE system SHALL return only their own todos, sorted in reverse chronological order (most recent first).
-- WHEN an authenticated user updates a todo, THE system SHALL permit the update only if the todo belongs to the user.
-- IF a user attempts to update a todo they do not own, THEN THE system SHALL deny the action with a forbidden error.
-- WHEN an authenticated user deletes a todo, THE system SHALL permanently remove it from the user’s list if it is owned by them.
-- IF a user attempts to delete a todo not owned by them, THEN THE system SHALL block the operation and return an error.
 
-### Todo Status and Filtering
-- WHEN a user marks a todo as completed, THE system SHALL update the todo status to "completed.”
-- WHEN a todo is uncompleted, THE system SHALL reflect the updated status accurately.
-- THE system SHALL allow filtering or viewing of todos by completion status, presenting only those in the selected state.
-- IF a user tries to change the status of another user’s todo, THEN THE system SHALL prevent the action and provide a clear error.
+## 2. User Types
 
-### Validation and Constraints
-- WHEN a user creates or updates a todo, THE system SHALL require a non-empty title field with length between 1 and 255 characters.
-- THE system SHALL optionally accept a description field (maximum 1000 characters).
-- THE system SHALL reject creation or updates of todos with missing or empty titles, and display a specific error message.
-- IF a user attempts to create more than 1000 todos, THEN THE system SHALL deny the request and explain the task limit.
-- All todo fields SHALL be validated for length and content on all operations.
+### 2.1 Guest User
 
-### Data Ownership and Security
-- THE system SHALL enforce that every todo is strictly linked to the owner's user identity.
-- Access to view, update, complete, or delete is limited only to the owner of each todo.
-- No sharing, delegation, or administrator access exists in the MVP (single-user model only).
-- Anonymous/unauthenticated users SHALL be blocked from all todo system functions.
+A **guest user** is anyone who visits the service without logging in.
 
-### Business Process and Error Handling
-- All error messages SHALL be clear, actionable, and not leak technical information.
-- WHEN a user attempts any forbidden action (access another user’s data, exceed limits, invalid authentication), THE system SHALL supply actionable guidance for next steps (e.g., log in, reduce number of todos, check credentials).
-- WHEN no todos exist for a user, THE system SHALL display an empty state rather than an error.
-- THE system SHALL handle all operations idempotently (duplicate submits do not create duplicate todos, etc.).
+- May read basic public information such as a welcome page or help text.
+- May not create, view, or manage todos.
 
-## Business Rules
-- Each user is uniquely identified as an actor and may only access or modify their own todos.
-- Each todo is uniquely identifiable (global UUID, timestamped at creation, tracked for last modification date, and status).
-- Only the required fields (title) are mandatory; descriptions are optional. Titles must be concise and informative to the user.
-- No batch or bulk operations (e.g., multi-select delete, complete all, or import/export) are supported in the MVP.
-- The system supports a maximum of 1000 todos per user concurrently. Attempts to exceed limit SHALL result in errors.
-- There are no collaborative, group, or shared task features in the MVP.
-- Ownership isolation is strictly enforced at every system boundary (API, UI, persistence layer).
+EARS-style requirements:
+- WHEN a guest user accesses todoApp, THE system SHALL show a simple introduction and options to register or log in.
+- WHEN a guest user tries to access any feature that requires an account (for example viewing todos or creating a todo), THE system SHALL refuse the action and SHALL guide the user to log in or register.
 
-## Success Criteria
-- All requirements above are fully implemented and verifiable via scenario-based testing.
-- All error/corner cases described in the requirements, flows, and business rules are handled without ambiguity.
-- No unauthenticated or unauthorized data access is possible (all data is protected and isolated).
-- Todo data is persistent and secure: no data loss or cross-user exposure under any normal, error, or edge conditions.
-- Performance: All responses to list, create, update, delete, and status-change operations return in under 2 seconds (for up to 1000 todos).
-- The business process flows are strictly followed; any deviations are handled gracefully, with clear user guidance.
+### 2.2 Member User
 
-## Example User Workflow (Mermaid)
+A **member user** is a person who has successfully registered and logged in.
 
-```mermaid
-graph LR
-  A["User Registers or Logs In"] --> B["Authenticated Session"]
-  B --> C["Create Todo"]
-  B --> D["View Todo List"]
-  D --> E["Edit/Update Todo"]
-  D --> F{"Mark Completed?"}
-  F -->|"Yes"| G["Status Set to Completed"]
-  F -->|"No"| H["Status Remains Not Completed"]
-  D --> I["Delete Todo"]
-  G --> D
-  H --> D
-  C --> D
-  E --> D
-  I --> D
-```
+- Has a private todo list.
+- Can perform all todo operations on their own items.
 
-## Edge Cases and Security Scenarios
-- IF a user attempts to log in with an unregistered email, THEN THE system SHALL show a "no account found" error and offer registration.
-- IF a user tries to create or update a todo with a title exceeding 255 characters, THEN THE system SHALL reject it and explain the limit.
-- IF a user edits or deletes a todo while their session has expired, THEN THE system SHALL require reauthentication.
-- IF data corruption or system errors prevent a todo operation, THEN THE system SHALL display a generic failure message and ensure no partial updates or data loss.
-- IF repeated failed logins exceed 5 in 10 minutes, THEN THE system SHALL lock the account for 15 minutes.
-- WHEN all todos are deleted, THE user’s list SHALL show an empty state, and not an error.
+EARS-style requirements:
+- WHEN a person completes registration successfully, THE system SHALL treat that person as a member user for future authenticated requests.
+- WHEN a member user is logged in, THE system SHALL allow that member user to create, view, update, complete, reopen, and delete only their own todos.
 
-## MVP Scope Limitations
-- No team, project, category, tag, file attachment, or calendar features are in scope.
-- No recurring, priority, due-date, or notification/reminder functionality in the MVP.
-- No API for third parties or public data export is provided.
+### 2.3 Admin User (Minimal Use Only)
 
----
+An **admin user** is an internal role for operational or support purposes. For this minimal version, admin behavior is intentionally limited and high-level.
 
-This document provides the complete mandatory business and functional requirements for the minimal Todo List Application. All requirements, flows, and rules must be strictly implemented for a successful backend delivery. No assumptions or feature extensions outside of this document are permitted for the first release.
+- May exist for later maintenance and monitoring.
+- Is not required for normal end-user todo operations.
+
+EARS-style requirement:
+- IF an admin user role exists, THEN THE system SHALL ensure that admin-only actions are not available to guest users or member users.
+
+
+## 3. Todo Item Concept
+
+A **todo item** is a small piece of work the user wants to remember and complete.
+
+Each todo item conceptually has:
+- A **title**: short text describing the task (required).
+- A **description**: longer text with details (optional).
+- A **completion status**: either "active" (not finished) or "completed".
+- A notion of **creation time** and **last update time** for the user’s awareness.
+
+EARS-style requirements:
+- WHEN a member user creates a todo, THE system SHALL require a non-empty title.
+- WHEN a member user creates a todo, THE system SHALL store the todo as belonging to that specific member user.
+- WHEN a member user views a todo, THE system SHALL show at least the title and current completion status.
+
+
+## 4. Authentication Flows (Sign Up, Login, Logout)
+
+### 4.1 Registration (Sign Up)
+
+The service allows new users to create an account with minimal information.
+
+Requirements:
+- WHEN a person opens the registration flow, THE system SHALL ask for the minimal information needed to create an account (for example, an email and a password in business terms).
+- WHEN a person provides the required registration information correctly, THE system SHALL create a new member user account and SHALL confirm that registration succeeded.
+- IF the provided registration information is incomplete or clearly invalid (for example, missing required fields), THEN THE system SHALL reject the registration attempt and SHALL explain what needs to be corrected without exposing technical details.
+- IF a person tries to register with information that conflicts with an existing account (for example, email already used), THEN THE system SHALL reject the registration and SHALL instruct the person to log in instead or use a different identifier.
+
+### 4.2 Login
+
+Requirements:
+- WHEN a member user provides valid login credentials, THE system SHALL log the user in and SHALL treat that user as authenticated for future requests within a reasonable session period.
+- IF a user provides invalid login credentials, THEN THE system SHALL reject the login attempt and SHALL show a generic error message that does not reveal whether a specific account exists.
+- WHILE a member user remains logged in and the session is still valid, THE system SHALL allow that user to access all features intended for member users without forcing them to log in again.
+
+### 4.3 Logout
+
+Requirements:
+- WHEN a logged-in member user chooses to log out, THE system SHALL end that user’s authenticated session and SHALL prevent further access to member-only features until the user logs in again.
+- WHEN a logged-out user tries to perform a member-only action, THE system SHALL deny the action and SHALL prompt the user to log in.
+
+
+## 5. Core Todo Operations
+
+### 5.1 Create Todo
+
+Requirements:
+- WHEN a logged-in member user creates a new todo with a non-empty title, THE system SHALL create the todo in an "active" state and SHALL link it to that member user.
+- WHEN a member user attempts to create a todo with an empty or whitespace-only title, THE system SHALL reject the creation and SHALL inform the user that a title is required.
+- WHEN todo creation succeeds, THE system SHALL make the new todo visible in the member user’s own list of todos.
+
+### 5.2 List and View Todos
+
+Requirements:
+- WHEN a logged-in member user requests to view their todos, THE system SHALL show only todos that belong to that member user.
+- WHEN a member user views their todo list, THE system SHALL present each todo with at least its title and completion status.
+- IF a member user has no todos yet, THEN THE system SHALL show an empty state that clearly indicates there are currently no todos.
+
+### 5.3 Update Todo Content
+
+Requirements:
+- WHEN a logged-in member user updates the title or description of one of their existing todos, THE system SHALL apply the change only if the todo belongs to that user.
+- IF a member user attempts to update a todo that does not belong to them, THEN THE system SHALL refuse the operation and SHALL not reveal whether such a todo exists for other users.
+- IF a member user attempts to update a todo with an invalid new title (for example, empty), THEN THE system SHALL reject the update and SHALL explain that the title must not be empty.
+
+### 5.4 Complete and Reopen Todo
+
+Requirements:
+- WHEN a member user marks one of their todos as completed, THE system SHALL change that todo’s completion status to "completed" and SHALL keep the todo in the member user’s list unless it is later deleted.
+- WHEN a member user wants to see which todos are still not done, THE system SHALL allow filtering or clear visual separation between "active" and "completed" todos in business terms (the exact visual design is not specified here).
+- WHEN a member user reopens one of their completed todos, THE system SHALL change that todo’s completion status back to an "active" state.
+- IF a member user attempts to change the completion status of a todo that does not belong to them, THEN THE system SHALL deny the operation.
+
+### 5.5 Delete Todo
+
+Requirements:
+- WHEN a member user decides to delete one of their todos, THE system SHALL remove that todo from the member user’s normal list of todos.
+- IF a member user attempts to delete a todo that does not belong to them, THEN THE system SHALL deny the operation and SHALL not reveal details about other users’ todos.
+- IF deletion is irreversible in this first version, THEN THE system SHALL make this clear at the business level (for example, by using wording such as "this cannot be undone") in any user-facing confirmation flow.
+
+
+## 6. Validation and Error Behavior
+
+### 6.1 Input Validation
+
+Requirements:
+- WHEN a member user submits any todo-related form, THE system SHALL validate that required fields are present (for example, title) and SHALL reject the request if required fields are missing or clearly invalid.
+- WHEN validation fails, THE system SHALL respond with messages that explain the problem in simple language (for example, "Title is required"), without exposing internal technical details.
+- WHEN a member user performs valid operations within their permissions, THE system SHALL not block those actions due to overly strict or unrelated validation rules.
+
+### 6.2 Permission and Access Errors
+
+Requirements:
+- IF a guest user attempts any operation that requires a member account, THEN THE system SHALL reject the attempt and SHALL prompt the user to log in or register.
+- IF a member user attempts to access or modify a todo that belongs to another user, THEN THE system SHALL deny the action and SHALL avoid revealing whether such a todo exists.
+
+### 6.3 System-Level Errors (High-Level)
+
+Requirements:
+- IF a temporary internal problem prevents the system from completing a todo operation, THEN THE system SHALL inform the user that an error occurred and SHALL encourage the user to try again later.
+- IF the service is unavailable for any reason, THEN THE system SHALL provide a clear, user-friendly message instead of failing silently.
+
+
+## 7. Basic Non-Functional Expectations
+
+These expectations are expressed in simple terms and do not define exact technical targets.
+
+Requirements:
+- WHILE the service is under normal use, THE system SHALL respond to basic operations such as listing todos and creating a todo fast enough that typical users do not feel the service is slow.
+- WHILE the service is running, THE system SHALL protect member users’ personal data and todos from being accessed by other users without permission.
+- WHEN sensitive information such as credentials is handled, THE system SHALL treat it carefully and SHALL not expose it in logs or user messages.
+
+
+## 8. Out-of-Scope Features for the First Version
+
+To keep the first version minimal and focused, several commonly requested features are explicitly out of scope. They may be considered later, but developers do not need to implement them now.
+
+Out-of-scope items:
+- Shared lists, collaboration, or assigning todos to other people.
+- Notifications and reminders (for example, email alerts, push messages, or scheduled reminders).
+- Complex categorization such as tags, projects, or folders beyond the basic todo item concept.
+- Attachments or file uploads.
+- Rich text formatting in titles or descriptions.
+- Integrations with calendars, third-party services, or external tools.
+
+EARS-style requirement:
+- UNLESS a feature is explicitly listed in the functional requirements of this document, THE first version of todoApp SHALL treat that feature as out of scope and SHALL not implement it.
+
+
+## 9. Summary
+
+In summary, todoApp is a simple personal task manager with:
+- Basic account handling (sign up, login, logout).
+- A private todo list per member user.
+- Core operations on todos: create, list, view, update, complete, reopen, and delete.
+- Clear validation, friendly error handling, and basic protection of user data.
+
+These requirements are written to be understandable for non-programmers while still being precise enough that backend developers can design data models, APIs, and technical details without additional business rules.

@@ -14,28 +14,24 @@ export async function getTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<ITodoListTodo> {
+  // Find the todo item ensuring it belongs to the authenticated user and is not deleted
   const todo = await MyGlobal.prisma.todo_list_todos.findFirst({
     where: {
       id: props.todoId,
       todo_list_user_id: props.user.id,
+      deleted_at: null,
     },
   });
 
+  // Check if todo exists and user has access
   if (!todo) {
-    throw new HttpException("Todo item not found", 404);
+    throw new HttpException("Todo not found or access denied", 404);
   }
 
+  // Return only the business data as specified in ITodoListTodo
   return {
-    id: todo.id,
     title: todo.title,
     description: todo.description ?? undefined,
-    status: typia.assert<"pending" | "completed" | "archived">(todo.status),
-    due_date: todo.due_date ? toISOStringSafe(todo.due_date) : undefined,
-    created_at: toISOStringSafe(todo.created_at),
-    updated_at: toISOStringSafe(todo.updated_at),
-    completed_at: todo.completed_at
-      ? toISOStringSafe(todo.completed_at)
-      : undefined,
-    todo_list_user_id: todo.todo_list_user_id,
+    status: todo.status as "pending" | "completed",
   };
 }

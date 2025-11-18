@@ -13,14 +13,21 @@ export async function deleteTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
+  // Verify the todo exists and belongs to the user
+  const existingTodo = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: { id: props.todoId },
   });
 
-  if (!todo || todo.todo_list_user_id !== props.user.id) {
+  if (!existingTodo) {
     throw new HttpException("Todo not found", 404);
   }
 
+  // Verify ownership
+  if (existingTodo.todo_list_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+
+  // Perform hard deletion
   await MyGlobal.prisma.todo_list_todos.delete({
     where: { id: props.todoId },
   });

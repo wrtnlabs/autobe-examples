@@ -16,108 +16,77 @@ export async function patchTodoListUserTodos(props: {
   user: UserPayload;
   body: ITodoListTodo.IRequest;
 }): Promise<IPageITodoListTodo.ISummary> {
-  const {
-    page = 1,
-    limit = 20,
-    status,
-    q,
-    due_date_from,
-    due_date_to,
-    created_from,
-    created_to,
-    sort_by = "created_at",
-    order = "desc",
-  } = props.body;
+  const page = props.body.page;
+  const limit = props.body.limit;
   const skip = (page - 1) * limit;
-  const where: any = {
-    // Use 'any' so we can strip typia tags
-    user_id: props.user.id as string, // Strip typia tags
-    ...(status && { status: status as "pending" | "completed" | "archived" }),
-    ...(q && {
-      OR: [
-        {
-          title: {
-            contains: q as string,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-        {
-          description: {
-            contains: q as string,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-      ],
-    }),
-    ...(due_date_from &&
-      due_date_to && {
-        due_date: {
-          gte: due_date_from as string,
-          lte: due_date_to as string,
-        },
-      }),
-    ...(!due_date_from &&
-      due_date_to && {
-        due_date: {
-          lte: due_date_to as string,
-        },
-      }),
-    ...(due_date_from &&
-      !due_date_to && {
-        due_date: {
-          gte: due_date_from as string,
-        },
-      }),
-    ...(created_from &&
-      created_to && {
-        created_at: {
-          gte: created_from as string,
-          lte: created_to as string,
-        },
-      }),
-    ...(!created_from &&
-      created_to && {
-        created_at: {
-          lte: created_to as string,
-        },
-      }),
-    ...(created_from &&
-      !created_to && {
-        created_at: {
-          gte: created_from as string,
-        },
-      }),
+
+  // Build where conditions with proper typing
+  const whereConditions: Record<string, unknown> = {
+    todo_list_user_id: props.user.id, // Always filter by authenticated user
+    deleted_at: null,
   };
 
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.todo_list_todos.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { [sort_by]: order },
-    }),
-    MyGlobal.prisma.todo_list_todos.count({ where }),
-  ]);
+  // Add search filter if provided
+  if (props.body.search) {
+    whereConditions.OR = [
+      { title: { contains: props.body.search, mode: "insensitive" } },
+      { description: { contains: props.body.search, mode: "insensitive" } },
+    ];
+  }
 
-  return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
-    data: records.map((row) => ({
-      id: row.id as string,
-      title: row.title as string,
-      status: row.status as "pending" | "completed" | "archived",
-      due_date:
-        row.due_date == null ? row.due_date : toISOStringSafe(row.due_date),
-      completed_at:
-        row.completed_at == null
-          ? row.completed_at
-          : toISOStringSafe(row.completed_at),
-      created_at: toISOStringSafe(row.created_at),
-      updated_at: toISOStringSafe(row.updated_at),
-    })),
-  };
+  // Add status filter if provided
+  if (props.body.status) {
+    whereConditions.status = props.body.status;
+  }
+
+  // Additional user_id filter (must match authenticated user for security)
+  if (props.body.user_id && props.body.user_id !== props.user.id) {
+    throw new HttpException("You can only search your own todos", 403);
+  }
+
+  // Build orderBy configuration
+  const orderBy: Record<string, "asc" | "desc"> = {};
+  const orderField = props.body.order_by || "created_at";
+  const orderDirection = props.body.order_direction || "desc";
+  orderBy[orderField] = orderDirection;
+
+  try {
+    // Execute queries concurrently for performance
+    const [data, total] = await Promise.all([
+      MyGlobal.prisma.todo_list_todos.findMany({
+        where: whereConditions,
+        skip,
+        take: limit,
+        orderBy,
+      }),
+      MyGlobal.prisma.todo_list_todos.count({
+        where: whereConditions,
+      }),
+    ]);
+
+    // Convert database results to API response format
+    const todos = data.map((todo) => ({
+      id: todo.id,
+      title: todo.title,
+      description: todo.description ?? undefined,
+      status: typia.assert<"pending" | "completed">(todo.status),
+      created_at: toISOStringSafe(todo.created_at),
+      updated_at: toISOStringSafe(todo.updated_at),
+      deleted_at: todo.deleted_at
+        ? toISOStringSafe(todo.deleted_at)
+        : undefined,
+    }));
+
+    return {
+      data: todos,
+      pagination: {
+        current: page,
+        limit: limit,
+        records: total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    throw new HttpException("Failed to retrieve todos", 500);
+  }
 }
