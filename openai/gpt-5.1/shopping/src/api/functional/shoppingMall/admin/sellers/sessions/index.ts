@@ -1,0 +1,456 @@
+import { IConnection, HttpError } from "@nestia/fetcher";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia, { tags } from "typia";
+import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+
+import { IShoppingMallSellerSession } from "../../../../../structures/IShoppingMallSellerSession";
+import { IPageIShoppingMallSellerSession } from "../../../../../structures/IPageIShoppingMallSellerSession";
+
+/**
+ * List authentication sessions for a seller from the
+ * shopping_mall_seller_sessions table.
+ *
+ * Retrieve a paginated and filterable list of seller authentication sessions
+ * for a specific seller.
+ *
+ * This operation targets the `shopping_mall_seller_sessions` Prisma model,
+ * which is described as "Authentication sessions for seller accounts" and
+ * stores records created whenever a seller successfully authenticates into the
+ * seller portal. Each session row has a primary key `id`, a foreign key
+ * `shopping_mall_seller_id` referencing the `shopping_mall_sellers` table, and
+ * connection metadata such as `ip` (the IP address), `href` (the full URL used
+ * when establishing the session), and `referrer` (the referrer URL at session
+ * creation). Temporal fields `created_at` and `expired_at` indicate when the
+ * session started and when it ended or is scheduled to expire.
+ *
+ * The list is always scoped by the `{sellerId}` path parameter, which
+ * corresponds to the seller account’s primary key `id` in the
+ * `shopping_mall_sellers` table. The parent `shopping_mall_sellers` model
+ * represents "Registered seller accounts on the shoppingMall platform", with
+ * fields like `email` (unique login and business contact email), `status`
+ * (values such as pending_review, active, suspended, or terminated),
+ * `email_verified`, and lifecycle timestamps `created_at`, `updated_at`, and
+ * nullable `deleted_at` for logical removal. By constraining on `sellerId`, the
+ * API ensures that only sessions for the specified seller are retrieved,
+ * supporting audits tied to a particular merchant.
+ *
+ * Request-side search parameters are encapsulated in the
+ * `IShoppingMallSellerSession.IRequest` DTO. This DTO is expected to carry
+ * pagination options (page size, cursor/offset) as well as optional filters
+ * such as creation time ranges (based on `created_at`), expiration ranges
+ * (based on `expired_at`), or IP/referrer matching. The operation uses HTTP
+ * PATCH with a JSON request body to support complex querying while remaining
+ * read-only.
+ *
+ * The response body wraps results in
+ * `IPageIShoppingMallSellerSession.ISummary`, a paginated container that
+ * includes session summary rows optimized for list rendering. Each summary row
+ * should at minimum expose the session `id`, `ip`, `href`, `referrer`,
+ * `created_at`, and `expired_at`, along with any other non-sensitive attributes
+ * defined in the schema. Sensitive data such as password hashes are not present
+ * in this model by design; session records only expose access metadata.
+ *
+ * From a security and authorization perspective, this endpoint is intended for
+ * internal operators such as admins or security analysts rather than sellers
+ * themselves. Therefore, `authorizationActor` is set to `"admin"`, and the
+ * implementation should further enforce that only appropriately privileged
+ * admin accounts—backed by the `shopping_mall_admins` model with fields like
+ * `email`, `status`, and `email_verified`—can call this API. Sellers do not use
+ * this endpoint for their own authentication; actual login, logout, and token
+ * refresh flows are delegated to a dedicated authentication service and not
+ * exposed here.
+ *
+ * Typical error conditions include invalid `sellerId` (when the referenced
+ * seller record does not exist or is logically deleted), validation errors in
+ * the request body (such as invalid date ranges or unsupported pagination
+ * parameters), and authorization failures when a non-admin principal attempts
+ * to call the endpoint. The operation may be used together with the
+ * single-session detail endpoint `GET
+ * /shoppingMall/admin/sellers/{sellerId}/sessions/{sessionId}` to first locate
+ * relevant sessions and then drill into a specific record.
+ *
+ * @param props.connection
+ * @param props.sellerId Unique identifier of the seller account whose
+ *   authentication sessions are being listed. This corresponds to the `id`
+ *   primary key of the `shopping_mall_sellers` table and must be a valid UUID
+ *   value.
+ * @param props.body Search and pagination criteria used to filter seller
+ *   authentication sessions for the specified seller. This DTO may include
+ *   pagination options and optional filters based on fields like `created_at`,
+ *   `expired_at`, `ip`, or `referrer` defined in the
+ *   `shopping_mall_seller_sessions` model.
+ * @path /shoppingMall/admin/sellers/:sellerId/sessions
+ * @accessor api.functional.shoppingMall.admin.sellers.sessions.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Unique identifier of the seller account whose authentication sessions
+     * are being listed. This corresponds to the `id` primary key of the
+     * `shopping_mall_sellers` table and must be a valid UUID value.
+     */
+    sellerId: string & tags.Format<"uuid">;
+
+    /**
+     * Search and pagination criteria used to filter seller authentication
+     * sessions for the specified seller. This DTO may include pagination
+     * options and optional filters based on fields like `created_at`,
+     * `expired_at`, `ip`, or `referrer` defined in the
+     * `shopping_mall_seller_sessions` model.
+     */
+    body: IShoppingMallSellerSession.IRequest;
+  };
+  export type Body = IShoppingMallSellerSession.IRequest;
+  export type Response = IPageIShoppingMallSellerSession.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/admin/sellers/:sellerId/sessions",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/admin/sellers/${encodeURIComponent(props.sellerId ?? "null")}/sessions`;
+  export const random = (): IPageIShoppingMallSellerSession.ISummary =>
+    typia.random<IPageIShoppingMallSellerSession.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("sellerId")(() => typia.assert(props.sellerId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Get detailed information for a single seller session from the
+ * shopping_mall_seller_sessions table.
+ *
+ * Retrieve detailed metadata for a specific seller authentication session using
+ * seller and session identifiers.
+ *
+ * This operation reads from the `shopping_mall_seller_sessions` Prisma model,
+ * whose description states that it contains "Authentication sessions for seller
+ * accounts" and that it "stores individual login sessions created when a seller
+ * successfully authenticates into the seller portal." The model’s fields
+ * include `id` as the primary key, `shopping_mall_seller_id` as a foreign key
+ * to the `shopping_mall_sellers` table, `ip` as the connection IP address,
+ * `href` as the full URL used during session establishment, `referrer` as the
+ * referring URL, and temporal columns `created_at` and `expired_at` for session
+ * lifetime.
+ *
+ * The path incorporates two UUID path parameters: `{sellerId}` corresponds to
+ * the `id` primary key of the `shopping_mall_sellers` table, and `{sessionId}`
+ * corresponds to the `id` primary key of the `shopping_mall_seller_sessions`
+ * table. Using both identifiers in the path allows the implementation to
+ * validate that the requested session belongs to the specified seller by
+ * checking that `shopping_mall_seller_id` for the session row matches the
+ * seller’s `id`. The parent `shopping_mall_sellers` model itself represents
+ * registered merchants with fields like `email`, `password_hash`, `status`,
+ * `email_verified`, and lifecycle timestamps including nullable `deleted_at`
+ * for logical removal; however, this endpoint focuses only on the session
+ * record and does not expose sensitive authentication material such as password
+ * hashes.
+ *
+ * The response uses the DTO type `IShoppingMallSellerSession`, representing a
+ * full session view suitable for administrative inspection. This type should
+ * expose all relevant fields from `shopping_mall_seller_sessions`, including
+ * `id`, `shopping_mall_seller_id`, `ip`, `href`, `referrer`, `created_at`, and
+ * `expired_at`. It may also include derived or joined information, such as
+ * denormalized seller email or status, as long as those extensions remain
+ * consistent with the underlying schema. Because this is a GET operation
+ * retrieving a single record, there is no request body; all identification is
+ * provided via the path parameters.
+ *
+ * Security-wise, the endpoint is intended only for privileged admin actors. The
+ * `authorizationActor` is configured as `"admin"`, and the controller must
+ * enforce that the caller corresponds to a valid admin account from the
+ * `shopping_mall_admins` table, which includes fields like `email`, `status`,
+ * and `email_verified`. Sellers and customers cannot access this endpoint
+ * directly; they interact with their own sessions purely through the
+ * authentication service.
+ *
+ * Error handling must account for several cases. If either the seller or
+ * session does not exist, or if the session’s `shopping_mall_seller_id` does
+ * not match the `sellerId` in the path, the implementation must return a
+ * not-found error to avoid leaking cross-tenant information. If the seller has
+ * been logically deleted via a non-null `deleted_at`, the implementation may
+ * treat the session as inaccessible or apply governance rules as configured.
+ * Authorization failures, such as non-admin callers or suspended admins (based
+ * on the `status` field in `shopping_mall_admins`), should result in
+ * appropriate forbidden or unauthorized responses. This endpoint naturally
+ * complements the list operation `PATCH
+ * /shoppingMall/admin/sellers/{sellerId}/sessions`, which can be used first to
+ * discover candidate session IDs before calling this detail view.
+ *
+ * @param props.connection
+ * @param props.sellerId Unique identifier of the seller account that owns the
+ *   authentication session. This maps to the `id` primary key of the
+ *   `shopping_mall_sellers` table and must be a valid UUID.
+ * @param props.sessionId Unique identifier of the seller session to retrieve.
+ *   This corresponds to the `id` primary key of the
+ *   `shopping_mall_seller_sessions` table and must be a valid UUID.
+ * @path /shoppingMall/admin/sellers/:sellerId/sessions/:sessionId
+ * @accessor api.functional.shoppingMall.admin.sellers.sessions.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the seller account that owns the authentication
+     * session. This maps to the `id` primary key of the
+     * `shopping_mall_sellers` table and must be a valid UUID.
+     */
+    sellerId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the seller session to retrieve. This corresponds
+     * to the `id` primary key of the `shopping_mall_seller_sessions` table
+     * and must be a valid UUID.
+     */
+    sessionId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallSellerSession;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/admin/sellers/:sellerId/sessions/:sessionId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/sellers/${encodeURIComponent(props.sellerId ?? "null")}/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
+  export const random = (): IShoppingMallSellerSession =>
+    typia.random<IShoppingMallSellerSession>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("sellerId")(() => typia.assert(props.sellerId));
+      assert.param("sessionId")(() => typia.assert(props.sessionId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Erase a specific seller session record in the shopping_mall_seller_sessions
+ * table for security administration.
+ *
+ * Delete a specific seller session record for administrative security control.
+ *
+ * This operation targets the `shopping_mall_seller_sessions` Prisma model,
+ * which persists authentication session records for seller actors in the
+ * shoppingMall marketplace. Each row typically includes a unique session
+ * identifier linked to a seller account row in `shopping_mall_sellers`, along
+ * with metadata such as issued time, expiration time, user agent, or IP
+ * information as documented in the schema comments. By calling this endpoint,
+ * an authorized administrative client instructs the backend to locate the
+ * session belonging to the seller specified by `sellerId` and to remove or
+ * invalidate that specific `sessionId` record.
+ *
+ * From a security perspective, this endpoint must only be accessible to
+ * privileged administrative actors, not to sellers or public clients. It is
+ * intended for use cases such as terminating compromised sessions, enforcing
+ * immediate sign-outs after policy violations, or responding to risk events
+ * flagged elsewhere in the governance stack. The backend implementation should
+ * verify that the path parameters are valid identifiers, ensure that the
+ * session belongs to the specified seller, and handle the case where either the
+ * seller or the session does not exist by returning appropriate error responses
+ * such as 404 Not Found. The description comments in the
+ * `shopping_mall_seller_sessions` schema regarding retention, indexing, and
+ * relationships to sellers should be followed so that deletion does not violate
+ * integrity constraints or audit requirements. If session rows are linked to
+ * audit or security event tables, providers should ensure those references
+ * remain consistent after deletion.
+ *
+ * This deletion operation is functionally independent but operationally related
+ * to other read-only administrative session inspection APIs such as listing
+ * seller sessions or viewing details of a specific session record. Typical
+ * workflows would first use a PATCH-based index endpoint (for example,
+ * `/sellers/{sellerId}/sessions`) to search for active or suspicious sessions,
+ * then call this DELETE operation with the chosen `sessionId` to terminate one
+ * of them. Error handling should distinguish between invalid identifiers,
+ * sessions already expired or previously removed, and authorization failures
+ * where the caller lacks the necessary administrative role.
+ *
+ * @param props.connection
+ * @param props.sellerId Unique identifier of the seller account that owns the
+ *   target session. This corresponds to the primary key of a row in the
+ *   `shopping_mall_sellers` Prisma model and is used to ensure that the session
+ *   being deleted is correctly scoped to the intended seller.
+ * @param props.sessionId Unique identifier of the seller session to delete.
+ *   This maps to the primary key of a row in the
+ *   `shopping_mall_seller_sessions` Prisma model and must belong to the seller
+ *   specified by `sellerId`. Once deleted, the session is considered terminated
+ *   and can no longer be used for authentication.
+ * @path /shoppingMall/admin/sellers/:sellerId/sessions/:sessionId
+ * @accessor api.functional.shoppingMall.admin.sellers.sessions.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * Unique identifier of the seller account that owns the target session.
+     * This corresponds to the primary key of a row in the
+     * `shopping_mall_sellers` Prisma model and is used to ensure that the
+     * session being deleted is correctly scoped to the intended seller.
+     */
+    sellerId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the seller session to delete. This maps to the
+     * primary key of a row in the `shopping_mall_seller_sessions` Prisma
+     * model and must belong to the seller specified by `sellerId`. Once
+     * deleted, the session is considered terminated and can no longer be
+     * used for authentication.
+     */
+    sessionId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/shoppingMall/admin/sellers/:sellerId/sessions/:sessionId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/sellers/${encodeURIComponent(props.sellerId ?? "null")}/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("sellerId")(() => typia.assert(props.sellerId));
+      assert.param("sessionId")(() => typia.assert(props.sessionId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}

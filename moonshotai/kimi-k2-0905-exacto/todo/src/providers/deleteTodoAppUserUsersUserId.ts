@@ -13,22 +13,46 @@ export async function deleteTodoAppUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify the authenticated user matches the user to be deleted
+  // Authorization check - user can only delete their own account
   if (props.user.id !== props.userId) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("You can only delete your own account", 403);
   }
 
-  // Check if user exists before attempting deletion
-  const existingUser = await MyGlobal.prisma.todo_app_users.findUnique({
-    where: { id: props.userId },
-  });
+  const now = toISOStringSafe(new Date());
 
-  if (!existingUser) {
-    throw new HttpException("User not found", 404);
-  }
+  // Perform all deletion operations in transaction
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // 1. Soft delete the user account
+    await tx.todo_app_users.update({
+      where: { id: props.userId },
+      data: {
+        deleted_at: now,
+        status: "inactive",
+        updated_at: now,
+      },
+    });
 
-  // Perform hard deletion - cascades to all related data
-  await MyGlobal.prisma.todo_app_users.delete({
-    where: { id: props.userId },
+    // 2. Invalidate all user sessions
+    await tx.todo_app_sessions.updateMany({
+      where: {
+        todo_app_user_id: props.userId,
+        is_valid: true,
+      },
+      data: {
+        is_valid: false,
+      },
+    });
+
+    // 3. Soft delete all user tasks
+    await tx.todo_app_tasks.updateMany({
+      where: {
+        todo_app_user_id: props.userId,
+        deleted_at: null,
+      },
+      data: {
+        deleted_at: now,
+        updated_at: now,
+      },
+    });
   });
 }

@@ -14,11 +14,11 @@ export async function postAuthUserJoin(props: {
   body: ITodoListUser.ICreate;
 }): Promise<ITodoListUser.IAuthorized> {
   const existing = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email.toLowerCase() },
   });
 
   if (existing) {
-    throw new HttpException("Email already registered", 409);
+    throw new HttpException("Email address is already registered", 409);
   }
 
   const hashedPassword: string = await PasswordUtil.hash(props.body.password);
@@ -26,12 +26,10 @@ export async function postAuthUserJoin(props: {
   const user = await MyGlobal.prisma.todo_list_users.create({
     data: {
       id: v4(),
-      email: props.body.email,
+      email: props.body.email.toLowerCase(),
       password_hash: hashedPassword,
-      name: props.body.name ?? null,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-      deleted_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
 
@@ -41,16 +39,16 @@ export async function postAuthUserJoin(props: {
   const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
       id: v4(),
-      user_id: user.id,
-      ip: props.body.ip ?? "",
+      todo_list_user_id: user.id,
+      ip: props.body.ip ?? "0.0.0.0",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
+      created_at: new Date(),
+      expired_at: accessExpires,
     },
   });
 
-  const token: IAuthorizationToken = {
+  const token = {
     access: jwt.sign(
       {
         type: "user",
@@ -85,10 +83,8 @@ export async function postAuthUserJoin(props: {
   return {
     id: user.id,
     email: user.email,
-    name: user.name ?? undefined,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
     token,
   };
 }

@@ -1,294 +1,377 @@
-# Requirement Overview for shoppingMall E-commerce Platform
+# shoppingMall Platform – Consolidated Business Requirements
 
-## 1. Purpose and Scope
+## 1. Platform Overview
 
-The shoppingMall platform enables customers to browse products from multiple sellers, manage carts and wishlists, place and pay for orders, track shipments, and submit reviews, while sellers manage their catalog and inventory and platform administrators oversee operations, content, and disputes.
+shoppingMall is a multi-seller e-commerce marketplace where customers can browse a shared product catalog, manage carts and wishlists, place orders with online payment, track shipping, leave reviews, and interact indirectly with sellers under the governance of platform admins.
 
-The requirements in this document define business behavior for the backend across these key areas:
-- User registration and login with address management.
-- Product catalog with categories and search.
-- Product variants as SKUs with different colors, sizes, and options.
-- Shopping cart and wishlist.
-- Order placement and payment processing.
-- Order tracking and shipping status updates.
-- Product reviews and ratings.
-- Seller accounts to manage their products and inventory.
-- Order history and cancellation/refund requests.
-- Admin dashboard for order and product management.
+The system supports four primary actors:
+- **guestUser** – unauthenticated visitor who can browse catalog and reviews.
+- **customer** – authenticated end-user who manages addresses, carts, wishlists, orders, and reviews.
+- **seller** – authenticated merchant who manages their own products, SKUs, inventory, and seller-side order handling.
+- **admin** – platform staff who manage users, sellers, catalog, orders, reviews, and policies.
 
-All requirements use EARS syntax where applicable and describe observable behavior, not technical implementation.
+All requirements in this document are expressed in business terms and follow EARS-style wording where applicable (WHEN/WHILE/IF/THEN/THE/SHALL). They define **what** the platform must do, not **how** it is implemented.
 
-## 2. Actors and High-Level Responsibilities
 
-### 2.1 Actors
+## 2. Actors and High-Level Capabilities
 
-- **guestUser**: Unauthenticated visitor who can browse the catalog, view products and reviews, and manage a temporary cart.
-- **customer**: Authenticated user who can maintain addresses, persistent carts and wishlists, place orders, pay, track shipments, and submit reviews.
-- **seller**: Authenticated merchant who can manage products, SKUs, inventory, and fulfillment-related updates for their items.
-- **platformAdmin**: Administrative operator who can oversee users, sellers, products, orders, payments, refunds, and reviews.
+### 2.1 guestUser
 
-### 2.2 High-Level Responsibilities
+- THE platform SHALL allow guestUser to browse categories, search products, and view product details and reviews without authentication.
+- THE platform SHALL prevent guestUser from placing orders, managing persistent addresses, writing reviews, or accessing any personal data.
 
-- THE shoppingMall platform SHALL allow guestUser and customer to discover products, configure variants, and prepare carts and wishlists.
-- THE shoppingMall platform SHALL allow customer to complete checkout, payment, and post-purchase actions according to business rules.
-- THE shoppingMall platform SHALL allow seller to manage catalog and inventory for their SKUs and to fulfill orders containing their products.
-- THE shoppingMall platform SHALL allow platformAdmin to enforce policies, resolve disputes, and maintain platform integrity.
+### 2.2 customer
 
-## 3. User Registration, Login, and Address Management
+- THE platform SHALL allow customer to register, log in, manage profile and addresses, maintain a cart and wishlist, place orders, track shipments, view order history, request cancellations and refunds, and leave product reviews.
+
+### 2.3 seller
+
+- THE platform SHALL allow seller to onboard, manage seller profile, create and manage products and SKUs, adjust inventory per SKU, view orders containing their products, and update shipment-related information.
+
+### 2.4 admin
+
+- THE platform SHALL allow admin to manage users and sellers, moderate catalog and reviews, oversee orders and refunds, monitor platform health, and configure business policies.
+
+
+## 3. Registration, Login, and Address Management
 
 ### 3.1 Registration
 
-- WHEN a guestUser submits required registration information for a customer account, THE system SHALL validate mandatory fields such as unique email and password according to configured rules.
-- WHEN validation passes, THE system SHALL create a customer account in an initial state (for example, unverified) and SHALL initiate any required verification steps such as email confirmation.
-- IF the provided email is already associated with an active customer or seller, THEN THE system SHALL reject registration and SHALL inform the user that the email is already in use.
+- WHEN a person signs up as customer, THE platform SHALL require at minimum a unique email address and a password that satisfies the password policy.
+- WHEN a person signs up as seller, THE platform SHALL require both login credentials and required business details (for example business name and contact information) before granting seller capabilities.
+- IF the email is already used by an existing account, THEN THE platform SHALL reject registration and SHALL indicate that the email is already in use.
 
-### 3.2 Login and Session Recognition
+### 3.2 Login and Logout
 
-- WHEN a customer, seller, or platformAdmin submits valid credentials, THE system SHALL authenticate the actor and SHALL establish an authenticated session that can be used for subsequent requests.
-- WHEN a request is received without valid authentication, THE system SHALL treat the actor as guestUser and SHALL restrict capabilities to guestUser permissions.
+- WHEN customer, seller, or admin submits valid credentials, THE platform SHALL create an authenticated session associated with that actor.
+- WHEN credentials are invalid, THE platform SHALL respond with a generic authentication failure without revealing whether the email exists.
+- WHEN an authenticated actor logs out, THE platform SHALL terminate the active session so further protected actions require authentication again.
 
-### 3.3 Address Management
+### 3.3 Address Management for Customers
 
-- WHEN a customer is authenticated, THE system SHALL allow the customer to create, update, and delete their own shipping addresses, including fields such as recipient name, street address, city, region, postal code, and contact phone number.
-- WHEN a customer attempts to modify or delete an address that is not owned by that customer, THE system SHALL deny the operation.
-- WHEN a customer places an order, THE system SHALL require selection of a valid address that meets shipping eligibility rules for the items in the cart.
-- IF a customer attempts to place an order without at least one usable shipping address, THEN THE system SHALL prevent order placement and SHALL prompt the customer to add or select an address.
-- WHERE a customer updates or deletes an address used in past orders, THE system SHALL preserve address details on those past orders for historical and compliance purposes and SHALL not retroactively change the stored address on completed orders.
+- THE platform SHALL allow customer to maintain one or more shipping addresses stored under their account.
+- WHEN customer adds a new address, THE platform SHALL require mandatory fields such as recipient name, street, city, postal code, and country.
+- WHEN customer marks an address as default, THE platform SHALL prefer that address during checkout unless customer selects a different one.
+- IF an address is missing mandatory fields or violates format rules, THEN THE platform SHALL reject the address and SHALL list the invalid fields.
 
-## 4. Product Catalog and Categories
+### 3.4 Address Use During Checkout
 
-### 4.1 Category Structure
+- WHEN customer proceeds to checkout, THE platform SHALL require selection of a valid shipping address for each shipment group.
+- IF no valid address is available, THEN THE platform SHALL require customer to create or correct an address before continuing.
 
-- THE system SHALL organize products into a category hierarchy with at least one top-level category and optional nested subcategories.
-- WHEN a category is marked active, THE system SHALL allow products assigned to that category to appear in browsing and search results according to product visibility rules.
-- WHEN a category is marked inactive, THE system SHALL hide that category from navigation and SHALL prevent new product assignments while maintaining visibility of existing orders that reference products in that category.
 
-### 4.2 Product Visibility and Status
+## 4. Product Catalog, Categories, and Search
 
-- THE system SHALL treat each product as having a lifecycle status including at least draft, active, inactive, and discontinued.
-- WHEN a product is in draft status, THE system SHALL prevent guestUser and customer from viewing that product in standard catalog views.
-- WHEN a product is active, THE system SHALL allow it to appear in catalog browsing and search results where stock and compliance rules are satisfied.
-- WHEN a product is inactive or discontinued, THE system SHALL prevent it from being added to cart or wishlist by guestUser or customer and SHALL only expose it through historical views such as order history.
+### 4.1 Catalog Visibility
 
-### 4.3 Catalog Browsing and Product Detail
+- THE platform SHALL show only active products and SKUs to guestUser and customer, subject to stock and policy rules.
+- WHERE a product is active but all SKUs are unavailable for purchase, THE platform SHALL still allow viewing the product details but SHALL indicate that no variants are currently purchasable.
 
-- WHEN guestUser or customer opens a category, THE system SHALL list active and visible products within that category, respecting stock and seller status constraints.
-- WHEN guestUser or customer opens a product detail, THE system SHALL present product attributes, available variant options, SKU-level prices, stock availability indicators, and aggregated review information.
-- IF a requested product identifier does not correspond to a visible product, THEN THE system SHALL return a business-level indication that the product is unavailable without exposing internal identifiers.
+### 4.2 Categories
 
-### 4.4 Search and Filtering
+- THE platform SHALL organize products into a hierarchical category structure (for example Electronics → Mobile Phones).
+- WHEN a user selects a category, THE platform SHALL show products assigned to that category and optionally its subcategories according to configuration.
+- IF a category contains no visible products, THEN THE platform SHALL show an empty result state and MAY suggest other categories.
 
-- WHEN guestUser or customer submits a free-text search query, THE system SHALL return a paginated list of active, visible products that match search criteria according to configured relevance rules.
-- THE system SHALL allow filtering of search results by at least category, price range, brand where applicable, and selected attributes such as size or color when variants exist.
-- IF no products satisfy the search and filter conditions, THEN THE system SHALL return an empty result set with a clear indication that no products were found.
+### 4.3 Search and Filtering
 
-## 5. Product Variants and SKU Management
+- WHEN guestUser or customer enters a search term, THE platform SHALL return a list of matching products ordered by a configurable relevance rule.
+- THE platform SHALL allow filtering product lists by at least category and price range and MAY support additional filters like brand or attributes.
+- WHEN a user applies filters, THE platform SHALL restrict results to products that satisfy all selected filters.
+- IF no products match the search and filters, THEN THE platform SHALL show an empty state and SHALL allow users to clear or adjust filters.
 
-### 5.1 SKU Definition and Ownership
+### 4.4 Product Details
 
-- THE system SHALL represent each purchasable variation of a product as a distinct SKU with defined variant attributes (for example, size, color, or other options).
-- THE system SHALL associate each SKU with exactly one product and one owning seller.
-- THE system SHALL treat SKUs as the unit of inventory tracking and order line creation.
+- THE platform SHALL store for each product a title, summary, description, at least one image, owning seller, categories, and status.
+- WHEN a user opens a product page, THE platform SHALL display product information, available SKUs with variant attributes, current prices, and aggregated rating information.
 
-### 5.2 Variant Selection Behavior
 
-- WHEN guestUser or customer views a product that has multiple SKUs, THE system SHALL present available variant options and SHALL allow selection of a specific combination that maps to an active SKU.
-- IF a selected combination of options does not correspond to an active SKU, THEN THE system SHALL indicate that the combination is unavailable and SHALL not allow adding that selection to cart or wishlist.
-- WHILE a valid active SKU is selected, THE system SHALL display the SKU-specific price and availability derived from inventory status.
+## 5. Product Variants (SKUs) and Inventory
 
-### 5.3 SKU Availability and Status
+### 5.1 SKU Modeling
 
-- WHEN all SKUs for an active product are out of stock or inactive, THE system SHALL either mark the product as unavailable or hide it from general catalog browsing according to configurable business policy.
-- WHEN a SKU is inactive or out of stock without backorder permission, THE system SHALL prevent guestUser and customer from adding that SKU to cart or wishlist or from placing orders containing that SKU.
+- THE platform SHALL represent each purchasable variant of a product as a SKU with its own price, inventory quantity, and variant attributes (for example color, size, option).
+- THE platform SHALL ensure that within a single product, each unique combination of variant attributes maps to at most one SKU.
 
-## 6. Shopping Cart Requirements
+### 5.2 SKU Availability
+
+- THE platform SHALL treat a SKU as purchasable only when the product is active, the SKU is enabled, and the SKU has sufficient stock or is otherwise allowed for sale.
+- WHEN a customer selects a specific variant combination, THE platform SHALL indicate whether that SKU is available, limited stock, or out of stock.
+- IF stock for a SKU is zero and overselling is not permitted, THEN THE platform SHALL prevent adding that SKU to cart.
+
+### 5.3 Inventory Management (Seller Perspective)
+
+- WHEN seller updates inventory quantity for one of their SKUs, THE platform SHALL adjust the recorded stock quantity for that SKU.
+- IF a seller attempts to set stock below zero, THEN THE platform SHALL reject the change and SHALL indicate that stock cannot be negative.
+- WHEN orders are placed and confirmed, THE platform SHALL reduce available stock for the ordered SKUs according to the order quantities and inventory rules.
+- WHEN an order is cancelled entirely before shipment and stock restoration is allowed by policy, THE platform SHALL increase available stock for affected SKUs by the cancelled quantities.
+
+
+## 6. Shopping Cart Behavior
 
 ### 6.1 Cart Ownership and Persistence
 
-- WHEN guestUser adds the first SKU to a cart, THE system SHALL create a temporary cart associated with that guest session and SHALL maintain it within a business-defined retention window.
-- WHEN customer adds the first SKU to a cart, THE system SHALL create or reuse a persistent cart associated with that customer account.
-- WHEN guestUser becomes customer by registering or logging in, THE system SHALL offer to merge the temporary cart with the existing persistent cart for that customer using rules that prevent invalid or duplicate items.
-- WHILE a customer account remains active, THE system SHALL persist the customer’s cart until items are converted to orders or explicitly removed.
+- WHEN guestUser adds the first SKU to cart, THE platform SHALL create a temporary cart tied to that browsing context.
+- WHEN customer adds the first SKU to cart, THE platform SHALL create or reuse a persistent cart tied to that customer account.
+- WHILE customer account remains active, THE platform SHALL preserve that customer’s persistent cart contents across sessions until the cart is cleared or converted to orders.
 
-### 6.2 Cart Item Validation
+### 6.2 Guest Cart to Customer Cart Merge
 
-- WHEN guestUser or customer attempts to add a SKU to cart, THE system SHALL validate that the SKU exists, is active, is visible to that actor, and is eligible for sale in the actor’s region.
-- WHEN requested quantity exceeds current available inventory and backorders are disallowed, THE system SHALL cap the quantity to the maximum allowed and SHALL inform the actor.
-- WHEN a SKU belongs to a seller who is suspended or otherwise restricted from selling, THE system SHALL reject attempts to add that SKU to cart and SHALL indicate that the item is not available.
+- WHEN guestUser with a temporary cart logs in or registers to become customer, THE platform SHALL merge the temporary cart into the customer’s persistent cart using a deterministic merge rule.
+- WHERE the same SKU exists in both carts, THE platform SHALL either sum the quantities or choose the larger quantity, as defined by business policy, and SHALL ensure final quantity does not exceed allowed per-SKU limits.
+- IF a SKU in the guest cart is no longer valid or purchasable, THEN THE platform SHALL exclude that SKU from the merged cart and SHALL inform customer after login.
 
-### 6.3 Cart Updates and Removal
+### 6.3 Add, Update, Remove
 
-- WHEN a customer modifies the quantity of a cart item, THE system SHALL revalidate the requested quantity against inventory and policy limits and SHALL apply the change only when valid.
-- IF updated quantity violates limits or availability, THEN THE system SHALL adjust the quantity to the maximum allowable and SHALL communicate the adjustment.
-- WHEN a cart item’s quantity is set to zero, THE system SHALL remove that item from the cart.
-- WHEN a customer requests to clear the cart, THE system SHALL remove all items from that cart instance.
+- WHEN a user adds a SKU to cart, THE platform SHALL validate that the SKU is visible, enabled, and purchasable.
+- IF the requested quantity exceeds the available quantity or per-customer limit, THEN THE platform SHALL cap the quantity at the maximum allowed and SHALL inform the user.
+- WHEN a user updates the quantity of a cart item, THE platform SHALL re-validate stock and rules before applying the change.
+- WHEN a user removes a cart item, THE platform SHALL remove that item from the cart while keeping other items unchanged.
 
-### 6.4 Cart Price Calculation
+### 6.4 Cart Validation During Checkout
 
-- WHEN the cart is retrieved for viewing, THE system SHALL calculate per-item line totals and overall cart totals including item prices, applicable discounts, estimated shipping costs, and taxes according to business rules.
-- WHEN any product price or promotion changes, THE system SHALL recalculate cart prices at the next cart retrieval or at checkout and SHALL require customer confirmation for orders where totals increase relative to earlier displays.
+- WHEN customer initiates checkout, THE platform SHALL validate all cart items for SKU existence, visibility, purchasability, price validity, and inventory sufficiency.
+- IF any cart item fails validation (for example out of stock or price changed), THEN THE platform SHALL block progression to payment until the customer acknowledges and adjusts the cart.
 
-### 6.5 Cart Validation Prior to Checkout
 
-- WHEN customer initiates checkout, THE system SHALL perform a comprehensive validation of all cart items, including product visibility, SKU availability, and region-based restrictions.
-- IF any item fails validation, THEN THE system SHALL identify invalid items, prevent progression to payment, and SHALL allow customer to adjust or remove those items.
+## 7. Wishlist Behavior
 
-## 7. Wishlist Requirements
+### 7.1 Wishlist Ownership and Scope
 
-### 7.1 Wishlist Availability
+- THE platform SHALL allow each customer to maintain at least one wishlist associated with their account.
+- THE platform SHALL restrict viewing and managing a wishlist to its owning customer.
 
-- THE system SHALL allow only authenticated customer to create and manage wishlists.
-- WHEN customer account is created, THE system SHALL create at least one default wishlist for that customer.
+### 7.2 Wishlist Operations
 
-### 7.2 Wishlist Item Management
+- WHEN customer adds a product or SKU to wishlist, THE platform SHALL create a wishlist entry without reserving stock.
+- IF the product is already in the wishlist, THEN THE platform SHALL avoid creating duplicates and MAY update a timestamp or metadata.
+- WHEN customer removes an item from wishlist, THE platform SHALL delete that entry without affecting cart or orders.
+- WHEN customer decides to move a wishlist item to cart, THE platform SHALL treat it as an add-to-cart operation and SHALL apply all SKU validation and stock checks.
 
-- WHEN a customer adds a product or SKU to a wishlist, THE system SHALL prevent duplicates within the same wishlist.
-- WHEN a wishlist entry references a product or SKU that becomes inactive or is removed, THE system SHALL mark the entry as unavailable and SHALL either hide or remove it from the wishlist according to policy.
-- WHEN a customer moves an item from wishlist to cart, THE system SHALL apply the same validation rules as standard add-to-cart actions.
 
-## 8. Checkout and Order Placement
+## 8. Order Placement and Payment Processing
 
-### 8.1 Checkout Entry and Preconditions
+### 8.1 Preconditions for Order Creation
 
-- WHEN a customer initiates checkout, THE system SHALL require the customer to be authenticated and SHALL ensure that the cart is not empty.
-- WHEN checkout begins, THE system SHALL validate all cart items, recalculate prices, and confirm that payment and shipping options are available for items and the customer’s address.
+- WHEN customer proceeds from validated cart to order, THE platform SHALL require:
+  - An authenticated customer session.
+  - At least one valid cart item.
+  - A valid shipping address for each shipment group.
+  - Selection of valid shipping methods where required.
+  - Selection of an allowed payment method.
 
-### 8.2 Address and Shipping Selection
+- IF any of these preconditions are not met, THEN THE platform SHALL block order creation and SHALL present clear error messages.
 
-- WHEN checkout reaches the address selection stage, THE system SHALL present the customer’s saved addresses and SHALL allow creation of a new address that meets validation check.
-- WHEN a shipping address is selected, THE system SHALL determine shipping eligibility for each cart item based on seller and region rules.
-- IF any items cannot be shipped to the selected address, THEN THE system SHALL identify those items and SHALL prevent checkout from proceeding until the customer removes them or selects another address.
+### 8.2 Order Creation Flow
 
-### 8.3 Payment Option Selection
+- WHEN customer confirms checkout details, THE platform SHALL create an order record that captures:
+  - Ordered items with references to SKUs and product names.
+  - Snapshot of unit prices, discounts, and totals.
+  - Selected shipping addresses and methods.
+  - Chosen payment method information in business terms.
 
-- WHEN a customer reaches payment selection, THE system SHALL present available payment methods based on region, order amount, and platform configuration.
-- WHEN a customer selects a payment method, THE system SHALL ensure that all required payment-related information is collected before initiating payment authorization.
+- WHEN an order is created, THE platform SHALL set an initial order status (for example "Awaiting Payment") and a corresponding payment status consistent with payment rules.
 
-### 8.4 Order Creation and Multi-Seller Handling
+### 8.3 Payment Processing
 
-- WHEN payment authorization succeeds according to payment rules, THE system SHALL create a customer-facing order that represents the entire purchase.
-- WHERE the cart includes items from multiple sellers, THE system SHALL create per-seller segments or suborders that can be managed independently for fulfillment and settlements.
-- THE system SHALL store a snapshot of item prices, discounts, shipping costs, and taxes at the time of order creation and SHALL not retroactively update those values due to later pricing changes.
+- WHEN payment is initiated for an order, THE platform SHALL lock the payable amount for that order so that subsequent price changes do not alter the amount for this payment attempt.
+- WHEN payment succeeds for the full order amount, THE platform SHALL mark the payment status as Paid and SHALL transition the order to a status that allows fulfillment (for example "Payment Confirmed").
+- IF payment fails or is declined, THEN THE platform SHALL mark the payment attempt as Failed, SHALL keep or revert the order to an unpaid state, and SHALL present a suitable error so customer can retry or choose a different payment method.
+- IF payment remains pending beyond a configured timeout, THEN THE platform SHALL treat the payment as Expired and SHALL transition the order to a status equivalent to "Payment Expired" or automatic cancellation according to policy.
 
-### 8.5 Failure During Checkout
+### 8.4 Multi-Seller Orders
 
-- IF payment authorization fails or is declined, THEN THE system SHALL keep the cart unchanged, SHALL mark the associated order attempt as payment-failed or expired, and SHALL allow the customer to retry payment according to configured limits.
-- IF an internal error occurs after payment authorization but before successful order creation, THEN THE system SHALL either roll back payment authorization where possible or initiate refunds and SHALL not leave the customer with an ambiguous order state.
+- WHERE an order contains items from multiple sellers, THE platform SHALL still create a single customer-facing order while internally associating each line item with its owning seller.
+- THE platform SHALL ensure that payment is taken for the entire order, then SHALL allocate financial amounts per seller according to business rules.
 
-## 9. Order Status Lifecycle and Tracking
+### 8.5 Error and Edge Cases
 
-### 9.1 Customer-Facing Order States
+- IF payment succeeds but order persistence temporarily fails, THEN THE platform SHALL ensure that either a corresponding order is created later or that the payment is refunded according to operations policies, and SHALL keep an auditable record for reconciliation.
+- IF network errors prevent returning a confirmation screen after successful order creation, THEN THE platform SHALL make the order visible in the customer’s order history so it can be reviewed on subsequent login.
 
-- THE system SHALL maintain a clear order status lifecycle visible to customers, including at minimum: pending payment, confirmed/processing, shipped, delivered, cancelled, and refunded.
-- WHEN order status changes, THE system SHALL update customer order history and SHALL ensure that the current state is available in order detail views.
 
-### 9.2 Seller Fulfillment States
+## 9. Order Tracking and Shipping Status Updates
 
-- THE system SHALL maintain seller-facing fulfillment states per order line or per seller segment, including at least: new, preparing, shipped, delivered, and cancelled.
-- WHEN a seller updates fulfillment status, THE system SHALL validate that the transition is allowed from the current state and SHALL propagate relevant updates to customer views.
+### 9.1 Shipping Status Lifecycle
 
-### 9.3 Shipping Information and Tracking
+- THE platform SHALL represent shipping status for each shipment using a defined set of states such as Pending, Preparing, Shipped, InTransit, OutForDelivery, Delivered, DeliveryFailed, Returned, and Cancelled.
 
-- WHEN seller or platformAdmin provides shipping carrier information and tracking identifiers for a shipment, THE system SHALL store these values and SHALL surface them to customers in order tracking views.
-- WHILE order items are in transit, THE system SHALL display the latest known shipping status and key milestones when such information is available from carriers or seller updates.
+- WHEN payment is confirmed for an order, THE platform SHALL create one or more shipment records in Pending state according to order splitting rules.
+- WHEN seller or warehouse starts preparing items, THE platform SHALL allow transition of shipments from Pending to Preparing.
+- WHEN a carrier picks up the package, THE platform SHALL allow transition from Preparing or ReadyForPickup to Shipped and SHALL capture a pickup timestamp.
+- WHEN carrier events indicate progress, THE platform SHALL update shipping status accordingly (InTransit, OutForDelivery, Delivered, DeliveryFailed, Returned).
 
-### 9.4 Order History
+### 9.2 Tracking Information
 
-- THE system SHALL maintain an order history for each customer, listing all past and current orders with key attributes including order date, total amount, primary status, and seller information.
-- WHEN a customer views order history, THE system SHALL paginate results and SHALL allow filtering by time period and status where supported.
+- THE platform SHALL allow storing tracking numbers, carrier names, and tracking events per shipment.
+- WHEN customer opens the order detail page, THE platform SHALL display current shipping status, the carrier (where known), tracking identifier (subject to privacy rules), and key tracking events.
+- IF tracking information is not yet available, THEN THE platform SHALL show that the order is being prepared and tracking will be available later.
 
-## 10. Cancellation and Refund Requests
+### 9.3 Handling Delivery Problems
 
-### 10.1 Customer-Initiated Cancellations
+- IF carrier reports DeliveryFailed, THEN THE platform SHALL update shipping status accordingly and SHALL display a suitable message to customer with next steps (for example re-delivery attempt or return to sender), based on policy.
+- IF a shipment is marked as Returned, THEN THE platform SHALL allow sellers and admins to initiate appropriate handling, such as re-shipment or refund, according to business rules.
 
-- WHEN a customer requests cancellation of an order or item before shipment and within the allowed cancellation window, THE system SHALL accept the request and SHALL either auto-approve or route it to seller or platformAdmin for approval according to policy.
-- WHEN cancellation is approved for items that have been paid but not shipped, THE system SHALL mark those items as cancelled, SHALL initiate refunds according to payment rules, and SHALL restore inventory as described in inventory requirements.
-- IF a customer attempts to cancel an order or item after it passes the allowed cancellation state (for example, after shipment), THEN THE system SHALL reject standard cancellation and SHALL direct the customer toward return or refund flows where applicable.
 
-### 10.2 Refund Requests After Shipment or Delivery
+## 10. Product Reviews and Ratings
 
-- WHEN a customer submits a refund or return request for delivered items within the configured refund window and according to product eligibility, THE system SHALL record the request with reasons and SHALL expose it to seller and platformAdmin for processing.
-- WHEN a refund request is approved, THE system SHALL trigger the refund process through payment systems and SHALL update order and payment statuses to reflect refund completion or pending state.
+### 10.1 Eligibility and Timing
 
-### 10.3 Seller and Admin Roles in Cancellation/Refund
+- THE platform SHALL allow only customers who have purchased a product and whose order items have reached a Delivered state to create reviews for that product.
+- WHEN an order line item is delivered, THE platform SHALL mark the corresponding customer as eligible to review that SKU or product within a defined review window.
+- IF a customer attempts to review a product they have not purchased under their account, THEN THE platform SHALL reject the review and SHALL indicate that only verified purchasers can review.
 
-- THE system SHALL allow seller to view and respond to cancellation and refund requests that concern their items, within policy constraints.
-- THE system SHALL allow platformAdmin to override seller decisions, initiate or adjust refunds, and close disputes when necessary for policy enforcement.
+### 10.2 Rating and Review Content
 
-## 11. Product Reviews and Ratings
+- THE platform SHALL require every review to include a numeric rating within the configured scale (for example 1–5).
+- THE platform MAY allow text reviews and media attachments subject to length and size limits defined by policy.
+- IF a review exceeds allowed length or attachment limits, THEN THE platform SHALL reject the review and SHALL describe which limits were violated.
 
-### 11.1 Eligibility to Review
+### 10.3 Review Management by Customer
 
-- WHEN a customer attempts to submit a review for a product, THE system SHALL verify that the customer has at least one completed order containing that product and that the submission is within the permitted review window.
-- IF eligibility criteria are not met, THEN THE system SHALL deny review creation and SHALL explain that reviews are limited to verified purchasers or to a specific time window.
+- THE platform SHALL allow customer to edit or delete their own reviews within business-defined constraints (for example limited time window for edits).
+- WHEN a review is deleted by its author, THE platform SHALL remove it from public visibility and from rating aggregation while keeping an internal record for audit if required.
 
-### 11.2 Review Submission and Editing
+### 10.4 Moderation and Reporting
 
-- WHEN an eligible customer submits a review with rating and optional comment, THE system SHALL validate rating value against the allowed scale and comment length against policies, then SHALL store the review in an initial moderation state.
-- WHEN a customer edits or deletes their own review within allowed conditions, THE system SHALL update or remove the review accordingly and SHALL recalculate aggregated rating for the associated product.
+- THE platform SHALL allow customers and sellers to report reviews they consider inappropriate or in violation of policy.
+- WHEN a review is reported, THE platform SHALL record the reporter, reason category, and timestamp and SHALL surface the review in admin moderation views.
+- THE platform SHALL allow admins to hide, remove, or reinstate reviews based on moderation decisions, and SHALL ensure that hidden or removed reviews no longer contribute to aggregated ratings.
 
-### 11.3 Rating Aggregation and Display
+### 10.5 Aggregated Ratings
 
-- THE system SHALL maintain an average rating and review count for each product based on reviews that are in a state considered public and approved.
-- WHEN product details or listings are displayed, THE system SHALL show aggregated ratings and review counts where available, and SHALL indicate when no reviews exist.
+- THE platform SHALL compute average rating and review count per product from all included reviews.
+- WHEN a user views a product, THE platform SHALL show its aggregated rating and the number of reviews where at least one review exists; otherwise, it SHALL show that there are no ratings yet.
 
-### 11.4 Moderation and Reporting
 
-- WHEN customers or sellers report a review as abusive, fraudulent, or irrelevant, THE system SHALL record the report and SHALL expose reported reviews to platformAdmin for moderation.
-- WHEN platformAdmin removes or hides a review, THE system SHALL update product rating aggregation to exclude that review and SHALL prevent the review from appearing in public views.
+## 11. Seller Accounts and Product / Inventory Management
 
-## 12. Seller Accounts, Inventory, and Order Management
+### 11.1 Seller Onboarding
 
-### 12.1 Seller Catalog Management
+- WHEN a person applies to become a seller, THE platform SHALL collect required business information and SHALL create a seller entity in a Pending state.
+- WHERE manual approval is required, THE platform SHALL allow admins to change seller status from Pending to Active or Rejected based on review.
+- WHEN seller status is Active, THE platform SHALL grant access to seller portal capabilities such as product and inventory management and order handling for that seller.
 
-- WHEN a seller account is approved and active, THE system SHALL allow the seller to create, update, and deactivate products and SKUs associated with that seller only.
-- WHEN creating or publishing a product, THE system SHALL require mandatory fields such as name, category, base description, at least one SKU, and initial stock where required.
+### 11.2 Seller Profile
 
-### 12.2 Inventory Management per SKU
+- THE platform SHALL allow seller to configure store display name, description text, contact email, default shipping origin address, and default return address.
+- WHEN seller updates profile information, THE platform SHALL validate required fields and SHALL use updated information in future customer-facing contexts without altering historical records that must remain unchanged.
 
-- WHEN seller updates on-hand inventory quantities for a SKU, THE system SHALL adjust available stock accordingly and SHALL enforce updated quantities in subsequent cart and checkout validation.
-- WHEN orders are placed, cancelled, or refunded, THE system SHALL coordinate with inventory rules to adjust on-hand and reserved quantities for affected SKUs.
+### 11.3 Product Management by Seller
 
-### 12.3 Seller Order Management
+- WHEN seller creates a new product, THE platform SHALL require product title, category, basic description, and at least one SKU definition prior to activation.
+- WHEN seller edits an existing product they own, THE platform SHALL allow changes to text fields, categories within allowed values, visibility state, and SEO-related metadata where applicable.
+- IF a product has been part of customer orders, THEN THE platform SHALL prevent full deletion of the product and SHALL require using an inactive or discontinued state instead.
 
-- THE system SHALL allow seller to view orders that contain their items, including line-level details, shipping address, and contact information necessary for fulfillment.
-- WHEN a seller updates fulfillment status or tracking information for their items, THE system SHALL store the updates and SHALL reflect them in customer-facing order tracking where appropriate.
+### 11.4 Inventory Management by Seller
 
-## 13. Admin Dashboard for Order and Product Management
+- WHEN seller adjusts stock for a SKU they own, THE platform SHALL update stock quantity accordingly while preventing negative values.
+- WHEN stock for a SKU falls below a seller-defined threshold, THE platform SHALL mark that SKU as low stock in seller views and MAY support notifications according to configuration.
 
-### 13.1 Admin Visibility
+### 11.5 Seller View of Orders
 
-- THE system SHALL allow platformAdmin to search, filter, and view all customers, sellers, products, and orders with relevant details needed for operations and compliance.
+- THE platform SHALL allow seller to view orders that contain their products, including item details, quantities, prices, shipping address necessary for fulfillment, and status fields relevant to the seller.
+- IF seller attempts to access an order that does not contain any of their products, THEN THE platform SHALL deny access.
+- WHEN seller ships their items, THE platform SHALL allow them to record carrier and tracking information for those items and SHALL update shipping status for affected shipments.
 
-### 13.2 Admin Actions
 
-- WHEN policy violations, fraud indicators, or disputes occur, THE system SHALL allow platformAdmin to take actions such as suspending sellers, hiding products, moderating reviews, adjusting order statuses, and initiating or adjusting refunds, within documented business constraints.
-- THE system SHALL record all admin actions affecting core entities in audit logs with at least acting admin identity, affected entity, timestamp, and a reason or justification field.
+## 12. Order History, Cancellation, and Refund Requests
 
-## 14. Key End-to-End Flow Diagram
+### 12.1 Order History for Customers
+
+- THE platform SHALL maintain an order history for each customer that lists all orders created by that customer.
+- WHEN customer views their order list, THE platform SHALL present orders in reverse chronological order with key details such as order identifier, creation date, total amount, and current status.
+- WHEN customer opens an individual order, THE platform SHALL display full details including line items, shipping address, shipping status, payment summary, and status timeline.
+
+### 12.2 Cancellation Requests
+
+- THE platform SHALL define which order states are cancellable (for example before shipment) and SHALL expose a cancellation option only when the order is in those states.
+- WHEN customer requests cancellation for an eligible order or item, THE platform SHALL create a cancellation request and SHALL transition the order or items to an intermediate state while the cancellation is processed.
+- IF an order is not in a cancellable state (for example already shipped beyond policy), THEN THE platform SHALL prevent new cancellation requests and SHALL direct the customer to refund or return flows where applicable.
+
+### 12.3 Refund Requests
+
+- THE platform SHALL allow customer to request a refund for eligible orders or items, specifying a reason from a predefined list and optional comments.
+- WHEN a refund request is submitted, THE platform SHALL create a refund case linked to the order and items and SHALL surface it to the relevant seller and admin according to policy.
+- THE platform SHALL track refund status through states such as Requested, UnderReview, Approved, Rejected, and Completed.
+
+### 12.4 Processing Refunds
+
+- WHERE policy allows sellers to handle refunds, THE platform SHALL allow seller to respond to refund requests by approving or contesting them with reasons.
+- WHEN a refund is approved by seller or admin, THE platform SHALL initiate financial refund according to payment provider rules and SHALL update payment and order statuses appropriately.
+- WHEN a refund is rejected, THE platform SHALL store the rejection reason and SHALL inform customer of the outcome.
+- WHERE a refund requires return of goods, THE platform SHALL provide instructions (for example return address) and SHALL allow marking whether returned items have been received.
+
+
+## 13. Admin Dashboard and Operations
+
+### 13.1 User and Seller Management
+
+- THE platform SHALL allow admin to search and view customers and sellers by identifiers such as email, name, or ID.
+- WHEN admin views a user or seller, THE platform SHALL show status (for example Active, Suspended, Blocked for users; Pending, Active, Suspended, Terminated for sellers) and key metrics such as number of orders or disputes.
+- WHEN admin changes account status, THE platform SHALL require a reason and SHALL log the change for audit purposes.
+
+### 13.2 Catalog Governance
+
+- THE platform SHALL allow admin to manage categories, including creating, renaming, hiding, deprecating, and reassigning.
+- WHEN admin hides or disables a product or SKU due to policy, THE platform SHALL prevent new purchases for that product or SKU while keeping existing orders intact.
+
+### 13.3 Order, Refund, and Dispute Oversight
+
+- THE platform SHALL allow admin to search and view any order, including full financial and shipping history and associated refund or dispute records.
+- WHEN refund or cancellation requests are escalated or disputed, THE platform SHALL allow admin to review case details and make final decisions that update order and payment statuses.
+- THE platform SHALL require admin to provide a reason when overriding seller decisions or manually adjusting order statuses and SHALL log those actions.
+
+### 13.4 Monitoring and Reporting
+
+- THE platform SHALL provide admin with aggregated metrics such as order volume, refund rate, dispute count, active sellers, and GMV over configurable time ranges.
+- THE platform SHALL allow admin to export business reports subject to privacy and access rules, for example per-seller sales summaries and refund statistics.
+
+
+## 14. High-Level Flow Diagrams
+
+### 14.1 Customer Purchase and Review Flow
 
 ```mermaid
 graph LR
-  A["Guest Browses Catalog"] --> B["Guest Adds SKUs To Cart"]
-  B --> C["Guest Proceeds To Checkout"]
-  C --> D["Register Or Login As Customer"]
-  D --> E["Customer Selects Address And Shipping"]
-  E --> F["Customer Selects Payment Method"]
-  F --> G{"Payment Authorized?"}
-  G -->|"No"| H["Payment Failed, Cart Preserved"]
-  G -->|"Yes"| I["Order Created And Stock Reserved"]
-  I --> J["Sellers Prepare And Ship Items"]
-  J --> K["Customer Tracks Shipment"]
-  K --> L{"Order Delivered?"}
-  L -->|"Yes"| M["Customer Can Submit Review"]
-  L -->|"No"| N["Cancellation Or Support Handling"]
+  A["Browse Catalog"] --> B["Add SKU to Cart"]
+  B --> C["Checkout"]
+  C --> D["Payment Processing"]
+  D -->|"Success"| E["Order Created & Paid"]
+  E --> F["Shipment Preparation"]
+  F --> G["Shipped & In Transit"]
+  G --> H["Delivered"]
+  H --> I["Review Eligible"]
+  I --> J["Customer Leaves Review"]
 ```
 
-## 15. Measurable Acceptance Criteria (Examples)
+### 14.2 Seller Operations Flow
 
-- WHEN a customer with a valid cart, address, and payment method completes checkout under normal conditions, THE system SHALL create a confirmed order and respond with order details within a few seconds for at least 95 percent of such attempts.
-- WHEN an eligible customer submits a review with valid rating and comment, THE system SHALL make the review visible (subject to moderation policy) and update aggregated ratings within a short, business-acceptable delay.
-- WHEN a seller updates fulfillment status or tracking details, THE system SHALL reflect this information in customer-facing order tracking views within a short, business-acceptable delay.
-- WHEN a cancellation or refund request meets all policy criteria, THE system SHALL update order and payment statuses and SHALL adjust inventory according to defined rules without manual data correction.
+```mermaid
+graph LR
+  S1["Seller Onboarding"] --> S2["Profile & Store Setup"]
+  S2 --> S3["Create Products & SKUs"]
+  S3 --> S4["Manage Inventory"]
+  S4 --> S5["Receive Orders"]
+  S5 --> S6["Prepare & Ship Items"]
+  S6 --> S7["Update Tracking Status"]
+  S7 --> S8["Handle Cancellations/Refunds"]
+```
 
-These requirements describe business behavior for the shoppingMall backend in a way that can be implemented and validated without prescribing specific technical solutions.
+
+## 15. Consolidated Key EARS Requirements
+
+- THE platform SHALL treat guestUser, customer, seller, and admin as distinct actors with clearly separated capabilities.
+- WHEN a user registers as customer, THE platform SHALL require a unique email and password and SHALL prevent duplicate email usage.
+- WHEN customer manages addresses, THE platform SHALL validate mandatory fields and SHALL not allow checkout without at least one valid shipping address.
+- WHEN users search or browse the catalog, THE platform SHALL display only active products and purchasable SKUs for their actor type.
+- WHEN customer adds a SKU to cart, THE platform SHALL validate SKU availability, stock, and purchase rules before increasing cart quantity.
+- WHEN customer starts checkout, THE platform SHALL validate cart items, shipping addresses, shipping options, and payment method selection before creating an order.
+- WHEN payment succeeds, THE platform SHALL mark the associated order as paid and eligible for fulfillment and SHALL capture a price and fee snapshot.
+- WHEN shipment status changes, THE platform SHALL update shipping status and SHALL expose the new state in customer order tracking.
+- WHEN a delivered order item is eligible for review, THE platform SHALL allow the purchasing customer to submit one rating per product or SKU within the allowed timeframe.
+- WHEN a customer requests cancellation or refund, THE platform SHALL create a case, enforce eligibility rules, and route the case to seller and admin according to policy.
+- WHEN seller updates inventory or product status, THE platform SHALL ensure that customer-facing catalog and cart validation reflect the new availability state.
+- WHEN admin changes user, seller, product, order, or refund status, THE platform SHALL require reasons and SHALL record audit entries for governance.
+
+These business requirements collectively define the expected behavior for the shoppingMall e-commerce backend from the perspective of core features requested: account and address management, catalog and variants, cart and wishlist, order and payment, tracking, reviews, seller operations, inventory per SKU, order history, cancellations and refunds, and admin dashboard operations.

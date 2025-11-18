@@ -1,0 +1,57 @@
+/// Todo item for a single authenticated user.
+///
+/// Represents an individual task managed by the user, with a required
+/// description, optional due date, completion status, and precise owner
+/// reference. Each Todo is strictly owned by a single user, and the system
+/// ensures no cross-user data access or visibility. Deleted Todos are
+/// permanently erased—this model supports only active storage, not soft
+/// deletes. Timestamps record creation, update, and completion events for
+/// full business traceability. Enforces per-user uniqueness on (description,
+/// due date) to prevent duplicates. Rows are never fragmented: one entity
+/// per row, minimal as per domain rules.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the Todo item. Unique identifier for each Todo, generated
+  /// as a UUID v4.
+  id String @id
+  
+  /// The owner of this Todo item. References {@link todo_list_users.id}.
+  user_id String
+  
+  /// Required task description. Must not be blank or exceed 250 characters.
+  /// Used to identify the Todo's main purpose for the owner.
+  description String
+  
+  /// Optional due date for the Todo. If set, must be an ISO 8601 future date.
+  /// Nullable when not specified.
+  due_date DateTime?
+  
+  /// Boolean flag indicating whether the task is completed. Default is false;
+  /// set to true upon completion.
+  completed Boolean
+  
+  /// Timestamp marking when the Todo item was completed. Set only when
+  /// completed is true; null otherwise.
+  completed_at DateTime?
+  
+  /// Timestamp of initial Todo creation. Set by the system, never updated.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the Todo, reflecting description, due
+  /// date, or completion status changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, description, due_date])
+  @@index([user_id, completed])
+  @@index([user_id, due_date])
+}

@@ -1,136 +1,72 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
-import typia from "typia";
+import { TypedRoute, TypedParam } from "@nestia/core";
+import typia, { tags } from "typia";
 
-import { IPageIShoppingMallProductSku } from "../../../../api/structures/IPageIShoppingMallProductSku";
-import { IShoppingMallProductSku } from "../../../../api/structures/IShoppingMallProductSku";
+import { IShoppingMallSku } from "../../../../api/structures/IShoppingMallSku";
 
-@Controller("/shoppingMall/products/:productCode/skus")
+@Controller("/shoppingMall/products/:productId/skus/:skuId")
 export class ShoppingmallProductsSkusController {
   /**
-   * Search and list product SKU variants from shopping_mall_product_skus for
-   * a specific product.
+   * Retrieve a specific SKU (shopping_mall_skus) for a given product.
    *
-   * Retrieve a filtered and paginated list of SKU variants for a specific
+   * Retrieve detailed information for a specific SKU that belongs to a given
    * product.
    *
-   * This operation is built on top of the `shopping_mall_product_skus` Prisma
-   * model, which stores the core definition of product variants including SKU
-   * code, pricing dimensions, and potentially references to option value
-   * assignments. By scoping the endpoint to `/products/{productCode}/skus`,
-   * clients can query only the SKUs belonging to a single parent product
-   * identified via its business-level `productCode`. This design keeps URLs
-   * human-readable while leveraging the underlying `shopping_mall_products`
-   * model's unique code field.
+   * This operation reads from the shopping_mall_skus Prisma table, which
+   * represents concrete sellable variants of products in the catalog. Each
+   * SKU is associated with a single product record from
+   * shopping_mall_products and may also have relationships to inventory state
+   * definitions in shopping_mall_sku_inventory_states, attribute value
+   * junction records in shopping_mall_sku_attribute_values, and external
+   * integration identifiers in shopping_mall_sku_external_ids. The operation
+   * must ensure that the requested SKU actually belongs to the specified
+   * product, reinforcing referential integrity at the API boundary in
+   * addition to the database foreign key constraints.
    *
-   * The request body uses `IShoppingMallProductSku.IRequest` to capture
-   * advanced search and pagination parameters. Typical fields in this DTO
-   * include page number, page size, sort key and order, and optional filters
-   * such as active/inactive state, publish status, available stock
-   * thresholds, region or channel filters, and constraints on specific option
-   * value combinations (e.g., size or color). The implementation may join
-   * with inventory and visibility tables such as
-   * `shopping_mall_inventory_items` and
-   * `shopping_mall_product_visibility_rules` to ensure that only SKUs that
-   * satisfy current inventory and visibility rules are returned.
+   * From a security and visibility standpoint, the handler should apply
+   * catalog visibility rules derived from
+   * shopping_mall_catalog_visibility_rules and related policy or block reason
+   * tables. For example, if either the product or the SKU is blocked
+   * according to shopping_mall_catalog_block_reasons, or hidden for the
+   * requesting actor due to business policies, the operation should respond
+   * with a suitable error (such as 404 for hidden catalog entries) instead of
+   * exposing restricted data. Even though the endpoint is defined as public
+   * (no explicit authorizationActors), internal logic can still apply
+   * actor-specific filters based on anonymous versus authenticated users,
+   * region, or risk flags.
    *
-   * On success, the operation returns a paginated collection described by
-   * `IPageIShoppingMallProductSku.ISummary`. Each summary entry should
-   * provide enough information for UI rendering in both storefront and
-   * management contexts, such as SKU code, key option labels, price, and
-   * availability indicators, without necessarily including all internal
-   * fields. As a read-only search endpoint, it can be exposed publicly for
-   * storefront usage (e.g., expanding variant lists on a product detail page)
-   * while still allowing additional internal flags to be present in the
-   * summary DTO for authenticated callers, with access control enforced at
-   * the field or view level by downstream systems.
+   * In addition to returning the fundamental SKU fields, implementations
+   * commonly enrich the IShoppingMallSku response with denormalized data from
+   * related tables, such as the parent product’s title and brand, selected
+   * attribute values that define the variant (size, color, etc.), and current
+   * inventory-related fields. Any error conditions such as a missing product,
+   * a missing SKU, or a SKU that does not belong to the given product should
+   * be handled explicitly and surfaced as domain-appropriate HTTP errors.
    *
-   * @param connection
-   * @param productCode Unique business identifier code of the target product
-   *   (global scope) whose SKUs are being queried.
-   * @param body Search filters, sorting options, and pagination settings for
-   *   querying SKUs of the specified product.
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedParam("productCode")
-    productCode: string,
-    @TypedBody()
-    body: IShoppingMallProductSku.IRequest,
-  ): Promise<IPageIShoppingMallProductSku.ISummary> {
-    productCode;
-    body;
-    return typia.random<IPageIShoppingMallProductSku.ISummary>();
-  }
-
-  /**
-   * Get a specific SKU variant (shopping_mall_product_skus) for a product
-   * (shopping_mall_products) by productCode and skuCode.
-   *
-   * Retrieve a specific SKU variant for a product using business-friendly
-   * codes.
-   *
-   * This operation targets the shopping_mall_product_skus table, which stores
-   * SKU-level variant records for products, and the shopping_mall_products
-   * table, which represents the parent product catalog entries. The SKU is
-   * identified not by an opaque UUID but by a human-readable skuCode that is
-   * unique within the context of a given productCode. This matches the
-   * typical catalog modeling where a product may have multiple variants (such
-   * as size or color combinations), each represented as a SKU under the same
-   * product umbrella.
-   *
-   * The API expects two path parameters: productCode and skuCode. The
-   * productCode is the globally unique business identifier for the product
-   * entity (aligned with an underlying @@unique([code]) constraint on the
-   * shopping_mall_products model), while the skuCode is the unique business
-   * identifier for the SKU within that product's scope (aligned with a
-   * composite unique constraint such as @@unique([shopping_mall_product_id,
-   * code]) on shopping_mall_product_skus). The implementation must first
-   * resolve the product record by code and then locate the SKU using both the
-   * resolved product ID and skuCode to avoid ambiguity when multiple products
-   * share the same SKU code names.
-   *
-   * Security-wise, this is a read-only operation that can safely be exposed
-   * to all clients, including anonymous shoppers, because it only returns
-   * catalog information intended for public display. There is no modification
-   * of inventory or pricing state performed by this endpoint. However, the
-   * implementation should still respect any product or SKU visibility rules
-   * encoded in related tables like shopping_mall_product_visibility_rules or
-   * shopping_mall_product_compliance_flags where applicable, ensuring that
-   * only active and allowed variants are returned. If the product or SKU
-   * cannot be found, or if it is not visible under current business rules,
-   * the endpoint should respond with a suitable not-found error.
-   *
-   * This endpoint is typically used in conjunction with list or search
-   * operations such as PATCH /products or PATCH /products/{productCode}/skus,
-   * where clients first retrieve a list of products or SKUs and then call
-   * this detail endpoint to load the full information for a specific variant.
-   * It complements creation and update operations for SKUs that may exist in
-   * internal admin APIs, but by itself remains a pure retrieval operation
-   * returning a single IShoppingMallProductSku entity.
+   * Clients typically invoke this operation from product detail pages when a
+   * user selects a particular variant, or from internal tools that need to
+   * inspect the exact SKU configuration tied to a product. Related operations
+   * include searching SKUs for a product (PATCH on a collection) or creating
+   * SKUs for a product (POST /products/{productId}/skus).
    *
    * @param connection
-   * @param productCode Unique business identifier code of the target product
-   *   in the shopping mall catalog (global scope). This corresponds to the
-   *   product code field on the shopping_mall_products model, which is
-   *   defined with a unique constraint such as @@unique([code]).
-   * @param skuCode Unique business identifier code of the target SKU variant
-   *   within the given product (scoped to product). This corresponds to the
-   *   code field on the shopping_mall_product_skus model, which is expected
-   *   to participate in a composite unique constraint such as
-   *   @@unique([shopping_mall_product_id, code]).
+   * @param productId Unique identifier of the parent product that owns the
+   *   target SKU. This identifier corresponds to the primary key of a record
+   *   in the shopping_mall_products table.
+   * @param skuId Unique identifier of the SKU to retrieve. This identifier
+   *   corresponds to the primary key of a record in the shopping_mall_skus
+   *   table and must belong to the specified productId.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
-  @TypedRoute.Get(":skuCode")
+  @TypedRoute.Get()
   public async at(
-    @TypedParam("productCode")
-    productCode: string,
-    @TypedParam("skuCode")
-    skuCode: string,
-  ): Promise<IShoppingMallProductSku> {
-    productCode;
-    skuCode;
-    return typia.random<IShoppingMallProductSku>();
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("skuId")
+    skuId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallSku> {
+    productId;
+    skuId;
+    return typia.random<IShoppingMallSku>();
   }
 }

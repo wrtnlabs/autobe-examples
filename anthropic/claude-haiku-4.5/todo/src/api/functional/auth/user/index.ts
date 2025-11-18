@@ -4,17 +4,56 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ITodoListUser } from "../../../structures/ITodoListUser";
+export * as password from "./password/index";
 
 /**
- * Register a new user account in todo_list_users and issue tokens.
+ * Register a new user account in the todo_list_users table and issue initial
+ * authentication tokens.
  *
- * Registers a new user in the system and issues authentication tokens. Tied to
- * todo_list_users table. Validates unique email and hashes password as per
- * schema.
+ * This endpoint enables new users to create an account in the Todo List
+ * application. It processes registration requests by creating a new record in
+ * the todo_list_users table with the provided email address and securely hashed
+ * password. The email field must be unique across all users to prevent
+ * duplicate accounts; emails are stored in lowercase for case-insensitive
+ * matching during login.
+ *
+ * The operation validates that the email is not already registered and that the
+ * password meets security requirements. Upon successful account creation, the
+ * password_hash field is populated with a bcrypt hash (minimum cost factor 10)
+ * of the user's password - the plaintext password is never stored in the
+ * database. The created_at timestamp is set to the current UTC time, marking
+ * the account creation moment, while last_login_at is initialized to null
+ * (indicating no login yet) and deleted_at remains null (indicating an active
+ * account).
+ *
+ * Immediately after user creation, a session record is created in the
+ * todo_list_sessions table to represent the initial authenticated session from
+ * the registration request. The session stores the client's ip_address and
+ * user_agent for device tracking and security monitoring. Session timeout
+ * fields are configured: created_at records the registration moment,
+ * last_activity_at is set to creation time, expired_at remains null (session is
+ * active), and absolute_timeout_at is set to 30 days from creation for maximum
+ * session duration enforcement.
+ *
+ * The endpoint generates JWT tokens for immediate authenticated access: an
+ * access token (short-lived, typically 15 minutes) for API requests and a
+ * refresh token (long-lived, typically 7 days) for obtaining new access tokens
+ * without re-authentication. These tokens encode the user ID and JTI (JWT ID)
+ * claim for revocation tracking via the todo_list_token_blacklist table. Tokens
+ * are returned in the response for client storage and use in subsequent API
+ * requests.
+ *
+ * Security considerations include: email uniqueness validation to prevent
+ * duplicate accounts, bcrypt password hashing to ensure passwords are never
+ * stored plaintext, cryptographically secure token generation to prevent token
+ * guessing attacks, and session creation to support multi-device login
+ * tracking. Related operations include the login endpoint (POST
+ * /auth/user/login) for existing users and the refresh endpoint (POST
+ * /auth/user/refresh) for token renewal.
  *
  * @param props.connection
- * @param props.body Registration credentials: email and password. Email must be
- *   unique. Password will be hashed as per security rules.
+ * @param props.body New user registration credentials including email and
+ *   password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -49,13 +88,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Registration credentials: email and password. Email must be unique.
-     * Password will be hashed as per security rules.
-     */
-    body: ITodoListUser.IJoin;
+    /** New user registration credentials including email and password */
+    body: ITodoListUser.ICreate;
   };
-  export type Body = ITodoListUser.IJoin;
+  export type Body = ITodoListUser.ICreate;
   export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
@@ -100,16 +136,50 @@ export namespace join {
 }
 
 /**
- * Authenticate user via email/password (todo_list_users); issue tokens and log
- * session to todo_list_user_sessions.
+ * Authenticate a user with email and password, and issue JWT tokens for the
+ * todo_list_users table.
  *
- * Authenticates a user with email and password. On success, creates a new
- * session in todo_list_user_sessions and issues JWT tokens. References
- * todo_list_users for credential verification and session management.
+ * This endpoint authenticates existing users by validating their email and
+ * password credentials. The operation queries the todo_list_users table to
+ * locate a user record with the provided email address (emails are stored in
+ * lowercase, so the lookup is case-insensitive). Once the user record is found,
+ * the provided plaintext password is securely compared against the stored
+ * password_hash using bcrypt verification to ensure the password is correct.
+ *
+ * Authentication only succeeds if the user account is active (deleted_at is
+ * null), preventing login attempts by users whose accounts have been deleted.
+ * The last_login_at field in the user record is updated to the current UTC
+ * timestamp, recording when this successful authentication occurred. This field
+ * is used for tracking user activity and detecting inactive accounts.
+ *
+ * Upon successful authentication, a new session record is created in the
+ * todo_list_sessions table to represent this login from a specific device or
+ * browser. The session captures the client's ip_address and user_agent header,
+ * which are stored for device tracking and security monitoring to detect
+ * unusual or suspicious login patterns. Session timeout fields are initialized:
+ * created_at records the login moment, last_activity_at is set to creation time
+ * (updated with each subsequent API request), expired_at remains null (session
+ * is active until explicitly logged out), and absolute_timeout_at is set to 30
+ * days from login for enforcing maximum session duration.
+ *
+ * The endpoint generates two JWT tokens returned to the client: an access token
+ * (short-lived, typically 15 minutes) for making authenticated API requests,
+ * and a refresh token (long-lived, typically 7 days) for obtaining new access
+ * tokens when the current one expires. Both tokens include the user ID and JTI
+ * (JWT ID) claim, with the JTI enabling token revocation tracking through the
+ * todo_list_token_blacklist table. The tokens are cryptographically secure and
+ * cannot be guessed or forged.
+ *
+ * Authentication failure responses (invalid email, incorrect password, or
+ * deleted account) do not reveal which condition failed, maintaining user
+ * privacy and preventing email enumeration attacks. The response simply
+ * indicates "invalid credentials" without distinguishing between missing user
+ * or wrong password. Related operations include the registration endpoint (POST
+ * /auth/user/join) for new users and the refresh endpoint (POST
+ * /auth/user/refresh) for token renewal without re-authentication.
  *
  * @param props.connection
- * @param props.body Login credentials: email and password of existing user, as
- *   persisted in todo_list_users.
+ * @param props.body User login credentials including email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -144,10 +214,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Login credentials: email and password of existing user, as persisted
-     * in todo_list_users.
-     */
+    /** User login credentials including email and password */
     body: ITodoListUser.ILogin;
   };
   export type Body = ITodoListUser.ILogin;
@@ -195,16 +262,55 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for a user session (todo_list_users,
- * todo_list_user_sessions).
+ * Refresh an expired access token using a valid refresh token for the
+ * todo_list_users table.
  *
- * Refreshes a user's authentication tokens (access and refresh) using a valid
- * refresh token, as tracked in todo_list_users and todo_list_user_sessions.
- * Audits session per schema fields.
+ * This endpoint implements token refresh functionality, allowing clients to
+ * obtain a new access token when their current token expires, without requiring
+ * the user to re-enter their password. The operation receives a refresh token
+ * from the client, validates it, and generates a new short-lived access token
+ * for continued API access.
+ *
+ * Token validation includes: (1) verifying the refresh token signature using
+ * the configured JWT secret to ensure it has not been tampered with, (2)
+ * checking that the token has not expired (the exp claim must be greater than
+ * current time), (3) extracting the JTI (JWT ID) claim and user ID from the
+ * token payload, and (4) querying the todo_list_token_blacklist table to ensure
+ * this token has not been revoked (if the JTI exists in the blacklist, the
+ * token is invalid and refresh fails).
+ *
+ * The blacklist check prevents token reuse after logout or password change -
+ * when users explicitly log out or change their password, all their existing
+ * tokens are added to the todo_list_token_blacklist table with
+ * revocation_reason documented as 'logout' or 'password_change'. These revoked
+ * tokens cannot be refreshed or used for API requests, forcing users to
+ * re-authenticate. This implements the security requirement that logging out
+ * from all devices invalidates all tokens immediately.
+ *
+ * If the refresh token passes all validation checks, a new access token
+ * (short-lived, typically 15 minutes) is generated and returned to the client.
+ * The new access token encodes the same user ID and includes a new JTI for
+ * token tracking. The refresh token itself is not changed or reissued; it
+ * continues to be valid until its natural expiration time or until explicitly
+ * revoked.
+ *
+ * If any validation check fails (invalid signature, expired token, revoked
+ * token, malformed payload), the refresh request is rejected and the client
+ * must re-authenticate via the login endpoint. Error responses do not reveal
+ * which specific validation failed, maintaining security by not leaking
+ * information about token state.
+ *
+ * The endpoint requires a valid refresh token but does not require an access
+ * token, enabling token refresh even when the access token has expired. This
+ * allows seamless user experience where the client can obtain new access tokens
+ * without manual user intervention. Session activity tracking is also updated
+ * if a database session record exists (last_activity_at is set to current
+ * time). Related operations include the login endpoint (POST /auth/user/login)
+ * for initial authentication and the logout operation (if implemented) for
+ * explicit token revocation.
  *
  * @param props.connection
- * @param props.body Valid refresh token, provided per secure transport policy.
- *   No other parameters accepted.
+ * @param props.body Refresh token for obtaining a new access token
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -239,10 +345,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Valid refresh token, provided per secure transport policy. No other
-     * parameters accepted.
-     */
+    /** Refresh token for obtaining a new access token */
     body: ITodoListUser.IRefresh;
   };
   export type Body = ITodoListUser.IRefresh;
@@ -285,59 +388,6 @@ export namespace refresh {
         data: exp.toJSON().message,
       } as any;
     }
-    return random();
-  };
-}
-
-/**
- * Logout current user and invalidate their session (todo_list_user_sessions).
- *
- * Logs out the authenticated user by invalidating their active session in
- * todo_list_user_sessions (expiry set), revoking all JWT tokens for this
- * session. Only affects the current user's session context.
- *
- * @param props.connection
- * @path /auth/user/logout
- * @accessor api.functional.auth.user.logout
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function logout(
-  connection: IConnection,
-): Promise<logout.Response> {
-  return true === connection.simulate
-    ? logout.simulate(connection)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...logout.METADATA,
-          path: logout.path(),
-          status: null,
-        },
-      );
-}
-export namespace logout {
-  export type Response = ITodoListUser.ILogout;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/auth/user/logout",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/auth/user/logout";
-  export const random = (): ITodoListUser.ILogout =>
-    typia.random<ITodoListUser.ILogout>();
-  export const simulate = (_connection: IConnection): Response => {
     return random();
   };
 }

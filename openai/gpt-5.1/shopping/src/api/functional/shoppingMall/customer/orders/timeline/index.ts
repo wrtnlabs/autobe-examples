@@ -1,50 +1,51 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallOrderTimeline } from "../../../../../structures/IShoppingMallOrderTimeline";
 
 /**
- * Retrieve the lifecycle timeline of an order composed from
- * shopping_mall_orders and related event tables.
+ * Get a composed lifecycle timeline for a ShoppingMall order from
+ * shopping_mall_orders and related history tables.
  *
- * Retrieve the full lifecycle timeline of a specific order, composed from
- * status change events and other history records linked to the
- * `shopping_mall_orders` table.
+ * Retrieve a unified, chronological business timeline for a specific order
+ * identified by its business order code.
  *
- * Internally, the shoppingMall schema models order lifecycle changes across
- * several specialized tables. The `shopping_mall_orders` model captures the
- * current aggregate state, while `shopping_mall_order_status_events` records
- * every transition of order-level status. Additional models such as payment
- * status events, shipment tracking events, cancellation or return requests, and
- * dispute records each store their own history related to the order or its
- * lines. This endpoint collates those various records into a single
- * chronological sequence of timeline entries suitable for presentation in a
- * tracking UI.
+ * This operation reads from the `shopping_mall_orders` table and multiple
+ * related history and event tables such as
+ * `shopping_mall_order_status_histories`, `shopping_mall_order_payments`,
+ * `shopping_mall_payment_status_histories`, `shopping_mall_shipments`,
+ * `shopping_mall_shipment_events`, `shopping_mall_cancellation_requests`,
+ * `shopping_mall_refund_requests`, and `shopping_mall_disputes`. Each of these
+ * Prisma models typically contains descriptive fields and status codes that
+ * capture state transitions and business events during the order lifecycle. The
+ * API normalizes these into a consistent `IShoppingMallOrderTimeline` response
+ * so that clients do not need to query each table individually.
  *
- * Security and authorization must ensure that only actors with legitimate
- * access to the order can see its timeline. Customers should see events
- * relevant to their own orders, sellers may see events that affect their
- * portion of the order, and platform administrators may access complete
- * timelines for support, investigation, or moderation. These checks rely on the
- * relationships defined in the Prisma schema (linking orders to customers,
- * sellers, and administrators) but are enforced in higher layers, not in the
- * OpenAPI contract.
+ * From a security and authorization perspective, this endpoint is intended for
+ * authenticated customers viewing their own orders. The `authorizationActor` is
+ * set to `customer`, and the underlying implementation must ensure that the
+ * requested order belongs to the authenticated customer account before
+ * returning any data.
  *
- * The operation is strictly read-only: it never modifies `shopping_mall_orders`
- * or any event tables. It is intended to be used alongside summary and detail
- * endpoints such as the order summary retrieval. When the specified order
- * identifier does not exist, when no events are associated with it, or when the
- * caller is not authorized, the implementation should respond with appropriate
- * error codes or an empty timeline. The response structure should remain stable
- * even as new internal event tables are added, by mapping them into the generic
- * `IShoppingMallOrderTimeline` DTO.
+ * In terms of validation and business rules, the `{orderCode}` parameter must
+ * map to an existing order record in `shopping_mall_orders` that is visible to
+ * the requesting customer. If the code cannot be found or is not accessible,
+ * the operation should return a suitable error (such as 404 for not found or
+ * 403 for forbidden). The response structure orders all events by their
+ * effective timestamps, ensuring a clear story line from order placement
+ * through payments, shipments, cancellations, refunds, and disputes. Related
+ * API operations include order detail retrieval (e.g., `GET
+ * /shoppingMall/customer/orders/{orderCode}`) and tracking-specific views
+ * (e.g., `GET /shoppingMall/customer/orders/{orderCode}/tracking`), which focus
+ * on more specialized subsets of the same underlying data.
  *
  * @param props.connection
- * @param props.orderId Unique identifier of the target order in the
- *   shopping_mall_orders table whose timeline is requested.
- * @path /shoppingMall/customer/orders/:orderId/timeline
+ * @param props.orderCode Unique business identifier code of the target order
+ *   (global scope), corresponding to the `code` field with a unique constraint
+ *   in the `shopping_mall_orders` Prisma table.
+ * @path /shoppingMall/customer/orders/:orderCode/timeline
  * @accessor api.functional.shoppingMall.customer.orders.timeline.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -72,16 +73,17 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target order in the shopping_mall_orders
-     * table whose timeline is requested.
+     * Unique business identifier code of the target order (global scope),
+     * corresponding to the `code` field with a unique constraint in the
+     * `shopping_mall_orders` Prisma table.
      */
-    orderId: string & tags.Format<"uuid">;
+    orderCode: string;
   };
   export type Response = IShoppingMallOrderTimeline;
 
   export const METADATA = {
     method: "GET",
-    path: "/shoppingMall/customer/orders/:orderId/timeline",
+    path: "/shoppingMall/customer/orders/:orderCode/timeline",
     request: null,
     response: {
       type: "application/json",
@@ -90,7 +92,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/customer/orders/${encodeURIComponent(props.orderId ?? "null")}/timeline`;
+    `/shoppingMall/customer/orders/${encodeURIComponent(props.orderCode ?? "null")}/timeline`;
   export const random = (): IShoppingMallOrderTimeline =>
     typia.random<IShoppingMallOrderTimeline>();
   export const simulate = (
@@ -104,7 +106,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("orderId")(() => typia.assert(props.orderId));
+      assert.param("orderCode")(() => typia.assert(props.orderCode));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

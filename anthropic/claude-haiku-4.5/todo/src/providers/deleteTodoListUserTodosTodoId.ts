@@ -11,21 +11,18 @@ import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoListUserTodosTodoId(props: {
   user: UserPayload;
-  todoId: string;
+  todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
   const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: { id: props.todoId },
   });
 
   if (!todo) {
-    throw new HttpException("Todo item not found.", 404);
+    throw new HttpException("Todo not found", 404);
   }
 
   if (todo.user_id !== props.user.id) {
-    throw new HttpException(
-      "You do not have permission to delete this todo item.",
-      403,
-    );
+    throw new HttpException("Forbidden", 403);
   }
 
   await MyGlobal.prisma.todo_list_todos.delete({

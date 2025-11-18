@@ -15,56 +15,80 @@ export async function putTodoListUserTodosTodoId(props: {
   todoId: string & tags.Format<"uuid">;
   body: ITodoListTodo.IUpdate;
 }): Promise<ITodoListTodo> {
-  // Step 1: Retrieve the todo for this user
+  // Fetch existing todo to verify ownership and existence
   const existing = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: { id: props.todoId },
   });
 
+  // Verify todo exists
   if (!existing) {
     throw new HttpException("Todo not found", 404);
   }
 
+  // Verify user owns this todo
   if (existing.user_id !== props.user.id) {
     throw new HttpException("Forbidden", 403);
   }
 
-  // Step 2: Prepare changes
-  const nowIso = toISOStringSafe(new Date());
-  let completedAt: string | null = existing.completed_at
-    ? toISOStringSafe(existing.completed_at)
-    : null;
-  let completed = existing.completed;
+  // Verify todo is not soft-deleted
+  if (existing.deleted_at !== null) {
+    throw new HttpException("Todo not found", 404);
+  }
 
-  if ("completed" in props.body && typeof props.body.completed === "boolean") {
-    if (props.body.completed !== existing.completed) {
-      completed = props.body.completed;
-      completedAt = completed ? nowIso : null;
+  // Build update data - only include provided fields
+  const updateData: Record<string, unknown> = {};
+
+  // Add optional fields if provided
+  if (props.body.title !== undefined) {
+    updateData.title = props.body.title;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (props.body.priority !== undefined) {
+    updateData.priority = props.body.priority;
+  }
+  if (props.body.due_date !== undefined) {
+    updateData.due_date = props.body.due_date;
+  }
+
+  // Handle completion status with special timestamp logic
+  if (props.body.completed !== undefined) {
+    updateData.completed = props.body.completed;
+    if (props.body.completed === true) {
+      // Mark as completed - set completed_at to current time
+      updateData.completed_at = new Date();
+    } else {
+      // Mark as incomplete - clear completed_at
+      updateData.completed_at = null;
     }
   }
 
-  const updateData: Record<string, unknown> = {
-    ...(props.body.title !== undefined && { title: props.body.title }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.completed !== undefined && { completed: completed }),
-    ...(props.body.completed !== undefined && { completed_at: completedAt }),
-    updated_at: nowIso,
-  };
+  // Always update the updated_at timestamp
+  updateData.updated_at = new Date();
 
+  // Apply updates to database
   const updated = await MyGlobal.prisma.todo_list_todos.update({
     where: { id: props.todoId },
     data: updateData,
   });
 
+  // Transform response - convert dates and handle null/undefined properly
   return {
     id: updated.id,
     title: updated.title,
-    description: updated.description === null ? null : updated.description,
+    description: updated.description === null ? undefined : updated.description,
     completed: updated.completed,
-    completed_at: updated.completed_at
-      ? toISOStringSafe(updated.completed_at)
-      : null,
+    priority:
+      updated.priority === null
+        ? undefined
+        : typia.assert<"low" | "medium" | "high">(updated.priority),
+    due_date:
+      updated.due_date === null ? undefined : toISOStringSafe(updated.due_date),
+    completed_at:
+      updated.completed_at === null
+        ? undefined
+        : toISOStringSafe(updated.completed_at),
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
   };

@@ -1,7 +1,7 @@
 import { IPage } from "./IPage";
 import { ITodoAppGuestUser } from "./ITodoAppGuestUser";
 
-export namespace IPageITodoAppGuestuser {
+export namespace IPageITodoAppGuestUser {
   /**
    * A page.
    *

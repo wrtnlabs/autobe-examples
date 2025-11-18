@@ -3,72 +3,70 @@ import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthGuestUserJoin } from "../../../providers/postAuthGuestUserJoin";
 import { postAuthGuestUserRefresh } from "../../../providers/postAuthGuestUserRefresh";
-import { GuestuserAuth } from "../../../decorators/GuestuserAuth";
-import { GuestuserPayload } from "../../../decorators/payload/GuestuserPayload";
 
 import { ITodoAppGuestUser } from "../../../api/structures/ITodoAppGuestUser";
 
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Register a conceptual guest identity in todo_app_guestusers and return an
-   * ITodoAppGuestUser.IAuthorized payload for guestUser.
+   * Register a new todo_app_guestusers guestUser concept and issue initial
+   * ITodoAppGuestUser.IAuthorized tokens.
    *
-   * This operation registers a conceptual guest identity in the system by
-   * creating or reusing a record in the todo_app_guestusers table and returning
-   * an authorization payload for the guestUser actor.
+   * This operation registers a new guest user concept in the
+   * todo_app_guestusers table and issues initial authorization tokens for the
+   * guestUser actor. The underlying Prisma table todo_app_guestusers is
+   * designed to represent unauthenticated visitors, with an id field as the
+   * primary key and optional metadata fields. When this endpoint is called, the
+   * service will create a new row with a generated id and timestamps in
+   * created_at and updated_at, optionally using the provided external_ref to
+   * correlate with external analytics or tracking systems.
    *
-   * The underlying Prisma model todo_app_guestusers is designed for
-   * unauthenticated visitors. Its primary key id uniquely identifies the
-   * conceptual guest identity and is used as the stable actor identifier in
-   * downstream workflows. When this API is invoked, a new todo_app_guestusers
-   * row may be created with a freshly generated id, or an existing row may be
-   * reused depending on higher-level application logic such as cookie-based
-   * correlation.
+   * From a security perspective, this endpoint is intentionally public
+   * (authorizationActor is null) because guest users do not yet have any
+   * credentials or authenticated identity. However, the service must implement
+   * rate limiting and abuse prevention at an infrastructure level, as repeated
+   * creation of guest concepts could be used for resource exhaustion. The
+   * external_ref field, when supplied, should be validated as a bounded-length
+   * string to avoid log pollution or injection issues.
    *
-   * From a field perspective, the display_name column is nullable and optional.
-   * If the implementation chooses to accept an optional nickname, it can
-   * populate display_name from the request body; otherwise, it can remain null.
-   * The created_at and updated_at timestamps are always set when the row is
-   * created or modified, ensuring auditability of when the guest identity first
-   * appeared and was last touched. The deleted_at column, which is nullable,
-   * indicates whether the guest identity has been logically removed from active
-   * use; this join operation must never return an identity whose deleted_at is
-   * non-null unless the implementation has explicitly restored it.
+   * On the database side, the todo_app_guestusers table stores external_ref as
+   * a nullable string, created_at as a non-null timestamp of when the record is
+   * created, and updated_at as a non-null timestamp updated whenever the record
+   * is modified. This API operation will populate created_at and updated_at
+   * with the current server time when inserting the new guest concept row. The
+   * id field is generated as a UUID, guaranteeing uniqueness across all
+   * guestUser records.
    *
-   * Security-wise, this endpoint is public (authorizationActor is null at the
-   * HTTP layer), but the resulting ITodoAppGuestUser.IAuthorized payload must
-   * only confer the limited capabilities described for the guestUser actor: the
-   * guestUser cannot own todos or access member-only resources. The token or
-   * session information encapsulated in ITodoAppGuestUser.IAuthorized must be
-   * scoped so that it cannot be mistaken for a memberUser or adminUser identity
-   * when interacting with other APIs.
+   * The business logic for this operation does not create any todos or
+   * sessions; guest users in this system never own todo_app_todos records and
+   * do not have dedicated session tables. Instead, the returned
+   * ITodoAppGuestUser.IAuthorized payload will embed token information (such as
+   * accessToken and refreshToken properties defined in the DTO) associated with
+   * the created guest id, allowing subsequent token-based access to other
+   * public or guest-limited endpoints.
    *
-   * The join operation is conceptually the first step in a guest journey. It
-   * precedes any future evolution where a guest might upgrade to a memberUser
-   * by registering a full account. When that later flow is introduced, it
-   * should treat the todo_app_guestusers.id as a prior actor that can be linked
-   * to a new todo_app_memberusers row, but this join remains purely
-   * guest-focused.
+   * Validation rules include ensuring that external_ref, if provided, conforms
+   * to any length or format constraints defined in the
+   * ITodoAppGuestUser.IJoinRequest DTO and matches the semantics described for
+   * external_ref in the todo_app_guestusers schema: an optional reference or
+   * correlation identifier. The system should also ensure that timestamps are
+   * generated server-side and not taken from client input. If insertion fails
+   * due to database errors, the API must return an appropriate 5xx error with a
+   * generic message while logging details internally.
    *
-   * In terms of validation and error handling, the server must ensure that any
-   * new row respects unique and index constraints defined on
-   * todo_app_guestusers (such as the created_at, id index) and must handle race
-   * conditions if multiple join calls are made concurrently for the same
-   * browser context. Errors related to database persistence, invalid payloads,
-   * or internal token generation failures must be transformed into clear error
-   * codes as described in the broader error handling requirements document.
-   *
-   * This endpoint is typically used once per browser or device context at the
-   * beginning of a session. It can be combined with other public informational
-   * endpoints, and the resulting guest authorization can later be replaced by a
-   * memberUser or adminUser authorization when the user logs in through those
-   * flows.
+   * This operation is typically used at the beginning of guest journeys as
+   * described in the requirements, where an unauthenticated visitor first
+   * interacts with the todo service and needs a transient identifier for
+   * analytics or feature gating. Related operations in the same authentication
+   * workflow are the guestUser refresh endpoint, which renews tokens based on a
+   * valid refresh token, and various public read-only endpoints that accept the
+   * guest's access token to personalize or track usage without associating
+   * persistent personal data.
    *
    * @param connection
-   * @param body Optional information to initialize or update a guest identity
-   *   before issuing guestUser authorization. May include fields such as a
-   *   preferred display name.
+   * @param body Guest join request payload containing optional external
+   *   reference or metadata necessary to create a todo_app_guestusers record
+   *   and establish an authorized guestUser context.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -78,7 +76,7 @@ export class AuthGuestuserController {
     @Ip()
     ip: string,
     @TypedBody()
-    body: ITodoAppGuestUser.IJoin,
+    body: ITodoAppGuestUser.IJoinRequest,
   ): Promise<ITodoAppGuestUser.IAuthorized> {
     try {
       return await postAuthGuestUserJoin({
@@ -91,68 +89,67 @@ export class AuthGuestuserController {
   }
 
   /**
-   * Refresh an existing guestUser authorization linked to todo_app_guestusers
-   * and return a new ITodoAppGuestUser.IAuthorized payload.
+   * Refresh guestUser authorization tokens based on a valid refresh token,
+   * returning ITodoAppGuestUser.IAuthorized.
    *
-   * This operation renews the authentication context for a guestUser by
-   * validating a refresh token (or similar credential) and issuing a new
-   * ITodoAppGuestUser.IAuthorized payload while ensuring that the underlying
-   * guest identity in todo_app_guestusers remains valid.
+   * This operation refreshes authorization tokens for the guestUser actor by
+   * validating an incoming refresh token and issuing a new
+   * ITodoAppGuestUser.IAuthorized structure. The underlying guest concept is
+   * stored in the todo_app_guestusers table, which tracks the guest's id as a
+   * UUID along with optional external_ref and the created_at and updated_at
+   * timestamps. While guest users do not authenticate with passwords or
+   * credentials, their tokens must still be strongly validated to prevent
+   * unauthorized token reuse or token theft.
    *
-   * The todo_app_guestusers table provides the canonical representation of the
-   * guest actor. Each record has a primary key id used as the actor identifier
-   * during refresh. Before issuing a new token, the implementation should
-   * resolve the guestUser by this id and verify that deleted_at is null,
-   * thereby confirming that the guest identity has not been logically removed.
-   * The updated_at timestamp can be advanced to the current time to reflect
-   * that the guest identity has been actively used again, while created_at
-   * preserves the original creation moment.
+   * From a security standpoint, this endpoint requires a valid refresh token
+   * but is otherwise open in terms of actor identity, so authorizationActor is
+   * set to null and the guard layer will rely on the refresh token validation
+   * logic instead of a pre-established session. The refresh token is mapped to
+   * a specific todo_app_guestusers.id, and the service must ensure the token
+   * has not expired, has not been revoked, and matches the current guest state.
+   * Any invalid token usage should result in an appropriate 401 or 403 error
+   * response without revealing sensitive details.
    *
-   * From a field perspective, refresh does not need to modify display_name,
-   * which is nullable and optional, but if business logic allows updating a
-   * nickname during refresh, it may use the same column. The index on
-   * created_at and id continues to support efficient queries when maintenance
-   * tasks need to scan active guest identities.
+   * On the database layer, the todo_app_guestusers table itself does not store
+   * tokens; instead, it provides a stable guest id that can be embedded in
+   * tokens or used to look up associated data in other subsystems. The
+   * updated_at field may be updated when a refresh occurs to reflect the last
+   * time the guest concept was actively used, which helps with data lifecycle
+   * and retention policies described in the requirements. The external_ref
+   * field remains unchanged during refresh and continues to serve as an
+   * optional correlation identifier.
    *
-   * Security considerations for this endpoint focus on careful validation of
-   * the refresh token or equivalent credential supplied in the request body
-   * type ITodoAppGuestUser.IRefresh. Only valid, unexpired, and unrevoked
-   * credentials should result in a new ITodoAppGuestUser.IAuthorized response.
-   * Because guestUser represents a limited-capability actor that does not own
-   * todos, the grants encoded in the refreshed authorization must remain
-   * constrained to guest-accessible operations only.
+   * The request body for this operation is defined by
+   * ITodoAppGuestUser.IRefreshRequest, which encapsulates the refresh token and
+   * any additional metadata needed for validation, such as client identifier or
+   * token family details. The response body must be
+   * ITodoAppGuestUser.IAuthorized, following the naming rules for authorization
+   * responses based on the TodoApp service prefix and the guestUser actor, and
+   * will include newly issued access and refresh tokens along with guest
+   * context fields.
    *
-   * This refresh operation fits into the broader authentication workflow as the
-   * mechanism for keeping a guest session alive without creating additional
-   * todo_app_guestusers rows. It is typically called by the client when the
-   * access token is close to expiring but the user remains active in a
-   * guest-only experience. If the guest later upgrades to a full member
-   * account, memberUser login or join operations will replace the guest tokens,
-   * but this guest refresh remains valid only for guest flows.
-   *
-   * Error handling should cover invalid or missing refresh credentials,
-   * attempts to refresh for a guest identity whose deleted_at is no longer
-   * null, and internal failures during token generation. In all of these cases,
-   * the server should not issue a new authorization payload and should return
-   * structured errors consistent with the global error-handling guidelines.
+   * This operation is a core part of the guest authentication flow for the todo
+   * service, typically called after the guest has initially obtained tokens
+   * through the /auth/guestUser/join endpoint. Client applications should use
+   * this refresh endpoint before access tokens expire to maintain a seamless
+   * guest experience. If refresh fails due to invalid or expired tokens, the
+   * client may need to call the join endpoint again to obtain a new guest
+   * identity, depending on the business rules defined for guest lifecycle.
    *
    * @param connection
-   * @param body Refresh-token-style credential or proof required to renew
-   *   guestUser authorization without recreating the guest identity.
+   * @param body Guest token refresh request containing the refresh token and
+   *   related metadata required to validate and renew guestUser authorization.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
-    @GuestuserAuth()
-    guestUser: GuestuserPayload,
     @TypedBody()
-    body: ITodoAppGuestUser.IRefresh,
+    body: ITodoAppGuestUser.IRefreshRequest,
   ): Promise<ITodoAppGuestUser.IAuthorized> {
     try {
       return await postAuthGuestUserRefresh({
-        guestUser,
         body,
       });
     } catch (error) {

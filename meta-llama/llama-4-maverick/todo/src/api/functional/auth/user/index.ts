@@ -3,39 +3,30 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoUser } from "../../../structures/ITodoUser";
+import { ITodoListUser } from "../../../structures/ITodoListUser";
 
 /**
- * Register a new todo user in todo_users table and issue initial JWT tokens.
+ * Registers a new user account.
  *
- * This endpoint enables a new todo user to register for personal access to the
- * service, directly creating a record in the 'todo_users' table. All fields
- * required for account creation, such as username and password, are validated
- * against the schema constraints. Uniqueness of username is enforced at the
- * database level according to comments on 'todo_users.username'.
+ * Creates a new user account with the provided credentials. This operation
+ * validates the input data, checks for uniqueness of username and email, and
+ * securely stores the user information in the database. The user is issued a
+ * JWT token upon successful registration.
  *
- * The join process is critical for user onboarding, as described in the
- * requirements. Upon successful registration, the system issues a JWT-based
- * access token and refresh token, following the platform's authentication
- * policy. No authentication or prior session is needed to call this endpoint.
+ * The user table schema includes fields for username, email, password_hash,
+ * created_at, and updated_at. The operation ensures that the password is hashed
+ * before storage and that the username and email are unique.
  *
- * Business context: The registering todo user establishes a secure identity in
- * the application, enabling secure ownership of todo items and associations
- * with their sessions in 'todo_user_sessions'.
+ * Security considerations include validating input data to prevent SQL
+ * injection and ensuring that sensitive information like passwords are handled
+ * securely.
  *
- * Security practices such as email verification or password constraints are
- * enforced according to project requirements documented in analysis files and
- * the 'todo_users' schema. Detailed error reporting is provided for failed
- * registration attempts.
- *
- * This operation is closely related to the user login and token refresh
- * operations, serving as the initial entry point to the authentication workflow
- * for 'user' actors.
+ * The operation returns a JWT token that the user can use for authentication in
+ * subsequent requests.
  *
  * @param props.connection
- * @param props.body The required registration data for a new todo user, as
- *   defined by ITodoUser.ICreate schema (matches fields in todo_users table
- *   needed for account creation).
+ * @param props.body User registration details including username, email, and
+ *   password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -70,15 +61,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * The required registration data for a new todo user, as defined by
-     * ITodoUser.ICreate schema (matches fields in todo_users table needed
-     * for account creation).
-     */
-    body: ITodoUser.ICreate;
+    /** User registration details including username, email, and password */
+    body: ITodoListUser.ICreate;
   };
-  export type Body = ITodoUser.ICreate;
-  export type Response = ITodoUser.IAuthorized;
+  export type Body = ITodoListUser.ICreate;
+  export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -94,8 +81,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/user/join";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
+  export const random = (): ITodoListUser.IAuthorized =>
+    typia.random<ITodoListUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -122,32 +109,23 @@ export namespace join {
 }
 
 /**
- * Authenticate todo user in todo_users table and issue new JWT tokens.
+ * Authenticates a user and issues a JWT token. This operation validates the
+ * provided username and password against the stored credentials. Upon
+ * successful authentication, it issues a JWT token that the user can use for
+ * subsequent requests.
  *
- * Authenticate an existing todo user via credentials stored in the 'todo_users'
- * schema. The endpoint validates the username and password exactly as described
- * in schema comments or requirements for secure authentication.
+ * The user table schema includes fields for username, email, password_hash,
+ * created_at, and updated_at. The operation ensures that the password is
+ * correctly hashed and compared against the stored hash.
  *
- * Upon successful authentication, a new JWT-based access token and refresh
- * token are generated and returned to the user in the ITodoUser.IAuthorized DTO
- * structure. Failed login attempts (e.g., invalid credentials) result in
- * standard error responses following error handling policy.
+ * Security considerations include protecting against brute-force attacks and
+ * ensuring that sensitive information like passwords are handled securely.
  *
- * This operation implements the core authentication logic needed for a user to
- * access the todo API securely. It is publicly accessible but enforces strict
- * validation for login data.
- *
- * Business context: Successful login links the authenticated user to their
- * personal todo data through 'todo_user_sessions', as described in business
- * requirements.
- *
- * Closely related operations: user registration (join) and token refresh, which
- * together provide full authentication capability for the 'user' actor.
+ * The operation returns a JWT token that the user can use for authentication in
+ * subsequent requests.
  *
  * @param props.connection
- * @param props.body Login credentials corresponding to a user in todo_users.
- *   Defined by ITodoUser.ILogin DTO (must match schema fields for credential
- *   authentication).
+ * @param props.body User login credentials including username and password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -182,15 +160,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Login credentials corresponding to a user in todo_users. Defined by
-     * ITodoUser.ILogin DTO (must match schema fields for credential
-     * authentication).
-     */
-    body: ITodoUser.ILogin;
+    /** User login credentials including username and password */
+    body: ITodoListUser.ILogin;
   };
-  export type Body = ITodoUser.ILogin;
-  export type Response = ITodoUser.IAuthorized;
+  export type Body = ITodoListUser.ILogin;
+  export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -206,8 +180,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/user/login";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
+  export const random = (): ITodoListUser.IAuthorized =>
+    typia.random<ITodoListUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -216,114 +190,6 @@ export namespace login {
       method: METADATA.method,
       host: connection.host,
       path: login.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Refresh JWT authentication tokens for todo user using a valid refresh token.
- *
- * Refresh JWT tokens for a todo user, validating the provided refresh token
- * according to session records in 'todo_user_sessions' schema.
- *
- * This endpoint is accessible only with a valid refresh token, and returns new
- * access and refresh tokens as specified in schema and requirements. Security
- * policies on refreshing and revoking tokens are enforced as described in the
- * service configuration.
- *
- * Business context: Token refresh links authenticated clients to their ongoing
- * user sessions and allows seamless access to todo data.
- *
- * Closely related endpoints: user login (issue tokens with credentials) and
- * registration (initial join and token provisioning). Together, these endpoints
- * enable a secure, session-based authentication workflow for todo users.
- *
- * Error conditions such as expired, revoked, or invalid tokens are handled
- * precisely as documented in error-handling requirements and schema comments.
- *
- * @param props.connection
- * @param props.body Refresh token data as required for the session, matching
- *   ITodoUser.IRefresh DTO definition.
- * @setHeader token.access Authorization
- *
- * @path /auth/user/refresh
- * @accessor api.functional.auth.user.refresh
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function refresh(
-  connection: IConnection,
-  props: refresh.Props,
-): Promise<refresh.Response> {
-  const output: refresh.Response =
-    true === connection.simulate
-      ? refresh.simulate(connection, props)
-      : await PlainFetcher.fetch(
-          {
-            ...connection,
-            headers: {
-              ...connection.headers,
-              "Content-Type": "application/json",
-            },
-          },
-          {
-            ...refresh.METADATA,
-            path: refresh.path(),
-            status: null,
-          },
-          props.body,
-        );
-  connection.headers ??= {};
-  connection.headers.Authorization = output.token.access;
-  return output;
-}
-export namespace refresh {
-  export type Props = {
-    /**
-     * Refresh token data as required for the session, matching
-     * ITodoUser.IRefresh DTO definition.
-     */
-    body: ITodoUser.IRefresh;
-  };
-  export type Body = ITodoUser.IRefresh;
-  export type Response = ITodoUser.IAuthorized;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/auth/user/refresh",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/auth/user/refresh";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
-  export const simulate = (
-    connection: IConnection,
-    props: refresh.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: refresh.path(),
       contentType: "application/json",
     });
     try {

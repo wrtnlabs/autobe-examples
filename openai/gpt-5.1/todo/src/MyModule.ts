@@ -2,39 +2,35 @@ import { Module } from "@nestjs/common";
 
 import { AuthGuestuserController } from "./controllers/auth/guestUser/AuthGuestuserController";
 import { AuthMemberuserController } from "./controllers/auth/memberUser/AuthMemberuserController";
-import { AuthMemberuserPasswordController } from "./controllers/auth/memberUser/password/AuthMemberuserPasswordController";
 import { AuthAdminuserController } from "./controllers/auth/adminUser/AuthAdminuserController";
-import { TodoappGuestuserGuestusersController } from "./controllers/todoApp/guestUser/guestUsers/TodoappGuestuserGuestusersController";
+import { TodoappAdminuserSystemsettingsController } from "./controllers/todoApp/adminUser/systemSettings/TodoappAdminuserSystemsettingsController";
+import { TodoappAdminuserGuestusersController } from "./controllers/todoApp/adminUser/guestUsers/TodoappAdminuserGuestusersController";
 import { TodoappAdminuserMemberusersController } from "./controllers/todoApp/adminUser/memberUsers/TodoappAdminuserMemberusersController";
-import { TodoappMemberuserMemberusersSessionsController } from "./controllers/todoApp/memberUser/memberUsers/sessions/TodoappMemberuserMemberusersSessionsController";
+import { TodoappAdminuserMemberusersStatusController } from "./controllers/todoApp/adminUser/memberUsers/status/TodoappAdminuserMemberusersStatusController";
 import { TodoappAdminuserMemberusersSessionsController } from "./controllers/todoApp/adminUser/memberUsers/sessions/TodoappAdminuserMemberusersSessionsController";
 import { TodoappAdminuserAdminusersController } from "./controllers/todoApp/adminUser/adminUsers/TodoappAdminuserAdminusersController";
+import { TodoappAdminuserAdminusersStatusController } from "./controllers/todoApp/adminUser/adminUsers/status/TodoappAdminuserAdminusersStatusController";
 import { TodoappAdminuserAdminusersSessionsController } from "./controllers/todoApp/adminUser/adminUsers/sessions/TodoappAdminuserAdminusersSessionsController";
-import { TodoappAdminuserActorsSearchController } from "./controllers/todoApp/adminUser/actors/search/TodoappAdminuserActorsSearchController";
+import { TodoappMemberuserActorsCurrentController } from "./controllers/todoApp/memberUser/actors/current/TodoappMemberuserActorsCurrentController";
+import { TodoappMemberuserActorsCurrentSessionsController } from "./controllers/todoApp/memberUser/actors/current/sessions/TodoappMemberuserActorsCurrentSessionsController";
 import { TodoappMemberuserTodosController } from "./controllers/todoApp/memberUser/todos/TodoappMemberuserTodosController";
-import { TodoappMemberuserTodosStatussummaryController } from "./controllers/todoApp/memberUser/todos/statusSummary/TodoappMemberuserTodosStatussummaryController";
-import { TodoappAdminuserLoginattemptsController } from "./controllers/todoApp/adminUser/loginAttempts/TodoappAdminuserLoginattemptsController";
-import { TodoappAdminuserAdmintodoactionsController } from "./controllers/todoApp/adminUser/adminTodoActions/TodoappAdminuserAdmintodoactionsController";
-import { TodoappAdminuserRatelimiteventsController } from "./controllers/todoApp/adminUser/rateLimitEvents/TodoappAdminuserRatelimiteventsController";
 
 @Module({
   controllers: [
     AuthGuestuserController,
     AuthMemberuserController,
-    AuthMemberuserPasswordController,
     AuthAdminuserController,
-    TodoappGuestuserGuestusersController,
+    TodoappAdminuserSystemsettingsController,
+    TodoappAdminuserGuestusersController,
     TodoappAdminuserMemberusersController,
-    TodoappMemberuserMemberusersSessionsController,
+    TodoappAdminuserMemberusersStatusController,
     TodoappAdminuserMemberusersSessionsController,
     TodoappAdminuserAdminusersController,
+    TodoappAdminuserAdminusersStatusController,
     TodoappAdminuserAdminusersSessionsController,
-    TodoappAdminuserActorsSearchController,
+    TodoappMemberuserActorsCurrentController,
+    TodoappMemberuserActorsCurrentSessionsController,
     TodoappMemberuserTodosController,
-    TodoappMemberuserTodosStatussummaryController,
-    TodoappAdminuserLoginattemptsController,
-    TodoappAdminuserAdmintodoactionsController,
-    TodoappAdminuserRatelimiteventsController,
   ],
 })
 export class MyModule {}

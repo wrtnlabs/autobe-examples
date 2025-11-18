@@ -1,41 +1,38 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 /**
- * Authenticates and verifies a Todo List user via JWT and session validation.
- * - Accepts HTTP headers with Bearer JWT.
- * - Verifies the JWT token and asserts it represents a user actor.
- * - Ensures the provided session is valid, active, and belongs to the correct user.
- * - Throws on role mismatch, non-existent user, or invalid session.
+ * Authenticate and authorize a registered todo_list user via JWT and DB verification.
  *
- * @param request HTTP request object with headers
- * @returns Payload containing user identity for controller injection
+ * @param request Express-style HTTP request headers containing the bearer token.
+ * @returns Payload info after validating user session and identity.
+ * @throws ForbiddenException if user JWT or session is invalid.
  */
 export async function userAuthorize(request: {
   headers: {
     authorization?: string;
   };
 }): Promise<UserPayload> {
+  // Validate JWT. Throws exception if invalid.
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
-  if (payload.type !== "user") {
-    throw new ForbiddenException(`You're not user (you are ${payload.type})`);
-  }
-  // Validate that the session exists, is not expired, and belongs to the correct user (with user not deleted)
-  const session = await MyGlobal.prisma.todo_user_sessions.findFirst({
+
+  if (payload.type !== "user")
+    throw new ForbiddenException(`You're not ${payload.type}`);
+
+  // Validate session and user existence with cascading ownership check.
+  const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: payload.session_id,
+      todo_list_user_id: payload.id,
       expired_at: null,
-      todo_user_id: payload.id,
       user: {
+        // Confirm user exists
         id: payload.id,
       },
     },
   });
-  if (!session) {
-    throw new ForbiddenException("You're not enrolled or session is invalid.");
-  }
+  if (!session) throw new ForbiddenException("You're not enrolled");
   return payload;
 }

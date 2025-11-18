@@ -1,62 +1,192 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallProductReview } from "../../../../structures/IShoppingMallProductReview";
+import { IShoppingMallReview } from "../../../../structures/IShoppingMallReview";
+import { IPageIShoppingMallReview } from "../../../../structures/IPageIShoppingMallReview";
 
 /**
- * Retrieve a single ShoppingMall product review from
- * shopping_mall_product_reviews by product and review identifiers.
+ * Search and retrieve a paginated list of reviews for a specific product from
+ * shopping_mall_reviews.
  *
- * Retrieve a single detailed product review resource for a specific product in
- * the ShoppingMall catalog.
+ * Retrieve a paginated, filterable list of reviews for a specific product from
+ * the `shopping_mall_reviews` table.
  *
- * This operation targets the `shopping_mall_product_reviews` table, which
- * stores customer-authored product reviews, including star ratings and
- * free-form review content. Each review row is expected to reference a specific
- * product (from `shopping_mall_products`) and, in most cases, a customer actor
- * (from `shopping_mall_customer`). The API implementation should join or map
- * the underlying Prisma model into the `IShoppingMallProductReview` DTO, which
- * represents the detailed review view exposed to clients. Depending on the
- * schema, the DTO may also embed summarized information from related entities,
- * such as basic product data or author display name, but the main record always
- * comes from the product reviews table.
+ * This operation allows clients to list reviews that belong to a single
+ * product, identified by the `productId` path parameter, and to apply
+ * additional query criteria through the request body. The request DTO
+ * `IShoppingMallReview.IRequest` is responsible for carrying pagination options
+ * (such as page size and cursor or page index), filter conditions (for example,
+ * minimum and maximum rating, presence of review text, or time windows), and
+ * sorting preferences (such as newest first, highest or lowest rating, or
+ * helpfulness ordering). By encapsulating these options in the body of a PATCH
+ * request, the API supports complex search semantics without overloading query
+ * parameters.
  *
- * From a security and visibility perspective, this endpoint is read-only and
- * can usually be exposed publicly, since product reviews are generally visible
- * to all users visiting the product detail page. However, the implementation
- * must still respect review visibility rules configured through policy models
- * such as `shopping_mall_review_policies` or compliance flags attached to
- * products. Reviews that have been blocked, hidden due to abuse reports, or
- * restricted by age or region policies must not be returned to unauthorized
- * clients. If the platform requires review visibility to differ between public
- * users, the author, and platform administrators, role-based filtering should
- * be implemented behind this endpoint, even though the endpoint itself is
- * public in terms of authentication.
+ * From a security and authorization perspective, this operation is designed
+ * primarily for end‑user consumption on product detail and review listing
+ * pages. It typically exposes only reviews that are considered visible
+ * according to platform policies—such as excluding reviews removed by
+ * moderation, hidden due to policy violations, or restricted by legal
+ * requirements. The API contract itself remains simple, and the actual
+ * visibility rules are implemented in the domain logic backing this operation.
+ * Rate limiting and abuse protection can be applied at the gateway level to
+ * prevent scraping or excessive querying.
  *
- * The operation must validate that the `reviewId` path parameter uniquely
- * identifies a review that belongs to the product identified by `productId`. If
- * either the product or review does not exist, or if the review is not
- * associated with the given product, the implementation must return an
- * appropriate not-found error. The API should also handle cases where related
- * data (such as seller responses or moderation events from
- * `shopping_mall_product_review_seller_responses` or
- * `shopping_mall_product_review_moderation_events`) cannot be loaded, and log
- * such inconsistencies for later investigation. This endpoint is expected to be
- * used together with the product reviews listing endpoint (such as a PATCH on
- * `/products/{productId}/reviews`) and with review creation endpoints that
- * insert rows into `shopping_mall_product_reviews`.
+ * The response encapsulates the results in a paginated container
+ * `IPageIShoppingMallReview.ISummary`. Each summary element focuses on fields
+ * required for list rendering and quick scanning—rating score, short content
+ * preview, timestamps, and lightweight author display information—helping the
+ * client generate efficient UIs. Additional list metadata such as total count
+ * or cursor tokens is delivered via the page wrapper. Clients may chain this
+ * operation with more specialized endpoints, such as review detail retrieval or
+ * rating aggregate operations, to build rich product review experiences.
+ *
+ * Error cases include passing an invalid or non‑existent `productId`, sending
+ * invalid pagination parameters, or specifying filter combinations that violate
+ * validation rules defined in `IShoppingMallReview.IRequest`. In such
+ * scenarios, the service must return structured error responses with clear
+ * messages, enabling clients to correct their requests.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose review is being
- *   requested. This should match the primary key or globally unique code of a
- *   row in the `shopping_mall_products` table and is used to scope the search
- *   for the target review.
- * @param props.reviewId Unique identifier of the product review to retrieve,
- *   corresponding to a row in the `shopping_mall_product_reviews` table. The
- *   implementation must ensure that this review belongs to the product
- *   identified by `productId`.
+ * @param props.productId Unique identifier of the product whose reviews are
+ *   being queried from the shopping_mall_reviews table
+ * @param props.body Search criteria, filters, and pagination options for
+ *   querying reviews of the specified product
+ * @path /shoppingMall/products/:productId/reviews
+ * @accessor api.functional.shoppingMall.products.reviews.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Unique identifier of the product whose reviews are being queried from
+     * the shopping_mall_reviews table
+     */
+    productId: string;
+
+    /**
+     * Search criteria, filters, and pagination options for querying reviews
+     * of the specified product
+     */
+    body: IShoppingMallReview.IRequest;
+  };
+  export type Body = IShoppingMallReview.IRequest;
+  export type Response = IPageIShoppingMallReview.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/products/:productId/reviews",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/reviews`;
+  export const random = (): IPageIShoppingMallReview.ISummary =>
+    typia.random<IPageIShoppingMallReview.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a single review from shopping_mall_reviews for a specific product by
+ * reviewId.
+ *
+ * Fetch detailed information for a specific product review stored in the
+ * shopping_mall_reviews table, ensuring it belongs to the specified product.
+ *
+ * This GET /products/{productId}/reviews/{reviewId} operation is designed to
+ * return the canonical current version of a single review as persisted in
+ * shopping_mall_reviews. The reviewId path parameter corresponds directly to
+ * shopping_mall_reviews.id, while productId identifies the parent product via
+ * shopping_mall_products.id and is used to constrain the query so that only a
+ * review whose shopping_mall_product_id matches the productId is returned. The
+ * result is serialized as IShoppingMallReview, exposing fields such as the
+ * integer rating, optional title and free-form body, visibility_status
+ * indicating whether the review is publicly visible, moderation_state
+ * describing its moderation lifecycle, boolean flags for verified_purchase and
+ * incentivized status, the integer helpfulness_score used for ranking, and
+ * timestamps created_at and updated_at.
+ *
+ * From an access-control perspective, this endpoint is typically safe to expose
+ * publicly for reviews that are intended to be visible to all users. The
+ * implementation must, however, enforce the visibility semantics encoded in the
+ * visibility_status and moderation_state columns of shopping_mall_reviews.
+ * Reviews flagged as hidden, pending_moderation, or removed should be excluded
+ * or handled according to business rules; a common approach for customer-facing
+ * contexts is to treat such reviews as not found. Soft deletion is implemented
+ * via the deleted_at column on shopping_mall_reviews, so the handler must
+ * ensure that rows with a non-null deleted_at are not returned in normal
+ * responses.
+ *
+ * Internally, the service will perform a query filtered by both id and
+ * productId-matching shopping_mall_product_id to guarantee product association.
+ * If no row satisfies these constraints, it should respond with a not-found
+ * error rather than exposing cross-product or soft-deleted data. Integrators
+ * using this API should pair it with collection endpoints that list or search
+ * reviews for a product, using this detailed endpoint primarily for deep links
+ * or drill-down interactions. Any changes to visibility or moderation state are
+ * applied through separate administrative or moderation endpoints and are
+ * reflected automatically when this retrieval endpoint is called.
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the product that owns the review.
+ *   Used to verify that shopping_mall_reviews.shopping_mall_product_id matches
+ *   the requested product.
+ * @param props.reviewId Primary key of the review in shopping_mall_reviews.id
+ *   that should be retrieved.
  * @path /shoppingMall/products/:productId/reviews/:reviewId
  * @accessor api.functional.shoppingMall.products.reviews.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -85,22 +215,19 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the product whose review is being requested.
-     * This should match the primary key or globally unique code of a row in
-     * the `shopping_mall_products` table and is used to scope the search
-     * for the target review.
+     * Unique identifier of the product that owns the review. Used to verify
+     * that shopping_mall_reviews.shopping_mall_product_id matches the
+     * requested product.
      */
-    productId: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the product review to retrieve, corresponding to
-     * a row in the `shopping_mall_product_reviews` table. The
-     * implementation must ensure that this review belongs to the product
-     * identified by `productId`.
+     * Primary key of the review in shopping_mall_reviews.id that should be
+     * retrieved.
      */
-    reviewId: string;
+    reviewId: string & tags.Format<"uuid">;
   };
-  export type Response = IShoppingMallProductReview;
+  export type Response = IShoppingMallReview;
 
   export const METADATA = {
     method: "GET",
@@ -114,8 +241,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
-  export const random = (): IShoppingMallProductReview =>
-    typia.random<IShoppingMallProductReview>();
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,

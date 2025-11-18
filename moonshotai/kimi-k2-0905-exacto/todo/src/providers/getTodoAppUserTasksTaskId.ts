@@ -9,19 +9,19 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppTask } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTask";
 import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { ITodoAppCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppCategory";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function getTodoAppUserTasksTaskId(props: {
   user: UserPayload;
   taskId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppTask> {
-  // Fetch task with user and category relationships
-  const task = await MyGlobal.prisma.todo_app_tasks.findUnique({
-    where: { id: props.taskId },
+  const task = await MyGlobal.prisma.todo_app_tasks.findFirst({
+    where: {
+      id: props.taskId,
+      todo_app_user_id: props.user.id,
+    },
     include: {
       user: true,
-      category: true,
     },
   });
 
@@ -29,41 +29,23 @@ export async function getTodoAppUserTasksTaskId(props: {
     throw new HttpException("Task not found", 404);
   }
 
-  // Authorization check - ensure user owns the task
-  if (task.todo_app_user_id !== props.user.id) {
-    throw new HttpException(
-      "You don't have permission to access this task",
-      403,
-    );
-  }
-
   return {
-    id: task.id,
+    id: task.id as string & tags.Format<"uuid">,
     title: task.title,
-    description: task.description,
-    status: typia.assert<"pending" | "in-progress" | "completed">(task.status),
-    priority: typia.assert<"Low" | "Medium" | "High">(task.priority),
+    description: task.description ?? undefined,
+    status: task.status,
+    priority: task.priority ?? undefined,
     due_date: task.due_date ? toISOStringSafe(task.due_date) : null,
-    completion_order: task.completion_order,
     created_at: toISOStringSafe(task.created_at),
     updated_at: toISOStringSafe(task.updated_at),
+    completed_at: task.completed_at ? toISOStringSafe(task.completed_at) : null,
+    deleted_at: task.deleted_at ? toISOStringSafe(task.deleted_at) : undefined,
     user: {
-      id: task.user.id,
+      id: task.user.id as string & tags.Format<"uuid">,
       email: task.user.email,
+      name: task.user.name ?? undefined,
+      status: task.user.status,
       created_at: toISOStringSafe(task.user.created_at),
-      updated_at: toISOStringSafe(task.user.updated_at),
-      deleted_at: task.user.deleted_at
-        ? toISOStringSafe(task.user.deleted_at)
-        : undefined,
     },
-    category: task.category
-      ? {
-          id: task.category.id,
-          name: task.category.name,
-          description: task.category.description,
-          created_at: toISOStringSafe(task.category.created_at),
-          updated_at: toISOStringSafe(task.category.updated_at),
-        }
-      : null,
   };
 }

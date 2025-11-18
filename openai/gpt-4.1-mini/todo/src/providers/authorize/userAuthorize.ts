@@ -11,20 +11,27 @@ export async function userAuthorize(request: { headers: { authorization?: string
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id is top-level user table ID
-  // Verify session validity and that user owns the session
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      id: payload.id,
+      deleted_at: null
+    },
+  });
+
+  if (user === null) {
+    throw new ForbiddenException("You're not enrolled");
+  }
+
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: payload.session_id,
-      todoListUser: {
-        id: payload.id,
-      },
-      expired_at: null,
+      todo_list_user_id: payload.id,
+      expired_at: null
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("You're not enrolled or session expired");
+    throw new ForbiddenException("Invalid session");
   }
 
   return payload;

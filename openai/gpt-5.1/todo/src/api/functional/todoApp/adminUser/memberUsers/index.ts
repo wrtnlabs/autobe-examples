@@ -3,60 +3,56 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoAppMemberuser } from "../../../../structures/ITodoAppMemberuser";
-import { IPageITodoAppMemberuser } from "../../../../structures/IPageITodoAppMemberuser";
+import { ITodoAppMemberUser } from "../../../../structures/ITodoAppMemberUser";
+import { IPageITodoAppMemberUser } from "../../../../structures/IPageITodoAppMemberUser";
+export * as status from "./status/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Search member user accounts from the todo_app_memberusers table with
- * pagination and filters.
+ * Search and paginate member user accounts from the todo_app_memberusers table
+ * using complex filters.
  *
- * Retrieve a filtered, paginated list of member user accounts from the
- * todo_app_memberusers table for administrative review and management.
+ * Retrieve a filtered, sorted, and paginated list of member user accounts from
+ * the todo_app_memberusers table based on flexible search criteria.
  *
- * The todo_app_memberusers schema stores the primary identity records for
- * regular users of the todoApp service. Each row represents a member user with
- * a UUID primary key id, a unique email used as the login identifier and
- * potential communication channel, a password_hash that is stored only
- * internally for secure authentication, an optional display_name for
- * human-friendly naming, a status string that reflects account state (such as
- * active, inactive, disabled, or deleted), failed_login_count used by
- * authentication logic to manage lockouts, last_login_at indicating the time of
- * the last successful login, and lifecycle timestamps created_at, updated_at,
- * and deleted_at capturing when the record was created, last modified, and
- * logically deleted. This operation leverages these fields primarily for
- * filtering and sorting but takes care not to expose password_hash in any
- * response payload.
+ * According to the Prisma schema, `todo_app_memberusers` "represents the
+ * primary end-user actor of the todoApp service" and each record corresponds to
+ * an authenticated member user who can own a private collection of todos.
+ * Fields include the unique `email` used for login and communication, a secure
+ * `password_hash` which is never exposed in responses, optional `display_name`
+ * for user-friendly identification, a `status` flag indicating whether the
+ * account is active, blocked, or disabled, and standard auditing timestamps
+ * `created_at` and `updated_at`. The model is indexed on `status` and
+ * `created_at`, enabling efficient querying for administrative overviews and
+ * lifecycle-based reporting.
  *
- * From a security perspective, this API is restricted to administrative actors
- * represented by the adminUser role in the authorizationActors array. It is
- * intended for use in internal tools where admins need to search for users by
- * email, status, or time-based criteria and review account states. The
- * ITodoAppMemberUser.IRequest request body allows specifying pagination
- * parameters (such as page size and page index), sorting options (for example,
- * ordering by created_at or last_login_at), and filter conditions like status
- * equals a given value, email contains a substring, created_at between two
- * timestamps, or inclusion of accounts where deleted_at is not null. The
- * service implementation must treat password_hash as confidential and must not
- * return it in any projection. Instead, the summary view includes only safe,
- * high-level account metadata such as id, email, status, and lifecycle
- * timestamps.
+ * The request body uses the DTO type `ITodoAppMemberuser.IRequest`, which
+ * encapsulates search filters (such as desired statuses, email fragments, or
+ * created_at ranges), sorting preferences (for example, newest users first or
+ * grouped by status), and pagination parameters like page number and page size.
+ * Clients can combine these options to implement powerful user search
+ * interfaces while keeping the HTTP method as PATCH to emphasize that the
+ * operation is read-only but uses a potentially complex request payload. No
+ * path parameters are required because this endpoint operates on the entire
+ * member user collection.
  *
- * This operation is read-only and does not modify any data in
- * todo_app_memberusers. It is typically used in conjunction with the GET
- * /todoApp/adminUser/memberUsers/{memberUserId} endpoint, which retrieves full
- * details for a single member user once an administrator has located the
- * relevant account via this list search. Error behavior includes validation
- * errors when the request body provides invalid pagination or filter
- * combinations, and appropriate authorization errors when a non-admin caller
- * attempts access. Rate limiting can be applied at the infrastructure level to
- * prevent abuse of high-cost search queries, but this specification focuses on
- * the request and response contracts, leaving such cross-cutting concerns to
- * the broader platform.
+ * The response body is a paginated summary view of member users encoded as
+ * `IPageITodoAppMemberuser.ISummary`. Each summary item is expected to include
+ * non-sensitive fields suitable for administrative consoles, such as email,
+ * display name, status, and relevant timestamps, while omitting secrets like
+ * `password_hash`. The pagination container provides information such as total
+ * count and current page, allowing clients to implement infinite scroll or
+ * page-by-page navigation. Since the data includes personal account
+ * information, access must be restricted to privileged actors such as
+ * administrative users, represented by the `adminUser` role, and the
+ * implementation must enforce authorization checks and respect any applicable
+ * privacy rules. If filters are malformed or unsupported, the service should
+ * return a 400 Bad Request with clear error details derived from the validation
+ * rules of `ITodoAppMemberuser.IRequest`.
  *
  * @param props.connection
- * @param props.body Search criteria, pagination, and sorting options for
- *   querying member user accounts.
+ * @param props.body Search, filter, sorting, and pagination criteria for
+ *   querying todo_app_memberusers records.
  * @path /todoApp/adminUser/memberUsers
  * @accessor api.functional.todoApp.adminUser.memberUsers.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -86,13 +82,13 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, pagination, and sorting options for querying member
-     * user accounts.
+     * Search, filter, sorting, and pagination criteria for querying
+     * todo_app_memberusers records.
      */
-    body: ITodoAppMemberuser.IRequest;
+    body: ITodoAppMemberUser.IRequest;
   };
-  export type Body = ITodoAppMemberuser.IRequest;
-  export type Response = IPageITodoAppMemberuser.ISummary;
+  export type Body = ITodoAppMemberUser.IRequest;
+  export type Response = IPageITodoAppMemberUser.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -108,8 +104,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/todoApp/adminUser/memberUsers";
-  export const random = (): IPageITodoAppMemberuser.ISummary =>
-    typia.random<IPageITodoAppMemberuser.ISummary>();
+  export const random = (): IPageITodoAppMemberUser.ISummary =>
+    typia.random<IPageITodoAppMemberUser.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -136,49 +132,42 @@ export namespace index {
 }
 
 /**
- * Get a specific member user from the todo_app_memberusers table by UUID id
- * without exposing password hashes.
+ * Get a single TodoApp member user from the todo_app_memberusers table by ID.
  *
- * Retrieve detailed information for a single member user stored in the
- * todo_app_memberusers table, identified by its UUID primary key, while
- * ensuring password hashes are never exposed.
+ * Retrieve a single member user record from the todo_app_memberusers table by
+ * its unique identifier.
  *
- * The todo_app_memberusers schema models member user accounts for authenticated
- * end users who own personal todo lists. Each record includes a unique id of
- * type UUID, a unique email used as the login identifier and potential
- * communication channel, a password_hash that is stored and used only
- * internally for authentication, an optional display_name to show in user
- * interfaces, a status field describing whether the account is active,
- * inactive, disabled, or deleted, a failed_login_count field used by
- * authentication logic to implement lockout policies, last_login_at capturing
- * the most recent successful login time, and created_at, updated_at, and
- * deleted_at timestamps managing account lifecycle events. This operation
- * focuses on reading that data for a specific user and projecting only
- * non-sensitive fields into the response DTO.
+ * This read-only operation allows privileged backoffice or administrative
+ * clients to look up the full details of a specific authenticated member user
+ * within the TodoApp ecosystem. It is designed for use cases such as account
+ * inspection, customer support, and debugging flows described in the
+ * requirements documents, where staff need to see what data is stored for a
+ * given member user. The memberUserId path parameter corresponds to the primary
+ * key of the todo_app_memberusers model, which uniquely identifies each member
+ * user row. The response maps the underlying Prisma fields into the
+ * ITodoAppMemberUser TypeScript DTO, ensuring that only the fields explicitly
+ * modeled on todo_app_memberusers are exposed.
  *
- * The memberUserId path parameter is a string in UUID format that maps directly
- * to todo_app_memberusers.id. When invoked, the service attempts to locate the
- * matching row in todo_app_memberusers and, if found, maps it into an
- * ITodoAppMemberUser response DTO. The DTO includes relevant account metadata,
- * such as id, email, display_name, status, failed_login_count, last_login_at,
- * created_at, updated_at, and deleted_at, so that an admin can see the full
- * lifecycle state of the account. The password_hash field, while present in the
- * underlying schema, is never included in the ITodoAppMemberUser DTO and is
- * never returned in any API response, even to admins.
+ * From a security and authorization perspective, this endpoint should not be
+ * publicly accessible. Only trusted actors, such as admin users or internal
+ * services, are expected to call it. The authorizationActors is therefore set
+ * to ["adminUser"], and implementation code should verify that the caller has
+ * sufficient privileges before querying the database. Authentication
+ * credentials and session artifacts are not handled here; they are assumed to
+ * be enforced by surrounding middleware and dedicated authentication
+ * components.
  *
- * This endpoint is read-only and is restricted to administrative actors
- * represented by the adminUser role in the authorizationActors array. It is
- * typically used after an admin has located a target account through the PATCH
- * /todoApp/adminUser/memberUsers search endpoint. Error handling includes
- * returning a not-found response when no member user exists with the given
- * memberUserId and returning appropriate authorization errors for non-admin
- * callers. The operation does not perform any authentication itself and must
- * not be confused with login or signup flows, which are handled by dedicated
- * authentication services outside the scope of this API.
+ * In relation to other APIs, this operation is typically used alongside member
+ * user search endpoints (for example, a PATCH /memberUsers index-style
+ * operation) where an administrator first filters down to a set of member users
+ * and then drills into an individual record by calling this GET endpoint. Error
+ * handling should distinguish between invalid identifier formats (treated as a
+ * bad request) and a well-formed identifier that does not correspond to any
+ * existing todo_app_memberusers row (treated as a not-found error).
  *
  * @param props.connection
- * @param props.memberUserId Unique identifier (UUID) of the target member user
- *   in the todo_app_memberusers table.
+ * @param props.memberUserId Unique identifier of the target member user in the
+ *   todo_app_memberusers table.
  * @path /todoApp/adminUser/memberUsers/:memberUserId
  * @accessor api.functional.todoApp.adminUser.memberUsers.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -207,12 +196,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier (UUID) of the target member user in the
+     * Unique identifier of the target member user in the
      * todo_app_memberusers table.
      */
-    memberUserId: string & tags.Format<"uuid">;
+    memberUserId: string;
   };
-  export type Response = ITodoAppMemberuser;
+  export type Response = ITodoAppMemberUser;
 
   export const METADATA = {
     method: "GET",
@@ -226,8 +215,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/todoApp/adminUser/memberUsers/${encodeURIComponent(props.memberUserId ?? "null")}`;
-  export const random = (): ITodoAppMemberuser =>
-    typia.random<ITodoAppMemberuser>();
+  export const random = (): ITodoAppMemberUser =>
+    typia.random<ITodoAppMemberUser>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -254,46 +243,45 @@ export namespace at {
 }
 
 /**
- * Update an existing member user in the `todo_app_memberusers` table.
+ * Update a TodoApp member user record in the todo_app_memberusers table by ID.
  *
- * Update an existing member user record in the `todo_app_memberusers` table.
+ * Update mutable attributes of a member user stored in the todo_app_memberusers
+ * table, using its unique identifier as the target.
  *
- * This operation allows an authorized actor to modify the properties of a
- * member user account that already exists in the system. The `memberUserId`
- * path parameter is used to locate the target row in the `todo_app_memberusers`
- * Prisma model, and the request body supplies the new field values using the
- * `ITodoAppMemberUser.IUpdate` structure. The update can include editable
- * profile fields and configuration fields that are explicitly permitted by the
- * service requirements, while core identifiers remain immutable and are not
- * changed by this endpoint.
+ * This operation enables administrative or internal management tools to modify
+ * information about an existing TodoApp member user. Typical use cases include
+ * correcting user profile data, changing high-level account flags that are
+ * modeled directly on todo_app_memberusers, or updating configuration fields
+ * that influence how the TodoApp behaves for that user. The memberUserId path
+ * parameter identifies the row in todo_app_memberusers that will be updated,
+ * while the request body follows the ITodoAppMemberUser.IUpdate DTO, which
+ * mirrors the updatable columns of that Prisma model.
  *
- * Security-wise, this endpoint should not be publicly accessible. Only
- * authenticated administrative or back-office tooling should call this API,
- * because changing another user's account data has direct implications for
- * access, auditing, and compliance. The controller and service layers must
- * therefore perform proper authorization checks before executing the Prisma
- * update on `todo_app_memberusers`. In addition, the update logic must enforce
- * all field-level validation rules defined for member users, such as length
- * limits, allowed characters, or enum values, and return appropriate error
- * responses if the incoming payload violates those constraints.
+ * All incoming data is validated against both the static type shape and the
+ * business rules described in the requirements documentation. For instance, the
+ * implementation should enforce constraints such as required profile fields,
+ * maximum string lengths, and valid state transitions between different member
+ * user statuses, if these are defined on the todo_app_memberusers model. Fields
+ * that are not present in ITodoAppMemberUser.IUpdate, including sensitive
+ * authentication properties or system-managed timestamps, must be ignored or
+ * rejected if sent by the client to preserve data integrity.
  *
- * At the data layer, the implementation interacts directly with the
- * `todo_app_memberusers` model, ensuring that only defined columns are updated
- * and that any relational integrity with other tables—such as todo ownership or
- * session associations—is preserved. If related tables like
- * `todo_app_memberuser_sessions` exist, they are not directly modified by this
- * operation, but their behavior may depend on the updated user status (for
- * example, disabling a user may require revoking or ignoring existing sessions
- * at a later stage). Related operations include reading a member user's details
- * via a GET endpoint on the same resource and deleting a member user via the
- * corresponding DELETE operation; together these form the management surface
- * for member user accounts.
+ * Because this endpoint can significantly change user data, it must be
+ * restricted to trusted actors only. The authorizationActors array is set to
+ * ["adminUser"], meaning only administrative users should be allowed to perform
+ * member user updates. In a typical workflow, an admin might first retrieve the
+ * current user record with GET /memberUsers/{memberUserId}, present it in a UI,
+ * let the operator make edits, and then submit those changes through this PUT
+ * endpoint. Error handling must clearly differentiate between invalid payloads,
+ * authorization failures, and the case where the specified memberUserId does
+ * not correspond to any todo_app_memberusers record.
  *
  * @param props.connection
- * @param props.memberUserId Unique identifier of the target member user record
- *   in the `todo_app_memberusers` table to be updated.
- * @param props.body New values for the editable fields of the member user
- *   account to be applied to the existing record.
+ * @param props.memberUserId Unique identifier of the member user record to
+ *   update in the todo_app_memberusers table.
+ * @param props.body Payload containing the fields to update on the target
+ *   member user, following the ITodoAppMemberUser.IUpdate schema derived from
+ *   todo_app_memberusers.
  * @path /todoApp/adminUser/memberUsers/:memberUserId
  * @accessor api.functional.todoApp.adminUser.memberUsers.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -323,19 +311,20 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the target member user record in the
-     * `todo_app_memberusers` table to be updated.
+     * Unique identifier of the member user record to update in the
+     * todo_app_memberusers table.
      */
     memberUserId: string;
 
     /**
-     * New values for the editable fields of the member user account to be
-     * applied to the existing record.
+     * Payload containing the fields to update on the target member user,
+     * following the ITodoAppMemberUser.IUpdate schema derived from
+     * todo_app_memberusers.
      */
-    body: ITodoAppMemberuser.IUpdate;
+    body: ITodoAppMemberUser.IUpdate;
   };
-  export type Body = ITodoAppMemberuser.IUpdate;
-  export type Response = ITodoAppMemberuser;
+  export type Body = ITodoAppMemberUser.IUpdate;
+  export type Response = ITodoAppMemberUser;
 
   export const METADATA = {
     method: "PUT",
@@ -352,8 +341,8 @@ export namespace update {
 
   export const path = (props: Omit<Props, "body">) =>
     `/todoApp/adminUser/memberUsers/${encodeURIComponent(props.memberUserId ?? "null")}`;
-  export const random = (): ITodoAppMemberuser =>
-    typia.random<ITodoAppMemberuser>();
+  export const random = (): ITodoAppMemberUser =>
+    typia.random<ITodoAppMemberUser>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -381,38 +370,52 @@ export namespace update {
 }
 
 /**
- * Delete an existing member user from the `todo_app_memberusers` table.
+ * Permanently erase a member user account row from the todo_app_memberusers
+ * table by id.
  *
- * Permanently delete a member user record from the `todo_app_memberusers`
- * table.
+ * Erase a specific member user account from the todoApp system using its
+ * primary key identifier.
  *
- * This operation allows an authorized administrative actor to remove a member
- * user account identified by the `memberUserId` path parameter. When invoked,
- * the service locates the targeted row in the `todo_app_memberusers` Prisma
- * model and issues a deletion command that removes the record from persistent
- * storage. No request body is required, because the only necessary input for
- * this action is the unique identifier of the member user.
+ * The todo_app_memberusers Prisma table represents authenticated member users
+ * who own private collections of todo items. Each row includes an id as the
+ * primary key, a unique email used for login, a password_hash storing a secure
+ * one-way hash of the password, an optional display_name, a status string that
+ * governs whether todo operations are allowed, and created_at and updated_at
+ * timestamps for lifecycle tracking. This DELETE operation targets a single row
+ * in that table, identified by the memberUserId path parameter which
+ * corresponds directly to the id column.
  *
- * From a security and governance standpoint, this operation must be restricted
- * to administrative tooling and must not be exposed to general users. Deleting
- * a member user can have significant consequences for data integrity and user
- * experience, so access control checks are essential. The service should
- * confirm that the caller is allowed to perform account-level deletion and
- * should handle cases where the member user does not exist by returning an
- * appropriate not-found response.
+ * From a security and authorization perspective, this operation must only be
+ * accessible to administrative actors with sufficient privileges to manage user
+ * accounts globally. Ordinary member users should never be able to erase their
+ * own account via this administrative endpoint; user-facing account closure
+ * flows, if any, would be handled separately. The controller and service
+ * implementation should enforce actor checks consistent with the
+ * authorizationActors definition and may additionally log audit information
+ * when an account is erased.
  *
- * At the persistence layer, the deletion logic must respect relationships
- * defined in the `todo_app_memberusers` Prisma schema. Depending on the
- * project's retention policies, the service might choose to handle related
- * todos or other domain entities before or after invoking this endpoint, but
- * those behaviors occur in separate operations. This endpoint focuses solely on
- * removing the member user row and is typically used in conjunction with read
- * and update operations on the same resource to complete the administrative
- * lifecycle for member accounts.
+ * When the request is processed, the backend will attempt to find the member
+ * user with the given id. If no matching record exists, the service should
+ * return a standard not-found error, indicating that the requested member user
+ * does not exist or has already been removed. If the record exists, the service
+ * performs a hard delete against todo_app_memberusers. Because todo_app_todos
+ * contains foreign keys referencing todo_app_memberusers.id, the implementation
+ * must ensure that related todos are handled appropriately—either through
+ * cascading constraints at the database layer or by transactional cleanup logic
+ * in the service—so that referential integrity is preserved and no orphaned
+ * todo records remain.
+ *
+ * Related operations include administrative inspection or status changes of
+ * member accounts, such as the PUT /memberUsers/{memberUserId}/status operation
+ * which updates the status field without removing the account. Clients will
+ * commonly call a search or detail endpoint first to confirm the target account
+ * and then invoke this erase operation as a final step. Error handling should
+ * clearly distinguish between authorization failures, missing records, and
+ * constraint violations to make operator workflows predictable.
  *
  * @param props.connection
- * @param props.memberUserId Unique identifier of the target member user record
- *   in the `todo_app_memberusers` table to be deleted.
+ * @param props.memberUserId Unique identifier (UUID) of the target member user
+ *   account in the todo_app_memberusers table.
  * @path /todoApp/adminUser/memberUsers/:memberUserId
  * @accessor api.functional.todoApp.adminUser.memberUsers.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -420,7 +423,7 @@ export namespace update {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<void> {
+): Promise<erase.Response> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -441,11 +444,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the target member user record in the
-     * `todo_app_memberusers` table to be deleted.
+     * Unique identifier (UUID) of the target member user account in the
+     * todo_app_memberusers table.
      */
-    memberUserId: string;
+    memberUserId: string & tags.Format<"uuid">;
   };
+  export type Response = ITodoAppMemberUser;
 
   export const METADATA = {
     method: "DELETE",
@@ -459,11 +463,12 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/todoApp/adminUser/memberUsers/${encodeURIComponent(props.memberUserId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+  export const random = (): ITodoAppMemberUser =>
+    typia.random<ITodoAppMemberUser>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): void => {
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,

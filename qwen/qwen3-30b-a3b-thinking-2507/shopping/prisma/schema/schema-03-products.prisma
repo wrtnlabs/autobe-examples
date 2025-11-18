@@ -1,0 +1,292 @@
+/// Core product listings managed by sellers. Each product represents a
+/// primary entity with unique characteristics, variants, and pricing.
+///
+/// Contains product title, description, base price, category associations,
+/// and lifecycle management attributes. These products are visible in the
+/// main catalog for customer browsing and purchasing.
+///
+/// Each product can have multiple variants (SKUs) for different colors,
+/// sizes, or options, all tracked separately for inventory purposes. The
+/// system automatically displays available variants based on stock levels.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product name displayed to customers. Must be descriptive and unique per
+  /// catalog.
+  name String
+  
+  /// Detailed description of the product, including key features, materials,
+  /// and usage instructions.
+  description String?
+  
+  /// Base price of the product in USD, excluding tax, for the main product
+  /// listing.
+  price Float
+  
+  /// Reference to the main product category. {@link
+  /// shopping_mall_product_categories.id}.
+  category_id String?
+  
+  /// Date and time when the product was first created in the system.
+  created_at DateTime
+  
+  /// Date and time when the product was last updated, including variant
+  /// changes.
+  updated_at DateTime
+  
+  /// Date and time when the product was deleted (soft delete). Null indicates
+  /// active product.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_product_ratings shopping_mall_product_ratings[]
+  
+  @@unique([name])
+  @@index([category_id])
+}
+
+/// Product variants (SKUs) representing different color, size, or option
+/// combinations. Each variant is a distinct entity with independent
+/// inventory and pricing.
+///
+/// Manages inventory for specific product configurations, with each variant
+/// having its own unique SKU, price, and availability status. The product
+/// variants directly determine what options are available for customers to
+/// purchase.
+///
+/// Each variant is connected to the main product through a foreign key
+/// relationship, allowing for accurate inventory tracking at the SKU level
+/// and efficient order fulfillment.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main product. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique stock keeping unit (SKU) identifier for the variant. Generated per
+  /// product with color/size combination.
+  sku String
+  
+  /// Color option for the product variant. Null indicates no color distinction.
+  color String?
+  
+  /// Size option for the product variant. Null indicates no size distinction.
+  size String?
+  
+  /// Price of the specific variant, which may differ from the base product
+  /// price.
+  price Float
+  
+  /// Current inventory count for this specific variant (SKU). Tracks real-time
+  /// availability.
+  inventory Int
+  
+  /// Date and time when this product variant was created.
+  created_at DateTime
+  
+  /// Date and time when this product variant's inventory or details were last
+  /// updated.
+  updated_at DateTime
+  
+  /// Date and time when this variant was soft-deleted. Null indicates active
+  /// inventory status.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory shopping_mall_inventory?
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([sku])
+  @@index([shopping_mall_product_id])
+}
+
+/// Product category structure used for organizing products in the catalog.
+/// Each category represents an organizational unit for products.
+///
+/// Contains hierarchical category mappings where categories can have
+/// parent-child relationships for nested categorization. This structure
+/// enables comprehensive product organization without needing to recreate
+/// category information for each product.
+///
+/// Each category appears in the catalog navigation and is used as filters
+/// for product searches by customers. The system ensures that categories
+/// remain consistent across the entire product library.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent category for hierarchical organization. {@link
+  /// shopping_mall_product_categories.id}.
+  parent_category_id String?
+  
+  /// Category name displayed in product catalog navigation. Must be
+  /// descriptive and distinct.
+  name String
+  
+  /// URL-friendly identifier for the category used in navigation paths. Must
+  /// be unique across all categories.
+  slug String
+  
+  /// Date and time when the category was first created in the system.
+  created_at DateTime
+  
+  /// Date and time when the category was last updated, including name or
+  /// structure changes.
+  updated_at DateTime
+  
+  /// Date and time when the category was soft-deleted. Null indicates active
+  /// category.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@unique([slug])
+  @@index([parent_category_id])
+}
+
+/// Customer feedback on product listings, including numerical ratings and
+/// written comments. Each review represents a verified customer experience
+/// with a purchased item.
+///
+/// Contains both a star rating (1-5) and optional text comments from
+/// customers who have purchased the product. Reviews are moderated for
+/// compliance before being displayed on product pages.
+///
+/// The review system enables customers to make informed purchasing decisions
+/// based on real user experiences, and provides sellers with valuable
+/// feedback on their product quality and descriptions.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being reviewed. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the customer who submitted the review. {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Numeric rating given by the customer, between 1 and 5 stars.
+  rating Int
+  
+  /// Optional written feedback from the customer about their experience with
+  /// the product.
+  comment String?
+  
+  /// Date and time when the review was submitted by the customer.
+  created_at DateTime
+  
+  /// Date and time when the review was last modified (e.g., updated comment).
+  updated_at DateTime
+  
+  /// Date and time when the review was soft-deleted (usually for violation).
+  /// Null indicates active review.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, customer_id], map: "shopping_mall_product_reviews_shopping_mall_product_id_072ae5eb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, rating], map: "shopping_mall_product_reviews_shopping_mall_product_id_8b20f8a1")
+  @@index([customer_id])
+}
+
+/// Store individual ratings for products as separate records. This table
+/// contains numerical ratings (1-5) provided by customers for specific
+/// products.
+///
+/// Each rating is associated with a product and a customer who submitted it.
+/// While reviews include comments, ratings focus solely on the numerical
+/// score without additional textual feedback.
+///
+/// This table supports analytics and aggregation of rating data, allowing
+/// the system to calculate average ratings across all customer submissions.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being rated. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the customer who provided the rating. {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Numeric rating given to the product, between 1 and 5 stars.
+  rating Int
+  
+  /// Date and time when the rating was submitted by the customer.
+  created_at DateTime
+  
+  /// Date and time when the rating was last modified (if applicable).
+  updated_at DateTime
+  
+  /// Date and time when the rating was soft-deleted. Null indicates active
+  /// rating.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, customer_id], map: "shopping_mall_product_ratings_shopping_mall_product_id_8d4fb024")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, rating], map: "shopping_mall_product_ratings_shopping_mall_product_id_8e6c4923")
+  @@index([customer_id])
+}

@@ -4,92 +4,101 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test successful user authentication workflow.
+ * Test successful user login with valid credentials.
  *
- * This test validates the complete user authentication process by first
- * registering a new user account and then using the same credentials to log in.
- * It verifies that the system properly authenticates the user, validates
- * credentials against stored hashes, generates new authentication tokens, and
- * returns complete user identity information. The test also validates session
- * context recording including IP, href, and referrer tracking.
+ * This E2E test validates the complete authentication workflow by first
+ * creating a user account and then testing login functionality. It verifies
+ * password comparison against stored hash, proper JWT token generation, and
+ * account status validation that allows 'pending_verification' accounts to
+ * authenticate.
+ *
+ * The test ensures that the login endpoint correctly handles session context
+ * information and returns comprehensive user data with authentication tokens.
  */
 export async function test_api_user_login_success(connection: api.IConnection) {
-  // Step 1: Create user account for login testing
+  // Step 1: Create a user account for login testing
   const userEmail = typia.random<string & tags.Format<"email">>();
-  const userPassword = RandomGenerator.alphaNumeric(12);
+  const userPassword = "TestPassword123";
+  const userName = RandomGenerator.name();
 
-  const registeredUser = await api.functional.auth.user.join(connection, {
+  const createdUser = await api.functional.auth.user.join(connection, {
     body: {
       email: userEmail,
       password: userPassword,
-    } satisfies ITodoListUser.ICreate,
+      name: userName,
+      status: "pending_verification",
+      href: "https://todoapp.com/login" satisfies string as string,
+      referrer: "https://todoapp.com/" satisfies string as string,
+    } satisfies ITodoAppUser.ICreate,
   });
-  typia.assert(registeredUser);
+  typia.assert(createdUser);
 
-  // Step 2: Login with the same credentials
+  // Step 2: Test successful login with valid credentials
   const loginResponse = await api.functional.auth.user.login(connection, {
     body: {
       email: userEmail,
       password: userPassword,
-      ip: "192.168.1.100",
-      href: "https://example.com/auth/login",
-      referrer: "https://example.com/dashboard",
-    } satisfies ITodoListUser.ILogin,
+      href: "https://todoapp.com/dashboard" satisfies string as string,
+      referrer: "https://todoapp.com/login" satisfies string as string,
+    } satisfies ITodoAppUser.ILogin,
   });
   typia.assert(loginResponse);
 
-  // Step 3: Validate user identity information
+  // Step 3: Validate login response structure and data
   TestValidator.equals(
-    "user ID should match registered user",
+    "user ID should match created user",
     loginResponse.id,
-    registeredUser.id,
+    createdUser.id,
   );
   TestValidator.equals(
-    "user email should match registered email",
+    "user email should match",
     loginResponse.email,
-    registeredUser.email,
+    userEmail,
   );
+  TestValidator.equals("user name should match", loginResponse.name, userName);
   TestValidator.equals(
-    "user status should be active",
+    "user status should be pending_verification",
     loginResponse.status,
-    "active",
+    "pending_verification",
   );
 
-  // Step 4: Validate authentication tokens
+  // Step 4: Validate token generation
   TestValidator.predicate(
-    "access token should be present",
+    "access token should be generated",
     loginResponse.token.access.length > 0,
   );
   TestValidator.predicate(
-    "refresh token should be present",
+    "refresh token should be generated",
     loginResponse.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "token expiration should be valid date",
+    "token expiration should be valid",
     new Date(loginResponse.token.expired_at) > new Date(),
   );
   TestValidator.predicate(
-    "refreshable until should be valid date",
+    "refresh token expiration should be valid",
     new Date(loginResponse.token.refreshable_until) > new Date(),
   );
 
-  // Step 5: Validate token structure
-  typia.assert<IAuthorizationToken>(loginResponse.token);
+  // Step 5: Validate timestamps
+  TestValidator.predicate(
+    "created_at timestamp should be valid",
+    new Date(loginResponse.created_at) <= new Date(),
+  );
+  TestValidator.predicate(
+    "updated_at timestamp should be valid",
+    new Date(loginResponse.updated_at) <= new Date(),
+  );
 
-  // Step 6: Validate session context recording (indirectly through successful login)
-  TestValidator.predicate(
-    "user should have creation timestamp",
-    loginResponse.created_at.length > 0,
-  );
-  TestValidator.predicate(
-    "user should have update timestamp",
-    loginResponse.updated_at.length > 0,
-  );
-  TestValidator.predicate(
-    "deleted_at should be undefined for active user",
-    loginResponse.deleted_at === undefined,
-  );
+  // Step 6: Validate last_login_at is updated (should be more recent than created_at)
+  if (loginResponse.last_login_at) {
+    TestValidator.predicate(
+      "last_login_at should be after account creation",
+      new Date(loginResponse.last_login_at) >=
+        new Date(loginResponse.created_at),
+    );
+  }
 }

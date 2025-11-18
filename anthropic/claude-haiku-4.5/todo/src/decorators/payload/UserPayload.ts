@@ -1,13 +1,12 @@
 import { tags } from "typia";
 
-/** Structure of authenticated user payload injected via UserAuth. */
 export interface UserPayload {
-  /** Top-level user table ID (primary user identifier). */
+  /** Top-level user table ID (the fundamental user identifier in the system). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID for the current authentication session. */
+  /** Session ID associated with the authenticated user. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Role type discriminator ('user'). */
+  /** Discriminator for the role type. */
   type: "user";
 }

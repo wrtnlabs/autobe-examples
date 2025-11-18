@@ -3,29 +3,15 @@ import { IShoppingMallCustomer } from "./IShoppingMallCustomer";
 
 export namespace IPageIShoppingMallCustomer {
   /**
-   * Paginated collection of customer account summary records.
+   * A page.
    *
-   * Wraps `IShoppingMallCustomer.ISummary` items together with pagination
-   * metadata for administrative search over the `shopping_mall_customer`
-   * table.
+   * Collection of records with pagination information.
    */
   export type ISummary = {
-    /**
-     * Pagination metadata for the customer search result.
-     *
-     * Represents the current page index, page size, total records, and
-     * total pages returned when searching `shopping_mall_customer` accounts
-     * for platform administrators.
-     */
+    /** Page information. */
     pagination: IPage.IPagination;
 
-    /**
-     * List of customer summary records for the current page.
-     *
-     * Each element is an `IShoppingMallCustomer.ISummary` rather than a
-     * full customer detail DTO, optimized for administrative list grids and
-     * search views.
-     */
+    /** List of records. */
     data: IShoppingMallCustomer.ISummary[];
   };
 }

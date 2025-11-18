@@ -13,86 +13,74 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthAdminUserJoin(props: {
   body: ITodoAppAdminUser.IJoin;
 }): Promise<ITodoAppAdminUser.IAuthorized> {
-  // Check for existing admin with same email
-  const existing = await MyGlobal.prisma.todo_app_adminusers.findFirst({
-    where: { email: props.body.email },
-  });
+  const { body } = props;
 
-  if (existing) {
-    throw new HttpException("Email already registered", 409);
-  }
-
-  // Hash password
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
-
-  const nowDate = new Date();
-  const nowIso = toISOStringSafe(nowDate);
-
-  const adminId = v4() as string & tags.Format<"uuid">;
-
-  // Create admin user
-  let admin: Prisma.todo_app_adminusersUncheckedCreateInput & {
-    id: string & tags.Format<"uuid">;
-    last_login_at: Date | null;
-    created_at: Date;
-    updated_at: Date;
-    deleted_at: Date | null;
-  };
-
-  try {
-    admin = (await MyGlobal.prisma.todo_app_adminusers.create({
-      data: {
-        id: adminId,
-        email: props.body.email,
-        password_hash: hashedPassword,
-        display_name: props.body.display_name ?? null,
-        status: "active",
-        failed_login_count: 0,
-        last_login_at: null,
-        created_at: nowDate,
-        updated_at: nowDate,
-        deleted_at: null,
-      },
-    })) as typeof admin;
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      // Unique constraint violation on email
-      throw new HttpException("Email already registered", 409);
-    }
-    throw error;
-  }
-
-  // Create session for admin user
-  const sessionId = v4() as string & tags.Format<"uuid">;
-
-  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  const accessExpiresIso = toISOStringSafe(accessExpiresDate);
-  const refreshExpiresIso = toISOStringSafe(refreshExpiresDate);
-
-  const session = await MyGlobal.prisma.todo_app_adminuser_sessions.create({
-    data: {
-      id: sessionId,
-      todo_app_adminuser_id: admin.id,
-      // No IP/href/referrer come from props for this operation; use empty string defaults.
-      ip: "",
-      href: "",
-      referrer: "",
-      created_at: nowDate,
-      expired_at: accessExpiresDate,
+  // 1. Check for duplicate email
+  const existingAdmin = await MyGlobal.prisma.todo_app_adminusers.findFirst({
+    where: {
+      email: body.email,
     },
   });
 
+  if (existingAdmin) {
+    throw new HttpException("Admin email already registered", 409);
+  }
+
+  // 2. Hash password
+  const passwordHash = await PasswordUtil.hash(body.password);
+
+  // 3. Compute current timestamp and token expiry timestamps as ISO strings
+  const now = toISOStringSafe(new Date());
+
+  const accessExpiryDate = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiredAt = toISOStringSafe(accessExpiryDate);
+  const refreshableUntil = toISOStringSafe(refreshExpiryDate);
+
+  // 4. Create admin user and session within a single transaction callback
+  const { adminUser, adminSession } = await MyGlobal.prisma.$transaction(
+    async (tx) => {
+      const createdAdminUser = await tx.todo_app_adminusers.create({
+        data: {
+          id: v4(),
+          email: body.email,
+          password_hash: passwordHash,
+          display_name:
+            body.display_name === undefined ? undefined : body.display_name,
+          status: body.status,
+          created_at: now,
+          updated_at: now,
+        },
+      });
+
+      const createdAdminSession = await tx.todo_app_adminuser_sessions.create({
+        data: {
+          id: v4(),
+          todo_app_adminuser_id: createdAdminUser.id,
+          ip: body.ip,
+          href: body.href,
+          referrer: body.referrer,
+          created_at: now,
+          expired_at: null,
+        },
+      });
+
+      return {
+        adminUser: createdAdminUser,
+        adminSession: createdAdminSession,
+      };
+    },
+  );
+
+  // 5. Generate JWT tokens for the newly created admin user and session
+  const tokenCreatedAt = toISOStringSafe(new Date());
+
   const accessToken = jwt.sign(
     {
-      type: "admin",
-      id: admin.id,
-      session_id: session.id,
-      created_at: nowIso,
+      type: "adminUser",
+      id: adminUser.id,
+      session_id: adminSession.id,
+      created_at: tokenCreatedAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -103,11 +91,11 @@ export async function postAuthAdminUserJoin(props: {
 
   const refreshToken = jwt.sign(
     {
-      type: "admin",
-      id: admin.id,
-      session_id: session.id,
+      type: "adminUser",
+      id: adminUser.id,
+      session_id: adminSession.id,
       tokenType: "refresh",
-      created_at: nowIso,
+      created_at: tokenCreatedAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -119,30 +107,19 @@ export async function postAuthAdminUserJoin(props: {
   const token: IAuthorizationToken = {
     access: accessToken,
     refresh: refreshToken,
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshableUntil,
   };
 
+  // 6. Build response conforming to ITodoAppAdminUser.IAuthorized
   return {
-    id: admin.id,
-    email: admin.email as string & tags.Format<"email">,
-    display_name: admin.display_name === null ? undefined : admin.display_name,
-    status: admin.status,
-    failed_login_count: admin.failed_login_count,
-    last_login_at:
-      admin.last_login_at === null
-        ? undefined
-        : (toISOStringSafe(admin.last_login_at) as string &
-            tags.Format<"date-time">),
-    created_at: toISOStringSafe(admin.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(admin.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at:
-      admin.deleted_at === null
-        ? undefined
-        : (toISOStringSafe(admin.deleted_at) as string &
-            tags.Format<"date-time">),
+    id: adminUser.id,
+    email: adminUser.email,
+    display_name:
+      adminUser.display_name === undefined ? undefined : adminUser.display_name,
+    status: adminUser.status,
+    created_at: toISOStringSafe(adminUser.created_at),
+    updated_at: toISOStringSafe(adminUser.updated_at),
     token,
   };
 }

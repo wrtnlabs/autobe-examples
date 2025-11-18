@@ -1,65 +1,56 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallProductSku } from "../../../../../structures/IShoppingMallProductSku";
-export * as optionValueAssignments from "./optionValueAssignments/index";
+import { IShoppingMallSku } from "../../../../../structures/IShoppingMallSku";
+import { IPageIShoppingMallSku } from "../../../../../structures/IPageIShoppingMallSku";
 
 /**
- * Create a new SKU variant (shopping_mall_product_skus) under a product
- * (shopping_mall_products) identified by productCode.
+ * Create a new SKU (shopping_mall_skus) under the specified product.
  *
- * Create a new SKU variant for a specific product in the shopping mall catalog.
+ * Create a new SKU for the specified product in the catalog.
  *
- * This operation primarily manipulates the shopping_mall_product_skus table,
- * which stores SKU-level variants associated with products in
- * shopping_mall_products. The caller specifies the parent product via the
- * productCode path parameter, which is the globally unique business identifier
- * for a product (typically defined in Prisma with a constraint such as
- * @@unique([code]) on the shopping_mall_products model). Using this code, the
- * service resolves the parent product record and then creates a new SKU row
- * linked to it.
+ * This operation writes to the shopping_mall_skus Prisma table, which models
+ * concrete sellable variants of a product owned by a seller. The SKU represents
+ * a specific combination of product attributes, such as size and color, and is
+ * tied to its parent product record in shopping_mall_products via a foreign
+ * key. The request payload, defined by IShoppingMallSku.ICreate, supplies the
+ * necessary fields to construct the SKU, including identifiers that relate to
+ * inventory state definitions in shopping_mall_sku_inventory_states and, when
+ * applicable, attribute value combinations tied to
+ * shopping_mall_product_attribute_values via the
+ * shopping_mall_sku_attribute_values junction table.
  *
- * The request body conforms to IShoppingMallProductSku.ICreate, containing all
- * attributes required to define a SKU. This commonly includes a skuCode that
- * will be unique for that product, pricing details (such as base price and any
- * compare-at price fields), and structural attributes or option value
- * assignments that tie the SKU to entries in
- * shopping_mall_product_option_values via the junction table
- * shopping_mall_sku_option_value_assignments. The implementation must enforce
- * business rules such as not allowing duplicate skuCode for the same product
- * (honoring a composite unique constraint like
- * @@unique([shopping_mall_product_id, code]) in Prisma), validating that
- * referenced option values belong to the same product, and ensuring that
- * compliance or age restriction policies do not prohibit the creation of the
- * requested variant.
+ * Before creating the record, the implementation must validate that the
+ * provided productId in the path corresponds to an existing product that
+ * belongs to the calling seller or is otherwise authorized for modification. It
+ * should also ensure that the proposed attribute combination does not violate
+ * uniqueness constraints or business rules, such as preventing duplicate SKUs
+ * with identical attribute sets for the same product. Additional business
+ * validations may include ensuring that pricing fields fall within configured
+ * bounds, that the initial inventory state is valid, and that any external
+ * identifiers conform to integrations represented by
+ * shopping_mall_sku_external_ids.
  *
- * From a security perspective, this is a privileged operation that should be
- * restricted to authenticated actors who manage catalog data, such as sellers
- * or platform administrators. The endpoint is therefore configured with
- * authorizationActors ["seller", "platformAdmin"], signaling that the generated
- * controller should require authenticated context and the business logic should
- * further verify that the acting seller has permission to modify the specific
- * product. No anonymous or general customer access should be allowed for this
- * write operation.
- *
- * This endpoint is typically used in workflows where a seller or admin creates
- * or expands a product's variant matrix, possibly after defining option types
- * and values via separate endpoints. It complements read operations such as GET
- * /products/{productCode}/skus/{skuCode} and any SKU listing/search endpoints,
- * and works together with inventory and fulfillment pipelines that will later
- * manage stock and shipping behavior for the newly created SKU.
+ * Upon successful creation, the endpoint responds with the newly created SKU
+ * serialized as IShoppingMallSku, reflecting the authoritative state of the SKU
+ * after all database-level defaults, triggers, and derived fields have been
+ * applied. Error conditions include invalid or missing product references,
+ * violations of attribute or uniqueness rules, and attempts by unauthorized
+ * actors to add SKUs to products they do not control. This operation
+ * complements read-only SKU endpoints such as GET
+ * /products/{productId}/skus/{skuId} and any SKU search/list operations exposed
+ * on the collection.
  *
  * @param props.connection
- * @param props.productCode Unique business identifier code of the parent
- *   product under which the new SKU will be created (global scope). This maps
- *   to the code field on the shopping_mall_products model, which is expected to
- *   be globally unique via a constraint like @@unique([code]).
- * @param props.body Payload containing all required attributes to define a new
- *   SKU variant under the specified product, following the
- *   IShoppingMallProductSku.ICreate contract.
- * @path /shoppingMall/seller/products/:productCode/skus
+ * @param props.productId Unique identifier of the parent product under which
+ *   the new SKU will be created. This corresponds to the primary key of a
+ *   record in the shopping_mall_products table.
+ * @param props.body Payload describing the SKU to be created for the specified
+ *   product, including variant-defining attributes, pricing, inventory state,
+ *   and any integration-related identifiers.
+ * @path /shoppingMall/seller/products/:productId/skus
  * @accessor api.functional.shoppingMall.seller.products.skus.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -88,26 +79,25 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique business identifier code of the parent product under which the
-     * new SKU will be created (global scope). This maps to the code field
-     * on the shopping_mall_products model, which is expected to be globally
-     * unique via a constraint like @@unique([code]).
+     * Unique identifier of the parent product under which the new SKU will
+     * be created. This corresponds to the primary key of a record in the
+     * shopping_mall_products table.
      */
-    productCode: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Payload containing all required attributes to define a new SKU
-     * variant under the specified product, following the
-     * IShoppingMallProductSku.ICreate contract.
+     * Payload describing the SKU to be created for the specified product,
+     * including variant-defining attributes, pricing, inventory state, and
+     * any integration-related identifiers.
      */
-    body: IShoppingMallProductSku.ICreate;
+    body: IShoppingMallSku.ICreate;
   };
-  export type Body = IShoppingMallProductSku.ICreate;
-  export type Response = IShoppingMallProductSku;
+  export type Body = IShoppingMallSku.ICreate;
+  export type Response = IShoppingMallSku;
 
   export const METADATA = {
     method: "POST",
-    path: "/shoppingMall/seller/products/:productCode/skus",
+    path: "/shoppingMall/seller/products/:productId/skus",
     request: {
       type: "application/json",
       encrypted: false,
@@ -119,9 +109,9 @@ export namespace create {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productCode ?? "null")}/skus`;
-  export const random = (): IShoppingMallProductSku =>
-    typia.random<IShoppingMallProductSku>();
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/skus`;
+  export const random = (): IShoppingMallSku =>
+    typia.random<IShoppingMallSku>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -133,7 +123,7 @@ export namespace create {
       contentType: "application/json",
     });
     try {
-      assert.param("productCode")(() => typia.assert(props.productCode));
+      assert.param("productId")(() => typia.assert(props.productId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -149,69 +139,198 @@ export namespace create {
 }
 
 /**
- * Update a SKU variant in shopping_mall_product_skus for a given product
- * identified by productCode and skuCode.
+ * Search and paginate SKUs for a specific product using the shopping_mall_skus
+ * table.
  *
- * Update a single SKU variant under a specific catalog product identified by
- * their business codes.
+ * Retrieve a filtered, paginated list of SKUs for a specific product from the
+ * shopping_mall_skus table.
  *
- * This operation targets the shopping_mall_product_skus table, where each SKU
- * represents a concrete purchasable variant of a product (for example, a
- * specific size and color combination). The SKU is located by first resolving
- * the parent product in shopping_mall_products using the {productCode} path
- * parameter, then resolving the SKU by its own code using the {skuCode} path
- * parameter. This matches a typical composite uniqueness constraint where code
- * values are scoped to the parent product rather than being globally unique.
+ * The shopping_mall_skus schema describes SKUs as stock keeping units
+ * representing concrete sellable variants of products. Each SKU belongs to a
+ * single shopping_mall_products record via the foreign key
+ * shopping_mall_skus.shopping_mall_product_id and includes core fields such as
+ * code, status, price, original_price, inventory_quantity, and
+ * low_stock_threshold, as well as a foreign key to
+ * shopping_mall_sku_inventory_states via shopping_mall_sku_inventory_state_id
+ * that describes availability semantics. The table description specifies that
+ * SKUs are the atomic unit for cart, order, inventory, and eligibility logic
+ * throughout the platform and that detailed adjustment history is kept in other
+ * tables.
  *
- * The request body follows the IShoppingMallProductSku.IUpdate schema, which
- * should mirror only the mutable fields of the SKU as defined in the Prisma
- * model comments. Typical mutable fields include human-readable attributes such
- * as displayName, SEO-related properties, pricing fields like listPrice and
- * salePrice, and operational flags such as isActive, isPurchasable, or channel
- * visibility toggles. Identity-defining fields like id, productId, and code, as
- * well as structural relationships to option values managed in
- * shopping_mall_sku_option_value_assignments, are intentionally excluded from
- * IShoppingMallProductSku.IUpdate to avoid breaking referential consistency.
+ * This PATCH operation is scoped to a particular product, identified by the
+ * productId path parameter, and uses a rich request body of type
+ * IShoppingMallSku.IRequest to express filtering, sorting, and pagination
+ * requirements. Typical filters include SKU status (e.g., draft, active,
+ * inactive, discontinued, blocked_by_admin), price ranges, inventory thresholds
+ * such as low or zero inventory, and combinations of these criteria. The
+ * request model can also carry page number, page size, and sort instructions
+ * (for example, sorting by created_at, price, or inventory_quantity) to support
+ * efficient UI listing and administrative workflows.
  *
- * From an authorization perspective, this endpoint is restricted to
- * authenticated business actors who can manage catalog data. In a typical
- * marketplace, that includes the seller that owns the product and platform
- * administrators responsible for catalog moderation. The Prisma schema for
- * shopping_mall_seller and shopping_mall_platformadmin, together with any
- * role/assignment tables, drive how the underlying service validates that the
- * caller is allowed to update the targeted SKU.
+ * The response body returns a paginated container
+ * IPageIShoppingMallSku.ISummary, which includes an array of SKU summary
+ * records and pagination metadata. Summary objects expose key fields like SKU
+ * code, status, price, and selected inventory indicators without the full
+ * object graph, making the payload suitable for grid views and management
+ * dashboards. The implementation is responsible for enforcing that only SKUs
+ * belonging to the specified product are returned, by constraining queries with
+ * shopping_mall_skus.shopping_mall_product_id = productId.
  *
- * In terms of behavior, the service should validate the existence and active
- * status of the parent product as defined in shopping_mall_products before
- * proceeding with the SKU update. It should also enforce any business rules
- * encoded in the Prisma schema comments, such as minimum or maximum allowable
- * price ranges, required relationships to inventory records in
- * shopping_mall_inventory_items, or compliance flags from
- * shopping_mall_product_compliance_flags and
- * shopping_mall_product_visibility_rules. If validation fails, the operation
- * should respond with appropriate error codes that align with the platform-wide
- * error handling guidelines.
- *
- * This operation is typically used together with creation and retrieval
- * endpoints for SKUs, such as POST /products/{productCode}/skus for creating
- * new variants, GET /products/{productCode}/skus/{skuCode} for fetching
- * individual SKU details, and PATCH /products/{productCode}/skus for searching
- * through SKUs under a product. Together, these endpoints support a complete
- * lifecycle for managing product variants in the shoppingMall catalog.
+ * From a security standpoint, authorizationActors is set to both seller and
+ * admin, allowing the endpoint to be used by authenticated sellers managing
+ * their own product catalog as well as administrative staff with broader
+ * visibility. Ownership and role-specific rules—such as restricting results to
+ * SKUs under the calling seller's products or allowing broader visibility for
+ * administrators—are enforced at the service layer based on relationships to
+ * shopping_mall_products and the seller/admin models. This endpoint complements
+ * other SKU management operations like creation, update, and retrieval by ID
+ * and is designed purely for read/search behavior without modifying any data.
  *
  * @param props.connection
- * @param props.productCode Unique business identifier code of the parent
- *   product (global scope or catalog-scoped as defined in the
- *   shopping_mall_products Prisma model). This code, combined with skuCode,
- *   uniquely identifies a SKU under the product.
- * @param props.skuCode Unique business identifier code of the SKU variant
- *   within the specified product (scoped to product). This code is unique only
- *   in combination with the parent productCode and corresponds to the code
- *   field in shopping_mall_product_skus.
- * @param props.body Fields to update on the target SKU variant under the
- *   specified product, restricted to mutable attributes as defined in
- *   IShoppingMallProductSku.IUpdate.
- * @path /shoppingMall/seller/products/:productCode/skus/:skuCode
+ * @param props.productId UUID of the product (shopping_mall_products.id) whose
+ *   SKUs are being listed.
+ * @param props.body Filter, sorting, and pagination parameters for querying
+ *   SKUs of the specified product.
+ * @path /shoppingMall/seller/products/:productId/skus
+ * @accessor api.functional.shoppingMall.seller.products.skus.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * UUID of the product (shopping_mall_products.id) whose SKUs are being
+     * listed.
+     */
+    productId: string & tags.Format<"uuid">;
+
+    /**
+     * Filter, sorting, and pagination parameters for querying SKUs of the
+     * specified product.
+     */
+    body: IShoppingMallSku.IRequest;
+  };
+  export type Body = IShoppingMallSku.IRequest;
+  export type Response = IPageIShoppingMallSku.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/seller/products/:productId/skus",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/skus`;
+  export const random = (): IPageIShoppingMallSku.ISummary =>
+    typia.random<IPageIShoppingMallSku.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update a SKU variant in the shopping_mall_skus table for a given product.
+ *
+ * Update an existing SKU variant for a specific product in the shoppingMall
+ * catalog.
+ *
+ * This operation targets the `shopping_mall_skus` Prisma model, which stores
+ * concrete sellable variants for products. Each row typically includes fields
+ * such as a foreign key to the parent product in `shopping_mall_products`,
+ * seller ownership information, merchant-visible SKU code, pricing and taxation
+ * fields, and references to inventory state semantics defined in
+ * `shopping_mall_sku_inventory_states`. The path parameters `productId` and
+ * `skuId` are expected to correspond to the primary key identifiers of the
+ * product and SKU, ensuring that the update is scoped to the correct product
+ * context.
+ *
+ * From a security and authorization perspective, this endpoint should normally
+ * be restricted to authenticated sellers that own the target product and its
+ * SKUs, and to privileged administrative actors for governance and support
+ * scenarios. The implementation must verify that the `shopping_mall_skus`
+ * record being updated is owned by the calling seller or is otherwise within
+ * the actor's permission scope. Additional validation should consider risk and
+ * policy configurations from `shopping_mall_business_policies`,
+ * `shopping_mall_policy_versions`, and
+ * `shopping_mall_catalog_visibility_rules`, especially when state changes
+ * affect product visibility, price ranges, or eligibility for promotions.
+ *
+ * The request body leverages the `IShoppingMallSku.IUpdate` DTO, which
+ * encapsulates mutable SKU attributes such as display name, description,
+ * merchant SKU code, base price, tax category references, inventory-related
+ * configuration, and flags controlling catalog visibility. The implementation
+ * must validate field-level constraints defined on the `shopping_mall_skus`
+ * columns (e.g., numeric ranges for price, required relationships for foreign
+ * keys) and maintain consistency with subsidiary tables like
+ * `shopping_mall_sku_attribute_values` or `shopping_mall_sku_external_ids` when
+ * their data is affected by the update logic.
+ *
+ * On success, the operation responds with `IShoppingMallSku`, representing the
+ * updated SKU entity with all persisted changes and any derived fields
+ * recomputed according to current business logic. Clients can use this result
+ * to refresh seller portal views or admin consoles immediately after the
+ * update. Error responses should clarify whether failures are due to invalid
+ * identifiers, authorization issues, violated business rules (such as
+ * disallowed price changes or invalid visibility transitions), or system-level
+ * problems like concurrent updates or transient database errors.
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the parent product in the
+ *   shopping_mall_products table to which the SKU belongs.
+ * @param props.skuId Unique identifier of the SKU variant in the
+ *   shopping_mall_skus table that will be updated.
+ * @param props.body Mutable fields for updating an existing SKU variant
+ *   associated with a product.
+ * @path /shoppingMall/seller/products/:productId/skus/:skuId
  * @accessor api.functional.shoppingMall.seller.products.skus.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -240,34 +359,29 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique business identifier code of the parent product (global scope
-     * or catalog-scoped as defined in the shopping_mall_products Prisma
-     * model). This code, combined with skuCode, uniquely identifies a SKU
-     * under the product.
+     * Unique identifier of the parent product in the shopping_mall_products
+     * table to which the SKU belongs.
      */
-    productCode: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique business identifier code of the SKU variant within the
-     * specified product (scoped to product). This code is unique only in
-     * combination with the parent productCode and corresponds to the code
-     * field in shopping_mall_product_skus.
+     * Unique identifier of the SKU variant in the shopping_mall_skus table
+     * that will be updated.
      */
-    skuCode: string;
+    skuId: string & tags.Format<"uuid">;
 
     /**
-     * Fields to update on the target SKU variant under the specified
-     * product, restricted to mutable attributes as defined in
-     * IShoppingMallProductSku.IUpdate.
+     * Mutable fields for updating an existing SKU variant associated with a
+     * product.
      */
-    body: IShoppingMallProductSku.IUpdate;
+    body: IShoppingMallSku.IUpdate;
   };
-  export type Body = IShoppingMallProductSku.IUpdate;
-  export type Response = IShoppingMallProductSku;
+  export type Body = IShoppingMallSku.IUpdate;
+  export type Response = IShoppingMallSku;
 
   export const METADATA = {
     method: "PUT",
-    path: "/shoppingMall/seller/products/:productCode/skus/:skuCode",
+    path: "/shoppingMall/seller/products/:productId/skus/:skuId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -279,9 +393,9 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productCode ?? "null")}/skus/${encodeURIComponent(props.skuCode ?? "null")}`;
-  export const random = (): IShoppingMallProductSku =>
-    typia.random<IShoppingMallProductSku>();
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/skus/${encodeURIComponent(props.skuId ?? "null")}`;
+  export const random = (): IShoppingMallSku =>
+    typia.random<IShoppingMallSku>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -293,8 +407,8 @@ export namespace update {
       contentType: "application/json",
     });
     try {
-      assert.param("productCode")(() => typia.assert(props.productCode));
-      assert.param("skuCode")(() => typia.assert(props.skuCode));
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("skuId")(() => typia.assert(props.skuId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -310,61 +424,48 @@ export namespace update {
 }
 
 /**
- * Delete a SKU variant in shopping_mall_product_skus for a given product
- * identified by productCode and skuCode.
+ * Delete a SKU variant from the shopping_mall_skus table for a given product.
  *
- * Delete a single SKU variant associated with a specific product using business
- * codes as identifiers.
+ * Delete an existing SKU variant for a specific product from the shoppingMall
+ * catalog.
  *
- * This operation targets the shopping_mall_product_skus table, where each
- * record represents a distinct purchasable variant of a product defined in
- * shopping_mall_products. The SKU to be deleted is located by its composite
- * business key consisting of {productCode} and {skuCode}. This pattern aligns
- * with Prisma schema designs where SKU codes are unique per product, enforced
- * via a composite uniqueness constraint such as @@unique([product_id, code]) on
- * shopping_mall_product_skus.
+ * This operation targets the `shopping_mall_skus` Prisma model, which stores
+ * concrete sellable variants of products owned by sellers. By calling this
+ * endpoint with a specific `productId` and `skuId`, the client instructs the
+ * system to remove the corresponding row from `shopping_mall_skus`, effectively
+ * eliminating that variant from the catalog. The implementation must confirm
+ * that the SKU is indeed related to the given product, preventing accidental
+ * deletion of unrelated records.
  *
- * The endpoint accepts no request body, because all the context required to
- * identify the SKU is conveyed through the path parameters. The absence of a
- * body simplifies client integration and emphasizes that no partial-delete
- * semantics or conditional fields are supported. The implementation should
- * perform all necessary referential and business rule checks before deletion,
- * such as verifying that there are no active orders referencing this SKU in
- * shopping_mall_order_lines, or that any remaining inventory in
- * shopping_mall_inventory_items has been reconciled or marked as obsolete
- * according to inventory policies.
+ * Authorization is critical for this operation. Typically, only the seller that
+ * owns the product and its SKUs, or an administrator with elevated privileges,
+ * should be allowed to delete a SKU. Before performing the deletion, the system
+ * should validate that the caller has the necessary permissions according to
+ * actor and policy data across models such as `shopping_mall_sellers`,
+ * `shopping_mall_admins`, and any RBAC structures in
+ * `shopping_mall_admin_roles` and `shopping_mall_admin_role_assignments`.
+ * Additionally, business rules defined via `shopping_mall_business_policies`
+ * and `shopping_mall_policy_versions` may place restrictions on which SKUs can
+ * be removed, for example when legal holds or ongoing disputes exist.
  *
- * Authorization for this operation is limited to actors who manage catalog
- * content. In practice, that includes the seller that owns the product and
- * platform administrators with catalog or moderation roles, as defined by
- * shopping_mall_seller, shopping_mall_platformadmin, and any role assignment
- * tables such as shopping_mall_admin_roles and
- * shopping_mall_admin_role_assignments. Attempted access by customers or guests
- * must be rejected, preserving catalog integrity.
- *
- * From a lifecycle perspective, this deletion endpoint is typically used when a
- * SKU is permanently withdrawn from sale and should no longer appear in product
- * detail views, search results, or analytics that rely on active catalog data.
- * It complements other SKU management operations like creation (POST
- * /products/{productCode}/skus) and update (PUT
- * /products/{productCode}/skus/{skuCode}). If the business requires retention
- * of historical SKU data for analytics or reporting, the Prisma schema may
- * instead implement status flags on shopping_mall_product_skus and the erase
- * operation would update those flags instead of physically removing the row. In
- * this specification, however, the operation is written as a hard delete that
- * removes the SKU record and its dependent subsidiary entities from the active
- * catalog tables.
+ * No request body is accepted for this DELETE operation; all necessary context
+ * is conveyed via the path parameters and the authenticated actor. Upon
+ * successful deletion, the endpoint can either return an empty response or a
+ * minimal confirmation payload; in this specification we model it with no
+ * response body to keep the contract simple. Clients should handle HTTP status
+ * codes to determine whether the deletion was successful or if it failed due to
+ * authorization problems, missing resources, or business-rule constraints.
+ * Implementations should also coordinate with subsidiary tables such as
+ * `shopping_mall_sku_attribute_values`, `shopping_mall_sku_external_ids`, and
+ * indexing tables like `shopping_mall_catalog_search_index_entries` to ensure
+ * that any dependent data is either removed or updated appropriately.
  *
  * @param props.connection
- * @param props.productCode Unique business identifier code of the parent
- *   product (global scope or catalog-scoped as defined in the
- *   shopping_mall_products Prisma model). This code, combined with skuCode,
- *   uniquely identifies a SKU under the product.
- * @param props.skuCode Unique business identifier code of the SKU variant
- *   within the specified product (scoped to product). This code is unique only
- *   in combination with the parent productCode and corresponds to the code
- *   field in shopping_mall_product_skus.
- * @path /shoppingMall/seller/products/:productCode/skus/:skuCode
+ * @param props.productId Unique identifier of the parent product in the
+ *   shopping_mall_products table to which the SKU belongs.
+ * @param props.skuId Unique identifier of the SKU variant in the
+ *   shopping_mall_skus table that will be deleted.
+ * @path /shoppingMall/seller/products/:productId/skus/:skuId
  * @accessor api.functional.shoppingMall.seller.products.skus.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -392,25 +493,21 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique business identifier code of the parent product (global scope
-     * or catalog-scoped as defined in the shopping_mall_products Prisma
-     * model). This code, combined with skuCode, uniquely identifies a SKU
-     * under the product.
+     * Unique identifier of the parent product in the shopping_mall_products
+     * table to which the SKU belongs.
      */
-    productCode: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique business identifier code of the SKU variant within the
-     * specified product (scoped to product). This code is unique only in
-     * combination with the parent productCode and corresponds to the code
-     * field in shopping_mall_product_skus.
+     * Unique identifier of the SKU variant in the shopping_mall_skus table
+     * that will be deleted.
      */
-    skuCode: string;
+    skuId: string & tags.Format<"uuid">;
   };
 
   export const METADATA = {
     method: "DELETE",
-    path: "/shoppingMall/seller/products/:productCode/skus/:skuCode",
+    path: "/shoppingMall/seller/products/:productId/skus/:skuId",
     request: null,
     response: {
       type: "application/json",
@@ -419,7 +516,7 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productCode ?? "null")}/skus/${encodeURIComponent(props.skuCode ?? "null")}`;
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/skus/${encodeURIComponent(props.skuId ?? "null")}`;
   export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
@@ -432,8 +529,8 @@ export namespace erase {
       contentType: "application/json",
     });
     try {
-      assert.param("productCode")(() => typia.assert(props.productCode));
-      assert.param("skuCode")(() => typia.assert(props.skuCode));
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("skuId")(() => typia.assert(props.skuId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -1,0 +1,121 @@
+/// SKU-level inventory tracking for products with real-time stock management.
+///
+/// Manages current inventory quantities for each product variant, enabling
+/// real-time stock updates to prevent overselling and maintain accurate
+/// product availability. Each record represents a specific product variant's
+/// current stock level, tracking changes as orders are placed or inventory
+/// is adjusted.
+///
+/// The inventory system is the authoritative source for available stock
+/// levels, with all order processing operations directly querying this table
+/// to confirm availability. When stock decreases due to orders or
+/// adjustments, this table is immediately updated to reflect the new
+/// real-time quantity.
+///
+/// The table follows a strict relationship pattern with product variants,
+/// where each product variant has exactly one inventory record, ensuring
+/// proper normalization while maintaining efficient querying patterns for
+/// inventory-level operations.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant in the catalog. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_product_variant_id String
+  
+  /// Current stock quantity for this product variant. Must be non-negative
+  /// integer.
+  quantity Int
+  
+  /// Timestamp of the last inventory update. Used for tracking freshness of
+  /// stock data.
+  last_updated DateTime
+  
+  /// Timestamp when the inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the inventory record was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  
+  @@unique([shopping_product_variant_id])
+  @@index([last_updated])
+}
+
+/// Inventory notification system tracking low-stock and stock adjustment
+/// alerts.
+///
+/// Records all inventory-related alerts generated for sellers, including
+/// low-stock notifications and out-of-stock triggers. Each alert represents
+/// a specific inventory event (e.g., stock drop below threshold, stock
+/// replenishment) that requires seller attention through the inventory
+/// management system.
+///
+/// The system maintains a historical record of all alerts, allowing sellers
+/// to review past stock concerns and adjust their inventory management
+/// strategies accordingly. Alerts are triggered automatically when inventory
+/// levels reach configured thresholds, providing the seller with actionable
+/// insights about their product availability.
+///
+/// All alerts reference the inventory record that triggered them, ensuring
+/// traceability between alert events and specific inventory states, while
+/// maintaining clear separation between alert data and core inventory
+/// tracking.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the inventory record that generated this alert. {@link
+  /// shopping_mall_inventory.id}
+  shopping_mall_inventory_id String
+  
+  /// Type of inventory alert (e.g., 'LOW_STOCK', 'OUT_OF_STOCK', 'REPLENISH').
+  alert_type String
+  
+  /// Human-readable alert message explaining the specific inventory situation.
+  message String
+  
+  /// Timestamp when the alert was generated and sent to the seller.
+  sent_at DateTime
+  
+  /// Timestamp when the alert record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the alert record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the alert record was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_id, alert_type, sent_at], map: "shopping_mall_inventory_alerts_shopping_mall_inventory_e592ddf0")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_id, sent_at], map: "shopping_mall_inventory_alerts_shopping_mall_inventory_d8de0860")
+}

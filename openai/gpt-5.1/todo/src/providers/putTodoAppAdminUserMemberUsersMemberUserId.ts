@@ -7,19 +7,17 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
+import { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import { AdminuserPayload } from "../decorators/payload/AdminuserPayload";
 
 export async function putTodoAppAdminUserMemberUsersMemberUserId(props: {
   adminUser: AdminuserPayload;
   memberUserId: string;
-  body: ITodoAppMemberuser.IUpdate;
-}): Promise<ITodoAppMemberuser> {
-  // Verify that the target member user exists and is not soft-deleted
+  body: ITodoAppMemberUser.IUpdate;
+}): Promise<ITodoAppMemberUser> {
   const existing = await MyGlobal.prisma.todo_app_memberusers.findFirst({
     where: {
       id: props.memberUserId,
-      deleted_at: null,
     },
   });
 
@@ -27,36 +25,37 @@ export async function putTodoAppAdminUserMemberUsersMemberUserId(props: {
     throw new HttpException("Member user not found", 404);
   }
 
-  const body = props.body;
+  try {
+    const updated = await MyGlobal.prisma.todo_app_memberusers.update({
+      where: { id: props.memberUserId },
+      data: {
+        ...(props.body.email !== undefined && {
+          email: props.body.email,
+        }),
+        ...(props.body.display_name !== undefined && {
+          display_name: props.body.display_name,
+        }),
+        ...(props.body.status !== undefined && {
+          status: props.body.status,
+        }),
+        updated_at: new Date(),
+      },
+    });
 
-  const updated = await MyGlobal.prisma.todo_app_memberusers.update({
-    where: { id: props.memberUserId },
-    data: {
-      ...(body.email !== undefined ? { email: body.email } : {}),
-      ...(body.display_name !== undefined
-        ? { display_name: body.display_name }
-        : {}),
-      ...(body.status !== undefined ? { status: body.status } : {}),
-      ...(body.failed_login_count !== undefined
-        ? { failed_login_count: body.failed_login_count }
-        : {}),
-      updated_at: new Date(),
-    },
-  });
-
-  return {
-    id: updated.id,
-    email: updated.email,
-    display_name: updated.display_name === null ? null : updated.display_name,
-    status: updated.status,
-    failed_login_count: updated.failed_login_count,
-    last_login_at:
-      updated.last_login_at !== null
-        ? toISOStringSafe(updated.last_login_at)
-        : null,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at:
-      updated.deleted_at !== null ? toISOStringSafe(updated.deleted_at) : null,
-  };
+    return {
+      id: updated.id,
+      email: updated.email,
+      display_name: updated.display_name,
+      status: updated.status,
+      created_at: toISOStringSafe(updated.created_at),
+      updated_at: toISOStringSafe(updated.updated_at),
+    };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        throw new HttpException("Email already in use", 409);
+      }
+    }
+    throw err;
+  }
 }

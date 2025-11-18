@@ -4,121 +4,74 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import type { ITodoAppMemberUserJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUserJoin";
-import type { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
 
 /**
- * Validate member user registration with optional display_name propagation.
+ * Verify that memberUser join accepts and persists an optional displayName.
  *
  * Business goal:
  *
- * - Ensure POST /auth/memberUser/join accepts an optional display_name field,
- *   persists it, and returns it in the authorized context.
- * - Confirm other identity and token fields are correctly populated on first
- *   registration.
+ * - Ensure that when a client provides displayName in
+ *   ITodoAppMemberUserJoin.ICreate, the backend stores it and returns it as
+ *   display_name in ITodoAppMemberUser.IAuthorized.
  *
- * Steps:
+ * Scenario steps:
  *
- * 1. Build a valid ITodoAppMemberUserJoin.IRequest payload including:
+ * 1. Build a join payload with:
  *
- *    - Email (random, valid email)
- *    - Password (random, password format)
- *    - Non-empty display_name
- *    - Href and referrer as valid URIs
- *    - Omit ip to let backend infer it.
- * 2. Call api.functional.auth.memberUser.join with this payload.
- * 3. Assert the response matches ITodoAppMemberuser.IAuthorized via typia.assert.
- * 4. Check that:
+ *    - Email: unique, valid email (Format<"email">)
+ *    - Password: any string satisfying Format<"password">
+ *    - DisplayName: a non-empty human-friendly string
+ *    - Ip: a valid IPv4 address (Format<"ipv4">)
+ *    - Href: a valid URI of the signup page
+ *    - Referrer: a valid URI of the previous page
+ * 2. Call POST /auth/memberUser/join via api.functional.auth.memberUser.join.
+ * 3. Assert that the response conforms to ITodoAppMemberUser.IAuthorized using
+ *    typia.assert.
+ * 4. Validate core business rules using TestValidator:
  *
- *    - Response.display_name is defined and equals request.display_name
- *    - Response.email equals request.email
- *    - Response.status is non-empty
- *    - Failed_login_count is 0
- *    - Created_at and updated_at are non-empty ISO date-time strings
- *    - Deleted_at is null on a fresh account
- *    - Token field is populated and matches IAuthorizationToken.
+ *    - Display_name in the response equals the provided displayName.
+ *    - Email in the response equals the request email.
+ *    - Token field exists and is structurally valid (validated by typia.assert).
  */
 export async function test_api_member_user_join_with_optional_display_name(
   connection: api.IConnection,
 ) {
-  // 1. Prepare registration payload with optional display_name
+  // 1. Prepare join payload with optional displayName and other required fields
   const email = typia.random<string & tags.Format<"email">>();
   const password = typia.random<string & tags.Format<"password">>();
   const displayName = RandomGenerator.name(2);
-  const href = "https://app.todo.example.com/signup";
-  const referrer = "https://marketing.example.com/landing";
+  const ip = "127.0.0.1" as string & tags.Format<"ipv4">;
+  const href = typia.random<string & tags.Format<"uri">>();
+  const referrer = typia.random<string & tags.Format<"uri">>();
 
   const body = {
     email,
     password,
-    display_name: displayName,
+    displayName,
+    ip,
     href,
     referrer,
-  } satisfies ITodoAppMemberUserJoin.IRequest;
+  } satisfies ITodoAppMemberUserJoin.ICreate;
 
   // 2. Call join endpoint
-  const authorized: ITodoAppMemberuser.IAuthorized =
+  const authorized: ITodoAppMemberUser.IAuthorized =
     await api.functional.auth.memberUser.join(connection, { body });
 
-  // 3. Structural type assertion
-  typia.assert<ITodoAppMemberuser.IAuthorized>(authorized);
+  // 3. Structural validation of response
+  typia.assert<ITodoAppMemberUser.IAuthorized>(authorized);
 
   // 4. Business rule validations
-
-  // 4-1. display_name should be defined and round-trip
-  await TestValidator.predicate(
-    "display_name is defined on authorized context",
-    async () =>
-      authorized.display_name !== null && authorized.display_name !== undefined,
-  );
-  await TestValidator.predicate(
-    "display_name equals requested value",
-    async () => authorized.display_name === displayName,
-  );
-
-  // 4-2. email should match input
   TestValidator.equals(
-    "email matches registration input",
+    "joined user email should match requested email",
     authorized.email,
     email,
   );
 
-  // 4-3. status should be non-empty string
-  await TestValidator.predicate(
-    "status is non-empty string",
-    async () => authorized.status.length > 0,
-  );
-
-  // 4-4. failed_login_count should be zero on first join
-  await TestValidator.predicate(
-    "failed_login_count is zero on fresh join",
-    async () => authorized.failed_login_count === 0,
-  );
-
-  // 4-5. created_at and updated_at non-empty ISO date-time strings
-  await TestValidator.predicate(
-    "created_at is non-empty ISO date-time string",
-    async () => authorized.created_at.length > 0,
-  );
-  await TestValidator.predicate(
-    "updated_at is non-empty ISO date-time string",
-    async () => authorized.updated_at.length > 0,
-  );
-
-  // 4-6. deleted_at is null for active account
-  await TestValidator.predicate(
-    "deleted_at is null on newly created account",
-    async () => authorized.deleted_at === null,
-  );
-
-  // 4-7. token object structure and basic sanity
-  typia.assert<IAuthorizationToken>(authorized.token);
-  await TestValidator.predicate(
-    "access token is non-empty string",
-    async () => authorized.token.access.length > 0,
-  );
-  await TestValidator.predicate(
-    "refresh token is non-empty string",
-    async () => authorized.token.refresh.length > 0,
+  TestValidator.equals(
+    "joined user display_name should match provided displayName",
+    authorized.display_name,
+    displayName,
   );
 }

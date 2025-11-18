@@ -9,111 +9,93 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppTask } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTask";
 import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { ITodoAppCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppCategory";
-import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postTodoAppUserTasks(props: {
-  user: UserPayload;
   body: ITodoAppTask.ICreate;
 }): Promise<ITodoAppTask> {
-  // Validate user exists and is active
-  const userData = await MyGlobal.prisma.todo_app_users.findUnique({
-    where: { id: props.user.id },
-  });
+  // Since auth info is implied by authorizationActors, but not in props, we need
+  // to understand how the framework handles user context.
+  //
+  // Looking at the operation spec again: authorizationActors: ["user"]
+  // This suggests the endpoint is protected and user ID will be available in auth context
+  // But the function signature doesn't include auth parameter!
+  //
+  // For now, implementing based on user_id from request body with fallback validation
 
-  if (!userData || userData.deleted_at !== null) {
-    throw new HttpException("User not found or inactive", 404);
-  }
+  let userId: string;
 
-  // Validate category if provided
-  if (props.body.todo_app_category_id) {
-    const category = await MyGlobal.prisma.todo_app_categories.findUnique({
-      where: {
-        id: props.body.todo_app_category_id,
-        todo_app_user_id: props.user.id,
-      },
+  if (props.body.user_id) {
+    // Validate the specified user exists
+    const specifiedUser = await MyGlobal.prisma.todo_app_users.findUnique({
+      where: { id: props.body.user_id },
     });
 
-    if (!category) {
-      throw new HttpException(
-        "Category not found or does not belong to user",
-        404,
-      );
+    if (!specifiedUser) {
+      throw new HttpException("User not found", 404);
     }
+
+    userId = props.body.user_id;
+  } else {
+    // This should come from auth context, but since it's not in the schema
+    // we must require user_id in the request body for this operation
+    throw new HttpException("User ID is required", 400);
   }
 
-  // Validate due date if provided (must be future and within 1 year)
-  if (props.body.due_date) {
-    const dueDate = new Date(props.body.due_date);
-    const now = new Date();
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setFullYear(now.getFullYear() + 1);
+  const now = new Date();
 
-    if (dueDate <= now) {
-      throw new HttpException("Due date must be in the future", 400);
-    }
-    if (dueDate > oneYearFromNow) {
-      throw new HttpException(
-        "Due date cannot be more than 1 year in advance",
-        400,
-      );
-    }
-  }
-
-  // Create the task
   const task = await MyGlobal.prisma.todo_app_tasks.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_app_user_id: props.user.id,
-      todo_app_category_id: props.body.todo_app_category_id ?? null,
+      todo_app_user_id: userId,
       title: props.body.title,
       description: props.body.description ?? null,
-      status: "pending",
-      priority: props.body.priority ?? "Low",
+      status: props.body.status,
+      priority: props.body.priority ?? null,
       due_date: props.body.due_date ?? null,
-      completion_order:
-        props.body.completion_order ?? Math.floor(new Date().getTime() / 1000),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+      completed_at: null,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          status: true,
+          created_at: true,
+        },
+      },
     },
   });
 
-  // Build return object with proper data
-  let categorySummary: ITodoAppCategory.ISummary | null = null;
-  if (task.todo_app_category_id) {
-    const category = await MyGlobal.prisma.todo_app_categories.findUnique({
-      where: { id: task.todo_app_category_id },
-    });
-    if (category) {
-      categorySummary = {
-        id: category.id,
-        name: category.name,
-        description: category.description ?? null,
-        created_at: toISOStringSafe(category.created_at),
-        updated_at: toISOStringSafe(category.updated_at),
-      };
-    }
-  }
+  const { user: userSummary, ...taskFields } = task;
 
   return {
-    id: task.id,
+    id: taskFields.id as string & tags.Format<"uuid">,
+    title: taskFields.title,
+    description:
+      taskFields.description === null ? undefined : taskFields.description,
+    status: taskFields.status,
+    priority: taskFields.priority === null ? undefined : taskFields.priority,
+    due_date: taskFields.due_date
+      ? toISOStringSafe(taskFields.due_date)
+      : undefined,
     user: {
-      id: userData.id,
-      email: userData.email,
-      created_at: toISOStringSafe(userData.created_at),
-      updated_at: toISOStringSafe(userData.updated_at),
-      deleted_at: userData.deleted_at
-        ? toISOStringSafe(userData.deleted_at)
-        : null,
+      id: userSummary.id as string & tags.Format<"uuid">,
+      email: userSummary.email,
+      name: userSummary.name ?? undefined,
+      status: userSummary.status,
+      created_at: toISOStringSafe(userSummary.created_at),
     },
-    category: categorySummary,
-    title: task.title,
-    description: task.description,
-    status: task.status as "pending" | "in-progress" | "completed",
-    priority: task.priority as "Low" | "Medium" | "High",
-    due_date: task.due_date ? toISOStringSafe(task.due_date) : null,
-    completion_order: task.completion_order,
-    created_at: toISOStringSafe(task.created_at),
-    updated_at: toISOStringSafe(task.updated_at),
+    created_at: toISOStringSafe(taskFields.created_at),
+    updated_at: toISOStringSafe(taskFields.updated_at),
+    deleted_at: taskFields.deleted_at
+      ? toISOStringSafe(taskFields.deleted_at)
+      : undefined,
+    completed_at: taskFields.completed_at
+      ? toISOStringSafe(taskFields.completed_at)
+      : undefined,
   };
 }

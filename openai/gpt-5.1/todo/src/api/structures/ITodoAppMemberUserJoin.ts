@@ -2,112 +2,113 @@ import { tags } from "typia";
 
 export namespace ITodoAppMemberUserJoin {
   /**
-   * Registration request body schema for creating a new authenticated member
-   * user.
+   * Request body schema for registering a new memberUser account in the
+   * todoApp service.
    *
-   * This DTO represents the minimal set of information that a client must
-   * provide to register a new member user account backed by the
-   * todo_app_memberusers table. It is consumed by the POST
-   * /auth/memberUser/join endpoint, which validates the registration data,
-   * hashes the supplied password into the password_hash column, initializes
-   * account status and security counters, and persists the new member
-   * record.
+   * This DTO is consumed by the /auth/memberUser/join endpoint. It collects
+   * the minimal information required to create a new authenticated member in
+   * the todo_app_memberusers table, namely the email address, a plaintext
+   * password, and an optional displayName to show in user interfaces.
    *
-   * In addition to the credential and profile fields, the DTO includes
-   * session context metadata (ip, href, referrer) required to create the
-   * initial authentication session. The href and referrer values are
-   * mandatory connection metadata, while ip is optional and may be derived by
-   * the server when not supplied.
+   * The backend transforms the provided password into a secure password_hash
+   * field in the todo_app_memberusers model and sets initial lifecycle fields
+   * such as status, created_at, and updated_at. The DTO does not expose
+   * internal database fields like password_hash or status and does not accept
+   * system-managed identifiers or timestamps.
    *
-   * The structure intentionally excludes internal security and lifecycle
-   * fields like failed_login_count, status, timestamps, and any explicit
-   * session identifiers, all of which are managed exclusively by backend
-   * logic.
+   * In addition, because this is a self-signup operation that establishes an
+   * authenticated context and typically creates an initial member session,
+   * the DTO also carries session metadata fields (ip, href, referrer). These
+   * values are used to populate the corresponding session records for
+   * auditability and security analysis without exposing any
+   * authentication-context identifiers such as user IDs or session IDs.
    */
-  export type IRequest = {
+  export type ICreate = {
     /**
-     * Unique email-style login identifier for the new member user.
+     * Email address for the new member user account.
      *
-     * This value is persisted into the todo_app_memberusers.email column,
-     * which is constrained by a unique index. It serves as the primary
-     * credential for authentication flows, and must conform to
-     * application-level validation rules for acceptable email formats.
-     *
-     * During registration the backend verifies that no existing member user
-     * already uses the same email. On conflict, the endpoint returns a
-     * business-level error rather than exposing low-level database details
-     * about the uniqueness violation.
+     * This value is used both as the primary login identifier and as a
+     * communication channel for account-related notifications. It must be
+     * unique across all records in the todo_app_memberusers table, where it
+     * is enforced by a unique index, and must conform to standard email
+     * formatting rules.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * Plain text password chosen by the registering member user.
+     * Plaintext password for the new member user account.
      *
-     * The server consumes this value to derive a secure password_hash that
-     * is stored in the todo_app_memberusers.password_hash column. The raw
-     * password itself is never persisted and should not be logged or echoed
-     * back to the client.
-     *
-     * Business rules from the authentication requirements define complexity
-     * constraints such as minimum length, required character classes, and
-     * rejection of common or compromised passwords. The endpoint enforces
-     * these rules and reports validation errors using the global
-     * error-handling strategy.
+     * The backend hashes this value into the password_hash column of the
+     * todo_app_memberusers table using a strong one-way hashing algorithm.
+     * The raw password is never stored. Implementations may apply
+     * additional validation rules such as minimum length or complexity
+     * requirements.
      */
     password: string & tags.Format<"password">;
 
     /**
-     * Optional human-friendly display name for the new member user.
+     * Optional human-friendly name or nickname for the member user.
      *
-     * When provided, this value is written to the
-     * todo_app_memberusers.display_name column and can be used in user
-     * interfaces and logs to present a readable identity. It has no role in
-     * authentication or authorization decisions and may be omitted entirely
-     * during registration.
-     *
-     * Clients may allow the user to customize this value at registration
-     * time, or the field can be set later via dedicated profile update
-     * operations.
+     * When provided, it maps to the display_name column in
+     * todo_app_memberusers and is used in user-facing contexts instead of
+     * the raw email. When omitted, the account may still be created with a
+     * null display_name, and user interfaces may fall back to showing the
+     * email address.
      */
-    display_name?: string | undefined;
+    displayName?: string | undefined;
 
     /**
-     * Optional IP address associated with the client initiating the
-     * registration request.
+     * Optional client IP address observed when the member user performs
+     * self-registration.
      *
-     * This value is stored in the initial session record for the member
-     * user and used for security auditing, anomaly detection, and geo- or
-     * device-based checks. It may represent either an IPv4 or IPv6
-     * address.
+     * This value represents the network-level source address of the join
+     * request and is primarily used for security auditing, anomaly
+     * detection, and session analytics. When supplied, it can be stored
+     * alongside the initial member session record; when omitted, the server
+     * implementation may instead derive the IP from the transport layer.
      *
-     * When omitted or null, the server determines the effective client IP
-     * from the underlying network connection details.
+     * The field is intentionally optional and nullable so that clients may
+     * either provide an explicit value (for example, in SSR or proxy-aware
+     * contexts) or leave it null and rely on the backend to infer the
+     * effective IP address.
      */
-    ip?: string | null | undefined;
+    ip?:
+      | (string & tags.Format<"ipv4">)
+      | (string & tags.Format<"ipv6">)
+      | null
+      | undefined;
 
     /**
-     * Full URL of the page or endpoint from which the registration request
-     * originates.
+     * Current page URL at the time the memberUser join request is
+     * initiated.
      *
-     * This captures the entry point context at the time the new member user
-     * account and its initial session are created, including protocol,
-     * host, path, and optionally query string.
+     * This value captures the full connection URL from which the
+     * registration action was triggered (for example, the sign-up page URL
+     * in a web client). It is used when creating the initial member session
+     * to record the entry point of the interaction for security auditing,
+     * behavioral analytics, and troubleshooting.
      *
-     * The value is persisted in the session table associated with the new
-     * member user and is used for analytics, security review, or tracing
-     * user journeys around sign-up events.
+     * Because the backend cannot reliably infer the precise client-facing
+     * URL (especially in SPA, proxy, or CDN scenarios), the client is
+     * required to send this value explicitly as part of the self-signup
+     * request.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * Referrer URL reported by the client when the registration is
-     * initiated.
+     * Referrer URL immediately preceding the memberUser join request.
      *
-     * This represents the previous location from which the user navigated
-     * before reaching the registration page or starting the sign-up flow.
+     * This value represents the page or location from which the user
+     * navigated before reaching the registration screen, mirroring the
+     * semantics of the HTTP Referer/Referrer header in a client-controlled
+     * and auditable way. It is persisted with the initial session so that
+     * operators can reconstruct typical onboarding paths and detect
+     * suspicious navigation patterns.
      *
-     * The value is stored alongside the session data to support navigation
-     * path analysis, marketing attribution, and security investigations.
+     * When there is no meaningful referrer (for example, direct navigation
+     * or native app flows), clients should send an empty string or a
+     * conventional placeholder URL consistent with the overall tracking
+     * strategy, rather than omitting the field.
      */
     referrer: string & tags.Format<"uri">;
   };

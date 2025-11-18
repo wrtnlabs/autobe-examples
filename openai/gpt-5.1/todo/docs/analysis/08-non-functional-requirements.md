@@ -1,141 +1,152 @@
-# Non-Functional Requirements Summary for Minimal Todo Backend (todoApp)
+# Minimal Todo App Requirements Analysis
 
-## Purpose
+## 1. Purpose and Goal
 
-Non-functional requirements describe how the todoApp backend should behave in terms of speed, reliability, security, and scale. They apply to all features (authentication, managing todos, and admin operations) and focus on user experience, not technical implementation.
+THE Todo app SHALL help a single person quickly record, review, and manage personal tasks in a simple way without extra project management features.
+WHEN a user thinks of something they need to do, THE Todo app SHALL make it possible to add that task within a few seconds and find it again easily.
+THE primary goal is to support day-to-day personal productivity with the smallest set of features that still feels reliable and comfortable to use.
 
-Actors mentioned:
-- **guestUser**: Not logged in.
-- **memberUser**: Logged-in regular user managing their own todos.
-- **adminUser**: Admin managing users and handling exceptional situations.
+## 2. Users and Access
 
-## 1. Performance (Speed and Responsiveness)
+For this minimal version, only one type of real user is considered from the business perspective:
 
-### 1.1 General response times
-- WHEN a memberUser does a normal action that touches a small amount of data (for example, viewing a small todo list or managing a single todo), THE system SHALL respond within **500 ms** for at least **95%** of these requests under normal conditions.
-- WHEN a guestUser calls public endpoints (for example, a status or info endpoint), THE system SHALL respond within **800 ms** for at least **95%** of these requests under normal conditions.
-- WHEN an adminUser runs normal admin actions that don’t involve bulk data, THE system SHALL respond within **1 second** for at least **95%** of these requests under normal conditions.
-- WHEN requests arrive during a short planned maintenance window, THE system SHALL either complete them successfully or reply within **2 seconds** with a clear message that the service is temporarily unavailable.
+- **Member user**: A person who signs in and manages their own todos.
+- **Guest user**: A visitor who is not signed in. Guest users are out of scope for managing todos in this minimal version.
 
-### 1.2 Core todo operations
-For single-todo actions by a memberUser under normal conditions:
-- WHEN creating a todo, THE system SHALL confirm creation within **700 ms** in at least **95%** of requests.
-- WHEN updating a todo, THE system SHALL confirm the update within **700 ms** in at least **95%** of requests.
-- WHEN completing or reopening a todo, THE system SHALL confirm the change within **700 ms** in at least **95%** of requests.
-- WHEN deleting a todo, THE system SHALL confirm deletion within **700 ms** in at least **95%** of requests.
-- WHEN listing todos for a normal-sized result set, THE system SHALL return the list within **800 ms** in at least **95%** of requests.
-- WHERE a user has a very large number of todos, THE system SHALL return results in **pages**, and each page request SHALL complete within **1 second** in at least **95%** of such requests.
+### 2.1 Authentication (High-level)
 
-### 1.3 Concurrency and throughput
-- WHERE there are up to **10,000** registered memberUsers and up to **500** active sessions at once, THE system SHALL meet the response time targets defined above for at least **95%** of requests.
-- WHERE active sessions temporarily double (short spikes), THE system SHALL still meet its timing targets for at least **90%** of requests, possibly by degrading non-essential work first.
-- WHILE the system is under sustained heavy load, THE system SHALL prioritize core todo operations (create, list, update, complete, reopen, delete) over non-essential features (for example, analytics or heavy admin queries).
+WHEN a person wants to use the Todo app as a member user, THE system SHALL require them to be authenticated (logged in) before allowing access to any personal todos.
+WHEN a member user is authenticated, THE system SHALL ensure that this user can only see and manage their own todos, and not any other user’s todos.
+IF a request comes from a user who is not authenticated, THEN THE system SHALL reject any attempt to access or modify personal todo data.
 
-### 1.4 Graceful degradation
-- IF the system cannot meet normal response time targets, THEN THE system SHALL still try to complete operations correctly, unless that threatens overall stability.
-- IF an operation must be rejected or delayed due to overload, THEN THE system SHALL answer within **3 seconds** with a clear “service busy, try later” style message.
-- IF the same user repeatedly triggers overload within a short period, THEN THE system SHALL throttle or limit that user’s **non-essential** operations while still serving essential todo operations where possible.
+## 3. Todo Item Concept
 
-## 2. Availability and Reliability
+A **Todo item** represents a single actionable task the user wants to remember or complete. The Todo item is intentionally simple.
 
-### 2.1 Uptime targets
-- THE system SHALL provide todo operations for memberUsers with at least **99.0%** availability per month, excluding pre-announced maintenance.
-- THE system SHALL provide essential admin operations with at least **99.0%** availability per month, excluding pre-announced maintenance.
-- THE system SHALL provide a way (for example, a status-style endpoint or pattern) for users or operators to know whether the service is healthy or in maintenance.
+Each Todo item has, at minimum, the following business fields:
 
-### 2.2 Maintenance and degraded modes
-- WHERE scheduled maintenance is needed, THE system SHALL allow pre-announced windows of at most **2 hours per week** on average.
-- WHEN in a scheduled maintenance window, THE system SHALL respond within **2 seconds** to every request with a clear maintenance message and SHALL not accept state-changing todo operations.
-- WHEN the system is partially degraded (some parts failing), THE system SHALL prioritize data safety and correctness of core todo operations, even if this means temporarily disabling optional or non-critical features.
+- **Title**: Short text that names the task (for example, “Buy milk”).
+- **Optional description**: Longer text with details, if the user wants to add more information.
+- **Status**: Either "active" (not done yet) or "completed".
+- **Created time**: When the todo was first created (for ordering and history).
+- **Last updated time**: When the todo was last changed.
+- **Optional due date**: Calendar date and time by when the user wants to finish the task.
 
-### 2.3 Data durability and loss tolerance
-- THE system SHALL protect user and todo data so that **more than the last 5 minutes** of confirmed changes are **very unlikely** to be lost during normal conditions.
-- IF a severe incident occurs that could cause greater data loss, THEN THE system SHALL prefer rolling back to the last clearly safe state rather than presenting inconsistent or corrupted todo data.
-- WHEN a user receives a success confirmation for a todo operation, THE system SHALL ensure that result is durable and remains visible after transient failures or restarts.
+Additional fields such as tags, priorities, reminders, or attachments are intentionally excluded to keep the app minimal.
 
-### 2.4 Backup, restore, incidents
-- THE system SHALL maintain regular backups of critical user and todo data so that in worst-case disaster scenarios, no more than **24 hours** of user activity is lost.
-- IF disaster recovery is needed, THEN THE system SHALL aim to restore core todo and authentication capabilities within **24 hours**, clearly communicating any data limitations.
-- WHEN a major incident is detected, THE system SHALL support switching to a controlled state, in which new write operations can be rejected or queued while read access may continue if consistency can be maintained.
+## 4. Core Functional Requirements
 
-## 3. Scalability
+This section defines what the user must be able to do with todos. All requirements are written in EARS style and focus on the minimal set of operations.
 
-### 3.1 Expected scale
-- WHERE the memberUser base grows up to **100,000** users (with proportional system capacity), THE system SHALL still meet the performance and availability targets above.
-- WHERE the total number of todo items grows up to **10 million**, THE system SHALL still provide acceptable response times for paginated listing and single-item operations as defined in the performance section.
+### 4.1 Creating Todos
 
-### 3.2 Workload patterns
-- WHILE the typical workload remains read-heavy (users viewing their lists more often than writing), THE system SHALL be optimized for fast reads without sacrificing correctness of writes.
-- WHERE a small number of accounts creates far more todos than average, THE system SHALL still provide predictable performance for other users.
+WHEN a member user submits a new todo with a valid title, THE system SHALL create a new todo item that belongs only to that user and store its initial data (title, optional description, optional due date, and default status as active).
+IF the user provides a due date while creating a todo, THEN THE system SHALL store that due date together with the todo.
+IF the user does not provide a description or due date, THEN THE system SHALL still create the todo with just the title.
 
-### 3.3 Conceptual scaling approach
-- THE system SHALL be designed so that adding more capacity (of whatever type the implementation team chooses) allows it to continue meeting performance and availability targets.
-- WHERE possible, THE system SHALL avoid business rules that assume a single-server limitation so that scaling decisions remain a technical concern, not a business constraint.
+### 4.2 Viewing Todos
 
-### 3.4 Limits and throttling
-- THE system SHALL define reasonable per-user rate limits so that normal users do not hit limits during normal daily use.
-- IF a guestUser or memberUser exceeds rate limits, THEN THE system SHALL temporarily reject further requests from that actor and clearly communicate that a limit was hit, while keeping existing data safe.
-- IF an adminUser runs bulk or heavy operations that can harm service quality for others, THEN THE system SHALL allow such operations only within defined boundaries or time windows that align with business policy.
+WHEN a member user asks to see their todo list, THE system SHALL return only todos that belong to that user and no one else.
+WHEN a member user views their todo list, THE system SHALL present todos in a consistent order, such as by creation time or by due date (one rule chosen and applied consistently).
+WHEN a member user views a specific todo item, THE system SHALL show all of its available details (title, description, status, created time, last updated time, and due date if any).
 
-## 4. Security and Privacy
+### 4.3 Updating Todos
 
-### 4.1 Principles
-- THE system SHALL ensure that each memberUser can see and manage only their own todos, unless there is an explicit rule allowing admin access.
-- THE system SHALL minimize exposure of sensitive user data and only return what is necessary for each operation.
-- THE system SHALL treat all inputs as untrusted and validate them according to separate validation and business rule requirements.
+WHEN a member user edits the title or description of one of their own todos, THE system SHALL update that todo with the new text and refresh its last updated time.
+IF a member user provides a new valid due date for an existing todo, THEN THE system SHALL update the stored due date for that todo.
+IF a member user clears the due date on an existing todo, THEN THE system SHALL remove the due date and keep the todo as otherwise unchanged.
 
-### 4.2 Authentication and sessions (quality expectations)
-- WHEN a memberUser or adminUser logs in successfully, THE system SHALL create a session or token that is valid only for a limited time, as defined in the authentication document.
-- WHILE that session or token is valid, THE system SHALL treat requests made with it as authenticated for exactly one user and SHALL prevent its use to impersonate another user.
-- IF a session or token is suspected to be compromised, THEN THE system SHALL allow it to be invalidated so that further use is rejected.
+### 4.4 Completing and Reopening Todos
 
-### 4.3 Authorization and access boundaries
-- THE system SHALL ensure that memberUsers can access and modify only their own todo items.
-- WHERE an adminUser has a valid business reason to access or remove any user’s todo items, THE system SHALL allow this and SHALL ensure such operations are auditable.
-- IF an actor attempts to access or modify something they are not allowed to, THEN THE system SHALL reject the operation with a clear insufficient-permissions indication, without leaking extra information about the target.
+WHEN a member user marks one of their own active todos as completed, THE system SHALL change the status of that todo to completed and update the last updated time.
+WHEN a member user marks one of their own completed todos as active again, THE system SHALL change the status of that todo back to active and update the last updated time.
+THE system SHALL ensure that each todo is always in exactly one of the two statuses: active or completed.
 
-### 4.4 Privacy of todo content
-- THE system SHALL treat todo titles, descriptions, and metadata as private to the owning memberUser and authorized admin operations.
-- WHERE logs or analytics are collected, THE system SHALL avoid storing full todo content in them and SHALL focus on non-sensitive metadata wherever possible.
-- IF data is anonymized for analytics, THEN THE system SHALL ensure that individual users cannot be re-identified from that anonymized data following normal business review practice.
+### 4.5 Deleting Todos
 
-### 4.5 Logging and monitoring
-- THE system SHALL log enough information to reconstruct important security events such as failed logins, password resets, suspicious rate-limit violations, and admin deletions.
-- WHERE logs contain user identifiers or metadata, THE system SHALL restrict access to those logs to authorized operators only.
-- IF monitoring detects repeated errors or abnormal error spikes, THEN THE system SHALL support placing the system into a safer limited mode while investigation happens.
+WHEN a member user chooses to delete one of their own todos, THE system SHALL remove that todo from their list so that it no longer appears in normal views.
+IF a member user attempts to delete a todo that does not belong to them, THEN THE system SHALL not delete anything and SHALL return an error indicating that the operation is not allowed.
 
-## 5. Consolidated EARS-Style Requirements (Quick Reference)
+### 4.6 Optional Minimal Filtering
 
-### 5.1 Performance
-- WHEN a memberUser performs a typical single-todo operation, THE system SHALL respond within **700 ms** in at least **95%** of such requests under normal conditions.
-- WHEN a memberUser requests a paginated list of todos, THE system SHALL respond within **1 second per page** in at least **95%** of such requests under normal conditions.
-- WHEN a guestUser accesses a public endpoint, THE system SHALL respond within **800 ms** in at least **95%** of such requests under normal conditions.
-- WHERE simultaneous sessions remain within normal limits, THE system SHALL maintain the defined response time targets.
-- IF a request is rejected due to overload, THEN THE system SHALL respond within **3 seconds** with a clear “busy” message.
+IF minimal filtering is supported, THEN WHEN a member user asks to see only active or only completed todos, THE system SHALL return todos of that status only, limited to that user.
+IF a member user filters by status and there are no todos matching that status, THEN THE system SHALL return an empty list instead of an error.
 
-### 5.2 Availability and reliability
-- THE system SHALL achieve at least **99.0%** availability for core todo operations each month, excluding planned maintenance.
-- WHEN scheduled maintenance occurs, THE system SHALL return clear maintenance responses within **2 seconds** and SHALL not accept state-changing operations.
-- THE system SHALL ensure confirmed todo operations remain durable and visible after transient failures.
-- IF a severe incident threatens data integrity, THEN THE system SHALL prefer a clear, consistent rollback to the last safe state over serving corrupted data.
-- THE system SHALL maintain backups often enough that worst-case disaster recovery loses no more than **24 hours** of activity.
+## 5. Business Rules and Validation
 
-### 5.3 Scalability
-- WHERE the memberUser base grows up to **100,000** accounts, THE system SHALL still meet performance and availability targets assuming proportional capacity is provided.
-- WHERE total stored todos reach **10 million**, THE system SHALL still offer paginated access within the defined response times.
-- THE system SHALL support increasing capacity without changing behavior visible to end users.
-- IF a single user or small group creates unusually high load, THEN THE system SHALL protect overall service quality by rate limiting those users while keeping normal users unaffected.
+### 5.1 Title Rules
 
-### 5.4 Security and privacy
-- THE system SHALL ensure each memberUser can access and manage only their own todos, except where adminUsers perform permitted admin actions.
-- WHEN a user logs in, THE system SHALL issue a time-limited session or token tied to that user.
-- IF suspicious access patterns are detected, THEN THE system SHALL enable operators to revoke affected sessions or tokens and to use logs for investigation.
-- THE system SHALL minimize storage of sensitive todo content in logs and analytics.
-- IF an actor attempts an unauthorized operation, THEN THE system SHALL deny the request and clearly indicate insufficient permissions without exposing additional details.
+WHEN a member user creates or updates a todo, THE system SHALL require a non-empty title consisting of visible characters (not just spaces).
+IF the provided title is too long beyond a reasonable maximum length defined by the product owner, THEN THE system SHALL reject the create or update request with a clear validation error message.
 
-## 6. Measurement and Acceptance
+### 5.2 Description Rules
 
-- THE system SHALL be testable with repeatable performance tests that simulate normal user operations at normal and moderately elevated load while checking the defined response time targets.
-- THE system SHALL offer enough observability (for example, through metrics or logs, as chosen by the implementation team) to calculate availability and error rates over time.
-- THE system SHALL support regular security and privacy reviews to confirm that authorization boundaries, data exposure, and logging match the requirements above.
-- THE system SHALL provide ways for operators to adjust rate limits, maintenance schedules, and incident-handling practices according to business policy without changing user-visible functional behavior.
+THE description for a todo SHALL be optional.
+WHEN a user provides a description, THE system SHALL accept it as long as it is within a reasonable maximum length defined by the product owner.
+IF the description is longer than this maximum, THEN THE system SHALL reject the request with a clear validation error message.
+
+### 5.3 Due Date Rules
+
+IF a member user sets a due date in the past when creating or updating a todo, THEN THE system MAY either reject it as invalid or accept it according to a simple business rule agreed by stakeholders, but SHALL behave consistently once the rule is chosen.
+WHEN a due date is provided and accepted, THE system SHALL store it in a consistent time format so that ordering by due date behaves predictably.
+
+### 5.4 Ownership and Access Rules
+
+WHEN a member user performs any operation on a todo (view, update, complete, reopen, delete), THE system SHALL first check that the todo belongs to that user before performing the operation.
+IF a member user tries to access a todo that does not belong to them, THEN THE system SHALL not reveal whether that todo exists and SHALL respond with an authorization error.
+
+## 6. Error Handling and Edge Cases (User Perspective)
+
+### 6.1 Invalid Input
+
+WHEN a member user sends invalid data for creating or updating a todo (such as an empty title or text that exceeds length limits), THE system SHALL reject the request and return a clear message pointing to what is wrong so the user can fix it.
+
+### 6.2 Non-existing Todos
+
+WHEN a member user tries to view, update, complete, reopen, or delete a todo that no longer exists (for example, it was already deleted), THE system SHALL respond with an error indicating that the todo could not be found.
+
+### 6.3 Unauthorized Access
+
+WHEN an unauthenticated user tries to perform any todo-related action, THE system SHALL respond with an error indicating that login is required.
+WHEN a logged-in user tries to act on a todo they do not own, THE system SHALL respond with an error indicating that they are not allowed to perform that action.
+
+### 6.4 System or Availability Issues
+
+IF the system temporarily cannot process a request due to internal problems or downtime, THEN THE system SHALL respond with a generic error that does not expose internal technical details but makes it clear that the operation failed and may be tried again later.
+
+## 7. Non-functional Expectations (Summary)
+
+Non-functional requirements such as speed, availability, security, and usability are defined in more detail in the separate non-functional requirements document. This section summarizes what matters most for the minimal Todo app.
+
+- Performance: WHEN a user performs common todo actions (list, create, update, complete, delete), THE system SHALL respond quickly enough that the interaction feels snappy, with typical server processing times well under one second for normal usage.
+- Availability: THE system SHALL generally be available throughout the day, with any planned maintenance kept short and preferably announced in advance.
+- Data durability: WHEN a todo is successfully created or updated, THE system SHALL store it so that it is not easily lost due to single failures.
+- Security and privacy: WHEN a user manages their todos, THE system SHALL ensure that no other user can see or modify those todos without explicit permission.
+- Consistency and clarity: WHEN the same kind of request is made under the same conditions, THE system SHALL respond in a consistent way so that both users and client applications can predict behavior.
+
+## 8. Out-of-scope Features (Intentionally Excluded)
+
+To keep the app minimal and focused, several commonly requested features are explicitly out of scope for this version:
+
+- No sharing of todos between users.
+- No collaboration or comments on todos.
+- No labels, tags, categories, or folders.
+- No recurring tasks or reminders.
+- No file uploads or attachments.
+- No complex search by text; only basic list and simple optional filtering by status.
+- No advanced analytics, dashboards, or reports.
+
+THE system SHALL not implement these features in the current minimal version so that development stays simple and focused on core todo management.
+
+## 9. Acceptance Criteria Summary
+
+The minimal Todo app is considered acceptable for release when all of the following are true:
+
+- WHEN a member user is authenticated, THE user SHALL be able to create todos with at least a title and optionally a description and due date.
+- WHEN a member user views their todos, THE user SHALL see only their own todos with correct titles, statuses, and optional details.
+- WHEN a member user edits or deletes one of their todos, THE change SHALL be reflected accurately and promptly in subsequent views.
+- WHEN a member user completes or reopens a todo, THE status change SHALL be stored and visible.
+- IF a user sends invalid or unauthorized requests, THEN THE system SHALL respond with clear error messages without exposing internal technical details.
+- WHEN the system is under normal load, THE core operations (create, read, update, complete/reopen, delete) SHALL respond fast enough to feel immediate to the user.
+
+These requirements collectively define the minimal, focused Todo app that you requested: simple for the user, small in scope, but reliable and comfortable to use in everyday life.

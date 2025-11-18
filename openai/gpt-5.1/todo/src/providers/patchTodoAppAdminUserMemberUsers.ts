@@ -7,127 +7,114 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
-import { IPageITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppMemberuser";
+import { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
+import { IPageITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppMemberUser";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { AdminuserPayload } from "../decorators/payload/AdminuserPayload";
 
 export async function patchTodoAppAdminUserMemberUsers(props: {
   adminUser: AdminuserPayload;
-  body: ITodoAppMemberuser.IRequest;
-}): Promise<IPageITodoAppMemberuser.ISummary> {
-  const page: number =
-    props.body.page !== undefined && props.body.page > 0 ? props.body.page : 1;
-  const limit: number =
-    props.body.limit !== undefined && props.body.limit > 0
-      ? props.body.limit
-      : 20;
+  body: ITodoAppMemberUser.IRequest;
+}): Promise<IPageITodoAppMemberUser.ISummary> {
+  // Pagination parameters with defaults
+  const rawPage = props.body.page;
+  const rawLimit = props.body.limit;
 
-  const skip: number = (page - 1) * limit;
+  const page = rawPage !== undefined && rawPage !== null ? rawPage : 1;
+  const limit = rawLimit !== undefined && rawLimit !== null ? rawLimit : 20;
 
-  const where = (() => {
-    const conditions: Record<string, unknown> = {};
+  const safePage = page < 1 ? 1 : page;
+  const safeLimit = limit < 1 ? 20 : limit;
 
-    // Email partial match (case-insensitive)
-    if (props.body.email !== undefined) {
-      conditions.email = {
-        contains: props.body.email,
-        mode: "insensitive",
+  const skip = (safePage - 1) * safeLimit;
+
+  // Build where condition based on filters
+  const where = {
+    ...(props.body.status !== undefined && props.body.status !== null
+      ? { status: props.body.status }
+      : {}),
+    ...(() => {
+      const createdFrom = props.body.created_from;
+      const createdTo = props.body.created_to;
+
+      if (createdFrom === undefined && createdTo === undefined) return {};
+
+      return {
+        created_at: {
+          ...(createdFrom !== undefined && createdFrom !== null
+            ? { gte: createdFrom }
+            : {}),
+          ...(createdTo !== undefined && createdTo !== null
+            ? { lte: createdTo }
+            : {}),
+        },
       };
-    }
+    })(),
+    ...(() => {
+      const search = props.body.search;
+      if (search === undefined || search === null || search === "") return {};
 
-    // Status equality
-    if (props.body.status !== undefined) {
-      conditions.status = props.body.status;
-    }
+      return {
+        OR: [
+          {
+            email: {
+              contains: search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          },
+          {
+            display_name: {
+              contains: search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          },
+        ],
+      };
+    })(),
+  } satisfies Prisma.todo_app_memberusersWhereInput;
 
-    // Deleted flag handling based on deleted_at field
-    if (props.body.deleted === true) {
-      // Include both active and logically deleted accounts: no deleted_at condition
-    } else {
-      // Default: only not-deleted accounts
-      conditions.deleted_at = null;
-    }
-
-    // Created_at range
-    if (
-      props.body.createdFrom !== undefined ||
-      props.body.createdTo !== undefined
-    ) {
-      const createdAtFilter: Record<string, string> = {};
-      if (props.body.createdFrom !== undefined) {
-        createdAtFilter.gte = props.body.createdFrom;
-      }
-      if (props.body.createdTo !== undefined) {
-        createdAtFilter.lte = props.body.createdTo;
-      }
-      conditions.created_at = createdAtFilter;
-    }
-
-    return conditions;
+  // Determine sorting
+  const orderByField = (() => {
+    const orderBy = props.body.order_by;
+    if (orderBy === "status") return "status" as const;
+    if (orderBy === "created_at") return "created_at" as const;
+    return "created_at" as const;
   })();
 
-  const orderBy = (() => {
-    const direction: "asc" | "desc" =
-      props.body.orderDirection === "asc" ? "asc" : "desc";
-
-    const field = props.body.orderBy;
-
-    if (field === "email") {
-      return { email: direction };
-    }
-    if (field === "status") {
-      return { status: direction };
-    }
-    if (field === "last_login_at") {
-      return { last_login_at: direction };
-    }
-
-    // Default ordering: created_at
-    return { created_at: direction };
+  const orderDirection = (() => {
+    const dir = props.body.order_direction;
+    if (dir === "asc" || dir === "ASC") return "asc" as const;
+    if (dir === "desc" || dir === "DESC") return "desc" as const;
+    return "desc" as const;
   })();
 
   const [rows, total] = await Promise.all([
     MyGlobal.prisma.todo_app_memberusers.findMany({
       where,
-      orderBy,
       skip,
-      take: limit,
+      take: safeLimit,
+      orderBy: {
+        [orderByField]: orderDirection,
+      },
     }),
     MyGlobal.prisma.todo_app_memberusers.count({
       where,
     }),
   ]);
 
-  const data: ITodoAppMemberuser.ISummary[] = rows.map((row) => {
-    const summary: ITodoAppMemberuser.ISummary = {
-      id: row.id,
-      email: row.email,
-      status: row.status,
-    };
-
-    if (row.display_name !== null) {
-      summary.display_name = row.display_name;
-    } else {
-      summary.display_name = null;
-    }
-
-    if (row.last_login_at !== null) {
-      summary.last_login_at = toISOStringSafe(row.last_login_at);
-    } else {
-      summary.last_login_at = null;
-    }
-
-    return summary;
-  });
-
-  const pages: number = limit === 0 ? 0 : Math.ceil(total / limit);
+  const data = rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    display_name: row.display_name,
+    status: row.status,
+    created_at: toISOStringSafe(row.created_at),
+  }));
 
   const pagination: IPage.IPagination = {
-    current: page,
-    limit,
+    current: safePage,
+    limit: safeLimit,
     records: total,
-    pages,
+    pages: Math.ceil(total / safeLimit),
   };
 
   return {

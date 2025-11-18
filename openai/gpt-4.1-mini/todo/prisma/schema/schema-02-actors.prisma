@@ -1,14 +1,90 @@
-/// Registered users of the Todo list application who can authenticate and
-/// manage their personal tasks.
+/// Guests who visit the Todo List application without registration.
 ///
-/// Each user has a unique email address used for login purposes and a hashed
-/// password for secure authentication.
-/// The user entity serves as the authentication principal and owner of tasks
-/// and sessions.
+/// This table stores basic guest visitor information for tracking anonymous
+/// sessions and limited interaction capabilities.
+/// Guests represent unregistered users visiting the platform with no
+/// authentication requirements.
 ///
-/// Users cannot be deleted outright; soft deletion is not implemented here.
-/// User lifecycle primarily includes creation, authentication, and potential
-/// deactivation handled outside this schema.
+/// Each guest has a unique UUID primary key and temporal fields for creation
+/// and updates.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address of the guest visitor for tracking purposes.
+  visitor_ip String
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_guest_sessions todo_list_guest_sessions[]
+  
+  @@index([visitor_ip, created_at])
+}
+
+/// Session records for guest visitors of the Todo List application.
+///
+/// Tracks anonymous sessions for guests, including connection context and
+/// session lifecycle details.
+///
+/// Each session belongs to exactly one guest, enabling session-based
+/// interaction tracking without authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the guest who owns this session. {@link todo_list_guests.id}.
+  todo_list_guest_id String
+  
+  /// IP address of the session connection.
+  ip String
+  
+  /// Connection URL for the session.
+  href String
+  
+  /// Referrer URL for the session.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time, null if session is currently active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guest todo_list_guests @relation(fields: [todo_list_guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_guest_id, created_at])
+}
+
+/// Registered users who can create, read, update, and delete their own todo
+/// items.
+///
+/// This table stores user authentication credentials, including secure
+/// password hashes and contact emails.
+///
+/// Each user record contains a unique UUID primary key along with timestamps
+/// for auditing purposes.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -19,40 +95,36 @@ model todo_list_users {
   /// Primary Key.
   id String @id
   
-  /// Unique email address used for user authentication and communication.
+  /// User email address used for authentication and communication.
   email String
   
-  /// Hashed password for secure authentication. Plain passwords are never
-  /// stored.
+  /// Hashed password for secure user authentication.
   password_hash String
   
-  /// Timestamp when the user account was created.
+  /// Timestamp when the user was created.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated.
+  /// Timestamp when the user was last updated.
   updated_at DateTime
+  
+  /// Timestamp when the user was soft deleted, if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_tasks todo_list_tasks[]
+  todo_list_todos todo_list_todos[]
   
   @@unique([email])
 }
 
-/// Active sessions of the registered users representing authenticated login
-/// sessions.
+/// Session records for registered users of the Todo List application.
 ///
-/// This table stores session information including IP address, originating
-/// URL, and referrer URL to support auditing and session management.
-/// Sessions have creation and optional expiration timestamps.
+/// Tracks authenticated user sessions with security and connection details.
 ///
-/// Each session is linked to a user, allowing multiple concurrent sessions
-/// per user.
-///
-/// This is a subsidiary table managed indirectly through user authentication
-/// and session handling flows.
+/// Each session belongs to exactly one user and records creation and
+/// expiration times for session lifecycle management.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -63,28 +135,111 @@ model todo_list_user_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the owning user. {@link todo_list_users.id}
+  /// Reference to the user who owns this session. {@link todo_list_users.id}.
   todo_list_user_id String
   
-  /// IP address from which the session originated.
+  /// IP address of the session connection.
   ip String
   
-  /// URL accessed at session initiation.
+  /// Connection URL for the session.
   href String
   
-  /// Referrer URL prior to accessing the session start URL.
+  /// Referrer URL for the session.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Session creation time.
   created_at DateTime
   
-  /// Optional timestamp when the session expired.
+  /// Session expiration time, null if session is currently active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todoListUser todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
   @@index([todo_list_user_id, created_at])
+}
+
+/// Administrators of the Todo List application with full system privileges.
+///
+/// This table stores admin authentication data including email and hashed
+/// password.
+///
+/// Admins have a unique UUID primary key and timestamps for auditing their
+/// account lifecycle.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin email address for authentication and communication.
+  email String
+  
+  /// Hashed password for secure admin authentication.
+  password_hash String
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_admin_sessions todo_list_admin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Session records for administrators of the Todo List application.
+///
+/// Tracks admin user sessions including connection information and session
+/// lifetimes.
+///
+/// Each session links to one admin and records creation and expiration times
+/// for session management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the admin who owns this session. {@link todo_list_admins.id}.
+  todo_list_admin_id String
+  
+  /// IP address of the session connection.
+  ip String
+  
+  /// Connection URL for the session.
+  href String
+  
+  /// Referrer URL for the session.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time, null if session is currently active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_admin_id, created_at])
 }

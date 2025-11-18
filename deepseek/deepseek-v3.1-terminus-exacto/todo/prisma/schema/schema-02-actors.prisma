@@ -1,36 +1,46 @@
-/// User accounts for the todo list application with authentication
-/// capabilities.
+/// User accounts for the Todo application.
 ///
-/// Stores user credentials and profile information for secure access to the
-/// todo management system. Each user account enables creation, management,
-/// and organization of personal todo items with complete data isolation from
-/// other users.
+/// Stores user authentication information, profile data, and account status
+/// for individuals managing their personal todo lists. Each user has a
+/// unique email address and secure password authentication, along with a
+/// display name for personalization.
 ///
-/// The model includes authentication fields for secure login functionality
-/// and supports account status tracking for active/inactive management. User
-/// data is protected with proper encryption and follows privacy requirements
-/// specified in the security documentation.
+/// Users can create, read, update, and delete their own todo items while
+/// maintaining complete data isolation from other users. The system supports
+/// user verification workflows, account status management, and activity
+/// tracking through last login timestamps.
+///
+/// User accounts support soft deletion for data recovery scenarios while
+/// maintaining comprehensive audit trails of account lifecycle events and
+/// authentication activities.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
+model todo_app_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address used for authentication and communication. Must be
-  /// unique across all users.
+  /// User's unique email address used for authentication and communication.
   email String
   
-  /// Securely hashed password for user authentication. Uses industry-standard
-  /// bcrypt hashing with proper salt rounds.
+  /// Securely hashed password for user authentication using industry-standard
+  /// algorithms.
   password_hash String
   
-  /// Current user account status. Valid values: active, inactive, suspended.
-  /// Controls login capability and system access.
+  /// User's display name for personalization and identification in the
+  /// application.
+  name String
+  
+  /// Current user account status. Valid business values: active, suspended,
+  /// verified, pending_verification, locked.
   status String
+  
+  /// Timestamp of the user's most recent successful login for activity
+  /// tracking.
+  last_login_at DateTime?
   
   /// Timestamp when the user account was created.
   created_at DateTime
@@ -38,49 +48,58 @@ model todo_list_users {
   /// Timestamp when the user account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft deleted. Null indicates active
-  /// account.
+  /// Timestamp when the user account was soft deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_todos todo_list_todos[]
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_todos todo_app_todos[]
   
   @@unique([email])
   @@index([status, created_at])
-  @@index([created_at])
+  @@index([last_login_at])
 }
 
-/// User authentication sessions for tracking login activity and security
-/// context.
+/// User session records for authentication tracking and security management.
 ///
-/// Records user login sessions with connection details including IP address,
-/// URL, and referrer information. Each session represents an authenticated
-/// connection from a specific device and location.
+/// Stores active user sessions for secure access to the Todo application.
+/// Each session represents an authenticated connection from a user's device,
+/// containing comprehensive connection context information for audit and
+/// security purposes.
 ///
-/// Sessions are used for audit tracing of user actions and support
-/// multi-device access with proper security monitoring. The model follows
-/// the exact session table pattern with required fields for security
+/// Sessions are automatically created during successful login and track
+/// connection details including IP address, user agent, and referrer
+/// information. The system maintains session state securely and validates
+/// authentication tokens on each API request.
+///
+/// Sessions require independent management capabilities including search
+/// across all users, expiration tracking, and security monitoring. Users and
+/// administrators need to view and manage active sessions for security
 /// compliance.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user_sessions {
+model todo_app_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated user account. {@link todo_list_users.id}
-  todo_list_user_id String
+  /// Belonged user's {@link todo_app_users.id}.
+  todo_app_user_id String
   
-  /// IP address of the connection where the session was created.
+  /// IP address of the connection that created this session for security
+  /// tracking.
   ip String
   
-  /// URL of the connection where the session was established.
+  /// User agent string identifying the device and browser used for this
+  /// session.
+  user_agent String
+  
+  /// Connection URL where the session was established.
   href String
   
   /// Referrer URL that directed the user to the application.
@@ -89,13 +108,19 @@ model todo_list_user_sessions {
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expires. Null indicates active session.
+  /// Timestamp when the session expired or was terminated.
   expired_at DateTime?
+  
+  /// Timestamp of the most recent activity in this session for timeout
+  /// tracking.
+  last_activity_at DateTime
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
+  @@index([todo_app_user_id, created_at])
+  @@index([expired_at])
+  @@index([last_activity_at])
 }

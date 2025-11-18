@@ -19,9 +19,9 @@ end
 subgraph "Functional Agents"
   coder --"Requirements Analysis"--> analyze("✅ Analyze")
   coder --"ERD"--> prisma("✅ Prisma")
-  coder --"API Design"--> interface(" Interface")
-  coder --"Test Codes" --> test(" Test")
-  coder --"Main Program" --> realize(" Realize")
+  coder --"API Design"--> interface("⬜ Interface")
+  coder --"Test Codes" --> test("⬜ Test")
+  coder --"Main Program" --> realize("⬜ Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -43,9 +43,9 @@ Waterfall Model | AutoBe Agent | Result
 Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
 Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          |  Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     |  Realize      | [API Provider Functions](src/providers)
-Testing         |  Test         | [E2E Test Functions](test/features/api)
+Design          | ⬜ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     | ⬜ Realize      | [API Provider Functions](src/providers)
+Testing         | ⬜ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -115,11 +115,15 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
 ✅ analyze | actors: 4, documents: 12 | 96.15 % | 808,106 | 618 sec
 ✅ prisma | namespaces: 10, models: 46 | 65.79 % | 2,122,457 | 880 sec
+⬜ interface | | | | 
+⬜ test | | | | 
+⬜ realize | | | | 
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
 
 - **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
 - **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **FCSR**: Function calling success rate
 - **Token Consumption**: Total number of LLM tokens consumed during the phase
 - **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
 

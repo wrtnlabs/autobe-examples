@@ -1,136 +1,71 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
-import typia from "typia";
+import { TypedRoute, TypedParam } from "@nestia/core";
+import typia, { tags } from "typia";
 
 import { IShoppingMallProductRatingAggregate } from "../../../../api/structures/IShoppingMallProductRatingAggregate";
 
 @Controller("/shoppingMall/products/:productId/ratingAggregates")
 export class ShoppingmallProductsRatingaggregatesController {
   /**
-   * Get rating aggregate snapshot for a product from
-   * shopping_mall_product_rating_aggregates.
+   * Retrieve rating aggregate metrics for a product from the
+   * shopping_mall_product_rating_aggregates table.
    *
-   * Retrieve the rating aggregate snapshot for a specific product, as stored
-   * in the `shopping_mall_product_rating_aggregates` Prisma table.
+   * Fetch precomputed rating aggregate information for a single product using
+   * the shopping_mall_product_rating_aggregates table.
    *
-   * This endpoint exposes precomputed rating statistics for a single product,
-   * identified by `productId` in the path. The corresponding Prisma model
-   * `shopping_mall_product_rating_aggregates` stores aggregate metrics
-   * derived from individual records in `shopping_mall_product_reviews`, such
-   * as average star rating, total number of reviews, and any other aggregate
-   * fields defined in the schema comments. The API surfaces these metrics as
-   * a read-only DTO `IShoppingMallProductRatingAggregate` so that clients can
-   * display rating summaries on product detail pages and in catalog listings
-   * without recomputing aggregates on the fly.
+   * This operation is built on top of the
+   * shopping_mall_product_rating_aggregates table, which stores precomputed
+   * rating statistics for products in the shoppingMall platform. Rather than
+   * scanning all reviews in shopping_mall_reviews or recalculating metrics
+   * every time a client requests product ratings, the system maintains this
+   * aggregate table as a fast-access representation of current rating state.
+   * A typical aggregate record may include average rating, total number of
+   * ratings, counts per rating score, and optionally helpful-vote-weighted
+   * metrics that incorporate data from shopping_mall_review_helpful_votes.
    *
-   * From a security and permissions perspective, rating aggregates are
-   * considered non-sensitive catalog data. They are intended to be publicly
-   * visible to both guest and authenticated users. Therefore, this operation
-   * does not require authentication and declares an empty
-   * `authorizationActors` array. The actual review creation, moderation, and
-   * aggregation logic is handled by other write-oriented endpoints and
-   * background processes, and is not exposed here.
+   * Clients call this endpoint by passing a {productId} path parameter that
+   * corresponds to the product's primary key in the shopping_mall_products
+   * table. The service then looks up the corresponding aggregate row in
+   * shopping_mall_product_rating_aggregates. If the aggregate exists, the
+   * endpoint returns a detailed aggregate DTO describing the product's rating
+   * metrics. If the aggregate has not yet been created, the implementation
+   * can decide whether to synthesize a default aggregate with neutral values
+   * or to return an error that signals the absence of rating data.
    *
-   * The implementation must ensure that it looks up the aggregate record by
-   * the product identifier field defined in the
-   * `shopping_mall_product_rating_aggregates` schema (for example,
-   * `product_id`). If multiple aggregate rows exist due to SKU-level scoping,
-   * this endpoint should select the record that represents product-level
-   * aggregation only (e.g., rows where the SKU reference is null), following
-   * the conventions described in the Prisma comments. If no aggregate record
-   * exists for the given product, the behavior (returning a 404 versus a
-   * default zero-aggregate object) should align with the documented business
-   * rules for the table.
+   * From a security standpoint, product rating aggregates are generally safe
+   * to expose publicly, because they summarize anonymized user feedback
+   * without revealing individual customer identities or sensitive
+   * information. For that reason, this endpoint is typically left open to all
+   * clients without requiring authentication, allowing product detail pages
+   * and catalog listings to retrieve rating metrics efficiently. However, the
+   * service should still include defensive checks to ensure only
+   * non-sensitive fields from shopping_mall_product_rating_aggregates are
+   * exposed.
    *
-   * This operation is typically used together with the SKU-level rating
-   * aggregate endpoint `GET
-   * /products/{productId}/skus/{skuId}/ratingAggregates`, allowing clients to
-   * show both overall product ratings and variant-specific ratings where
-   * applicable. It does not create, update, or delete any records and must
-   * not perform any side effects on the underlying tables.
+   * This operation is closely related to other review and rating APIs, such
+   * as endpoints that let customers create, update, or delete reviews in
+   * shopping_mall_reviews, endpoints that manage helpful votes in
+   * shopping_mall_review_helpful_votes, and SKU-level rating aggregate
+   * endpoints that query shopping_mall_sku_rating_aggregates. Those write
+   * operations must keep the aggregate tables up to date, either
+   * synchronously or via background processing, so that this read-only
+   * endpoint always returns consistent rating information. Error handling
+   * should clearly differentiate "no rating data yet" scenarios from actual
+   * server errors, enabling clients to decide whether to display placeholder
+   * messages or error states.
    *
    * @param connection
-   * @param productId Unique identifier of the target product whose rating
-   *   aggregate snapshot should be retrieved. This corresponds to the primary
-   *   or unique key of the product as referenced by the
-   *   `shopping_mall_product_rating_aggregates` table (for example,
-   *   `product_id`).
+   * @param productId Unique identifier of the product in the
+   *   shopping_mall_products table whose rating aggregates are being
+   *   requested.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Get()
   public async at(
     @TypedParam("productId")
-    productId: string,
+    productId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallProductRatingAggregate> {
     productId;
-    return typia.random<IShoppingMallProductRatingAggregate>();
-  }
-
-  /**
-   * Retrieve rating aggregate data from
-   * shopping_mall_product_rating_aggregates for a single product.
-   *
-   * Retrieve rating aggregates for a specific product using its identifier
-   * while allowing optional, structured filter criteria through the request
-   * body.
-   *
-   * This operation focuses on read-only analytic data stored in the
-   * `shopping_mall_product_rating_aggregates` table, which is conceptually
-   * derived from individual customer reviews recorded in the
-   * `shopping_mall_product_reviews` table. The aggregate table typically
-   * contains fields such as total review count, sum or average of rating
-   * scores, and potentially breakdowns per SKU or per region. The Prisma
-   * schema for `shopping_mall_product_rating_aggregates` is expected to
-   * define the exact set of aggregate fields, indexes, and any constraints
-   * that ensure efficient lookup by product.
-   *
-   * From a security perspective, this endpoint is safe to expose publicly
-   * because it returns only summarized rating information and no personally
-   * identifiable review content. For that reason, `authorizationType` is set
-   * to null and `authorizationActor` is also null, indicating no
-   * authentication requirement at the interface layer. Implementations may
-   * still apply rate limiting or IP-based throttling to protect against
-   * scraping and abuse.
-   *
-   * The `productId` path parameter is mandatory and identifies which
-   * product's aggregates should be retrieved. It is typically a string
-   * identifier (often a UUID or business-specific product key) that matches
-   * the primary key in the `shopping_mall_products` table. The request body,
-   * typed as `IShoppingMallProductRatingAggregate.IRequest`, can encapsulate
-   * optional filters such as region codes, sales channel, time windows, or
-   * flags indicating whether SKU-level aggregates should be included,
-   * depending on what fields and query patterns the Prisma schema and
-   * business requirements support.
-   *
-   * Error handling should include clear responses when the referenced product
-   * does not exist, when no aggregate data is available yet (for example, a
-   * product with no reviews), or when invalid filter criteria are supplied.
-   * Related operations include product review listing endpoints and product
-   * detail retrieval endpoints, which together provide both the detailed
-   * review content and the summarized aggregate metrics used in catalog and
-   * product detail UI components.
-   *
-   * @param connection
-   * @param productId Unique identifier of the target product whose rating
-   *   aggregates should be retrieved. This usually corresponds to the primary
-   *   key of the product record in the `shopping_mall_products` table and is
-   *   used to locate related rows in
-   *   `shopping_mall_product_rating_aggregates`.
-   * @param body Optional search and filter criteria that control which rating
-   *   aggregates are returned for the specified product, such as region,
-   *   channel, time window, or whether to include SKU-level breakdowns, as
-   *   supported by the rating aggregate schema.
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedParam("productId")
-    productId: string,
-    @TypedBody()
-    body: IShoppingMallProductRatingAggregate.IRequest,
-  ): Promise<IShoppingMallProductRatingAggregate> {
-    productId;
-    body;
     return typia.random<IShoppingMallProductRatingAggregate>();
   }
 }

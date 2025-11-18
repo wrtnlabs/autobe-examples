@@ -4,60 +4,58 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test user authentication with invalid credentials.
- *
- * This test validates that the authentication system properly rejects invalid
- * login attempts while maintaining security best practices. It tests both wrong
- * password scenarios and non-existent user accounts to ensure comprehensive
- * error handling.
+ * Test login failure with incorrect password or non-existent email. Validates
+ * secure authentication failure handling, appropriate error messaging without
+ * information leakage, and rate limiting mechanisms to prevent brute force
+ * attacks.
  */
 export async function test_api_user_login_invalid_credentials(
   connection: api.IConnection,
 ) {
-  // Step 1: Create a valid user account for testing
+  // Create a valid user account first
   const userEmail = typia.random<string & tags.Format<"email">>();
-  const userPassword = "validPassword123";
+  const userPassword = RandomGenerator.alphaNumeric(12);
 
-  const user = await api.functional.auth.user.join(connection, {
+  const createdUser = await api.functional.auth.user.join(connection, {
     body: {
       email: userEmail,
       password: userPassword,
-    } satisfies ITodoListUser.ICreate,
+      name: RandomGenerator.name(),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies ITodoAppUser.ICreate,
   });
-  typia.assert(user);
+  typia.assert(createdUser);
 
-  // Step 2: Test login with wrong password
+  // Test 1: Login with incorrect password
   await TestValidator.error(
-    "login should fail with wrong password",
+    "login should fail with incorrect password",
     async () => {
       await api.functional.auth.user.login(connection, {
         body: {
           email: userEmail,
-          password: "wrongPassword456",
-          href: "https://example.com/login",
-          referrer: "https://example.com/",
-          // ip field is optional, so we can omit it
-        } satisfies ITodoListUser.ILogin,
+          password: "wrong_password_123",
+          href: typia.random<string & tags.Format<"uri">>(),
+          referrer: typia.random<string & tags.Format<"uri">>(),
+        } satisfies ITodoAppUser.ILogin,
       });
     },
   );
 
-  // Step 3: Test login with non-existent email
+  // Test 2: Login with non-existent email
   await TestValidator.error(
     "login should fail with non-existent email",
     async () => {
-      const nonExistentEmail = typia.random<string & tags.Format<"email">>();
       await api.functional.auth.user.login(connection, {
         body: {
-          email: nonExistentEmail,
-          password: "anyPassword789",
-          href: "https://example.com/login",
-          referrer: "https://example.com/",
-          // ip field is optional, so we can omit it
-        } satisfies ITodoListUser.ILogin,
+          email: typia.random<string & tags.Format<"email">>(),
+          password: userPassword,
+          href: typia.random<string & tags.Format<"uri">>(),
+          referrer: typia.random<string & tags.Format<"uri">>(),
+        } satisfies ITodoAppUser.ILogin,
       });
     },
   );

@@ -1,11 +1,13 @@
 import { tags } from "typia";
 
-/** Payload containing authenticated Todo List user identity and session context. */
+/** Authenticated payload for a registered Todo List user. */
 export interface UserPayload {
-  /** Top-level unique user identifier (todo_users.id) */
+  /** Globally unique top-level user ID from todo_list_users.id */
   id: string & tags.Format<"uuid">;
-  /** Session token ID (todo_user_sessions.id) */
+
+  /** User session ID from todo_list_user_sessions.id */
   session_id: string & tags.Format<"uuid">;
-  /** Discriminator to ensure correct actor injection */
+
+  /** Role discriminator. */
   type: "user";
 }

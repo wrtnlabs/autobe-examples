@@ -14,40 +14,37 @@ export async function deleteTodoAppAdminUserAdminUsersAdminUserIdSessionsSession
   adminUserId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Ensure the target admin user exists and is active/non-deleted
-  const adminUserRecord = await MyGlobal.prisma.todo_app_adminusers.findFirst({
+  // Verify that the target admin user exists.
+  const targetAdminUser = await MyGlobal.prisma.todo_app_adminusers.findFirst({
     where: {
       id: props.adminUserId,
-      deleted_at: null,
-      status: "active",
     },
   });
 
-  if (adminUserRecord === null) {
+  if (targetAdminUser === null) {
     throw new HttpException("Admin user not found", 404);
   }
 
-  // Locate the session ensuring it belongs to the specified admin user
-  const sessionRecord =
-    await MyGlobal.prisma.todo_app_adminuser_sessions.findFirst({
-      where: {
-        id: props.sessionId,
-        todo_app_adminuser_id: props.adminUserId,
-      },
-    });
+  // Ensure that the session exists and belongs to the specified admin user.
+  const session = await MyGlobal.prisma.todo_app_adminuser_sessions.findFirst({
+    where: {
+      id: props.sessionId,
+      todo_app_adminuser_id: props.adminUserId,
+    },
+  });
 
-  if (sessionRecord === null) {
-    // Either the session does not exist or does not belong to this admin user
+  if (session === null) {
     throw new HttpException("Admin session not found", 404);
   }
 
-  // Perform the deletion of the specific session
+  // Authorization policy: any authenticated adminUser can revoke sessions
+  // for any admin account. The adminUser payload has already been validated
+  // by the authorization layer, so at this point we only enforce that the
+  // targeted session belongs to the provided adminUserId path parameter.
+
   await MyGlobal.prisma.todo_app_adminuser_sessions.delete({
     where: {
       id: props.sessionId,
     },
   });
-
-  // No content body is required on success (HTTP 204 will be handled by controller layer)
-  return;
 }

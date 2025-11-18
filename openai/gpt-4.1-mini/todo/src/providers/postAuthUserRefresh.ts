@@ -7,33 +7,23 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoListTodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserRefresh(props: {
   user: UserPayload;
-  body: ITodoListUser.IRefresh;
-}): Promise<ITodoListUser.IAuthorized> {
-  let decoded: {
+  body: ITodoListTodoListUser.IRefresh;
+}): Promise<ITodoListTodoListUser.IAuthorized> {
+  const decoded = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  ) as {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "user";
   };
-
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as {
-      id: string & tags.Format<"uuid">;
-      session_id: string & tags.Format<"uuid">;
-      type: "user";
-    };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
 
   if (decoded.type !== "user") {
     throw new HttpException("Invalid token type", 403);
@@ -42,69 +32,67 @@ export async function postAuthUserRefresh(props: {
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
-      todoListUser: {
-        id: decoded.id,
-      },
+      todo_list_user_id: decoded.id,
       expired_at: null,
     },
-    include: {
-      todoListUser: true,
-    },
+    // Removed include: { todo_list_user: true } because it does not exist on the Prisma model
   });
 
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (session.todoListUser === null) {
-    throw new HttpException("User not found", 404);
-  }
+  // Removed check for session.todo_list_user.deleted_at since the relation is not included
 
-  // Calculate expiry times as ISO string with correct tags, no usage of native Date variables
-  const nowISOString = new Date().toISOString();
-  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const nowMillis = Date.now();
+  const accessExpiryMillis = nowMillis + 60 * 60 * 1000;
+  const refreshExpiryMillis = nowMillis + 7 * 24 * 60 * 60 * 1000;
 
-  const accessExpiresString = accessExpiresDate.toISOString() as string &
-    tags.Format<"date-time">;
-  const refreshExpiresString = refreshExpiresDate.toISOString() as string &
-    tags.Format<"date-time">;
+  const accessExpires = toISOStringSafe(new Date(accessExpiryMillis));
+  const refreshExpires = toISOStringSafe(new Date(refreshExpiryMillis));
+  const createdAt = toISOStringSafe(new Date(nowMillis));
 
-  const accessToken = jwt.sign(
+  const access = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: nowISOString,
+      created_at: createdAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
   );
 
-  const refreshToken = jwt.sign(
+  const refresh = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: nowISOString,
+      created_at: createdAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
   );
 
   await MyGlobal.prisma.todo_list_user_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresString },
+    data: { expired_at: refreshExpires },
   });
 
   return {
     id: decoded.id,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresString,
-      refreshable_until: refreshExpiresString,
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

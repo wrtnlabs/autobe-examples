@@ -1,14 +1,12 @@
 import { SwaggerCustomizer } from "@nestia/core";
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
-
 import { userAuthorize } from "../providers/authorize/userAuthorize";
 
 /**
- * Parameter decorator to inject authenticated UserPayload into controller methods.
+ * User authentication decorator for Todo List API.
  *
- * Adds Bearer token security schema to OpenAPI documentation and ensures
- * authorized access for user role.
+ * Injects authenticated UserPayload into decorated controller method parameter.
  */
 export const UserAuth =
   (): ParameterDecorator =>
@@ -27,7 +25,7 @@ export const UserAuth =
   };
 
 const singleton = new Singleton(() =>
-  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
+  createParamDecorator(async (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     return userAuthorize(request);
   })(),

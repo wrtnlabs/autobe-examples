@@ -1,58 +1,61 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrder";
 
 @Controller("/shoppingMall/customer/orders")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Create a new master order record in the shopping_mall_orders table based
-   * on checkout data.
+   * Create a new shopping_mall_orders record representing a confirmed
+   * customer order.
    *
-   * Create a new customer order record in the shopping mall backend.
+   * Create a new customer order record in the shopping_mall_orders table
+   * based on the customer’s confirmed cart and checkout selections.
    *
-   * This endpoint is responsible for transforming a validated checkout state
-   * into a persistent master order stored in the `shopping_mall_orders`
-   * table. The input structure `IShoppingMallOrder.ICreate` includes customer
-   * identity or guest context, the list of SKUs and quantities derived from
-   * the active cart, pricing and tax breakdowns, and references to selected
-   * shipping and billing addresses. At this stage, the system applies catalog
-   * and policy rules defined across models such as product, inventory, and
-   * mall-level policy settings to ensure the requested purchase is
-   * permitted.
+   * This operation is responsible for turning a transient cart or selection
+   * of SKUs into a durable order entity. The client sends an
+   * IShoppingMallOrder.ICreate payload that encapsulates core business fields
+   * such as which customer or guest user is placing the order, which items
+   * and quantities are being purchased, which payment method and shipping
+   * method are selected, and any order-level notes or instructions. The
+   * backend uses this data to populate a new shopping_mall_orders row and
+   * related subsidiary entities like shopping_mall_order_items and
+   * shopping_mall_order_price_snapshots according to the Prisma schema
+   * definitions.
    *
-   * From a security and authorization perspective, only authenticated
-   * customers or guest flows that the platform explicitly supports may create
-   * orders. This is enforced via the `authorizationActor: "customer"`
-   * designation, with additional checks in business logic to ensure the
-   * caller is allowed to place an order for the indicated customer identity.
-   * Fraud and risk subsystems (represented by models like
-   * `shopping_mall_risk_flags` and fraud rule definitions) may be consulted
-   * as part of the creation workflow, but those checks are encapsulated in
-   * the service layer rather than exposed to clients.
+   * From a security and authorization perspective, this endpoint is typically
+   * restricted to authenticated customers or guest contexts managed by
+   * upstream authentication/session infrastructure. The operation will
+   * enforce that the caller is allowed to place orders for the referenced
+   * customer identity and that referenced cart or wishlist resources (if
+   * present in the DTO) indeed belong to that actor. It will also enforce
+   * that the selected payment method and shipping method are currently
+   * enabled and compatible with the destination region and basket contents.
    *
-   * Internally, this operation writes to the `shopping_mall_orders` table as
-   * the primary record and may also trigger creation of subsidiary entities
-   * such as `shopping_mall_order_lines` for each purchased SKU,
-   * `shopping_mall_order_seller_segments` for per-seller groupings, and
-   * `shopping_mall_order_addresses` snapshots to capture point-in-time
-   * address information. These related inserts ensure that later flows for
-   * payment, fulfillment, refunds, reviews, and disputes can rely on
-   * immutable order snapshots even if catalog or profile data changes.
+   * The business logic around this API must validate inventory availability
+   * via SKU and warehouse data, enforce catalog visibility rules, and compute
+   * monetary components such as item subtotals, taxes, and fees based on
+   * configured payment and shipping surcharges. If any validation fails (for
+   * example, an item becomes unavailable or a risk rule blocks the order),
+   * the operation should respond with appropriate error codes rather than
+   * creating a partial order. On success, the response returns an
+   * IShoppingMallOrder structure representing the newly created order,
+   * including its business orderCode, initial status, and a stable snapshot
+   * of key monetary amounts and selected shipping/payment options for
+   * subsequent flows like payment and shipment creation.
    *
-   * Clients will typically call this API immediately after a successful cart
-   * review step. Error handling should report validation failures (e.g.,
-   * invalid SKUs, insufficient inventory, policy violations) and conflict
-   * scenarios (e.g., stale pricing or cart data) with clear messages so the
-   * client can guide the user to resolve issues before retrying the order
-   * creation.
+   * This creation endpoint is used in conjunction with later operations such
+   * as updating an order by orderCode, searching orders, viewing order
+   * details, and initiating cancellation or refund processes. Downstream
+   * systems such as risk evaluation, payment orchestration, and seller payout
+   * calculations all depend on the correctness and integrity of the order
+   * records generated by this API.
    *
    * @param connection
-   * @param body Order creation payload including customer context,
-   *   cart-derived line items, pricing breakdowns, and address selections
-   *   required to create a new `shopping_mall_orders` record and its key
-   *   subsidiary entities.
+   * @param body Payload containing all information required to create a new
+   *   shopping order, including buyer identity, line items, and selected
+   *   payment/shipping options.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -65,61 +68,58 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Update mutable, customer-editable fields of an existing order in the
-   * shopping_mall_orders table identified by orderId.
+   * Update an existing shopping_mall_orders record identified by its business
+   * orderCode.
    *
-   * Update an existing master order stored in the `shopping_mall_orders`
-   * table using its unique identifier.
+   * Update mutable fields of an existing order in the shopping_mall_orders
+   * table using its business orderCode as the identifier.
    *
-   * This endpoint accepts an order identifier in the path parameter `orderId`
-   * and an `IShoppingMallOrder.IUpdate` payload describing the fields that
-   * should be modified. The service layer ensures that the targeted order
-   * exists and that the requesting actor is authorized to perform the
-   * requested changes, typically by verifying that the order belongs to the
-   * current customer and that the order is still in a lifecycle state where
-   * edits are permitted.
+   * Clients call this endpoint when they need to adjust details of a
+   * previously created order, such as updating customer contact information,
+   * modifying a delivery instruction field, or changing a shipping method
+   * before fulfillment begins. The {orderCode} path parameter uniquely
+   * identifies the order at the business layer, and the request body of type
+   * IShoppingMallOrder.IUpdate specifies which fields are to be changed
+   * according to the constraints of the Prisma schema and business rules.
+   * Typical rules may restrict changes after the order enters certain
+   * fulfillment or payment states; the provider implementation enforces those
+   * rules using the persisted state of the shopping_mall_orders row and any
+   * related status history.
    *
-   * From a security perspective, the operation is restricted to authenticated
-   * customers via the `authorizationActor: "customer"` designation, with
-   * additional ownership checks in the underlying business logic. Certain
-   * updates may also be constrained by mall-wide policies defined in
-   * configuration and policy models (for example, whether address changes are
-   * allowed after payment authorization or before shipment creation). Payment
-   * status, irreversible fulfillment states, and other internal-only workflow
-   * fields are not directly modifiable through this endpoint and remain the
-   * responsibility of internal services and administrative tools.
+   * Authorization-wise, this endpoint is intended for the customer who owns
+   * the order and possibly for administrative actors, but in this generic
+   * specification the authorizationActors are modeled as ["customer"] and the
+   * provider is expected to confirm that the authenticated customer is indeed
+   * allowed to modify the target order. Attempts to update an order that does
+   * not exist, is not owned by the caller, or is in a state that forbids
+   * modification should result in clear error responses, such as 404 for
+   * missing orders or 409 for invalid state transitions.
    *
-   * The update logic primarily affects the `shopping_mall_orders` row, but in
-   * some cases it may cascade to subsidiary entities such as
-   * `shopping_mall_order_addresses` if address snapshots need to be updated
-   * in a consistent way. The API returns the updated `IShoppingMallOrder`
-   * representation, enabling clients to immediately reflect changes in order
-   * detail screens and to drive subsequent flows such as cancellation
-   * requests or review eligibility checks.
-   *
-   * Clients typically invoke this API from order detail management screens
-   * where users can edit allowed fields. Errors are surfaced when the order
-   * does not exist, does not belong to the caller, or is in a terminal or
-   * locked state that disallows further modification.
+   * The response returns the full IShoppingMallOrder representation
+   * post-update, giving clients a consistent, up-to-date view of the order
+   * including any recalculated fields (for example, updated shipping cost if
+   * the shipping method changes). This operation is designed to work
+   * alongside other order-related APIs like order retrieval, payment
+   * initiation, and cancellation or refund workflows, all of which rely on
+   * the integrity of data stored in the shopping_mall_orders table.
    *
    * @param connection
-   * @param orderId Unique identifier of the target order in the
-   *   `shopping_mall_orders` table whose mutable fields should be updated.
-   * @param body Order update payload specifying the subset of
-   *   customer-editable fields on the `shopping_mall_orders` record that the
-   *   customer is allowed to modify. Sensitive workflow fields such as
-   *   payment status and irreversible fulfillment states are intentionally
-   *   excluded.
+   * @param orderCode Unique business identifier code of the target order
+   *   (global scope) used to locate the shopping_mall_orders record to
+   *   update.
+   * @param body Partial or full set of mutable order fields to update on the
+   *   target shopping order, constrained by current order state and business
+   *   rules.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
-  @TypedRoute.Put(":orderId")
+  @TypedRoute.Put(":orderCode")
   public async update(
-    @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
+    @TypedParam("orderCode")
+    orderCode: string,
     @TypedBody()
     body: IShoppingMallOrder.IUpdate,
   ): Promise<IShoppingMallOrder> {
-    orderId;
+    orderCode;
     body;
     return typia.random<IShoppingMallOrder>();
   }

@@ -3,64 +3,71 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallCustomerAuth } from "../../../structures/IShoppingMallCustomerAuth";
+import { IShoppingMallCustomerJoin } from "../../../structures/IShoppingMallCustomerJoin";
 import { IShoppingMallCustomer } from "../../../structures/IShoppingMallCustomer";
-export * as email from "./email/index";
-export * as password from "./password/index";
+import { IShoppingMallCustomerLogin } from "../../../structures/IShoppingMallCustomerLogin";
+import { IShoppingMallCustomerRefresh } from "../../../structures/IShoppingMallCustomerRefresh";
 
 /**
- * Register a new customer account using shopping_mall_customer and
- * shopping_mall_auth_credentials and return JWT tokens as
- * IShoppingMallCustomer.IAuthorized.
+ * Register a new customer in shopping_mall_customers and return an authorized
+ * customer token payload.
  *
- * This endpoint registers a new customer account by orchestrating multiple
- * database entities centered around the shopping_mall_customer and
- * shopping_mall_auth_credentials tables.
+ * This operation registers a new customer account in the shoppingMall platform
+ * by creating a row in the shopping_mall_customers table, which represents
+ * registered customer accounts for the marketplace. It sets the required
+ * identity fields such as email and password_hash, the business status field
+ * status, the boolean email_verified flag, and the lifecycle timestamps
+ * created_at and updated_at based on the current server time. The deleted_at
+ * column remains null on creation, indicating that the account is active and
+ * not logically removed.
  *
- * First, it validates that the supplied login email is not already used for an
- * existing credentials record with actor_type set to "customer" in
- * shopping_mall_auth_credentials, which stores email, password_hash,
- * actor_type, status, last_login_at, created_at, and updated_at. It also
- * ensures that the customer’s primary profile email in shopping_mall_customer,
- * constrained by its unique index on email, does not conflict with an existing
- * customer. These checks enforce unique identity and consistent authentication
- * mapping.
+ * From a security and authentication standpoint, the endpoint validates that
+ * the provided email does not conflict with the unique index on
+ * shopping_mall_customers.email. It also ensures that the password is never
+ * stored in plain text by deriving and writing a password_hash value into the
+ * corresponding column. The operation may initialize status to an appropriate
+ * business value such as "active" or a registration-pending state according to
+ * higher level policies, and it sets email_verified to false until the customer
+ * passes any optional verification flow.
  *
- * Upon successful validation, the operation creates a new row in
- * shopping_mall_customer with fields such as email, name, status, is_verified,
- * created_at, updated_at, and an initially null deleted_at. The status field is
- * typically initialized to an active-like value that allows authentication,
- * while is_verified may be false until the customer completes an email
- * verification flow. Timestamps are set according to platform conventions.
+ * Upon successful account creation, the system records the registration time in
+ * created_at and updated_at, and may insert a corresponding session row into
+ * shopping_mall_customer_sessions to represent the authenticated context
+ * created at login. The session record stores ip, href, referrer, created_at,
+ * and optionally expired_at if the login is immediately bound to a finite
+ * session lifetime. The foreign key
+ * shopping_mall_customer_sessions.shopping_mall_customer_id links the session
+ * to the owning customer row.
  *
- * Next, the endpoint persists authentication details into
- * shopping_mall_auth_credentials, hashing the incoming password into
- * password_hash, setting actor_type to "customer", assigning the same email for
- * login, and initializing status to an allowed value for authentication. A
- * linking row in shopping_mall_auth_credentials_of_customers is then created to
- * connect the credentials record with the newly created shopping_mall_customer
- * record, maintaining the enforced 1:1 relation through the unique constraint
- * on shopping_mall_auth_credentials_id.
+ * For platforms with advanced security monitoring, this registration event can
+ * also be modeled as an actor security event. In that case, an upstream process
+ * would create a row in shopping_mall_actor_security_events and then link it to
+ * the new customer via shopping_mall_actor_security_events_of_customers, using
+ * the shopping_mall_actor_security_event_id and shopping_mall_customer_id
+ * foreign keys and the created_at timestamp in the linkage table. Similarly, if
+ * any initial risk conditions are detected for the registering user, a risk
+ * flag row in shopping_mall_account_risk_flags could be created and associated
+ * with the customer through shopping_mall_account_risk_flags_of_customers.
  *
- * For auditability and security analysis, the implementation is expected to
- * record a login_success or registration-like event in shopping_mall_auth_logs
- * and optionally a more generic security event in
- * shopping_mall_security_events, populating event_type, actor_type, actor_id,
- * actor_email, ip, user_agent, and created_at. It may also establish an initial
- * shopping_mall_customer_sessions row capturing ip, href, referrer, created_at,
- * and a null expired_at to represent the active session.
+ * The operation returns an authorized customer payload following the
+ * IShoppingMallCustomer.IAuthorized schema, which encapsulates the essential
+ * identity properties and issued JWT tokens for the customer actor. Client
+ * applications should treat the returned access token as proof of
+ * authentication for subsequent customer-scoped operations, while the refresh
+ * token (if present in the authorized payload) is stored securely for later use
+ * with the refresh endpoint.
  *
- * Finally, the endpoint returns an IShoppingMallCustomer.IAuthorized payload
- * containing JWT access and refresh tokens plus the customer identity
- * projection. If an email verification flow is required, a row in
- * shopping_mall_email_verification_tokens may be created using token,
- * expires_at, consumed_at, created_at, and updated_at fields linked by
- * shopping_mall_auth_credentials_id, but the token itself is not exposed in
- * this response; instead, it is sent via out-of-band email.
+ * Typical error conditions include violations of the unique index on email,
+ * invalid credential formats, and policy-based rejections such as blocked or
+ * high-risk registrations. In such cases, no shopping_mall_customers row is
+ * created, and therefore no dependent session, security event linkage, or risk
+ * flag linkage rows should be persisted, preserving the integrity of the
+ * authentication data model.
  *
  * @param props.connection
- * @param props.body Registration data for creating a new customer along with
- *   corresponding authentication credentials.
+ * @param props.body Customer registration payload that includes email,
+ *   password, and contextual metadata required to create a
+ *   shopping_mall_customers row and optionally a first session.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/join
@@ -96,12 +103,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Registration data for creating a new customer along with
-     * corresponding authentication credentials.
+     * Customer registration payload that includes email, password, and
+     * contextual metadata required to create a shopping_mall_customers row
+     * and optionally a first session.
      */
-    body: IShoppingMallCustomerAuth.IJoin;
+    body: IShoppingMallCustomerJoin.IRequest;
   };
-  export type Body = IShoppingMallCustomerAuth.IJoin;
+  export type Body = IShoppingMallCustomerJoin.IRequest;
   export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {
@@ -146,51 +154,63 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing customer using shopping_mall_auth_credentials and
- * return JWT tokens as IShoppingMallCustomer.IAuthorized.
+ * Authenticate an existing customer in shopping_mall_customers and issue an
+ * authorized customer token payload.
  *
- * This endpoint authenticates an existing customer by checking their login
- * credentials against the central authentication store embodied by the
- * shopping_mall_auth_credentials table.
+ * This operation logs in an existing customer by validating credentials against
+ * the shopping_mall_customers table, where each row represents a registered
+ * marketplace buyer. It locates the account using the unique email column
+ * enforced by the unique index on shopping_mall_customers.email and verifies
+ * the supplied secret against the stored password_hash, which is a hashed
+ * representation of the customer’s authentication secret. The operation only
+ * succeeds if the account’s status column indicates that the account is in a
+ * state that permits authentication, such as active, and will reject logins for
+ * suspended or blocked statuses according to business policies.
  *
- * The handler receives a login payload that includes at least the customer’s
- * email and password. It searches shopping_mall_auth_credentials for a record
- * where actor_type equals "customer" and email matches the provided value. Once
- * located, the password is validated by comparing the provided secret, after
- * hashing, with the stored password_hash field. If no credentials record exists
- * or the hash comparison fails, the login attempt is rejected and a
- * login_failure event is written to shopping_mall_auth_logs with event_type set
- * appropriately, success=false, and failure_reason like "invalid_credentials".
+ * On successful authentication, the endpoint updates the last_login_at column
+ * to the current timestamp, providing an audit trail of the most recent
+ * successful login. It preserves created_at as the original account creation
+ * time and updates updated_at to reflect the profile modification associated
+ * with this login event. The deleted_at column remains unchanged and, if
+ * non-null, would typically prevent login, as such accounts are logically
+ * removed from normal use.
  *
- * If the credentials match, the operation further inspects the status column in
- * shopping_mall_auth_credentials to ensure that the credentials are in an
- * allowed state (such as active and not locked or compromised). It then loads
- * the corresponding shopping_mall_auth_credentials_of_customers record to
- * resolve the owning shopping_mall_customer and verify that the customer’s own
- * status column (for example active vs suspended) and deleted_at flag permit
- * login. When the customer is allowed to sign in, the implementation may update
- * last_login_at in shopping_mall_auth_credentials to the current timestamp.
+ * The operation then creates a new row in shopping_mall_customer_sessions to
+ * represent the authenticated session context. It sets
+ * shopping_mall_customer_sessions.shopping_mall_customer_id to the customer’s
+ * primary key id, captures the ip address, href, and referrer of the login
+ * request, and records created_at as the moment of session establishment. The
+ * expired_at column is either initialized to null to indicate an active session
+ * or set to a computed value if fixed-duration sessions are used.
  *
- * A new session entry may be created in shopping_mall_customer_sessions,
- * capturing shopping_mall_customer_id, ip, href, referrer, created_at, and a
- * null expired_at to represent an active session. The operation should also
- * record a login_success event in shopping_mall_auth_logs, populating
- * event_type (e.g., "login_success"), actor_type="customer", actor_id,
- * actor_email, ip, user_agent, success=true, and created_at. For broader
- * security monitoring, a correlated entry in shopping_mall_security_events can
- * be added with event_type such as LOGIN_SUCCESS, actor_type, actor_identifier,
- * ip, user_agent, metadata, and created_at filled appropriately.
+ * For installations with detailed security monitoring, suspicious or notable
+ * login events may be modeled as security events in
+ * shopping_mall_actor_security_events with a corresponding linkage row in
+ * shopping_mall_actor_security_events_of_customers. That linkage stores
+ * shopping_mall_actor_security_event_id, shopping_mall_customer_id, and
+ * created_at to associate the security event with this particular customer.
+ * Similarly, when login patterns trigger risk scoring thresholds, the system
+ * can create or update risk flags in shopping_mall_account_risk_flags and
+ * associate them through shopping_mall_account_risk_flags_of_customers.
  *
- * Finally, the endpoint returns an IShoppingMallCustomer.IAuthorized payload
- * containing freshly issued JWT access and refresh tokens together with an
- * identity projection of the authenticated shopping_mall_customer. These tokens
- * follow the platform’s session and token management rules described in the
- * requirements and will be used by clients to authorize subsequent API calls on
- * behalf of the customer.
+ * A successful login returns an IShoppingMallCustomer.IAuthorized response
+ * body, which encapsulates the authenticated customer identity and issued JWT
+ * tokens used for subsequent API calls. Client applications must store the
+ * access token securely for short-term authorization and, when present, keep
+ * any refresh token in a secure store for future token renewal via the refresh
+ * endpoint.
+ *
+ * Failures include incorrect credentials, attempts to log in to accounts with
+ * disallowed status, or attempts against records whose deleted_at indicates
+ * logical removal. In such cases, no shopping_mall_customer_sessions row is
+ * created, last_login_at remains unchanged, and no new security or risk linkage
+ * rows are persisted, preserving a clean audit trail of successful versus
+ * failed authentication attempts.
  *
  * @param props.connection
- * @param props.body Login credentials for an existing customer including email
- *   and password.
+ * @param props.body Customer login payload containing email, password, and
+ *   contextual session information required to authenticate and create a
+ *   shopping_mall_customer_sessions row.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/login
@@ -226,12 +246,13 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Login credentials for an existing customer including email and
-     * password.
+     * Customer login payload containing email, password, and contextual
+     * session information required to authenticate and create a
+     * shopping_mall_customer_sessions row.
      */
-    body: IShoppingMallCustomerAuth.ILogin;
+    body: IShoppingMallCustomerLogin.IRequest;
   };
-  export type Body = IShoppingMallCustomerAuth.ILogin;
+  export type Body = IShoppingMallCustomerLogin.IRequest;
   export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {
@@ -276,49 +297,59 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for an existing customer session using the underlying
- * shopping_mall_auth_credentials and shopping_mall_customer state.
+ * Refresh JWT tokens for an existing customer in shopping_mall_customers based
+ * on a valid refresh token.
  *
- * This endpoint renews JWT-based authentication for an already-registered
- * customer by exchanging a valid refresh token for a new authorized session.
+ * This operation refreshes the authentication context for an existing customer
+ * without requiring the user to re-enter credentials. It operates on an already
+ * registered account in shopping_mall_customers, using the customer’s persisted
+ * identity record to validate that the account is still eligible for
+ * authentication. Before issuing new tokens, the implementation verifies that
+ * the customer’s status column remains in a state that permits continued
+ * access, such as active, and that deleted_at is still null, indicating the
+ * account has not been logically removed.
  *
- * When invoked, the handler receives a refresh payload that includes a refresh
- * token representing prior successful authentication of a customer. The
- * implementation validates the token according to platform rules (for example,
- * signature verification, expiry checks, and rotation policies). From the
- * token’s claims, it resolves the underlying identity represented in the
- * shopping_mall_auth_credentials table, where actor_type is "customer" and
- * fields like email, status, and last_login_at describe the credential state.
+ * The refresh token presented by the client is validated against server-side
+ * state, which may be modeled via shopping_mall_customer_sessions or an
+ * external token store. When sessions are used, the endpoint finds the relevant
+ * session row by correlating token metadata to
+ * shopping_mall_customer_sessions.id or another token reference and ensures
+ * that expired_at has not passed and that the session is still valid. The ip,
+ * href, and referrer fields in shopping_mall_customer_sessions may be used for
+ * additional context or anomaly detection but are not typically modified during
+ * a refresh.
  *
- * Using the credential identifier or email derived from the token, the
- * operation loads the corresponding shopping_mall_auth_credentials record and
- * evaluates status to ensure the credentials are still in an allowed state. It
- * then navigates through shopping_mall_auth_credentials_of_customers to the
- * owning shopping_mall_customer row, where status, is_verified, and deleted_at
- * determine whether the customer account remains eligible for authentication.
- * If the account has been suspended, closed, or logically deleted via
- * deleted_at, the refresh attempt is rejected.
+ * If the platform emits security telemetry for token lifecycle events, the
+ * refresh can be recorded in shopping_mall_actor_security_events with a
+ * specific event type and linked to the customer via
+ * shopping_mall_actor_security_events_of_customers. This linkage uses
+ * shopping_mall_actor_security_event_id and shopping_mall_customer_id, with
+ * created_at capturing the time of the refresh, to maintain a comprehensive
+ * history of authentication-related activity for the customer.
  *
- * On successful validation of both the token and the account state, the
- * operation may update last_login_at in shopping_mall_auth_credentials to
- * reflect the latest activity and optionally write a token_refresh event into
- * shopping_mall_auth_logs with event_type set to "token_refresh",
- * actor_type="customer", actor_id, actor_email, ip, user_agent, success=true,
- * and created_at. For deeper security analytics, a correlated record in
- * shopping_mall_security_events can also be written with event_type like
- * TOKEN_REFRESH, capturing actor_type, actor_identifier, ip, user_agent,
- * metadata, and created_at.
+ * Risk evaluation may also be performed at refresh time. For example, detection
+ * of unusual token usage patterns might cause creation or update of risk flags
+ * in shopping_mall_account_risk_flags and linkage rows in
+ * shopping_mall_account_risk_flags_of_customers, associating the risk
+ * evaluation outcome with the appropriate shopping_mall_customer_id and
+ * timestamping it via created_at. Such risk information can then influence
+ * future login or refresh decisions.
  *
- * Finally, the endpoint issues new JWT tokens, following the platform’s session
- * duration and rotation policies, and returns them in the
- * IShoppingMallCustomer.IAuthorized response body together with a projection of
- * the shopping_mall_customer identity. This allows clients to transparently
- * maintain authenticated sessions while honoring credential and account status
- * from the underlying Prisma tables.
+ * Upon successful validation, the endpoint returns an
+ * IShoppingMallCustomer.IAuthorized response body that includes a new access
+ * token and, when applicable, a rotated refresh token. Clients should replace
+ * any previously stored tokens with the new values and continue to use the
+ * returned access token for subsequent customer-scoped API calls. Failed
+ * refresh attempts due to invalid, expired, or revoked tokens result in no
+ * changes to shopping_mall_customers, shopping_mall_customer_sessions,
+ * shopping_mall_actor_security_events_of_customers, or
+ * shopping_mall_account_risk_flags_of_customers, preserving the integrity of
+ * the authentication data model while clearly signaling to the client that
+ * re-authentication is required.
  *
  * @param props.connection
- * @param props.body Refresh token payload for renewing a customer’s
- *   authenticated session.
+ * @param props.body Refresh token payload that identifies the customer session
+ *   or token state used to validate and renew authentication.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/refresh
@@ -354,12 +385,12 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token payload for renewing a customer’s authenticated
-     * session.
+     * Refresh token payload that identifies the customer session or token
+     * state used to validate and renew authentication.
      */
-    body: IShoppingMallCustomerAuth.IRefresh;
+    body: IShoppingMallCustomerRefresh.IRequest;
   };
-  export type Body = IShoppingMallCustomerAuth.IRefresh;
+  export type Body = IShoppingMallCustomerRefresh.IRequest;
   export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {

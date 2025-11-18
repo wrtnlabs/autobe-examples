@@ -8,7 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
-import { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
+import { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import { MemberuserPayload } from "../decorators/payload/MemberuserPayload";
 
 export async function putTodoAppMemberUserTodosTodoId(props: {
@@ -16,7 +16,9 @@ export async function putTodoAppMemberUserTodosTodoId(props: {
   todoId: string & tags.Format<"uuid">;
   body: ITodoAppTodo.IUpdate;
 }): Promise<ITodoAppTodo> {
-  // Ensure the todo exists, belongs to this member user, and is not soft-deleted
+  const body = props.body;
+
+  // 1. Load the existing todo, ensuring ownership and non-deleted state
   const existing = await MyGlobal.prisma.todo_app_todos.findFirst({
     where: {
       id: props.todoId,
@@ -29,88 +31,77 @@ export async function putTodoAppMemberUserTodosTodoId(props: {
     throw new HttpException("Todo not found", 404);
   }
 
-  // Determine which fields are explicitly present in the request body
-  const hasTitle = Object.prototype.hasOwnProperty.call(props.body, "title");
-  const hasDescription = Object.prototype.hasOwnProperty.call(
-    props.body,
-    "description",
-  );
-  const hasStatus = Object.prototype.hasOwnProperty.call(props.body, "status");
+  // 2. Load the owning member user for response mapping
+  const member = await MyGlobal.prisma.todo_app_memberusers.findUnique({
+    where: { id: props.memberUser.id },
+  });
 
-  const nowIso = toISOStringSafe(new Date());
-
-  // Manage lifecycle of completed_at based on status transition
-  let completedAtToSet: string | null | undefined = undefined;
-
-  if (hasStatus) {
-    const nextStatus =
-      props.body.status === undefined ? existing.status : props.body.status;
-    const prevStatus = existing.status;
-    const wasCompleted = prevStatus === "completed";
-    const willBeCompleted = nextStatus === "completed";
-
-    if (!wasCompleted && willBeCompleted) {
-      // Transition into completed state: set completed_at when not already set
-      if (existing.completed_at === null) {
-        completedAtToSet = nowIso;
-      }
-    } else if (wasCompleted && !willBeCompleted) {
-      // Reopen from completed state: clear completed_at
-      completedAtToSet = null;
-    }
+  if (member === null) {
+    throw new HttpException("Member user not found", 404);
   }
 
-  const data = {
-    ...(hasTitle && props.body.title !== undefined
-      ? { title: props.body.title }
-      : {}),
-    ...(hasDescription
-      ? {
-          // When description is omitted we keep existing value;
-          // when provided (even null), we apply that value.
-          description:
-            props.body.description === undefined
-              ? existing.description
-              : props.body.description,
-        }
-      : {}),
-    ...(hasStatus && props.body.status !== undefined
-      ? { status: props.body.status }
-      : {}),
-    updated_at: nowIso,
-    ...(completedAtToSet !== undefined
-      ? { completed_at: completedAtToSet }
-      : {}),
-  };
+  // 3. Determine whether there are any fields to update
+  const hasUpdatableField =
+    body.title !== undefined ||
+    body.description !== undefined ||
+    body.state !== undefined ||
+    body.due_date !== undefined;
 
+  // If no mutable fields were provided, return the current representation
+  if (!hasUpdatableField) {
+    return {
+      id: existing.id,
+      memberUser: {
+        id: member.id,
+        email: member.email,
+        display_name: member.display_name === null ? null : member.display_name,
+        status: member.status,
+        created_at: toISOStringSafe(member.created_at),
+      },
+      title: existing.title,
+      description: existing.description,
+      state: existing.state,
+      due_date:
+        existing.due_date === null ? null : toISOStringSafe(existing.due_date),
+      created_at: toISOStringSafe(existing.created_at),
+      updated_at: toISOStringSafe(existing.updated_at),
+      completed_at:
+        existing.completed_at === null
+          ? null
+          : toISOStringSafe(existing.completed_at),
+      deleted_at:
+        existing.deleted_at === null
+          ? null
+          : toISOStringSafe(existing.deleted_at),
+    };
+  }
+
+  // 4. Perform the update with only the provided fields
   const updated = await MyGlobal.prisma.todo_app_todos.update({
     where: { id: props.todoId },
-    data,
-    include: {
-      memberUser: true,
+    data: {
+      ...(body.title !== undefined && { title: body.title }),
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.state !== undefined && { state: body.state }),
+      ...(body.due_date !== undefined && { due_date: body.due_date }),
     },
   });
 
-  const memberUserSummary: ITodoAppMemberuser.ISummary = {
-    id: updated.memberUser.id,
-    email: updated.memberUser.email,
-    display_name:
-      updated.memberUser.display_name === null
-        ? null
-        : updated.memberUser.display_name,
-    status: updated.memberUser.status,
-    last_login_at:
-      updated.memberUser.last_login_at === null
-        ? null
-        : toISOStringSafe(updated.memberUser.last_login_at),
-  };
-
-  const result: ITodoAppTodo = {
+  // 5. Map the updated record to ITodoAppTodo with correct null/undefined handling
+  return {
     id: updated.id,
-    memberUser: memberUserSummary,
+    memberUser: {
+      id: member.id,
+      email: member.email,
+      display_name: member.display_name === null ? null : member.display_name,
+      status: member.status,
+      created_at: toISOStringSafe(member.created_at),
+    },
     title: updated.title,
-    description: updated.description === null ? null : updated.description,
-    status: updated.status,
+    description: updated.description,
+    state: updated.state,
+    due_date:
+      updated.due_date === null ? null : toISOStringSafe(updated.due_date),
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     completed_at:
@@ -120,6 +111,4 @@ export async function putTodoAppMemberUserTodosTodoId(props: {
     deleted_at:
       updated.deleted_at === null ? null : toISOStringSafe(updated.deleted_at),
   };
-
-  return result;
 }

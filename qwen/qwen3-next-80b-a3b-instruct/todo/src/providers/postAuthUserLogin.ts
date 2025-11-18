@@ -9,28 +9,80 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserLogin(props: {
-  user: UserPayload;
-  body: ITodoListUser.ILogin;
+  body: ITodoListUser.IRequest;
 }): Promise<ITodoListUser.IAuthorized> {
-  // Schema mismatch: todo_list_users has no password_hash field for authentication
-  // Schema mismatch: todo_list_user_sessions table doesn't exist for session creation
-  // Unable to implement login operation as schema prohibits password authentication
+  // Find user by email (mandatory)
+  const user = await MyGlobal.prisma.todo_list_user.findUnique({
+    where: { email: props.body.email },
+  });
 
-  // Return mock response that satisfies type constraints without database interaction
-  return {
-    id: typia.random<string & tags.Format<"uuid">>(),
-    email: typia.random<string & tags.Format<"email">>(),
-    created_at: typia.random<string & tags.Format<"date-time">>(),
-    updated_at: undefined,
-    deleted_at: null,
-    token: {
-      access: typia.random<string>(),
-      refresh: typia.random<string>(),
-      expired_at: typia.random<string & tags.Format<"date-time">>(),
-      refreshable_until: typia.random<string & tags.Format<"date-time">>(),
+  if (!user) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  // Verify password using PasswordUtil (mandatory)
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    user.password_hash,
+  );
+
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  // Create new session record (mandatory)
+  const accessExpires: Date = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires: Date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: user.id,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
+      ip: "",
+      href: "",
+      referrer: "",
     },
-  } satisfies ITodoListUser.IAuthorized;
+  });
+
+  // Generate JWT tokens (mandatory)
+  const token = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+
+  // Return authorized response
+  return {
+    id: user.id,
+    token,
+  };
 }

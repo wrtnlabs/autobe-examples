@@ -4,61 +4,51 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test user registration with duplicate email address.
- *
- * This test validates that the system properly prevents duplicate user
- * registrations by detecting when the same email address is used for multiple
- * accounts. The test follows a clear workflow: first creating a valid user
- * account, then attempting to register another account with the same email
- * address, and finally verifying that the system rejects the duplicate
- * registration attempt.
- *
- * The test ensures that the authentication system maintains data integrity by
- * enforcing unique email constraints, which is crucial for user account
- * management and security in the todo list application.
+ * Test registration failure when attempting to register with an email that
+ * already exists in the system. Validates email uniqueness constraint
+ * enforcement and appropriate error messaging to prevent duplicate account
+ * creation.
  */
 export async function test_api_user_registration_duplicate_email(
   connection: api.IConnection,
 ) {
   // Generate a unique email address for testing
-  const testEmail = typia.random<string & tags.Format<"email">>();
+  const email = typia.random<string & tags.Format<"email">>();
 
-  // Step 1: Create initial user account successfully
+  // Create first user registration with valid data
   const firstUser = await api.functional.auth.user.join(connection, {
     body: {
-      email: testEmail,
+      email: email,
       password: "TestPassword123",
-    } satisfies ITodoListUser.ICreate,
+      name: RandomGenerator.name(),
+      href: "https://example.com/register",
+      referrer: "https://example.com",
+    } satisfies ITodoAppUser.ICreate,
   });
   typia.assert(firstUser);
 
-  // Validate that the first user was created successfully
-  TestValidator.equals(
-    "first user email matches input",
-    firstUser.email,
-    testEmail,
-  );
+  // Verify first registration was successful
+  TestValidator.equals("first user email matches", firstUser.email, email);
   TestValidator.predicate(
     "first user has valid token",
     firstUser.token.access.length > 0,
   );
-  TestValidator.predicate(
-    "first user has valid refresh token",
-    firstUser.token.refresh.length > 0,
-  );
 
-  // Step 2: Attempt to register another account with the same email
+  // Attempt to register second user with the same email address
   await TestValidator.error(
     "duplicate email registration should fail",
     async () => {
       return await api.functional.auth.user.join(connection, {
         body: {
-          email: testEmail,
-          password: "DifferentPassword456",
-        } satisfies ITodoListUser.ICreate,
+          email: email,
+          password: "AnotherPassword456",
+          name: RandomGenerator.name(),
+          href: "https://example.com/register",
+          referrer: "https://example.com",
+        } satisfies ITodoAppUser.ICreate,
       });
     },
   );

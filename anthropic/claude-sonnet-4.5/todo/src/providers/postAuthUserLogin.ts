@@ -15,8 +15,7 @@ export async function postAuthUserLogin(props: {
 }): Promise<ITodoListUser.IAuthorized> {
   const user = await MyGlobal.prisma.todo_list_users.findFirst({
     where: {
-      email: props.body.email,
-      deleted_at: null,
+      email: props.body.email.toLowerCase(),
     },
   });
 
@@ -33,25 +32,22 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const nowTimestamp = Date.now();
-  const accessExpiresTimestamp = nowTimestamp + 60 * 60 * 1000;
-  const refreshExpiresTimestamp = nowTimestamp + 7 * 24 * 60 * 60 * 1000;
-
-  const nowISO = toISOStringSafe(new Date(nowTimestamp));
-  const accessExpiresISO = toISOStringSafe(new Date(accessExpiresTimestamp));
-  const refreshExpiresISO = toISOStringSafe(new Date(refreshExpiresTimestamp));
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4(),
-      user_id: user.id,
-      ip: props.body.ip ?? "0.0.0.0",
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: user.id,
+      ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: nowISO,
-      expired_at: null,
+      created_at: new Date(),
+      expired_at: accessExpires,
     },
   });
+
+  const currentTime = toISOStringSafe(new Date());
 
   const token: IAuthorizationToken = {
     access: jwt.sign(
@@ -59,7 +55,7 @@ export async function postAuthUserLogin(props: {
         type: "user",
         id: user.id,
         session_id: session.id,
-        created_at: nowISO,
+        created_at: currentTime,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -73,7 +69,7 @@ export async function postAuthUserLogin(props: {
         id: user.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: nowISO,
+        created_at: currentTime,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -81,18 +77,15 @@ export async function postAuthUserLogin(props: {
         issuer: "autobe",
       },
     ),
-    expired_at: accessExpiresISO,
-    refreshable_until: refreshExpiresISO,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
 
   return {
     id: user.id,
     email: user.email,
-    name: user.name === null ? undefined : user.name,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at:
-      user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
     token,
   };
 }

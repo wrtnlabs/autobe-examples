@@ -1,367 +1,467 @@
-# User Actors and Permissions Requirements for shoppingMall Backend
+# shoppingMall E-commerce Platform – Consolidated Business Requirements
 
-## 1. Introduction
+## 1. Service Overview
 
-This document defines the user actors and permissions model for the shoppingMall e-commerce backend. It describes who can perform which business actions, under which conditions, and with which limitations, in a way that backend developers can implement directly.
+THE shoppingMall platform SHALL operate as a multi-seller e-commerce shopping mall where customers can discover, compare, and purchase products from multiple independent sellers through a unified experience.
 
-The focus is exclusively on business-level requirements and behaviors:
-- No API endpoint shapes.
-- No database schema design.
-- No infrastructure or technology stack choices.
+THE shoppingMall platform SHALL support a full purchase lifecycle including browsing, cart and wishlist management, order placement, payment processing, shipping and tracking, product reviews, seller operations, and admin governance.
 
-All functional requirements are expressed in natural language using EARS (Easy Approach to Requirements Syntax), keeping the EARS keywords in English and all other wording in en-US.
+THE shoppingMall platform SHALL focus on clear business rules so that backend developers can implement a consistent, predictable, and testable backend without ambiguity.
 
-## 2. Actor List and Descriptions
 
-### 2.1 Actor Summary
+## 2. Actors and Global Concepts
 
-The shoppingMall platform uses the following actors:
+### 2.1 Actors
 
-- guestUser (guest)
-- customer (authenticated member)
-- seller (authenticated member with merchant privileges)
-- platformAdmin (administrative operator)
+THE shoppingMall platform SHALL recognize the following actors:
 
-### 2.2 guestUser
+- **guestUser**: unauthenticated visitor.
+- **customer**: authenticated buyer who manages addresses, carts, wishlists, orders, and reviews.
+- **seller**: authenticated merchant who manages products, SKUs, inventory, and seller-side orders.
+- **admin**: platform operator responsible for governance, moderation, and operations.
 
-A guestUser is an unauthenticated visitor who can browse the public catalog, search for products, and read product information and reviews without logging in.
+WHEN any requirement refers to "the system", THE system SHALL mean the shoppingMall backend as observed through its external behavior.
 
-Key characteristics:
-- Has no persistent identity in the system.
-- May start a temporary shopping cart before registration or login.
-- Cannot perform any action that requires a persistent account (orders, payments, reviews, seller operations, admin operations).
+### 2.2 Global EARS Principles
 
-### 2.3 customer
+- THE system SHALL describe business rules using EARS style where applicable.
+- WHEN a trigger occurs, THE system SHALL respond according to the defined business rule.
+- WHILE a state holds, THE system SHALL maintain behaviors associated with that state.
+- IF an unwanted condition occurs, THEN THE system SHALL handle it with clearly defined outcomes.
 
-A customer is an authenticated end user who purchases products from one or more sellers on the platform.
 
-Key characteristics:
-- Has a persistent account with authentication credentials.
-- Manages one or more delivery addresses.
-- Manages personal carts and wishlists.
-- Places orders and makes payments.
-- Tracks order status.
-- Initiates post-order actions such as cancellation requests, refund requests, and writing reviews.
+## 3. User Registration, Login, and Address Management
 
-### 2.4 seller
+### 3.1 Customer Registration
 
-A seller is a merchant who uses the platform to list products, manage inventory, and fulfill orders containing their products.
+WHEN a person requests creation of a customer account, THE system SHALL require at minimum a unique email address, a password that satisfies the password policy, and explicit agreement to terms of service and privacy policy.
 
-Key characteristics:
-- Has a persistent account associated with one seller entity (store or brand) within the platform.
-- Manages own product catalog, SKUs, and prices.
-- Manages stock and inventory per SKU.
-- Views and processes orders that contain own products.
-- Updates fulfillment and shipping statuses for own order lines.
+WHEN customer registration input is submitted, THE system SHALL validate that the email has a valid format and is not already associated with an existing account.
 
-### 2.5 platformAdmin
+IF the email already exists, THEN THE system SHALL reject registration with a business error that indicates the email is already in use without disclosing any other account details.
 
-A platformAdmin is an operator employed by the platform owner to manage the entire system.
+WHERE email verification is enabled, THE system SHALL mark the new customer as "email-unverified" until the verification step is completed.
 
-Key characteristics:
-- Has full visibility of users, sellers, products, orders, and reviews.
-- Performs moderation, dispute resolution, and high-level configuration tasks.
-- Has the ability to intervene in critical flows such as order corrections, refunds, and seller suspension, while maintaining auditability.
+WHEN email verification is successfully completed, THE system SHALL update the customer status to allow full use of customer-only features.
 
-### 2.6 User Lifecycle Assumptions
+### 3.2 Seller Registration
 
-- THE shoppingMall backend SHALL support the lifecycle of guestUser transitioning to customer through registration.
-- WHERE a seller applies and is approved by platformAdmin, THE shoppingMall backend SHALL associate the seller role with a specific seller entity.
-- THE shoppingMall backend SHALL allow platformAdmin accounts to be created and maintained only by existing platformAdmin actors or through controlled internal processes defined by business policy.
+WHEN a person or entity applies for a seller account, THE system SHALL capture required seller information in business terms including business name, contact details, and any required legal identifiers.
 
-## 3. Permission Hierarchy
+WHEN seller registration data is submitted, THE system SHALL set seller status to a pending state until required checks are finished.
 
-### 3.1 Hierarchy Overview
+WHEN an admin approves a pending seller, THE system SHALL mark seller status as active and SHALL allow access to seller portal capabilities.
 
-The roles follow a general hierarchy:
+IF seller registration is rejected, THEN THE system SHALL retain the application record and SHALL prevent seller access to seller operations while exposing a human-readable rejection reason to admin and, where policy allows, to the applicant.
 
-- guestUser: lowest privileges, read-only access to public information.
-- customer: member with consumer privileges, extends guestUser capabilities with account-bound features.
-- seller: member with merchant privileges, extends customer account concept with store-level management; seller permissions apply only to seller-owned resources.
-- platformAdmin: highest privileges, can view and manage all entities, with specific business constraints and auditing.
+### 3.3 Admin Account Provisioning
 
-### 3.2 Inheritance Rules
+WHEN an organization needs a new admin account, THE system SHALL allow creation of that admin account only through controlled internal provisioning, not through public registration flows.
 
-- THE shoppingMall backend authorization SHALL treat customer and seller as authenticated member roles distinct from guestUser.
-- WHERE an authenticated user is a customer, THE shoppingMall backend authorization SHALL grant all guestUser read-only capabilities plus customer-specific capabilities.
-- WHERE an authenticated user is a seller, THE shoppingMall backend authorization SHALL grant all customer capabilities plus seller-specific capabilities limited to seller-owned resources.
-- WHERE an authenticated user is a platformAdmin, THE shoppingMall backend authorization SHALL allow admin capabilities that supersede or override seller and customer actions within the constraints defined in this document.
+WHEN an admin account is created, THE system SHALL require strong credentials consistent with security policy and SHALL record who created the admin account and when.
 
-### 3.3 Access Boundaries
+### 3.4 Login and Logout
 
-- THE shoppingMall backend authorization SHALL prevent guestUser from performing any action that creates, modifies, or deletes persistent account-bound data.
-- THE shoppingMall backend authorization SHALL prevent customer from performing seller-specific operations on resources they do not own.
-- THE shoppingMall backend authorization SHALL prevent seller from performing platform-level operations such as managing other sellers, changing system-wide settings, or resolving disputes outside their own orders.
-- THE shoppingMall backend authorization SHALL ensure platformAdmin can access all resources but SHALL log sensitive administrative actions for auditing.
+WHEN a customer, seller, or admin submits login credentials, THE system SHALL validate identity and SHALL start an authenticated session if the credentials and account status are valid.
 
-## 4. Per-Actor Capabilities
+IF the account is suspended or blocked, THEN THE system SHALL deny login and SHALL indicate that the account is not currently active without exposing internal reasons.
 
-### 4.1 guestUser Capabilities
+WHEN an authenticated actor performs a logout action, THE system SHALL terminate the corresponding session and SHALL treat subsequent requests as unauthenticated until login occurs again.
 
-#### 4.1.1 Catalog Browsing and Search
+### 3.5 Address Management
 
-- THE shoppingMall backend authorization SHALL allow guestUser to view publicly visible products, categories, and product details.
-- THE shoppingMall backend authorization SHALL allow guestUser to search products by keywords, categories, and filter criteria that are marked as public.
+WHEN a customer is authenticated, THE system SHALL allow the customer to create, update, and delete multiple shipping addresses.
 
-#### 4.1.2 Reviews Visibility
+WHEN a customer saves an address, THE system SHALL validate that all required address fields are present and conform to business format rules such as country, city, postal code, and street information.
 
-- THE shoppingMall backend authorization SHALL allow guestUser to view approved product reviews and ratings.
+IF an address fails validation, THEN THE system SHALL reject the change and SHALL return field-level errors in business terms.
 
-#### 4.1.3 Temporary Cart
+WHILE an address is associated with existing orders, THE system SHALL retain that address snapshot in those orders regardless of later changes to the customer’s address book.
 
-- WHERE a guestUser creates a temporary cart, THE shoppingMall backend authorization SHALL allow adding, updating, and removing product items from that temporary cart, subject to stock and policy limits.
-- IF a guestUser session ends or expires, THEN THE shoppingMall backend authorization SHALL permit the temporary cart content to be discarded according to business-configured retention rules.
 
-### 4.2 customer Capabilities
+## 4. Product Catalog, Categories, and Search
 
-#### 4.2.1 Registration and Profile
+### 4.1 Product Structure
 
-- WHEN a new user registers successfully, THE shoppingMall backend authorization SHALL grant that user the customer role.
-- THE shoppingMall backend authorization SHALL allow customer to view and update own profile data, excluding fields explicitly marked as immutable by business policy.
+THE system SHALL represent each product as a business concept owned by exactly one seller.
 
-#### 4.2.2 Address Management
+THE system SHALL store for each product at least a title, a summary description, a detailed description, a primary category, at least one image, and a lifecycle status.
 
-- THE shoppingMall backend authorization SHALL allow customer to create, update, and delete own delivery addresses.
-- IF a customer attempts to modify another user’s address, THEN THE shoppingMall backend authorization SHALL deny the operation.
+WHEN a seller creates a new product, THE system SHALL initialize that product in a draft status that is not visible to customers or guest users.
 
-#### 4.2.3 Cart Management
+WHEN a seller requests that a product become active, THE system SHALL ensure all mandatory product attributes and at least one valid SKU exist and SHALL reject activation if validation fails.
 
-- THE shoppingMall backend authorization SHALL allow customer to maintain a persistent cart linked to own account.
-- WHEN a customer adds an item to own cart, THE shoppingMall backend authorization SHALL validate that the actor is the owner of the cart.
-- WHEN a guestUser logs in or registers and becomes customer, THE shoppingMall backend authorization SHALL allow merging temporary cart items into the customer’s persistent cart according to cart business rules.
+### 4.2 Categories and Navigation
 
-#### 4.2.4 Wishlist Management
+THE system SHALL maintain a hierarchical category structure where each category may have a single parent and multiple children.
 
-- THE shoppingMall backend authorization SHALL allow customer to create and manage own wishlists.
-- THE shoppingMall backend authorization SHALL allow customer to add and remove products or SKUs from own wishlists.
+WHEN an admin creates or updates a category, THE system SHALL prevent creation of circular category relationships.
 
-#### 4.2.5 Order Placement and Access
+WHILE a category is active, THE system SHALL include that category in customer and guest navigation menus.
 
-- WHEN a customer proceeds to checkout with a valid cart, THE shoppingMall backend authorization SHALL verify that the cart belongs to that customer before allowing order creation.
-- THE shoppingMall backend authorization SHALL allow customer to view detailed information of own orders, including line items, prices, and statuses.
+WHEN a category is deactivated, THE system SHALL prevent new product assignments to that category and SHALL remove it from customer-facing navigation while allowing admins and sellers to view it for maintenance.
 
-#### 4.2.6 Payment Initiation
+### 4.3 SKU and Variant Modeling
 
-- WHEN a customer attempts to initiate payment for an order, THE shoppingMall backend authorization SHALL verify that the order belongs to that customer and that the order is in a state that allows payment.
+THE system SHALL model each SKU as a specific sellable variant of a product with its own price, inventory quantity, and variant attributes.
 
-#### 4.2.7 Order Tracking
+WHEN a seller creates a SKU for a product, THE system SHALL ensure that the combination of variant attributes (for example color and size) is unique under that product.
 
-- THE shoppingMall backend authorization SHALL allow customer to view order and shipment statuses, and tracking information, for own orders only.
+IF a seller attempts to create a SKU with a variant combination that already exists, THEN THE system SHALL reject the creation with a clear message that the variant combination is duplicated.
 
-#### 4.2.8 Cancellation and Refund Requests
+WHILE a SKU is marked active and inventory is available, THE system SHALL treat the SKU as eligible for purchase subject to any additional restrictions.
 
-- WHEN an order is in a business-defined cancelable state, THE shoppingMall backend authorization SHALL allow the owning customer to submit cancellation requests for that order or its eligible items.
-- WHEN a delivered order is within the business-defined refund window, THE shoppingMall backend authorization SHALL allow the owning customer to submit refund or return requests for eligible items.
+### 4.4 Catalog Visibility Rules
 
-#### 4.2.9 Reviews and Ratings
+WHERE the actor is a guestUser, THE system SHALL show only products and SKUs that are in active state and not restricted to registered customers.
 
-- WHEN a customer has at least one completed purchase of a product, THE shoppingMall backend authorization SHALL allow that customer to create a review and rating for that product, subject to the review eligibility rules.
-- THE shoppingMall backend authorization SHALL allow a customer to edit or delete own reviews while the review is in an editable state and not locked by moderation.
+WHERE the actor is a customer, THE system SHALL show products and SKUs that are active and permitted for that customer according to any segmentation rules.
 
-### 4.3 seller Capabilities
+WHERE the actor is a seller, THE system SHALL show all products and SKUs owned by that seller regardless of public visibility plus any catalog information needed for comparison if permitted by policy.
 
-#### 4.3.1 Seller Profile and Store Management
+WHERE the actor is an admin, THE system SHALL allow viewing of all products and SKUs in any lifecycle state.
 
-- WHERE a user has seller role, THE shoppingMall backend authorization SHALL allow that user to manage seller-specific profile information such as store name and contact details.
+WHEN all SKUs of a product are non-purchasable due to stock or status, THE system SHALL disable add-to-cart actions for that product while allowing browsing according to configuration.
 
-#### 4.3.2 Product and SKU Management
+### 4.5 Search and Filtering
 
-- THE shoppingMall backend authorization SHALL allow seller to create new products under own seller entity.
-- THE shoppingMall backend authorization SHALL allow seller to create and manage SKUs for own products.
-- THE shoppingMall backend authorization SHALL allow seller to update and deactivate only own products and SKUs.
+WHEN a guestUser or customer submits a search query, THE system SHALL return a list of matching products that are visible and in-scope for that actor.
 
-#### 4.3.3 Inventory Management
+WHEN search results are requested, THE system SHALL support sorting by relevance, price, newest, and popularity as configured.
 
-- THE shoppingMall backend authorization SHALL allow seller to set and update inventory quantities for SKUs that belong to that seller.
+WHEN a user applies filters such as category, price range, or variant attributes, THE system SHALL limit results to products whose SKUs satisfy the filter criteria.
 
-#### 4.3.4 Order Access and Fulfillment
+IF the combination of search and filters yields no results, THEN THE system SHALL return an empty result indicator and SHALL allow users to clear or adjust filters.
 
-- THE shoppingMall backend authorization SHALL allow seller to view order lines that contain SKUs owned by that seller, including necessary customer shipping information for fulfillment, within privacy constraints.
-- WHEN a seller updates shipment status or tracking information for an order line, THE shoppingMall backend authorization SHALL verify that the line belongs to that seller before applying the change.
 
-#### 4.3.5 After-Sales Interactions
+## 5. Shopping Cart and Wishlist
 
-- WHERE a customer requests cancellation or refund for items belonging to a seller, THE shoppingMall backend authorization SHALL allow that seller to access and respond to those requests for own items, subject to platform rules and admin oversight.
+### 5.1 Cart Ownership and Creation
 
-### 4.4 platformAdmin Capabilities
+WHEN a guestUser adds the first SKU to cart, THE system SHALL create a temporary cart associated with that browsing context.
 
-#### 4.4.1 User and Seller Management
+WHEN a customer adds the first SKU to cart while authenticated, THE system SHALL create a persistent cart tied to that customer account when none exists.
 
-- THE shoppingMall backend authorization SHALL allow platformAdmin to view customer and seller account information necessary for operations.
-- THE shoppingMall backend authorization SHALL allow platformAdmin to change user and seller statuses (for example, active, suspended) in line with admin business rules.
+WHILE a customer account remains active, THE system SHALL persist that customer’s cart across sessions until it is emptied or converted into an order or removed by policy.
 
-#### 4.4.2 Catalog and Content Moderation
+### 5.2 Guest Cart to Customer Cart Merge
 
-- THE shoppingMall backend authorization SHALL allow platformAdmin to view and moderate all products, categories, and reviews.
-- WHEN platformAdmin flags content as violating policy, THE shoppingMall backend authorization SHALL allow corresponding visibility changes such as hiding or removing content.
+WHEN a guestUser with a temporary cart authenticates as a customer, THE system SHALL merge the temporary cart into the customer’s persistent cart using a deterministic merge policy.
 
-#### 4.4.3 Orders, Payments, and Refunds Oversight
+WHERE the same SKU appears in both carts, THE system SHALL either sum quantities or choose a preferred quantity according to configured business rules.
 
-- THE shoppingMall backend authorization SHALL allow platformAdmin to view all orders, payments, cancellations, and refunds across the platform.
-- WHEN platformAdmin needs to intervene in a dispute or exceptional case, THE shoppingMall backend authorization SHALL allow state changes such as forcing refunds or adjusting order status, subject to audit rules.
+IF any SKU in the temporary cart is no longer purchasable at merge time, THEN THE system SHALL omit that SKU from the merged cart and SHALL mark it as unavailable in user-facing feedback.
 
-#### 4.4.4 Configuration and Reporting
+### 5.3 Cart Item Validation
 
-- WHERE certain business policies are configurable, THE shoppingMall backend authorization SHALL allow platformAdmin to manage those settings (for example, cancellation windows, refund limits) within allowed ranges.
-- THE shoppingMall backend authorization SHALL allow platformAdmin to access platform-wide reports while respecting privacy constraints.
+WHEN a SKU is added to cart, THE system SHALL verify that the SKU is visible, active, and meets purchase eligibility conditions such as stock availability and purchase limits.
 
-### 4.5 Cross-Actor Shared Capabilities
+IF a SKU fails validation for reasons such as inactive status, insufficient stock, or restricted sale conditions, THEN THE system SHALL reject the add-to-cart request and SHALL inform the user why the item cannot be added in business terms.
 
-- THE shoppingMall backend authorization SHALL allow all authenticated actors (customer, seller, platformAdmin) to change their own authentication credentials through authorized flows.
-- THE shoppingMall backend authorization SHALL allow authenticated actors to view own security-related activity logs where required by compliance policies.
+WHEN a customer updates the quantity of a cart item, THE system SHALL re-validate the requested quantity against inventory and purchase limits.
 
-## 5. Per-Actor Restrictions
+IF the updated quantity exceeds available inventory or allowed limits, THEN THE system SHALL adjust the quantity down to the maximum permitted value or SHALL reject the change according to configured policy and SHALL inform the customer.
 
-### 5.1 guestUser Restrictions
+### 5.4 Cart Display and Revalidation
 
-- IF a guestUser attempts to access any account-specific resource (such as profile, addresses, orders, or wishlists), THEN THE shoppingMall backend authorization SHALL deny access and SHALL require authentication.
-- IF a guestUser attempts to place an order or initiate payment, THEN THE shoppingMall backend authorization SHALL prevent order creation until the user becomes an authenticated customer.
-- IF a guestUser attempts to create a review or rating, THEN THE shoppingMall backend authorization SHALL deny the operation.
+WHEN a customer opens the cart view, THE system SHALL recalculate current prices, discounts, and stock status for each cart item based on the latest business data.
 
-### 5.2 customer Restrictions
+IF any cart item has become unavailable or changed in price since it was added, THEN THE system SHALL reflect the new status or price and SHALL identify the affected items to the customer.
 
-- IF a customer attempts to view or modify another customer’s profile, addresses, cart, wishlist, or orders, THEN THE shoppingMall backend authorization SHALL deny access.
-- IF a customer attempts to perform seller-specific actions such as creating products, managing inventory, or updating shipping status, THEN THE shoppingMall backend authorization SHALL deny the operation.
-- IF a customer attempts to create a review for a product they have never purchased, THEN THE shoppingMall backend authorization SHALL block the review creation.
+WHILE checkout has not begun, THE system SHALL allow customers to adjust quantities, remove items, or clear the cart entirely.
 
-### 5.3 seller Restrictions
+### 5.5 Wishlist Behavior
 
-- IF a seller attempts to modify products, SKUs, or inventory that belong to another seller, THEN THE shoppingMall backend authorization SHALL deny the update.
-- IF a seller attempts to view orders that do not contain any of that seller’s SKUs, THEN THE shoppingMall backend authorization SHALL deny access.
-- IF a seller attempts to modify platform-level settings or user roles, THEN THE shoppingMall backend authorization SHALL deny the operation.
+WHEN a customer chooses to add a product to a wishlist, THE system SHALL record that preference in a wishlist associated with that customer account.
 
-### 5.4 platformAdmin Restrictions
+WHERE business policy allows multiple wishlists, THE system SHALL allow the customer to create, name, and delete wishlists and to move items between them.
 
-- WHERE business policy defines restricted administrative capabilities (such as irreversible data deletion), THE shoppingMall backend authorization SHALL limit these operations to designated high-privilege admin roles and shall require additional safeguards such as explicit confirmation.
-- IF a platformAdmin attempts to bypass audit requirements for sensitive actions by using unsupported paths, THEN THE shoppingMall backend authorization SHALL prevent the action or SHALL still ensure appropriate audit logging is recorded.
+IF an attempt is made to add a product that is no longer visible or has been removed, THEN THE system SHALL reject the addition and SHALL indicate that the product is unavailable.
 
-### 5.5 Separation of Duties
+WHEN a customer chooses to move a wishlist item to cart, THE system SHALL apply the same SKU and availability validations used for direct add-to-cart actions.
 
-- WHERE a user holds both customer and seller roles, THE shoppingMall backend authorization SHALL enforce owner-based rules so that resources tied to the seller entity remain isolated from resources tied to the customer identity, except where explicitly allowed (for example, the same person buying their own products as a customer).
-- WHERE a platformAdmin is also a customer or seller, THE shoppingMall backend authorization SHALL distinguish between their administrative actions and personal customer or seller actions and SHALL log these roles clearly in audit trails.
 
-## 6. Permission Matrix by Feature
+## 6. Order Placement and Payment Processing
 
-### 6.1 Feature Permission Table
+### 6.1 Checkout Pre-conditions
 
-| Feature / Action                                     | guestUser | customer | seller | platformAdmin |
-|------------------------------------------------------|-----------|----------|--------|---------------|
-| Browse products and categories                       | ✅        | ✅       | ✅     | ✅            |
-| Search products                                      | ✅        | ✅       | ✅     | ✅            |
-| View reviews and ratings                             | ✅        | ✅       | ✅     | ✅            |
-| Register account                                     | ✅        | ✅       | ✅     | ❌            |
-| Manage own profile                                   | ❌        | ✅       | ✅     | ✅ (self)     |
-| Manage addresses                                     | ❌        | ✅       | ✅     | ❌            |
-| Manage temporary cart                                | ✅        | ✅       | ✅     | ❌            |
-| Manage persistent cart                               | ❌        | ✅       | ✅     | ❌            |
-| Manage wishlist                                      | ❌        | ✅       | ✅     | ❌            |
-| Place order                                          | ❌        | ✅       | ✅     | ✅ (special)  |
-| View personal order history                          | ❌        | ✅       | ✅     | ❌            |
-| View all orders                                      | ❌        | ❌       | ❌     | ✅            |
-| Request cancellation                                 | ❌        | ✅       | ✅     | ✅            |
-| Request refund                                       | ❌        | ✅       | ✅     | ✅            |
-| Respond to cancellation/refund for owned items       | ❌        | ❌       | ✅     | ✅            |
-| Create products                                      | ❌        | ❌       | ✅     | ✅            |
-| Manage own products and SKUs                         | ❌        | ❌       | ✅     | ✅            |
-| Manage inventory for own SKUs                        | ❌        | ❌       | ✅     | ✅            |
-| Manage other sellers’ SKUs and inventory             | ❌        | ❌       | ❌     | ✅            |
-| Update shipping status for owned items               | ❌        | ❌       | ✅     | ✅            |
-| Leave review and rating                              | ❌        | ✅       | ✅     | ❌            |
-| Moderate or remove reviews                           | ❌        | ❌       | ❌     | ✅            |
-| Approve or suspend sellers                           | ❌        | ❌       | ❌     | ✅            |
-| Deactivate user accounts                             | ❌        | ❌       | ❌     | ✅            |
-| Access system-wide reporting                         | ❌        | ❌       | ❌     | ✅            |
+WHEN a customer initiates checkout, THE system SHALL require that the customer is authenticated.
 
-### 6.2 Representative EARS Requirements by Feature
+WHEN checkout begins, THE system SHALL validate all cart items for SKU existence, visibility, purchase eligibility, and inventory sufficiency.
 
-#### 6.2.1 Product Catalog and Search
+IF any cart item fails validation, THEN THE system SHALL block progression to payment selection and SHALL prompt the customer to resolve the problematic items.
 
-- THE shoppingMall backend authorization SHALL permit guestUser, customer, seller, and platformAdmin to browse public products and categories.
-- IF a product is marked as hidden or inactive, THEN THE shoppingMall backend authorization SHALL prevent guestUser and customer from seeing it in standard catalog listings, while still allowing visibility in historical order views where necessary.
+### 6.2 Address and Shipping Selection
 
-#### 6.2.2 Cart and Wishlist
+WHEN checkout progresses beyond cart validation, THE system SHALL require selection of at least one shipping address for all items that require physical delivery.
 
-- WHEN an authenticated customer adds a product or SKU to own persistent cart, THE shoppingMall backend authorization SHALL verify that the actor owns the cart and that the product is eligible for sale to that actor.
-- IF any actor attempts to add or modify items in a cart belonging to a different user, THEN THE shoppingMall backend authorization SHALL deny the operation.
-- WHEN a customer modifies a wishlist, THE shoppingMall backend authorization SHALL ensure only the owning customer can make changes to that wishlist.
+WHEN a shipping address is selected, THE system SHALL validate address fields as compatible with supported shipping regions and SHALL ensure that at least one shipping option exists for that address and set of items.
 
-#### 6.2.3 Orders and Payments
+IF no shipping method is available for a combination of address and items, THEN THE system SHALL prevent order confirmation and SHALL identify the problematic items.
 
-- WHEN a customer initiates checkout, THE shoppingMall backend authorization SHALL confirm that the actor is authenticated and that the cart belongs to that customer.
-- IF any order-level or item-level action such as cancellation or refund request is initiated by an actor who is neither the owning customer, the owning seller for that line (where permitted), nor a platformAdmin, THEN THE shoppingMall backend authorization SHALL deny the action.
+### 6.3 Payment Method Selection
 
-#### 6.2.4 Seller Operations
+WHEN all order details and shipping selections are valid, THE system SHALL present the customer with a set of allowed payment methods appropriate for the region, currency, and order amount.
 
-- WHEN a seller modifies inventory of a SKU, THE shoppingMall backend authorization SHALL verify that the SKU belongs to that seller’s store.
-- IF a seller attempts to modify or deactivate a product owned by another seller, THEN THE shoppingMall backend authorization SHALL deny the operation.
+WHEN the customer selects a payment method, THE system SHALL lock the payable amount and SHALL initiate payment processing according to that method’s rules.
 
-#### 6.2.5 Admin Operations
+IF payment authorization succeeds, THEN THE system SHALL mark the payment as successful at business level and SHALL create or update the order in a paid state.
 
-- WHEN a platformAdmin attempts to suspend a seller, THE shoppingMall backend authorization SHALL ensure the actor has appropriate admin permissions and SHALL allow the suspension while recording an audit entry.
-- IF a non-admin actor attempts to access admin-only reporting or configuration features, THEN THE shoppingMall backend authorization SHALL deny access.
+IF payment authorization fails or is declined, THEN THE system SHALL record the failure reason, SHALL leave the cart intact for potential retry, and SHALL not mark the order as paid.
 
-## 7. Business Rules for Authorization
+### 6.4 Order Creation and Confirmation
 
-### 7.1 Ownership Rules
+WHEN payment is confirmed or otherwise deemed acceptable, THE system SHALL create an order record that contains a snapshot of items, SKUs, prices, discounts, fees, taxes, shipping details, and payment status at the time of confirmation.
 
-- THE shoppingMall backend authorization SHALL associate each customer-owned resource (profile, address, cart, wishlist, order, review) with a single customer identity.
-- THE shoppingMall backend authorization SHALL associate each seller-owned resource (products, SKUs, inventory records, seller-specific shipping entries) with a single seller identity or store.
-- WHEN an operation is performed on a resource, THE shoppingMall backend authorization SHALL validate that the actor’s identity matches the resource owner or that the actor is a platformAdmin with override capability.
+WHEN an order is successfully created, THE system SHALL provide the customer with an order identifier and summarized order details.
 
-### 7.2 Tenant Isolation for Sellers
+WHEN an order includes items from multiple sellers, THE system SHALL record the seller attribution for each order line so that subsequent seller-specific processing can occur.
 
-- THE shoppingMall backend authorization SHALL ensure that each seller can see only own products, inventories, and order line details, except for customer information explicitly needed for fulfillment.
-- IF a seller attempts to access another seller’s internal data, THEN THE shoppingMall backend authorization SHALL deny access.
+### 6.5 Payment Status Lifecycle
 
-### 7.3 State-Driven Restrictions
+WHEN a payment attempt is initiated, THE system SHALL set payment status to a pending state until a final outcome is known or a timeout occurs.
 
-- WHILE an order is beyond the business-defined cancellation window, THE shoppingMall backend authorization SHALL prevent customers from initiating standard cancellation for that order.
-- WHILE a review is in a moderated or locked state, THE shoppingMall backend authorization SHALL prevent further edits or deletions by the customer, except where platformAdmin overrides per moderation rules.
+WHEN a payment completes successfully, THE system SHALL set payment status to paid and SHALL ensure that the order becomes eligible for fulfillment.
 
-### 7.4 Time-Based Rules
+IF a payment is declined or fails, THEN THE system SHALL mark payment status as failed and SHALL prevent shipment until a successful payment exists.
 
-- WHERE refund policies specify a maximum time after delivery for refund requests, THE shoppingMall backend authorization SHALL disallow new refund requests by customers for items delivered beyond that period, unless platformAdmin explicitly overrides.
+WHEN a refund is approved and processed, THE system SHALL update payment-related records to reflect the refunded amount and SHALL store the reason for that refund.
 
-### 7.5 Cross-Domain Consistency Rules
-
-- THE shoppingMall backend authorization SHALL enforce consistent permissions across related domains so that actions permitted in cart flows align with order, payment, inventory, and review flows.
-- WHEN a user’s role or status changes (for example, seller suspended), THE shoppingMall backend authorization SHALL update allowed actions in all relevant domains, such as hiding the seller’s products from catalog and blocking fulfillment actions for new orders.
-
-## 8. Performance and Audit Expectations for Permissions
-
-### 8.1 Performance Expectations
-
-- THE shoppingMall backend authorization SHALL evaluate standard authorization checks, such as verifying actor role and resource ownership, fast enough that typical authenticated requests meet the performance targets defined in nonfunctional requirements.
-- THE shoppingMall backend authorization SHALL avoid redundant checks for the same actor and resource within a single business operation, while still maintaining correctness and security.
-
-### 8.2 Audit and Logging Requirements
-
-- THE shoppingMall backend SHALL record audit entries for sensitive resource access denials and for all state-changing administrative actions that depend on authorization decisions.
-- WHEN a platformAdmin performs an action that modifies another actor’s resources, THE shoppingMall backend SHALL log the acting admin identity, target resource identity, action type, and timestamp.
-- WHERE required by regulation or internal policy, THE shoppingMall backend SHALL provide authorized roles with the ability to review audit logs related to authorization, while protecting sensitive personal data according to privacy rules.
-
-## 9. Diagrams
-
-### 9.1 Actor and Role Relationship Overview
+### 6.6 Mermaid Diagram – Checkout and Payment
 
 ```mermaid
 graph LR
-  G["guestUser"] --> C["customer"]
-  C["customer"] --> S["seller"]
-  C --> A["platformAdmin"]
+  A["Cart Ready"] --> B["Checkout Started"]
+  B --> C["Validate Items & Stock"]
+  C -->|"Valid"| D["Address & Shipping Selection"]
+  C -->|"Invalid"| E["Show Validation Errors"]
+  D --> F["Payment Method Selection"]
+  F --> G["Payment Attempt"]
+  G -->|"Success"| H["Create Confirmed Order"]
+  G -->|"Failure"| I["Keep Cart and Show Error"]
+  H --> J["Order Visible in Order History"]
 ```
 
-### 9.2 High-Level Authorization Decision Flow
+
+## 7. Order Tracking, Shipping, and Status Updates
+
+### 7.1 Order Status Lifecycle
+
+THE system SHALL maintain a high-level order status lifecycle that reflects major business stages such as created, paid, preparing, shipped, delivered, cancelled, and refunded.
+
+WHEN payment is confirmed, THE system SHALL transition order status from waiting-for-payment to a paid state and SHALL allow shipping preparation actions.
+
+WHEN shipping activities progress, THE system SHALL update order-related shipping statuses so that customers can see current progress.
+
+### 7.2 Shipping Status
+
+WHEN an order is ready to be fulfilled by a seller, THE system SHALL create one or more shipment records for that order according to splitting rules.
+
+WHEN the seller indicates that items have been shipped, THE system SHALL update shipping status to a shipped or in-transit state and SHALL record carrier and tracking identifiers where available.
+
+WHEN the carrier reports delivery, THE system SHALL update shipping status to delivered and SHALL record delivery timestamp.
+
+IF a shipment fails delivery, THEN THE system SHALL update shipping status to a failed state and SHALL record the failure reason for later review.
+
+### 7.3 Customer-Facing Tracking
+
+WHEN a customer views order details, THE system SHALL display the order status and each shipment’s shipping status, carrier, tracking identifier, and last known tracking event where available.
+
+IF tracking information is not yet available, THEN THE system SHALL indicate that the shipment is being prepared and that tracking will appear later.
+
+### 7.4 Handling Exceptional Shipping Scenarios
+
+IF a shipment is lost, THEN THE system SHALL mark that shipment accordingly and SHALL allow admin and seller to trigger appropriate compensation steps such as replacement or refund.
+
+IF a shipment is returned to sender, THEN THE system SHALL update status to returned and SHALL allow subsequent order and refund decisions based on return condition.
+
+
+## 8. Order History, Cancellations, and Refund Requests
+
+### 8.1 Order History
+
+WHEN a customer is authenticated, THE system SHALL allow the customer to view a chronological list of that customer’s orders.
+
+WHEN a customer selects a specific order from history, THE system SHALL present detailed information including items, prices, shipping states, payment state, and any associated cancellations or refunds.
+
+IF an authenticated actor attempts to open an order that does not belong to that actor, THEN THE system SHALL deny access and SHALL not disclose whether the order exists.
+
+### 8.2 Cancellation Requests
+
+WHEN an order is in a business-defined cancellable state such as not yet shipped, THE system SHALL allow the owning customer to request cancellation of the order in whole or in part.
+
+WHEN a cancellation request is submitted, THE system SHALL record the request, including items, quantities, reason, and requested scope, and SHALL route the request to the appropriate seller or admin workflow.
+
+IF the order is no longer cancellable (for example already shipped), THEN THE system SHALL reject new cancellation requests and SHALL suggest using refund or return flows where applicable.
+
+### 8.3 Refund Requests
+
+WHEN an order or line item meets conditions for refund eligibility such as delivery completed within a return period, THE system SHALL allow the customer to request a refund.
+
+WHEN a refund request is created, THE system SHALL require a reason category and, where required, additional details such as description of issues or photographic evidence references.
+
+WHEN a refund request is submitted, THE system SHALL create a refund case linked to the order and SHALL track its status from requested through approved or rejected.
+
+IF the refund request is approved, THEN THE system SHALL mark related order items as refunded, SHALL store the approved refund amount, and SHALL update payment status accordingly.
+
+IF the refund request is rejected, THEN THE system SHALL record the rejection reason in business terms and SHALL expose that reason to the customer.
+
+
+## 9. Product Reviews and Ratings
+
+### 9.1 Eligibility
+
+WHEN an order line item is delivered, THE system SHALL mark the associated customer as eligible to submit a review and rating for the purchased product or SKU.
+
+IF a customer attempts to submit a review for a product that the customer has not purchased or has not yet received, THEN THE system SHALL reject the review and SHALL indicate that reviews are allowed only for completed purchases.
+
+### 9.2 Rating Scale
+
+THE system SHALL use a rating scale where higher numeric values represent more positive evaluations, and SHALL default to a range from 1 to 5 inclusive unless configured otherwise.
+
+WHEN a review is submitted, THE system SHALL require a rating value within the allowed range and SHALL reject any rating outside that range.
+
+### 9.3 Review Content
+
+WHEN a customer submits review text, THE system SHALL require the content to respect configured minimum and maximum length constraints and SHALL strip or reject any unsupported markup.
+
+IF review content contains prohibited content such as hate speech or personal contact information, THEN THE system SHALL flag the review and SHALL hide it or send it for moderation according to policy.
+
+### 9.4 Review Updates and Deletion
+
+WHEN a customer owns an existing review, THE system SHALL allow the customer to update or delete that review within any defined policy time limits.
+
+WHEN a review is updated, THE system SHALL preserve an internal history of changes for audit while showing only the latest version to general users.
+
+WHEN a review is deleted by its author or removed by admin, THE system SHALL exclude that review from rating aggregations and public display while retaining it internally for an appropriate retention period.
+
+### 9.5 Aggregation and Visibility
+
+WHEN computing product rating aggregates, THE system SHALL include only reviews that are visible, non-deleted, and not excluded by policy.
+
+WHEN a product detail page is viewed, THE system SHALL show aggregated rating information such as average rating and count of reviews when at least one review exists.
+
+IF a product has no reviews, THEN THE system SHALL indicate that no rating is yet available rather than showing a misleading default value.
+
+
+## 10. Seller Accounts, Product Management, and Inventory
+
+### 10.1 Seller Profile and Access
+
+WHEN a seller account is active, THE system SHALL allow that seller to access the seller portal and manage products, SKUs, inventory, and seller-specific orders.
+
+IF a seller account is suspended, THEN THE system SHALL prevent that seller from publishing new products or modifying critical data and SHALL show that operations are restricted.
+
+### 10.2 Product Management by Sellers
+
+WHEN a seller creates or edits a product, THE system SHALL restrict changes to that seller’s own products only.
+
+IF a seller attempts to modify a product that belongs to another seller, THEN THE system SHALL deny the operation and SHALL log the attempt.
+
+WHEN a seller updates product attributes such as title, description, or category, THE system SHALL validate new values against business rules and SHALL reject invalid updates.
+
+WHEN a seller marks a product as active, THE system SHALL ensure that at least one SKU is active and that all mandatory product fields are complete.
+
+### 10.3 SKU and Inventory Management
+
+WHEN a seller sets or adjusts inventory for a SKU, THE system SHALL ensure that resulting inventory is not negative unless overselling is explicitly allowed by configuration.
+
+IF a requested inventory adjustment would cause the quantity to drop below zero and overselling is disabled, THEN THE system SHALL reject the adjustment.
+
+WHEN customer orders reserve or consume inventory, THE system SHALL adjust the effective available stock according to configured reservation or deduction rules.
+
+WHEN inventory for a SKU reaches zero and overselling is not allowed, THE system SHALL prevent new orders that would require that SKU.
+
+### 10.4 Seller Order Views and Actions
+
+WHEN a seller accesses the list of orders, THE system SHALL show only orders that include that seller’s products.
+
+WHEN a seller opens an order view, THE system SHALL display only the items, quantities, prices, and shipping address details necessary to fulfill the portion belonging to that seller.
+
+WHEN a seller marks items as shipped and provides tracking information, THE system SHALL update the shipping status for those items and SHALL make the tracking information visible to the relevant customer.
+
+
+## 11. Admin Dashboard and Governance
+
+### 11.1 Admin Visibility
+
+WHEN an admin views the admin dashboard, THE system SHALL present aggregate information about users, sellers, products, orders, refunds, disputes, and key operational metrics.
+
+WHEN an admin searches for a specific user, seller, product, or order, THE system SHALL allow searching by business identifiers and SHALL show matching results with sufficient detail for governance.
+
+### 11.2 Admin Actions on Users and Sellers
+
+WHEN an admin needs to change the status of a user or seller account, THE system SHALL require the admin to specify the new status, a reason category, and optional explanatory text.
+
+WHEN a user or seller is set to suspended or blocked, THE system SHALL prevent that actor from performing additional actions that are incompatible with the new status while preserving historical data and audit trails.
+
+### 11.3 Admin Catalog Governance
+
+WHEN an admin identifies a product or SKU that violates policy, THE system SHALL allow the admin to hide or block that product or SKU from future sales while keeping it visible in historical orders and in admin views.
+
+WHEN a product or SKU is blocked by admin, THE system SHALL ensure that customers and guest users cannot add it to cart or create new orders for it.
+
+### 11.4 Admin Handling of Orders, Refunds, and Disputes
+
+WHEN a refund or dispute requires admin intervention, THE system SHALL provide admins with complete relevant data including order details, prior decisions, and any evidence provided by customer or seller.
+
+WHEN an admin decides a dispute outcome, THE system SHALL apply the decision to order, payment, and refund records and SHALL record the decision and reasoning for audit.
+
+IF an admin attempts to perform an action that contradicts business rules such as approving a refund larger than the total paid amount, THEN THE system SHALL prevent the action and SHALL show a clear error.
+
+
+## 12. High-Level User Journeys Diagram
 
 ```mermaid
 graph LR
-  R["Incoming Request"] --> U["Identify Actor and Role"]
-  U --> P["Check Permissions For Action"]
-  P --> O{"Owns Target Resource Or Admin?"}
-  O -->|"Yes"| A["Allow Action"]
-  O -->|"No"| D["Deny Action"]
-  A --> L["Log Sensitive Actions If Needed"]
-  D --> L
+  G1["guestUser Browses Catalog"] --> G2["Registers or Logs In"]
+  G2 --> C1["customer Browses & Searches"]
+  C1 --> C2["Adds Items to Cart/Wishlist"]
+  C2 --> C3["Places Order & Pays"]
+  C3 --> C4["Tracks Shipping"]
+  C4 --> C5["Leaves Review or Requests Refund"]
+
+  G2 --> S1["seller Onboarding"]
+  S1 --> S2["Manages Products & Inventory"]
+  S2 --> S3["Processes Orders & Shipping"]
+
+  A1["admin Monitors Platform"] --> A2["Manages Users & Sellers"]
+  A1 --> A3["Moderates Catalog & Reviews"]
+  A1 --> A4["Oversees Orders, Refunds, Disputes"]
 ```
 
-These diagrams provide a conceptual overview of how actor roles relate to each other and how authorization decisions are made at a high level for shoppingMall.
+
+## 13. Error Handling and Unwanted Behavior (Cross-Cutting)
+
+### 13.1 Authorization Failures
+
+IF any actor attempts an operation outside that actor’s permission scope, THEN THE system SHALL deny the request and SHALL respond with an authorization error without revealing sensitive internal details.
+
+WHILE repeated unauthorized attempts are detected from the same actor or device within a defined period, THE system SHALL log the attempts and MAY limit further requests from that source according to security policy.
+
+### 13.2 Data Validation Failures
+
+WHEN input data is missing mandatory fields or violates business constraints such as length limits or invalid formats, THE system SHALL reject the operation and SHALL return field-level validation errors in business terms.
+
+WHEN multiple validation failures occur in a single request, THE system SHALL report all relevant issues in one response where practical.
+
+### 13.3 Concurrency and Consistency Issues
+
+IF a data conflict is detected due to concurrent changes such as simultaneous cart updates or stock adjustments, THEN THE system SHALL apply a deterministic resolution strategy such as last-write-wins or version-based conflict handling and SHALL make the final state visible to affected actors.
+
+WHEN concurrency conflicts affect customer-facing operations such as checkout, THE system SHALL err on the side of preventing over-commitment of inventory and SHALL explain the conflict to the customer.
+
+
+## 14. Non-functional Business Expectations (Summary)
+
+THE system SHALL provide response times that are generally within a few seconds for all customer-facing operations under normal load so that the shopping experience feels responsive.
+
+THE system SHALL provide high availability for catalog browsing, cart operations, checkout, and order history consistent with business uptime targets.
+
+THE system SHALL protect personal and business data from unauthorized access and SHALL maintain audit trails for sensitive operations, especially those performed by admin actors.
+
+THE system SHALL retain essential business records including orders, payments, refunds, and seller information for periods sufficient to satisfy legal, tax, and operational requirements.
+
+THE system SHALL allow adjustments to policies such as refund windows, rating rules, and seller performance thresholds through configuration so that business teams can adapt rules without rewriting core logic.
+
+THE requirements in this document SHALL guide backend developers and QA engineers in implementing and validating the shoppingMall backend strictly from a business behavior perspective.

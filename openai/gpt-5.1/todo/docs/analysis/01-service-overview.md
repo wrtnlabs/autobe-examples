@@ -1,267 +1,254 @@
-# todoApp Minimal Todo Service – Requirements Analysis
+# Minimal Todo Backend Requirements
 
 ## 1. Purpose and Vision
 
-todoApp is a minimal Todo list backend service intended for individual task management and for learning how a simple backend behaves. The primary goal is to support the smallest useful set of features for managing personal todos, while keeping the behavior predictable and easy to understand for non-technical users.
+TodoApp is a minimal backend service that allows individual users to manage a simple personal list of todos. The purpose is to support only the essential capabilities required for basic task management: creating, viewing, updating, completing, reopening, and deleting personal todos. Everything else is intentionally excluded from the first version.
 
-WHEN a person wants a simple way to record and track personal tasks, THE todoApp SHALL allow that person, as a memberUser, to manage a list of todo items without unnecessary extra features.
+THE TodoApp backend service SHALL focus on simplicity, reliability, and privacy for single-user task lists, not on team collaboration or complex project management.
 
-WHEN stakeholders use todoApp as a learning or demonstration tool, THE todoApp SHALL keep its behavior small, clear, and consistent so that the overall flow of creating, viewing, updating, completing, and deleting todos can be understood quickly.
-
-## 2. Actors and High-Level Goals
+## 2. Actors
 
 ### 2.1 guestUser
 
 A guestUser is an unauthenticated visitor.
 
-- Goal: Understand what todoApp does and decide whether to sign up.
-- No access to personal todos.
+- Cannot access any personal todo data.
+- May only access non-sensitive information such as service status or public documentation, if such endpoints exist in the broader system.
 
-WHEN the actor is a guestUser, THE todoApp SHALL show only general service information and SHALL NOT show or manipulate any personal todo data.
+EARS requirements:
+- THE TodoApp backend service SHALL prevent a guestUser from viewing, creating, updating, completing, reopening, deleting, or searching any todo.
 
 ### 2.2 memberUser
 
-A memberUser is an authenticated user who manages personal todos.
+A memberUser is an authenticated user who manages a personal todo list.
 
-- Goal: Create, review, update, complete, reopen, and delete personal tasks.
-- Can only operate on their own todos.
+- Owns a private collection of todos.
+- Expects todos to be stored reliably and visible only to themselves.
 
-WHEN the actor is a memberUser, THE todoApp SHALL allow full management of todos that belong only to that memberUser.
+EARS requirements:
+- THE TodoApp backend service SHALL allow a memberUser to manage only their own todos.
+- THE TodoApp backend service SHALL prevent a memberUser from accessing any todo that belongs to another memberUser.
 
 ### 2.3 adminUser
 
-An adminUser is an authenticated user with elevated operational privileges.
+An adminUser is responsible for system monitoring and exceptional maintenance.
 
-- Goal: Maintain service health and policy compliance.
-- Can view and remove problematic todos across users when necessary.
+- Monitors service health and system usage.
+- May manage user accounts in exceptional cases according to separate policy documents.
 
-WHEN the actor is an adminUser, THE todoApp SHALL allow oversight of todos created by different memberUsers for operational and policy reasons, without treating the adminUser as the personal owner of those todos.
+EARS requirements:
+- THE TodoApp backend service SHALL allow an adminUser to access system-level metrics and logs needed to operate the service.
+- THE TodoApp backend service SHALL restrict an adminUser from casually reading memberUser todo contents except where explicitly allowed by separate business policies.
 
-## 3. Minimal In-Scope Features
+## 3. Scope and Goals
 
-The minimal version focuses on essential Todo capabilities for a single memberUser.
+### 3.1 In-scope (Minimal Feature Set)
 
-In-scope capabilities:
+- Personal todo management for memberUser.
+- Strict privacy: todos are never shared between users.
+- Basic monitoring capabilities for adminUser.
 
-- Member authentication and ownership of todos at a business level.
-- Creating todos with a short textual description.
-- Listing todos that belong to the current memberUser.
-- Updating the description of an existing todo.
-- Marking a todo as completed.
-- Reopening a completed todo.
-- Deleting a todo so it no longer appears in normal usage.
-- Admin oversight actions to remove inappropriate todos.
+EARS requirements:
+- THE TodoApp backend service SHALL support core todo operations for a memberUser: create, view/list, update, mark as completed, reopen, and delete.
+- THE TodoApp backend service SHALL ensure that each todo is owned by exactly one memberUser.
 
-WHEN a memberUser is authenticated and provides a valid description, THE todoApp SHALL create a todo item associated only with that memberUser.
+### 3.2 Out-of-scope for First Version
 
-WHEN a memberUser requests their todo list, THE todoApp SHALL return only todos owned by that memberUser in a consistent order.
+The following are explicitly excluded from the minimal implementation:
 
-WHEN a memberUser updates, completes, reopens, or deletes a todo, THE todoApp SHALL apply the requested change only to todos owned by that memberUser.
+- Collaboration between users (shared lists, assigning todos to other users, comments between users).
+- Complex project management (subtasks, Kanban boards, sprints, timelines, Gantt charts).
+- Integrations with external tools (email, calendars, chat, storage).
+- File attachments on todos.
+- Advanced user analytics dashboards.
+- Public or shareable links to todos.
+- guestUser ability to create or manage todos.
 
-WHEN an adminUser decides that a todo must be removed for policy or legal reasons, THE todoApp SHALL allow the adminUser to remove or hide that todo from normal access.
+EARS requirements:
+- THE TodoApp backend service SHALL NOT implement cross-user sharing of todos in the initial version.
+- THE TodoApp backend service SHALL NOT implement file uploads or attachments for todos in the initial version.
 
-## 4. Explicit Out-of-Scope Items
+## 4. Core Todo Concept
 
-To keep todoApp minimal, many typical task management features are intentionally excluded in this version.
+A todo is a single, actionable task owned by one memberUser.
 
-Out-of-scope examples:
+Each todo has at minimum:
+- A short textual description that explains what needs to be done.
+- A state indicating whether it is pending or completed.
 
-- Shared or collaborative todo lists.
-- Assigning todos to other users.
-- Tags, labels, folders, or complex categorization.
-- Reminders, notifications, or calendar integrations.
-- File attachments or images.
-- Subtasks or nested todos.
-- Rich text or long-form notes.
-- Time tracking or productivity analytics.
-- Advanced search and filtering beyond basic listing.
+Optional minimal attributes may include:
+- A longer note for additional context.
+- A simple date field (for example, a target or reminder date) without complex scheduling logic.
 
-WHERE a requested feature would significantly increase complexity, such as collaboration or reminders, THE todoApp SHALL treat that feature as out of scope for this minimal version.
+EARS requirements:
+- THE TodoApp backend service SHALL represent each todo with a description and a state (pending or completed) at minimum.
+- THE TodoApp backend service SHALL associate each todo with exactly one memberUser.
 
-WHILE the minimal version is active, THE todoApp SHALL protect its scope by not adding advanced organization, sharing, or integration features.
+## 5. Functional Requirements by Feature
 
-## 5. Core Concepts
+### 5.1 Creating Todos
 
-### 5.1 Todo Item
+WHEN a memberUser decides to remember a new task,
+THE TodoApp backend service SHALL allow the memberUser to create a new todo with a non-empty textual description.
 
-A todo item is a single task that a memberUser wants to remember.
+Functional rules:
+- A valid todo creation requires at least a non-empty description.
+- The initial state of a newly created todo is pending.
+- The todo is linked to the memberUser who created it.
 
-Characteristics at business level:
+EARS requirements:
+- WHEN a memberUser submits a request to create a todo with a valid description, THE TodoApp backend service SHALL create a new pending todo linked to that memberUser.
+- IF a memberUser submits a request to create a todo without a valid description (for example, missing or blank), THEN THE TodoApp backend service SHALL reject the request and SHALL indicate that a description is required.
+- IF a guestUser attempts to create a todo, THEN THE TodoApp backend service SHALL reject the request and SHALL indicate that authentication is required.
 
-- A short textual description.
-- Owned by exactly one memberUser.
-- A completion state: completed or not completed.
-- Conceptual timestamps for creation and last update.
+### 5.2 Viewing Todos (List and Detail)
 
-WHEN a memberUser creates a todo, THE todoApp SHALL require a non-empty description that is reasonably short and understandable.
+A memberUser must be able to see their todos to decide what to work on.
 
-IF a todo item has been deleted, THEN THE todoApp SHALL not return that todo in normal listings or retrieval operations for any user.
+Functional rules:
+- A memberUser can request a list of their own todos.
+- The response includes, for each todo, at least its description and current state.
+- The list may include both pending and completed todos.
+- The system applies a simple, deterministic ordering (for example, by creation time or last update); the specific rule is defined in detailed design but must be consistent.
 
-### 5.2 Completion State
+EARS requirements:
+- WHEN a memberUser requests their todo list, THE TodoApp backend service SHALL return only todos owned by that memberUser.
+- WHEN a memberUser requests their todo list, THE TodoApp backend service SHALL include each todo’s description and current state.
+- IF a memberUser attempts to access a specific todo by identifier that belongs to another memberUser, THEN THE TodoApp backend service SHALL deny access.
+- IF a guestUser attempts to view any todo list or todo detail, THEN THE TodoApp backend service SHALL deny access and SHALL indicate that authentication is required.
 
-The completion state represents whether the memberUser considers the task done.
+### 5.3 Updating Todo Content
 
-WHEN a memberUser marks a todo as completed, THE todoApp SHALL set its completion state to completed without changing the description.
+Member users may refine a todo’s description or optional fields.
 
-WHEN a memberUser reopens a completed todo, THE todoApp SHALL set its completion state back to not completed.
+Functional rules:
+- A memberUser can update the description of a todo they own.
+- A memberUser can update minimal optional fields such as a simple note or date.
 
-### 5.3 Ownership and Access
+EARS requirements:
+- WHEN a memberUser submits a request to update one of their todos with valid data, THE TodoApp backend service SHALL apply the changes and SHALL keep the todo associated with the same memberUser.
+- IF a memberUser attempts to update a todo that does not belong to them, THEN THE TodoApp backend service SHALL reject the update and SHALL indicate that the todo is not accessible.
+- IF a memberUser submits invalid update data (for example, an empty description if description is required), THEN THE TodoApp backend service SHALL reject the update and SHALL indicate what is invalid.
 
-Ownership links each todo to one memberUser.
+### 5.4 Completing Todos
 
-WHEN a memberUser tries to perform any operation on a todo that is not owned by that memberUser, THE todoApp SHALL deny that operation.
+Completing todos represents finishing tasks.
 
-WHEN a guestUser interacts with the system, THE todoApp SHALL prevent the guestUser from creating, viewing, updating, completing, reopening, or deleting any todo items.
+Functional rules:
+- A memberUser can mark their own pending todo as completed.
+- Completing a todo changes its state but does not delete it.
 
-WHEN an adminUser performs oversight, THE todoApp SHALL allow the adminUser to view and remove todos across users when required by policy, legal, or safety reasons.
+EARS requirements:
+- WHEN a memberUser marks one of their pending todos as completed, THE TodoApp backend service SHALL switch the todo’s state from pending to completed while keeping all other data unchanged.
+- IF a memberUser attempts to mark a todo as completed that does not belong to them, THEN THE TodoApp backend service SHALL reject the operation.
 
-## 6. User Journeys
+### 5.5 Reopening Todos
 
-### 6.1 guestUser Journey
+Reopening supports corrections or additional work.
 
-- The guestUser visits the service.
-- The guestUser reads a brief explanation of what todoApp does.
-- The guestUser may decide to register and become a memberUser using the separate authentication flow.
+Functional rules:
+- A memberUser can change a completed todo back to pending.
 
-WHEN a guestUser attempts an operation that depends on personal todos, THE todoApp SHALL require the guestUser to authenticate as a memberUser before allowing access.
+EARS requirements:
+- WHEN a memberUser marks one of their completed todos as reopened, THE TodoApp backend service SHALL switch the todo’s state from completed to pending.
+- IF a memberUser attempts to reopen a todo that does not belong to them, THEN THE TodoApp backend service SHALL reject the operation.
 
-### 6.2 memberUser Journey: Managing Todos
+### 5.6 Deleting Todos
 
-Typical steps:
+Deleting removes tasks that are no longer needed.
 
-1. The person becomes a memberUser by registering and signing in.
-2. The memberUser creates one or more todos describing tasks.
-3. The memberUser periodically views the todo list to recall tasks.
-4. The memberUser edits descriptions when the nature of tasks changes.
-5. The memberUser marks todos as completed when tasks are done.
-6. The memberUser reopens tasks that need to be done again.
-7. The memberUser deletes tasks that are no longer relevant.
+Functional rules:
+- A memberUser can delete any of their own todos, whether pending or completed.
+- A deleted todo is no longer returned in normal todo lists for that user.
 
-WHEN a memberUser is authenticated and requests their todo list, THE todoApp SHALL show the list of todos owned by that memberUser.
+EARS requirements:
+- WHEN a memberUser requests deletion of one of their todos, THE TodoApp backend service SHALL remove that todo from subsequent normal todo listings for that memberUser.
+- IF a memberUser attempts to delete a todo that does not belong to them, THEN THE TodoApp backend service SHALL reject the request.
 
-WHEN a memberUser provides a valid new description for an existing todo they own, THE todoApp SHALL update that todo with the new description.
+### 5.7 Basic Filtering (Minimal)
 
-WHEN a memberUser requests to complete a todo they own, THE todoApp SHALL mark that todo as completed.
+Filtering is optional but may be included in a minimal way.
 
-WHEN a memberUser requests to reopen a completed todo they own, THE todoApp SHALL mark that todo as not completed.
+Functional rules:
+- A memberUser can request to see only pending or only completed todos.
 
-WHEN a memberUser requests to delete a todo they own, THE todoApp SHALL make that todo unavailable in subsequent normal operations.
+EARS requirements:
+- WHERE state-based filtering is requested, THE TodoApp backend service SHALL return only todos matching the requested state and owned by that memberUser.
+- IF a memberUser requests an unsupported filter or search option, THEN THE TodoApp backend service SHALL respond with an indication that the option is not available in the minimal version.
 
-### 6.3 adminUser Journey: Oversight
+## 6. Permissions and Access Control
 
-- The adminUser signs in with administrative credentials.
-- The adminUser may search or navigate to todos linked to specific memberUsers when there is a complaint or policy issue.
-- The adminUser decides whether a todo violates operational or legal rules.
-- The adminUser removes or hides the todo when necessary.
+### 6.1 Ownership Rules
 
-WHEN an adminUser is authenticated as an administrative actor, THE todoApp SHALL provide visibility into memberUser todos that is sufficient for resolving policy and operational issues.
+EARS requirements:
+- THE TodoApp backend service SHALL treat the combination of memberUser identity and todo ownership as the primary access control for todo operations.
+- THE TodoApp backend service SHALL ensure that no todo can be accessed or modified by a different memberUser than its owner.
 
-WHEN an adminUser determines that a todo must be removed, THE todoApp SHALL ensure that the todo no longer appears in normal memberUser listings and SHALL prevent further normal access to that todo.
+### 6.2 Actor Capabilities Summary
 
-## 7. Functional Requirements in EARS Format
+- guestUser:
+  - SHALL NOT be able to perform any todo operation.
+- memberUser:
+  - SHALL be able to create, view, update, complete, reopen, delete, and minimally filter their own todos.
+  - SHALL NOT be able to see or modify any other user’s todos.
+- adminUser:
+  - SHALL be able to access system-level information and user account controls defined in separate documents.
+  - SHALL NOT have general-purpose, everyday access to todo contents unless required by special policies.
 
-This section summarizes core behaviors using EARS-style requirements.
+## 7. Minimal Non-functional Requirements
 
-### 7.1 Create Todo
+These requirements define a basic level of service quality.
 
-WHEN a memberUser is authenticated AND provides a non-empty todo description within the allowed length, THE todoApp SHALL create a new todo item owned by that memberUser and record its initial state as not completed.
+### 7.1 Performance
 
-WHEN a memberUser attempts to create a todo with an empty description or a description that exceeds reasonable length limits, THE todoApp SHALL reject the creation and SHALL NOT store a todo for that request.
+EARS requirements:
+- UNDER normal load conditions, WHEN a memberUser performs a core todo operation (create, view, update, complete, reopen, delete), THE TodoApp backend service SHALL respond quickly enough that the user perceives the operation as immediate in common client applications.
 
-### 7.2 List Todos
+### 7.2 Reliability
 
-WHEN a memberUser is authenticated AND requests their todo list, THE todoApp SHALL return a list that contains all non-deleted todos owned by that memberUser.
+EARS requirements:
+- THE TodoApp backend service SHALL make core todo operations available the vast majority of the time, with failures limited to rare exceptions.
+- WHEN a failure occurs during a todo operation, THE TodoApp backend service SHALL avoid leaving todo data in an inconsistent state (for example, partially applied updates).
 
-WHEN a memberUser views their todo list repeatedly over time, THE todoApp SHALL return consistent data that reflects earlier create, update, completion, reopen, and deletion actions performed by that memberUser.
+### 7.3 Security and Privacy (High-level)
 
-### 7.3 Read Single Todo (Conceptual)
+EARS requirements:
+- THE TodoApp backend service SHALL require authentication for any operation that reads or modifies todos.
+- THE TodoApp backend service SHALL ensure that todo data for one memberUser is never exposed to another memberUser or guestUser.
 
-WHEN a memberUser is authenticated AND requests details for a specific todo they own, THE todoApp SHALL return the description, completion state, and relevant timestamps for that todo.
+### 7.4 Usability from Backend Perspective
 
-WHEN a memberUser requests a todo that does not exist or is deleted, THE todoApp SHALL indicate that the todo is not available and SHALL NOT expose any unrelated todo data.
+EARS requirements:
+- THE TodoApp backend service SHALL apply consistent validation and error-handling rules so that client applications can provide predictable user experiences.
 
-### 7.4 Update Todo Description
+## 8. Assumptions and Constraints
 
-WHEN a memberUser is authenticated AND provides a valid new description for a todo they own, THE todoApp SHALL update the todo’s description and SHALL keep its completion state unchanged.
+- A separate authentication mechanism exists that can reliably distinguish guestUser, memberUser, and adminUser.
+- Frontend clients (such as web or mobile apps) will handle user interface and will rely on clear success and error responses from the backend.
+- The minimal version favors clarity and simplicity over flexibility and customization.
 
-WHEN a memberUser attempts to update a todo they do not own, THE todoApp SHALL deny the update operation and SHALL NOT change any todo data.
+EARS requirements:
+- THE TodoApp backend service SHALL expose todo-related behaviors in a way that frontend clients can use to implement a simple, predictable todo experience.
 
-### 7.5 Complete and Reopen Todo
+## 9. Success Criteria (Business-level)
 
-WHEN a memberUser is authenticated AND requests to mark a todo they own as completed, THE todoApp SHALL set the todo’s completion state to completed.
+The minimal TodoApp is considered successful if:
 
-WHEN a memberUser is authenticated AND requests to reopen a completed todo they own, THE todoApp SHALL set the todo’s completion state back to not completed.
+- memberUser can reliably maintain a personal list of todos with the core operations defined above.
+- Todos are never visible to other users without explicit business justification.
+- System behavior is predictable and consistent for all core operations.
 
-WHEN a memberUser attempts to change the completion state of a todo they do not own, THE todoApp SHALL deny the operation.
+EARS requirements:
+- THE TodoApp backend service SHALL support measurement of aggregate todo operations (such as counts of creations and completions) in a way that does not expose individual todo contents in analytics contexts.
 
-### 7.6 Delete Todo
+## 10. Future Extensions (Informative, Not Required for First Version)
 
-WHEN a memberUser is authenticated AND requests to delete a todo they own, THE todoApp SHALL remove that todo from normal access and SHALL ensure it no longer appears in the memberUser’s todo list.
+The following ideas are identified as potential future enhancements but are not required for the first minimal release:
 
-WHEN a memberUser attempts to delete a todo they do not own, THE todoApp SHALL deny the delete operation and SHALL keep the todo unchanged.
+- Labels or categories for todos.
+- Reminders or notifications.
+- Shared lists or team workspaces.
+- Rich text descriptions or file attachments.
 
-### 7.7 Admin Oversight
-
-WHEN an adminUser is authenticated as an administrative actor AND requests to review todos for operational reasons, THE todoApp SHALL present the requested todos in a way that supports policy evaluation.
-
-WHEN an adminUser decides that a todo must be removed for policy, legal, or safety reasons, THE todoApp SHALL remove or hide that todo from normal access for both the memberUser owner and other users.
-
-WHEN an adminUser performs oversight actions, THE todoApp SHALL distinguish between oversight access and personal ownership so that admin actions do not incorrectly change ownership semantics.
-
-## 8. Authentication and Authorization (Business View)
-
-Authentication and detailed mechanisms are defined elsewhere, but the requirements for this minimal Todo service are:
-
-WHEN a user performs operations that depend on personal todos, THE todoApp SHALL require that user to be authenticated as a memberUser or adminUser.
-
-WHEN a user is not authenticated, THE todoApp SHALL treat that user as a guestUser and SHALL restrict access to general information only.
-
-WHEN a memberUser is authenticated, THE todoApp SHALL treat that identity as the owner of newly created todos and SHALL use that identity to enforce access checks for existing todos.
-
-WHEN an adminUser is authenticated, THE todoApp SHALL recognize administrative privileges and SHALL allow the adminUser to view and remove todos across users for operational reasons, while preventing the adminUser from acting as if they were the personal owner of memberUser todos.
-
-## 9. Validation and Business Rules (High Level)
-
-This minimal service relies on simple, clear validation rules.
-
-WHEN a memberUser creates or updates a todo description, THE todoApp SHALL require the description to be non-empty and reasonably short so that it can be read easily in a list.
-
-WHEN a todo description violates basic length or emptiness rules, THE todoApp SHALL reject the request and SHALL keep existing data unchanged.
-
-WHEN operations target specific todos (update, complete, reopen, delete), THE todoApp SHALL require that the referenced todo exists and is owned by the actor (unless the actor is an adminUser performing an allowed oversight action).
-
-WHEN a memberUser sends multiple identical or repeated requests for the same update, completion, reopen, or deletion, THE todoApp SHALL handle these requests in a way that keeps the todo’s final state consistent and avoids confusing duplicate effects from a business perspective.
-
-## 10. Error Handling Expectations (Business View)
-
-Error details and formats are defined elsewhere, but expectations for behavior are:
-
-WHEN an unauthenticated user attempts an operation that requires authentication, THE todoApp SHALL refuse the operation and SHALL clearly distinguish that authentication is required.
-
-WHEN an authenticated user attempts to operate on a todo they do not own, THE todoApp SHALL deny the operation as not permitted and SHALL NOT reveal sensitive details about the unauthorized todo.
-
-WHEN a requested todo does not exist or has been deleted, THE todoApp SHALL indicate that the todo is not available.
-
-WHEN internal problems temporarily prevent normal operation, THE todoApp SHALL avoid corrupting todo data and SHALL make it possible for users to retry operations later.
-
-## 11. Non-Functional Expectations (Business Level)
-
-Although low-level technical metrics are not specified, there are clear expectations:
-
-WHEN a memberUser performs normal operations such as viewing their todo list or updating a todo under typical usage, THE todoApp SHALL respond quickly enough that the memberUser experiences the interaction as immediate or nearly immediate.
-
-WHILE the todoApp is running in normal conditions, THE todoApp SHALL preserve the integrity of todo data and SHALL avoid unexpected loss of todos during ordinary usage.
-
-WHEN traffic grows within reasonable limits for a minimal service, THE todoApp SHALL maintain consistent behavior so that memberUsers can still create and manage todos without noticeable degradation in normal conditions.
-
-## 12. Success Criteria for the Minimal Version
-
-The minimal version of todoApp is considered successful when the following conditions are met:
-
-- memberUsers can reliably create, list, update, complete, reopen, and delete their own todos.
-- guestUsers cannot access or manipulate any personal todo data.
-- adminUsers can review and remove todos that violate policies, without breaking normal memberUser flows.
-
-WHEN a memberUser repeatedly uses todoApp over time for basic todo operations, THE todoApp SHALL behave consistently across sessions so the memberUser can trust that actions have the same effect each time.
-
-WHEN stakeholders look at todoApp as an example of a minimal backend, THE todoApp SHALL demonstrate clear, focused behavior aligned with the requirements described here, without extra complexity from out-of-scope features.
+EARS requirements:
+- THE TodoApp backend service SHALL maintain stable core behaviors for todo creation, viewing, updating, completing, reopening, and deleting so that any future extension does not break existing minimal functionality for current users.

@@ -1,30 +1,26 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { AuthUserPasswordResetRequestController } from "./controllers/auth/user/password/reset/request/AuthUserPasswordResetRequestController";
-import { AuthUserPasswordResetCompleteController } from "./controllers/auth/user/password/reset/complete/AuthUserPasswordResetCompleteController";
-import { AuthUserPasswordChangeController } from "./controllers/auth/user/password/change/AuthUserPasswordChangeController";
-import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
-import { TodolistUserUsersSessionsController } from "./controllers/todoList/user/users/sessions/TodolistUserUsersSessionsController";
-import { TodolistUserPasswordresettokensController } from "./controllers/todoList/user/passwordResetTokens/TodolistUserPasswordresettokensController";
-import { TodolistPasswordresettokensController } from "./controllers/todoList/passwordResetTokens/TodolistPasswordresettokensController";
+import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
+import { TodolistUserUsersMeController } from "./controllers/todoList/user/users/me/TodolistUserUsersMeController";
+import { TodolistUserUsersMePasswordController } from "./controllers/todoList/user/users/me/password/TodolistUserUsersMePasswordController";
+import { TodolistUserUsersMeSessionsController } from "./controllers/todoList/user/users/me/sessions/TodolistUserUsersMeSessionsController";
+import { TodolistAdminAdminsMeController } from "./controllers/todoList/admin/admins/me/TodolistAdminAdminsMeController";
+import { TodolistAdminAdminsMePasswordController } from "./controllers/todoList/admin/admins/me/password/TodolistAdminAdminsMePasswordController";
+import { TodolistAdminAdminsMeSessionsController } from "./controllers/todoList/admin/admins/me/sessions/TodolistAdminAdminsMeSessionsController";
 import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
-import { TodolistUserCategoriesController } from "./controllers/todoList/user/categories/TodolistUserCategoriesController";
 
 @Module({
   controllers: [
-    AuthGuestController,
     AuthUserController,
-    AuthUserPasswordResetRequestController,
-    AuthUserPasswordResetCompleteController,
-    AuthUserPasswordChangeController,
-    TodolistUserUsersController,
-    TodolistUserUsersSessionsController,
-    TodolistUserPasswordresettokensController,
-    TodolistPasswordresettokensController,
+    AuthAdminController,
+    TodolistUserUsersMeController,
+    TodolistUserUsersMePasswordController,
+    TodolistUserUsersMeSessionsController,
+    TodolistAdminAdminsMeController,
+    TodolistAdminAdminsMePasswordController,
+    TodolistAdminAdminsMeSessionsController,
     TodolistUserTodosController,
-    TodolistUserCategoriesController,
   ],
 })
 export class MyModule {}

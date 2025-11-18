@@ -1,353 +1,384 @@
-# Payment and Refund Requirements for shoppingMall Backend
+# Business Model and Goals for shoppingMall E-commerce Platform
 
-## 1. Document Purpose and Scope
+## 1. Introduction and Scope
 
-This document defines the business requirements for how the shoppingMall platform handles payments, order payment states, order history visibility, cancellations, and refunds. It is written for backend developers and product owners who need a precise description of **what** the system must do from a business perspective, without prescribing **how** to implement it.
+The shoppingMall e-commerce platform operates as a multi-seller marketplace where multiple independent sellers list products, customers purchase those products, and the platform operator earns revenue primarily from transaction-related fees and value-added services.
 
-Scope of this document:
-- Payment processing behavior and interactions with external payment providers at a conceptual level
-- Required payment-related states and transitions for orders
-- Rules and timelines for cancellations initiated by customers, sellers, and platform admins
-- Rules and timelines for refunds, including full and partial refunds
-- How payment and refund information appears in order history for different actors
-- High-level performance, security, and audit expectations related to payments
+THE business model specification for shoppingMall SHALL define:
+- What revenue mechanisms the platform relies on.
+- What fee and commission rules apply to orders, cancellations, and refunds.
+- What growth and retention strategies the platform must support and measure.
+- What key performance indicators (KPIs) are needed for monitoring business health.
+- What risk, compliance, and governance expectations exist around monetary flows.
 
-Out of scope for this document:
-- Technical details of API calls to payment providers
-- Database schemas or data models
-- User interface layouts or screen designs
-- Low-level error codes, HTTP status codes, or infrastructure design
+THE specification SHALL describe these topics strictly in business terms and SHALL avoid prescribing any technical implementation details (such as APIs, database schemas, or infrastructure choices).
 
-All functional requirements in this document are written using EARS (Easy Approach to Requirements Syntax) templates, with EARS keywords in English and requirement descriptions in en-US natural language.
+### 1.1 In-Scope Topics
 
-## 2. Terminology and Actors
+THE business model for shoppingMall SHALL cover at least the following areas:
+- Market problem and opportunity that justify the platform.
+- Value propositions for customers, sellers, and the platform operator.
+- Revenue streams, including commissions, customer-facing fees, and optional seller subscriptions or promotional fees.
+- Fee and commission concepts and their interaction with cancellations, refunds, and chargebacks.
+- Growth and retention strategies for both customers and sellers.
+- KPIs that the backend must be able to compute and support.
+- Business-level risk, compliance, and governance requirements relating to revenue, payouts, and disputes.
 
-### 2.1 Key Business Terms
+### 1.2 Out-of-Scope Topics
 
-- **Order**: A confirmed purchase created from a customer’s cart, potentially containing products from one or multiple sellers.
-- **Order item**: A single line item within an order, linked to a specific product SKU and quantity.
-- **Payment transaction**: A single interaction with an external payment provider to authorize, capture, refund, or void funds for an order.
-- **Payment provider**: Any external service that processes financial transactions for the platform (e.g., card processors, digital wallets), referenced generically without vendor names.
-- **Authorization**: A temporary hold on customer funds initiated during checkout, awaiting capture.
-- **Capture**: The action that transfers authorized funds from the customer to the platform or seller accounts.
-- **Settlement**: The completion of the financial transfer from the payment provider to the platform or sellers, which may occur asynchronously.
-- **Refund**: A payment transaction that returns funds to the customer for part or all of an order.
-- **Chargeback**: A dispute initiated through the customer’s bank or card issuer, resulting in a forced reversal of funds.
-- **Cancellation**: The action of invalidating an order, such that it will not be fulfilled. This may or may not involve a refund depending on payment state.
-- **Dispute**: A formal complaint raised by a customer about an order, payment, or refund, handled by sellers and/or platformAdmin.
-
-### 2.2 Actors
-
-The following actors are relevant for payment and refund processes:
-
-- **guestUser**: Unauthenticated visitor who can browse products and build a temporary cart, but cannot place orders or view order history.
-- **customer**: Authenticated end user who places orders, pays, views order history, requests cancellations and refunds, and tracks their financial transactions.
-- **seller**: Merchant responsible for managing products, inventory, and order fulfillment for orders that contain their products. Sellers participate in decisions about refunds and disputes for their orders.
-- **platformAdmin**: Platform operator with global visibility and authority to manage orders, refunds, disputes, and financial adjustments according to platform policy.
-
-## 3. Payment Processing Requirements
+THE business model SHALL not define:
+- Technical architecture, microservice boundaries, or API specifications.
+- Database schema, table structures, or storage technologies.
+- Frontend user interface layouts or visual design.
 
-### 3.1 Supported Payment Concepts
+THE development team SHALL interpret this document purely as a definition of **what** business behaviors and data concepts must be supported, not **how** they are implemented.
 
-Business assumptions:
-- The platform supports multiple conceptual payment methods (such as credit/debit card, bank transfer, or digital wallet) through one or more external payment providers.
-- The platform does not store sensitive payment instrument details directly and relies on tokens or references returned by providers.
-
-EARS requirements:
-- THE shoppingMall payment subsystem SHALL treat all external payment providers as abstract services that accept a payment request and return a success or failure result with a reference identifier.
-- THE shoppingMall payment subsystem SHALL support at least one online immediate payment method where payment authorization occurs during checkout.
-- WHERE a payment provider supports distinct authorization and capture steps, THE shoppingMall payment subsystem SHALL track these steps separately in its business records.
-- WHERE a payment provider performs immediate capture without separate authorization, THE shoppingMall payment subsystem SHALL treat the payment as both authorized and captured at the moment of provider success.
 
-### 3.2 Payment Initiation from Checkout
+## 2. Market Problem and Opportunity
 
-Payment is initiated after the customer completes the checkout flow defined in the cart and order document.
+### 2.1 Customer and Seller Pain Points
 
-EARS requirements:
-- WHEN a customer confirms checkout for a cart, THE shoppingMall payment subsystem SHALL create a new order in a "payment pending" state before initiating any external payment request.
-- WHEN a customer confirms checkout, THE shoppingMall payment subsystem SHALL initiate a payment transaction request to the selected payment provider for the total payable amount of the order, including taxes, shipping, and discounts according to current business rules.
-- IF a payment initiation attempt fails before any provider confirmation is received, THEN THE shoppingMall payment subsystem SHALL keep the order in a "payment failed" or equivalent non-payable state and SHALL not mark the order as paid or ready for fulfillment.
-- IF a customer abandons the payment process without provider confirmation (for example by closing the payment page), THEN THE shoppingMall payment subsystem SHALL leave the order in a "payment pending" or "payment expired" state according to configured timeouts and SHALL not proceed to fulfillment.
+Customers frequently face fragmented e-commerce experiences, including:
+- Difficulty comparing similar products across different sellers.
+- Low transparency regarding shipping times, return policies, and refund timelines.
+- Unclear or manual processes for cancellations and refunds.
+- Limited trust in less-known sellers.
 
-### 3.3 Payment Authorization, Capture, and Settlement
+Sellers, particularly small and mid-sized merchants, face challenges such as:
+- Limited access to large pools of customers.
+- High cost and complexity of building and operating an independent online store.
+- Lack of standardized tools for inventory management, sales analytics, and customer feedback.
 
-EARS requirements:
-- WHEN a payment provider returns a successful authorization response, THE shoppingMall payment subsystem SHALL record a payment transaction with status "authorized" and SHALL associate it with the corresponding order.
-- WHEN a payment provider returns a successful capture response, THE shoppingMall payment subsystem SHALL record a payment transaction with status "captured" and SHALL update the order payment status accordingly.
-- WHERE the platform business policy requires capture only after certain checks (such as fraud checks or stock confirmation), THE shoppingMall payment subsystem SHALL delay the capture request until those checks are satisfied and SHALL keep the order in a state that is not yet fully paid.
-- WHILE a payment is in "authorized" but not "captured" state, THE shoppingMall payment subsystem SHALL prevent shipment-related status transitions that assume funds are captured, such as "shipped" or "completed".
-- IF a capture request fails after a successful authorization, THEN THE shoppingMall payment subsystem SHALL transition the payment transaction to a "capture failed" state, SHALL prevent order fulfillment, and SHALL provide enough information for platformAdmin and seller, via their views, to decide on reattempts or cancellation.
+### 2.2 shoppingMall Opportunity
 
-### 3.4 Handling Payment Success
+shoppingMall positions itself as a centralized multi-seller marketplace that:
+- Aggregates diverse sellers under a unified catalog and checkout experience.
+- Provides customers with a single account, unified order tracking, and consistent cancellation/refund flows.
+- Provides sellers with standardized tools for product listing, SKU management, and order handling.
+- Enables the platform operator to generate revenue from commissions, fees, and future value-added services.
 
-EARS requirements:
-- WHEN a payment is successfully captured or treated as captured by the provider, THE shoppingMall payment subsystem SHALL update the order payment status to indicate that it is fully paid.
-- WHEN an order becomes fully paid, THE shoppingMall payment subsystem SHALL allow the order to enter fulfillment states (such as "processing" and "ready to ship") according to the fulfillment requirements document.
-- WHEN a payment succeeds, THE shoppingMall payment subsystem SHALL ensure that the order total, currency, and captured amount are consistent; IF inconsistencies are detected, THEN THE shoppingMall payment subsystem SHALL flag the order for platformAdmin review and SHALL prevent automatic fulfillment until resolved.
-- WHEN a payment is successfully processed, THE shoppingMall payment subsystem SHALL provide the customer-facing order views with a stable payment reference identifier in order history so the customer can verify the transaction with their financial institution if needed.
+Ubiquitous requirements:
+- THE platform business model SHALL assume that multiple independent sellers can list products simultaneously in overlapping categories.
+- THE platform business model SHALL assume that a single customer order MAY contain items from multiple sellers.
+- THE platform business model SHALL require that all revenue and cost-related data can be broken down by seller, product category, and time period for analysis.
 
-### 3.5 Handling Payment Failure, Timeouts, and Retries
 
-EARS requirements:
-- IF a payment provider explicitly returns a failure result (for example, insufficient funds or declined card), THEN THE shoppingMall payment subsystem SHALL mark the payment transaction as "failed" and SHALL keep the order in a non-fulfillable state.
-- IF a payment transaction fails, THEN THE shoppingMall payment subsystem SHALL allow the customer, through appropriate flows, to reattempt payment for the same order within a defined business-configurable time window, provided that the order has not been cancelled or expired.
-- WHEN a payment attempt times out without a confirmation from the provider within the expected timeframe, THE shoppingMall payment subsystem SHALL treat the transaction as "timeout" and SHALL either mark the order as "payment expired" or keep it as "payment pending" with clear indication that the payment outcome is unknown.
-- IF a payment timeout is later followed by a delayed provider success notification, THEN THE shoppingMall payment subsystem SHALL reconcile the order and payment statuses to treat the order as paid, provided that the order has not already been cancelled or replaced, and SHALL record an audit entry describing the delayed confirmation.
-- IF a payment timeout is later followed by a delayed provider failure notification, THEN THE shoppingMall payment subsystem SHALL keep or move the order to a "payment failed" state and SHALL not allow fulfillment without a new successful payment.
+## 3. Value Proposition
 
-### 3.6 Partial Payments and Multi-seller Orders
+### 3.1 Value for Customers
 
-In multi-seller scenarios, a single customer order may contain items from multiple sellers, but the payment to the platform is usually a single transaction.
+Customers seek convenience, reliability, and transparency.
 
-EARS requirements:
-- THE shoppingMall payment subsystem SHALL treat customer-facing payment as a single payable amount per order, even when the order contains products from multiple sellers.
-- WHERE internal settlement splits the payment among multiple sellers, THE shoppingMall payment subsystem SHALL maintain internal allocation records at the order item level, without exposing these allocations as separate payments to the customer.
-- WHERE the business model later supports partial payments (such as deposits or installments), THE shoppingMall payment subsystem SHALL represent each partial payment as a distinct payment transaction linked to the same order, with clear indication of which portion of the order total each transaction covers.
+Ubiquitous requirements:
+- THE platform SHALL allow customers to discover and purchase products from multiple sellers using a single account and a single integrated checkout flow.
+- THE platform SHALL expose clear order status, shipping status, and refund status information so that customers can understand where their money and goods are at all times.
+- THE platform SHALL support customer-friendly refund and cancellation processes that are consistent across sellers, subject to category-specific policies.
+- THE platform SHALL use product reviews, ratings, and seller performance indicators to help customers decide what to buy.
 
-## 4. Order Payment Statuses
+### 3.2 Value for Sellers
 
-### 4.1 Payment-related Order States
+Sellers seek reach, standardized tools, and predictable earnings.
 
-The platform must maintain clear payment-related states for each order.
+Ubiquitous requirements:
+- THE platform SHALL allow sellers to onboard without building their own independent store infrastructure.
+- THE platform SHALL provide sellers with tools to list products, manage SKUs and inventory, and monitor orders and refunds related to their catalog.
+- THE platform SHALL allow sellers to see business-level metrics such as sales volumes, refund rates, and basic customer feedback related to their products.
+- THE platform SHALL ensure that sellers can understand how much they earn per order after commissions, fees, and refunds.
 
-Representative payment-related states (names are conceptual and may differ in implementation):
-- "payment pending"
-- "payment in progress"
-- "payment authorized"
-- "payment captured" (fully paid)
-- "payment failed"
-- "payment expired"
-- "refunded" (full)
-- "partially refunded"
+### 3.3 Value for Platform Operator
 
-EARS requirements:
-- THE shoppingMall payment subsystem SHALL maintain a payment status for each order that is separate from shipment or fulfillment status.
-- THE shoppingMall payment subsystem SHALL allow only one primary active payment status per order at any time.
-- WHEN an order is created at checkout, THE shoppingMall payment subsystem SHALL assign an initial payment status equivalent to "payment pending".
-- WHEN payment succeeds, THE shoppingMall payment subsystem SHALL set the payment status to a state equivalent to "payment captured".
-- WHEN payment fails and cannot be reattempted, THE shoppingMall payment subsystem SHALL set the payment status to a state equivalent to "payment failed".
-- WHEN all captured amounts for an order are fully refunded, THE shoppingMall payment subsystem SHALL set the payment status to a state equivalent to "refunded".
-- WHEN only a portion of the captured amount has been refunded, THE shoppingMall payment subsystem SHALL set the payment status to a state equivalent to "partially refunded".
+The platform operator seeks profitable, sustainable revenue and controllable risk.
 
-### 4.2 State Transitions and Business Rules
+Ubiquitous requirements:
+- THE platform business model SHALL define commission and fee structures that can be configured per category, per seller, and per campaign without code changes.
+- THE platform business model SHALL support tracking of gross merchandise value (GMV), net merchandise value (NMV), platform revenue, and take rate.
+- THE platform business model SHALL support mechanisms for reducing fraud, abuse, and excessive losses due to chargebacks and disputes.
 
-EARS requirements:
-- WHEN an order is in "payment pending", THE shoppingMall payment subsystem SHALL allow transitions to "payment in progress", "payment failed", "payment expired", or "payment captured" based on payment outcomes.
-- WHEN an order is in "payment captured", THE shoppingMall payment subsystem SHALL allow transitions to "partially refunded" or "refunded" based on refund processing.
-- WHEN an order is in "payment failed" or "payment expired" and the business rules allow retry, THE shoppingMall payment subsystem SHALL allow a transition back to "payment in progress" upon a new payment attempt.
-- IF an order has payment status "refunded", THEN THE shoppingMall payment subsystem SHALL prevent further shipment or fulfillment actions for that order.
-- IF an order payment status changes due to asynchronous provider events (such as delayed capture confirmation), THEN THE shoppingMall payment subsystem SHALL update the state consistently and SHALL append the event to an audit trail.
 
-### 4.3 Relationship between Order Status and Payment Status
+## 4. Revenue Streams
 
-EARS requirements:
-- IF an order payment status is not in a paid or authorized state, THEN THE shoppingMall order management subsystem SHALL prevent the order from moving into shipment states such as "shipped" or "delivered".
-- WHILE an order is in a state equivalent to "payment in progress", THE shoppingMall order management subsystem SHALL prevent irreversible order actions such as permanent cancellation, except where business rules explicitly allow it.
-- WHEN an order is cancelled before payment capture, THE shoppingMall payment subsystem SHALL attempt to void the authorization where supported by the provider and SHALL record the result in payment history.
-- WHEN an order is cancelled after full payment capture, THE shoppingMall payment subsystem SHALL initiate a refund process instead of voiding the payment, according to cancellation and refund rules.
+### 4.1 Transaction Commissions
 
-### 4.4 Seller and Admin Visibility of Payment States
+The primary revenue stream is commission on each successfully paid and completed order item.
 
-EARS requirements:
-- THE shoppingMall payment subsystem SHALL provide seller-facing views with payment-related information for their orders sufficient to know whether they may proceed with fulfillment, without exposing sensitive customer payment details.
-- THE shoppingMall payment subsystem SHALL provide platformAdmin-facing views with full visibility into payment statuses, payment transactions, refunds, and chargebacks for all orders.
-- WHEN a payment status changes for an order, THE shoppingMall payment subsystem SHALL ensure that seller and platformAdmin views reflect the updated status within a timeframe consistent with non-functional requirements.
+Event-driven requirements:
+- WHEN a customer payment is successfully captured for an order, THE platform business logic SHALL calculate a commission amount for each order line item according to active commission rules.
+- WHEN an order line item reaches a business-defined completed state (for example, after delivery and beyond the standard refund window), THE platform business logic SHALL recognize the associated commission as **earned platform revenue** for that item.
 
-## 5. Order History Access
+Business rules:
+- THE platform SHALL define a default global commission rule that applies when no more specific rule exists.
+- WHERE category-specific commission is configured, THE platform SHALL apply the commission rule defined for the product’s primary category.
+- WHERE seller-specific commission overrides exist, THE platform SHALL use the seller-specific rules according to a defined priority order.
+- THE commission base for each item SHALL be clearly defined, for example: item price after seller discounts but before customer-facing shipping fees and taxes.
 
-### 5.1 Customer Order History Requirements
+Unwanted behavior requirements:
+- IF an order item is fully refunded for any reason, THEN THE platform SHALL treat the corresponding commission for that item as not earned and SHALL reverse or cancel that commission.
+- IF an order item is partially refunded (for example, quantity reduction or partial price refund), THEN THE platform SHALL reduce the commission in proportion to the refunded amount or quantity as defined by policy.
+- IF a chargeback is received from a payment provider for an item that previously generated commission revenue, THEN THE platform SHALL mark the commission as disputed and SHALL support reducing future payout or recognizing a negative revenue adjustment.
 
-EARS requirements:
-- THE shoppingMall order history subsystem SHALL provide customer-facing views with access to a chronological list of their past and current orders including payment and refund information.
-- WHEN a customer views an order in order history, THE shoppingMall order history subsystem SHALL display at least the order creation date, order identifier, payment status, total amount paid, and any refunded amounts.
-- WHEN a refund is processed for an order, THE shoppingMall order history subsystem SHALL record the refund details in order history, including refunded amount, date, and high-level reason category.
-- IF a customer has no completed orders, THEN THE shoppingMall order history subsystem SHALL return an empty order history list without error.
+### 4.2 Seller Subscription and Service Fees (Optional)
 
-### 5.2 Seller View of Orders and Payouts
+In addition to transaction commissions, the platform MAY charge recurring or one-time fees to sellers.
 
-EARS requirements:
-- THE shoppingMall seller order subsystem SHALL provide seller with access to order lists that include only orders containing one or more of their products.
-- WHEN a seller views order details, THE shoppingMall seller order subsystem SHALL display the portion of the order amount that relates to that seller’s products, as well as payment status relevant to their fulfillment decisions.
-- WHERE the business model involves periodic payouts to sellers, THE shoppingMall payout subsystem SHALL maintain records of payout calculations and SHALL link them to underlying orders and refunds for audit purposes.
+Optional feature requirements:
+- WHERE subscription plans for sellers are offered, THE platform SHALL represent for each seller:
+  - Subscription plan identifier.
+  - Billing cycle (for example monthly, yearly).
+  - Subscription fee amount.
+  - Subscription status (active, past due, cancelled, expired).
+- WHEN a seller subscribes or upgrades to a paid plan, THE platform SHALL record the effective date, fees, and benefits at a business level (such as higher exposure or additional analytics).
+- WHERE one-time service fees are charged (for example, paid onboarding support or catalog optimization), THE platform SHALL associate these fees with the seller and the service, and SHALL treat them as part of platform revenue.
 
-### 5.3 Admin Access to Global Order History
+Unwanted behavior requirements:
+- IF a seller fails to pay subscription or service fees by a business-defined grace period, THEN THE platform SHALL mark the subscription or service as inactive and SHALL apply corresponding business restrictions (for example, reduced visibility or inability to list new products).
+- IF subscription fees are refunded due to service-level issues, THEN THE platform SHALL recognize a negative adjustment to subscription revenue and SHALL track the reason.
 
-EARS requirements:
-- THE shoppingMall admin order subsystem SHALL provide platformAdmin with search and filtering capabilities over all orders, payment statuses, refunds, and disputes.
-- WHEN platformAdmin views an order, THE shoppingMall admin order subsystem SHALL display complete payment and refund history, including all payment transactions, attempts, and external provider reference identifiers where available.
-- THE shoppingMall admin order subsystem SHALL allow platformAdmin to filter orders by payment-related criteria such as "payment failed", "partially refunded", "refunded", "chargeback", and by date ranges, seller, or customer.
+### 4.3 Customer-Facing Fees and Surcharges
 
-### 5.4 Filtering, Sorting, and Export Expectations
+The platform MAY charge additional fees to customers, such as shipping fees, packaging fees, or payment method surcharges.
 
-EARS requirements:
-- THE shoppingMall order history subsystem SHALL allow customer to sort order history by at least order date and optionally by order status or amount.
-- THE shoppingMall seller order subsystem SHALL allow seller to filter their order lists by payment status and timeframe so they can focus on orders ready for fulfillment or requiring refund handling.
-- WHERE the business requires data export for accounting, THE shoppingMall admin order subsystem SHALL provide platformAdmin with mechanisms to export order and payment history data in a commonly accepted, non-proprietary format.
+Event-driven requirements:
+- WHEN a customer places an order, THE platform pricing logic SHALL calculate customer-facing fees according to configured rules and SHALL include them in the order total.
 
-## 6. Cancellation Rules
+Business rules:
+- THE platform SHALL distinguish between:
+  - Platform-owned fees that contribute to platform revenue (for example a service fee).
+  - Pass-through fees that are fully remitted to carriers or third parties (for example pure courier charge).
+- WHERE certain fees are designated as refundable (for example shipping fee when the entire order is cancelled before shipment), THE platform SHALL include these fees in refund calculations according to policy.
+- WHERE certain fees are designated as non-refundable (for example payment method surcharges), THE platform SHALL exclude these fees from customer refund amounts even if the order is refunded.
 
-### 6.1 Customer-initiated Cancellations (Before Shipment)
+Unwanted behavior requirements:
+- IF business rules specify that a fee must never exceed a defined maximum percentage or amount relative to the order value, THEN THE platform SHALL validate fee calculations against those limits and SHALL reject any calculation that exceeds them.
 
-EARS requirements:
-- WHEN a customer requests cancellation for an order whose payment status is "payment pending", THE shoppingMall cancellation subsystem SHALL cancel the order without initiating any payment transaction and SHALL release any temporary holds not yet confirmed by the provider where possible.
-- WHEN a customer requests cancellation for an order whose payment status is "payment captured" and whose fulfillment status is still in an early stage (for example "processing" or "not shipped"), THE shoppingMall cancellation subsystem SHALL treat the request as a cancellation with refund eligibility according to refund rules.
-- IF an order is already in a fulfillment status equivalent to "shipped" or "delivered", THEN THE shoppingMall cancellation subsystem SHALL not allow direct cancellation by the customer and SHALL instead direct the process toward returns or refunds according to the refund requirements document.
-- THE shoppingMall cancellation subsystem SHALL require the customer to choose a reason category when submitting a cancellation request (for example "changed mind", "ordered by mistake", "found cheaper elsewhere", "delivery taking too long", "other"), and SHALL record this information for reporting.
+### 4.4 Promotional Subsidies and Discounts
 
-### 6.2 Seller-initiated Cancellations (Stock or Operational Issues)
+Promotions can impact who bears the cost of discounts (seller or platform).
 
-EARS requirements:
-- WHEN a seller identifies that they cannot fulfill an order item due to stock or operational issues before shipment, THE shoppingMall cancellation subsystem SHALL allow the seller to request cancellation for affected items with a reason category (for example "out of stock", "pricing error", "shipping restriction", "logistics failure").
-- WHERE an order contains multiple items from multiple sellers, THE shoppingMall cancellation subsystem SHALL allow seller to cancel only the items they own, resulting in partial cancellation of the order.
-- WHEN seller-initiated cancellation affects one or more items in a fully paid order, THE shoppingMall cancellation subsystem SHALL trigger a refund process for the cancelled items in accordance with refund rules.
-- IF repeated seller-initiated cancellations indicate potential abuse or poor performance, THEN THE shoppingMall admin reporting subsystem SHALL provide platformAdmin with visibility and reporting to take appropriate actions according to platform policy.
+Business rules:
+- THE platform SHALL distinguish discounts funded by sellers (for example seller’s own coupon or markdown) from discounts funded by the platform (for example platform-wide campaigns).
+- WHERE a discount is seller-funded, THE platform SHALL reduce the seller’s gross sales accordingly but SHALL still calculate commission according to defined rules (for example commission on discounted price).
+- WHERE a discount is platform-funded, THE platform SHALL treat the undiscounted line-item price as the basis for seller earnings and commission, and SHALL recognize the discount as a promotional cost borne by the platform.
 
-### 6.3 Admin-initiated Cancellations (Fraud or Policy Violations)
+Event-driven requirements:
+- WHEN a promotional campaign applies to an order or line item, THE platform SHALL record the campaign identifier and the split of discount responsibility (seller vs platform) so that later reporting can attribute costs correctly.
 
-EARS requirements:
-- WHEN platformAdmin detects fraud, payment anomalies, or policy violations, THE shoppingMall cancellation subsystem SHALL allow platformAdmin to cancel orders or order items regardless of seller or customer actions, subject to internal governance rules.
-- WHEN platformAdmin cancels an order that has been paid, THE shoppingMall cancellation subsystem SHALL initiate refunds for the appropriate amounts and SHALL record the reason as an admin action with a specific category (for example "suspected fraud", "policy violation", "duplicate order", "customer safety concern").
-- THE shoppingMall cancellation subsystem SHALL ensure that admin-initiated cancellations are logged with the acting admin identity, timestamp, and justification text for auditability.
+### 4.5 Advertising, Boosts, and Future Revenue Streams (Optional)
 
-### 6.4 Time Windows and Constraints per Order State
+Optional feature requirements:
+- WHERE advertising placements or boosted listings are sold to sellers, THE platform SHALL represent each such purchase with:
+  - Seller identity.
+  - Placement type or campaign identifier.
+  - Fee amount and billing period.
+- WHERE advertising fees are charged based on impressions or clicks, THE platform SHALL record aggregated counts of impressions and clicks per advertising agreement at a business level.
 
-EARS requirements:
-- THE shoppingMall cancellation subsystem SHALL support business-configurable time windows during which customers can request order cancellation after payment, for example up to a certain number of hours before shipment.
-- WHERE time windows are configured, THE shoppingMall cancellation subsystem SHALL enforce them consistently and SHALL prevent cancellation requests outside allowed time unless overridden by seller or platformAdmin.
-- WHERE local regulations require longer cooling-off periods for cancellations, THE shoppingMall cancellation subsystem SHALL support configuration of different time windows based on market or product category.
 
-### 6.5 Effects of Cancellation on Inventory and Payments
+## 5. Fee and Commission Concepts
 
-EARS requirements:
-- WHEN an order or order item is cancelled before payment capture, THE shoppingMall cancellation subsystem, together with the inventory subsystem, SHALL release any reserved inventory quantities associated with that order or item.
-- WHEN an order or order item is cancelled after payment capture, THE shoppingMall cancellation subsystem, together with the payment and inventory subsystems, SHALL ensure that the cancellation process is tightly linked to refund processing so that inventory and financial records remain consistent.
-- IF a cancellation action fails to trigger the expected refund due to external payment provider issues, THEN THE shoppingMall cancellation subsystem SHALL flag the order for manual review by platformAdmin and SHALL not silently mark the order as fully resolved.
+### 5.1 Commission Rule Hierarchy
 
-## 7. Refund and Dispute Handling
+Commission rules may exist at multiple levels: global, category, seller, and campaign.
 
-### 7.1 Refund Types: Full vs Partial
+Ubiquitous requirements:
+- THE platform SHALL define for each order line which single commission rule was applied and why.
+- THE platform SHALL support a deterministic priority order such as:
+  1. Specific campaign-based commission rule (if applicable).
+  2. Seller-specific commission rule.
+  3. Category-specific commission rule.
+  4. Global default commission rule.
 
-EARS requirements:
-- THE shoppingMall refund subsystem SHALL support full refunds where the entire captured amount for an order is returned to the customer.
-- THE shoppingMall refund subsystem SHALL support partial refunds where only part of the captured amount is returned, such as when one item in a multi-item order is cancelled or returned.
-- WHEN a refund is created, THE shoppingMall refund subsystem SHALL record at least the refunded amount, currency, associated order, responsible actor (seller or platformAdmin), and reason category.
-- WHEN multiple refunds are created for the same order, THE shoppingMall refund subsystem SHALL keep a cumulative record of refunded amounts and SHALL ensure that the total refunded amount does not exceed the total captured amount for that order.
+Event-driven requirements:
+- WHEN multiple commission rules could logically apply to a line item, THE platform SHALL select the rule with highest priority according to configured hierarchy and SHALL record that decision.
 
-### 7.2 Refund Triggers and Eligibility Conditions
+Unwanted behavior requirements:
+- IF no applicable commission rule is found for an order item, THEN THE platform SHALL prevent the order from being finalized until a valid rule is configured or an explicit decision is made by business stakeholders.
 
-EARS requirements:
-- WHEN a customer cancels an order that has been paid but not shipped, THE shoppingMall refund subsystem SHALL treat the order as eligible for a refund of the full captured amount, subject to any applicable fees defined by platform policy and regulations.
-- WHEN a customer cancels or returns only part of an order, THE shoppingMall refund subsystem SHALL treat the relevant items as eligible for partial refund equal to the item price plus associated taxes and any shipping portions to be refunded according to business rules.
-- WHEN seller cancels items due to their own stock or operational issues, THE shoppingMall refund subsystem SHALL treat the affected amounts as eligible for full refund to the customer, without penalizing the customer.
-- WHERE products are non-refundable by business policy (for example certain digital goods or personalized items), THE shoppingMall refund subsystem SHALL enforce these policies by preventing automatic refund eligibility, while still allowing platformAdmin to override in exceptional cases.
+### 5.2 Order Price Components
 
-### 7.3 Refund Approval Flows (Seller vs Admin)
+Each order’s monetary structure must be decomposable for reporting and settlement.
 
-EARS requirements:
-- WHERE platform policy allows sellers to approve refunds for their orders, THE shoppingMall refund subsystem SHALL allow seller to create refund requests for orders they own, within the limits of not exceeding the captured amounts for their items.
-- WHERE refund requests require platformAdmin approval (for example high-value refunds or complex disputes), THE shoppingMall refund subsystem SHALL support a two-step process where seller proposes the refund and platformAdmin reviews and approves or rejects.
-- WHEN a refund request is approved, THE shoppingMall refund subsystem SHALL initiate a refund transaction through the payment provider and SHALL track its status until completion or failure.
-- IF a refund transaction fails at the payment provider, THEN THE shoppingMall refund subsystem SHALL mark the refund record as "refund failed" and SHALL notify the responsible actors (seller and/or platformAdmin) for manual follow-up.
+Ubiquitous requirements:
+- THE platform SHALL represent for each order at least the following monetary components:
+  - Item subtotal (sum of line items before discounts and fees).
+  - Item-level discounts.
+  - Order-level discounts.
+  - Shipping fees and other delivery-related charges.
+  - Payment method surcharges (if any).
+  - Taxes where applicable.
+  - Total amount charged to the customer.
+- THE platform SHALL represent for each line item:
+  - Seller gross amount before commission.
+  - Platform commission amount.
+  - Net amount owed to the seller after commission (and after any platform-funded promotions).
 
-### 7.4 Dispute and Chargeback Management
+### 5.3 Refunds, Cancellations, and Chargebacks
 
-EARS requirements:
-- WHEN a customer reports a problem with an order that they believe justifies a refund but does not fit automated rules, THE shoppingMall dispute subsystem SHALL allow the customer to create a dispute record with a description and optional evidence references.
-- THE shoppingMall dispute subsystem SHALL allow seller to respond to disputes for their orders with their explanation and evidence.
-- THE shoppingMall dispute subsystem SHALL allow platformAdmin to view the full dispute history and make a final decision, which may result in a refund, partial refund, replacement, or rejection of the claim.
-- IF a chargeback notification is received from a payment provider, THEN THE shoppingMall dispute subsystem SHALL create or update a dispute record reflecting the chargeback, SHALL adjust internal payment and refund statuses, and SHALL provide platformAdmin with information for further action.
+Event-driven requirements:
+- WHEN a cancellation or refund is approved for an order item, THE platform SHALL compute:
+  - Customer refund amount (including or excluding certain fees based on policy).
+  - Reduction in seller earnings.
+  - Reduction or reversal of platform commission.
+- WHEN a chargeback is received from a payment provider, THE platform SHALL mark affected items with a chargeback status and SHALL link this to negative adjustments for both seller earnings and platform revenue.
 
-### 7.5 Refund Timelines and User Communication
+Unwanted behavior requirements:
+- IF a refund or cancellation is requested for an amount that exceeds the original customer payment for the relevant items, THEN THE platform SHALL reject the request as invalid.
+- IF a refund is attempted more than once for the same item, THEN THE platform SHALL prevent duplicate refunds by enforcing maximum refundable amounts per line item.
 
-EARS requirements:
-- THE shoppingMall refund subsystem SHALL provide customers, through customer-facing views, with clear expectations about how long refunds typically take to appear on their payment method once approved (for example a range of business days), and these expectations SHALL be configurable at the business level.
-- WHEN a refund is approved and the refund transaction is successfully initiated, THE shoppingMall refund subsystem SHALL reflect a "refund pending" or equivalent state in the customer’s order history until confirmation from the payment provider is received.
-- WHEN the payment provider confirms refund completion, THE shoppingMall refund subsystem SHALL update the refund record to "refund completed" and SHALL ensure that this status is visible in the customer’s order history and admin views.
+### 5.4 Payouts to Sellers
 
-### 7.6 Representation of Refunds in Order History
+Seller payouts represent the transfer of accumulated net earnings from the platform to the seller.
 
-EARS requirements:
-- THE shoppingMall order history subsystem SHALL show refund activity as part of the order timeline for customer, seller, and platformAdmin, including dates and amounts.
-- WHEN a full refund is completed, THE shoppingMall order history subsystem SHALL clearly label the order as fully refunded so that customers do not expect additional charges or delivery for that order.
-- WHEN partial refunds are completed, THE shoppingMall order history subsystem SHALL clearly show the remaining net charged amount for the order after all refunds.
+State-driven requirements:
+- WHILE an order is within the standard refund or chargeback window, THE platform SHALL treat associated seller earnings as **pending** and not yet eligible for payout.
+- WHEN an order passes the refund and chargeback window without any open disputes, THE platform SHALL treat the related seller earnings as **payout-eligible**.
 
-## 8. Non-functional Expectations Related to Payments
+Event-driven requirements:
+- WHEN a payout cycle runs (for example weekly or monthly), THE platform SHALL sum all payout-eligible earnings per seller and SHALL create a payout record that includes:
+  - Seller identity.
+  - Payout period.
+  - Gross seller earnings included.
+  - Adjustments (for example prior negative balances or manual corrections).
+  - Final payout amount to be transferred.
 
-### 8.1 Performance and Responsiveness Requirements
+Unwanted behavior requirements:
+- IF a refund or chargeback is applied to an order after a payout that included the relevant earnings, THEN THE platform SHALL track a negative adjustment for the seller, such that future payouts are reduced or a negative balance is recorded.
+- IF a seller’s negative balance exceeds a business-defined threshold, THEN THE platform SHALL flag this seller for risk review and MAY suspend payouts or seller operations according to policy.
 
-EARS requirements:
-- WHEN a customer submits a payment during checkout under normal load, THE shoppingMall payment subsystem SHALL provide a definitive success or failure result within a target time that feels immediate for typical network conditions, and this target SHALL be configurable for different payment methods.
-- WHEN customers access order history, THE shoppingMall order history subsystem SHALL return a list of orders including payment and refund summaries within a few seconds for typical account sizes, in line with global non-functional requirements.
-- WHILE asynchronous payment or refund confirmations are pending, THE shoppingMall payment and refund subsystems SHALL maintain consistent and understandable intermediate statuses to avoid confusing customers and support teams.
 
-### 8.2 Security and Compliance Expectations (Business-level)
+## 6. Growth and Retention Strategy
 
-EARS requirements:
-- THE shoppingMall payment subsystem SHALL avoid storing raw payment instrument details such as full card numbers or sensitive authentication data and SHALL rely on tokens or references provided by payment providers.
-- THE shoppingMall payment and refund subsystems SHALL treat all payment and refund records as sensitive data and SHALL restrict access based on actor roles and least-privilege principles.
-- WHERE applicable regulations require specific handling of financial data and refunds, THE shoppingMall payment and refund subsystems SHALL support configuration and data retention rules to meet those obligations.
+### 6.1 Customer Acquisition and Activation
 
-### 8.3 Auditability and Traceability of Financial Events
+Event-driven requirements:
+- WHEN a guestUser registers as a customer, THE platform SHALL record a customer acquisition event including registration timestamp and basic acquisition channel where known.
+- WHEN a newly registered customer completes their first paid order, THE platform SHALL record a conversion event that can be used to measure time-to-first-purchase.
 
-EARS requirements:
-- THE shoppingMall auditing subsystem SHALL maintain an immutable audit trail of key financial events, including payment authorizations, captures, refunds, cancellations affecting payments, and chargebacks.
-- WHEN any actor (seller or platformAdmin) manually adjusts payment or refund records, THE shoppingMall auditing subsystem SHALL record the acting identity, timestamp, and justification.
-- THE shoppingMall auditing subsystem SHALL provide platformAdmin, via admin tools, with reporting views that summarize payment volumes, refund rates, and chargeback rates over time to support risk management and business decisions.
+Business rules:
+- THE platform SHALL support segmentation of customers by acquisition channel, registration date, and first-order date to allow analysis of marketing effectiveness.
 
-## 9. Mermaid Diagrams
+### 6.2 Customer Retention and Engagement
 
-### 9.1 Payment Flow from Checkout to Confirmation
+Event-driven requirements:
+- WHEN a customer completes each paid order, THE platform SHALL record that event such that the number of distinct customers with one order, two orders, and three or more orders per period can be computed.
+- WHEN a customer adds items to a wishlist or marks products as favorites, THE platform SHALL record these actions in a way that can be used for future engagement strategies (for example targeted campaigns), without prescribing any specific campaign engine.
+
+Business rules:
+- THE platform SHALL support identification of inactive customers based on configurable criteria such as no login or no order for a defined number of days.
+- THE platform SHALL support highlighting high-value customers based on criteria such as total spend over a period or frequency of orders, for business-led retention initiatives.
+
+### 6.3 Seller Acquisition and Quality
+
+Event-driven requirements:
+- WHEN a seller completes onboarding and becomes active, THE platform SHALL record the activation date and basic seller attributes (such as category focus or region).
+- WHEN a seller receives their first paid order, THE platform SHALL record a seller activation metric that can be used to monitor seller ramp-up speed.
+
+Business rules:
+- THE platform SHALL support classification of sellers into tiers (for example new, standard, premium) based on performance metrics such as GMV, refund rate, and ratings.
+- THE platform SHALL support applying different business policies by seller tier, such as access to promotions, support levels, or commission variations.
+
+### 6.4 Promotions and Campaign Measurement
+
+Optional feature requirements:
+- WHERE marketing campaigns are used (for example voucher codes, category-wide discounts, seasonal sales), THE platform SHALL record for each affected order or line item the associated campaign identifier.
+- THE platform SHALL enable computation of campaign-level metrics such as GMV, NMV, number of orders, number of new customers acquired, and incremental increase in activity compared to baseline.
+
+
+## 7. Business KPIs and Targets
+
+### 7.1 Commercial KPIs
+
+Ubiquitous requirements:
+- THE platform SHALL enable calculation of **Gross Merchandise Value (GMV)** as the sum of order line item amounts for successfully paid orders within a defined period, before refunds and cancellations.
+- THE platform SHALL enable calculation of **Net Merchandise Value (NMV)** as GMV minus the impact of refunded or cancelled items within the same or subsequent periods, depending on selected reporting logic.
+- THE platform SHALL enable calculation of **Platform Revenue** as the sum of recognized commissions, platform-owned customer-facing fees, subscription fees, advertising fees, and other monetization sources, net of adjustments.
+- THE platform SHALL enable calculation of **Take Rate** as Platform Revenue divided by GMV for a given period.
+
+### 7.2 Customer Behavior KPIs
+
+Ubiquitous requirements:
+- THE platform SHALL enable calculation of **Number of Active Customers** in a period based on configurable activity definitions (for example customers with at least one session, one order, or one add-to-cart action in that period).
+- THE platform SHALL enable calculation of **New Customers** per period, based on registration date.
+- THE platform SHALL enable calculation of **First-Order Conversion Rate** as the proportion of newly registered customers who place at least one order within a defined time window (for example 30 days).
+- THE platform SHALL enable calculation of **Repeat Purchase Rate** as the proportion of ordering customers in a period who place more than one order within that period.
+- THE platform SHALL enable calculation of **Average Order Value (AOV)** as total GMV divided by number of successfully paid orders in the period.
+
+### 7.3 Seller Performance KPIs
+
+Ubiquitous requirements:
+- THE platform SHALL enable calculation of **Seller GMV** per seller and period.
+- THE platform SHALL enable calculation of **Seller Net Earnings** per seller and period (seller gross sales minus commissions and seller-borne discounts, before payouts and adjustments).
+- THE platform SHALL enable calculation of **Cancellation Rate** per seller as the ratio of cancelled or fully refunded items to successfully paid items over a period.
+- THE platform SHALL enable calculation of **Late Shipment Rate** per seller, where relevant shipment timestamps are available.
+- THE platform SHALL enable calculation of **Average Product Rating** per seller and per product, using rating data from the reviews and ratings domain.
+
+### 7.4 Operational and Risk KPIs
+
+Ubiquitous requirements:
+- THE platform SHALL enable calculation of **Order Fulfillment Time** metrics, such as median time from payment confirmation to shipment, and from shipment to delivery.
+- THE platform SHALL enable calculation of **Refund Resolution Time**, such as median time from refund request creation to final decision and completion.
+- THE platform SHALL enable tracking of **Dispute Volume** and **Dispute Win/Loss Ratios** (for example customer-favored vs seller-favored outcomes) per seller and per period.
+- THE platform SHALL enable tracking of **Chargeback Rate** as the number or value of chargebacks relative to total paid orders, globally and per seller.
+
+
+## 8. Risk, Compliance, and Governance Considerations
+
+### 8.1 Auditability of Financial Flows
+
+Ubiquitous requirements:
+- THE platform SHALL maintain an auditable record of order creation, payment status changes, refunds, chargebacks, commission calculations, and payouts.
+- THE platform SHALL ensure that for each financial adjustment (for example refund, manual adjustment, or chargeback), the responsible actor (system, seller, admin) and the reason are recorded at a business level.
+
+### 8.2 Compliance with Financial and Tax Regulations
+
+Business-level expectations:
+- THE platform SHALL store financial data (orders, payments, refunds, commissions, payouts) in a way that supports preparation of statutory financial statements and tax filings according to jurisdictions where the business operates.
+- THE platform SHALL support multi-period reporting (for example monthly, quarterly, yearly) with consistent cut-off rules based on transaction dates and statuses.
+
+### 8.3 Anti-Fraud and Risk Management
+
+Unwanted behavior requirements:
+- IF unusual patterns such as very high refund rates, high chargeback rates, or suspicious ordering behavior are detected for a seller, THEN THE platform SHALL flag the seller for risk review and MAY trigger temporary measures such as delayed payouts, additional verification, or suspension, according to policy.
+- IF high-risk payment behavior is detected on a customer account or device (for example multiple declined payments or inconsistent shipping addresses), THEN THE platform SHALL mark the account or device as high risk and MAY require additional verification steps before allowing further orders.
+
+### 8.4 Data Protection for Monetary Information
+
+Business-level privacy expectations:
+- THE platform SHALL ensure that detailed payout and commission information is visible only to relevant actors: each seller can see their own payouts and commissions, while admins can see all sellers’ data.
+- THE platform SHALL ensure that customers cannot see internal commission or payout breakdowns beyond what is necessary (for example customers see order prices and refunds, but not internal commission splits).
+
+
+## 9. Conceptual Revenue and Refund Lifecycle Diagram
+
+The conceptual lifecycle below shows how an order evolves from creation to revenue recognition and payout.
 
 ```mermaid
 graph LR
-  A["Customer Confirms Checkout"] --> B["Create Order (Payment Pending)"]
-  B --> C["Initiate Payment with Provider"]
-  C --> D{"Provider Response?"}
-  D -->|"Success"| E["Record Payment Captured"]
-  E --> F["Update Order Payment Status to Paid"]
-  F --> G["Order Eligible for Fulfillment"]
-  D -->|"Failure"| H["Record Payment Failed"]
-  H --> I["Keep Order Non-fulfillable"]
-  D -->|"Timeout"| J["Mark Payment Pending or Expired"]
-  J --> K["Allow Customer to Retry Within Window"]
+  A["Order Created"] --> B["Payment Captured"]
+  B --> C["Order In Fulfillment"]
+  C --> D["Order Delivered"]
+  D --> E{"Within Refund Window?"}
+  E -->|"Yes"| F["Customer May Request Refund"]
+  E -->|"No"| G["Order Considered Completed"]
+  F --> H{"Refund Approved?"}
+  H -->|"Yes"| I["Refund Processed"]
+  H -->|"No"| G
+  I --> J["Commission and Seller Earnings Adjusted"]
+  G --> K["Commission Recognized as Revenue"]
+  K --> L["Included in Seller Payout Cycle"]
+  J --> L
 ```
 
-### 9.2 Cancellation and Refund Flow
+This diagram is purely conceptual and SHALL NOT be interpreted as a technical workflow or architecture diagram. It exists to clarify business expectations regarding when commissions are considered tentative, when they are recognized as revenue, and how refunds influence payouts.
 
-```mermaid
-graph LR
-  A["Cancellation or Refund Trigger"] --> B{"Order Paid?"}
-  B -->|"No"| C["Cancel Without Refund"]
-  C --> D["Release Inventory Holds"]
-  B -->|"Yes"| E{"Full or Partial?"}
-  E -->|"Full"| F["Create Full Refund Request"]
-  E -->|"Partial"| G["Create Partial Refund Request"]
-  F --> H["Submit Refund to Provider"]
-  G --> H
-  H --> I{"Refund Result?"}
-  I -->|"Success"| J["Update Order Payment Status (Refunded/Partially Refunded)"]
-  J --> K["Update Order History Timeline"]
-  I -->|"Failure"| L["Mark Refund Failed and Flag for Admin"]
-```
 
-## 10. Success Criteria and Future Extensions
+## 10. Business-Only Nature of This Document
 
-### 10.1 Success Criteria
+THE business model and goals described here SHALL be treated as business requirements only.
 
-From a business perspective, payment and refund handling in shoppingMall is considered successful when:
+THE platform SHALL implement these business rules in ways chosen by the development team, including how data is stored, how services are architected, and which external providers are integrated.
 
-- Orders cannot proceed to fulfillment stages unless payment has been successfully captured or otherwise authorized according to business rules.
-- Customers can reliably see accurate, up-to-date payment and refund information in their order history without confusion.
-- Sellers have enough visibility into payment status to make correct fulfillment and refund decisions, without exposure to sensitive customer payment data.
-- Platform admins can audit and report on all financial operations, including payment attempts, refunds, cancellations, and disputes.
-- Refunds and cancellations are processed within clearly defined, configurable timelines that align with customer expectations and legal requirements.
+THE development team SHALL ensure that any technical implementation, however designed, enables:
+- Accurate computation of all defined monetary components and KPIs.
+- Traceable and auditable flows from order placement through payment, refund, and payout.
+- Adaptability so that changes in commission rates, fee structures, or policies can be applied without rewriting fundamental business logic.
 
-### 10.2 Future Extensions (Non-binding)
-
-Potential enhancements that may be considered in future:
-
-- Support for scheduled or recurring payments (subscriptions) using the same payment status model.
-- Support for advanced payment methods such as installments, buy-now-pay-later services, or loyalty points.
-- Support for automated risk scoring and fraud detection rules that influence authorization and capture timing.
-
-These possible extensions should be considered when designing the overall payment and refund domain model so that future changes can be integrated without disrupting the core flows defined here.
+THE business stakeholders SHALL use this document to decide commercial terms (such as commission levels, refund windows, and promotional budgets), while recognizing that technical teams retain full autonomy over **how** these decisions are implemented in the system.

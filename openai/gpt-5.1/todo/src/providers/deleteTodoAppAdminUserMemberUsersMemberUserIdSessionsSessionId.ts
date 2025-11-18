@@ -14,47 +14,33 @@ export async function deleteTodoAppAdminUserMemberUsersMemberUserIdSessionsSessi
   memberUserId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const { adminUser, memberUserId, sessionId } = props;
-
-  // Basic safety check: ensure payload represents an admin actor.
-  if (adminUser.type !== "admin") {
-    throw new HttpException(
-      "Forbidden: only admin users may delete member sessions",
-      403,
-    );
-  }
-
-  // Ensure the target member user exists and is not logically deleted.
+  // Ensure the target member user exists
   const memberUser = await MyGlobal.prisma.todo_app_memberusers.findFirst({
     where: {
-      id: memberUserId,
-      deleted_at: null,
+      id: props.memberUserId,
     },
   });
 
   if (memberUser === null) {
-    throw new HttpException("Target member user not found", 404);
+    throw new HttpException("Member user not found", 404);
   }
 
-  // Ensure the session exists and is associated with the given member user.
+  // Ensure the session exists and belongs to the specified member user
   const session = await MyGlobal.prisma.todo_app_memberuser_sessions.findFirst({
     where: {
-      id: sessionId,
-      todo_app_memberuser_id: memberUserId,
+      id: props.sessionId,
+      todo_app_memberuser_id: props.memberUserId,
     },
   });
 
   if (session === null) {
-    throw new HttpException(
-      "Session not found for the specified member user",
-      404,
-    );
+    throw new HttpException("Session not found for this member user", 404);
   }
 
-  // Hard delete of the session row.
+  // Hard delete the session record
   await MyGlobal.prisma.todo_app_memberuser_sessions.delete({
     where: {
-      id: sessionId,
+      id: props.sessionId,
     },
   });
 }

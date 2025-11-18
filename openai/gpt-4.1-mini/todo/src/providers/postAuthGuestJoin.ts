@@ -13,77 +13,75 @@ import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestJoin(props: {
   guest: GuestPayload;
-  body: ITodoListGuest.ICreate;
+  body: ITodoListGuest.IJoin;
 }): Promise<ITodoListGuest.IAuthorized> {
-  const existingGuest = await MyGlobal.prisma.todo_list_users.findUnique({
-    where: { email: props.body.email },
-  });
-  if (existingGuest !== null) {
-    throw new HttpException("Email already registered", 409);
-  }
-
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
-
+  // Create guest record
+  const guestId = v4();
   const now = toISOStringSafe(new Date());
 
-  const guestUser = await MyGlobal.prisma.todo_list_users.create({
+  const createdGuest = await MyGlobal.prisma.todo_list_guests.create({
     data: {
-      id: v4(),
-      email: props.body.email,
-      password_hash: hashedPassword,
+      id: guestId,
+      visitor_ip: props.body.ip ?? "",
       created_at: now,
       updated_at: now,
     },
   });
 
-  const accessExpire = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpire = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Create guest session record
+  const sessionId = v4();
+  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpires = toISOStringSafe(accessExpiresDate);
+  const refreshExpires = toISOStringSafe(refreshExpiresDate);
 
-  const accessExpireStr = toISOStringSafe(accessExpire);
-  const refreshExpireStr = toISOStringSafe(refreshExpire);
-
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+  const createdSession = await MyGlobal.prisma.todo_list_guest_sessions.create({
     data: {
-      id: v4(),
-      todo_list_user_id: guestUser.id,
-      ip: "",
-      href: "",
-      referrer: "",
+      id: sessionId,
+      todo_list_guest_id: guestId,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
       created_at: now,
-      expired_at: accessExpireStr,
+      expired_at: accessExpires,
     },
   });
 
-  const accessToken = jwt.sign(
-    {
-      type: "guest",
-      id: guestUser.id,
-      session_id: session.id,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      type: "guest",
-      id: guestUser.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  // Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: guestId,
+        session_id: sessionId,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: guestId,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
-    id: guestUser.id,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpireStr,
-      refreshable_until: refreshExpireStr,
-    },
+    id: guestId,
+    token,
   };
 }

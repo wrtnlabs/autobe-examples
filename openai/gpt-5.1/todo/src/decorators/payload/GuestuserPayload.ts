@@ -1,18 +1,13 @@
 import { tags } from "typia";
 
-/**
- * JWT payload for guest users.
- *
- * The `id` corresponds to the primary key of `todo_app_guestusers` and is the
- * top-level identifier for a conceptual guest identity.
- */
+/** JWT payload for unauthenticated guest users. */
 export interface GuestuserPayload {
-  /** Top-level guest user ID (`todo_app_guestusers.id`). */
+  /** Top-level guest concept identifier. */
   id: string & tags.Format<"uuid">;
 
-  /** Session identifier for the guest user context. */
+  /** Session identifier associated with this guest interaction. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator indicating this payload belongs to a guest user. */
+  /** Discriminator used by authorization logic to distinguish guest actors. */
   type: "guestUser";
 }

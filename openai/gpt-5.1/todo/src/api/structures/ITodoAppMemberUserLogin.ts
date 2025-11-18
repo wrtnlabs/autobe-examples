@@ -2,88 +2,71 @@ import { tags } from "typia";
 
 export namespace ITodoAppMemberUserLogin {
   /**
-   * Login request payload for authenticating an existing todoApp member user.
+   * Login payload for authenticating an existing member user in the todoApp
+   * service.
    *
-   * This DTO is consumed by the member user login endpoint that validates
-   * credentials against the `todo_app_memberusers` table. It carries the
-   * minimal set of information required to perform password-based
-   * authentication together with session context metadata.
+   * Clients submit the member's email and password, along with optional
+   * connection metadata, to request an authenticated session. The backend
+   * validates these credentials against todo_app_memberusers (using email and
+   * password_hash) and typically creates a session entry in
+   * todo_app_memberuser_sessions using the supplied connection context.
    *
-   * The `email` and `password` fields represent the member user's
-   * credentials. The password is provided in plain text over a secure
-   * transport and is never stored directly; the backend compares a secure
-   * hash of this value with the `password_hash` column in
-   * `todo_app_memberusers`.
-   *
-   * The `href` and `referrer` fields capture the connection context at the
-   * time of authentication and are required for session tracking and security
-   * analytics. The optional `ip` field may be supplied by clients that are
-   * able to determine the effective client IP, but the backend can also
-   * derive it from the network layer when omitted.
-   *
-   * This DTO does not contain any user identifiers such as the member user ID
-   * from the database, as those are resolved by the authentication process
-   * itself.
+   * This DTO never includes any identity fields such as member IDs, because
+   * those are derived by the server from the validated credentials, and it
+   * never contains pre-hashed passwords. The raw password is provided in
+   * plain text and hashed server-side.
    */
-  export type IRequest = {
+  export type ICreate = {
     /**
-     * Email identifier used as the unique login name for the member user.
+     * Email address of the member user attempting to log in.
      *
-     * This value is matched against the `email` column of
-     * `todo_app_memberusers`, which has a unique index.
-     *
-     * The format must be a syntactically valid email address according to
-     * standard email address rules, and business rules may apply additional
-     * constraints such as domain restrictions.
+     * This value is matched against todo_app_memberusers.email and serves
+     * as the primary credential identifier during authentication. It must
+     * be a syntactically valid email address and is subject to the
+     * uniqueness constraint enforced on the member table.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * Plain-text password supplied by the member user for authentication.
+     * Plain-text password for the member user.
      *
-     * The backend hashes this value and compares it against the
-     * `password_hash` column in `todo_app_memberusers`. The raw password is
-     * never stored.
-     *
-     * Password complexity requirements and minimum length constraints are
-     * defined in the authentication requirements document and must be
-     * enforced during validation.
+     * The server hashes this value and compares it to
+     * todo_app_memberusers.password_hash; hashed passwords must never be
+     * sent by clients. Implementations may enforce additional policies such
+     * as minimum length, character variety, or breach checks, but those
+     * rules are enforced on the server side, not encoded in this schema.
      */
-    password: string & tags.Format<"password">;
+    password: string;
 
     /**
-     * Optional IP address associated with the client initiating the login
-     * request.
+     * Optional client IP address associated with this login attempt.
      *
-     * This value is used for session tracking, security auditing, and
-     * potential anomaly detection. It may represent either an IPv4 or IPv6
-     * address.
-     *
-     * When omitted or null, the server determines the effective client IP
-     * from the underlying network connection details.
+     * When provided, it may be recorded in todo_app_memberuser_sessions.ip
+     * for auditing, security analytics, or anomaly detection. If omitted or
+     * null, the server can derive the IP from the underlying HTTP request
+     * or reverse proxy headers, depending on deployment configuration.
      */
     ip?: string | null | undefined;
 
     /**
-     * Full URL of the page or endpoint from which the login request
-     * originates.
+     * Absolute URL of the page from which the login request is initiated.
      *
-     * This captures the entry point context at the time of authentication,
-     * including protocol, host, path, and optionally query string.
-     *
-     * The value is stored in the session record and used for analytics,
-     * security review, or tracing user journeys.
+     * This connection context is typically persisted in
+     * todo_app_memberuser_sessions.href and can help operators understand
+     * from which route or screen the authentication attempt originated. It
+     * must be a valid URI string, usually matching the frontend application
+     * location.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * Referrer URL reported by the client when the login is initiated.
+     * Referring URL that led the client to the login page.
      *
-     * This represents the previous location from which the user navigated
-     * before reaching the login page or initiating the login flow.
-     *
-     * The value is stored alongside the session data to support navigation
-     * path analysis and security investigations.
+     * This value is often stored in todo_app_memberuser_sessions.referrer
+     * and may be an empty page or external site that navigated to the login
+     * screen. It is useful for analyzing user flows and potential security
+     * concerns such as phishing, but is not required for successful
+     * authentication.
      */
     referrer: string & tags.Format<"uri">;
   };

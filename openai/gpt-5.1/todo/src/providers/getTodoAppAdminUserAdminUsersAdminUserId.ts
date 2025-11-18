@@ -14,27 +14,32 @@ export async function getTodoAppAdminUserAdminUsersAdminUserId(props: {
   adminUser: AdminuserPayload;
   adminUserId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppAdminUser> {
-  const record = await MyGlobal.prisma.todo_app_adminusers.findUnique({
-    where: { id: props.adminUserId },
+  // Authorization for adminUser is already enforced by the AdminuserAuth decorator
+  // and adminuserAuthorize provider, which validate JWT, role type, and session.
+  // Here we only need to ensure the requested admin user exists and map it to DTO.
+
+  const adminUserRecord = await MyGlobal.prisma.todo_app_adminusers.findUnique({
+    where: {
+      id: props.adminUserId,
+    },
   });
 
-  if (record === null || record.deleted_at !== null) {
+  if (adminUserRecord === null) {
     throw new HttpException("Admin user not found", 404);
   }
 
-  return {
-    id: record.id,
-    email: record.email,
-    display_name: record.display_name === null ? null : record.display_name,
-    status: record.status,
-    failed_login_count: record.failed_login_count,
-    last_login_at:
-      record.last_login_at === null
+  // Map Prisma model to ITodoAppAdminUser DTO, intentionally excluding password_hash.
+  const result: ITodoAppAdminUser = {
+    id: adminUserRecord.id,
+    email: adminUserRecord.email,
+    display_name:
+      adminUserRecord.display_name === null
         ? null
-        : toISOStringSafe(record.last_login_at),
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+        : adminUserRecord.display_name,
+    status: adminUserRecord.status,
+    created_at: toISOStringSafe(adminUserRecord.created_at),
+    updated_at: toISOStringSafe(adminUserRecord.updated_at),
   };
+
+  return result;
 }

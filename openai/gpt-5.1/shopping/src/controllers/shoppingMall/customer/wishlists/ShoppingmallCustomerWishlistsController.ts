@@ -8,53 +8,57 @@ import { IPageIShoppingMallWishlist } from "../../../../api/structures/IPageISho
 @Controller("/shoppingMall/customer/wishlists")
 export class ShoppingmallCustomerWishlistsController {
   /**
-   * Create a new wishlist record in the shopping_mall_wishlists table for the
-   * authenticated customer.
+   * Create a new customer-owned wishlist backed by the
+   * shopping_mall_wishlists table.
    *
-   * Create a new customer-owned wishlist within the shoppingMall platform.
+   * Create a new wishlist for the authenticated customer in the shopping mall
+   * system.
    *
-   * This operation works with the `shopping_mall_wishlists` table, whose
-   * records represent persistent wishlist containers that customers use to
-   * organize products or SKUs they may want to purchase later. Each wishlist
-   * belongs to exactly one customer from the `shopping_mall_customer` table,
-   * and typically contains attributes such as a human-readable name, optional
-   * description, visibility configuration (for example, private or shareable
-   * via link), and timestamps for creation and last update maintained by the
-   * database or ORM layer.
+   * This operation allows a logged-in customer to create a new wishlist,
+   * which conceptually corresponds to a new record in the
+   * `shopping_mall_wishlists` table, described at a high level as
+   * "Customer-owned wishlists for saving products of interest". The API does
+   * not expose raw table fields directly; instead, it uses the DTO
+   * `IShoppingMallWishlist.ICreate` to capture business-level fields such as
+   * the wishlist title, optional description, visibility flags (for example,
+   * private vs shared), and optional initial item references. The server is
+   * responsible for attaching the wishlist to the currently authenticated
+   * customer account, enforcing any constraints configured at the database
+   * and policy levels.
    *
-   * When a client invokes this endpoint, the server reads the authenticated
-   * customer identity from the session or token associated with the request
-   * rather than from the request body. This prevents a caller from forging
-   * ownership information in the payload. The request body conforms to the
-   * `IShoppingMallWishlist.ICreate` DTO, which includes only the fields that
-   * a customer is allowed to set directly, such as name or description, and
-   * excludes system-managed properties like primary keys or audit
-   * timestamps.
+   * From a security and permissions perspective, this operation is restricted
+   * to authenticated customers, modeled with the `authorizationActors:
+   * ["customer"]` value. The implementing service must ensure that the
+   * customer identity comes from the authentication layer (for example, via a
+   * JWT token or session context) and MUST NOT trust any user-supplied
+   * identifiers for ownership. Additional authorization rules, such as
+   * maximum number of wishlists per customer or feature availability per
+   * subscription tier, should also be enforced in the service layer using the
+   * customer context.
    *
-   * Before inserting a new row into `shopping_mall_wishlists`, the
-   * implementation should validate that the owning customer exists, has not
-   * been deactivated, and is allowed to create additional wishlists according
-   * to platform policy. If there is a configured limit on the number of
-   * wishlists per customer, attempts to exceed that quota should result in a
-   * business error. The service should also apply any default values defined
-   * in platform configuration, such as default visibility, when the client
-   * omits optional fields.
+   * In terms of its relationship to the underlying Prisma entities, the
+   * created wishlist record in `shopping_mall_wishlists` may be linked to
+   * other tables such as `shopping_mall_wishlist_items` for the individual
+   * product or SKU entries that the customer wants to save. The
+   * `IShoppingMallWishlist` response DTO can include a summary view of these
+   * relationships (for example, basic information about initial items)
+   * without exposing the entire relational structure. Validation rules for
+   * fields such as name length, description length, and allowed visibility
+   * values are derived from the Prisma schema and business requirement
+   * documents, with appropriate error responses (such as 400 for validation
+   * failures and 409 for conflicts like exceeding wishlist limits).
    *
-   * On success, the API returns the complete wishlist representation using
-   * the `IShoppingMallWishlist` DTO. This response includes the generated
-   * identifier that clients will use to reference the wishlist in subsequent
-   * operations (such as updating the wishlist or managing
-   * `shopping_mall_wishlist_items`), as well as resolved visibility settings
-   * and timestamps. Validation errors, permission issues, or quota violations
-   * should be surfaced as structured error responses consistent with the
-   * platform-wide error handling policies, while not exposing internal
-   * database details.
+   * This endpoint complements other wishlist-related operations such as
+   * listing wishlists, retrieving a single wishlist, updating an existing
+   * wishlist, and managing individual items within a wishlist. Clients
+   * typically call this endpoint when a customer wants to start organizing
+   * favorite products, before they add more items or share the wishlist with
+   * others.
    *
    * @param connection
-   * @param body Data required to create a new wishlist, including
-   *   customer-controlled attributes such as name, description, and
-   *   visibility options. Ownership is derived from the authenticated
-   *   customer context and is not supplied in this payload.
+   * @param body Wishlist creation data including name, optional description,
+   *   visibility, and optional initial items to be saved for the
+   *   authenticated customer.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -67,52 +71,53 @@ export class ShoppingmallCustomerWishlistsController {
   }
 
   /**
-   * Search and retrieve a paginated list of wishlists from the
-   * shopping_mall_wishlists table for the authenticated customer.
+   * Search and list wishlists from the shopping_mall_wishlists table in a
+   * paginated way.
    *
-   * Search and retrieve a filtered, paginated list of wishlists from the
+   * Search and retrieve a paginated list of wishlist headers stored in the
    * `shopping_mall_wishlists` table.
    *
-   * This operation provides an advanced search interface over customer
-   * wishlists, which are represented in the database by the
-   * `shopping_mall_wishlists` Prisma model. That model stores metadata about
-   * each wishlist, such as which customer owns it, its display name, optional
-   * description, creation and update timestamps, and any status flags that
-   * control visibility. The endpoint does not create or modify wishlists; it
-   * only reads and returns them based on the supplied criteria.
+   * This operation returns wishlist summaries rather than full detail
+   * records, optimized for listing screens where users see multiple wishlists
+   * at once. Each wishlist corresponds to a row in the
+   * `shopping_mall_wishlists` Prisma model, which conceptually includes
+   * information such as the owning customer, wishlist name or label, creation
+   * timestamps, and potentially configuration flags that control visibility
+   * or default usage. The response type `IPageIShoppingMallWishlist.ISummary`
+   * reflects this summary nature by exposing only those fields needed for
+   * list views and navigation.
    *
-   * The request body is represented by the `IShoppingMallWishlist.IRequest`
-   * DTO. This DTO is expected to include pagination controls (for example,
-   * page index and page size), optional free-text search fields, and
-   * structured filters such as customer identifiers, date ranges, or status
-   * filters. Implementations should validate that pagination parameters are
-   * within acceptable bounds and that any identifiers or filter values
-   * conform to their expected formats before querying the underlying
-   * `shopping_mall_wishlists` data.
+   * Clients provide search criteria and pagination options in the request
+   * body using the `IShoppingMallWishlist.IRequest` DTO. Typical filter
+   * capabilities include restricting results to the currently authenticated
+   * customer, filtering by name or keyword, constraining by creation or
+   * update date ranges, and toggling flags like "archived" or "active"
+   * depending on how the Prisma schema models wishlist lifecycle. Pagination
+   * fields (such as page index and size) and sort descriptors (e.g., ordering
+   * by most recently updated) are also included, enabling efficient browsing
+   * even when a customer maintains many wishlists.
    *
-   * From a security perspective, this endpoint is scoped to the `customer`
-   * actor, modeled via the `authorizationActors: ["customer"]` declaration.
-   * The NestJS layer should ensure that the authenticated principal is a
-   * customer and then apply additional filtering in the service layer so that
-   * each customer only ever sees their own wishlists. This avoids exposing
-   * other users' data while still providing rich search and navigation
-   * capabilities over the customer's personal wishlists.
+   * From a security perspective, this is a read-only operation that should
+   * not expose wishlist data belonging to other customers unless the caller
+   * is an administrator or support actor with elevated privileges. The
+   * underlying service logic must enforce that standard customer actors only
+   * receive wishlists they own, while admin actors may perform broader
+   * searches across multiple customers for support, compliance, or analytics
+   * use cases. Rate limiting and result-size limits may be applied to prevent
+   * abuse of the search functionality.
    *
-   * The response body is a paginated collection of wishlist summaries,
-   * returned as `IPageIShoppingMallWishlist.ISummary`. Each summary entry
-   * should contain sufficient information for list views in customer-facing
-   * or account pages, such as wishlist identifier, name, brief description,
-   * and key status indicators, but may omit heavier or deeply nested detail
-   * that is only required when viewing a single wishlist. Typical error cases
-   * include invalid pagination arguments, malformed filter criteria, or
-   * internal database errors; these should be surfaced according to the
-   * platform's standard error-handling and messaging guidelines. This search
-   * endpoint is usually followed by calls to the detail retrieval API for a
-   * specific wishlist when more in-depth information is needed.
+   * This list operation is typically used together with corresponding detail
+   * retrieval endpoints (for example, `GET
+   * /shoppingMall/customer/wishlists/{wishlistId}` or `GET
+   * /shoppingMall/admin/wishlists/{wishlistId}`), which return the full
+   * wishlist including its items. Clients generally call this PATCH endpoint
+   * first to obtain a page of wishlist headers, allow user selection of a
+   * specific wishlist, and then call a detail endpoint to inspect or manage
+   * the items inside that wishlist.
    *
    * @param connection
-   * @param body Search and pagination criteria for listing wishlists from the
-   *   shopping_mall_wishlists table.
+   * @param body Search filters, pagination, and sorting options for listing
+   *   wishlists.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Patch()
@@ -126,42 +131,42 @@ export class ShoppingmallCustomerWishlistsController {
 
   /**
    * Retrieve detailed information for a single wishlist from the
-   * shopping_mall_wishlists table by its identifier for the authenticated
+   * shopping_mall_wishlists table by ID for the authenticated customer.
+   *
+   * Retrieve full details of a single wishlist stored in the
+   * `shopping_mall_wishlists` table by its identifier for the authenticated
    * customer.
    *
-   * Retrieve detailed information about a single wishlist stored in the
-   * `shopping_mall_wishlists` table by its unique identifier.
+   * The operation accepts a single required path parameter `wishlistId`,
+   * which uniquely identifies a wishlist row in the `shopping_mall_wishlists`
+   * Prisma model. In most implementations this will be a string identifier
+   * such as a UUID. The backend uses this identifier to look up the
+   * corresponding wishlist and then maps its fields, and potentially its
+   * related `shopping_mall_wishlist_items` records, into the
+   * `IShoppingMallWishlist` DTO. The detail DTO is intended for rich UI
+   * screens where customers examine all items and metadata associated with
+   * their own wishlist.
    *
-   * This operation targets the `shopping_mall_wishlists` Prisma model, which
-   * represents customer-owned wishlists grouping products or SKUs for later
-   * consideration. Each wishlist record typically contains an internal
-   * identifier, a reference to the owning customer, a human-readable name,
-   * optional description, creation and update timestamps, and various status
-   * or visibility flags. Depending on DTO design, the associated wishlist
-   * items from `shopping_mall_wishlist_items` may also be included as a
-   * nested collection to present the actual contents of the wishlist.
+   * From an authorization standpoint, standard customer actors should only be
+   * allowed to retrieve wishlists that they own. The service layer must
+   * therefore validate that the authenticated customer is the owner of the
+   * wishlist before returning the data. If the wishlist does not exist or the
+   * caller is not permitted to view it, appropriate error responses (such as
+   * 404 Not Found or 403 Forbidden) are returned instead of the wishlist
+   * data.
    *
-   * The wishlist to retrieve is identified using the `{wishlistId}` path
-   * parameter. This parameter corresponds to the primary key of the
-   * `shopping_mall_wishlists` record and is usually modeled as a UUID string.
-   * Implementations should validate that the value conforms to the expected
-   * format and handle the case where no wishlist exists with the given
-   * identifier by returning an appropriate not-found error response according
-   * to platform error-handling standards.
-   *
-   * Access to this endpoint is limited to the `customer` actor, as defined by
-   * `authorizationActors: ["customer"]`. The NestJS controller must
-   * authenticate the customer, and the service layer must verify that the
-   * wishlist belongs to that customer before returning data. This restriction
-   * ensures that arbitrary customers cannot view other users' wishlists,
-   * preserving privacy while enabling customers to manage and review their
-   * own saved products. This detail retrieval endpoint is usually called
-   * after the customer has discovered the wishlist via the paginated search
-   * endpoint for wishlists.
+   * This operation is commonly used in conjunction with the customer list
+   * endpoint `PATCH /shoppingMall/customer/wishlists`, which provides a
+   * paginated list of wishlist headers. A typical flow is that the client
+   * first obtains a list of wishlists using the list endpoint, then calls
+   * this detail endpoint for a chosen `wishlistId` in order to render a
+   * detailed wishlist page. Subsequent item-level modifications or
+   * conversions of items to cart entries would be handled by other dedicated
+   * endpoints not covered here.
    *
    * @param connection
-   * @param wishlistId Unique identifier of the target wishlist record in the
-   *   shopping_mall_wishlists table, typically a UUID string.
+   * @param wishlistId Unique identifier of the target wishlist in the
+   *   `shopping_mall_wishlists` table.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Get(":wishlistId")
@@ -174,56 +179,54 @@ export class ShoppingmallCustomerWishlistsController {
   }
 
   /**
-   * Update an existing wishlist record in the shopping_mall_wishlists table
-   * identified by wishlistId.
+   * Update an existing wishlist resource in the shopping_mall_wishlists table
+   * using its wishlistId.
    *
-   * Update metadata of an existing customer-owned wishlist in the
-   * shoppingMall platform.
+   * Update an existing customer-owned wishlist identified by its wishlistId.
    *
-   * This operation targets the `shopping_mall_wishlists` table, which stores
-   * wishlist containers linked to customers from `shopping_mall_customer`.
-   * Each record typically includes a unique identifier, a foreign key to the
-   * owning customer, a display name, optional description, visibility
-   * settings, and audit timestamps. The purpose of this endpoint is to let
-   * customers revise wishlist-level attributes such as the name or visibility
-   * without affecting the collection of items maintained in
-   * `shopping_mall_wishlist_items`.
+   * This operation targets a specific wishlist resource that corresponds
+   * conceptually to a row in the `shopping_mall_wishlists` table, which is
+   * defined at a high level as the master entity for customer wishlists. The
+   * wishlist is identified by the `wishlistId` path parameter, which is
+   * treated in the API as an opaque string identifier (commonly a UUID) and
+   * must uniquely identify a single wishlist belonging to the authenticated
+   * customer. The request body, represented by
+   * `IShoppingMallWishlist.IUpdate`, can include fields such as a new name
+   * for the wishlist, updated description, and modified visibility
+   * configuration, while fields that should not be changed (such as owner or
+   * creation timestamps) are excluded.
    *
-   * The client specifies the wishlist to modify using the `wishlistId` path
-   * parameter. This identifier maps directly to the primary key of a record
-   * in `shopping_mall_wishlists`. The server resolves the authenticated
-   * customer from the session or token context and verifies that this
-   * customer is the owner of the wishlist. If the wishlist does not exist,
-   * belongs to a different customer, or is in a state that disallows updates
-   * according to platform policies, the operation must reject the request
-   * with an appropriate error code and message.
+   * From a security and authorization standpoint, this operation is
+   * restricted to the customer that owns the wishlist, modeled using
+   * `authorizationActors: ["customer"]`. The implementation must ensure that
+   * the authenticated customer is indeed the owner of the wishlist referenced
+   * by `wishlistId`. If the wishlist does not exist, belongs to another
+   * account, or is otherwise not editable (for example, locked by a legal
+   * hold), appropriate error responses such as 404 (not found) or 403
+   * (forbidden) should be returned. The server should also enforce any
+   * business policies derived from the `shopping_mall_business_policies` and
+   * related models that might control how and when wishlists can be
+   * modified.
    *
-   * The request body conforms to the `IShoppingMallWishlist.IUpdate` DTO and
-   * contains only fields that are permitted to change, such as name or
-   * description. System-controlled properties, including identifiers and
-   * ownership fields, are not accepted in the payload and must not be
-   * modifiable through this API. The implementation should perform
-   * field-level validation, such as enforcing maximum lengths or ensuring
-   * that visibility flags align with global policy definitions stored in
-   * configuration tables like `shopping_mall_mall_configs` or policy-setting
-   * models.
-   *
-   * On success, the endpoint returns the updated wishlist as an
-   * `IShoppingMallWishlist` DTO, providing clients with the latest persisted
-   * state including modified attributes and updated timestamps. This allows
-   * the UI to immediately reflect the new wishlist name or visibility
-   * settings. Any errors encountered during validation, authorization, or
-   * persistence should be transformed into consistent, user-friendly error
-   * responses defined by the platform-wide exception handling and messaging
-   * guidelines.
+   * This operation is closely related to other wishlist lifecycle endpoints:
+   * the POST `/wishlists` operation for initial creation, eventual GET
+   * operations for retrieving wishlist details, and additional operations for
+   * managing individual items via tables such as
+   * `shopping_mall_wishlist_items`. Validation rules for update payloads are
+   * driven by the Prisma schema comments and business requirements; for
+   * example, name and description fields may have length limits, and
+   * visibility updates may be constrained to a specific set of allowed
+   * values. On successful update, the API returns the full
+   * `IShoppingMallWishlist` representation, allowing clients to update their
+   * state with the most recent data.
    *
    * @param connection
-   * @param wishlistId Unique identifier of the wishlist record in the
-   *   shopping_mall_wishlists table that the authenticated customer intends
-   *   to update.
+   * @param wishlistId Unique identifier of the target wishlist resource to
+   *   update, typically corresponding to the primary key of a row in the
+   *   shopping_mall_wishlists table.
    * @param body Fields to update on the wishlist, such as name, description,
-   *   or visibility settings, constrained to attributes that customers are
-   *   allowed to modify.
+   *   or visibility settings, represented by the
+   *   IShoppingMallWishlist.IUpdate DTO.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Put(":wishlistId")
@@ -239,46 +242,47 @@ export class ShoppingmallCustomerWishlistsController {
   }
 
   /**
-   * Delete a customer wishlist from the shopping_mall_wishlists table.
+   * Delete a wishlist record from the shopping_mall_wishlists table by its
+   * identifier.
    *
-   * Delete an existing customer-owned wishlist by its unique identifier.
+   * Delete a single wishlist entity from the system along with its associated
+   * items when applicable.
    *
-   * This operation is built on top of the `shopping_mall_wishlists` Prisma
-   * model, which represents wishlists that customers use to group products or
-   * specific SKUs they may want to purchase later. Each wishlist belongs to a
-   * single customer, and its structure and relationships are defined in the
-   * Prisma schema so that it can be joined with
-   * `shopping_mall_wishlist_items` and related catalog entities.
+   * This operation focuses on the shopping_mall_wishlists table, which
+   * represents customer-owned wishlist headers used to store products of
+   * interest. The wishlist is identified through the wishlistId path
+   * parameter, which corresponds to the primary key in the underlying Prisma
+   * model. When invoked, the system first verifies that the requester is an
+   * authenticated customer who owns the wishlist or an authorized admin user
+   * acting under governance rules.
    *
-   * When the client calls this endpoint, it must supply the `wishlistId` path
-   * parameter, which corresponds to the primary key of the target wishlist
-   * row in `shopping_mall_wishlists`. The service must first load this
-   * wishlist and verify that it exists and that it is owned by the currently
-   * authenticated customer actor. If no matching wishlist is found, the
-   * operation should respond with a not-found error. If the wishlist is found
-   * but belongs to a different customer, the operation must fail with an
-   * authorization error to prevent cross-account access.
+   * From a security and authorization perspective, the operation must prevent
+   * customers from deleting wishlists owned by other customers, and it should
+   * also respect any platform-level governance constraints such as legal
+   * holds or ongoing dispute investigations that may require preservation of
+   * wishlist-related data. Ownership and actor-type checks are handled in the
+   * service layer using the authenticated principal extracted from the
+   * session.
    *
-   * After successful validation, the service performs a hard delete of the
-   * wishlist record. Any associated entries in
-   * `shopping_mall_wishlist_items`, which represent the individual products
-   * or SKUs stored in the wishlist, must also be removed according to the
-   * database’s referential integrity constraints or explicit deletion logic
-   * in the service. This ensures there are no dangling references to a
-   * deleted wishlist.
+   * At the database level, the provider uses Prisma to locate the wishlist
+   * row in shopping_mall_wishlists. If the wishlist exists and passes
+   * authorization checks, the service issues a delete operation. Depending on
+   * how the relations are modeled in Prisma, wishlist items in
+   * shopping_mall_wishlist_items may be configured with cascading deletes or
+   * may require explicit deletion. Any such child deletions should be
+   * performed in a single transaction to maintain referential integrity.
    *
-   * The endpoint does not return an entity in the response body; instead, it
-   * is expected to return an appropriate success status code (such as 204)
-   * when deletion completes successfully. If an error occurs during
-   * deletion—such as database constraint violations or concurrent
-   * modification—the service should return a clear error response so that the
-   * client can notify the user. Related operations typically include creating
-   * wishlists, listing a customer’s wishlists, and managing the items
-   * contained in a wishlist.
+   * Related operations include listing and searching wishlist items,
+   * modifying wishlist contents, and potentially creating new wishlists.
+   * Clients typically call this endpoint from a "manage wishlists" screen
+   * when the user chooses to remove a list they no longer need. If the
+   * wishlistId does not correspond to an existing wishlist or the caller
+   * lacks permission, the service responds with an appropriate error status
+   * such as 404 Not Found or 403 Forbidden.
    *
    * @param connection
-   * @param wishlistId Unique identifier of the wishlist to delete,
-   *   corresponding to the primary key of a row in the
+   * @param wishlistId Unique identifier of the target wishlist to delete.
+   *   This value corresponds to the primary key of the wishlist record in the
    *   shopping_mall_wishlists table.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
@@ -289,5 +293,160 @@ export class ShoppingmallCustomerWishlistsController {
   ): Promise<void> {
     wishlistId;
     return typia.random<void>();
+  }
+
+  /**
+   * Move an item from a shopping_mall_wishlists record into the customer’s
+   * active cart, updating both wishlist and cart aggregates.
+   *
+   * Move a specific item from a customer’s wishlist into their active
+   * shopping cart while enforcing wishlist and cart invariants.
+   *
+   * This operation is associated primarily with the shopping_mall_wishlists
+   * table, which stores customer-owned wishlists, and secondarily with
+   * shopping_mall_carts and shopping_mall_cart_items, which represent
+   * shopping carts and their line items. The wishlistId path parameter
+   * identifies the wishlist whose item will be moved. Internally, the
+   * implementation will use the foreign-key relationships between wishlists,
+   * customers, carts, and SKUs to validate ownership and ensure that the move
+   * respects product visibility and inventory constraints as defined in the
+   * schema comments for catalog- and inventory-related tables.
+   *
+   * From a security perspective, this endpoint is restricted to authenticated
+   * customers, represented by the "customer" actor. The backend must verify
+   * that the authenticated customer is indeed the owner of the wishlist
+   * referenced by wishlistId. If the wishlist does not exist, is not owned by
+   * the customer, or is in a state that does not allow modifications, the
+   * operation should respond with an appropriate error such as 404 Not Found
+   * or 403 Forbidden. If the associated product or SKU is no longer
+   * available, or inventory is insufficient, the service should return a
+   * validation error with details derived from catalog visibility rules and
+   * inventory state definitions.
+   *
+   * The request body, typed as IShoppingMallWishlist.IMoveItemToCartRequest,
+   * carries the wishlist item identifier and optional quantity or merge
+   * behavior flags. For example, it can indicate whether to increase the
+   * quantity of an existing cart line if the same SKU is already in the cart,
+   * or to replace the quantity entirely. The DTO is defined to align with the
+   * underlying shopping_mall_wishlist_items and shopping_mall_cart_items
+   * schema fields, such as SKU identifier fields and quantity fields, without
+   * duplicating path-level identifiers.
+   *
+   * The response body, typed as IShoppingMallWishlist.IMoveItemToCartResult,
+   * returns a structured representation of the resulting wishlist and cart
+   * state after the move has completed. This may include the remaining
+   * wishlist items, the updated cart items (including computed prices from
+   * order/price-related tables if relevant), and any messages or flags
+   * describing partial success scenarios (e.g., moved with reduced quantity
+   * due to stock limits). Client applications can use this payload to update
+   * both wishlist and cart views atomically, avoiding additional round
+   * trips.
+   *
+   * Related operations typically include PATCH /wishlists for listing and
+   * searching wishlists, POST /wishlists for creating new wishlists, POST
+   * /wishlists/{wishlistId}/copyItemToCart for copying rather than moving
+   * items, and cart endpoints that directly manipulate cart items. However,
+   * this move endpoint is optimized for the common UX pattern where a user
+   * promotes an item from "saved for later" to the active purchase list in a
+   * single action, while ensuring that all cross-entity constraints defined
+   * in the Prisma schema are respected and enforced.
+   *
+   * @param connection
+   * @param wishlistId Unique identifier of the target wishlist whose item
+   *   will be moved into the customer’s cart. This identifier corresponds to
+   *   the primary key of the shopping_mall_wishlists table and is unique per
+   *   wishlist record.
+   * @param body Details about which wishlist item to move into the cart and
+   *   how to handle quantity or merge behavior. The DTO aligns with wishlist
+   *   item and cart item schema fields while excluding path-level
+   *   identifiers.
+   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   */
+  @TypedRoute.Post(":wishlistId/moveItemToCart")
+  public async moveItemToCart(
+    @TypedParam("wishlistId")
+    wishlistId: string,
+    @TypedBody()
+    body: IShoppingMallWishlist.IMoveItemToCartRequest,
+  ): Promise<IShoppingMallWishlist.IMoveItemToCartResult> {
+    wishlistId;
+    body;
+    return typia.random<IShoppingMallWishlist.IMoveItemToCartResult>();
+  }
+
+  /**
+   * Copy an item from a shopping_mall_wishlists record into the customer’s
+   * active cart without removing it from the wishlist.
+   *
+   * Copy a specific item from a customer’s wishlist into their active
+   * shopping cart while keeping the original wishlist entry intact.
+   *
+   * This operation is primarily associated with the shopping_mall_wishlists
+   * table, which represents wishlists owned by customers, and with the
+   * shopping_mall_carts and shopping_mall_cart_items tables that represent
+   * carts and their line items. The wishlistId path parameter identifies
+   * which wishlist is the source of the copied item. Internally, the
+   * implementation will traverse the relationships between wishlists,
+   * customers, products, and SKUs defined in the Prisma schema to ensure that
+   * the wishlist and the requested item exist and are associated with the
+   * authenticated customer.
+   *
+   * From a security perspective, the endpoint is restricted to authenticated
+   * customers, captured by the "customer" actor in authorizationActors. The
+   * backend must perform ownership checks to ensure that the caller is
+   * authorized to read and act upon the wishlist and its items. Unauthorized
+   * access or access to non-existent resources should result in appropriate
+   * 403 Forbidden or 404 Not Found errors. If the underlying product, SKU, or
+   * visibility rules prevent buying the item (for example, because it was
+   * removed from catalog or blocked by
+   * shopping_mall_catalog_visibility_rules), the operation should fail with a
+   * validation error that indicates the reason.
+   *
+   * The request body is typed as IShoppingMallWishlist.ICopyItemToCartRequest
+   * and contains the minimal information necessary to identify the wishlist
+   * item and describe cart-related behavior, such as desired quantity or how
+   * to merge with an existing cart line for the same SKU. The DTO is defined
+   * to mirror key fields from the wishlist item and cart item models (like
+   * SKU identifiers and quantity) without duplicating the wishlistId path
+   * parameter.
+   *
+   * The response body uses the IShoppingMallWishlist.ICopyItemToCartResult
+   * DTO to return a snapshot of the wishlist and cart state after the copy
+   * operation. Since the wishlist item is not removed, the wishlist portion
+   * typically remains unchanged, but the result may include indicators if
+   * availability changed between the time the item was saved and the copy
+   * attempt. The cart part of the result shows the updated line items,
+   * including any new or adjusted quantities, and may reflect price
+   * components derived from order and payment-related tables where
+   * applicable.
+   *
+   * Related operations include PATCH /wishlists for listing and searching
+   * wishlists, endpoints for directly managing cart contents, and POST
+   * /wishlists/{wishlistId}/moveItemToCart which transfers items instead of
+   * copying them. This copy endpoint is tailored for UX flows where customers
+   * want to stage items for purchase while still retaining them in a
+   * long-term saved list, ensuring that cross-table constraints and catalog
+   * rules defined in the Prisma schema are consistently enforced.
+   *
+   * @param connection
+   * @param wishlistId Unique identifier of the wishlist from which the item
+   *   will be copied into the customer’s cart. This corresponds to the
+   *   primary key of the shopping_mall_wishlists table and uniquely
+   *   identifies a wishlist record.
+   * @param body Information identifying which wishlist item to copy into the
+   *   cart and how to handle quantity or merge behavior when a corresponding
+   *   cart line already exists.
+   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   */
+  @TypedRoute.Post(":wishlistId/copyItemToCart")
+  public async copyItemToCart(
+    @TypedParam("wishlistId")
+    wishlistId: string,
+    @TypedBody()
+    body: IShoppingMallWishlist.ICopyItemToCartRequest,
+  ): Promise<IShoppingMallWishlist.ICopyItemToCartResult> {
+    wishlistId;
+    body;
+    return typia.random<IShoppingMallWishlist.ICopyItemToCartResult>();
   }
 }

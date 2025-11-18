@@ -15,12 +15,12 @@ export async function putTodoAppUserUsersUserId(props: {
   userId: string & tags.Format<"uuid">;
   body: ITodoAppUser.IUpdate;
 }): Promise<ITodoAppUser> {
-  // Check authorization - user can only update their own account
+  // Verify user can only update their own account
   if (props.user.id !== props.userId) {
     throw new HttpException("You can only update your own account", 403);
   }
 
-  // Check if user exists and is not deleted
+  // Check if user exists
   const existingUser = await MyGlobal.prisma.todo_app_users.findUnique({
     where: { id: props.userId },
   });
@@ -29,39 +29,20 @@ export async function putTodoAppUserUsersUserId(props: {
     throw new HttpException("User not found", 404);
   }
 
-  if (existingUser.deleted_at !== null) {
-    throw new HttpException("Cannot update deleted account", 400);
-  }
-
-  // Check email uniqueness if email is being updated
-  if (
-    props.body.email !== undefined &&
-    props.body.email !== existingUser.email
-  ) {
-    const existingEmail = await MyGlobal.prisma.todo_app_users.findFirst({
-      where: {
-        email: props.body.email,
-        deleted_at: null,
-      },
-    });
-
-    if (existingEmail) {
-      throw new HttpException("Email already in use", 400);
-    }
-  }
-
-  // Update user
+  // Update user with new data
   const updatedUser = await MyGlobal.prisma.todo_app_users.update({
     where: { id: props.userId },
     data: {
-      ...(props.body.email !== undefined && { email: props.body.email }),
-      updated_at: new Date(),
+      name: props.body.name,
+      updated_at: toISOStringSafe(new Date()),
     },
   });
 
   return {
     id: updatedUser.id,
-    email: updatedUser.email,
+    email: updatedUser.email as string & tags.Format<"email">,
+    name: updatedUser.name,
+    status: updatedUser.status,
     created_at: toISOStringSafe(updatedUser.created_at),
     updated_at: toISOStringSafe(updatedUser.updated_at),
     deleted_at: updatedUser.deleted_at

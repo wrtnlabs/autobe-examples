@@ -1,67 +1,56 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallProductReview } from "../../../structures/IShoppingMallProductReview";
-import { IPageIShoppingMallProductReview } from "../../../structures/IPageIShoppingMallProductReview";
-export * as sellerResponse from "./sellerResponse/index";
-export * as statistics from "./statistics/index";
+import { IShoppingMallReview } from "../../../structures/IShoppingMallReview";
+import { IPageIShoppingMallReview } from "../../../structures/IPageIShoppingMallReview";
 
 /**
- * Search and retrieve a paginated list of product reviews from
- * shopping_mall_product_reviews.
+ * Search and retrieve a paginated list of review summaries from the
+ * shopping_mall_reviews table.
  *
- * Retrieve a filtered and paginated list of product reviews from the shopping
- * mall catalog.
+ * Retrieve a filtered, paginated list of customer-written product reviews from
+ * the `shopping_mall_reviews` table.
  *
- * This operation queries the `shopping_mall_product_reviews` table, whose
- * records represent customer-authored product reviews with star ratings and
- * textual feedback. Each review row typically includes fields such as the
- * product identifier, optional SKU identifier (for variant-specific reviews),
- * the customer identifier of the author, star rating value (for example, 1–5),
- * review title, body/content, publication status, visibility flags, and
- * timestamps for creation and last modification. The schema may also include
- * references or flags that indicate whether a review is eligible to be shown
- * publicly, pending moderation, or hidden due to policy violations. The request
- * body type `IShoppingMallProductReview.IRequest` encapsulates these search and
- * filter criteria in a structured way, including product-level filters, rating
- * ranges, presence of media, and time windows.
+ * This operation targets the `shopping_mall_reviews` Prisma model, which stores
+ * core review attributes such as the reviewed product or SKU, the authoring
+ * customer, rating score, textual content, timestamps, and various status flags
+ * indicating eligibility, visibility, moderation decisions, or linkage to
+ * refund and dispute workflows. The list endpoint returns summarized review
+ * representations to support efficient browsing and search UX flows.
  *
- * From a security perspective, this endpoint is exposed as a public read API
- * (`authorizationActors: []`) so that both guests and authenticated users can
- * browse reviews. Even though it is a public endpoint, the implementation must
- * ensure that only reviews that satisfy the platform's visibility rules—derived
- * from the review status, product visibility settings, and any applicable
- * compliance flags—are returned. Internal-only or policy-violating reviews must
- * not be exposed. Rate limiting and abuse protection should be applied at the
- * API gateway layer to prevent scraping and denial-of-service patterns.
+ * The request body, modeled as `IShoppingMallReview.IRequest`, is expected to
+ * contain search filters such as product or SKU identifiers, ranges for rating
+ * scores, creation or update time windows, flags for whether a review is
+ * visible to end users, and optional filters for moderation state or presence
+ * of reports. It also includes pagination parameters like page index and page
+ * size, and sorting options such as ordering by creation time, rating, or
+ * helpfulness metrics that are precomputed in aggregates. The server validates
+ * that filters are well-formed, compatible (for example, disallowing
+ * contradictory ranges), and within allowable limits for performance.
  *
- * Regarding the relationship to other entities, reviews are connected to
- * products (and optionally SKUs) defined in tables such as
- * `shopping_mall_products` and `shopping_mall_product_skus`, and to customers
- * defined in `shopping_mall_customer`. The search implementation can join or
- * prefetch related entities as needed to provide summary information (for
- * example, product name, variant label, or anonymized author display name) in
- * the `IShoppingMallProductReview.ISummary` DTO, while ensuring that no
- * sensitive customer information is leaked. The response type
- * `IPageIShoppingMallProductReview.ISummary` wraps a list of these summary
- * objects with standard pagination metadata (page number, page size, total
- * count, etc.).
+ * From a security perspective, this list operation is modeled as publicly
+ * callable (empty `authorizationActors` array) because it is commonly exposed
+ * on public product detail pages or SEO-friendly review listing pages. In
+ * practice, an implementation may still require some form of throttling,
+ * IP-based rate limiting, or cookie/session based abuse protection to avoid
+ * scraping and review spam analysis evasion. When used in internal back-office
+ * tools, the same endpoint can be wrapped with stricter access control and
+ * additional filters to include moderated or hidden content.
  *
- * This operation is expected to be used heavily in product detail pages,
- * category browse pages, and possibly in administrative dashboards that need an
- * overview of review health for products. Clients typically combine this
- * endpoint with per-product average rating aggregates (served by another
- * endpoint backed by `shopping_mall_product_rating_aggregates`) to render
- * comprehensive review sections. Error scenarios include invalid pagination
- * parameters, unsupported sorting fields, or filter combinations that violate
- * platform constraints; these should result in well-defined validation errors
- * as described in the global error-handling requirements document.
+ * The response body uses `IPageIShoppingMallReview.ISummary`, which represents
+ * a paged collection of lightweight review summary objects. Each summary
+ * contains only the fields required to render lists, such as rating score,
+ * short excerpt of text, helpful vote statistics, and high-level status,
+ * leaving full content, detailed moderation history, reports, and version
+ * snapshots to be obtained from the detail endpoint. This separation keeps the
+ * list endpoint fast and scalable while still giving clients the ability to
+ * drill into details when necessary.
  *
  * @param props.connection
- * @param props.body Search and filter criteria, along with pagination and
- *   sorting options, for querying product reviews.
+ * @param props.body Search criteria, pagination, and sorting options for
+ *   querying review summaries.
  * @path /shoppingMall/reviews
  * @accessor api.functional.shoppingMall.reviews.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,13 +80,13 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search and filter criteria, along with pagination and sorting
-     * options, for querying product reviews.
+     * Search criteria, pagination, and sorting options for querying review
+     * summaries.
      */
-    body: IShoppingMallProductReview.IRequest;
+    body: IShoppingMallReview.IRequest;
   };
-  export type Body = IShoppingMallProductReview.IRequest;
-  export type Response = IPageIShoppingMallProductReview.ISummary;
+  export type Body = IShoppingMallReview.IRequest;
+  export type Response = IPageIShoppingMallReview.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -113,8 +102,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/shoppingMall/reviews";
-  export const random = (): IPageIShoppingMallProductReview.ISummary =>
-    typia.random<IPageIShoppingMallProductReview.ISummary>();
+  export const random = (): IPageIShoppingMallReview.ISummary =>
+    typia.random<IPageIShoppingMallReview.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -141,46 +130,49 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single product review from
- * shopping_mall_product_reviews by reviewId.
+ * Get detailed information for a single review record from the
+ * shopping_mall_reviews table by its identifier.
  *
- * Retrieve the full details of a single product review identified by its unique
- * reviewId.
+ * Fetch the full details of a single product review from the
+ * `shopping_mall_reviews` table using its unique identifier.
  *
- * This operation reads from the `shopping_mall_product_reviews` table, which
- * contains customer-authored reviews and star ratings bound to products (and
- * optionally SKUs). Each record typically includes fields such as the primary
- * key of the review, foreign keys to the product and SKU, the customer who
- * wrote the review, rating score, title, body text, moderation status,
- * visibility flags, and timestamps (for example, when the review was created
- * and last updated). By mapping this schema to the `IShoppingMallProductReview`
- * DTO, the API exposes a structured representation suitable for both
- * customer-facing and internal views.
+ * This detail retrieval operation is centered on the `shopping_mall_reviews`
+ * Prisma model, which contains the authoritative record for individual customer
+ * reviews and ratings. By specifying the `reviewId` path parameter, clients
+ * request one specific review and receive all primary fields necessary for
+ * rendering a detailed review view, performing moderation tasks, or debugging
+ * review-related issues.
  *
- * From a security and privacy standpoint, this endpoint is defined as a public
- * read operation (`authorizationActors: []`), but the implementation must still
- * enforce visibility rules based on the review's moderation status and any
- * associated compliance or policy settings. Reviews that have been hidden or
- * restricted due to policy violations, age-restriction rules, or product
- * visibility constraints must not be returned to callers lacking the necessary
- * privileges. In many storefront scenarios, this endpoint is used to display a
- * single review in detail, for example after a user selects a review from a
- * paginated listing provided by `PATCH /reviews`.
+ * The `reviewId` parameter is modeled as a string and should match the unique
+ * identifier used in the `shopping_mall_reviews` schema, such as a UUID or
+ * another unique key. The operation validates that the identifier is
+ * well-formed and then queries the database for a corresponding review record.
+ * If no review exists for the provided identifier, the server responds with an
+ * appropriate error status (typically 404) without exposing sensitive metadata
+ * about non-existent or restricted reviews.
  *
- * The `reviewId` path parameter uniquely identifies the review record. The
- * parameter is modeled as a string to accommodate UUID-based identifiers
- * commonly used in Prisma schemas. The endpoint responds with a fully populated
- * `IShoppingMallProductReview` object, which may include nested or embedded
- * summary information about the related product or SKU, depending on how the
- * DTO is defined. If no review exists for the given identifier, the API should
- * return a standard not-found error consistent with the global error-handling
- * and user-messaging guidelines. This operation complements list/search
- * endpoints and is often used by customer support tools and administration
- * dashboards that need to inspect a specific review in depth.
+ * The response DTO `IShoppingMallReview` is expected to represent a complete
+ * review object, including fields such as associated product or SKU references,
+ * customer information (or anonymized display name where required), rating
+ * score, full textual content, timestamps for creation and last update,
+ * moderation and visibility statuses, and any high-level computed attributes
+ * like helpful vote counts or whether the review has associated reports.
+ * Implementations may also include related snapshots or versioning information
+ * via nested DTOs if this is part of the detailed view design.
+ *
+ * This operation declares an empty `authorizationActors` array to allow
+ * implementations to expose public reviews without authentication.
+ * Nevertheless, the internal business logic should still enforce visibility
+ * rules derived from review status fields: hidden or blocked reviews must be
+ * filtered out or protected, and only authorized administrative contexts should
+ * be able to override these restrictions. Together with the list/search
+ * endpoint on `/reviews`, this detail endpoint forms the core of the review
+ * read API surface for the shoppingMall service.
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the target product review in the
- *   shopping_mall_product_reviews table.
+ * @param props.reviewId Unique identifier of the target review in the
+ *   `shopping_mall_reviews` table, typically a UUID-like string assigned when
+ *   the review was created.
  * @path /shoppingMall/reviews/:reviewId
  * @accessor api.functional.shoppingMall.reviews.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -209,12 +201,13 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target product review in the
-     * shopping_mall_product_reviews table.
+     * Unique identifier of the target review in the `shopping_mall_reviews`
+     * table, typically a UUID-like string assigned when the review was
+     * created.
      */
-    reviewId: string & tags.Format<"uuid">;
+    reviewId: string;
   };
-  export type Response = IShoppingMallProductReview;
+  export type Response = IShoppingMallReview;
 
   export const METADATA = {
     method: "GET",
@@ -228,8 +221,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/shoppingMall/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
-  export const random = (): IShoppingMallProductReview =>
-    typia.random<IShoppingMallProductReview>();
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,

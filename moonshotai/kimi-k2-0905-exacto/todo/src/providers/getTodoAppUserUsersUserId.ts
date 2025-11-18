@@ -14,15 +14,6 @@ export async function getTodoAppUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppUser> {
-  // Check authorization - users can only view their own profile
-  if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "Forbidden - You can only view your own profile",
-      403,
-    );
-  }
-
-  // Find the user by UUID
   const user = await MyGlobal.prisma.todo_app_users.findUnique({
     where: { id: props.userId },
   });
@@ -31,12 +22,22 @@ export async function getTodoAppUserUsersUserId(props: {
     throw new HttpException("User not found", 404);
   }
 
-  // Return user data in ITodoAppUser format
+  // Security check: ensure user can only access their own data
+  if (user.id !== props.user.id) {
+    throw new HttpException(
+      "Access denied - you can only view your own account",
+      403,
+    );
+  }
+
+  // Transform to ITodoAppUser format, excluding password_hash for security
   return {
     id: user.id,
     email: user.email,
+    name: user.name,
+    status: user.status,
     created_at: toISOStringSafe(user.created_at),
-    updated_at: user.updated_at ? toISOStringSafe(user.updated_at) : undefined,
+    updated_at: toISOStringSafe(user.updated_at),
     deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
   };
 }

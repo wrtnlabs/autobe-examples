@@ -1,57 +1,48 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody } from "@nestia/core";
-import typia from "typia";
+import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
+import typia, { tags } from "typia";
 
 import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallProduct";
 
 @Controller("/shoppingMall/seller/products")
 export class ShoppingmallSellerProductsController {
   /**
-   * Create a new shopping_mall_products record for a catalog product.
+   * Create a ShoppingMall product row in the shopping_mall_products table for
+   * a seller.
    *
-   * Create a new product in the shoppingMall catalog by inserting a record
-   * into the shopping_mall_products table using the fields provided in the
-   * request body.
+   * Create a new ShoppingMall product record using data mapped to the
+   * shopping_mall_products Prisma model.
    *
-   * The shopping_mall_products model describes core product definitions,
-   * including a globally unique business-visible `code`, a primary `name`,
-   * optional `short_description` and full `description`, a lifecycle `status`
-   * (such as draft, pending_review, active, inactive, or discontinued), a
-   * boolean `is_multi_sku` flag, an optional `primary_image_uri`, and an
-   * optional `additional_data` text column that can hold JSON-encoded
-   * metadata. Each product belongs to a seller via `shopping_mall_seller_id`
-   * and may optionally reference a brand by `shopping_mall_brand_id`.
-   * Timestamps `created_at` and `updated_at` are non-null and managed by the
-   * system, while `deleted_at` is nullable and used to mark records that are
-   * no longer active in the catalog.
+   * This operation serves as the primary entry point for sellers to introduce
+   * new products into the ShoppingMall catalog. An authenticated seller calls
+   * POST /shoppingMall/seller/products with an IShoppingMallProduct.ICreate
+   * payload containing all mandatory and optional business fields necessary
+   * to define a sellable product. The implementation validates these fields
+   * against the shopping_mall_products schema and associated domain rules,
+   * including constraints on catalog visibility, category references,
+   * pricing, and descriptive content.
    *
-   * The request body type IShoppingMallProduct.ICreate is designed to accept
-   * only the fields that clients are allowed to specify when creating a
-   * product. This typically includes the seller association, brand
-   * association if applicable, business `code`, textual attributes, initial
-   * `status`, `is_multi_sku` configuration, media URI, and any additional
-   * metadata. The backend implementation must enforce the unique index on
-   * `code`, returning a validation error if a duplicate code is supplied. It
-   * must also validate that referenced seller and brand IDs correspond to
-   * existing shopping_mall_seller and shopping_mall_brands records when those
-   * fields are present.
+   * From a security and authorization perspective, this endpoint is
+   * restricted to sellers, represented here with authorizationActor "seller"
+   * and authorizationActors ["seller"]. The actual identity of the seller is
+   * resolved from the authenticated context by the platform’s authentication
+   * layer, and the service enforces that the new product is owned by that
+   * seller. The endpoint never handles raw credentials or tokens and does not
+   * attempt to manage sessions.
    *
-   * This operation requires authentication and is restricted to actors that
-   * are allowed to manage catalog products, specifically sellers and platform
-   * administrators. The `authorizationActors` array is therefore set to
-   * ["seller", "platformAdmin"], and the underlying business logic should
-   * additionally verify that the authenticated seller has permission to
-   * create products under the specified seller context. On success, it
-   * returns the created product as an `IShoppingMallProduct`, including all
-   * system-managed fields such as `id`, `created_at`, and `updated_at`.
-   * Related operations would include product update and deletion endpoints,
-   * as well as listing and search APIs for catalog browsing.
+   * At the database level, the operation inserts a new row into
+   * shopping_mall_products and may trigger internal workflows such as
+   * populating denormalized search index tables or creating audit records.
+   * These side effects occur in system-managed tables and do not have their
+   * own public write APIs. If validation fails, the service returns
+   * appropriate error responses instead of partially creating related
+   * records. Clients typically call this endpoint before managing related
+   * artifacts like product images, attributes, or SKUs, which are handled
+   * through their own specialized operations.
    *
    * @param connection
-   * @param body Attributes required to create a new product in the
-   *   shopping_mall_products table, including seller association, business
-   *   code, textual content, lifecycle status, multi-SKU configuration, and
-   *   optional media and metadata.
+   * @param body Data required to create a new ShoppingMall product mapped to
+   *   shopping_mall_products fields, excluding system-managed values.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -59,6 +50,64 @@ export class ShoppingmallSellerProductsController {
     @TypedBody()
     body: IShoppingMallProduct.ICreate,
   ): Promise<IShoppingMallProduct> {
+    body;
+    return typia.random<IShoppingMallProduct>();
+  }
+
+  /**
+   * Update an existing ShoppingMall product row in the shopping_mall_products
+   * table by productId via the seller path.
+   *
+   * Update an existing ShoppingMall product record in the
+   * shopping_mall_products table identified by productId via the
+   * seller-oriented API path.
+   *
+   * This endpoint is primarily used when a seller needs to revise information
+   * about one of their own products that is already registered in the
+   * ShoppingMall catalog. The client supplies the productId path parameter to
+   * indicate the specific shopping_mall_products row to update and an
+   * IShoppingMallProduct.IUpdate payload containing the mutable fields to
+   * change, such as merchandising text, pricing-related attributes, or
+   * catalog flags permitted by business rules.
+   *
+   * From an authorization standpoint, this path is designed for the owning
+   * seller, indicated by authorizationActor "seller". The broader
+   * authorizationActors ["seller", "admin"] allows the underlying system to
+   * treat both sellers and admins as valid actors for this contract, but
+   * typical usage is that sellers update their own products while admins rely
+   * on the corresponding admin path for governance tasks. Ownership checks
+   * and role checks are implemented within the service layer using the
+   * authenticated actor context; authentication workflows and session
+   * management remain delegated to dedicated authentication systems.
+   *
+   * At the database level, the operation performs an update against
+   * shopping_mall_products using productId as the primary key filter. The
+   * implementation validates that the product exists, that the caller is
+   * allowed to modify it (for example, is the owning seller), and that the
+   * new values are consistent with related entities such as categories or
+   * visibility rules. If the target product does not exist, a not-found error
+   * is returned; if the caller lacks permission, an authorization error is
+   * returned without leaking additional information. This operation is
+   * typically invoked repeatedly as sellers refine their product information
+   * and complements operations that manage subsidiary resources like images,
+   * attributes, and SKUs.
+   *
+   * @param connection
+   * @param productId Unique identifier of the target ShoppingMall product
+   *   record in shopping_mall_products to update.
+   * @param body Fields to update on an existing ShoppingMall product mapped
+   *   to shopping_mall_products, excluding system-managed columns and the
+   *   primary key.
+   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   */
+  @TypedRoute.Put(":productId")
+  public async update(
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProduct.IUpdate,
+  ): Promise<IShoppingMallProduct> {
+    productId;
     body;
     return typia.random<IShoppingMallProduct>();
   }

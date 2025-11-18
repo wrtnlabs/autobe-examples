@@ -17,12 +17,15 @@ export async function getTodoListUserTodosTodoId(props: {
   const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: {
       id: props.todoId,
-      user_id: props.user.id,
     },
   });
 
   if (!todo) {
-    throw new HttpException("Todo not found or not owned by user", 404);
+    throw new HttpException("Todo not found", 404);
+  }
+
+  if (todo.user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
   }
 
   return {
@@ -30,6 +33,12 @@ export async function getTodoListUserTodosTodoId(props: {
     title: todo.title,
     description: todo.description === null ? undefined : todo.description,
     completed: todo.completed,
+    priority:
+      todo.priority === null
+        ? undefined
+        : typia.assert<"low" | "medium" | "high">(todo.priority),
+    due_date:
+      todo.due_date === null ? undefined : toISOStringSafe(todo.due_date),
     completed_at:
       todo.completed_at === null
         ? undefined

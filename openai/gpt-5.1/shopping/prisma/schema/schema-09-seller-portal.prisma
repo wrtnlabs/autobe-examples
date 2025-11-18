@@ -1,0 +1,767 @@
+/// Physical or logical warehouses owned by sellers for inventory storage and
+/// shipment origin.
+///
+/// Each warehouse belongs to exactly one seller and represents a location
+/// from which SKUs are stocked and fulfilled. The warehouse stores
+/// high-level metadata such as internal code, human-readable name,
+/// operational status, and whether it is the default origin for the seller.
+///
+/// Address details are normalized into {@link
+/// shopping_mall_seller_warehouse_addresses} so that postal information
+/// remains independent and auditable over time. Inventory adjustment records
+/// in {@link shopping_mall_inventory_adjustments} reference warehouses to
+/// indicate where stock changes occurred.
+///
+/// Admins may read and govern warehouses across sellers, while sellers
+/// typically manage only their own warehouses via seller-portal flows.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_warehouses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller warehouse.
+  id String @id
+  
+  /// Seller that owns this warehouse. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Seller-scoped warehouse code used for internal reference. Must be unique
+  /// per seller and stable once assigned for reconciliation.
+  code String
+  
+  /// Human-readable warehouse name shown in seller portal and internal tools.
+  name String
+  
+  /// Optional longer description of the warehouse, such as notes about
+  /// purpose, capacity, or internal comments.
+  description String?
+  
+  /// Whether this warehouse is the seller’s default shipping origin for new
+  /// SKUs and orders when no explicit origin is chosen.
+  is_default_origin Boolean
+  
+  /// Operational status of the warehouse from business perspective, e.g.
+  /// active, inactive, suspended. Controls whether it can be used for new
+  /// fulfilment operations.
+  status String
+  
+  /// Timestamp when the warehouse record was created.
+  created_at DateTime
+  
+  /// Timestamp when the warehouse record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the warehouse is logically removed
+  /// from new operations but preserved for historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_warehouse_addresses shopping_mall_seller_warehouse_addresses?
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  
+  @@unique([seller_id, code])
+  @@index([seller_id, status])
+  @@index([seller_id, is_default_origin])
+  @@index([status, created_at])
+  @@index([seller_id, name])
+}
+
+/// Postal and contact address details attached to seller warehouses.
+///
+/// This table stores normalized address information for {@link
+/// shopping_mall_seller_warehouses}. Using a separate table avoids repeating
+/// address columns across warehouse-like entities and supports future
+/// extension such as multiple address types per warehouse (shipping origin,
+/// return address) while maintaining 3NF.
+///
+/// Warehouse address records are typically managed indirectly via
+/// seller-portal flows that edit a warehouse together with its address
+/// fields rather than through independent CRUD operations.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_warehouse_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the warehouse address row.
+  id String @id
+  
+  /// Warehouse that this address belongs to. One-to-one relationship with
+  /// {@link shopping_mall_seller_warehouses.id}.
+  seller_warehouse_id String
+  
+  /// Country of the warehouse location. {@link shopping_mall_countries.id}.
+  country_id String
+  
+  /// Optional region or state of the warehouse address. {@link
+  /// shopping_mall_regions.id}.
+  region_id String?
+  
+  /// Recipient or contact name used for carrier labels and operational
+  /// communication.
+  recipient_name String
+  
+  /// First line of the warehouse street address (street, number, or primary
+  /// descriptor).
+  line1 String
+  
+  /// Second address line, such as building, floor, or suite information.
+  line2 String?
+  
+  /// City or locality of the warehouse.
+  city String
+  
+  /// Postal or ZIP code of the warehouse location, following local formatting
+  /// rules.
+  postal_code String
+  
+  /// Optional phone number for the warehouse to be shared with carriers and
+  /// used for delivery issues.
+  phone String?
+  
+  /// Timestamp when this address record was created.
+  created_at DateTime
+  
+  /// Timestamp when this address record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  warehouse shopping_mall_seller_warehouses @relation(fields: [seller_warehouse_id], references: [id], onDelete: Cascade)
+  country shopping_mall_countries @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  region shopping_mall_regions? @relation(fields: [region_id], references: [id], onDelete: Cascade)
+  
+  @@index([region_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([seller_warehouse_id], map: "shopping_mall_seller_warehouse_addresses_seller_wareho_486769d8")
+  // spellchecker: ignore-next-line
+  @@index([country_id, region_id, city], map: "shopping_mall_seller_warehouse_addresses_country_id_re_09ace4ac")
+  // spellchecker: ignore-next-line
+  @@index([postal_code, country_id], map: "shopping_mall_seller_warehouse_addresses_postal_code_c_7e972e2b")
+}
+
+/// Master data representing standardized reasons for inventory adjustments.
+///
+/// Each row describes a business-level reason why stock is increased or
+/// decreased, such as purchase, correction, damage, shrinkage, or manual
+/// reconciliation. These reasons are referenced by inventory adjustment
+/// records in {@link shopping_mall_inventory_adjustments}.
+///
+/// Having a dedicated reasons table ensures consistent semantics across
+/// sellers and time and supports governance, reporting, and policy
+/// enforcement by admins.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustment_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the inventory adjustment reason.
+  id String @id
+  
+  /// Stable, system-wide reason code, for example PURCHASE_INBOUND or
+  /// STOCK_CORRECTION. Used in configuration and reporting.
+  code String
+  
+  /// Human-readable name of the adjustment reason shown in UI and reports.
+  name String
+  
+  /// Optional detailed explanation of when this reason should be used and any
+  /// relevant policy notes.
+  description String?
+  
+  /// Business direction of the adjustment for reporting, such as increase,
+  /// decrease, or neutral. Application logic interprets this string as an
+  /// enum.
+  direction String
+  
+  /// Indicates whether this reason is system-managed and cannot be edited or
+  /// deleted by regular admins.
+  is_system_managed Boolean
+  
+  /// Timestamp when the reason record was created.
+  created_at DateTime
+  
+  /// Timestamp when the reason record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the reason is no longer available for
+  /// new adjustments but remains for historical records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  
+  @@unique([code])
+  @@index([name])
+  @@index([direction])
+  // spellchecker: ignore-next-line
+  @@index([is_system_managed, direction], map: "shopping_mall_inventory_adjustment_reasons_is_system_m_ee9ec40b")
+}
+
+/// Atomic inventory adjustment events per seller, SKU, and warehouse.
+///
+/// Each record represents a single change to the on-hand or available
+/// quantity of a SKU for a seller at a given warehouse. Adjustments are used
+/// for manual corrections, inbound receipts, write-offs, damage, shrinkage,
+/// and other non-order-based changes.
+///
+/// The table links to {@link shopping_mall_sellers} for ownership, {@link
+/// shopping_mall_skus} for the affected SKU, {@link
+/// shopping_mall_seller_warehouses} for the physical location, and {@link
+/// shopping_mall_inventory_adjustment_reasons} for the standardized reason.
+/// Optional references to sessions and admins allow clear audit trails about
+/// who initiated the adjustment.
+///
+/// This table is append-only from a business perspective; corrections are
+/// expressed as compensating adjustments rather than in-place updates,
+/// maintaining a robust audit history aligned with risk and compliance
+/// expectations.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the inventory adjustment event.
+  id String @id
+  
+  /// Seller that owns the stock being adjusted. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// SKU whose inventory is adjusted. {@link shopping_mall_skus.id}.
+  sku_id String
+  
+  /// Warehouse where the stock change occurs. {@link
+  /// shopping_mall_seller_warehouses.id}.
+  seller_warehouse_id String
+  
+  /// Reason category explaining why this adjustment was performed. {@link
+  /// shopping_mall_inventory_adjustment_reasons.id}.
+  inventory_adjustment_reason_id String
+  
+  /// Optional seller session that initiated the adjustment, for traceability.
+  /// {@link shopping_mall_seller_sessions.id}.
+  seller_session_id String?
+  
+  /// Optional admin responsible for this adjustment when done via admin tools.
+  /// {@link shopping_mall_admins.id}.
+  admin_id String?
+  
+  /// Optional admin session associated with the adjustment event. {@link
+  /// shopping_mall_admin_sessions.id}.
+  admin_session_id String?
+  
+  /// Adjustment direction from the event’s own perspective, for example
+  /// increase or decrease. Typically matches or refines the direction on the
+  /// reason.
+  direction String
+  
+  /// Quantity change applied to the SKU at this warehouse. Positive values
+  /// increase stock, negative values decrease stock.
+  quantity_delta Float
+  
+  /// Optional business reference type string describing the origin context,
+  /// e.g. inbound_shipment, inventory_audit, manual_correction.
+  reference_type String?
+  
+  /// Optional external business identifier associated with the adjustment,
+  /// such as an internal document ID or shipment reference.
+  reference_id String?
+  
+  /// Optional free-text note describing details of the adjustment for human
+  /// audit and explanation.
+  note String?
+  
+  /// Business timestamp when the stock change actually occurred, which may
+  /// differ slightly from record creation time.
+  occurred_at DateTime
+  
+  /// Timestamp when this adjustment record was inserted.
+  created_at DateTime
+  
+  /// Timestamp when metadata of this adjustment record was last updated.
+  /// Quantity and core links are typically immutable.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [sku_id], references: [id], onDelete: Cascade)
+  warehouse shopping_mall_seller_warehouses @relation(fields: [seller_warehouse_id], references: [id], onDelete: Cascade)
+  reason shopping_mall_inventory_adjustment_reasons @relation(fields: [inventory_adjustment_reason_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions? @relation(fields: [seller_session_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  adminSession shopping_mall_admin_sessions? @relation(fields: [admin_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([sku_id])
+  @@index([seller_warehouse_id])
+  @@index([seller_session_id])
+  @@index([admin_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([seller_id, sku_id, occurred_at], map: "shopping_mall_inventory_adjustments_seller_id_sku_id_o_5488edc1")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, seller_warehouse_id, occurred_at], map: "shopping_mall_inventory_adjustments_seller_id_seller_w_7bc99a57")
+  // spellchecker: ignore-next-line
+  @@index([inventory_adjustment_reason_id, occurred_at], map: "shopping_mall_inventory_adjustments_inventory_adjustme_e10f686a")
+  @@index([admin_id, occurred_at])
+}
+
+/// Time-series snapshots of seller order-related metrics for analytics and
+/// monitoring.
+///
+/// Each record represents aggregated metrics for a seller over a specific
+/// snapshot period, such as a day. The table captures values like order
+/// counts, GMV, cancellation volume, refund volume, and derived KPIs used
+/// for dashboards and risk checks.
+///
+/// Snapshots are computed from transactional sources such as {@link
+/// shopping_mall_orders}, {@link shopping_mall_order_items}, and refund
+/// components, but those details are not duplicated here beyond raw metrics.
+/// This table is treated as an append-only snapshot store with a clear
+/// snapshot_date dimension to support efficient trend queries and KPI
+/// computations.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_order_metrics_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller order metrics snapshot row.
+  id String @id
+  
+  /// Seller for whom these order metrics are recorded. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Date or date-time representing the logical period boundary for this
+  /// snapshot, typically the start of the day being summarized.
+  snapshot_date DateTime
+  
+  /// Business timezone identifier used when aggregating metrics, such as
+  /// Asia/Seoul. Ensures consistent day boundaries across reports.
+  timezone String
+  
+  /// Number of orders that entered a placed or confirmed state for the seller
+  /// within the snapshot period.
+  orders_placed_count Int
+  
+  /// Number of orders that reached a paid state for the seller within the
+  /// snapshot period.
+  orders_paid_count Int
+  
+  /// Number of orders or order segments cancelled for the seller during the
+  /// snapshot period, regardless of reason.
+  orders_cancelled_count Int
+  
+  /// Number of orders or line segments with approved refunds affecting the
+  /// seller during the snapshot period.
+  orders_refunded_count Int
+  
+  /// Gross merchandise value for the seller’s orders in the snapshot period,
+  /// before cancellations and refunds.
+  gmv_amount Float
+  
+  /// Net merchandise value after accounting for cancellations and refunds in
+  /// the snapshot period, from the seller’s perspective.
+  nmv_amount Float
+  
+  /// Total shipping fees charged to customers associated with the seller’s
+  /// items in the snapshot period.
+  shipping_fee_amount Float
+  
+  /// Total customer refund amount impacting the seller’s items in the snapshot
+  /// period.
+  refund_amount Float
+  
+  /// Total amount involved in chargebacks associated with the seller in the
+  /// snapshot period.
+  chargeback_amount Float
+  
+  /// Timestamp when this snapshot row was created by the metrics computation
+  /// process.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot row was last recalculated or corrected, if
+  /// applicable.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([seller_id, snapshot_date, timezone], map: "shopping_mall_seller_order_metrics_snapshots_seller_id_1f11b7e0")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_date, seller_id], map: "shopping_mall_seller_order_metrics_snapshots_snapshot__cbfeccfa")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, gmv_amount], map: "shopping_mall_seller_order_metrics_snapshots_seller_id_5a4646aa")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, orders_cancelled_count, orders_refunded_count], map: "shopping_mall_seller_order_metrics_snapshots_seller_id_dc1600cd")
+}
+
+/// Aggregated performance KPIs per seller at defined points in time.
+///
+/// This table summarizes seller-level health indicators such as refund
+/// rates, cancellation rates, late shipment rates, dispute counts, and
+/// rating statistics. It is used by admins and risk engines to classify
+/// sellers into tiers and to trigger governance workflows.
+///
+/// The data is derived from transactional tables like orders, shipments,
+/// refunds, disputes, and reviews ({@link shopping_mall_orders}, {@link
+/// shopping_mall_shipments}, {@link shopping_mall_reviews}), but those
+/// details are not repeated here. Instead, this table stores normalized
+/// numeric metrics in snapshot form, supporting trend analysis and
+/// segmentation while preserving 3NF in the transactional schema.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_performance_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller performance snapshot row.
+  id String @id
+  
+  /// Seller whose performance metrics are represented. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Logical date or date-time representing when this performance snapshot was
+  /// computed.
+  snapshot_date DateTime
+  
+  /// Timezone context used for computing the performance window, such as
+  /// Asia/Seoul.
+  timezone String
+  
+  /// Order defect rate for the seller during the analysis window, expressed as
+  /// a fraction between 0 and 1.
+  order_defect_rate Float
+  
+  /// Refund rate for the seller during the analysis window, expressed as a
+  /// fraction between 0 and 1.
+  refund_rate Float
+  
+  /// Cancellation rate for the seller during the analysis window, expressed as
+  /// a fraction between 0 and 1.
+  cancellation_rate Float
+  
+  /// Proportion of shipments that were dispatched or delivered late in the
+  /// analysis window, expressed as a fraction between 0 and 1.
+  late_shipment_rate Float
+  
+  /// Proportion of paid orders that resulted in chargebacks during the
+  /// analysis window, expressed as a fraction between 0 and 1.
+  chargeback_rate Float
+  
+  /// Average product rating (for example 1–5 scale) for the seller’s catalog
+  /// at this snapshot point, derived from reviews.
+  average_rating Float
+  
+  /// Number of ratings considered when computing average_rating.
+  rating_count Int
+  
+  /// Number of open disputes involving the seller at the time of snapshot
+  /// computation.
+  dispute_open_count Int
+  
+  /// Optional seller tier classification at this snapshot (for example new,
+  /// standard, premium, high_risk). Evaluated by business rules.
+  tier String?
+  
+  /// Timestamp when the snapshot row was created.
+  created_at DateTime
+  
+  /// Timestamp when the snapshot row was last updated due to recomputation or
+  /// corrections.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([seller_id, snapshot_date, timezone], map: "shopping_mall_seller_performance_snapshots_seller_id_s_c0d95ae9")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_date, seller_id], map: "shopping_mall_seller_performance_snapshots_snapshot_da_b1eaa5c9")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, order_defect_rate], map: "shopping_mall_seller_performance_snapshots_seller_id_o_e4c18204")
+  @@index([seller_id, tier])
+}
+
+/// Catalog of subscription plans and service offerings available to sellers.
+///
+/// Each row describes a plan that a seller can subscribe to, such as basic,
+/// standard, or premium tiers. Plans define attributes like billing period,
+/// base fee, included features, and whether they are currently available for
+/// new sign-ups.
+///
+/// Subscriptions in {@link shopping_mall_seller_subscriptions} reference
+/// these plans to determine pricing and entitlements. Admins manage this
+/// table to add, modify, or retire plans over time while preserving
+/// historical understanding of what each plan contained when a subscription
+/// was active.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_subscription_plans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller subscription plan.
+  id String @id
+  
+  /// Stable business code for the plan, such as BASIC, PRO, or ENTERPRISE.
+  /// Used in configuration, integrations, and reporting.
+  code String
+  
+  /// Human-readable plan name exposed to sellers in the portal.
+  name String
+  
+  /// Optional detailed description of features and benefits included in this
+  /// plan.
+  description String?
+  
+  /// Billing period identifier, for example monthly or yearly. Application
+  /// logic treats this string as an enum.
+  billing_period String
+  
+  /// ISO currency code used for billing this plan, such as USD or KRW.
+  currency String
+  
+  /// Subscription fee amount per billing period, expressed in the plan’s
+  /// currency.
+  price_amount Float
+  
+  /// Whether the plan is currently active and available for new subscriptions.
+  /// Existing subscriptions may continue even if the plan is deactivated.
+  is_active Boolean
+  
+  /// Timestamp from which the plan is considered effective for new
+  /// subscriptions and pricing calculations.
+  effective_from DateTime
+  
+  /// Optional timestamp after which the plan is no longer offered for new
+  /// subscriptions. Null means open-ended.
+  effective_until DateTime?
+  
+  /// Timestamp when the plan record was created.
+  created_at DateTime
+  
+  /// Timestamp when the plan record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for plans that should no longer appear anywhere,
+  /// subject to business retention rules.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_subscriptions shopping_mall_seller_subscriptions[]
+  
+  @@unique([code])
+  @@index([name, billing_period])
+  // spellchecker: ignore-next-line
+  @@index([is_active, effective_from], map: "shopping_mall_seller_subscription_plans_is_active_effe_3ebd0543")
+  // spellchecker: ignore-next-line
+  @@index([billing_period, currency], map: "shopping_mall_seller_subscription_plans_billing_period_5f5b180b")
+}
+
+/// Individual subscriptions of sellers to specific subscription plans.
+///
+/// Each record links a seller to a plan from {@link
+/// shopping_mall_seller_subscription_plans} and tracks the subscription
+/// lifecycle, including start and end timestamps, current status, and
+/// billing amounts.
+///
+/// These records are used to determine which features and limits apply to a
+/// seller at a given time and to drive billing, invoicing, and revenue
+/// recognition logic. They align with the business model requirements for
+/// seller subscriptions and service fees outlined in the revenue and goals
+/// specification.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the seller subscription instance.
+  id String @id
+  
+  /// Seller who owns this subscription. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Subscription plan that defines pricing and entitlements for this
+  /// subscription. {@link shopping_mall_seller_subscription_plans.id}.
+  seller_subscription_plan_id String
+  
+  /// Current subscription status, such as pending, active, past_due,
+  /// cancelled, or expired. Application logic treats this as a business enum.
+  status String
+  
+  /// Timestamp when the subscription became active for the seller.
+  started_at DateTime
+  
+  /// Timestamp when the subscription ended or is scheduled to end. Null while
+  /// the subscription is ongoing.
+  ended_at DateTime?
+  
+  /// Timestamp of the next expected billing event, if applicable for this
+  /// subscription.
+  next_billing_at DateTime?
+  
+  /// Currency code in which this subscription is billed. Usually matches the
+  /// plan currency but stored explicitly for historical accuracy.
+  currency String
+  
+  /// Nominal price per billing period for this subscription at the time of
+  /// activation, in the subscription currency.
+  price_amount Float
+  
+  /// Per-period discount amount applied to this subscription, if any. Zero
+  /// means no discount.
+  discount_amount Float
+  
+  /// Optional JSON-encoded metadata capturing configuration or context
+  /// specific to this subscription instance. Not used for computed values.
+  metadata_json String?
+  
+  /// Timestamp when the subscription record was created.
+  created_at DateTime
+  
+  /// Timestamp when the subscription record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Used when a subscription is logically removed
+  /// from normal views but retained for compliance and revenue audits.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  plan shopping_mall_seller_subscription_plans @relation(fields: [seller_subscription_plan_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([seller_id, seller_subscription_plan_id, started_at], map: "shopping_mall_seller_subscriptions_seller_id_seller_su_13f97f33")
+  @@index([seller_id, status])
+  @@index([seller_id, started_at])
+  // spellchecker: ignore-next-line
+  @@index([seller_subscription_plan_id, status], map: "shopping_mall_seller_subscriptions_seller_subscription_ae02d737")
+}
+
+/// Individual fee and commission charges applied to sellers for
+/// transactional and service events.
+///
+/// Each record represents a distinct charge that impacts the net earnings or
+/// balance of a seller, such as transaction commissions, platform-owned
+/// fees, subscription charges, advertising fees, adjustments, or penalties.
+///
+/// The table links to {@link shopping_mall_sellers} and may optionally
+/// reference an order in {@link shopping_mall_orders}, a refund in {@link
+/// shopping_mall_payment_refunds}, or a payout item in {@link
+/// shopping_mall_seller_payout_items} for reconciliation. It aligns with the
+/// revenue model by making each charge explicit, auditable, and traceable
+/// through time without pre-aggregating data.
+///
+/// @namespace SellerPortal
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_fee_charges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller fee charge row.
+  id String @id
+  
+  /// Seller to whom this fee charge applies. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Optional related order that caused this charge, if any. {@link
+  /// shopping_mall_orders.id}.
+  order_id String?
+  
+  /// Optional related payment refund record when this fee is associated with a
+  /// refund event. {@link shopping_mall_payment_refunds.id}.
+  payment_refund_id String?
+  
+  /// Optional payout item that settled this fee charge, used for
+  /// reconciliation. {@link shopping_mall_seller_payout_items.id}.
+  seller_payout_item_id String?
+  
+  /// Business category of the fee, such as transaction_commission,
+  /// platform_service_fee, subscription_fee, advertising_fee, or adjustment.
+  /// Application treats this as an enum.
+  fee_type String
+  
+  /// Optional human-readable description explaining the origin of the fee
+  /// charge.
+  description String?
+  
+  /// Currency code in which the fee amount is expressed.
+  currency String
+  
+  /// Fee amount applied to the seller. Positive values represent charges to
+  /// the seller (reducing net earnings), while negative values may represent
+  /// fee reversals or credits.
+  amount Float
+  
+  /// Tax portion associated with this fee, if applicable, expressed in the
+  /// same currency. Zero when no tax applies.
+  tax_amount Float
+  
+  /// Indicates whether this fee contributes to platform revenue (true) or is a
+  /// pass-through amount due entirely to third parties (false).
+  is_platform_revenue Boolean
+  
+  /// Business date on which the fee is considered effective for revenue
+  /// recognition and reporting.
+  effective_date DateTime
+  
+  /// Timestamp when this fee charge record was created.
+  created_at DateTime
+  
+  /// Timestamp when this fee charge record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logically removed fee charges, preserved for
+  /// audit and reconciliation use cases.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  paymentRefund shopping_mall_payment_refunds? @relation(fields: [payment_refund_id], references: [id], onDelete: Cascade)
+  payoutItem shopping_mall_seller_payout_items? @relation(fields: [seller_payout_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([payment_refund_id])
+  
+  @@index([seller_id, effective_date])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, fee_type, effective_date], map: "shopping_mall_seller_fee_charges_seller_id_fee_type_ef_aa908e27")
+  @@index([order_id, seller_id])
+  @@index([seller_payout_item_id])
+}

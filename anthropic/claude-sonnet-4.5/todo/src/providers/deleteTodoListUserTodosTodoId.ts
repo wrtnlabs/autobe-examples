@@ -8,8 +8,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
-import { ITodoListCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListCategory";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoListUserTodosTodoId(props: {
@@ -18,59 +16,39 @@ export async function deleteTodoListUserTodosTodoId(props: {
 }): Promise<ITodoListTodo> {
   const existing = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: { id: props.todoId },
-    include: {
-      user: true,
-      category: true,
-    },
   });
 
-  if (!existing || existing.deleted_at !== null) {
-    throw new HttpException("Todo not found", 404);
+  if (!existing) {
+    throw new HttpException("Todo item not found", 404);
   }
 
   if (existing.todo_list_user_id !== props.user.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "You do not have permission to delete this todo item",
+      403,
+    );
   }
 
   const deleted = await MyGlobal.prisma.todo_list_todos.update({
     where: { id: props.todoId },
     data: {
       deleted_at: new Date(),
-      updated_at: new Date(),
-    },
-    include: {
-      user: true,
-      category: true,
     },
   });
 
   return {
-    id: deleted.id,
-    user: {
-      id: deleted.user.id,
-      email: deleted.user.email,
-      name: deleted.user.name === null ? undefined : deleted.user.name,
-      created_at: toISOStringSafe(deleted.user.created_at),
-    },
-    category:
-      deleted.category === null
-        ? undefined
-        : {
-            id: deleted.category.id,
-            name: deleted.category.name,
-            created_at: toISOStringSafe(deleted.category.created_at),
-          },
+    id: deleted.id as string & tags.Format<"uuid">,
+    todo_list_user_id: deleted.todo_list_user_id as string &
+      tags.Format<"uuid">,
     title: deleted.title,
-    description: deleted.description === null ? undefined : deleted.description,
-    due_date:
-      deleted.due_date === null ? undefined : toISOStringSafe(deleted.due_date),
-    priority: typia.assert<"low" | "medium" | "high">(deleted.priority),
-    status: typia.assert<"pending" | "completed">(deleted.status),
+    completed: deleted.completed,
+    completed_at: deleted.completed_at
+      ? toISOStringSafe(deleted.completed_at)
+      : undefined,
     created_at: toISOStringSafe(deleted.created_at),
     updated_at: toISOStringSafe(deleted.updated_at),
-    deleted_at:
-      deleted.deleted_at === null
-        ? undefined
-        : toISOStringSafe(deleted.deleted_at),
+    deleted_at: deleted.deleted_at
+      ? toISOStringSafe(deleted.deleted_at)
+      : undefined,
   };
 }

@@ -7,28 +7,31 @@ import { AdminuserPayload } from "./payload/AdminuserPayload";
 
 /**
  * Parameter decorator to inject an authenticated AdminuserPayload.
+ *
+ * Usage:
+ * ```ts
+ * @Get("/admin/health")
+ * public async health(
+ *   @AdminuserAuth() admin: AdminuserPayload,
+ * ): Promise<HealthCheckResponse> {
+ *   // ...
+ * }
+ * ```
  */
 export const AdminuserAuth =
   (): ParameterDecorator =>
-  (
-    target: object,
-    propertyKey: string | symbol | undefined,
-    parameterIndex: number,
-  ): void => {
+  (target: object, propertyKey: string | symbol | undefined, parameterIndex: number): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({
-        bearer: [],
-      });
+      props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
+
     singleton.get()(target, propertyKey, parameterIndex);
   };
 
 const singleton = new Singleton(() =>
-  createParamDecorator(
-    async (_data: unknown, ctx: ExecutionContext): Promise<AdminuserPayload> => {
-      const request = ctx.switchToHttp().getRequest();
-      return adminuserAuthorize(request);
-    },
-  )(),
+  createParamDecorator(async (_data: unknown, ctx: ExecutionContext): Promise<AdminuserPayload> => {
+    const request = ctx.switchToHttp().getRequest();
+    return adminuserAuthorize(request);
+  })(),
 );

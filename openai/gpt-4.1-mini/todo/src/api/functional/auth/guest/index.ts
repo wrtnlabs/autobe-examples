@@ -6,34 +6,20 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListGuest } from "../../../structures/ITodoListGuest";
 
 /**
- * Create temporary guest account for limited access.
+ * Create a new guest account temporarily with minimal permissions.
  *
- * This API endpoint enables guest users to join by creating a temporary
- * account. The operation leverages the 'todo_list_users' database table,
- * specifically utilizing the 'email' and 'password_hash' fields where email
- * uniquely identifies the guest and password_hash is securely stored as a
- * hashed value. Guest accounts are ephemeral and provide limited access,
- * fulfilling the requirements for temporary guest registrations.
- *
- * The join operation is public and does not require authentication, allowing
- * unauthenticated users to create guest accounts easily. Security is maintained
- * by enforcing password hashing and validation upon creation. This forms the
- * entry point for the guest authentication workflow.
- *
- * The associated database record uses 'id' as the primary key and timestamps
- * 'created_at' and 'updated_at' for lifecycle management consistent with the
- * schema's fields.
- *
- * Guests do not have login operations as they do not authenticate with
- * credentials, emphasizing temporary access.
- *
- * Related operations include the token refresh endpoint which renews guest
- * session tokens, extending guest access seamlessly without requiring
- * re-registration.
+ * This operation enables unauthenticated users to register temporary guest
+ * accounts. It creates a limited-access guest record in the database, providing
+ * minimal permissions suitable for public resource viewing. The database fields
+ * involved typically include the guest identifier and any session linkage if
+ * applicable. This process does not require credentials, allowing fast
+ * onboarding for temporary access. The operation's security considerations
+ * involve limiting permissions for guests and secure issuance of temporary JWT
+ * tokens. It integrates with the refresh operation to renew guest tokens as
+ * necessary.
  *
  * @param props.connection
- * @param props.body Payload for guest guest user creation including necessary
- *   fields as per 'todo_list_users' schema.
+ * @param props.body Guest join request body with necessary join information.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -68,13 +54,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Payload for guest guest user creation including necessary fields as
-     * per 'todo_list_users' schema.
-     */
-    body: ITodoListGuest.ICreate;
+    /** Guest join request body with necessary join information. */
+    body: ITodoListGuest.IJoin;
   };
-  export type Body = ITodoListGuest.ICreate;
+  export type Body = ITodoListGuest.IJoin;
   export type Response = ITodoListGuest.IAuthorized;
 
   export const METADATA = {
@@ -119,25 +102,20 @@ export namespace join {
 }
 
 /**
- * Refresh guest access tokens.
+ * Refresh guest access token using a valid refresh token.
  *
- * Allows guest users to refresh their JWT access tokens using a valid refresh
- * token previously issued during guest join. It depends on the
- * 'todo_list_users' schema for maintaining user identifiers.
- *
- * The operation verifies token validity and issues a new token pair, enabling
- * extended guest access without re-registration.
- *
- * Security mechanisms ensure the refresh token is unexpired and unrevoked.
- *
- * Related endpoints include '/auth/guest/join' for initial registration. This
- * refresh API is essential for maintaining authenticated state for the guest
- * actor.
- *
- * This operation is public but requires a valid refresh token in request
- * headers.
+ * This operation allows guest users to renew their JWT access tokens by
+ * providing a valid refresh token. It maintains session continuity for
+ * temporary guest accounts with limited permissions. The underlying database
+ * schema supports token validity checks and expiration management for guest
+ * sessions. Security considerations include validating the refresh token,
+ * preventing token theft, and limiting refresh capabilities to guests only. The
+ * integration complements the join operation to ensure seamless temporary
+ * access.
  *
  * @param props.connection
+ * @param props.body Refresh token request body containing the refresh token
+ *   string.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -146,10 +124,11 @@ export namespace join {
  */
 export async function refresh(
   connection: IConnection,
+  props: refresh.Props,
 ): Promise<refresh.Response> {
   const output: refresh.Response =
     true === connection.simulate
-      ? refresh.simulate(connection)
+      ? refresh.simulate(connection, props)
       : await PlainFetcher.fetch(
           {
             ...connection,
@@ -163,18 +142,27 @@ export async function refresh(
             path: refresh.path(),
             status: null,
           },
+          props.body,
         );
   connection.headers ??= {};
   connection.headers.Authorization = output.token.access;
   return output;
 }
 export namespace refresh {
+  export type Props = {
+    /** Refresh token request body containing the refresh token string. */
+    body: ITodoListGuest.IRefresh;
+  };
+  export type Body = ITodoListGuest.IRefresh;
   export type Response = ITodoListGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
     path: "/auth/guest/refresh",
-    request: null,
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
     response: {
       type: "application/json",
       encrypted: false,
@@ -184,7 +172,27 @@ export namespace refresh {
   export const path = () => "/auth/guest/refresh";
   export const random = (): ITodoListGuest.IAuthorized =>
     typia.random<ITodoListGuest.IAuthorized>();
-  export const simulate = (_connection: IConnection): Response => {
+  export const simulate = (
+    connection: IConnection,
+    props: refresh.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: refresh.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
     return random();
   };
 }

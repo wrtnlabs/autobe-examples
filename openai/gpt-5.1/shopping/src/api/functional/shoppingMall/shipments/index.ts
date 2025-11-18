@@ -1,1 +1,1 @@
-export * as trackingEvents from "./trackingEvents/index";
+export * as events from "./events/index";

@@ -1,13 +1,13 @@
 import { tags } from "typia";
 
-/** JWT payload for administrative users of the todoApp. */
+/** JWT payload for administrative users (adminUser actor). */
 export interface AdminuserPayload {
-  /** Top-level admin user identifier (todo_app_adminusers.id). */
+  /** Top-level admin user ID from `todo_app_adminusers.id`. */
   id: string & tags.Format<"uuid">;
 
-  /** Session identifier (todo_app_adminuser_sessions.id). */
+  /** Session ID from `todo_app_adminuser_sessions.id`. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Role discriminator for administrative users. */
-  type: "admin";
+  /** Discriminator for admin user role. */
+  type: "adminUser";
 }

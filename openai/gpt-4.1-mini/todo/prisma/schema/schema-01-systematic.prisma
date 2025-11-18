@@ -1,0 +1,47 @@
+/// System configuration key-value storage for the Todo List application.
+///
+/// Stores system-wide parameters and settings that control application
+/// behavior and feature toggles. Each configuration entry contains a unique
+/// key name, associated string value, human-readable description, and
+/// lifecycle timestamps. This facilitates dynamic configuration without
+/// requiring code changes or system redeployment.
+///
+/// Configurations are managed independently and may be updated by
+/// administrators or system processes. The table supports soft deletion to
+/// preserve audit trails and enable recovery if necessary.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier used for lookup and management.
+  key String
+  
+  /// Configuration value stored as string, typically representing a setting or
+  /// parameter value.
+  value String
+  
+  /// Human-readable explanation of the configuration entry and its purpose.
+  description String?
+  
+  /// Timestamp when the configuration entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration entry was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating when the entry was marked deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at, updated_at])
+}

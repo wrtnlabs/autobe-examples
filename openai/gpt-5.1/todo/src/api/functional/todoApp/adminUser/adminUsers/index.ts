@@ -4,66 +4,50 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ITodoAppAdminUser } from "../../../../structures/ITodoAppAdminUser";
-import { IPageITodoAppAdminuser } from "../../../../structures/IPageITodoAppAdminuser";
+import { IPageITodoAppAdminUser } from "../../../../structures/IPageITodoAppAdminUser";
+export * as status from "./status/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Search and retrieve a paginated list of admin users from the
- * todo_app_adminusers table.
+ * Search and list administrative users from the `todo_app_adminusers` table
+ * with filtering and pagination.
  *
- * Retrieve a filtered and paginated list of administrative user accounts
- * defined in the `todo_app_adminusers` Prisma model.
+ * Retrieve a filtered and paginated list of TodoApp administrative users based
+ * on flexible search criteria.
  *
- * The `todo_app_adminusers` table models admin user accounts that have elevated
- * privileges for managing and supervising the TodoApp backend and its data.
- * According to its schema comments, each record captures essential identity
- * information (such as username, email, or display name), role or permission
- * attributes governing which operations the admin can perform, and lifecycle
- * metadata such as when the admin account was created, updated, or potentially
- * disabled. This operation exposes a read-only search interface that allows
- * authorized callers to query these admin accounts with rich filters and
- * pagination.
+ * This operation targets the `todo_app_adminusers` Prisma model, which stores
+ * data about administrative accounts responsible for operating and governing
+ * the TodoApp service. Fields in this model typically include identifiers,
+ * authentication-related attributes, contact information, and flags indicating
+ * roles, permissions, or account status (such as active, suspended, or
+ * read-only). The search request encapsulated by `ITodoAppAdminuser.IRequest`
+ * allows callers to filter these administrator records by various attributes,
+ * including partial matches on name or email, status filters, and creation or
+ * last-login date ranges.
  *
- * The request body uses the `ITodoAppAdminuser.IRequest` DTO, which is designed
- * to be aligned with the Prisma schema fields. It typically includes fields
- * such as free-text keyword search across username or email, exact or
- * multi-value filters for role and status, and date range filters for creation
- * or last-activity timestamps. It also carries pagination controls, like page
- * index and page size, and sorting options specifying which field to sort on
- * and in which direction. The system must validate these fields against the
- * underlying schema, ensuring, for example, that page sizes are within
- * acceptable bounds, that sort fields correspond to real columns, and that any
- * enumerated filters match the allowed values.
+ * The `PATCH /todoApp/adminUser/adminUsers` design allows the request body to
+ * carry structured search criteria and pagination parameters such as page size,
+ * page index, and sort ordering. The response type
+ * `IPageITodoAppAdminuser.ISummary` returns a page of lightweight summary
+ * projections of each admin account, ideal for display in an administration
+ * UI's list view. These summary entries may include only the key identifying
+ * and status fields needed to decide subsequent actions, while omitting
+ * sensitive details.
  *
- * On successful execution, the endpoint returns a
- * `IPageITodoAppAdminuser.ISummary` response. This paginated wrapper includes
- * metadata like total count, current page, and page size, along with an array
- * of admin user summary objects. Each summary is defined by
- * `ITodoAppAdminuser.ISummary`, a projection of the full `todo_app_adminusers`
- * record that focuses on non-sensitive, list-appropriate fields like
- * identifier, username, email, display name, role, and status. Sensitive
- * details or internal-only fields described in the Prisma comments (such as
- * credential hashes or internal security flags) must not be exposed in this
- * summary representation.
- *
- * Because this endpoint provides a consolidated view into privileged accounts,
- * it is restricted to the `adminUser` actor via the `authorizationActor`
- * configuration. In practice, the NestJS layer should enforce this through
- * guard decorators that ensure only properly authenticated and authorized admin
- * users can call this operation. The implementation should also consider
- * integration with audit tables (such as `todo_app_admin_todo_actions` or other
- * audit mechanisms) to record access to admin account lists if required by
- * broader compliance requirements.
- *
- * The operation is read-only and does not modify any data in
- * `todo_app_adminusers`. It is intended to be used alongside other admin
- * management endpoints, such as those that update or deactivate admin users,
- * forming part of a complete administrative workflow for securing and operating
- * the TodoApp service.
+ * Security considerations are paramount for this operation. Only highly
+ * privileged actors, represented by the `adminUser` authorization actor, are
+ * allowed to access administrative user information in this way. The
+ * implementation should also enforce rate limiting and robust input validation
+ * to prevent expensive or abusive search patterns. Common error cases include
+ * invalid pagination parameters, unsupported sort keys, or malformed filter
+ * values, all of which should result in clear validation errors without
+ * exposing internal details of the underlying `todo_app_adminusers` schema.
+ * Related operations would typically include a detail retrieval endpoint for a
+ * single admin user and update operations to modify admin account properties.
  *
  * @param props.connection
- * @param props.body Search criteria, filters, pagination, and sorting options
- *   for querying admin users.
+ * @param props.body Search criteria, filtering options, and pagination
+ *   parameters for querying administrative users.
  * @path /todoApp/adminUser/adminUsers
  * @accessor api.functional.todoApp.adminUser.adminUsers.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -93,13 +77,13 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, filters, pagination, and sorting options for
-     * querying admin users.
+     * Search criteria, filtering options, and pagination parameters for
+     * querying administrative users.
      */
     body: ITodoAppAdminUser.IRequest;
   };
   export type Body = ITodoAppAdminUser.IRequest;
-  export type Response = IPageITodoAppAdminuser.ISummary;
+  export type Response = IPageITodoAppAdminUser.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -115,8 +99,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/todoApp/adminUser/adminUsers";
-  export const random = (): IPageITodoAppAdminuser.ISummary =>
-    typia.random<IPageITodoAppAdminuser.ISummary>();
+  export const random = (): IPageITodoAppAdminUser.ISummary =>
+    typia.random<IPageITodoAppAdminUser.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -143,45 +127,48 @@ export namespace index {
 }
 
 /**
- * Get a single administrative user account record from the todo_app_adminusers
- * table by id.
+ * Get detailed information of a single todo_app_adminusers admin user by ID.
  *
- * Retrieve detailed information for a single administrative user account stored
- * in the todo_app_adminusers table.
+ * Retrieve the full detail view of a single administrative user record from the
+ * todo_app_adminusers table.
  *
- * This operation looks up an admin account by its primary key id, which is
- * defined in the Prisma schema as a uuid-typed field with the description
- * "Primary key of the admin user. Uniquely identifies an administrative actor
- * within the todoApp service." The lookup returns a representation of the admin
- * user including email, optional display_name, account status,
- * failed_login_count, timestamps such as last_login_at, created_at, updated_at,
- * and any logical deletion marker in deleted_at.
+ * This operation targets the todo_app_adminusers Prisma model, which is
+ * described as storing administrative users responsible for monitoring and
+ * maintaining the todoApp service. Each record includes an id primary key, an
+ * email field that is the unique login identifier, a password_hash holding a
+ * secure one-way hash of the admin’s password, an optional display_name used in
+ * logs and dashboards, a status string indicating whether the account is
+ * 'active', 'suspended', or 'disabled', and created_at and updated_at
+ * timestamps tracking when the admin account was created and last changed. The
+ * description of the model emphasizes that admin accounts do not own
+ * member-facing todos, but they may read or delete them under explicit
+ * policies, and that admin users authenticate separately from members with
+ * stricter credential policies.
  *
- * From a security and authorization perspective, this endpoint should be
- * restricted to trusted backoffice contexts, such as super-admin tools or
- * monitoring services, because it exposes administrative identity metadata.
- * Although the password_hash field exists in the underlying table and is
- * critical for secure authentication, the actual API DTO should be designed so
- * that this field is never exposed in the response body, aligning with the
- * description "Hashed representation of the admin user password. Must follow
- * strong security practices and never store raw passwords." Instead, only
- * non-sensitive account fields are serialized for clients.
+ * From a security perspective, this GET /adminUsers/{adminUserId} endpoint must
+ * never expose the password_hash field in the serialized response, even though
+ * it is stored in the underlying Prisma table. The service implementation
+ * should map the todo_app_adminusers record into an ITodoAppAdminuser DTO that
+ * includes only safe fields such as id, email, display_name, status,
+ * created_at, and updated_at. Access to this endpoint is restricted to
+ * administrative actors represented by the "adminUser" authorization actor, and
+ * all calls should be authenticated and authorized. The endpoint is suitable
+ * for use in internal admin consoles for viewing details of specific admin
+ * accounts and for audit or troubleshooting workflows.
  *
- * The operation is read-only and does not change any data in
- * todo_app_adminusers. It is logically related to list and update operations on
- * the same table (for example, a PATCH /adminUsers search endpoint and the PUT
- * /adminUsers/{adminUserId} update endpoint). Consumers typically call this GET
- * endpoint to fetch the latest state of an admin account before or after
- * performing an update operation, or when investigating audit events in related
- * tables such as todo_app_adminuser_sessions or todo_app_admin_todo_actions. In
- * case the specified adminUserId is not found, the implementation should
- * respond with an appropriate not-found error so that client applications can
- * show a clear message to the operator.
+ * In terms of behavior and error handling, when a valid adminUserId (UUID) is
+ * provided and the corresponding record exists, the endpoint returns a 200
+ * response with the ITodoAppAdminuser payload. If the identifier does not match
+ * any row in todo_app_adminusers, the service should return a 404 Not Found
+ * error. If the caller lacks administrative privileges, an authorization error
+ * should be returned according to the platform’s standard (e.g., 403
+ * Forbidden). This operation is read-only and does not modify any fields;
+ * related operations such as updating admin user data are handled by the PUT
+ * /adminUsers/{adminUserId} endpoint.
  *
  * @param props.connection
- * @param props.adminUserId Unique identifier of the target administrative user
- *   account in the todoApp service, corresponding to the id primary key column
- *   in the todo_app_adminusers table.
+ * @param props.adminUserId Unique UUID identifier of the target administrative
+ *   user account in the todo_app_adminusers table.
  * @path /todoApp/adminUser/adminUsers/:adminUserId
  * @accessor api.functional.todoApp.adminUser.adminUsers.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -210,9 +197,8 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target administrative user account in the
-     * todoApp service, corresponding to the id primary key column in the
-     * todo_app_adminusers table.
+     * Unique UUID identifier of the target administrative user account in
+     * the todo_app_adminusers table.
      */
     adminUserId: string & tags.Format<"uuid">;
   };
@@ -258,51 +244,49 @@ export namespace at {
 }
 
 /**
- * Update an existing administrative user account record in the
- * todo_app_adminusers table by id.
+ * Update fields of a todo_app_adminusers admin user identified by its UUID.
  *
- * Update the profile and status information of an administrative user account
- * stored in the todo_app_adminusers table.
+ * Modify details of an existing administrative user stored in the
+ * todo_app_adminusers table, identified by its UUID primary key.
  *
- * The todo_app_adminusers schema defines id as a uuid primary key identifying
- * each admin account. Other fields include email (a unique login identifier),
- * password_hash (the hashed password, never exposed to clients), display_name
- * (an optional human-friendly label), status (values such as active, inactive,
- * disabled, or deleted as defined by business rules), failed_login_count (for
- * rate limiting and lockout), last_login_at, created_at, updated_at, and
- * deleted_at. This endpoint allows authorized operators to change allowed
- * fields for an existing record, for example updating the email or
- * display_name, toggling the status, or resetting counters according to
- * application policy.
+ * This PUT /adminUsers/{adminUserId} endpoint works with the
+ * todo_app_adminusers Prisma model, whose description emphasizes that
+ * administrative users are internal operators responsible for monitoring and
+ * maintaining the todoApp service. Fields in this model include id, email,
+ * password_hash, display_name, status, created_at, and updated_at. The model
+ * notes that admin accounts are subject to stricter credential policies, and
+ * that they may access service-level information and perform maintenance or
+ * policy enforcement actions, but they do not own member-facing todos
+ * themselves.
  *
- * When processing the ITodoAppAdminuser.IUpdate request body, the
- * implementation must validate that changes obey the constraints implied by the
- * schema descriptions. For example, email must remain unique per the unique
- * index on email, status transitions should follow permitted state diagrams,
- * and password changes must always be handled as new hashes in password_hash,
- * never as raw values. Timestamps like updated_at should be refreshed
- * automatically by the backend, while created_at must remain immutable. The
- * deleted_at field can be set to a timestamp to indicate a logically deleted or
- * deactivated account as described in its comment "Timestamp marking when this
- * admin user account was logically deleted or deactivated. Null while the
- * account is considered active or recoverable."
+ * The request body uses ITodoAppAdminuser.IUpdate, which is designed to carry
+ * updatable properties such as email, display_name, and status. When these
+ * fields are provided, the service must validate them according to the business
+ * rules implied by the schema comments: email must remain unique among all
+ * admin users and be suitable as a primary login identifier; display_name is
+ * optional and can be null or omitted when not needed; status must be
+ * constrained to valid operational values like 'active', 'suspended', or
+ * 'disabled' as enforced by higher-level validation logic. If password updates
+ * are supported via this DTO, the service must accept a suitable input
+ * representation (for example, a plain password field in the DTO) and convert
+ * it to a secure password_hash before persisting.
  *
- * This operation is tightly related to the GET /adminUsers/{adminUserId} detail
- * endpoint, which clients often call before updating to display the current
- * values, and after updating to reflect the new state. It also indirectly
- * interacts with audit and session tables, because changes to status or email
- * may affect how future logins and administrative actions are recorded. On
- * error, such as attempting to update a nonexistent id or violating the unique
- * email constraint, the API should return clear error responses so that
- * administrative UIs can guide the operator to correct the issue.
+ * From a security perspective, only actors with the "adminUser" authorization
+ * role may call this operation, and the implementation must ensure that
+ * password_hash is never exposed in the response. The operation returns the
+ * updated ITodoAppAdminuser DTO containing safe fields, and it updates the
+ * updated_at timestamp to reflect the modification time. On error, the endpoint
+ * returns 404 Not Found if no admin user matches the given adminUserId,
+ * validation errors for malformed or conflicting input (such as duplicate
+ * email), and 403 Forbidden or equivalent errors when an unauthorized caller
+ * attempts to update administrative accounts.
  *
  * @param props.connection
- * @param props.adminUserId Unique identifier of the administrative user account
- *   to be updated, corresponding to the id primary key column in the
- *   todo_app_adminusers table.
- * @param props.body Fields to update for the target administrative user account
- *   identified by adminUserId, following the ITodoAppAdminuser.IUpdate
- *   structure derived from the todo_app_adminusers schema.
+ * @param props.adminUserId Unique UUID identifier of the administrative user
+ *   account in todo_app_adminusers to be updated.
+ * @param props.body Updated administrative user information for the target
+ *   record in todo_app_adminusers, including fields such as email,
+ *   display_name, and status.
  * @path /todoApp/adminUser/adminUsers/:adminUserId
  * @accessor api.functional.todoApp.adminUser.adminUsers.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -332,16 +316,15 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the administrative user account to be updated,
-     * corresponding to the id primary key column in the todo_app_adminusers
-     * table.
+     * Unique UUID identifier of the administrative user account in
+     * todo_app_adminusers to be updated.
      */
     adminUserId: string & tags.Format<"uuid">;
 
     /**
-     * Fields to update for the target administrative user account
-     * identified by adminUserId, following the ITodoAppAdminuser.IUpdate
-     * structure derived from the todo_app_adminusers schema.
+     * Updated administrative user information for the target record in
+     * todo_app_adminusers, including fields such as email, display_name,
+     * and status.
      */
     body: ITodoAppAdminUser.IUpdate;
   };
@@ -392,48 +375,43 @@ export namespace update {
 }
 
 /**
- * Permanently delete an admin user record from the todo_app_adminusers table by
- * UUID identifier.
+ * Permanently delete a todo_app_adminusers administrative user by primary key
+ * id.
  *
- * Remove an existing administrative user record from the todo_app_adminusers
- * table by its UUID identifier.
+ * Delete an existing administrative user account from the todo_app_adminusers
+ * table using its unique identifier.
  *
- * This operation targets the todo_app_adminusers model, which represents
- * administrative user accounts with elevated privileges for operating and
- * supervising the todoApp service. Each row in this table typically contains
- * identity and lifecycle information for an admin, such as a unique login
- * identifier (for example, an email), securely stored password hash, optional
- * display name, account status, counters for failed login attempts, timestamps
- * for recent logins, and creation and update timestamps. When this endpoint is
- * invoked, the implementation must locate the row whose id matches the
- * adminUserId path parameter.
+ * This operation targets the todo_app_adminusers Prisma model, which stores
+ * administrative users responsible for monitoring and maintaining the todoApp
+ * service. Each record includes an id primary key, unique email login,
+ * password_hash for secure credential storage, optional display_name,
+ * operational status, and created_at/updated_at timestamps. By issuing a DELETE
+ * request to this endpoint, an authorized operator requests that the specified
+ * admin account record be removed from the database.
  *
- * From a security and authorization perspective, only authenticated
- * administrative actors should be allowed to invoke this endpoint. The calling
- * admin must have sufficient privileges to manage other admin accounts, and the
- * implementation may enforce additional business rules such as preventing
- * deletion of the last remaining admin or disallowing deletion of the currently
- * authenticated admin account to avoid locking the system out of
- * administration. If the caller does not meet these conditions, the operation
- * must fail with an authorization error.
+ * From a security perspective, this operation must only be accessible to highly
+ * privileged actors. The authorizationActors field is set to ["adminUser"] to
+ * indicate that only authenticated administrative backoffice processes or
+ * super-admin accounts may call this endpoint. Before deletion, the
+ * implementation should verify that the target admin user exists; if not found,
+ * a suitable 404-style error should be returned. If business rules require
+ * preventing deletion of certain critical admin accounts (for example, a root
+ * or bootstrap account), the provider logic should enforce those rules and
+ * respond with an appropriate error code.
  *
- * After validating permissions and business rules, the service performs a
- * permanent deletion of the admin record from todo_app_adminusers by removing
- * the row from the database. Any related subsidiary data, such as admin session
- * records in todo_app_adminuser_sessions or audit logs that reference this
- * admin, must be handled according to higher-level data lifecycle policies (for
- * example, via cascading deletes, explicit cleanup logic, or by preserving
- * immutable audit records). If the specified adminUserId does not correspond to
- * an existing record, the service returns a not-found error. On successful
- * deletion, the endpoint does not return a response body; instead, it uses the
- * HTTP status code (such as 204 No Content) to indicate completion. Related
- * administrative management operations include listing admins, creating new
- * admins, and updating admin status, which are implemented via other
- * endpoints.
+ * In relation to the underlying Prisma schema, the adminUserId path parameter
+ * maps directly to the id field of todo_app_adminusers, which is a UUID primary
+ * key. No related foreign key entries are defined for this table in the loaded
+ * schema, so deletion is localized to this table. The operation does not
+ * require a request body, and it does not return any response body content on
+ * success; clients should rely on the HTTP status code to confirm the action.
+ * This delete endpoint forms part of the administrative account lifecycle
+ * toolkit, alongside endpoints that update status or manage credentials for
+ * entries in todo_app_adminusers.
  *
  * @param props.connection
- * @param props.adminUserId Unique UUID identifier of the target administrative
- *   user in the todo_app_adminusers table.
+ * @param props.adminUserId Unique identifier of the target administrative user
+ *   account in the todo_app_adminusers table.
  * @path /todoApp/adminUser/adminUsers/:adminUserId
  * @accessor api.functional.todoApp.adminUser.adminUsers.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -462,7 +440,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique UUID identifier of the target administrative user in the
+     * Unique identifier of the target administrative user account in the
      * todo_app_adminusers table.
      */
     adminUserId: string & tags.Format<"uuid">;

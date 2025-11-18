@@ -10,108 +10,128 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ITodoAppTask } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTask";
 import { IPageITodoAppTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTask";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoAppUserTasks(props: {
   user: UserPayload;
   body: ITodoAppTask.IRequest;
 }): Promise<IPageITodoAppTask.ISummary> {
-  const skip = (props.body.page - 1) * props.body.limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 25;
+  const skip = (page - 1) * limit;
 
-  const [tasks, totalRecords] = await MyGlobal.prisma.$transaction([
+  // Build where conditions with proper typing
+  let whereConditions: Prisma.todo_app_tasksWhereInput = {
+    todo_app_user_id: props.user.id,
+    deleted_at: null,
+  };
+
+  // Add search if provided
+  if (props.body.search && props.body.search.trim()) {
+    const searchTerm = props.body.search.trim();
+    whereConditions.OR = [
+      { title: { contains: searchTerm } },
+      { description: { contains: searchTerm } },
+    ];
+  }
+
+  // Add status filter
+  if (props.body.status) {
+    if (!["pending", "completed"].includes(props.body.status)) {
+      throw new HttpException("Invalid status value", 400);
+    }
+    whereConditions.status = props.body.status;
+  }
+
+  // Add priority filter
+  if (props.body.priority) {
+    if (!["none", "low", "medium", "high"].includes(props.body.priority)) {
+      throw new HttpException("Invalid priority value", 400);
+    }
+    whereConditions.priority = props.body.priority;
+  }
+
+  // Add due date ranges
+  if (props.body.due_before || props.body.due_after) {
+    whereConditions.due_date = {};
+    if (props.body.due_before) {
+      whereConditions.due_date.lte = props.body.due_before;
+    }
+    if (props.body.due_after) {
+      whereConditions.due_date.gte = props.body.due_after;
+    }
+  }
+
+  // Build order by
+  const validOrderBy = ["due_date", "priority", "created_at", "updated_at"];
+  const orderField = validOrderBy.includes(props.body.order_by ?? "")
+    ? props.body.order_by!
+    : "created_at";
+  const orderDirection = props.body.order_direction === "asc" ? "asc" : "desc";
+
+  const orderBy: Prisma.todo_app_tasksOrderByWithRelationInput = {
+    [orderField]: orderDirection,
+  };
+
+  // Execute queries
+  const [tasks, total] = await Promise.all([
     MyGlobal.prisma.todo_app_tasks.findMany({
-      where: {
-        todo_app_user_id: props.user.id,
-        ...(props.body.status !== null &&
-          props.body.status !== undefined && {
-            status: props.body.status,
-          }),
-        ...(props.body.priority !== null &&
-          props.body.priority !== undefined && {
-            priority: props.body.priority,
-          }),
-        ...(props.body.category_id !== null &&
-          props.body.category_id !== undefined && {
-            todo_app_category_id: props.body.category_id,
-          }),
-        ...((props.body.due_date_from || props.body.due_date_to) && {
-          due_date: {
-            ...(props.body.due_date_from && { gte: props.body.due_date_from }),
-            ...(props.body.due_date_to && { lte: props.body.due_date_to }),
-          },
-        }),
-        ...(props.body.search && {
-          OR: [
-            { title: { contains: props.body.search, mode: "insensitive" } },
-            {
-              description: { contains: props.body.search, mode: "insensitive" },
-            },
-          ],
-        }),
-      },
+      where: whereConditions,
       skip,
-      take: props.body.limit,
-      orderBy: {
-        [props.body.sort_by || "created_at"]: props.body.sort_order || "desc",
-      },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        priority: true,
-        due_date: true,
-        completion_order: true,
+      take: limit,
+      orderBy,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            status: true,
+            created_at: true,
+          },
+        },
       },
     }),
     MyGlobal.prisma.todo_app_tasks.count({
-      where: {
-        todo_app_user_id: props.user.id,
-        ...(props.body.status !== null &&
-          props.body.status !== undefined && {
-            status: props.body.status,
-          }),
-        ...(props.body.priority !== null &&
-          props.body.priority !== undefined && {
-            priority: props.body.priority,
-          }),
-        ...(props.body.category_id !== null &&
-          props.body.category_id !== undefined && {
-            todo_app_category_id: props.body.category_id,
-          }),
-        ...((props.body.due_date_from || props.body.due_date_to) && {
-          due_date: {
-            ...(props.body.due_date_from && { gte: props.body.due_date_from }),
-            ...(props.body.due_date_to && { lte: props.body.due_date_to }),
-          },
-        }),
-        ...(props.body.search && {
-          OR: [
-            { title: { contains: props.body.search, mode: "insensitive" } },
-            {
-              description: { contains: props.body.search, mode: "insensitive" },
-            },
-          ],
-        }),
-      },
+      where: whereConditions,
     }),
   ]);
 
-  return {
-    pagination: {
-      current: props.body.page,
-      limit: props.body.limit,
-      records: totalRecords,
-      pages: Math.ceil(totalRecords / props.body.limit),
-    },
-    data: tasks.map((task) => ({
+  // Transform results with proper type handling
+  const data: ITodoAppTask.ISummary[] = tasks.map((task) => {
+    return {
       id: task.id,
       title: task.title,
-      status: typia.assert<"pending" | "in-progress" | "completed">(
-        task.status,
-      ),
-      priority: typia.assert<"Low" | "Medium" | "High">(task.priority),
-      due_date: task.due_date ? toISOStringSafe(task.due_date) : undefined,
-      completion_order: task.completion_order,
-    })),
+      status: task.status,
+      created_at: toISOStringSafe(task.created_at),
+      updated_at: toISOStringSafe(task.updated_at),
+      // Handle optional fields with proper null/undefined typing
+      due_date:
+        task.due_date === null ? undefined : toISOStringSafe(task.due_date),
+      priority: task.priority === null ? undefined : task.priority,
+      completed_at:
+        task.completed_at === null
+          ? undefined
+          : toISOStringSafe(task.completed_at),
+      todo_app_user_id: task.todo_app_user_id,
+      user: {
+        id: task.user.id,
+        email: task.user.email,
+        name: task.user.name === null ? undefined : task.user.name,
+        status: task.user.status,
+        created_at: toISOStringSafe(task.user.created_at),
+      },
+    };
+  });
+
+  return {
+    data,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
   };
 }

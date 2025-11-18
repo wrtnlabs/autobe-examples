@@ -5,235 +5,383 @@
 - [Systematic](#systematic)
 - [Actors](#actors)
 - [Todos](#todos)
+- [default](#default)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"todo_list_configurations" {
+"todo_app_configurations" {
   String id PK
-  String key UK
-  String value
-  String description "nullable"
-  String category "nullable"
+  String config_key UK
+  String name
+  String description
+  String data_type
+  String default_value
+  String validation_rules "nullable"
+  String category
+  Boolean is_sensitive
+  Boolean is_required
+  Int version
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"todo_app_configuration_snapshots" {
+  String id PK
+  String todo_app_configuration_id FK
+  String config_key
+  String name
+  String description
+  String data_type
+  String default_value
+  String validation_rules "nullable"
+  String category
+  Boolean is_sensitive
+  Boolean is_required
+  Int version
+  String snapshot_reason
+  DateTime created_at
+}
+"todo_app_configuration_values" {
+  String id PK
+  String todo_app_configuration_id FK
+  String environment
+  String config_value
+  String value_type
+  Boolean is_active
+  DateTime effective_from
+  DateTime effective_to "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"todo_app_configuration_snapshots" }o--|| "todo_app_configurations" : configuration
+"todo_app_configuration_values" }o--|| "todo_app_configurations" : configuration
 ```
 
-### `todo_list_configurations`
+### `todo_app_configurations`
 
-System-level configuration settings for the Todo List application.
+Core application configuration settings with version control and audit
+trail support.
 
-Stores key-value pairs that control application behavior, feature flags,
-and system parameters. These configurations are managed at the system
-level and affect the entire application rather than individual users.
+Stores the master configuration definitions including metadata,
+validation rules, and default values. Each configuration entry represents
+a configurable parameter that can be customized per environment while
+maintaining a consistent definition structure.
 
-Each configuration entry represents a specific setting that can be
-modified to adjust application behavior without code changes. The table
-supports flexible key-value storage with proper data typing and
-validation.
+Supports typed configuration values with proper validation, dependency
+tracking, and hierarchical organization. Configuration changes are
+tracked through snapshots to maintain audit trails and enable rollback
+capabilities.
 
-Configurations are version-controlled through the updated_at timestamp,
-allowing tracking of when settings were modified. This provides audit
-capability for system changes and configuration management.
-
-Soft deletion is supported through the deleted_at field, allowing
-configurations to be disabled without permanent removal. This maintains
-historical records while preventing accidental data loss.
+The table enforces data integrity through unique constraints and supports
+flexible configuration management for multi-environment deployments.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique configuration key identifier. Used to reference specific settings
-  > throughout the application. Must be unique across all configuration
-  > entries.
-- `value`
-  > Configuration value stored as string. Can represent various data types
-  > (boolean, number, text) that are parsed by the application logic.
+- `config_key`
+  > Unique configuration key identifier following naming convention:
+  > 'category.subcategory.setting'. Must be lowercase with underscores.
+- `name`: Human-readable display name for the configuration setting.
 - `description`
-  > Human-readable description explaining the purpose and usage of this
-  > configuration setting. Helps administrators understand what the setting
-  > controls.
+  > Detailed description explaining the purpose, usage, and impact of this
+  > configuration.
+- `data_type`
+  > Expected data type for configuration values: 'boolean', 'number',
+  > 'string', 'json', 'array', 'object'.
+- `default_value`
+  > Default configuration value that applies when no environment-specific
+  > value is set.
+- `validation_rules`: JSON string containing validation constraints for the configuration value.
 - `category`
-  > Optional category grouping for organizing related configurations.
-  > Examples: 'ui', 'performance', 'security', 'features'.
-- `created_at`
-  > Timestamp when this configuration was initially created. Tracks when
-  > settings were first established in the system.
-- `updated_at`
-  > Timestamp when this configuration was last modified. Used for tracking
-  > configuration changes and version control.
-- `deleted_at`
-  > Timestamp when this configuration was soft-deleted. Allows configurations
-  > to be disabled without permanent removal, supporting audit trails and
-  > recovery capabilities.
+  > Configuration category for organizational grouping (e.g., 'security',
+  > 'performance', 'ui').
+- `is_sensitive`
+  > Indicates whether this configuration contains sensitive information that
+  > requires encryption.
+- `is_required`: Whether this configuration must have a value set in all environments.
+- `version`: Configuration version number for tracking schema changes.
+- `created_at`: Timestamp when this configuration definition was created.
+- `updated_at`: Timestamp when this configuration definition was last modified.
+- `deleted_at`: Timestamp when this configuration was soft-deleted, allowing for recovery.
+
+### `todo_app_configuration_snapshots`
+
+Historical snapshots of configuration changes for audit trails and
+version control.
+
+Captures point-in-time states of configuration definitions whenever
+changes are made. Each snapshot represents a complete configuration
+definition at a specific moment, enabling rollback capabilities and
+change tracking.
+
+Used for compliance auditing, troubleshooting configuration-related
+issues, and understanding the evolution of application settings over
+time. Snapshots are append-only and never modified after creation.
+
+Maintains referential integrity with the main configuration table while
+providing independent historical records for analysis and reporting.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_configuration_id`
+  > Reference to the configuration definition being snapshotted. {@link
+  > todo_app_configurations.id}
+- `config_key`: Configuration key at the time of snapshot creation.
+- `name`: Configuration display name at snapshot time.
+- `description`: Configuration description at snapshot time.
+- `data_type`: Data type definition at snapshot time.
+- `default_value`: Default value at snapshot time.
+- `validation_rules`: Validation rules at snapshot time.
+- `category`: Configuration category at snapshot time.
+- `is_sensitive`: Sensitivity flag at snapshot time.
+- `is_required`: Required flag at snapshot time.
+- `version`: Configuration version at snapshot time.
+- `snapshot_reason`
+  > Reason for creating this snapshot (e.g., 'version_update', 'bug_fix',
+  > 'compliance').
+- `created_at`: Timestamp when this snapshot was created.
+
+### `todo_app_configuration_values`
+
+Environment-specific configuration values that override default settings.
+
+Stores actual configuration values for specific deployment environments
+(development, staging, production). Each value entry links to a
+configuration definition and provides the environment-specific
+implementation of that setting.
+
+Supports value versioning and audit trails for environment-specific
+configurations. Values can be set, modified, or deleted independently per
+environment while maintaining referential integrity with the master
+configuration definitions.
+
+Enables flexible configuration management across multiple deployment
+environments with proper isolation and change tracking.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_configuration_id`
+  > Reference to the configuration definition. {@link
+  > todo_app_configurations.id}
+- `environment`
+  > Deployment environment for this configuration value (e.g., 'development',
+  > 'staging', 'production').
+- `config_value`: Environment-specific configuration value that overrides the default.
+- `value_type`: Type of the stored value for validation purposes.
+- `is_active`: Indicates whether this environment-specific value is currently active.
+- `effective_from`: Timestamp when this configuration value becomes effective.
+- `effective_to`: Timestamp when this configuration value expires (null for indefinite).
+- `created_at`: Timestamp when this configuration value was created.
+- `updated_at`: Timestamp when this configuration value was last modified.
+- `deleted_at`: Timestamp when this configuration value was soft-deleted.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"todo_list_users" {
+"todo_app_users" {
   String id PK
   String email UK
   String password_hash
+  String name
   String status
+  DateTime last_login_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"todo_list_user_sessions" {
+"todo_app_user_sessions" {
   String id PK
-  String todo_list_user_id FK
+  String todo_app_user_id FK
   String ip
+  String user_agent
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
+  DateTime last_activity_at
 }
-"todo_list_user_sessions" }o--|| "todo_list_users" : user
+"todo_app_user_sessions" }o--|| "todo_app_users" : user
 ```
 
-### `todo_list_users`
+### `todo_app_users`
 
-User accounts for the todo list application with authentication
-capabilities.
+User accounts for the Todo application.
 
-Stores user credentials and profile information for secure access to the
-todo management system. Each user account enables creation, management,
-and organization of personal todo items with complete data isolation from
-other users.
+Stores user authentication information, profile data, and account status
+for individuals managing their personal todo lists. Each user has a
+unique email address and secure password authentication, along with a
+display name for personalization.
 
-The model includes authentication fields for secure login functionality
-and supports account status tracking for active/inactive management. User
-data is protected with proper encryption and follows privacy requirements
-specified in the security documentation.
+Users can create, read, update, and delete their own todo items while
+maintaining complete data isolation from other users. The system supports
+user verification workflows, account status management, and activity
+tracking through last login timestamps.
+
+User accounts support soft deletion for data recovery scenarios while
+maintaining comprehensive audit trails of account lifecycle events and
+authentication activities.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`
-  > User's email address used for authentication and communication. Must be
-  > unique across all users.
+- `email`: User's unique email address used for authentication and communication.
 - `password_hash`
-  > Securely hashed password for user authentication. Uses industry-standard
-  > bcrypt hashing with proper salt rounds.
+  > Securely hashed password for user authentication using industry-standard
+  > algorithms.
+- `name`
+  > User's display name for personalization and identification in the
+  > application.
 - `status`
-  > Current user account status. Valid values: active, inactive, suspended.
-  > Controls login capability and system access.
+  > Current user account status. Valid business values: active, suspended,
+  > verified, pending_verification, locked.
+- `last_login_at`
+  > Timestamp of the user's most recent successful login for activity
+  > tracking.
 - `created_at`: Timestamp when the user account was created.
 - `updated_at`: Timestamp when the user account was last updated.
-- `deleted_at`
-  > Timestamp when the user account was soft deleted. Null indicates active
-  > account.
+- `deleted_at`: Timestamp when the user account was soft deleted, if applicable.
 
-### `todo_list_user_sessions`
+### `todo_app_user_sessions`
 
-User authentication sessions for tracking login activity and security
-context.
+User session records for authentication tracking and security management.
 
-Records user login sessions with connection details including IP address,
-URL, and referrer information. Each session represents an authenticated
-connection from a specific device and location.
+Stores active user sessions for secure access to the Todo application.
+Each session represents an authenticated connection from a user's device,
+containing comprehensive connection context information for audit and
+security purposes.
 
-Sessions are used for audit tracing of user actions and support
-multi-device access with proper security monitoring. The model follows
-the exact session table pattern with required fields for security
+Sessions are automatically created during successful login and track
+connection details including IP address, user agent, and referrer
+information. The system maintains session state securely and validates
+authentication tokens on each API request.
+
+Sessions require independent management capabilities including search
+across all users, expiration tracking, and security monitoring. Users and
+administrators need to view and manage active sessions for security
 compliance.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_user_id`: Associated user account. [todo_list_users.id](#todo_list_users)
-- `ip`: IP address of the connection where the session was created.
-- `href`: URL of the connection where the session was established.
+- `todo_app_user_id`: Belonged user's [todo_app_users.id](#todo_app_users).
+- `ip`
+  > IP address of the connection that created this session for security
+  > tracking.
+- `user_agent`
+  > User agent string identifying the device and browser used for this
+  > session.
+- `href`: Connection URL where the session was established.
 - `referrer`: Referrer URL that directed the user to the application.
 - `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expires. Null indicates active session.
+- `expired_at`: Timestamp when the session expired or was terminated.
+- `last_activity_at`
+  > Timestamp of the most recent activity in this session for timeout
+  > tracking.
 
 ## Todos
 
 ```mermaid
 erDiagram
-"todo_list_todos" {
+"todo_app_todos" {
   String id PK
-  String todo_list_user_id FK
-  String title
-  String description "nullable"
-  String status
+  String todo_app_user_id FK
+  String text
+  Boolean completed
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"todo_list_todo_snapshots" {
-  String id PK
-  String todo_list_todo_id FK
-  String title
-  String description "nullable"
-  String status
-  DateTime created_at
-}
-"todo_list_todo_snapshots" }o--|| "todo_list_todos" : todo
 ```
 
-### `todo_list_todos`
+### `todo_app_todos`
 
-Core todo items that users create and manage.
+Core todo items created and managed by authenticated users.
 
-Represents individual tasks that users track for completion. Each todo
-has a title, optional description, and status tracking
-(pending/completed). Todos are owned by authenticated users and support
-full CRUD operations with soft deletion capability.
+Stores individual todo tasks with text descriptions and completion status
+tracking.
+Each todo belongs to exactly one user and maintains creation and
+modification timestamps
+for audit purposes. The design follows minimal principles with only
+essential fields
+required for basic todo functionality.
 
-Todos maintain their own lifecycle independent of users, allowing for
-proper task management workflows. The system tracks creation and
-modification timestamps for audit purposes and supports status
-transitions between pending and completed states.
-
-**Business Rules:**
-- Title must be between 1-255 characters
-- Description can be up to 1000 characters
-- Status must be either 'pending' or 'completed'
-- Todos belong to authenticated users
-- Soft deletion preserves audit trail
+Todos support soft deletion through the deleted_at field while
+maintaining data integrity
+for historical tracking. The completion status allows users to track task
+progress
+without complex workflow management.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_user_id`: Owner user reference. [todo_list_users.id](#todo_list_users)
-- `title`
-  > Todo item title. Required field with 1-255 character limit as specified
+- `todo_app_user_id`: Owner user's identifier. [todo_app_users.id](#todo_app_users)
+- `text`
+  > Todo item description text. Must be between 1-500 characters as specified
   > in requirements.
-- `description`
-  > Optional detailed description of the todo item. Maximum 1000 characters
-  > as specified.
-- `status`
-  > Current status of the todo item. Valid values: 'pending', 'completed'.
-  > Defaults to 'pending'. Status transitions follow business workflow rules.
-- `created_at`: Timestamp when the todo item was created.
+- `completed`
+  > Completion status indicating whether the todo item is finished. Defaults
+  > to false (incomplete).
+- `created_at`: Timestamp when the todo item was originally created.
 - `updated_at`: Timestamp when the todo item was last modified.
 - `deleted_at`: Timestamp when the todo item was soft deleted. Null indicates active item.
 
-### `todo_list_todo_snapshots`
+## default
 
-Historical snapshots of todo items for audit trail and version tracking.
+```mermaid
+erDiagram
+"mv_todo_app_active_configurations" {
+  String id PK
+  String todo_app_configuration_id FK,UK
+  String todo_app_configuration_value_id FK,UK "nullable"
+  String config_key
+  String environment
+  String effective_value
+  String value_source
+  String data_type
+  String category
+  Boolean is_sensitive
+  DateTime last_updated
+}
+```
 
-Captures point-in-time states of todo items whenever significant changes
-occur (title, description, or status changes). Each snapshot preserves
-the complete state of a todo item at a specific moment, enabling
-historical tracking and audit capabilities.
+### `mv_todo_app_active_configurations`
 
-Snapshots are created automatically when todo items are modified and
-provide an append-only record of changes for compliance and recovery
-purposes.
+Materialized view showing currently active configuration values across
+all environments.
+
+Pre-computed view that combines configuration definitions with their
+active environment-specific values. Provides fast access to the complete
+configuration state without complex joins and filtering logic.
+
+Used by application components that need to quickly access the current
+configuration settings. The view is refreshed periodically to ensure
+consistency with the underlying configuration tables.
+
+Optimizes configuration lookup performance for high-frequency access
+patterns in the application runtime.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_todo_id`: Reference to the original todo item. [todo_list_todos.id](#todo_list_todos)
-- `title`: Todo title at the time of snapshot creation.
-- `description`: Todo description at the time of snapshot creation.
-- `status`: Todo status at the time of snapshot creation.
-- `created_at`: Timestamp when this snapshot was created.
+- `todo_app_configuration_id`
+  > Reference to the configuration definition. {@link
+  > todo_app_configurations.id}
+- `todo_app_configuration_value_id`
+  > Reference to the active configuration value. {@link
+  > todo_app_configuration_values.id}
+- `config_key`: Configuration key identifier.
+- `environment`: Deployment environment.
+- `effective_value`: Currently active configuration value (environment-specific or default).
+- `value_source`
+  > Source of the value: 'environment' for specific values, 'default' for
+  > fallback.
+- `data_type`: Expected data type for validation.
+- `category`: Configuration category for filtering.
+- `is_sensitive`: Whether the value contains sensitive information.
+- `last_updated`: Timestamp when this configuration was last updated.

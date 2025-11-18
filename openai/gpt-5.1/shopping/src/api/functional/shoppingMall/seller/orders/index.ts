@@ -1,5 +1,3 @@
-export * as lines from "./lines/index";
-export * as cancellationRequests from "./cancellationRequests/index";
-export * as returnRequests from "./returnRequests/index";
-export * as disputes from "./disputes/index";
-export * as fulfillments from "./fulfillments/index";
+export * as priceSnapshots from "./priceSnapshots/index";
+export * as shipments from "./shipments/index";
+export * as payments from "./payments/index";

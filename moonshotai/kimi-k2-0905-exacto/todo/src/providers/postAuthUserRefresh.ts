@@ -8,17 +8,21 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { IRefreshToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IRefreshToken";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserRefresh(props: {
+  user: UserPayload;
   body: ITodoAppUser.IRefresh;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // 1. Verify and decode the refresh token
+  // Verify the refresh token
   let decoded: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "user";
   };
+
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
@@ -33,40 +37,45 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // 2. Validate type matches expected user type
+  // Validate token type matches expected actor
   if (decoded.type !== "user") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  // 3. Validate session exists and is active
-  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
-    where: {
-      id: decoded.session_id,
-      user_id: decoded.id,
-    },
-    include: {
-      user: true,
-    },
-  });
-
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+  // Validate session matches the authenticated user
+  if (
+    decoded.session_id !== props.user.session_id ||
+    decoded.id !== props.user.id
+  ) {
+    throw new HttpException("Token session mismatch", 401);
   }
 
-  // 4. Check if user account is deleted
-  if (session.user.deleted_at !== null) {
+  // Get user data and validate account status
+  const user = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: { id: props.user.id },
+  });
+
+  if (!user) {
+    throw new HttpException("User not found", 404);
+  }
+
+  if (user.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // 5. Generate new access and refresh tokens with same session_id
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  if (user.status !== "active") {
+    throw new HttpException("Account is not active", 403);
+  }
+
+  // Generate new tokens with updated expiration
+  const accessExpires: Date = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires: Date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
   const accessToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id, // Reuse same session_id
+      type: "user",
+      id: user.id,
+      session_id: props.user.session_id, // Maintain same session
       created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
@@ -78,9 +87,9 @@ export async function postAuthUserRefresh(props: {
 
   const refreshToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id, // Reuse same session_id
+      type: "user",
+      id: user.id,
+      session_id: props.user.session_id, // Maintain same session
       tokenType: "refresh",
       created_at: new Date().toISOString(),
     },
@@ -91,27 +100,16 @@ export async function postAuthUserRefresh(props: {
     },
   );
 
-  // 6. Update session expiration time
-  await MyGlobal.prisma.todo_app_user_sessions.update({
-    where: {
-      id: decoded.session_id,
-    },
-    data: {
-      expired_at: refreshExpires,
-    },
-  });
-
-  // 7. Return user info with new tokens
+  // Return IAuthorized response
   return {
-    id: session.user.id,
-    email: session.user.email,
-    created_at: toISOStringSafe(session.user.created_at),
-    updated_at: session.user.updated_at
-      ? toISOStringSafe(session.user.updated_at)
-      : undefined,
-    deleted_at: session.user.deleted_at
-      ? toISOStringSafe(session.user.deleted_at)
-      : undefined,
+    id: user.id,
+    email: user.email,
+    name: user.name ?? undefined,
+    status: user.status,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at:
+      user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
     token: {
       access: accessToken,
       refresh: refreshToken,

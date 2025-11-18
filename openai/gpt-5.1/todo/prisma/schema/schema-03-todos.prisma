@@ -1,21 +1,21 @@
-/// Core todo items owned by member users.
+/// Personal todo items owned by a single member user.
 ///
-/// This model stores the minimal but complete representation of a todo in
-/// the todoApp service. Each row represents a single task that belongs to
-/// exactly one member user and can be created, viewed, updated, completed,
-/// reopened, and deleted according to the lifecycle rules.
+/// This table stores the minimal but complete representation of each todo in
+/// the system. Every row represents one actionable task that belongs to
+/// exactly one member user from {@link todo_app_memberusers} and is never
+/// shared between users.
 ///
-/// The table captures required business fields including a short title,
-/// optional longer description, simple status (pending or completed),
-/// timestamps for creation and last update, and an optional completion
-/// timestamp. Logical deletion is modeled via a nullable deleted_at
-/// timestamp so that deleted todos disappear from normal lists while still
-/// being available for short-term retention and background cleanup.
+/// Each todo contains human-readable text (title and optional description),
+/// a simple lifecycle state (such as active, completed, or deleted), and key
+/// timestamps used for ordering and enforcing business rules. Optional
+/// fields like due_date and completed_at support basic productivity
+/// workflows while maintaining a minimal schema.
 ///
-/// Ownership is enforced by a foreign key to {@link todo_app_memberusers}.
-/// Admin users can read and administratively delete todos via higher-level
-/// operations, but they do not change the ownership relationship stored
-/// here.
+/// Application logic uses this table for all core todo operations: creation,
+/// listing, filtering by state, viewing details, updating content, marking
+/// as completed, reopening, and deleting. Soft deletion is modeled via
+/// deleted_at so that deleted todos are excluded from normal lists but may
+/// be retained internally according to retention policies.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,43 +23,51 @@ model todo_app_todos {
   //----
   // COLUMNS
   //----
-  /// Primary key of the todo item. Generated as a UUID and uniquely identifies
-  /// a single todo across the system.
+  /// Primary key of the todo item. Universally unique identifier for each todo
+  /// row.
   id String @id
   
-  /// Reference to the owning member user. This links the todo to exactly one
-  /// authenticated user account. {@link todo_app_memberusers.id}.
+  /// Owner of this todo item. References the member user who created and
+  /// manages the todo. {@link todo_app_memberusers.id}.
   todo_app_memberuser_id String
   
-  /// Short textual title of the todo. Must be non-empty after trimming and is
-  /// limited to a reasonable maximum length to keep lists readable.
+  /// Short human-readable title of the todo. Required, non-empty text that
+  /// summarizes what needs to be done.
   title String
   
-  /// Optional longer description providing additional details about the task.
-  /// May be null or an empty string when the user does not provide extra
-  /// information.
+  /// Optional longer free-text description that provides additional details
+  /// about the todo. May be null or an empty string when no extra detail is
+  /// provided.
   description String?
   
-  /// Current business status of the todo. Expected values are "pending" for
-  /// active items and "completed" for finished tasks, matching the lifecycle
+  /// Business state of the todo item. Expected values are conceptually
+  /// "active" (or "pending"), "completed", or treated as deleted when
+  /// deleted_at is set. Used for filtering lists and enforcing lifecycle
   /// rules.
-  status String
+  state String
   
-  /// Timestamp when the todo was first created. Used for ordering and audit
-  /// purposes.
+  /// Optional target date and time by which the user intends to complete the
+  /// todo. When null, the todo has no explicit due date.
+  due_date DateTime?
+  
+  /// Timestamp when the todo was first created. Set once at insertion time and
+  /// used for chronological ordering and audit purposes.
   created_at DateTime
   
-  /// Timestamp of the last modification to this todo, including content edits
-  /// or status changes. Updated on each successful change.
+  /// Timestamp of the most recent modification to this todo, including content
+  /// edits and state changes. Used for ordering and concurrency-friendly
+  /// business logic.
   updated_at DateTime
   
-  /// Timestamp when the todo was marked as completed. Null while the todo is
-  /// still pending or has been reopened to an active state.
+  /// Timestamp when the todo was last transitioned into the completed state.
+  /// Null when the todo has never been completed or has been reopened without
+  /// re-completion.
   completed_at DateTime?
   
-  /// Soft deletion timestamp. When null the todo is considered active or
-  /// completed; when set the todo is treated as deleted and excluded from
-  /// normal user listings.
+  /// Timestamp when the todo was logically deleted. Null while the todo is
+  /// considered active or completed and visible in normal lists. Non-null
+  /// values indicate soft deletion and remove the todo from user-facing
+  /// queries.
   deleted_at DateTime?
   
   //----
@@ -67,9 +75,6 @@ model todo_app_todos {
   //----
   memberUser todo_app_memberusers @relation(fields: [todo_app_memberuser_id], references: [id], onDelete: Cascade)
   
-  todo_app_admin_todo_actions todo_app_admin_todo_actions[]
-  
-  @@index([todo_app_memberuser_id, status, created_at])
-  @@index([todo_app_memberuser_id, deleted_at])
-  @@index([status, completed_at])
+  @@index([todo_app_memberuser_id, state, created_at])
+  @@index([todo_app_memberuser_id, created_at])
 }

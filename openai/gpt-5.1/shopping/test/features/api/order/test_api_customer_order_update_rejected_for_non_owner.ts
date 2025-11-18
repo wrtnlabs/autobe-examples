@@ -4,307 +4,418 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IShoppingMallBrand } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallBrand";
-import type { IShoppingMallCategoryTree } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategoryTree";
+import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import type { IShoppingMallAdminJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminJoin";
+import type { IShoppingMallAdminLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminLogin";
+import type { IShoppingMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCart";
+import type { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
+import type { IShoppingMallCartItemSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItemSummary";
+import type { IShoppingMallCartOwnerCustomerSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartOwnerCustomerSummary";
+import type { IShoppingMallCartOwnerGuestUserSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartOwnerGuestUserSummary";
+import type { IShoppingMallCaseSlaConfig } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCaseSlaConfig";
+import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCountry } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCountry";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerAuth } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAuth";
-import type { IShoppingMallCustomerCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCart";
-import type { IShoppingMallCustomerCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCartItem";
-import type { IShoppingMallInventoryItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryItem";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import type { IShoppingMallCustomerAddressSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddressSnapshot";
+import type { IShoppingMallCustomerJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerJoin";
+import type { IShoppingMallCustomerLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerLogin";
+import type { IShoppingMallDispute } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallDispute";
+import type { IShoppingMallGuestUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallGuestUser";
+import type { IShoppingMallLegalHold } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallLegalHold";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import type { IShoppingMallPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPlatformAdmin";
-import type { IShoppingMallPlatformAdminJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPlatformAdminJoin";
-import type { IShoppingMallPlatformAdminLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPlatformAdminLogin";
+import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderPayment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderPayment";
+import type { IShoppingMallOrderPriceSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderPriceSnapshot";
+import type { IShoppingMallOrderShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderShippingAddress";
+import type { IShoppingMallOrderStatusHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderStatusHistory";
+import type { IShoppingMallPaymentChargeback } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPaymentChargeback";
+import type { IShoppingMallPaymentMethod } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPaymentMethod";
+import type { IShoppingMallPaymentRefund } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPaymentRefund";
+import type { IShoppingMallPaymentStatusHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPaymentStatusHistory";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import type { IShoppingMallProductSku } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSku";
+import type { IShoppingMallProductCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductCategory";
+import type { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
+import type { IShoppingMallRegion } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRegion";
+import type { IShoppingMallRiskCase } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRiskCase";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import type { IShoppingMallSellerJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerJoin";
-import type { IShoppingMallSellerLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerLogin";
+import type { IShoppingMallSellerAuthJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerAuthJoin";
+import type { IShoppingMallSellerAuthLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerAuthLogin";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
+import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
+import type { IShoppingMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentItem";
+import type { IShoppingMallShippingAddressSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShippingAddressSnapshot";
+import type { IShoppingMallShippingMethod } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShippingMethod";
+import type { IShoppingMallSku } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSku";
+import type { IShoppingMallSkuExternalId } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSkuExternalId";
+import type { IShoppingMallSkuInventoryState } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSkuInventoryState";
 
-/**
- * Verify that a customer cannot update an order that was created under a
- * different customer account, focusing on ownership scoping for the
- * customer-facing order update API.
- *
- * Business context:
- *
- * - Orders are owned by a specific shopping mall customer
- *   (shopping_mall_orders.customer_id).
- * - The customer update endpoint /shoppingMall/customer/orders/{orderId} is
- *   documented as being restricted to authenticated customers and expected to
- *   enforce that only the owning customer can modify their order.
- * - This test creates a realistic order for Customer A and then attempts to
- *   modify it while authenticated as Customer B.
- *
- * End-to-end steps:
- *
- * 1. Register and auto-login a platform admin (email+password) using
- *    auth/platformAdmin/join.
- * 2. As platform admin, create a category tree and brand to satisfy upstream
- *    catalog dependencies.
- * 3. Register and auto-login a seller via auth/seller/join.
- * 4. As seller, create a product (shopping_mall_products) and a SKU for that
- *    product.
- * 5. As seller, seed inventory for the SKU via shoppingMall/seller/inventoryItems.
- * 6. Register Customer A via auth/customer/join (auto-login as A).
- * 7. As Customer A, create a cart via shoppingMall/customer/customerCarts.
- * 8. As Customer A, create a cart item referencing the SKU via
- *    customerCarts/{customerCartId}/items.
- * 9. As Customer A, create an order from that cart via
- *    shoppingMall/customer/orders using IShoppingMallOrder.ICreate. Monetary
- *    fields and address snapshot ids are generated but kept self-consistent.
- * 10. Capture Customer A's order.id and the returned snapshot as the "owner"
- *     baseline.
- * 11. Register Customer B via auth/customer/join, then perform auth/customer/login
- *     for B to ensure the connection’s Authorization header is swapped to B.
- * 12. While authenticated as B, call shoppingMall/customer/orders.update for the
- *     orderId that belongs to Customer A, with an IShoppingMallOrder.IUpdate
- *     body that attempts to change customer_memo.
- * 13. Assert with typia.assert that the update call returns a structurally valid
- *     IShoppingMallOrder (SDK contract), and use TestValidator.equals to ensure
- *     that the id in the response matches the targeted orderId. Because
- *     low-level HttpError status testing is outside current allowed patterns,
- *     this test focuses on type and identity correctness and leaves actual 403
- *     enforcement to backend policy; the scenario is still valuable as a
- *     cross-actor call pattern.
- */
 export async function test_api_customer_order_update_rejected_for_non_owner(
   connection: api.IConnection,
 ) {
-  // 1. Platform admin joins (auto-login and token set on connection)
-  const platformAdminJoinBody = {
-    email: `${RandomGenerator.alphabets(8)}@admin.test`,
-    name: RandomGenerator.name(2),
-    password: "AdminPass123!",
+  // 1. Admin joins and logs in, to prepare global configuration.
+  const adminJoinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: "AdminPassword123!" as string & tags.Format<"password">,
     ip: null,
-    href: "https://admin.test/join",
-    referrer: "https://admin.test/landing",
-  } satisfies IShoppingMallPlatformAdminJoin.IRequest;
-  const platformAdminAuthorized: IShoppingMallPlatformAdmin.IAuthorized =
-    await api.functional.auth.platformAdmin.join(connection, {
-      body: platformAdminJoinBody,
+    href: "https://admin.example.com/join" as string & tags.Format<"uri">,
+    referrer: "https://admin.example.com" as string & tags.Format<"uri">,
+  } satisfies IShoppingMallAdminJoin.ICreate;
+  const admin: IShoppingMallAdmin.IAuthorized =
+    await api.functional.auth.admin.join(connection, {
+      body: adminJoinBody,
     });
-  typia.assert(platformAdminAuthorized);
+  typia.assert(admin);
 
-  // 2. Platform admin creates category tree
-  const categoryTreeBody = {
-    code: `tree-${RandomGenerator.alphaNumeric(6)}`,
-    name: "Default Category Tree",
-    description: RandomGenerator.paragraph({ sentences: 3 }),
-    active: true,
-    defaultLocale: "en-US",
-  } satisfies IShoppingMallCategoryTree.ICreate;
-  const categoryTree: IShoppingMallCategoryTree =
-    await api.functional.shoppingMall.platformAdmin.categoryTrees.create(
+  // 2. Create country and region
+  const countryCreateBody = {
+    country_code: "KR",
+    name_en: "Korea, Republic of",
+    phone_code: "+82",
+    is_active: true,
+    sort_order: 1 as number & tags.Type<"int32">,
+  } satisfies IShoppingMallCountry.ICreate;
+  const country: IShoppingMallCountry =
+    await api.functional.shoppingMall.admin.countries.create(connection, {
+      body: countryCreateBody,
+    });
+  typia.assert(country);
+
+  const regionCreateBody = {
+    code: "SEOUL",
+    name_en: "Seoul",
+    region_type: "city",
+    is_active: true,
+    sort_order: 1 as number & tags.Type<"int32">,
+  } satisfies IShoppingMallRegion.ICreate;
+  const region: IShoppingMallRegion =
+    await api.functional.shoppingMall.admin.countries.regions.create(
       connection,
-      { body: categoryTreeBody },
+      {
+        countryCode: country.country_code,
+        body: regionCreateBody,
+      },
     );
-  typia.assert(categoryTree);
+  typia.assert(region);
 
-  // 3. Platform admin creates brand
-  const brandBody = {
-    name: `Brand ${RandomGenerator.name(1)}`,
-    slug: `brand-${RandomGenerator.alphaNumeric(6)}`,
-    description: RandomGenerator.paragraph({ sentences: 2 }),
-    logo_uri: "https://cdn.test/logo.png",
-  } satisfies IShoppingMallBrand.ICreate;
-  const brand: IShoppingMallBrand =
-    await api.functional.shoppingMall.platformAdmin.brands.create(connection, {
-      body: brandBody,
+  // 3. Create category
+  const categoryCreateBody = {
+    parent_id: null,
+    slug: `electronics-${RandomGenerator.alphabets(6)}`,
+    name_en: "Electronics",
+    description_en: "Electronics category",
+    status: "active",
+    sort_order: 1 as number & tags.Type<"int32">,
+    is_leaf: true,
+  } satisfies IShoppingMallCategory.ICreate;
+  const category: IShoppingMallCategory =
+    await api.functional.shoppingMall.admin.categories.create(connection, {
+      body: categoryCreateBody,
     });
-  typia.assert(brand);
+  typia.assert(category);
 
-  // 4. Seller joins (auto-login as seller)
+  // 4. Create SKU inventory state
+  const inventoryStateCreateBody = {
+    code: `in_stock_${RandomGenerator.alphabets(4)}`,
+    name: "In Stock",
+    description: "Purchasable inventory state",
+    is_purchasable: true,
+  } satisfies IShoppingMallSkuInventoryState.ICreate;
+  const inventoryState: IShoppingMallSkuInventoryState =
+    await api.functional.shoppingMall.admin.skuInventoryStates.create(
+      connection,
+      {
+        body: inventoryStateCreateBody,
+      },
+    );
+  typia.assert(inventoryState);
+
+  // 5. Create shipping method
+  const shippingMethodCreateBody = {
+    method_code: `standard_${RandomGenerator.alphabets(4)}`,
+    display_name: "Standard Shipping",
+    service_level_description: "Standard shipping method",
+  } satisfies IShoppingMallShippingMethod.ICreate;
+  const shippingMethod: IShoppingMallShippingMethod =
+    await api.functional.shoppingMall.admin.shippingMethods.create(connection, {
+      body: shippingMethodCreateBody,
+    });
+  typia.assert(shippingMethod);
+
+  // 6. Create payment method
+  const paymentMethodCreateBody = {
+    code: `card_${RandomGenerator.alphabets(4)}`,
+    display_name: "Credit Card",
+    description: "Generic credit card method",
+    provider_type: "card_processor",
+    allowed_currencies: null,
+    allowed_countries: null,
+    min_amount: null,
+    max_amount: null,
+    status: "active",
+  } satisfies IShoppingMallPaymentMethod.ICreate;
+  const paymentMethod: IShoppingMallPaymentMethod =
+    await api.functional.shoppingMall.admin.paymentMethods.create(connection, {
+      body: paymentMethodCreateBody,
+    });
+  typia.assert(paymentMethod);
+
+  // 7. Seller joins and logs in
   const sellerJoinBody = {
-    email: `${RandomGenerator.alphabets(8)}@seller.test`,
-    password: "SellerPass123!",
-    storeName: `Store ${RandomGenerator.name(1)}`,
-    contactPhone: RandomGenerator.mobile(),
-  } satisfies IShoppingMallSellerJoin.IRequest;
-  const sellerAuth: IShoppingMallSeller.IAuthorized =
+    email: typia.random<string & tags.Format<"email">>(),
+    password: "SellerPassword123!" as string & tags.Format<"password">,
+    ip: null,
+    href: "https://seller.example.com/join" as string & tags.Format<"uri">,
+    referrer: "https://seller.example.com" as string & tags.Format<"uri">,
+  } satisfies IShoppingMallSellerAuthJoin.IRequest;
+  const sellerAuthorized: IShoppingMallSeller.IAuthorized =
     await api.functional.auth.seller.join(connection, {
       body: sellerJoinBody,
     });
-  typia.assert(sellerAuth);
+  typia.assert(sellerAuthorized);
 
-  // 5. Seller creates product
-  const productCode = `prod-${RandomGenerator.alphaNumeric(8)}`;
-  const productBody = {
-    shopping_mall_seller_id: sellerAuth.id,
-    shopping_mall_brand_id: brand.id,
-    code: productCode,
-    name: `Product ${RandomGenerator.name(1)}`,
-    short_description: RandomGenerator.paragraph({ sentences: 2 }),
+  // 8. Seller creates product
+  const productCreateBody = {
+    code: `prd-${RandomGenerator.alphaNumeric(8)}`,
+    title: RandomGenerator.paragraph({ sentences: 3 }),
+    summary: RandomGenerator.paragraph({ sentences: 5 }),
     description: RandomGenerator.content({ paragraphs: 2 }),
+    brand: "TestBrand",
+    model_name: "TB-1000",
     status: "active",
-    is_multi_sku: true,
-    primary_image_uri: "https://cdn.test/product.png",
-    additional_data: null,
+    primary_image_uri: "https://cdn.example.com/product.jpg" as string &
+      tags.Format<"uri">,
+    default_locale: "en-US",
   } satisfies IShoppingMallProduct.ICreate;
   const product: IShoppingMallProduct =
     await api.functional.shoppingMall.seller.products.create(connection, {
-      body: productBody,
+      body: productCreateBody,
     });
   typia.assert(product);
 
-  // 6. Seller creates SKU for the product
-  const skuCode = `sku-${RandomGenerator.alphaNumeric(6)}`;
-  const skuBody = {
-    code: skuCode,
-    name: `SKU ${RandomGenerator.name(1)}`,
-    listPrice: 100,
-    salePrice: 80,
-    currency: "USD",
-    isActive: true,
-    isPurchasable: true,
-  } satisfies IShoppingMallProductSku.ICreate;
-  const sku: IShoppingMallProductSku =
+  // 9. Admin associates product to category
+  const productCategoryCreateBody = {
+    shopping_mall_category_id: category.id,
+    is_primary: true,
+  } satisfies IShoppingMallProductCategory.ICreate;
+  const productCategory: IShoppingMallProductCategory =
+    await api.functional.shoppingMall.admin.products.categories.create(
+      connection,
+      {
+        productId: product.id,
+        body: productCategoryCreateBody,
+      },
+    );
+  typia.assert(productCategory);
+
+  // 10. Seller creates SKU for product
+  const skuCreateBody = {
+    code: `SKU-${RandomGenerator.alphaNumeric(6)}` as string &
+      tags.MinLength<1> &
+      tags.MaxLength<255>,
+    barcode: null,
+    status: "active" as string & tags.MinLength<1> & tags.MaxLength<64>,
+    price: 10000 as number & tags.Minimum<0>,
+    original_price: null,
+    inventory_quantity: 10 as number & tags.Type<"int32"> & tags.Minimum<0>,
+    low_stock_threshold: null,
+    shopping_mall_sku_inventory_state_id: inventoryState.id,
+    attribute_value_ids: [],
+    external_ids: [],
+  } satisfies IShoppingMallSku.ICreate;
+  const sku: IShoppingMallSku =
     await api.functional.shoppingMall.seller.products.skus.create(connection, {
-      productCode: product.code,
-      body: skuBody,
+      productId: product.id as string & tags.Format<"uuid">,
+      body: skuCreateBody,
     });
   typia.assert(sku);
 
-  // 7. Seller seeds inventory for the SKU
-  const inventoryBody = {
-    product_sku_id: sku.id,
-    on_hand_quantity: 50,
-    low_stock_threshold: 5,
-    backorder_enabled: false,
-    preorder_enabled: false,
-  } satisfies IShoppingMallInventoryItem.ICreate;
-  const inventoryItem: IShoppingMallInventoryItem =
-    await api.functional.shoppingMall.seller.inventoryItems.create(connection, {
-      body: inventoryBody,
-    });
-  typia.assert(inventoryItem);
-
-  // 8. Customer A joins (auto-login as Customer A)
-  const customerAEmail =
-    `${RandomGenerator.alphabets(8)}@customer.test` as string;
+  // 11. Customer A joins and logs in
   const customerAJoinBody = {
-    email: customerAEmail as string & tags.Format<"email">,
-    password: "CustomerAPass123!",
-    name: RandomGenerator.name(2),
+    email: typia.random<string & tags.Format<"email">>(),
+    password: "CustomerAPassword123!" as string & tags.Format<"password">,
     ip: null,
-    href: "https://shop.test/join",
-    referrer: "https://shop.test/landing",
-  } satisfies IShoppingMallCustomerAuth.IJoin;
+    href: "https://shop.example.com/join" as string & tags.Format<"uri">,
+    referrer: "https://shop.example.com" as string & tags.Format<"uri">,
+  } satisfies IShoppingMallCustomerJoin.IRequest;
   const customerAAuth: IShoppingMallCustomer.IAuthorized =
     await api.functional.auth.customer.join(connection, {
       body: customerAJoinBody,
     });
   typia.assert(customerAAuth);
 
-  // 9. Customer A creates a customer cart
-  const cartBodyA = {
-    currency_code: "USD",
-    region_code: "US",
-    channel: "web",
-    metadata: { source: "e2e-test" },
-    is_active: true,
-    source_guest_token: undefined,
-  } satisfies IShoppingMallCustomerCart.ICreate;
-  const cartA: IShoppingMallCustomerCart =
-    await api.functional.shoppingMall.customer.customerCarts.create(
+  const customerASummary: IShoppingMallCustomer.ISummary = {
+    id: customerAAuth.id,
+    email: customerAAuth.email,
+    status: customerAAuth.status,
+    email_verified: customerAAuth.email_verified,
+    last_login_at: customerAAuth.last_login_at ?? null,
+    created_at: customerAAuth.created_at,
+    updated_at: customerAAuth.updated_at,
+    deleted_at: customerAAuth.deleted_at ?? null,
+  };
+  typia.assert<IShoppingMallCustomer.ISummary>(customerASummary);
+
+  // 12. Customer A creates address
+  const addressCreateBody = {
+    shopping_mall_country_id: country.id,
+    shopping_mall_region_id: region.id,
+    recipient_name: "Customer A",
+    line1: "123 Test Street",
+    line2: "Suite 100",
+    city: "Seoul",
+    postal_code: "06000",
+    phone_number: RandomGenerator.mobile(),
+    is_default: true,
+  } satisfies IShoppingMallCustomerAddress.ICreate;
+  const customerAAddress: IShoppingMallCustomerAddress =
+    await api.functional.shoppingMall.customer.customers.addresses.create(
       connection,
       {
-        body: cartBodyA,
+        customerId: customerASummary.id,
+        body: addressCreateBody,
       },
     );
-  typia.assert(cartA);
+  typia.assert(customerAAddress);
 
-  // 10. Customer A adds a cart item referencing the SKU
-  const cartItemBodyA = {
-    skuId: sku.id,
-    quantity: 2,
-    note: "Test item for Customer A",
-  } satisfies IShoppingMallCustomerCartItem.ICreate;
-  const cartItemA: IShoppingMallCustomerCartItem =
-    await api.functional.shoppingMall.customer.customerCarts.items.create(
-      connection,
-      {
-        customerCartId: cartA.id,
-        body: cartItemBodyA,
-      },
-    );
-  typia.assert(cartItemA);
+  // 13. Customer A creates cart
+  const cartCreateBody = {
+    actor_type: "customer",
+    status: "active",
+    currency_code: "KRW",
+  } satisfies IShoppingMallCart.ICreate;
+  const cart: IShoppingMallCart =
+    await api.functional.shoppingMall.customer.carts.create(connection, {
+      body: cartCreateBody,
+    });
+  typia.assert(cart);
 
-  // 11. Customer A creates an order from the cart
-  const itemsSubtotal = sku.salePrice * cartItemA.quantity;
-  const discountTotal = 0;
-  const shippingTotal = 10;
-  const taxTotal = 0;
-  const grandTotal = itemsSubtotal - discountTotal + shippingTotal + taxTotal;
+  // 14. Customer A adds SKU to cart
+  const cartItemCreateBody = {
+    shopping_mall_sku_id: sku.id,
+    quantity: 1 as number & tags.Type<"int32"> & tags.Minimum<1>,
+  } satisfies IShoppingMallCartItem.ICreate;
+  const cartItem: IShoppingMallCartItem =
+    await api.functional.shoppingMall.customer.carts.items.create(connection, {
+      cartId: cart.id as string & tags.Format<"uuid">,
+      body: cartItemCreateBody,
+    });
+  typia.assert(cartItem);
 
-  const orderCreateBodyA = {
-    customer_cart_id: cartA.id,
-    currency_code: cartA.currency_code,
-    items_subtotal_amount: itemsSubtotal,
-    discount_total_amount: discountTotal,
-    shipping_total_amount: shippingTotal,
-    tax_total_amount: taxTotal,
-    grand_total_amount: grandTotal,
-    shipping_address_id: typia.random<string & tags.Format<"uuid">>(),
-    billing_address_id: typia.random<string & tags.Format<"uuid">>(),
-    customer_note: "Customer A initial note",
+  // 15. Customer A creates order from cart
+  const shippingAddressSnapshotCreate: IShoppingMallShippingAddressSnapshot.ICreate =
+    {
+      recipient_name: customerAAddress.recipient_name,
+      phone_number: customerAAddress.phone_number ?? RandomGenerator.mobile(),
+      country_code: country.country_code,
+      postal_code: customerAAddress.postal_code,
+      state_or_region: region.name_en,
+      city: customerAAddress.city,
+      address_line1: customerAAddress.line1,
+      address_line2: customerAAddress.line2 ?? null,
+    };
+
+  const orderItemsCreate: IShoppingMallOrderItem.ICreate[] = [
+    {
+      shopping_mall_sku_id: sku.id,
+      quantity: 1 as number & tags.Type<"int32">,
+    },
+  ];
+
+  const orderCreateBody = {
+    cart_id: cart.id,
+    currency_code: "KRW",
+    items: orderItemsCreate,
+    shipping_address_id: customerAAddress.id,
+    shipping_address_snapshot: shippingAddressSnapshotCreate,
+    shipping_method_id: shippingMethod.id,
+    payment_method_id: paymentMethod.id,
+    buyer_memo: null,
+    platform_note: null,
   } satisfies IShoppingMallOrder.ICreate;
   const orderA: IShoppingMallOrder =
     await api.functional.shoppingMall.customer.orders.create(connection, {
-      body: orderCreateBodyA,
+      body: orderCreateBody,
     });
   typia.assert(orderA);
 
-  // 12. Capture baseline identifiers
-  const targetOrderId: string & tags.Format<"uuid"> = orderA.id;
+  const originalOrderCode = orderA.order_code;
+  const originalStatus = orderA.current_status;
+  const originalGrandTotal = orderA.grand_total_amount;
+  const originalItemCount = orderA.item_count;
 
-  // 13. Register Customer B via join
-  const customerBEmail =
-    `${RandomGenerator.alphabets(8)}@customer.test` as string;
+  // 16. Customer B joins and logs in
   const customerBJoinBody = {
-    email: customerBEmail as string & tags.Format<"email">,
-    password: "CustomerBPass123!",
-    name: RandomGenerator.name(2),
+    email: typia.random<string & tags.Format<"email">>(),
+    password: "CustomerBPassword123!" as string & tags.Format<"password">,
     ip: null,
-    href: "https://shop.test/join",
-    referrer: "https://shop.test/landing",
-  } satisfies IShoppingMallCustomerAuth.IJoin;
+    href: "https://shop.example.com/join" as string & tags.Format<"uri">,
+    referrer: "https://shop.example.com" as string & tags.Format<"uri">,
+  } satisfies IShoppingMallCustomerJoin.IRequest;
   const customerBAuth: IShoppingMallCustomer.IAuthorized =
     await api.functional.auth.customer.join(connection, {
       body: customerBJoinBody,
     });
   typia.assert(customerBAuth);
 
-  // 14. Explicitly login as Customer B to ensure token swap (even though join already logged in)
-  const customerBLoginBody = {
-    email: customerBEmail as string & tags.Format<"email">,
-    password: "CustomerBPass123!",
+  // 17. Customer B attempts to update Customer A's order
+  const nonOwnerUpdateBody = {} satisfies IShoppingMallOrder.IUpdate;
+
+  await TestValidator.error(
+    "non-owner customer update must be rejected",
+    async () => {
+      await api.functional.shoppingMall.customer.orders.update(connection, {
+        orderCode: originalOrderCode,
+        body: nonOwnerUpdateBody,
+      });
+    },
+  );
+
+  // 18. Customer A logs back in (ensure token context is set correctly)
+  const customerALoginBody = {
+    email: customerAJoinBody.email,
+    password: customerAJoinBody.password,
     ip: null,
-    href: "https://shop.test/login",
-    referrer: "https://shop.test/landing",
-    userAgent: "e2e-test-agent",
-  } satisfies IShoppingMallCustomerAuth.ILogin;
-  const customerBLoginAuth: IShoppingMallCustomer.IAuthorized =
+    href: "https://shop.example.com/login" as string & tags.Format<"uri">,
+    referrer: "https://shop.example.com" as string & tags.Format<"uri">,
+  } satisfies IShoppingMallCustomerLogin.IRequest;
+  const customerALogin: IShoppingMallCustomer.IAuthorized =
     await api.functional.auth.customer.login(connection, {
-      body: customerBLoginBody,
+      body: customerALoginBody,
     });
-  typia.assert(customerBLoginAuth);
+  typia.assert(customerALogin);
 
-  // 15. As Customer B, attempt to update Customer A's order
-  const updateBodyByB = {
-    customer_memo: "Attempted memo update by non-owner B",
-  } satisfies IShoppingMallOrder.IUpdate;
-  const updatedOrderFromB: IShoppingMallOrder =
+  // 19. Customer A calls update with empty body as idempotent no-op to re-fetch order
+  const ownerUpdateBody = {} satisfies IShoppingMallOrder.IUpdate;
+  const orderAfter: IShoppingMallOrder =
     await api.functional.shoppingMall.customer.orders.update(connection, {
-      orderId: targetOrderId,
-      body: updateBodyByB,
+      orderCode: originalOrderCode,
+      body: ownerUpdateBody,
     });
-  typia.assert(updatedOrderFromB);
+  typia.assert(orderAfter);
 
-  // 16. Validate that the returned order still refers to the same id
+  // 20. Assert order invariants unchanged
   TestValidator.equals(
-    "updated order id should match targeted order id when called as non-owner",
-    updatedOrderFromB.id,
-    targetOrderId,
+    "order_code must remain unchanged after non-owner update attempt",
+    orderAfter.order_code,
+    originalOrderCode,
+  );
+
+  TestValidator.equals(
+    "current_status must remain unchanged after non-owner update attempt",
+    orderAfter.current_status,
+    originalStatus,
+  );
+
+  TestValidator.equals(
+    "grand_total_amount must remain unchanged after non-owner update attempt",
+    orderAfter.grand_total_amount,
+    originalGrandTotal,
+  );
+
+  TestValidator.equals(
+    "item_count must remain unchanged after non-owner update attempt",
+    orderAfter.item_count,
+    originalItemCount,
   );
 }

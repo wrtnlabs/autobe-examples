@@ -8,76 +8,87 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppMemberUserRefresh } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUserRefresh";
-import { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
+import { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { MemberuserPayload } from "../decorators/payload/MemberuserPayload";
 
 export async function postAuthMemberUserRefresh(props: {
-  memberUser: MemberuserPayload;
-  body: ITodoAppMemberUserRefresh.IRequest;
-}): Promise<ITodoAppMemberuser.IAuthorized> {
-  // 1. Verify and decode the refresh token
+  body: ITodoAppMemberUserRefresh.ICreate;
+}): Promise<ITodoAppMemberUser.IAuthorized> {
+  // Step 1: verify and decode refresh token
   let decoded: any;
 
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    });
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        issuer: "autobe",
+      },
+    );
   } catch (_error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (!decoded || typeof decoded !== "object") {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  // Ensure token has expected shape and actor type
+  const decodedId = decoded && decoded.id;
+  const decodedSessionId = decoded && decoded.session_id;
+  const decodedType = decoded && decoded.type;
+
+  if (typeof decodedId !== "string" || typeof decodedSessionId !== "string") {
+    throw new HttpException("Malformed refresh token payload", 401);
   }
 
-  if (decoded.type !== "memberuser") {
+  if (decodedType !== "memberuser") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  if (decoded.tokenType !== "refresh") {
-    // Enforce that only refresh tokens can be used here
-    throw new HttpException("Invalid token kind for refresh operation", 403);
-  }
-
-  // 2. Validate that the session exists and is active
-  const session = await MyGlobal.prisma.todo_app_memberuser_sessions.findFirst({
-    where: {
-      id: decoded.session_id,
-      todo_app_memberuser_id: decoded.id,
-    },
-  });
-
-  if (session === null) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
-
-  if (session.expired_at !== null) {
-    // Session already marked as expired, do not allow refresh
-    throw new HttpException("Session expired or revoked", 401);
-  }
-
-  // 3. Load the corresponding member user account
+  // Step 2: load member user from DB
   const member = await MyGlobal.prisma.todo_app_memberusers.findUnique({
     where: {
-      id: decoded.id,
+      id: decodedId,
     },
   });
 
-  if (member === null) {
-    // Avoid leaking account existence vs token validity differences
+  if (!member) {
+    throw new HttpException("Member not found for refresh token", 401);
+  }
+
+  // Enforce acceptable status (only "active" is allowed)
+  if (member.status !== "active") {
+    throw new HttpException("Account status does not allow refresh", 403);
+  }
+
+  // Step 3: determine and validate session id
+  const effectiveSessionId =
+    props.body.session_id !== undefined
+      ? props.body.session_id
+      : decodedSessionId;
+
+  if (effectiveSessionId !== decodedSessionId) {
+    throw new HttpException("Session mismatch for refresh token", 401);
+  }
+
+  // Step 4: load session and validate it is active
+  const session = await MyGlobal.prisma.todo_app_memberuser_sessions.findFirst({
+    where: {
+      id: effectiveSessionId,
+      todo_app_memberuser_id: decodedId,
+    },
+  });
+
+  if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Business rule: disabled or logically deleted accounts cannot refresh tokens
-  if (member.deleted_at !== null || member.status !== "active") {
-    throw new HttpException("Account has been disabled or deleted", 403);
+  const nowMs = Date.now();
+  if (session.expired_at !== null) {
+    const expiredAtMs = session.expired_at.getTime();
+    if (expiredAtMs <= nowMs) {
+      throw new HttpException("Session has been expired", 401);
+    }
   }
 
-  // 4. Generate new tokens (reuse same session_id)
-  const nowMs = Date.now();
-  const nowIso = toISOStringSafe(new Date(nowMs));
-
+  // Step 5: generate new access and refresh tokens using same session
   const accessExpiresMs = nowMs + 60 * 60 * 1000; // 1 hour
   const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -86,10 +97,10 @@ export async function postAuthMemberUserRefresh(props: {
 
   const accessToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: nowIso,
+      type: decodedType,
+      id: decodedId,
+      session_id: decodedSessionId,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -100,11 +111,11 @@ export async function postAuthMemberUserRefresh(props: {
 
   const refreshToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
+      type: decodedType,
+      id: decodedId,
+      session_id: decodedSessionId,
       tokenType: "refresh",
-      created_at: nowIso,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -113,60 +124,38 @@ export async function postAuthMemberUserRefresh(props: {
     },
   );
 
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
-  };
-
-  // 5. Update session expiration to align with new refresh token
+  // Step 6: update session expiration and metadata
   await MyGlobal.prisma.todo_app_memberuser_sessions.update({
     where: {
-      id: decoded.session_id,
+      id: decodedSessionId,
     },
     data: {
       expired_at: new Date(refreshExpiresMs),
+      ...(props.body.ip !== undefined && {
+        ip: props.body.ip,
+      }),
+      ...(props.body.href !== undefined && {
+        href: props.body.href,
+      }),
+      ...(props.body.referrer !== undefined && {
+        referrer: props.body.referrer,
+      }),
     },
   });
 
-  // Optionally, track last authenticated activity by updating member user timestamps
-  const updatedMember = await MyGlobal.prisma.todo_app_memberusers.update({
-    where: {
-      id: member.id,
+  // Step 7: build response DTO
+  return {
+    id: member.id,
+    email: member.email,
+    display_name: member.display_name === null ? null : member.display_name,
+    status: member.status,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
-    data: {
-      last_login_at: new Date(nowMs),
-      updated_at: new Date(nowMs),
-    },
-  });
-
-  // 6. Map DB record to ITodoAppMemberuser.IAuthorized
-  const displayName =
-    updatedMember.display_name === null ? null : updatedMember.display_name;
-  const lastLoginAtIso =
-    updatedMember.last_login_at === null
-      ? null
-      : toISOStringSafe(updatedMember.last_login_at);
-  const createdAtIso = toISOStringSafe(updatedMember.created_at);
-  const updatedAtIso = toISOStringSafe(updatedMember.updated_at);
-  const deletedAtIso =
-    updatedMember.deleted_at === null
-      ? null
-      : toISOStringSafe(updatedMember.deleted_at);
-
-  const result: ITodoAppMemberuser.IAuthorized = {
-    id: updatedMember.id,
-    email: updatedMember.email,
-    display_name: displayName,
-    status: updatedMember.status,
-    failed_login_count: updatedMember.failed_login_count,
-    last_login_at: lastLoginAtIso,
-    created_at: createdAtIso,
-    updated_at: updatedAtIso,
-    deleted_at: deletedAtIso,
-    token,
   };
-
-  return result;
 }

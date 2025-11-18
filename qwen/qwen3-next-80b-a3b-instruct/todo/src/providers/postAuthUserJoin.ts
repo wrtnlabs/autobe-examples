@@ -9,84 +9,85 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserJoin(props: {
-  user: UserPayload;
   body: ITodoListUser.ICreate;
+  ip: string;
+  href: string;
+  referrer: string;
 }): Promise<ITodoListUser.IAuthorized> {
-  // Validate email doesn't already exist
-  const existingUser = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: { email: props.body.email, deleted_at: null },
+  // Check for duplicate email
+  const existing = await MyGlobal.prisma.todo_list_user.findFirst({
+    where: { email: props.body.email },
   });
-
-  if (existingUser) {
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash password (MANDATORY)
+  // Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Create user account - password field not in schema, must be removed
-  const now = new Date();
-  const user = await MyGlobal.prisma.todo_list_users.create({
+  // Create user record
+  const user = await MyGlobal.prisma.todo_list_user.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
-      // password_hash: hashedPassword, // Removed - doesn't exist in schema
-      created_at: toISOStringSafe(now),
-      updated_at: toISOStringSafe(now),
-      deleted_at: null,
+      password_hash: hashedPassword,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
   });
 
-  // Create session using proper model based on the registration context
-  // But based on the provided schemas, we don't have a session model
-  // So we'll create a token without session_id, using the user id as session_id
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Create session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: user.id,
+      ip: props.ip,
+      href: props.href,
+      referrer: props.referrer,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
+    },
+  });
 
-  const accessToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: user.id, // Use user.id as session_id since no session model exists
-      created_at: toISOStringSafe(now),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
+  // Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
-  const refreshToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: user.id, // Use user.id as session_id
-      tokenType: "refresh",
-      created_at: toISOStringSafe(now),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Return authorized response
   return {
     id: user.id,
-    email: user.email,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: user.updated_at ? toISOStringSafe(user.updated_at) : undefined,
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+    token,
   } satisfies ITodoListUser.IAuthorized;
 }

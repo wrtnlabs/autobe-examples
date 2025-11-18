@@ -8,83 +8,113 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { ITodoListTokenBlacklist } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTokenBlacklist";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoListUser.IJoin;
+  body: ITodoListUser.ICreate;
 }): Promise<ITodoListUser.IAuthorized> {
   // Check for duplicate email
-  const existing = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: { email: props.body.email },
+  const existingUser = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: {
+      email: props.body.email.toLowerCase(),
+    },
   });
-  if (existing) {
+
+  if (existingUser) {
     throw new HttpException("Email already registered", 409);
   }
+
   // Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
-  const now = toISOStringSafe(new Date());
-  const userId = v4();
-  // Create user
+
+  // Create timestamps
+  const now = new Date();
+  const nowISOString = toISOStringSafe(now);
+  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const absoluteTimeoutDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+  // Create user actor
+  const userId = v4() as string & tags.Format<"uuid">;
   const user = await MyGlobal.prisma.todo_list_users.create({
     data: {
       id: userId,
-      email: props.body.email,
+      email: props.body.email.toLowerCase(),
       password_hash: hashedPassword,
       created_at: now,
+      updated_at: now,
+      deleted_at: null,
+      last_login_at: null,
     },
   });
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+
+  // Create session record
+  const sessionId = v4() as string & tags.Format<"uuid">;
+  const session = await MyGlobal.prisma.todo_list_sessions.create({
     data: {
       id: sessionId,
-      todo_list_user_id: userId,
-      ip:
-        props.body.ip !== null && props.body.ip !== undefined
-          ? (props.body.ip satisfies string as string)
-          : "",
-      href: props.body.href,
-      referrer: props.body.referrer,
+      todo_list_user_id: user.id,
+      ip_address: props.body.ip ?? "127.0.0.1",
+      user_agent: props.body.user_agent ?? "Unknown",
       created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
+      last_activity_at: now,
+      expired_at: null,
+      absolute_timeout_at: absoluteTimeoutDate,
     },
   });
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+
+  // Generate JWT tokens
+  const tokenPayload = {
+    type: "user",
+    id: user.id,
+    session_id: session.id,
+    created_at: nowISOString,
   };
+
+  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
+  });
+
+  const refreshToken = jwt.sign(
+    {
+      ...tokenPayload,
+      tokenType: "refresh",
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // Map response
+  const userResponse: ITodoListUser = {
+    id: user.id,
+    email: user.email,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
+    last_login_at: user.last_login_at
+      ? toISOStringSafe(user.last_login_at)
+      : null,
+  };
+
   return {
     id: user.id,
     email: user.email,
     created_at: toISOStringSafe(user.created_at),
-    token,
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
+    last_login_at: user.last_login_at
+      ? toISOStringSafe(user.last_login_at)
+      : null,
+    user: userResponse,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpiresDate),
+      refreshable_until: toISOStringSafe(refreshExpiresDate),
+    },
   };
 }

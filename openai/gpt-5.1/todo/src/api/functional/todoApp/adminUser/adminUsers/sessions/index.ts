@@ -3,52 +3,61 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoAppAdminuserSession } from "../../../../../structures/ITodoAppAdminuserSession";
+import { ITodoAppAdminUserSession } from "../../../../../structures/ITodoAppAdminUserSession";
 import { IPageITodoAppAdminuserSession } from "../../../../../structures/IPageITodoAppAdminuserSession";
 
 /**
- * Search and list sessions for a specific admin user from the
- * todo_app_adminuser_sessions table with filtering and pagination.
+ * Search and paginate todo_app_adminuser_sessions for a specific admin user.
  *
- * Retrieve a filtered, paginated list of authentication sessions for a specific
- * administrative user from the todo_app_adminuser_sessions table.
+ * Retrieve a paginated and filtered list of authentication sessions for a
+ * specific administrative user of the todoApp backend.
  *
- * This operation focuses on the todo_app_adminuser_sessions model, which stores
- * individual authentication session records for administrative users. Each
- * session row includes a primary key id, a foreign key todo_app_adminuser_id
- * linking it to the owning admin in the todo_app_adminusers table, the ip
- * address used when establishing the session, the href representing the full
- * URL entry point, the referrer URL, created_at indicating when the session was
- * initiated, and expired_at, which is null while a session is active and set
- * once the session terminates. By providing an adminUserId path parameter, the
- * caller scopes the retrieval strictly to sessions belonging to a single admin
- * account.
+ * This operation targets the `todo_app_adminuser_sessions` Prisma model, which
+ * represents individual authentication session records for admin users. Each
+ * record typically contains fields such as the associated admin user
+ * identifier, token or session key data, creation and expiration timestamps,
+ * last activity time, IP address, user agent, and any status or revocation
+ * indicators. The path parameter `adminUserId` is used to restrict the query to
+ * sessions that belong to the specified admin user, ensuring that the listing
+ * is always scoped to a single administrative account rather than the entire
+ * system.
  *
- * The request body follows the ITodoAppAdminuserSession.IRequest DTO contract
- * and can contain filters such as time windows for created_at, flags indicating
- * whether to include only active sessions (where expired_at is null) or only
- * historical sessions, as well as pagination and sorting options. The response
- * uses a paginated container type IPageITodoAppAdminuserSession.ISummary, which
- * exposes a list of summary records for each session together with pagination
- * metadata. Summary items are expected to include the most relevant fields for
- * auditing, like id, ip, created_at, expired_at, href, and referrer, without
- * necessarily exposing every low-level column.
+ * Security-wise, this endpoint is exposed only to administrative actors and is
+ * intended for internal monitoring, incident response, and security auditing.
+ * It must be protected by strict authorization so that only properly
+ * authenticated and authorized administrative callers can inspect admin
+ * sessions. The endpoint does not modify session state in any way; it merely
+ * reads from the `todo_app_adminuser_sessions` table and returns aggregated
+ * results. Any actions such as revoking sessions or forcing logout are handled
+ * by specialized authentication services via separate mechanisms and are not
+ * part of this API.
  *
- * From a security standpoint, this endpoint is restricted to administrative
- * actors, since session data for admins is sensitive and used primarily for
- * security audits, anomaly detection, and troubleshooting. The implementation
- * must check that the authenticated caller has permission to view session
- * activity, and it might further restrict which admins they can inspect,
- * depending on organizational policies. If the referenced adminUserId does not
- * exist in todo_app_adminusers, the service should return a not-found error.
- * This operation complements other admin management APIs, such as viewing admin
- * profiles or reviewing audit logs of actions taken by admins.
+ * The request body DTO `ITodoAppAdminuserSession.IRequest` defines the allowed
+ * filters and pagination controls. Typical filters might include date ranges
+ * for creation or last activity, the current active or revoked status, source
+ * IP ranges, or user agent fingerprints, along with page size, page index, and
+ * sort order. The response DTO `IPageITodoAppAdminuserSession.ISummary` returns
+ * a page of summary objects that expose only the key fields needed for
+ * monitoring views, such as session identifier, creation time, last activity,
+ * origin IP, and status flags, and is sized according to the pagination
+ * parameters. If no sessions match the criteria, the operation returns an empty
+ * page with metadata describing the requested page and total count.
+ *
+ * Related operations include `GET
+ * /adminUsers/{adminUserId}/sessions/{sessionId}`, which retrieves detailed
+ * information about a single session, while this `PATCH
+ * /adminUsers/{adminUserId}/sessions` endpoint provides a high-level overview
+ * across multiple sessions. The two endpoints are typically used together in
+ * admin consoles: first listing sessions via this search endpoint, then
+ * drilling into individual sessions with the detail endpoint when needed.
  *
  * @param props.connection
- * @param props.adminUserId Unique UUID identifier of the administrative user
- *   whose sessions are being queried, matching todo_app_adminusers.id.
- * @param props.body Filter, sorting, and pagination criteria for querying admin
- *   user sessions associated with the given adminUserId.
+ * @param props.adminUserId Unique identifier of the target administrative user
+ *   whose sessions are being listed. This value must correspond to the primary
+ *   key of a record in the admin user table referenced by the
+ *   `todo_app_adminuser_sessions` model.
+ * @param props.body Search filters, sorting options, and pagination parameters
+ *   for listing admin user sessions belonging to the specified admin user.
  * @path /todoApp/adminUser/adminUsers/:adminUserId/sessions
  * @accessor api.functional.todoApp.adminUser.adminUsers.sessions.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -78,18 +87,20 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Unique UUID identifier of the administrative user whose sessions are
-     * being queried, matching todo_app_adminusers.id.
+     * Unique identifier of the target administrative user whose sessions
+     * are being listed. This value must correspond to the primary key of a
+     * record in the admin user table referenced by the
+     * `todo_app_adminuser_sessions` model.
      */
     adminUserId: string & tags.Format<"uuid">;
 
     /**
-     * Filter, sorting, and pagination criteria for querying admin user
-     * sessions associated with the given adminUserId.
+     * Search filters, sorting options, and pagination parameters for
+     * listing admin user sessions belonging to the specified admin user.
      */
-    body: ITodoAppAdminuserSession.IRequest;
+    body: ITodoAppAdminUserSession.IRequest;
   };
-  export type Body = ITodoAppAdminuserSession.IRequest;
+  export type Body = ITodoAppAdminUserSession.IRequest;
   export type Response = IPageITodoAppAdminuserSession.ISummary;
 
   export const METADATA = {
@@ -136,53 +147,46 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific admin session from the todo_app_adminuser_sessions table
- * for a given admin user.
+ * Get detailed information from todo_app_adminuser_sessions for a specific
+ * admin user session.
  *
- * Retrieve detailed information about a specific administrative authentication
- * session from the `todo_app_adminuser_sessions` table, scoped to a given admin
- * user.
+ * Retrieve full details for a specific authentication session belonging to an
+ * administrative user of the todoApp backend.
  *
- * This operation reads a single session record identified by the `sessionId`
- * primary key in `todo_app_adminuser_sessions`, while also enforcing that it
- * belongs to the admin user identified by `adminUserId` from the
- * `todo_app_adminusers` table. The underlying Prisma schema describes
- * `todo_app_adminuser_sessions` with fields such as `ip` (the IP address used
- * at login), `href` (the full URL accessed when the session was created),
- * `referrer` (the referrer URL reported by the client), `created_at` (the
- * timestamp of successful authentication), and `expired_at` (the time when the
- * session was terminated or expired, which can be null while active). The
- * foreign key field `todo_app_adminuser_id` relates each session to an admin
- * user whose core identity and status are stored in `todo_app_adminusers`,
- * including `email`, `password_hash`, `display_name`, `status`,
- * `failed_login_count`, and audit timestamps such as `created_at`,
- * `updated_at`, and `deleted_at`.
+ * This operation focuses on the `todo_app_adminuser_sessions` Prisma model,
+ * which stores authentication sessions for admin users, and allows security
+ * administrators or internal tools to inspect a single session in depth. The
+ * `adminUserId` parameter in the path identifies the admin user account, while
+ * the `sessionId` parameter identifies the particular session record within the
+ * `todo_app_adminuser_sessions` table. Implementations should validate that the
+ * session referenced by `sessionId` actually belongs to the given admin user to
+ * prevent cross-user data leaks.
  *
- * From a security perspective, this endpoint is meant for privileged
- * administrative tooling or monitoring services and therefore requires an
- * administrative actor. The `authorizationActor` is set to `"adminUser"`,
- * indicating that only authenticated administrative contexts should be able to
- * fetch admin session details. This allows operations teams to investigate
- * suspicious access patterns, confirm from where an admin logged in (via `ip`
- * and `referrer`), and check session lifetimes while maintaining clear
- * separation between end-user and admin-facing APIs.
+ * From a security perspective, access to this endpoint must be strictly limited
+ * to administrative actors and automated security tooling that operates with
+ * elevated privileges. The endpoint is read-only and does not perform any
+ * mutation; revoking or terminating sessions should be delegated to dedicated
+ * authentication or session management mechanisms. Nonetheless, the detailed
+ * data returned here, such as timestamps, origin IPs, user agents, and status
+ * indicators, is crucial for forensic analysis, abnormal behavior detection,
+ * and audit trail review.
  *
- * In terms of behavior, the operation returns a 200 response with the
- * `ITodoAppAdminuserSession` representation when a matching session exists for
- * the given admin user. If either the admin user does not exist, the session
- * does not exist, or the session does not belong to the specified admin user,
- * the implementation should respond with an appropriate error such as 404 Not
- * Found. No request body is accepted because all necessary identifiers are
- * supplied via the path parameters. This operation can be used in conjunction
- * with higher-level admin session listing endpoints (for example, a PATCH on an
- * admin’s sessions collection) to drill down from a list of sessions into a
- * single detailed record for deeper inspection.
+ * The response DTO `ITodoAppAdminuserSession` is expected to mirror the shape
+ * of the `todo_app_adminuser_sessions` model, including all relevant fields
+ * required for a complete view of the session. If the specified session does
+ * not exist, or does not belong to the given admin user, the implementation
+ * should return an appropriate not-found or authorization error according to
+ * the todoApp service's standardized error-handling guidelines. This endpoint
+ * complements `PATCH /adminUsers/{adminUserId}/sessions`, which lists sessions;
+ * administrators typically locate a suspicious session in the list and then
+ * call this detail endpoint for deeper inspection.
  *
  * @param props.connection
- * @param props.adminUserId Unique identifier (UUID) of the admin user in
- *   `todo_app_adminusers` who owns the target session.
- * @param props.sessionId Unique identifier (UUID) of the target admin session
- *   in `todo_app_adminuser_sessions`. Must belong to the indicated admin user.
+ * @param props.adminUserId Unique identifier of the administrative user who
+ *   owns the session being retrieved. This must reference a valid admin user
+ *   associated with the session record.
+ * @param props.sessionId Unique identifier of the admin user session record to
+ *   retrieve from the `todo_app_adminuser_sessions` table.
  * @path /todoApp/adminUser/adminUsers/:adminUserId/sessions/:sessionId
  * @accessor api.functional.todoApp.adminUser.adminUsers.sessions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -211,19 +215,19 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier (UUID) of the admin user in `todo_app_adminusers`
-     * who owns the target session.
+     * Unique identifier of the administrative user who owns the session
+     * being retrieved. This must reference a valid admin user associated
+     * with the session record.
      */
     adminUserId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier (UUID) of the target admin session in
-     * `todo_app_adminuser_sessions`. Must belong to the indicated admin
-     * user.
+     * Unique identifier of the admin user session record to retrieve from
+     * the `todo_app_adminuser_sessions` table.
      */
     sessionId: string & tags.Format<"uuid">;
   };
-  export type Response = ITodoAppAdminuserSession;
+  export type Response = ITodoAppAdminUserSession;
 
   export const METADATA = {
     method: "GET",
@@ -237,8 +241,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/todoApp/adminUser/adminUsers/${encodeURIComponent(props.adminUserId ?? "null")}/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
-  export const random = (): ITodoAppAdminuserSession =>
-    typia.random<ITodoAppAdminuserSession>();
+  export const random = (): ITodoAppAdminUserSession =>
+    typia.random<ITodoAppAdminUserSession>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -266,51 +270,63 @@ export namespace at {
 }
 
 /**
- * Delete a specific admin session row from the todo_app_adminuser_sessions
- * table for a given admin user.
+ * Delete a specific admin session row from todo_app_adminuser_sessions for a
+ * given admin user.
  *
- * Delete a specific administrative authentication session record from the
- * `todo_app_adminuser_sessions` table for a given admin user.
+ * Erase a specific administrative session record for a given admin user, using
+ * the underlying todo_app_adminuser_sessions and todo_app_adminusers tables as
+ * the source of truth.
  *
- * This operation locates a session row in `todo_app_adminuser_sessions` using
- * the `sessionId` primary key and the `todo_app_adminuser_id` foreign key,
- * ensuring that the session belongs to the admin identified by `adminUserId` in
- * `todo_app_adminusers`. The sessions table includes fields described in the
- * Prisma schema such as `ip`, `href`, `referrer`, `created_at`, and
- * `expired_at`, but this deletion operation focuses solely on removing the row
- * rather than returning its contents. The associated admin user table,
- * `todo_app_adminusers`, holds fields like `email`, `password_hash`,
- * `display_name`, `status`, `failed_login_count`, `last_login_at`,
- * `created_at`, `updated_at`, and `deleted_at`, which help distinguish active,
- * disabled, or logically deleted admin accounts when implementing authorization
- * checks.
+ * The todo_app_adminuser_sessions table stores authentication sessions for
+ * administrative users of the todoApp service. Key fields include the primary
+ * key id (unique identifier for each session), the foreign key
+ * todo_app_adminuser_id pointing to the owning admin in todo_app_adminusers,
+ * and contextual information such as ip, href, referrer, created_at, and
+ * expired_at. These columns collectively provide the audit trail and connection
+ * context for each authenticated session as described in the schema comments.
  *
- * From a security and governance standpoint, this endpoint must only be
- * accessible to administrative actors, as reflected by `authorizationActors:
- * ["adminUser"]`. It is typically used by security tooling or operations
- * dashboards to forcefully end specific sessions, for example when suspicious
- * activity is detected from a certain IP address or when an admin account’s
- * credentials are suspected to be compromised. The implementation should log
- * all invocations of this operation to an audit facility such as
- * `todo_app_admin_todo_actions` or a similar system-managed log, ensuring
- * traceability of who terminated which sessions and when.
+ * The todo_app_adminusers table represents administrative users who perform
+ * monitoring, exceptional maintenance, or policy enforcement. Its primary key
+ * id is used to associate sessions, while fields such as email, password_hash,
+ * display_name, status, created_at, and updated_at describe the admin account’s
+ * identity and lifecycle state. The status column explicitly controls whether
+ * an admin account is operational (for example, active or suspended) and may be
+ * used in business logic to determine whether session management operations are
+ * permissible.
  *
- * When the specified session exists and belongs to the given admin user, the
- * backend should delete the record and respond with a success status (for
- * example, HTTP 204 No Content) while returning no response body (represented
- * here by a null response body in the operation description). If the session
- * does not exist, or it belongs to a different admin user than indicated by
- * `adminUserId`, the implementation should return an appropriate error such as
- * 404 Not Found or 403 Forbidden depending on the authorization and visibility
- * model. No request body is accepted because all necessary targeting
- * information is conveyed via the path parameters.
+ * This DELETE operation is designed as an administrative capability that allows
+ * authorized admins to forcibly revoke an existing session. The controller must
+ * first resolve the adminUserId path parameter to a todo_app_adminusers record
+ * and the sessionId to a todo_app_adminuser_sessions record. It must then
+ * verify that the session’s todo_app_adminuser_id matches the adminUserId to
+ * prevent cross-account manipulation. If either record is missing, or if the
+ * linkage check fails, the system should return a not-found or access-denied
+ * error consistent with the service’s error-handling guidelines.
+ *
+ * Security considerations are critical for this endpoint. Only actors
+ * classified as admin in the authorization model may access it. The
+ * implementation should also consider policies such as whether an admin can
+ * terminate only their own sessions or those of other admins, and whether
+ * additional checks against the admin’s status (for example, preventing actions
+ * from suspended accounts) are required. Audit logging at a separate system
+ * level (not via CRUD APIs) should track who revoked which session for
+ * traceability, but no extra audit tables should be exposed via write APIs.
+ *
+ * There is no requestBody because all necessary identification data is
+ * contained in the URL path. There is also no responseBody; clients are
+ * expected to rely on HTTP status codes and possibly standardized error
+ * responses defined elsewhere. Related operations would typically include
+ * read-only session inspection endpoints (for example, PATCH
+ * /adminUsers/{adminUserId}/sessions) that list sessions based on
+ * todo_app_adminuser_sessions, but those are outside the scope of the current
+ * specification. This operation strictly concerns the removal of a single
+ * session record.
  *
  * @param props.connection
- * @param props.adminUserId Unique identifier (UUID) of the admin user in
- *   `todo_app_adminusers` who owns the session to be deleted.
- * @param props.sessionId Unique identifier (UUID) of the target admin session
- *   in `todo_app_adminuser_sessions` to be deleted. Must belong to the
- *   indicated admin user.
+ * @param props.adminUserId Unique identifier of the admin user in
+ *   todo_app_adminusers who owns the target session record.
+ * @param props.sessionId Unique identifier of the admin session in
+ *   todo_app_adminuser_sessions that should be revoked.
  * @path /todoApp/adminUser/adminUsers/:adminUserId/sessions/:sessionId
  * @accessor api.functional.todoApp.adminUser.adminUsers.sessions.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -339,15 +355,14 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier (UUID) of the admin user in `todo_app_adminusers`
-     * who owns the session to be deleted.
+     * Unique identifier of the admin user in todo_app_adminusers who owns
+     * the target session record.
      */
     adminUserId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier (UUID) of the target admin session in
-     * `todo_app_adminuser_sessions` to be deleted. Must belong to the
-     * indicated admin user.
+     * Unique identifier of the admin session in todo_app_adminuser_sessions
+     * that should be revoked.
      */
     sessionId: string & tags.Format<"uuid">;
   };

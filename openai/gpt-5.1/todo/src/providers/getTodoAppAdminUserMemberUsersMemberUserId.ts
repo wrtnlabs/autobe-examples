@@ -7,40 +7,63 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
+import { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import { AdminuserPayload } from "../decorators/payload/AdminuserPayload";
 
 export async function getTodoAppAdminUserMemberUsersMemberUserId(props: {
   adminUser: AdminuserPayload;
-  memberUserId: string & tags.Format<"uuid">;
-}): Promise<ITodoAppMemberuser> {
-  const member = await MyGlobal.prisma.todo_app_memberusers.findUnique({
-    where: {
-      id: props.memberUserId,
-    },
-  });
+  memberUserId: string;
+}): Promise<ITodoAppMemberUser> {
+  // Fetch the member user record from Prisma using the provided identifier.
+  // Authorization for adminUser is handled by surrounding decorators/middleware.
 
-  if (member === null) {
+  let memberUserRecord: {
+    id: string;
+    email: string;
+    password_hash: string;
+    display_name: string | null;
+    status: string;
+    created_at: unknown;
+    updated_at: unknown;
+  } | null = null;
+
+  try {
+    memberUserRecord = await MyGlobal.prisma.todo_app_memberusers.findUnique({
+      where: {
+        id: props.memberUserId,
+      },
+    });
+  } catch (error) {
+    // If Prisma throws due to an invalid identifier format or other query issue,
+    // surface this as a 400 Bad Request consistent with the spec's guidance
+    // about distinguishing malformed identifiers.
+    throw new HttpException("Invalid memberUserId format", 400);
+  }
+
+  if (memberUserRecord === null) {
     throw new HttpException("Member user not found", 404);
   }
 
-  const lastLoginAt =
-    member.last_login_at === null
+  const displayNameValue: string | null | undefined =
+    memberUserRecord.display_name === null
       ? null
-      : toISOStringSafe(member.last_login_at);
+      : memberUserRecord.display_name;
 
-  const deletedAt =
-    member.deleted_at === null ? null : toISOStringSafe(member.deleted_at);
+  const createdAtValue = toISOStringSafe(
+    memberUserRecord.created_at as string & tags.Format<"date-time">,
+  );
+  const updatedAtValue = toISOStringSafe(
+    memberUserRecord.updated_at as string & tags.Format<"date-time">,
+  );
 
-  return {
-    id: member.id,
-    email: member.email,
-    display_name: member.display_name,
-    status: member.status,
-    failed_login_count: member.failed_login_count,
-    last_login_at: lastLoginAt,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at: deletedAt,
+  const result: ITodoAppMemberUser = {
+    id: memberUserRecord.id,
+    email: memberUserRecord.email,
+    display_name: displayNameValue,
+    status: memberUserRecord.status,
+    created_at: createdAtValue,
+    updated_at: updatedAtValue,
   };
+
+  return result;
 }

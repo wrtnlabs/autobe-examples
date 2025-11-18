@@ -7,14 +7,14 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoListUser.ILogin;
-}): Promise<ITodoListUser.IAuthorized> {
+  body: ITodoAppUser.ILogin;
+}): Promise<ITodoAppUser.IAuthorized> {
   // Find user by email
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: { email: props.body.email },
   });
 
@@ -22,52 +22,55 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
+  // Check account status
+  if (user.status !== "active" && user.status !== "verified") {
+    throw new HttpException("Account is not active", 403);
+  }
+
   // Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Check account status
-  if (user.status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-
-  // Update user's last login timestamp
-  const currentTime = new Date().toISOString();
-  await MyGlobal.prisma.todo_list_users.update({
+  // Update last login timestamp
+  const now = new Date();
+  const updatedUser = await MyGlobal.prisma.todo_app_users.update({
     where: { id: user.id },
-    data: { updated_at: currentTime },
+    data: {
+      last_login_at: toISOStringSafe(now),
+      updated_at: toISOStringSafe(now),
+    },
   });
 
-  // Create session
+  // Create session record
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_list_user_id: user.id,
-      ip: props.body.ip ?? "",
+      todo_app_user_id: user.id,
+      ip: props.body.ip !== undefined ? props.body.ip : "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: currentTime,
+      user_agent: "TodoApp", // Default user agent
+      created_at: toISOStringSafe(now),
       expired_at: toISOStringSafe(accessExpires),
+      last_activity_at: toISOStringSafe(now), // Set to current time
     },
   });
 
   // Generate JWT tokens
-  const token: IAuthorizationToken = {
+  const token = {
     access: jwt.sign(
       {
         type: "user",
         id: user.id,
         session_id: session.id,
-        created_at: currentTime,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -81,7 +84,7 @@ export async function postAuthUserLogin(props: {
         id: user.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: currentTime,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -93,14 +96,16 @@ export async function postAuthUserLogin(props: {
     refreshable_until: toISOStringSafe(refreshExpires),
   };
 
-  // Return user information with tokens
   return {
     id: user.id,
     email: user.email,
+    name: user.name,
     status: user.status,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: currentTime,
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
+    last_login_at: updatedUser.last_login_at
+      ? toISOStringSafe(new Date(updatedUser.last_login_at))
+      : undefined,
+    created_at: toISOStringSafe(new Date(user.created_at)),
+    updated_at: toISOStringSafe(new Date(updatedUser.updated_at)),
     token,
   };
 }

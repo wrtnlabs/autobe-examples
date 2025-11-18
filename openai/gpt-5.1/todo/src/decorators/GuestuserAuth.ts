@@ -5,18 +5,7 @@ import { Singleton } from "tstl";
 import { guestuserAuthorize } from "../providers/authorize/guestuserAuthorize";
 
 /**
- * NestJS parameter decorator that injects an authenticated GuestuserPayload
- * into controller handlers.
- *
- * Usage:
- * ```ts
- * @Get("/public")
- * public async getPublic(
- *   @GuestuserAuth() guest: GuestuserPayload,
- * ): Promise<...> {
- *   // guest contains the authenticated guest user payload
- * }
- * ```
+ * Parameter decorator that injects an authenticated GuestuserPayload.
  */
 export const GuestuserAuth =
   (): ParameterDecorator =>
@@ -35,7 +24,7 @@ export const GuestuserAuth =
   };
 
 const singleton = new Singleton(() =>
-  createParamDecorator(async (_data: unknown, ctx: ExecutionContext) => {
+  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     return guestuserAuthorize(request);
   })(),

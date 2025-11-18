@@ -3,66 +3,332 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
+import { ITodoAppMemberUserSession } from "../../../../../structures/ITodoAppMemberUserSession";
+import { IPageITodoAppMemberUserSession } from "../../../../../structures/IPageITodoAppMemberUserSession";
+
 /**
- * Permanently delete a specific member user session from the
- * todo_app_memberuser_sessions table for a given member user.
+ * List and search todo_app_memberuser_sessions for a specific member user for
+ * administrative auditing.
  *
- * Delete a specific member user session record belonging to a given member
- * user.
+ * Retrieve a paginated and filterable list of authentication sessions belonging
+ * to a specific member user, primarily for administrative monitoring and
+ * security analysis.
  *
- * This operation targets the `todo_app_memberuser_sessions` Prisma model, which
- * records authentication sessions initiated by member users of the TodoApp
- * service. The description comments for this table emphasize that it captures
- * session context and lifetime for authenticated member users, including
- * identifiers that allow correlation with the owning member user from
- * `todo_app_memberusers`, timestamps that indicate when the session started and
- * when it is due to expire, and environment metadata such as IP address or user
- * agent. By exposing a delete endpoint for these records, the system provides
- * administrators with a precise tool for terminating and removing a single
- * session instance when required for operational or security reasons.
+ * From a data perspective, this operation queries the
+ * `todo_app_memberuser_sessions` Prisma table, which stores session records
+ * linked to a `todo_app_memberusers` row. Typical fields in this schema include
+ * a unique session identifier, a foreign key to the member user, timestamps
+ * such as when the session was created and when it was last active, and
+ * metadata describing the client (for example, user agent or device type) and
+ * originating IP or network details. The query uses the `memberUserId` path
+ * parameter to constrain the search to sessions for a single member user and
+ * then applies additional filters and pagination from the
+ * `ITodoAppMemberUserSession.IRequest` payload.
  *
- * From a security perspective, this operation must be restricted to privileged
- * administrative actors only. The `authorizationActors` field therefore
- * specifies `adminUser`, reflecting that normal member users do not have direct
- * control over the low-level session storage and must instead use higher-level
- * authentication flows managed by a separate authentication service (for
- * example, logout endpoints or token revocation mechanisms). When this endpoint
- * is invoked, the implementation should ensure that the authenticated admin has
- * been properly authorized and that all access is audited according to business
- * rules defined around administrative operations and security events.
+ * Security and authorization for this operation are critical. End users must
+ * not be able to call this endpoint directly to enumerate their own or other
+ * users' sessions. Instead, the endpoint is restricted to administrative
+ * actors, as indicated by the `authorizationActors: ["adminUser"]`
+ * configuration. The underlying implementation must verify that the caller has
+ * administrative privileges before returning any data. Returned fields must be
+ * carefully chosen to avoid leaking sensitive internal tokens or secrets; the
+ * `IPageITodoAppMemberUserSession.ISummary` response DTO should expose only
+ * safe, high-level information useful for audit and monitoring, such as
+ * timestamps, client fingerprints, and session state flags.
  *
- * In terms of database relationships, the `memberUserId` path parameter refers
- * to the primary key of a record in `todo_app_memberusers`, while `sessionId`
- * refers to the primary key of a row in `todo_app_memberuser_sessions`. The
- * implementation must first verify that the session row exists and that its
- * foreign key to member users matches the provided `memberUserId`. If the
- * member user does not exist, if the session does not exist, or if the
- * association does not match, the operation should respond with clear error
- * semantics, such as 404 Not Found, and must not perform any deletion.
+ * In terms of validation and business rules, the operation should enforce that
+ * the provided `memberUserId` actually corresponds to an existing
+ * `todo_app_memberusers` record. If no such member user exists, the API should
+ * return an appropriate error (for example, a 404 indicating that the target
+ * user could not be found) rather than an empty list. Search parameters like
+ * page size should have sensible upper bounds to protect performance, and any
+ * filter fields in `ITodoAppMemberUserSession.IRequest` must be validated
+ * against the underlying schema types (dates must be valid and within allowable
+ * ranges, boolean flags must be correctly typed, and so on). Error handling
+ * should distinguish clearly between invalid input (returning a 400 with
+ * validation details) and authorization failures (returning a 403 when the
+ * caller lacks admin permissions).
  *
- * Validation rules for this operation include confirming that both identifiers
- * are valid UUID strings according to the schema definitions and that the
- * caller is an authorized admin user. No request body is expected. This
- * endpoint might be used alongside other administrative read operations, such
- * as searching or viewing member users and their sessions, enabling a full
- * workflow where an admin first inspects abnormal activity and then selectively
- * deletes suspicious sessions for containment.
- *
- * The operation performs a permanent removal of the session record from
- * `todo_app_memberuser_sessions`. Once deleted, the session can no longer be
- * used for authentication or tracking, and any further attempts to reference it
- * must fail. Because the schema does not include a dedicated soft-deletion flag
- * or archival mechanism for session records, the implementation should rely on
- * direct deletion while ensuring that any necessary audit logging is written to
- * dedicated audit tables such as `todo_app_login_attempts` or
- * `todo_app_admin_todo_actions` as required by the wider system design.
+ * This endpoint is closely related to the single-session detail retrieval
+ * operation `GET /memberUsers/{memberUserId}/sessions/{sessionId}`, which is
+ * used when an administrator needs full detail for a specific session. A
+ * typical workflow is for an admin to first use this list endpoint to identify
+ * a suspicious session and then call the detail endpoint with the corresponding
+ * `sessionId` to inspect it further. Together, these operations provide
+ * complete read-only visibility into member user session activity while
+ * respecting the architectural constraint that session lifecycle management is
+ * delegated to a specialized authentication system.
  *
  * @param props.connection
- * @param props.memberUserId Unique identifier of the target member user in the
- *   todo_app_memberusers table who owns the session to be deleted.
- * @param props.sessionId Unique identifier of the session record in the
- *   todo_app_memberuser_sessions table that belongs to the specified member
- *   user.
+ * @param props.memberUserId Unique identifier of the target member user whose
+ *   authentication sessions are being listed. This corresponds to the primary
+ *   key of a row in the `todo_app_memberusers` Prisma model and scopes the
+ *   search to sessions belonging to that single user.
+ * @param props.body Search criteria, filters, and pagination options for
+ *   listing member user authentication sessions associated with the specified
+ *   member user.
+ * @path /todoApp/adminUser/memberUsers/:memberUserId/sessions
+ * @accessor api.functional.todoApp.adminUser.memberUsers.sessions.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Unique identifier of the target member user whose authentication
+     * sessions are being listed. This corresponds to the primary key of a
+     * row in the `todo_app_memberusers` Prisma model and scopes the search
+     * to sessions belonging to that single user.
+     */
+    memberUserId: string & tags.Format<"uuid">;
+
+    /**
+     * Search criteria, filters, and pagination options for listing member
+     * user authentication sessions associated with the specified member
+     * user.
+     */
+    body: ITodoAppMemberUserSession.IRequest;
+  };
+  export type Body = ITodoAppMemberUserSession.IRequest;
+  export type Response = IPageITodoAppMemberUserSession.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/todoApp/adminUser/memberUsers/:memberUserId/sessions",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/todoApp/adminUser/memberUsers/${encodeURIComponent(props.memberUserId ?? "null")}/sessions`;
+  export const random = (): IPageITodoAppMemberUserSession.ISummary =>
+    typia.random<IPageITodoAppMemberUserSession.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("memberUserId")(() => typia.assert(props.memberUserId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Get detailed todo_app_memberuser_sessions information for a specific member
+ * user session by IDs.
+ *
+ * Retrieve detailed information about a single authentication session for a
+ * particular member user, intended for administrative review and security
+ * analysis.
+ *
+ * At the data layer, this operation targets a single row in the
+ * `todo_app_memberuser_sessions` Prisma table. The `sessionId` path parameter
+ * identifies the session record, while the `memberUserId` path parameter
+ * constrains the lookup to sessions that belong to a specific member user
+ * represented in the `todo_app_memberusers` table. This dual-parameter approach
+ * ensures that administrators cannot accidentally or maliciously query a
+ * session that does not belong to the specified member user, thereby reducing
+ * the risk of cross-tenant data exposure.
+ *
+ * The response uses the `ITodoAppMemberUserSession` DTO, which should be
+ * designed to expose all relevant, non-sensitive fields necessary for security
+ * investigation and operational monitoring. Typical properties include the
+ * session's lifecycle timestamps, indicators of whether the session is active,
+ * expired, or revoked, and client metadata such as user agent, device type, and
+ * IP address. Any raw authentication tokens or cryptographic secrets stored in
+ * the database must be excluded from the DTO to preserve security.
+ *
+ * Authorization and validation rules are strict for this operation. Only actors
+ * classified as administrative member users may access it, as indicated by
+ * `authorizationActors: ["adminUser"]`. The implementation should validate that
+ * `memberUserId` and `sessionId` are well-formed (for example, UUID strings
+ * where applicable) and must check that a session exists with the given
+ * `sessionId` that is linked to the given `memberUserId`. If the member user
+ * does not exist or if the session does not belong to them, the API should
+ * respond with a 404 status code. If the caller lacks required administrative
+ * privileges, the API must respond with a 403 status code. This endpoint is
+ * complementary to the list endpoint for sessions and is typically called after
+ * an admin has used the list to identify a specific session requiring closer
+ * inspection.
+ *
+ * @param props.connection
+ * @param props.memberUserId Unique identifier of the member user who owns the
+ *   session, corresponding to the primary key of `todo_app_memberusers`. Used
+ *   to ensure the session being queried belongs to this specific user.
+ * @param props.sessionId Unique identifier of the authentication session record
+ *   in `todo_app_memberuser_sessions` to retrieve in detail.
+ * @path /todoApp/adminUser/memberUsers/:memberUserId/sessions/:sessionId
+ * @accessor api.functional.todoApp.adminUser.memberUsers.sessions.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the member user who owns the session,
+     * corresponding to the primary key of `todo_app_memberusers`. Used to
+     * ensure the session being queried belongs to this specific user.
+     */
+    memberUserId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the authentication session record in
+     * `todo_app_memberuser_sessions` to retrieve in detail.
+     */
+    sessionId: string & tags.Format<"uuid">;
+  };
+  export type Response = ITodoAppMemberUserSession;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/todoApp/adminUser/memberUsers/:memberUserId/sessions/:sessionId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/todoApp/adminUser/memberUsers/${encodeURIComponent(props.memberUserId ?? "null")}/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
+  export const random = (): ITodoAppMemberUserSession =>
+    typia.random<ITodoAppMemberUserSession>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("memberUserId")(() => typia.assert(props.memberUserId));
+      assert.param("sessionId")(() => typia.assert(props.sessionId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Erase a specific member user session record in the
+ * `todo_app_memberuser_sessions` table.
+ *
+ * Erase a single member user session for the TodoApp service using both the
+ * member user identifier and the session identifier.
+ *
+ * This operation operates on the `todo_app_memberuser_sessions` Prisma model,
+ * which stores authentication session records for member users of the TodoApp
+ * system. Typical fields in this table include a primary key ID for the
+ * session, a foreign key linking to `todo_app_memberusers`, token- or
+ * device-related metadata, and timestamps describing when the session was
+ * created and when it expires. By carefully identifying the session via
+ * `{sessionId}` while scoping it to a specific member user via
+ * `{memberUserId}`, the endpoint ensures that session management remains
+ * tightly coupled to the owning account.
+ *
+ * Security-wise, only privileged backend actors should be allowed to invoke
+ * this endpoint because it manipulates authentication state for member users.
+ * In most deployments this would be restricted to internal administration
+ * processes or trusted backend services that manage security events such as
+ * suspicious login detection, device management, or account takeover
+ * remediation. The implementation must verify that the calling actor has
+ * sufficient authorization before attempting to delete the record, and must
+ * ensure that the specified session actually belongs to the member user
+ * indicated in the path.
+ *
+ * In terms of behavior, the handler should first confirm that the
+ * `todo_app_memberusers` record referenced by `{memberUserId}` exists, then
+ * verify that a `todo_app_memberuser_sessions` row with `{sessionId}` exists
+ * and is linked to that user. If either is missing, the operation should return
+ * a not-found style error indicating that the targeted resource does not exist
+ * in the given scope. On success, it permanently removes the session record
+ * from the database so that any associated authentication token can no longer
+ * be used. Related operations might include read-only session inspection
+ * endpoints for admins, but this particular operation focuses solely on erasing
+ * one specific session record for a member user.
+ *
+ * @param props.connection
+ * @param props.memberUserId Unique identifier of the member user who owns the
+ *   session being erased. This value corresponds to the primary key of the
+ *   `todo_app_memberusers` table and scopes the session deletion to a specific
+ *   account.
+ * @param props.sessionId Unique identifier of the member user session to erase
+ *   from the `todo_app_memberuser_sessions` table. The implementation must
+ *   verify that this session belongs to the member user specified by
+ *   `memberUserId`.
  * @path /todoApp/adminUser/memberUsers/:memberUserId/sessions/:sessionId
  * @accessor api.functional.todoApp.adminUser.memberUsers.sessions.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,15 +357,18 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the target member user in the
-     * todo_app_memberusers table who owns the session to be deleted.
+     * Unique identifier of the member user who owns the session being
+     * erased. This value corresponds to the primary key of the
+     * `todo_app_memberusers` table and scopes the session deletion to a
+     * specific account.
      */
     memberUserId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the session record in the
-     * todo_app_memberuser_sessions table that belongs to the specified
-     * member user.
+     * Unique identifier of the member user session to erase from the
+     * `todo_app_memberuser_sessions` table. The implementation must verify
+     * that this session belongs to the member user specified by
+     * `memberUserId`.
      */
     sessionId: string & tags.Format<"uuid">;
   };

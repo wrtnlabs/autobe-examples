@@ -8,8 +8,8 @@ import { patchTodoAppMemberUserTodos } from "../../../../providers/patchTodoAppM
 import { getTodoAppMemberUserTodosTodoId } from "../../../../providers/getTodoAppMemberUserTodosTodoId";
 import { putTodoAppMemberUserTodosTodoId } from "../../../../providers/putTodoAppMemberUserTodosTodoId";
 import { deleteTodoAppMemberUserTodosTodoId } from "../../../../providers/deleteTodoAppMemberUserTodosTodoId";
-import { postTodoAppMemberUserTodosTodoIdComplete } from "../../../../providers/postTodoAppMemberUserTodosTodoIdComplete";
-import { postTodoAppMemberUserTodosTodoIdReopen } from "../../../../providers/postTodoAppMemberUserTodosTodoIdReopen";
+import { putTodoAppMemberUserTodosTodoIdComplete } from "../../../../providers/putTodoAppMemberUserTodosTodoIdComplete";
+import { putTodoAppMemberUserTodosTodoIdReopen } from "../../../../providers/putTodoAppMemberUserTodosTodoIdReopen";
 
 import { ITodoAppTodo } from "../../../../api/structures/ITodoAppTodo";
 import { IPageITodoAppTodo } from "../../../../api/structures/IPageITodoAppTodo";
@@ -17,43 +17,44 @@ import { IPageITodoAppTodo } from "../../../../api/structures/IPageITodoAppTodo"
 @Controller("/todoApp/memberUser/todos")
 export class TodoappMemberuserTodosController {
   /**
-   * Create a new todo_app_todos record for the authenticated member user and
-   * return the created todo.
+   * Create a new todo_app_todos record representing a member user's personal
+   * todo item.
    *
-   * Create a new todo record in the todo_app_todos table for the calling member
-   * user based on the provided todo attributes.
+   * Create a new todo item owned by the authenticated member user based on the
+   * todo_app_todos Prisma model.
    *
-   * The todo_app_todos model represents core todo items owned by member users.
-   * According to its schema, each row has a required UUID id, a non-null
-   * todo_app_memberuser_id foreign key to todo_app_memberusers, a mandatory
-   * title, an optional description, a required status string (typically
-   * "pending" or "completed"), and lifecycle timestamps including created_at,
-   * updated_at, completed_at, and deleted_at. Logical deletion is expressed via
-   * deleted_at, which remains null for active or completed todos and is set
-   * when a todo is removed from normal listings.
+   * This operation handles the insertion of a fresh todo record into the
+   * todo_app_todos table, using the ITodoAppTodo.ICreate payload to capture
+   * client-specified properties such as the textual content, optional
+   * description, and any initial scheduling or priority fields defined in the
+   * schema. The implementation must enforce validation rules derived from the
+   * todo domain, including required presence of core fields, maximum length
+   * constraints on text fields, and any restrictions on the initial state or
+   * due date values defined in the requirements and reflected in the Prisma
+   * model comments.
    *
-   * When this operation is invoked, the server reads the ITodoAppTodo.ICreate
-   * payload to obtain business inputs like title and optional description. It
-   * then determines the owning member user from the authenticated context and
-   * sets the todo_app_memberuser_id field accordingly, ensuring users cannot
-   * forge ownership through the request body. The implementation initializes
-   * status to the appropriate initial value (normally "pending"), sets
-   * created_at and updated_at to the current time, and leaves completed_at and
-   * deleted_at null, producing a consistent new todo that appears in subsequent
-   * list and detail queries.
+   * From a security and authorization perspective, this endpoint is designed
+   * for authenticated member users, represented in the database by the
+   * todo_app_memberusers model. The service will derive the owning member
+   * user's identifier from the authentication context rather than trusting
+   * arbitrary user identifiers in the request body. Business logic must prevent
+   * creation of todos on behalf of other users and may apply per-user limits on
+   * the number of open todos if specified in the business rules.
    *
-   * The response body returns the newly created todo as an ITodoAppTodo object,
-   * reflecting all persisted fields including the generated UUID id and
-   * timestamps. Error handling must cover invalid input such as empty or
-   * excessively long titles, unsupported status values if the API allows
-   * specifying them, and any attempts to create a todo when the underlying
-   * member user account in todo_app_memberusers is inactive or deleted
-   * according to its own status and deleted_at fields.
+   * The created todo record is returned as an ITodoAppTodo representation,
+   * which maps closely to the columns of todo_app_todos including identifiers,
+   * ownership reference, timestamps, and state fields such as completion
+   * status. Client applications typically call this API when a user submits a
+   * new task in the UI; they may then call related operations like updating a
+   * todo with PUT /todos/{todoId} or listing/searching todos once such
+   * endpoints exist. Error handling should surface validation problems with
+   * clear messages and respond with appropriate error codes when authorization
+   * fails or when business constraints such as per-user limits are violated.
    *
    * @param connection
-   * @param body Attributes required to create a new todo item, including title
-   *   and optional description, following the constraints of the todo_app_todos
-   *   table.
+   * @param body Data required to create a new todo item for the authenticated
+   *   member user, excluding server-generated fields like identifiers and
+   *   timestamps.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -75,56 +76,41 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Search todoApp todos from the `todo_app_todos` table and return a paginated
-   * list of todo summary records.
+   * Search and retrieve a paginated list of todo_app_todos records as todo
+   * summaries.
    *
-   * Search and retrieve a paginated list of todo items from the todoApp service
-   * using rich filtering, sorting, and pagination options.
+   * Retrieve a paginated and filterable list of todo items from the
+   * `todo_app_todos` table.
    *
-   * The underlying data for this operation comes from the `todo_app_todos`
-   * Prisma table, which stores the core todo items that belong to member users.
-   * Each todo record typically includes a foreign key to its owning member
-   * user, human-readable fields like title or description, and lifecycle
-   * attributes such as whether the todo is currently open, completed, or in
-   * another allowed state defined in the schema comments. This endpoint focuses
-   * on read access only; creation, update, and deletion of todos are handled by
-   * separate operations.
+   * This operation is designed to power list and overview screens in the
+   * TodoApp where users browse their existing todos, optionally with search and
+   * filtering. The request body, represented by `ITodoAppTodo.IRequest`, allows
+   * clients to specify search keywords, filters such as completion status, and
+   * pagination parameters like page index and page size. The backend uses these
+   * criteria to build a query over the `todo_app_todos` Prisma model and
+   * returns only the subset of todos that match.
    *
-   * The request body uses the `ITodoAppTodo.IRequest` type to express search
-   * criteria. This can include filters on the owning member (such as limiting
-   * results to the authenticated user’s own todos), on lifecycle state (e.g.,
-   * only completed or only active items), on date ranges (e.g., todos created
-   * or due within a certain window), and on textual fields such as partial
-   * matches in the title. It also contains pagination controls like page index
-   * and page size, as well as sorting instructions (for example, sorting by
-   * creation date or due date in ascending or descending order). Validation
-   * logic must enforce that pagination parameters fall within allowed ranges
-   * and that only supported fields are used for sorting.
+   * From a security perspective, this endpoint should typically be accessible
+   * only to authenticated member users, represented here by the `"memberUser"`
+   * authorization actor. In the implementation, the authenticated member
+   * identity is used to restrict results to todos owned by that member,
+   * ensuring that users can see only their own personal todo items. Even though
+   * the API documentation exposes a flexible filter structure, the service must
+   * always enforce ownership constraints based on the authenticated user rather
+   * than trusting client-supplied identifiers alone.
    *
-   * From an authorization perspective, this endpoint is typically used by
-   * authenticated end users to retrieve their own todos, so
-   * `authorizationActors: ["memberUser"]` is applied. In implementation,
-   * additional ownership checks must ensure that a non-administrative user only
-   * sees todos belonging to their own member account, even if they attempt to
-   * specify other owners in the request body. If the platform later introduces
-   * an administrative actor who can see todos across users, a separate
-   * admin-specific search endpoint or expanded authorization logic can be
-   * added. For now, the search is constrained to the authenticated user
-   * context.
-   *
-   * This `PATCH /todos` search complements other todo operations such as `POST
-   * /todos` for creating items, `PUT /todos/{todoId}` for updating them, and
-   * `DELETE /todos/{todoId}` for erasing them. Error handling for this search
-   * includes validation errors on malformed filter criteria, authorization
-   * failures when a user attempts to access todos they do not own, and generic
-   * server errors when database access fails. The response type
-   * `IPageITodoAppTodo.ISummary` provides summaries optimized for list
-   * displays, avoiding unnecessary heavy fields while still including enough
-   * information for clients to render main todo lists efficiently.
+   * The operation is read-only with respect to the `todo_app_todos` table. It
+   * does not modify or delete records, and it does not expose system-managed
+   * audit fields even if such fields exist in the schema. Instead, it focuses
+   * on returning summary-level data via `IPageITodoAppTodo.ISummary` optimized
+   * for list rendering, while more detailed views should use the dedicated
+   * detail retrieval endpoint on `/todoApp/memberUser/todos/{todoId}`. Errors
+   * include validation failures for malformed request bodies and authorization
+   * failures when the caller is not an authenticated member.
    *
    * @param connection
-   * @param body Search filters, pagination controls, and sorting options for
-   *   querying todoApp todo items from the `todo_app_todos` table.
+   * @param body Search conditions, filters, and pagination options used to
+   *   query todo_app_todos records for the current member user.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -146,43 +132,39 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Get a single todo_app_todos record by its UUID identifier as a detailed
-   * todo resource.
+   * Retrieve the detailed ITodoAppTodo record for a single todo_app_todos entry
+   * by todoId.
    *
-   * Retrieve the detailed representation of a single todo item from the
-   * todo_app_todos table using its UUID identifier.
+   * Retrieve a single todo item from the `todo_app_todos` table by its unique
+   * identifier.
    *
-   * The underlying todo_app_todos model stores core todo items owned by member
-   * users, with each record representing a task that can be created, updated,
-   * completed, reopened, and logically deleted. Key fields include a non-empty
-   * title, an optional description, a status string that is typically either
-   * "pending" or "completed", and lifecycle timestamps such as created_at,
-   * updated_at, completed_at, and deleted_at. The id column is a UUID primary
-   * key that uniquely identifies each todo across the system.
+   * This endpoint is used when a client needs full details of a specific todo,
+   * for example when opening a detail view or preparing an editing form. The
+   * client must supply the `todoId` path parameter, which corresponds to the
+   * primary key of a row in `todo_app_todos`. The backend looks up that record
+   * and maps it into the `ITodoAppTodo` DTO, including all relevant fields such
+   * as title, content, completion flag, and timestamps defined in the
+   * underlying Prisma model.
    *
-   * From a security perspective, this operation should only return todos that
-   * the caller is allowed to see. In the usual configuration, that means
-   * restricting access so that authenticated member users can only fetch todos
-   * where todo_app_memberuser_id matches their own user id, while
-   * administrative actors may be able to access arbitrary todos for support or
-   * operational purposes. The deleted_at column is used to model logical
-   * deletion; when it is non-null, the todo is generally considered deleted and
-   * must either be hidden from normal member users or returned only in
-   * specialized administrative contexts according to higher-level
-   * requirements.
+   * Authorization is restricted to the `"memberUser"` actor, and the
+   * implementation must additionally verify that the requested todo belongs to
+   * the authenticated member user. If the todo is not owned by the caller, the
+   * service should respond with an authorization error, preventing cross-user
+   * data leakage even if a valid identifier is guessed. If no record exists for
+   * the provided `todoId`, the service returns a not-found error, allowing
+   * clients to handle deleted or invalid todos gracefully.
    *
-   * This endpoint is typically used after a client has obtained a todo id from
-   * another operation, such as a list query or creation response. When the
-   * specified todoId does not correspond to an existing, visible row, the
-   * implementation should respond with a not-found error. When it succeeds, the
-   * response body is an ITodoAppTodo object reflecting the current state of the
-   * todo, allowing the client to render all business-relevant details and
-   * decide whether actions such as update, completion, or deletion are
-   * applicable.
+   * This operation is strictly read-only with respect to the `todo_app_todos`
+   * table. It does not alter any fields or state, nor does it perform any
+   * system-generated logging beyond standard observability. Related operations
+   * that change todo content or completion status would be handled by separate
+   * update endpoints, while this GET focuses on providing an accurate,
+   * up-to-date snapshot of a single todo record for display or client-side
+   * processing.
    *
    * @param connection
-   * @param todoId UUID identifier of the target todo item, corresponding to the
-   *   id primary key column of the todo_app_todos table.
+   * @param todoId Unique identifier of the target todo item in the
+   *   todo_app_todos table.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":todoId")
@@ -190,7 +172,7 @@ export class TodoappMemberuserTodosController {
     @MemberuserAuth()
     memberUser: MemberuserPayload,
     @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
+    todoId: string,
   ): Promise<ITodoAppTodo> {
     try {
       return await getTodoAppMemberUserTodosTodoId({
@@ -204,51 +186,45 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Update an existing todo item in the todo_app_todos table by UUID.
+   * Update an existing todo_app_todos record for a member user's personal todo
+   * item.
    *
-   * Update a single todo item in the todoApp service, targeting a specific row
-   * in the todo_app_todos table by its UUID primary key.
+   * Update an existing todo item identified by its unique identifier in the
+   * todo_app_todos table.
    *
-   * This operation is intended for authenticated member users who own the todo
-   * item being modified. The todo_app_todos schema defines the concrete columns
-   * used to store core todo data, including primary content fields such as
-   * title and description, any lifecycle-related status indicators, and any
-   * timestamp fields that track creation and modification times. When handling
-   * an update, the implementation must verify that the calling user is the
-   * owner associated to the row through the ownership fields defined in the
-   * model (for example, a foreign key to the member user) or has appropriate
-   * elevated privileges provided through higher-level administrative flows.
-   * Unauthorized users must not be able to modify todos belonging to other
-   * accounts.
+   * This operation allows authenticated member users to modify an existing row
+   * in todo_app_todos via the PUT /todos/{todoId} endpoint. The todoId path
+   * parameter represents the primary key of the target todo record, typically a
+   * string identifier such as a UUID, and is used in the underlying Prisma
+   * update query. The ITodoAppTodo.IUpdate request body carries the fields that
+   * the client wishes to change, such as the textual content of the todo,
+   * optional descriptive fields, due date, priority, or completion-related
+   * attributes.
    *
-   * From a data and lifecycle perspective, this endpoint allows modification of
-   * user-controlled fields like title and description, as well as
-   * lifecycle-related attributes that determine whether a todo is currently
-   * active, completed, or in any other state modeled by the schema. The service
-   * should keep the lifecycle and timestamp fields consistent with the business
-   * rules derived from the requirements documentation; for example, when a todo
-   * is marked as completed for the first time, an appropriate completion
-   * timestamp field may be set if such a field exists, and when a previously
-   * completed todo is reopened, lifecycle fields may be adjusted accordingly.
-   * Every successful update should refresh the modification timestamp defined
-   * by the schema so that clients can track when a todo was last changed.
+   * Authorization logic must ensure that only the member user who owns the todo
+   * (as represented by the foreign key to todo_app_memberusers in
+   * todo_app_todos) can perform this update. The service must reject attempts
+   * to modify todos belonging to other users and should respond with
+   * appropriate error codes when the record does not exist or when ownership
+   * checks fail. Additionally, it should apply the business rules described for
+   * todo lifecycle management, including how and when completion status can be
+   * toggled, how reopening works, and any constraints around editing past-due
+   * or completed items.
    *
-   * If the underlying model includes any notion of deletion or archival state,
-   * the implementation must ensure that todos considered deleted or archived by
-   * the schema are not updated through this endpoint; such attempts should
-   * result in an appropriate error response such as a not-found or conflict
-   * error, ensuring that removed items remain immutable until any background
-   * cleanup or archival processes run. This PUT endpoint works together with
-   * the creation, listing/search, and deletion operations on todo_app_todos to
-   * provide a complete lifecycle for todo items, while keeping the exact
-   * column-level behavior aligned with the actual Prisma model.
+   * Upon a successful update, the API returns the ITodoAppTodo representation
+   * of the modified todo, mapping all relevant columns of todo_app_todos
+   * including updated timestamps and state fields. Client applications
+   * typically call this operation when a user edits a todo's text, changes
+   * deadlines, or marks a todo as completed in the UI. Validation errors or
+   * business rule violations should be reported with clear messages to guide
+   * users toward valid modifications.
    *
    * @param connection
-   * @param todoId UUID identifier of the target todo item in the todo_app_todos
-   *   table.
-   * @param body Updated fields for the target todo, including primary content
-   *   and lifecycle-related attributes, validated against the rules for the
-   *   todo_app_todos model.
+   * @param todoId Unique identifier of the target todo item in the
+   *   todo_app_todos table, typically a string such as a UUID that serves as
+   *   the primary key.
+   * @param body Set of fields to update on the existing todo item, constrained
+   *   to properties that are mutable according to todo lifecycle rules.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":todoId")
@@ -273,41 +249,45 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Delete a todo_app_todos record by UUID according to the model's deletion
-   * strategy.
+   * Permanently delete a todo item from the todo_app_todos table by its
+   * identifier.
    *
-   * Delete a single todo item in the todoApp service, targeting a specific row
-   * in the todo_app_todos table by its UUID primary key.
+   * Delete a specific todo item from the `todo_app_todos` table using its
+   * unique identifier.
    *
-   * This operation is designed for authenticated member users who own the todo
-   * item being removed. The todo_app_todos schema defines how deletion is
-   * represented for todo records, which may be as a physical removal of the row
-   * or as a logical deletion using one or more lifecycle fields that indicate a
-   * removed or archived state. Before performing the deletion, the
-   * implementation must verify that the calling user is the owner associated
-   * with the todo through the ownership fields defined in the model, or that
-   * the caller has appropriate elevated privileges provided via administrative
-   * workflows. If the todo does not exist, belongs to a different user, or is
-   * already treated as removed under the model's deletion semantics, the
-   * endpoint should respond with an appropriate error status such as 404 Not
-   * Found, without revealing information about other users' data.
+   * This operation targets the `todo_app_todos` Prisma model, which stores
+   * individual todo items created and owned by member users of the TodoApp
+   * service. Each record in this table represents a single actionable item with
+   * fields such as title, description, status, timestamps, and ownership
+   * references to a member user. When this operation is invoked, the system
+   * locates the todo by the provided `todoId` and removes it from persistent
+   * storage.
    *
-   * When deletion is accepted, the service applies the deletion strategy
-   * defined for todo_app_todos: this may involve issuing a hard delete against
-   * the backing table, or updating one or more lifecycle fields that indicate
-   * that the record is no longer active and should be excluded from normal
-   * lists and operations. The operation should also ensure that any
-   * modification timestamp fields remain consistent with the model's
-   * expectations. Clients are expected to rely on the todo list/search
-   * endpoints to hide removed records in regular views, using the same deletion
-   * semantics. This DELETE endpoint complements the creation, listing/search,
-   * and update operations to provide a full lifecycle for todo items while
-   * keeping the exact low-level behavior aligned strictly with the Prisma
-   * schema.
+   * From a security and authorization perspective, only authenticated member
+   * users should be able to delete their own todos. The implementation must
+   * verify that the caller is authenticated as a member user and that the
+   * todo's owner matches the authenticated user. If the todo belongs to another
+   * user or if the user lacks sufficient privileges, the system must respond
+   * with an authorization error rather than performing the deletion.
+   *
+   * In terms of behavior and error handling, the operation must validate that
+   * the `todoId` is well-formed and corresponds to an existing record in
+   * `todo_app_todos`. If no matching todo is found, the system should respond
+   * with a not-found error describing that the todo does not exist. If
+   * concurrent updates occur, such as another request already deleting the same
+   * todo, the operation should still behave deterministically by returning
+   * either a successful deletion response or a not-found error depending on
+   * whether the record still exists at the time of execution.
+   *
+   * This deletion endpoint is expected to be used together with other todo
+   * lifecycle operations such as creation, updating, completing, and reopening
+   * todos. Clients typically obtain the `todoId` from list or detail retrieval
+   * APIs and then call this endpoint when the user explicitly chooses to remove
+   * the item from their list.
    *
    * @param connection
-   * @param todoId UUID identifier of the target todo item in the todo_app_todos
-   *   table to remove.
+   * @param todoId Unique identifier of the target todo item in the
+   *   todo_app_todos table
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":todoId")
@@ -315,8 +295,8 @@ export class TodoappMemberuserTodosController {
     @MemberuserAuth()
     memberUser: MemberuserPayload,
     @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
-  ): Promise<ITodoAppTodo> {
+    todoId: string,
+  ): Promise<void> {
     try {
       return await deleteTodoAppMemberUserTodosTodoId({
         memberUser,
@@ -329,57 +309,57 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Complete a todoApp todo item in the `todo_app_todos` table.
+   * Mark a todo item in the todo_app_todos table as completed and return the
+   * updated entity.
    *
-   * Mark a specific todo item as completed in the todoApp system.
+   * Mark a specific todo item in the `todo_app_todos` table as completed and
+   * update its completion-related metadata.
    *
-   * This operation targets a single todo record stored in the `todo_app_todos`
-   * Prisma model and updates its lifecycle state to represent completion.
-   * According to the core functional requirements and the todo lifecycle
-   * documentation, a todo may move from an initial or open state into a
-   * completed state when the user decides that the work represented by the todo
-   * is done. The endpoint encapsulates this transition so that clients do not
-   * need to manually manipulate status fields.
+   * This operation focuses on the lifecycle of a todo item stored in the
+   * `todo_app_todos` Prisma model. Each todo has a status or state indicating
+   * whether it is pending, in progress, or completed. When a member user
+   * invokes this endpoint with a valid `todoId`, the system retrieves the
+   * corresponding record and updates its state to represent completion. This
+   * may involve setting a status field to a completed value and populating a
+   * completion timestamp field used for reporting and sorting.
    *
-   * When invoked, the service verifies that the todo identified by `todoId`
-   * exists, is owned by the calling member user, and is in a state that allows
-   * completion. If the todo is already completed, the operation behaves
-   * idempotently and simply returns the current representation without applying
-   * conflicting changes. If the todo has been removed or is otherwise in a
-   * terminal state where completion is invalid, the service will reject the
-   * request with an appropriate business error as outlined in the
-   * error-handling requirements.
+   * Security and authorization are critical: only authenticated member users
+   * may complete their own todos. The provider logic must verify that the
+   * caller is a member user and that the todo belongs to them. Requests
+   * attempting to complete a todo owned by a different user must be rejected
+   * with an appropriate authorization error. Additionally, the system should
+   * validate the current state of the todo; for example, if the todo is already
+   * completed, the implementation can treat the request as idempotent and
+   * return the existing completed entity, or it may enforce domain rules that
+   * disallow redundant completions.
    *
-   * Security-wise, this endpoint is restricted to authenticated member users
-   * and enforces ownership checks based on the relationship between
-   * `todo_app_todos` and `todo_app_memberusers` in the Prisma schema.
-   * Administrative or system actors are not required for this action, and no
-   * public access is allowed. This operation is typically used together with
-   * other todo lifecycle operations such as reopening a todo, updating its
-   * content, or deleting it, ensuring that the todo lifecycle remains
-   * consistent with the defined workflow diagrams and business rules.
+   * Error handling should cover several scenarios. If the `todoId` does not
+   * correspond to any record in `todo_app_todos`, the system must return a
+   * not-found error. If validation fails because the todo is in an incompatible
+   * state for completion (such as being archived or otherwise not active), the
+   * system should return a domain-specific error describing why completion
+   * cannot proceed. This operation is typically used in conjunction with todo
+   * creation, update, reopening, and deletion endpoints as part of the overall
+   * todo lifecycle management.
    *
-   * Error handling covers cases such as invalid identifiers, attempts to
-   * complete todos not owned by the caller, attempts to complete
-   * already-deleted todos, and conflicts with lifecycle constraints. In all
-   * cases, responses conform to the service-wide error handling and validation
-   * policies so that clients can present clear recovery options to users.
+   * The response returns the updated todo representation so that clients can
+   * immediately reflect the new state in their user interface, including any
+   * updated timestamps or derived fields relevant to completed items.
    *
    * @param connection
-   * @param todoId Unique identifier of the target todo item in the
-   *   `todo_app_todos` table whose lifecycle state will be transitioned to
-   *   completed.
+   * @param todoId Unique identifier of the todo item in the todo_app_todos
+   *   table to be marked as completed
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":todoId/complete")
+  @TypedRoute.Put(":todoId/complete")
   public async complete(
     @MemberuserAuth()
     memberUser: MemberuserPayload,
     @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
+    todoId: string,
   ): Promise<ITodoAppTodo> {
     try {
-      return await postTodoAppMemberUserTodosTodoIdComplete({
+      return await putTodoAppMemberUserTodosTodoIdComplete({
         memberUser,
         todoId,
       });
@@ -390,49 +370,70 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Reopen a todoApp todo item in the `todo_app_todos` table.
+   * Reopen a todo in the todo_app_todos table by transitioning it from
+   * completed or logically deleted back to active using the
+   * /todos/{todoId}/reopen action.
    *
-   * Reopen a completed todo item so that it returns to an active state in the
-   * todoApp system.
+   * Reopen an existing personal todo item recorded in the `todo_app_todos`
+   * table so that it transitions from a completed or logically deleted state
+   * back to an active state and becomes visible again in the owning member
+   * user's standard todo lists.
    *
-   * This operation is used when a member user decides that a todo previously
-   * marked as completed needs further work. It specifically targets a single
-   * row in the `todo_app_todos` Prisma model, identified by `todoId`, and
-   * changes its lifecycle status from a completed or closed state back into an
-   * open or active state as defined by the todo lifecycle requirements. The
-   * operation encapsulates this lifecycle reversal so clients do not need
-   * direct control over low-level status fields.
+   * The underlying Prisma model `todo_app_todos` represents minimal but
+   * complete todo records for a single member user. Each row contains a
+   * required `title`, optional `description`, a business `state` string, and
+   * lifecycle timestamps including `created_at`, `updated_at`, `completed_at`,
+   * and `deleted_at`. A todo is treated as logically deleted when `deleted_at`
+   * is non-null, and it is typically excluded from normal member queries in
+   * that case. When a todo is completed, the `state` column reflects a
+   * completed value and `completed_at` is populated to record the completion
+   * time. These fields are indexed together with `todo_app_memberuser_id` to
+   * support efficient filtering and ordering of active todos.
    *
-   * When called, the service ensures that the todo exists, belongs to the
-   * authenticated member user, and is in a state that can be legitimately
-   * reopened. If the todo is already open, the operation behaves idempotently
-   * and simply returns the current representation without conflicting updates.
-   * If the todo has been deleted or is in a terminal state where reopening is
-   * disallowed, the service responds with a domain-specific error consistent
-   * with the error-handling requirements.
+   * When this reopen endpoint is called, the service must first validate that
+   * the todo identified by `todoId` exists in `todo_app_todos`, that it is
+   * owned by the authenticated member as indicated by `todo_app_memberuser_id`,
+   * and that its current `state` and timestamps allow a transition back to
+   * active according to the lifecycle rules defined in the todo requirements.
+   * If the todo is currently completed or logically deleted, the implementation
+   * will update the `state` to an active/pending value, set `deleted_at` to
+   * null if it had been set, and always refresh `updated_at` to the current
+   * timestamp. Handling of `completed_at` should follow the documented
+   * lifecycle semantics—either clearing it when reopening, or preserving it for
+   * historical purposes—while ensuring the overall state of the todo remains
+   * consistent and that the record is once again included in member-visible
+   * lists.
    *
-   * Access to this endpoint is limited to authenticated member users, aligning
-   * with the relationship from `todo_app_todos` to `todo_app_memberusers` in
-   * the Prisma schema. Ownership is enforced so that users cannot reopen todos
-   * that they do not own, and no public or unauthenticated access is permitted.
-   * This reopen operation is typically paired with the completion endpoint and
-   * other todo lifecycle operations, ensuring that state transitions remain
-   * consistent with the documented workflow diagrams and validation rules.
+   * From an authorization perspective, only authenticated member users are
+   * allowed to reopen their own todos, which is captured by the `memberUser`
+   * entry in `authorizationActors` and must be enforced by comparing the
+   * current principal with the `todo_app_memberuser_id` on the target row. If
+   * the todo does not exist, is not owned by the caller, or is in a state that
+   * cannot be reopened (for example, already active or governed by stricter
+   * retention rules), the operation should respond with appropriate error codes
+   * following the service's error-handling guidelines, such as not-found or
+   * conflict/business-rule violations. This endpoint is typically used by
+   * clients in combination with todo completion and deletion operations to
+   * fully support the todo lifecycle, enabling users to undo completion or
+   * restore deleted tasks when permitted.
    *
-   * Error handling covers scenarios such as unknown `todoId` values, attempts
-   * to reopen todos not owned by the current user, attempts to reopen
-   * already-deleted items, and operations that violate lifecycle constraints.
-   * All errors are surfaced using the standardized error response patterns used
-   * across the service so that clients can guide users in resolving conflicts
-   * or understanding why the operation failed.
+   * The response returns the updated todo as `ITodoAppTodo`, exposing fields
+   * like `title`, `description`, `state`, `due_date`, `created_at`,
+   * `updated_at`, `completed_at`, and `deleted_at` after the state transition.
+   * Client applications can use this payload to move the todo back into the
+   * active list UI, refresh counters or statistics, and keep any local caches
+   * synchronized with the server-side representation of `todo_app_todos`. Error
+   * scenarios such as concurrent modifications should be handled in alignment
+   * with the general error-handling and validation rules for the Todo service,
+   * ensuring that lifecycle fields remain consistent and durable across
+   * requests.
    *
    * @param connection
-   * @param todoId Unique identifier of the target todo item in the
-   *   `todo_app_todos` table that should be moved from a completed state back
-   *   to an active state.
+   * @param todoId Unique identifier (UUID) of the todo in the `todo_app_todos`
+   *   table that should be reopened for the authenticated member user.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":todoId/reopen")
+  @TypedRoute.Put(":todoId/reopen")
   public async reopen(
     @MemberuserAuth()
     memberUser: MemberuserPayload,
@@ -440,7 +441,7 @@ export class TodoappMemberuserTodosController {
     todoId: string & tags.Format<"uuid">,
   ): Promise<ITodoAppTodo> {
     try {
-      return await postTodoAppMemberUserTodosTodoIdReopen({
+      return await putTodoAppMemberUserTodosTodoIdReopen({
         memberUser,
         todoId,
       });

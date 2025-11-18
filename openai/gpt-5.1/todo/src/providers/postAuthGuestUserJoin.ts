@@ -8,39 +8,44 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppGuestUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppGuestUser";
-import { ITodoAppGuestUserMetadata } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppGuestUserMetadata";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthGuestUserJoin(props: {
-  body: ITodoAppGuestUser.IJoin;
+  body: ITodoAppGuestUser.IJoinRequest;
 }): Promise<ITodoAppGuestUser.IAuthorized> {
-  const nowDate = new Date();
-  const nowIso = toISOStringSafe(nowDate);
+  const nowMillis = Date.now();
+  const nowIso = toISOStringSafe(new Date(nowMillis));
 
-  const accessExpiresDate = new Date(nowDate.getTime() + 60 * 60 * 1000);
-  const refreshExpiresDate = new Date(
-    nowDate.getTime() + 7 * 24 * 60 * 60 * 1000,
+  const accessTtlMillis = 60 * 60 * 1000; // 1 hour
+  const refreshTtlMillis = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  const accessExpiredAtIso = toISOStringSafe(
+    new Date(nowMillis + accessTtlMillis),
   );
-  const accessExpiresIso = toISOStringSafe(accessExpiresDate);
-  const refreshExpiresIso = toISOStringSafe(refreshExpiresDate);
+  const refreshableUntilIso = toISOStringSafe(
+    new Date(nowMillis + refreshTtlMillis),
+  );
+
+  const guestId = v4();
+  const sessionId = v4();
 
   try {
     const createdGuest = await MyGlobal.prisma.todo_app_guestusers.create({
       data: {
-        id: v4(),
-        display_name: props.body.display_name ?? null,
-        created_at: nowDate,
-        updated_at: nowDate,
-        deleted_at: null,
+        id: guestId,
+        external_ref:
+          props.body.external_ref !== undefined
+            ? props.body.external_ref
+            : null,
+        created_at: nowIso,
+        updated_at: nowIso,
       },
     });
-
-    const sessionId = v4();
 
     const accessToken = jwt.sign(
       {
         type: "guestUser",
-        id: createdGuest.id,
+        id: guestId,
         session_id: sessionId,
         created_at: nowIso,
       },
@@ -54,7 +59,7 @@ export async function postAuthGuestUserJoin(props: {
     const refreshToken = jwt.sign(
       {
         type: "guestUser",
-        id: createdGuest.id,
+        id: guestId,
         session_id: sessionId,
         tokenType: "refresh",
         created_at: nowIso,
@@ -66,28 +71,27 @@ export async function postAuthGuestUserJoin(props: {
       },
     );
 
-    const authorized: ITodoAppGuestUser.IAuthorized = {
-      id: createdGuest.id,
-      display_name: createdGuest.display_name,
-      created_at: toISOStringSafe(createdGuest.created_at),
-      updated_at: toISOStringSafe(createdGuest.updated_at),
-      deleted_at: createdGuest.deleted_at
-        ? toISOStringSafe(createdGuest.deleted_at)
-        : null,
-      token: {
-        access: accessToken,
-        refresh: refreshToken,
-        expired_at: accessExpiresIso,
-        refreshable_until: refreshExpiresIso,
-      },
+    const token: IAuthorizationToken = {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiredAtIso,
+      refreshable_until: refreshableUntilIso,
     };
 
-    return authorized;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      throw new HttpException("Failed to create guest user", 500);
-    }
+    const response: ITodoAppGuestUser.IAuthorized = {
+      id: createdGuest.id,
+      external_ref:
+        createdGuest.external_ref !== null ? createdGuest.external_ref : null,
+      created_at: toISOStringSafe(createdGuest.created_at),
+      updated_at: toISOStringSafe(createdGuest.updated_at),
+      accessToken,
+      refreshToken,
+      token,
+    };
 
-    throw error;
+    return response;
+  } catch (error) {
+    // In a real system, we would log `error` with a proper logger
+    throw new HttpException("Failed to register guest user", 500);
   }
 }

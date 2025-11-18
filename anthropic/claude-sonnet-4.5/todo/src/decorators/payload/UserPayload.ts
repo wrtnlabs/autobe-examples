@@ -1,12 +1,12 @@
 import { tags } from "typia";
 
 export interface UserPayload {
-  /** User ID - Primary identifier for the authenticated user. */
+  /** Top-level user table ID (the fundamental user identifier in the system). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the authenticated user session. */
+  /** Session ID associated with the user. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the user role type. */
+  /** Discriminator for the discriminated union type. */
   type: "user";
 }

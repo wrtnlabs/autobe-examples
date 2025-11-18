@@ -1,0 +1,1031 @@
+/// High-level customer or seller initiated requests to cancel orders or
+/// specific order items.
+///
+/// Represents the business case that a placed order should be cancelled
+/// partially or fully, prior to or during fulfillment. Each cancellation
+/// request links to a single order but can cover multiple order items via
+/// {@link shopping_mall_cancellation_request_items}. It stores the current
+/// lifecycle status and key timestamps for SLA monitoring.
+///
+/// These records are permanent audit entities; they are never soft-deleted
+/// and form the core of after-order cancellation workflows.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the cancellation request.
+  id String @id
+  
+  /// Order that this cancellation request is targeting. {@link
+  /// shopping_mall_orders}.
+  shopping_mall_order_id String
+  
+  /// Customer who initiated the cancellation, if the requester is a customer.
+  /// {@link shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller who initiated the cancellation when seller-driven. {@link
+  /// shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Admin who created the cancellation on behalf of another actor or as an
+  /// operational action. {@link shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// SLA configuration that governs this cancellation request, when a
+  /// dedicated SLA rule applies. {@link shopping_mall_case_sla_configs}.
+  shopping_mall_case_sla_config_id String?
+  
+  /// Business-visible identifier for the cancellation request, unique per
+  /// order for reference in communications.
+  request_code String
+  
+  /// Current lifecycle status of the cancellation request, such as pending,
+  /// approved, rejected, or expired.
+  status String
+  
+  /// Scope of the cancellation, for example full_order or partial_items, used
+  /// to distinguish request semantics.
+  scope_type String
+  
+  /// Optional structured reason code selected from policy-defined values, such
+  /// as change_of_mind or ordered_by_mistake.
+  reason_code String?
+  
+  /// Free-text explanation describing why cancellation is requested, as
+  /// written by the requester.
+  reason_description String?
+  
+  /// Actor type who requested the cancellation, such as customer, seller, or
+  /// admin, used for governance and analytics.
+  requested_by_actor_type String
+  
+  /// Timestamp when the cancellation request was created in the system.
+  requested_at DateTime
+  
+  /// Timestamp when the cancellation request reached a terminal decision such
+  /// as approved or rejected.
+  decided_at DateTime?
+  
+  /// Timestamp when this cancellation request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation request record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  slaConfig shopping_mall_case_sla_configs? @relation(fields: [shopping_mall_case_sla_config_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cancellation_request_items shopping_mall_cancellation_request_items[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_case_sla_violations shopping_mall_case_sla_violations[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_cancellation_requests_shopping_mall_cust_e7d34440")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_cancellation_requests_shopping_mall_sell_7bb7f71b")
+  @@index([shopping_mall_admin_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_case_sla_config_id], map: "shopping_mall_cancellation_requests_shopping_mall_case_40eb0343")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, request_code], map: "shopping_mall_cancellation_requests_shopping_mall_orde_fa379ca3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_orde_abb70de8")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([requested_by_actor_type, created_at], map: "shopping_mall_cancellation_requests_requested_by_actor_9c7b58fb")
+}
+
+/// Order item level lines that belong to a cancellation request.
+///
+/// Each row represents a specific order item and quantity that is included
+/// in a parent {@link shopping_mall_cancellation_requests}. This allows
+/// partial item-level cancellations and accurate audit of what was requested
+/// to be cancelled.
+///
+/// These records are append-only in practice and are not soft-deleted;
+/// corrections are done via additional requests or business rules.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the cancellation request item.
+  id String @id
+  
+  /// Parent cancellation request that owns this line. {@link
+  /// shopping_mall_cancellation_requests}.
+  shopping_mall_cancellation_request_id String
+  
+  /// Order item that the cancellation line refers to. {@link
+  /// shopping_mall_order_items}.
+  shopping_mall_order_item_id String
+  
+  /// Quantity of the order item that the requester wants to cancel.
+  requested_quantity Int
+  
+  /// Optional item-specific cancellation explanation, when different from the
+  /// header reason.
+  reason_description String?
+  
+  /// Timestamp when this cancellation request item record was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation request item record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cancellation_request_id, shopping_mall_order_item_id], map: "shopping_mall_cancellation_request_items_shopping_mall_0db49811")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_cancellation_request_items_shopping_mall_689ae47c")
+}
+
+/// High-level refund cases initiated by customers, sellers, or admins after
+/// or around delivery.
+///
+/// Stores the primary business record for a refund case linked to an order
+/// and often to a payment. It contains lifecycle status, requested and
+/// approved amounts, and links to more granular {@link
+/// shopping_mall_refund_request_items} and status histories.
+///
+/// Refund requests are core governance entities and must remain immutable
+/// from an audit perspective except for status progression and
+/// administrative annotations.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the refund request.
+  id String @id
+  
+  /// Order for which this refund is requested. {@link shopping_mall_orders}.
+  shopping_mall_order_id String
+  
+  /// Specific order payment that this refund request is associated with, when
+  /// applicable. {@link shopping_mall_order_payments}.
+  shopping_mall_order_payment_id String?
+  
+  /// Customer who requested the refund, when the requester is a customer.
+  /// {@link shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller who initiated the refund or concession, when seller-driven. {@link
+  /// shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Admin who created the refund request, often in manual adjustment
+  /// scenarios. {@link shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// Primary structured reason selected for this refund request from the
+  /// reason catalog. {@link shopping_mall_refund_request_reasons}.
+  shopping_mall_refund_request_reason_id String?
+  
+  /// Linked cancellation request when the refund stems from a cancellation
+  /// case. {@link shopping_mall_cancellation_requests}.
+  shopping_mall_cancellation_request_id String?
+  
+  /// SLA configuration that governs this refund request, if a specific SLA
+  /// rule applies. {@link shopping_mall_case_sla_configs}.
+  shopping_mall_case_sla_config_id String?
+  
+  /// Business-visible identifier for the refund request, used in support and
+  /// communication flows.
+  request_code String
+  
+  /// Current lifecycle status of the refund request, such as requested,
+  /// under_review, approved, rejected, or completed.
+  status String
+  
+  /// Total monetary amount that the requester asks to be refunded, expressed
+  /// in the order currency.
+  requested_total_amount Float
+  
+  /// Total monetary amount approved to be refunded after review, expressed in
+  /// the order currency.
+  approved_total_amount Float?
+  
+  /// Currency code for the requested and approved amounts, typically matching
+  /// the order currency (for example, USD or KRW).
+  currency_code String
+  
+  /// Free-text explanation providing additional context for the refund request
+  /// beyond the structured reason code.
+  reason_description String?
+  
+  /// Actor type who initiated the refund request, such as customer, seller, or
+  /// admin.
+  requested_by_actor_type String
+  
+  /// Indicates whether physical goods must be returned as part of fulfilling
+  /// this refund request.
+  requires_return Boolean
+  
+  /// Timestamp when the refund request was created in the system.
+  requested_at DateTime
+  
+  /// Timestamp when a final decision was made, such as approved or rejected.
+  decided_at DateTime?
+  
+  /// Timestamp when the financial refund was fully processed and completed.
+  completed_at DateTime?
+  
+  /// Timestamp when this refund request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund request record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderPayment shopping_mall_order_payments? @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  primaryReason shopping_mall_refund_request_reasons? @relation(fields: [shopping_mall_refund_request_reason_id], references: [id], onDelete: Cascade)
+  linkedCancellationRequest shopping_mall_cancellation_requests? @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  slaConfig shopping_mall_case_sla_configs? @relation(fields: [shopping_mall_case_sla_config_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refund_request_items shopping_mall_refund_request_items[]
+  shopping_mall_refund_request_status_histories shopping_mall_refund_request_status_histories[]
+  shopping_mall_disputes shopping_mall_disputes[]
+  shopping_mall_case_sla_violations shopping_mall_case_sla_violations[]
+  
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_admin_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_reason_id], map: "shopping_mall_refund_requests_shopping_mall_refund_req_38fcd29d")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id], map: "shopping_mall_refund_requests_shopping_mall_cancellati_58405437")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_case_sla_config_id], map: "shopping_mall_refund_requests_shopping_mall_case_sla_c_d0fc9b8c")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, request_code], map: "shopping_mall_refund_requests_shopping_mall_order_id_r_abd69dc6")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_id_c_fc29405e")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([requested_by_actor_type, created_at], map: "shopping_mall_refund_requests_requested_by_actor_type__76ca8107")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_paym_6d5bdbdc")
+}
+
+/// Line-level mapping between refund requests and the specific monetary
+/// impact per order item or payment component.
+///
+/// Each record belongs to a {@link shopping_mall_refund_requests} and
+/// optionally references an {@link shopping_mall_order_items} or a low-level
+/// payment refund item. It captures requested and approved amounts per
+/// component, enabling detailed reconciliation.
+///
+/// These rows form the granular basis for how a refund request breaks down
+/// financially without storing any derived aggregates.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the refund request item.
+  id String @id
+  
+  /// Parent refund request that owns this line. {@link
+  /// shopping_mall_refund_requests}.
+  shopping_mall_refund_request_id String
+  
+  /// Order item that this refund amount is associated with, when the refund
+  /// targets a specific item. {@link shopping_mall_order_items}.
+  shopping_mall_order_item_id String?
+  
+  /// Underlying payment refund item that implements this refund line at the
+  /// payment provider level. {@link shopping_mall_payment_refund_items}.
+  shopping_mall_payment_refund_item_id String?
+  
+  /// Specific structured reason associated with this line, which may differ
+  /// from the header reason. {@link shopping_mall_refund_request_reasons}.
+  shopping_mall_refund_request_reason_id String?
+  
+  /// Quantity of the item for which refund is requested, when the refund is
+  /// quantity-based.
+  requested_quantity Int?
+  
+  /// Quantity approved for refund, when the refund is quantity-based and
+  /// partially accepted.
+  approved_quantity Int?
+  
+  /// Monetary amount requested to be refunded for this line in the order
+  /// currency.
+  requested_amount Float
+  
+  /// Monetary amount approved for this line after review, in the order
+  /// currency.
+  approved_amount Float?
+  
+  /// Currency code for the requested and approved amounts, typically matching
+  /// the order currency.
+  currency_code String
+  
+  /// Timestamp when this refund request item record was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund request item record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  paymentRefundItem shopping_mall_payment_refund_items? @relation(fields: [shopping_mall_payment_refund_item_id], references: [id], onDelete: Cascade)
+  reason shopping_mall_refund_request_reasons? @relation(fields: [shopping_mall_refund_request_reason_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_refund_item_id], map: "shopping_mall_refund_request_items_shopping_mall_payme_3f4606bb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_reason_id], map: "shopping_mall_refund_request_items_shopping_mall_refun_e286e8a0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_refund_request_id, shopping_mall_order_item_id, shopping_mall_payment_refund_item_id], map: "shopping_mall_refund_request_items_shopping_mall_refun_6222106e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_request_items_shopping_mall_refun_64e2d741")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_refund_request_items_shopping_mall_order_6b3a56b2")
+}
+
+/// Catalog of structured reason codes that can be associated with refund and
+/// cancellation requests.
+///
+/// Defines stable business-level categories such as change_of_mind,
+/// damaged_item, wrong_item, or not_delivered. These reasons are used by
+/// both {@link shopping_mall_refund_requests} and {@link
+/// shopping_mall_refund_request_items} for consistent analytics and policy
+/// enforcement.
+///
+/// Admins can manage these reasons, but they are treated as configuration
+/// records rather than primary business cases.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the refund request reason.
+  id String @id
+  
+  /// Unique machine-friendly code representing the refund or cancellation
+  /// reason, such as damaged_item.
+  code String
+  
+  /// Human-readable name of the reason as shown in management tools or
+  /// localized catalogs.
+  name String
+  
+  /// Detailed explanation of when this reason should be used, written for
+  /// admins or internal staff.
+  description String?
+  
+  /// Indicates whether this reason can be used for cancellation requests.
+  applies_to_cancellation Boolean
+  
+  /// Indicates whether this reason can be used for refund requests.
+  applies_to_refund Boolean
+  
+  /// Flag indicating if this reason is currently allowed for new requests.
+  is_active Boolean
+  
+  /// Timestamp when this reason record was created.
+  created_at DateTime
+  
+  /// Timestamp when this reason record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_refund_request_items shopping_mall_refund_request_items[]
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([is_active, applies_to_refund], map: "shopping_mall_refund_request_reasons_is_active_applies_e84190e0")
+  // spellchecker: ignore-next-line
+  @@index([is_active, applies_to_cancellation], map: "shopping_mall_refund_request_reasons_is_active_applies_dd9ddea4")
+}
+
+/// Historical record of all status transitions that occurred on a refund
+/// request.
+///
+/// Each row captures a single transition for a {@link
+/// shopping_mall_refund_requests} instance, including the previous status,
+/// the new status, the actor responsible, and timestamps. This enables full
+/// audit of how and when a refund case was processed.
+///
+/// The table is append-only and not subject to soft deletion, preserving a
+/// reliable audit trail for compliance and dispute resolution.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the refund request status history entry.
+  id String @id
+  
+  /// Refund request whose status changed in this history record. {@link
+  /// shopping_mall_refund_requests}.
+  shopping_mall_refund_request_id String
+  
+  /// Customer involved in this status change, when the customer triggered the
+  /// transition. {@link shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller involved in this status change, when the seller provided a
+  /// decision or response. {@link shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Admin who performed or recorded this status change. {@link
+  /// shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// Previous status of the refund request before this transition. Null when
+  /// the request is first created.
+  from_status String?
+  
+  /// New status of the refund request after this transition.
+  to_status String
+  
+  /// Actor type that caused the status change, such as customer, seller,
+  /// admin, or system.
+  changed_by_actor_type String
+  
+  /// Optional human-readable explanation for why this status change occurred.
+  reason_description String?
+  
+  /// Timestamp when this status change took effect.
+  occurred_at DateTime
+  
+  /// Timestamp when this status history record was created.
+  created_at DateTime
+  
+  /// Timestamp when this status history record was last updated, if ever.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_refund_request_status_histories_shopping_7011d2d0")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_refund_request_status_histories_shopping_52743499")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id], map: "shopping_mall_refund_request_status_histories_shopping_b1dbfbc8")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, occurred_at], map: "shopping_mall_refund_request_status_histories_shopping_86ab3669")
+  // spellchecker: ignore-next-line
+  @@index([to_status, occurred_at], map: "shopping_mall_refund_request_status_histories_to_statu_92cee96f")
+}
+
+/// Platform-level disputes that encapsulate high-severity conflicts
+/// involving orders, refunds, chargebacks, or policy violations.
+///
+/// A dispute is a higher-level construct that may reference one or more
+/// refund or cancellation cases and payment chargebacks. It is used by
+/// admins and risk teams to investigate, decide, and document outcomes
+/// within a dedicated dispute lifecycle.
+///
+/// This table stores core attributes, such as dispute type, severity,
+/// status, and external references, while {@link
+/// shopping_mall_dispute_events}, {@link shopping_mall_dispute_parties}, and
+/// {@link shopping_mall_dispute_evidences} capture the detailed history and
+/// context.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the dispute.
+  id String @id
+  
+  /// Order primarily associated with this dispute, when the dispute is
+  /// order-centric. {@link shopping_mall_orders}.
+  shopping_mall_order_id String?
+  
+  /// Refund request that triggered or is central to this dispute, if
+  /// applicable. {@link shopping_mall_refund_requests}.
+  shopping_mall_refund_request_id String?
+  
+  /// Payment chargeback record associated with this dispute, when the dispute
+  /// originates from a chargeback. {@link shopping_mall_payment_chargebacks}.
+  shopping_mall_payment_chargeback_id String?
+  
+  /// Risk case that tracks broader risk analysis related to this dispute.
+  /// {@link shopping_mall_risk_cases}.
+  shopping_mall_risk_case_id String?
+  
+  /// Legal hold that constrains modifications or deletions related to this
+  /// dispute data. {@link shopping_mall_legal_holds}.
+  shopping_mall_legal_hold_id String?
+  
+  /// Admin currently assigned as the owner or primary handler of this dispute.
+  /// {@link shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// SLA configuration that governs this dispute, defining response or
+  /// resolution targets. {@link shopping_mall_case_sla_configs}.
+  shopping_mall_case_sla_config_id String?
+  
+  /// Business-visible identifier for the dispute case used across admin tools
+  /// and communications.
+  dispute_code String
+  
+  /// High-level dispute type, such as payment_chargeback, refund_dispute,
+  /// policy_violation, or other configured types.
+  type String
+  
+  /// Business-defined severity level for prioritization, for example low,
+  /// medium, high, or critical.
+  severity String
+  
+  /// Current lifecycle status of the dispute, such as open,
+  /// under_investigation, resolved, or closed.
+  status String
+  
+  /// Short human-readable summary describing the nature of the dispute for
+  /// quick scanning in dashboards.
+  summary String?
+  
+  /// Detailed description of the dispute, used by admins to capture context
+  /// and notes about the situation.
+  description String?
+  
+  /// Timestamp when the dispute was opened.
+  opened_at DateTime
+  
+  /// Timestamp when a resolution decision was made for the dispute.
+  resolved_at DateTime?
+  
+  /// Timestamp when the dispute was fully closed and no further actions are
+  /// expected.
+  closed_at DateTime?
+  
+  /// Timestamp when this dispute record was created.
+  created_at DateTime
+  
+  /// Timestamp when this dispute record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  paymentChargeback shopping_mall_payment_chargebacks? @relation(fields: [shopping_mall_payment_chargeback_id], references: [id], onDelete: Cascade)
+  riskCase shopping_mall_risk_cases? @relation(fields: [shopping_mall_risk_case_id], references: [id], onDelete: Cascade)
+  legalHold shopping_mall_legal_holds? @relation(fields: [shopping_mall_legal_hold_id], references: [id], onDelete: Cascade)
+  ownerAdmin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  slaConfig shopping_mall_case_sla_configs? @relation(fields: [shopping_mall_case_sla_config_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_dispute_parties shopping_mall_dispute_parties[]
+  shopping_mall_dispute_events shopping_mall_dispute_events[]
+  shopping_mall_dispute_evidences shopping_mall_dispute_evidences[]
+  shopping_mall_case_sla_violations shopping_mall_case_sla_violations[]
+  
+  @@index([shopping_mall_refund_request_id])
+  @@index([shopping_mall_payment_chargeback_id])
+  @@index([shopping_mall_risk_case_id])
+  @@index([shopping_mall_legal_hold_id])
+  @@index([shopping_mall_admin_id])
+  @@index([shopping_mall_case_sla_config_id])
+  
+  @@unique([dispute_code])
+  @@index([status, opened_at])
+  @@index([type, opened_at])
+  @@index([shopping_mall_order_id, opened_at])
+}
+
+/// Entities that participate in a dispute, such as customers, sellers,
+/// admins, or external entities.
+///
+/// This table links {@link shopping_mall_disputes} to the parties involved
+/// and classifies each party by role (for example complainant, respondent,
+/// or observer) and actor type. It supports multiple parties per dispute and
+/// multiple roles per actor when necessary.
+///
+/// The design keeps the schema normalized by storing only identifiers and
+/// role metadata without duplicating profile data from the underlying actor
+/// tables.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_parties {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the dispute party.
+  id String @id
+  
+  /// Dispute that this party is associated with. {@link
+  /// shopping_mall_disputes}.
+  shopping_mall_dispute_id String
+  
+  /// Customer participating in the dispute, when actor_type is customer.
+  /// {@link shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller participating in the dispute, when actor_type is seller. {@link
+  /// shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Admin participating in the dispute, when actor_type is admin. {@link
+  /// shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// Type of party, such as customer, seller, admin, or external, used to
+  /// interpret which foreign keys are populated.
+  actor_type String
+  
+  /// Role of this party in the dispute, for example complainant, respondent,
+  /// witness, or observer.
+  role String
+  
+  /// Name shown in admin tools for this party, which may be derived from the
+  /// actor profile or manually entered for external parties.
+  display_name String?
+  
+  /// Timestamp when this dispute party record was created.
+  created_at DateTime
+  
+  /// Timestamp when this dispute party record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_dispute_id, actor_type, role, shopping_mall_customer_id, shopping_mall_seller_id, shopping_mall_admin_id], map: "shopping_mall_dispute_parties_shopping_mall_dispute_id_ee3b4a4e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, actor_type], map: "shopping_mall_dispute_parties_shopping_mall_dispute_id_d4fae9ef")
+}
+
+/// Timeline of events that occur during the lifecycle of a dispute.
+///
+/// Each record documents a single business event related to a {@link
+/// shopping_mall_disputes} instance, such as creation, assignment, evidence
+/// submission, note additions, escalation, or resolution. Events support
+/// detailed audit tracking, SLA analysis, and operational visibility.
+///
+/// This table is append-only, capturing immutable history without soft
+/// deletion to maintain integrity of the dispute timeline.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the dispute event.
+  id String @id
+  
+  /// Dispute that this event relates to. {@link shopping_mall_disputes}.
+  shopping_mall_dispute_id String
+  
+  /// Admin who performed the action or recorded this event, when applicable.
+  /// {@link shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// Customer involved in this event, when customer-initiated or
+  /// customer-facing. {@link shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller involved in this event, when seller-initiated or seller-facing.
+  /// {@link shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Type of event, such as created, note_added, status_changed, escalated,
+  /// evidence_added, or external_update.
+  event_type String
+  
+  /// Dispute status before this event occurred, when the event changed the
+  /// status.
+  status_before String?
+  
+  /// Dispute status after this event occurred, when the event changed the
+  /// status.
+  status_after String?
+  
+  /// Human-readable description or notes for this event, explaining what
+  /// happened or why.
+  description String?
+  
+  /// Timestamp when this event occurred in business terms.
+  occurred_at DateTime
+  
+  /// Timestamp when this dispute event record was created.
+  created_at DateTime
+  
+  /// Timestamp when this dispute event record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_dispute_evidences shopping_mall_dispute_evidences[]
+  
+  @@index([shopping_mall_admin_id])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, occurred_at], map: "shopping_mall_dispute_events_shopping_mall_dispute_id__e2062b32")
+  @@index([event_type, occurred_at])
+}
+
+/// Evidence artifacts attached to disputes to support investigations and
+/// decisions.
+///
+/// Stores references to documents, images, messages, or external systems
+/// that are relevant to a {@link shopping_mall_disputes} instance. Evidence
+/// items may optionally be linked to a specific {@link
+/// shopping_mall_dispute_events} entry that introduced them.
+///
+/// Only metadata and URIs are stored here; the actual binary content is
+/// expected to live in separate storage services. Records are append-only to
+/// preserve evidentiary integrity.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_evidences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the dispute evidence.
+  id String @id
+  
+  /// Dispute that this evidence supports. {@link shopping_mall_disputes}.
+  shopping_mall_dispute_id String
+  
+  /// Specific dispute event that introduced this evidence, when applicable.
+  /// {@link shopping_mall_dispute_events}.
+  shopping_mall_dispute_event_id String?
+  
+  /// Admin who attached this evidence, when the evidence was supplied by an
+  /// admin. {@link shopping_mall_admins}.
+  shopping_mall_admin_id String?
+  
+  /// Customer who provided this evidence, when relevant. {@link
+  /// shopping_mall_customers}.
+  shopping_mall_customer_id String?
+  
+  /// Seller who provided this evidence, when relevant. {@link
+  /// shopping_mall_sellers}.
+  shopping_mall_seller_id String?
+  
+  /// Type of evidence, such as image, document, message_log, or
+  /// external_reference.
+  evidence_type String
+  
+  /// Short title or label that describes this evidence item in admin tools.
+  title String?
+  
+  /// Detailed description or notes about what this evidence shows or why it is
+  /// relevant.
+  description String?
+  
+  /// URI pointing to the stored evidence content in external storage or
+  /// another system.
+  uri String
+  
+  /// Optional checksum or hash of the evidence content for integrity
+  /// verification.
+  checksum String?
+  
+  /// Timestamp when this dispute evidence record was created.
+  created_at DateTime
+  
+  /// Timestamp when this dispute evidence record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  disputeEvent shopping_mall_dispute_events? @relation(fields: [shopping_mall_dispute_event_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_event_id], map: "shopping_mall_dispute_evidences_shopping_mall_dispute__dc3caa96")
+  @@index([shopping_mall_admin_id])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_dispute_id, uri], map: "shopping_mall_dispute_evidences_shopping_mall_dispute__77ee6c93")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, created_at], map: "shopping_mall_dispute_evidences_shopping_mall_dispute__44c0fa83")
+  @@index([evidence_type, created_at])
+}
+
+/// Configuration of service-level agreements (SLAs) for different case types
+/// such as cancellations, refunds, and disputes.
+///
+/// Defines time-bound expectations for response or resolution by actor role
+/// and case type, for example seller must respond within X hours to a refund
+/// request. These configs are referenced by {@link
+/// shopping_mall_cancellation_requests}, {@link
+/// shopping_mall_refund_requests}, and {@link shopping_mall_disputes}.
+///
+/// This table allows policy teams to adjust SLA thresholds without changing
+/// core business tables, and it is treated as a primary configuration entity
+/// in the refunds and disputes domain.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_case_sla_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the case SLA configuration.
+  id String @id
+  
+  /// Business policy version this SLA config is associated with, enabling
+  /// policy evolution tracking. {@link shopping_mall_policy_versions}.
+  shopping_mall_business_policy_version_id String?
+  
+  /// Type of case this SLA applies to, such as cancellation, refund, or
+  /// dispute.
+  case_type String
+  
+  /// Actor role whose behavior is constrained, such as customer, seller, or
+  /// admin.
+  actor_role String
+  
+  /// Action governed by the SLA, for example initial_response or
+  /// final_decision.
+  action_type String
+  
+  /// Target time window in seconds within which the action should be completed
+  /// from the relevant start time.
+  target_duration_seconds Int
+  
+  /// Optional duration in seconds after which a warning should be raised
+  /// before the SLA breach occurs.
+  warning_duration_seconds Int?
+  
+  /// Flag indicating whether this SLA rule is currently active for new cases.
+  is_active Boolean
+  
+  /// Timestamp when this SLA configuration record was created.
+  created_at DateTime
+  
+  /// Timestamp when this SLA configuration record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  businessPolicyVersion shopping_mall_policy_versions? @relation(fields: [shopping_mall_business_policy_version_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cancellation_requests shopping_mall_cancellation_requests[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_disputes shopping_mall_disputes[]
+  shopping_mall_case_sla_violations shopping_mall_case_sla_violations[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_business_policy_version_id], map: "shopping_mall_case_sla_configs_shopping_mall_business__12364ec4")
+  
+  // spellchecker: ignore-next-line
+  @@unique([case_type, actor_role, action_type, shopping_mall_business_policy_version_id], map: "shopping_mall_case_sla_configs_case_type_actor_role_ac_8737ba71")
+  @@index([is_active, case_type])
+}
+
+/// Recorded SLA breaches for specific cases such as cancellations, refunds,
+/// or disputes.
+///
+/// Each row represents a detected violation of a particular {@link
+/// shopping_mall_case_sla_configs} rule, linking back to the concrete
+/// business case. These records provide an immutable audit of SLA
+/// performance, enabling compliance reporting and operational tuning.
+///
+/// The table is subsidiary because it supports analysis and risk management
+/// rather than representing a primary business case itself.
+///
+/// @namespace RefundsAndDisputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_case_sla_violations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the case SLA violation.
+  id String @id
+  
+  /// SLA configuration that was violated. {@link
+  /// shopping_mall_case_sla_configs}.
+  shopping_mall_case_sla_config_id String
+  
+  /// Cancellation request that violated this SLA, when the case is a
+  /// cancellation. {@link shopping_mall_cancellation_requests}.
+  shopping_mall_cancellation_request_id String?
+  
+  /// Refund request that violated this SLA, when the case is a refund. {@link
+  /// shopping_mall_refund_requests}.
+  shopping_mall_refund_request_id String?
+  
+  /// Dispute that violated this SLA, when the case is a dispute. {@link
+  /// shopping_mall_disputes}.
+  shopping_mall_dispute_id String?
+  
+  /// Type of case that violated the SLA, such as cancellation, refund, or
+  /// dispute, mirroring the SLA config.
+  case_type String
+  
+  /// Actor role responsible for satisfying the SLA, such as seller or admin.
+  actor_role String
+  
+  /// Action for which the SLA was defined, such as initial_response or
+  /// final_decision.
+  action_type String
+  
+  /// Number of seconds by which the SLA was exceeded beyond the target
+  /// duration.
+  breach_duration_seconds Int
+  
+  /// Timestamp when the system detected the SLA violation.
+  detected_at DateTime
+  
+  /// Timestamp when this SLA violation record was created.
+  created_at DateTime
+  
+  /// Timestamp when this SLA violation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  slaConfig shopping_mall_case_sla_configs @relation(fields: [shopping_mall_case_sla_config_id], references: [id], onDelete: Cascade)
+  cancellationRequest shopping_mall_cancellation_requests? @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  dispute shopping_mall_disputes? @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id], map: "shopping_mall_case_sla_violations_shopping_mall_cancel_ee4ab08b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id], map: "shopping_mall_case_sla_violations_shopping_mall_refund_a44d85ba")
+  @@index([shopping_mall_dispute_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_case_sla_config_id, shopping_mall_cancellation_request_id, shopping_mall_refund_request_id, shopping_mall_dispute_id], map: "shopping_mall_case_sla_violations_shopping_mall_case_s_a8c23888")
+  @@index([case_type, actor_role])
+  @@index([detected_at])
+}

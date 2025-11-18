@@ -1,14 +1,13 @@
-/// Configurable payment methods available on the shoppingMall platform.
+/// Configured payment methods that customers can use during checkout.
 ///
-/// Stores the catalog of conceptual payment methods such as credit card,
-/// bank transfer, and digital wallet as they are exposed to checkout. Each
-/// method is linked to a payment provider integration and can be enabled or
-/// disabled over time.
+/// Each row represents a conceptual payment method, such as a card
+/// processor, bank transfer, wallet, or COD, as seen by business logic.
+/// Methods are referenced by order payments to determine which rails were
+/// used for a payment.
 ///
-/// The table is used by payment transactions to record which method was
-/// chosen for a given order. Admin users manage these rows as business
-/// configuration, adjusting display names, ordering, and availability
-/// windows without touching historical financial records.
+/// Business rules and availability (region, currency, status) are stored
+/// here so that payment selection during checkout can be validated and
+/// audited over time.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -16,632 +15,546 @@ model shopping_mall_payment_methods {
   //----
   // COLUMNS
   //----
-  /// Primary key of the payment method.
+  /// Primary key.
   id String @id
   
-  /// Administrator who initially created this payment method configuration.
-  /// {@link shopping_mall_platformadmin.id}.
-  created_by_platformadmin_id String?
-  
-  /// Most recent administrator who updated this payment method configuration.
-  /// {@link shopping_mall_platformadmin.id}.
-  updated_by_platformadmin_id String?
-  
-  /// Business identifier for the payment method, unique across the platform,
-  /// such as "card", "bank_transfer", or a provider-specific key.
+  /// Business identifier for the payment method (e.g., "card",
+  /// "bank_transfer"). Used in configuration and references from other tables.
   code String
   
-  /// Human readable name shown to customers at checkout, such as "Credit Card"
-  /// or "Bank Transfer".
+  /// Human-readable name of the payment method shown in backoffice and
+  /// possibly to customers (for example "Credit Card", "Bank Transfer").
   display_name String
   
-  /// Optional longer description of the payment method, including business
-  /// notes or eligibility information.
+  /// Optional longer description of the payment method for admin reference or
+  /// customer hints.
   description String?
   
-  /// Identifier of the underlying payment provider configuration that should
-  /// be used when processing this method, for example a gateway code or
-  /// profile key.
-  provider_key String
+  /// High-level provider type or gateway family (for example "card_processor",
+  /// "bank_gateway", "wallet", "cod").
+  provider_type String
   
-  /// Logical type of the payment method, such as "card", "bank", "wallet", or
-  /// "offline". Used for business rules and reporting.
-  method_type String
+  /// Optional serialized list or expression of allowed order currencies for
+  /// this method (for example comma-separated ISO 4217 codes).
+  allowed_currencies String?
   
-  /// Optional list or pattern of currencies that this method supports, encoded
-  /// as a business string when a method is not globally available.
-  currency_restriction String?
+  /// Optional serialized list or expression of allowed customer shipping or
+  /// billing countries for this method (for example comma-separated ISO 3166-1
+  /// alpha-2 codes).
+  allowed_countries String?
   
-  /// Optional minimum order amount in the platform currency for which this
-  /// payment method is allowed.
+  /// Optional minimum payable amount for using this method, in the order
+  /// currency.
   min_amount Float?
   
-  /// Optional maximum order amount in the platform currency for which this
-  /// payment method is allowed.
+  /// Optional maximum payable amount for using this method, in the order
+  /// currency.
   max_amount Float?
   
-  /// Display priority for this payment method in checkout lists. Lower values
-  /// are shown earlier.
-  priority Int
+  /// Lifecycle status of the payment method at business level (for example
+  /// "active", "disabled"). Determines whether it may be chosen at checkout.
+  status String
   
-  /// Indicates whether this payment method is currently available for new
-  /// checkouts.
-  is_active Boolean
-  
-  /// Optional datetime after which this payment method becomes eligible for
-  /// use in checkout.
-  starts_at DateTime?
-  
-  /// Optional datetime after which this payment method should no longer appear
-  /// in checkout selections.
-  ends_at DateTime?
-  
-  /// Timestamp when this payment method row was first created.
+  /// Timestamp when this payment method configuration was created.
   created_at DateTime
   
-  /// Timestamp when this payment method row was last updated.
+  /// Timestamp when this payment method configuration was last updated.
   updated_at DateTime
-  
-  /// Soft deletion timestamp used to hide this method from configuration lists
-  /// while keeping historical references intact.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  createdByAdmin shopping_mall_platformadmin? @relation("shopping_mall_payment_methods_of_created_by_platformadmin_id", fields: [created_by_platformadmin_id], references: [id], onDelete: Cascade)
-  updatedByAdmin shopping_mall_platformadmin? @relation("shopping_mall_payment_methods_of_updated_by_platformadmin_id", fields: [updated_by_platformadmin_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
-  
-  @@index([created_by_platformadmin_id])
-  @@index([updated_by_platformadmin_id])
+  shopping_mall_payment_method_surcharges shopping_mall_payment_method_surcharges[]
+  shopping_mall_order_payments shopping_mall_order_payments[]
+  shopping_mall_order_payment_attempts shopping_mall_order_payment_attempts[]
+  shopping_mall_payment_method_stats shopping_mall_payment_method_stats[]
   
   @@unique([code])
-  @@index([is_active, priority])
-  @@index([starts_at, ends_at])
+  @@index([status, provider_type])
+  // spellchecker: ignore-next-line
+  @@index([allowed_currencies, allowed_countries], map: "shopping_mall_payment_methods_allowed_currencies_allow_2cffcff1")
 }
 
-/// Customer payment transactions associated with shoppingMall orders.
+/// Payment method surcharge and fee configuration.
 ///
-/// Represents the platform-level payment record for an order, independent of
-/// the underlying provider implementation. Each transaction references the
-/// order it pays for, the payment method chosen at checkout, and key
-/// provider identifiers used for reconciliation.
+/// Each row defines fee behavior for a particular payment method under some
+/// business scope, such as a specific region, currency, or order amount
+/// range. These rows allow calculation of customer-facing surcharges and
+/// platform-owned or pass-through fees per payment method.
 ///
-/// The table captures amounts authorized and captured, the current business
-/// payment status, and links to associated authorization and capture
-/// attempts, refund transactions, chargebacks, and status events. It forms
-/// the core of financial reporting for incoming payments.
+/// This table is subsidiary to {@link shopping_mall_payment_methods} and is
+/// not managed independently by end users.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_transactions {
+model shopping_mall_payment_method_surcharges {
   //----
   // COLUMNS
   //----
-  /// Primary key of the payment transaction.
+  /// Primary key.
   id String @id
   
-  /// Order that this payment transaction is associated with. {@link
-  /// shopping_mall_orders.id}.
-  shopping_mall_order_id String
-  
-  /// Customer who owns the order and initiated the payment. Nullable for edge
-  /// cases where the customer record is unavailable. {@link
-  /// shopping_mall_customer.id}.
-  shopping_mall_customer_id String?
-  
-  /// Payment method used for this transaction at checkout time. {@link
+  /// Payment method that this surcharge configuration belongs to. {@link
   /// shopping_mall_payment_methods.id}.
   shopping_mall_payment_method_id String
   
-  /// Optional platform-side identifier grouping multiple provider interactions
-  /// for the same logical payment intent, such as an internal intent code.
-  payment_intent_key String?
+  /// Optional business scope identifier for this surcharge (for example a
+  /// region code, channel code, or customer segment).
+  scope_code String?
   
-  /// Name or code of the payment provider handling this transaction, such as a
-  /// gateway identifier.
-  provider_name String
+  /// Optional ISO 4217 currency code for which this surcharge configuration
+  /// applies. If null, applies to all currencies of the parent method.
+  currency_code String?
   
-  /// Identifier of the transaction at the payment provider, used for
-  /// reconciliation and support inquiries.
-  provider_transaction_id String?
+  /// Optional minimum order amount for which this surcharge configuration is
+  /// valid.
+  min_order_amount Float?
   
-  /// ISO currency code for the amounts in this transaction, for example "USD"
-  /// or "EUR".
-  currency String
+  /// Optional maximum order amount for which this surcharge configuration is
+  /// valid.
+  max_order_amount Float?
   
-  /// Total amount that has been successfully authorized by the provider but
-  /// not necessarily captured yet.
-  authorized_amount Float?
+  /// Optional fixed fee amount added when this payment method is used and this
+  /// rule applies.
+  fixed_fee_amount Float?
   
-  /// Total amount that has been successfully captured from the provider for
-  /// this transaction.
-  captured_amount Float?
+  /// Optional percentage fee rate applied to the payable amount when this rule
+  /// applies (for example 2.9 for 2.9%).
+  percentage_fee_rate Float?
   
-  /// Total amount that has been refunded against this payment transaction,
-  /// aggregated from refund transactions.
-  refunded_amount Float
+  /// Flag indicating whether this surcharge is owned by the platform (true) or
+  /// pass-through to external parties such as carriers or gateways (false).
+  is_platform_revenue Boolean
   
-  /// Business payment status for the order, such as "payment_pending",
-  /// "payment_in_progress", "payment_authorized", "payment_captured",
-  /// "payment_failed", "payment_expired", "partially_refunded", or "refunded".
-  payment_status String
+  /// Optional policy string explaining how this surcharge behaves in refunds
+  /// (for example "refundable", "non_refundable", or a more complex
+  /// expression).
+  refundable_policy String?
   
-  /// Raw or provider-specific status code representing the latest known state
-  /// of the provider transaction.
-  provider_status String?
-  
-  /// Optional code describing why the payment failed, using either
-  /// platform-defined or provider-defined categories.
-  failure_reason_code String?
-  
-  /// Optional human readable message explaining why the payment failed or
-  /// could not be processed.
-  failure_reason_message String?
-  
-  /// Indicates that this payment transaction requires manual investigation or
-  /// review due to risk signals or inconsistencies.
-  requires_manual_review Boolean
-  
-  /// Optional JSON-encoded metadata from business logic or the provider. Only
-  /// raw data is stored; interpretation happens in application code.
-  metadata_json String?
-  
-  /// Timestamp when this payment transaction record was created.
+  /// Timestamp when this surcharge rule was created.
   created_at DateTime
   
-  /// Timestamp when this payment transaction record was last updated.
+  /// Timestamp when this surcharge rule was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_payment_authorizations shopping_mall_payment_authorizations[]
-  shopping_mall_payment_captures shopping_mall_payment_captures[]
-  shopping_mall_payment_status_events shopping_mall_payment_status_events[]
-  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
-  shopping_mall_payment_chargebacks shopping_mall_payment_chargebacks[]
-  
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id], map: "shopping_mall_payment_transactions_shopping_mall_custo_c2eac390")
+  @@index([shopping_mall_payment_method_id, currency_code, scope_code], map: "shopping_mall_payment_method_surcharges_shopping_mall__b04bc26e")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_method_id], map: "shopping_mall_payment_transactions_shopping_mall_payme_bc504092")
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_order_id, provider_transaction_id], map: "shopping_mall_payment_transactions_shopping_mall_order_7be41e93")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_payment_transactions_shopping_mall_order_1b7d748b")
-  // spellchecker: ignore-next-line
-  @@index([payment_status, created_at], map: "shopping_mall_payment_transactions_payment_status_crea_9351b9a3")
-  // spellchecker: ignore-next-line
-  @@index([provider_name, provider_transaction_id], map: "shopping_mall_payment_transactions_provider_name_provi_b35b3549")
+  @@index([min_order_amount, max_order_amount], map: "shopping_mall_payment_method_surcharges_min_order_amou_2f17575f")
 }
 
-/// Authorization attempts associated with payment transactions.
+/// Logical payments associated with customer orders.
 ///
-/// Each row represents a single authorization interaction with a payment
-/// provider for a given payment transaction. It stores provider
-/// authorization identifiers, amounts, and status codes, and supports
-/// multiple attempts or re-authorizations where business policy allows.
+/// Each row represents a payment at the business level for one order, which
+/// may be fully or partially covered by one or more attempts or split
+/// payments. The row holds the payable amount, method, and high-level status
+/// used to drive order payment lifecycle.
 ///
-/// This table acts as supporting audit detail for {@link
-/// shopping_mall_payment_transactions} and is not typically manipulated
-/// directly by end users, but it is important for troubleshooting and
-/// reconciliation.
+/// Refunds, chargebacks, and reconciliation events reference this entity to
+/// adjust and audit financial outcomes over time.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_authorizations {
+model shopping_mall_order_payments {
   //----
   // COLUMNS
   //----
-  /// Primary key of the payment authorization attempt.
+  /// Primary key.
   id String @id
   
-  /// Payment transaction that this authorization attempt belongs to. {@link
-  /// shopping_mall_payment_transactions.id}.
-  shopping_mall_payment_transaction_id String
-  
-  /// Identifier of the authorization at the payment provider, used to
-  /// reference or capture funds later.
-  provider_authorization_id String?
-  
-  /// Amount that was requested for authorization in the transaction currency.
-  amount Float
-  
-  /// ISO currency code for the authorization amount, matching the parent
-  /// payment transaction.
-  currency String
-  
-  /// Business status for this authorization attempt, such as "authorized",
-  /// "authorization_failed", or "authorization_voided".
-  authorization_status String
-  
-  /// Raw status code returned by the provider for this authorization attempt.
-  provider_status String?
-  
-  /// Datetime when the authorization is expected to expire according to
-  /// provider rules.
-  expires_at DateTime?
-  
-  /// Optional code describing why the authorization failed when the status
-  /// represents a failure.
-  failure_reason_code String?
-  
-  /// Optional human readable explanation describing authorization failure
-  /// returned by the provider or produced by the platform.
-  failure_reason_message String?
-  
-  /// Timestamp when this authorization record was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_payment_captures shopping_mall_payment_captures[]
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_transaction_id, created_at], map: "shopping_mall_payment_authorizations_shopping_mall_pay_2d6ec237")
-  // spellchecker: ignore-next-line
-  @@index([authorization_status, created_at], map: "shopping_mall_payment_authorizations_authorization_sta_29b2067c")
-}
-
-/// Capture attempts for previously authorized payment transactions.
-///
-/// Each row records a capture interaction with the payment provider, which
-/// moves funds from an authorized state to a captured state. The design
-/// supports multiple partial captures against the same authorization or
-/// payment transaction and records provider identifiers and status codes for
-/// each attempt.
-///
-/// These records provide fine-grained audit trails that complement the
-/// aggregate captured_amount stored on {@link
-/// shopping_mall_payment_transactions}.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_captures {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key of the payment capture attempt.
-  id String @id
-  
-  /// Payment transaction that this capture attempt belongs to. {@link
-  /// shopping_mall_payment_transactions.id}.
-  shopping_mall_payment_transaction_id String
-  
-  /// Authorization record that this capture is based on, when a specific
-  /// authorization was used. {@link shopping_mall_payment_authorizations.id}.
-  shopping_mall_payment_authorization_id String?
-  
-  /// Identifier of the capture at the payment provider, used for
-  /// reconciliation.
-  provider_capture_id String?
-  
-  /// Amount that was requested to be captured in this attempt, expressed in
-  /// the transaction currency.
-  amount Float
-  
-  /// ISO currency code for the capture amount, matching the parent payment
-  /// transaction.
-  currency String
-  
-  /// Business status for this capture attempt, such as "capture_succeeded" or
-  /// "capture_failed".
-  capture_status String
-  
-  /// Raw status code from the provider describing the capture result.
-  provider_status String?
-  
-  /// Optional code describing why the capture failed when capture_status
-  /// indicates failure.
-  failure_reason_code String?
-  
-  /// Optional human readable message describing capture failure details.
-  failure_reason_message String?
-  
-  /// Timestamp when this capture record was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
-  authorization shopping_mall_payment_authorizations? @relation(fields: [shopping_mall_payment_authorization_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_authorization_id], map: "shopping_mall_payment_captures_shopping_mall_payment_a_9b4904e9")
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_transaction_id, created_at], map: "shopping_mall_payment_captures_shopping_mall_payment_t_b1e2421c")
-  @@index([capture_status, created_at])
-}
-
-/// Status and event history for payment transactions.
-///
-/// Captures an append-only stream of state changes, notifications, and
-/// significant events related to a payment transaction. This includes
-/// transitions between business payment statuses, asynchronous webhooks from
-/// providers, and manual changes triggered by admins.
-///
-/// The table provides a detailed timeline for troubleshooting, analysis, and
-/// compliance investigations and complements the current payment_status on
-/// {@link shopping_mall_payment_transactions}.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_status_events {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key of the payment status event.
-  id String @id
-  
-  /// Payment transaction that this status event belongs to. {@link
-  /// shopping_mall_payment_transactions.id}.
-  shopping_mall_payment_transaction_id String
-  
-  /// Administrator responsible for this event when it represents a manual
-  /// override or adjustment. {@link shopping_mall_platformadmin.id}.
-  shopping_mall_platformadmin_id String?
-  
-  /// Payment status before this event was applied, using the same business
-  /// vocabulary as payment_status on the transaction.
-  previous_status String?
-  
-  /// Payment status after this event was applied, using the same business
-  /// vocabulary as payment_status on the transaction.
-  new_status String
-  
-  /// Categorized type of status event, such as "provider_webhook",
-  /// "manual_update", or "system_transition".
-  event_type String
-  
-  /// Optional raw event code from the provider when the event was triggered by
-  /// an external notification.
-  provider_event_code String?
-  
-  /// Optional reference identifier from the provider, such as an event ID or
-  /// notification ID.
-  provider_reference String?
-  
-  /// Optional human readable notes describing the reason or context for this
-  /// status change.
-  notes String?
-  
-  /// Timestamp when this status event was recorded.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
-  admin shopping_mall_platformadmin? @relation(fields: [shopping_mall_platformadmin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_platformadmin_id], map: "shopping_mall_payment_status_events_shopping_mall_plat_3affbb7b")
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_transaction_id, created_at], map: "shopping_mall_payment_status_events_shopping_mall_paym_15777ddb")
-  @@index([new_status, created_at])
-}
-
-/// Refund transactions that return funds to customers for all or part of an
-/// order.
-///
-/// Each row represents a distinct refund event against a payment transaction
-/// and order. It stores the refunded amount, reason categories, and status,
-/// and provides links to the underlying payment transaction and order for
-/// reconciliation.
-///
-/// Refunds may be triggered by customers, sellers, or platform admins. The
-/// table records the initiating actor type and identifiers and is
-/// complemented by {@link shopping_mall_refund_items} for line-level
-/// breakdowns and {@link shopping_mall_payment_transactions} for the
-/// original payment context.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_refund_transactions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key of the refund transaction.
-  id String @id
-  
-  /// Payment transaction that this refund is applied to. {@link
-  /// shopping_mall_payment_transactions.id}.
-  shopping_mall_payment_transaction_id String
-  
-  /// Order whose financial amounts are being refunded. {@link
+  /// Order that this logical payment belongs to. {@link
   /// shopping_mall_orders.id}.
   shopping_mall_order_id String
   
-  /// Customer who initiated the refund request when it originates from the
-  /// buyer. {@link shopping_mall_customer.id}.
-  initiator_customer_id String?
+  /// Customer who owns the order and thus the payment. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Seller who initiated the refund when the request originates from the
-  /// merchant side. {@link shopping_mall_seller.id}.
-  initiator_seller_id String?
+  /// Payment method used for this payment from the platform perspective.
+  /// {@link shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
   
-  /// Administrator who initiated or approved the refund when it is an
-  /// admin-driven adjustment. {@link shopping_mall_platformadmin.id}.
-  initiator_platformadmin_id String?
+  /// Sequence number of this payment within the order, starting from 1. Allows
+  /// multiple payments per order (partial or split payments).
+  payment_sequence Int
   
-  /// Business identifier for the refund transaction, unique per payment for
-  /// audit and customer communication.
-  refund_number String
+  /// ISO 4217 currency code in which this payment is denominated.
+  currency_code String
   
-  /// Business status of the refund, such as "refund_pending",
-  /// "refund_in_progress", "refund_failed", or "refund_completed".
-  refund_status String
+  /// Total amount that should be paid for this payment in currency_code,
+  /// including items, taxes, and customer-facing fees that belong to this
+  /// payment.
+  payable_amount Float
   
-  /// Categorical type of the actor that initiated the refund, such as
-  /// "customer", "seller", or "admin". Used for reporting and business rules.
-  actor_type String
+  /// Total amount that has actually been captured or otherwise confirmed as
+  /// paid so far for this payment.
+  captured_amount Float
   
-  /// Categorized reason for the refund, such as "customer_cancellation",
-  /// "seller_cancellation", "return", or "admin_adjustment".
-  reason_category String
+  /// Total amount that has been refunded for this payment across all completed
+  /// refunds.
+  refunded_amount Float
   
-  /// Optional free text explanation describing why the refund was requested or
-  /// approved.
-  reason_message String?
+  /// Total amount that has been chargebacked for this payment across all
+  /// chargebacks.
+  chargeback_amount Float
   
-  /// Amount initially requested to be refunded in the payment currency.
-  requested_amount Float
+  /// Business status for this payment (for example "pending", "paid",
+  /// "partially_refunded", "refunded", "chargeback", "cancelled"). Drives
+  /// order eligibility to ship and refund.
+  business_status String
   
-  /// Amount that was approved for refund, which may be less than the
-  /// requested_amount according to policy.
-  approved_amount Float?
+  /// Optional provider-specific status code summarizing the last known state
+  /// from the payment gateway.
+  provider_status_code String?
   
-  /// Amount actually refunded through the provider once the refund is
-  /// completed.
-  refunded_amount Float?
+  /// Optional reference identifier from the payment provider (for example
+  /// payment intent id or transaction id) at the payment level.
+  provider_reference String?
   
-  /// ISO currency code for all amounts, matching the currency of the payment
-  /// transaction.
-  currency String
+  /// Optional serialized metadata for payment, such as structured JSON storing
+  /// provider or internal diagnostic information.
+  metadata String?
   
-  /// Identifier for this refund at the payment provider, used for
-  /// reconciliation and support.
-  provider_refund_id String?
-  
-  /// Raw status code from the payment provider describing the current state of
-  /// the refund.
-  provider_status String?
-  
-  /// Optional code describing why the refund failed when refund_status
-  /// indicates a failure.
-  failure_reason_code String?
-  
-  /// Optional message giving more detail about a refund failure.
-  failure_reason_message String?
-  
-  /// Timestamp when the refund transaction record was created.
+  /// Timestamp when this payment record was created.
   created_at DateTime
   
-  /// Timestamp when the refund transaction record was last updated.
+  /// Timestamp when this payment record was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  initiatorCustomer shopping_mall_customer? @relation(fields: [initiator_customer_id], references: [id], onDelete: Cascade)
-  initiatorSeller shopping_mall_seller? @relation(fields: [initiator_seller_id], references: [id], onDelete: Cascade)
-  initiatorAdmin shopping_mall_platformadmin? @relation(fields: [initiator_platformadmin_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_refund_items shopping_mall_refund_items[]
+  shopping_mall_order_payment_attempts shopping_mall_order_payment_attempts[]
+  shopping_mall_payment_status_histories shopping_mall_payment_status_histories[]
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_chargebacks shopping_mall_payment_chargebacks[]
+  shopping_mall_payment_reconciliation_events shopping_mall_payment_reconciliation_events[]
+  shopping_mall_seller_earnings shopping_mall_seller_earnings[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
   
-  @@index([initiator_customer_id])
-  @@index([initiator_seller_id])
   // spellchecker: ignore-next-line
-  @@index([initiator_platformadmin_id], map: "shopping_mall_refund_transactions_initiator_platformad_9af5e4b1")
-  
+  @@unique([shopping_mall_order_id, payment_sequence], map: "shopping_mall_order_payments_shopping_mall_order_id_pa_302bc583")
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_payment_transaction_id, refund_number], map: "shopping_mall_refund_transactions_shopping_mall_paymen_b6193b7c")
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_order_payments_shopping_mall_customer_id_15d7e461")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_refund_transactions_shopping_mall_order__81972382")
-  @@index([refund_status, created_at])
+  @@index([shopping_mall_payment_method_id, business_status], map: "shopping_mall_order_payments_shopping_mall_payment_met_16e4b2a5")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, business_status], map: "shopping_mall_order_payments_shopping_mall_order_id_bu_107b23bf")
 }
 
-/// Line-level breakdown of amounts within a refund transaction.
+/// Concrete payment attempts for a logical order payment.
 ///
-/// Each row represents a component of a refund, such as a specific order
-/// line, shipping portion, or manual adjustment. This allows the platform to
-/// explain which parts of an order were refunded and to match refund amounts
-/// to item-level and fee-level amounts.
+/// Each row represents one technical attempt to pay the amount indicated by
+/// the parent payment, such as a card charge attempt or bank transfer
+/// initiation. Multiple attempts may exist for the same business payment due
+/// to retries or switching methods, depending on policy.
 ///
-/// The table is managed as a child of {@link
-/// shopping_mall_refund_transactions} and may reference order lines or
-/// seller segments defined in the order domain.
+/// Attempts are subsidiary and are mainly used for audit, troubleshooting,
+/// and risk analysis rather than independent management.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_refund_items {
+model shopping_mall_order_payment_attempts {
   //----
   // COLUMNS
   //----
-  /// Primary key of the refund item.
+  /// Primary key.
   id String @id
   
-  /// Refund transaction that this item belongs to. {@link
-  /// shopping_mall_refund_transactions.id}.
-  shopping_mall_refund_transaction_id String
+  /// Parent logical order payment that this attempt belongs to. {@link
+  /// shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String
   
-  /// Order line that this refund item relates to, when the refund targets
-  /// specific items. {@link shopping_mall_order_lines.id}.
-  shopping_mall_order_line_id String?
+  /// Payment method actually used in this attempt (could differ from the main
+  /// payment configuration in exceptional flows). {@link
+  /// shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
   
-  /// Seller segment that this refund item relates to when the refund is
-  /// computed at seller-scope instead of a single line. {@link
-  /// shopping_mall_order_seller_segments.id}.
-  shopping_mall_order_seller_segment_id String?
+  /// Sequence number of this attempt for the given payment, starting from 1.
+  /// Used to order attempts chronologically or by retry count.
+  attempt_sequence Int
   
-  /// Type of amount being refunded, such as "item_price", "tax", "shipping",
-  /// or "adjustment".
-  component_type String
+  /// Status of this attempt (for example "pending", "success", "failed",
+  /// "error", "expired").
+  status String
   
-  /// Optional description of this refund component, suitable for
-  /// customer-facing explanations.
-  description String?
+  /// Amount that this attempt tried to authorize or capture, denominated in
+  /// the payment currency.
+  amount Float
   
-  /// Gross amount of this refund component before any fees, expressed in the
-  /// refund currency.
-  gross_amount Float
+  /// Attempt-level reference from the payment provider (for example
+  /// transaction id or intent id).
+  provider_reference String?
   
-  /// Amount of tax included in this refund component when tax needs to be
-  /// reported separately.
-  tax_amount Float?
+  /// Optional failure or error code reported by the payment provider for this
+  /// attempt.
+  failure_code String?
   
-  /// Portion of shipping cost included in this component when applicable.
-  shipping_amount Float?
+  /// Optional human-readable message explaining why the attempt failed or
+  /// errored, suitable for internal support analysis.
+  failure_message String?
   
-  /// Net amount of this refund component after subtracting non-refundable fees
-  /// if any are applied by the business.
-  net_amount Float?
+  /// Optional serialized raw response or payload received from the payment
+  /// provider for this attempt for debugging and audits.
+  raw_response String?
+  
+  /// Timestamp when this attempt record was created.
+  created_at DateTime
+  
+  /// Timestamp when this attempt record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_payment_id, attempt_sequence], map: "shopping_mall_order_payment_attempts_shopping_mall_ord_ac9b5c56")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id, status], map: "shopping_mall_order_payment_attempts_shopping_mall_ord_156030f3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id, created_at], map: "shopping_mall_order_payment_attempts_shopping_mall_pay_eadb04c1")
+}
+
+/// Historical status changes for order payments.
+///
+/// Each row records a transition of business_status and optionally
+/// provider_status_code for a particular payment. This provides an
+/// append-only audit trail showing how payment state evolved over time and
+/// which process or actor triggered each change.
+///
+/// It is subsidiary to {@link shopping_mall_order_payments} and used mainly
+/// for audit, risk, and debugging purposes.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Payment whose status changed. {@link shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String
+  
+  /// Optional admin who manually changed the status, if the transition was
+  /// admin-driven. {@link shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
+  
+  /// Previous business_status value before this change. Null if this is the
+  /// first recorded status.
+  previous_business_status String?
+  
+  /// New business_status value after this change.
+  new_business_status String
+  
+  /// Previous provider_status_code before this change, if any.
+  previous_provider_status_code String?
+  
+  /// New provider_status_code after this change, if any.
+  new_provider_status_code String?
+  
+  /// Optional structured code describing why the status change occurred (for
+  /// example "payment_confirmed", "refund_completed", "manual_override").
+  reason_code String?
+  
+  /// Optional human-readable explanation providing more detail about the
+  /// status change for audit purposes.
+  reason_message String?
+  
+  /// Timestamp when this status change was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated. Generally equals created_at
+  /// for immutable history rows.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id], map: "shopping_mall_payment_status_histories_shopping_mall_a_fa4235fc")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id, created_at], map: "shopping_mall_payment_status_histories_shopping_mall_o_13d6a3a6")
+  // spellchecker: ignore-next-line
+  @@index([new_business_status, created_at], map: "shopping_mall_payment_status_histories_new_business_st_0fb39551")
+}
+
+/// Refund operations executed against payments.
+///
+/// Each row represents a refund transaction at the payment level, covering
+/// some portion or all of one order payment. Refunds reference order
+/// payments rather than orders directly, aligning financial flows with
+/// payment records.
+///
+/// Refund items provide per-line breakdowns, and external provider
+/// references allow reconciliation with gateway-side refund transactions.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Payment that this refund operation applies to. {@link
+  /// shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String
+  
+  /// Admin who approved or executed the refund, when applicable. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
+  
+  /// Sequence number of this refund for the given payment, starting from 1.
+  /// Used to differentiate multiple refunds against the same payment.
+  refund_sequence Int
+  
+  /// ISO 4217 currency code in which this refund is denominated. Usually
+  /// matches the payment currency.
+  currency_code String
+  
+  /// Amount initially requested to be refunded at business level.
+  requested_amount Float
+  
+  /// Amount that was approved for refund based on policy and decision.
+  approved_amount Float
+  
+  /// Amount that the payment provider confirms has actually been refunded to
+  /// the customer.
+  refunded_amount Float
+  
+  /// Status of this refund (for example "pending", "approved", "rejected",
+  /// "completed", "failed").
+  status String
+  
+  /// Optional structured reason code for the refund, aligned with
+  /// business-level refund reasons.
+  reason_code String?
+  
+  /// Optional free-text explanation describing why the refund was requested or
+  /// approved, suitable for audit.
+  reason_message String?
+  
+  /// Optional refund transaction reference from the payment provider.
+  provider_reference String?
+  
+  /// Optional serialized metadata with provider or internal diagnostic details
+  /// regarding this refund.
+  metadata String?
+  
+  /// Timestamp when this refund record was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refund_items shopping_mall_payment_refund_items[]
+  shopping_mall_seller_fee_charges shopping_mall_seller_fee_charges[]
+  
+  @@index([shopping_mall_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_payment_id, refund_sequence], map: "shopping_mall_payment_refunds_shopping_mall_order_paym_ea10feb1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id, status], map: "shopping_mall_payment_refunds_shopping_mall_order_paym_fc11d542")
+  @@index([status, created_at])
+}
+
+/// Per-order-item breakdown of a refund.
+///
+/// Each row represents a portion of a refund allocated to a particular order
+/// item. It supports item-level refund amounts, quantities, and reason codes
+/// so that refunds can be analyzed at the SKU or seller level.
+///
+/// This table is subsidiary to {@link shopping_mall_payment_refunds} and
+/// {@link shopping_mall_order_items}.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refund_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Refund that this item-level breakdown belongs to. {@link
+  /// shopping_mall_payment_refunds.id}.
+  shopping_mall_payment_refund_id String
+  
+  /// Order item whose charge is being refunded in whole or part. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Quantity of the order item being refunded. Supports fractional quantities
+  /// if the platform allows them.
+  refunded_quantity Float
+  
+  /// Unit price amount used as basis for this refund for the item in
+  /// currency_code of the parent refund.
+  unit_price_amount Float
+  
+  /// Total monetary amount refunded for this order item line within this
+  /// refund operation.
+  line_refund_amount Float
+  
+  /// Optional item-specific reason code (for example "damaged", "wrong_item",
+  /// "customer_remorse").
+  reason_code String?
   
   /// Timestamp when this refund item record was created.
   created_at DateTime
   
+  /// Timestamp when this refund item record was last updated.
+  updated_at DateTime
+  
   //----
   // RELATIONS
   //----
-  refundTransaction shopping_mall_refund_transactions @relation(fields: [shopping_mall_refund_transaction_id], references: [id], onDelete: Cascade)
-  orderLine shopping_mall_order_lines? @relation(fields: [shopping_mall_order_line_id], references: [id], onDelete: Cascade)
-  orderSellerSegment shopping_mall_order_seller_segments? @relation(fields: [shopping_mall_order_seller_segment_id], references: [id], onDelete: Cascade)
+  paymentRefund shopping_mall_payment_refunds @relation(fields: [shopping_mall_payment_refund_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_order_line_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_seller_segment_id], map: "shopping_mall_refund_items_shopping_mall_order_seller__f82a12ca")
+  shopping_mall_refund_request_items shopping_mall_refund_request_items[]
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_refund_transaction_id, component_type], map: "shopping_mall_refund_items_shopping_mall_refund_transa_b488bdec")
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_payment_refund_items_shopping_mall_order_10e66d46")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_refund_id, shopping_mall_order_item_id], map: "shopping_mall_payment_refund_items_shopping_mall_payme_7a1b73e7")
 }
 
-/// Chargebacks raised through financial institutions against completed
-/// payments.
+/// Chargeback cases associated with payments.
 ///
-/// Represents disputes initiated outside the platform, typically via a
-/// customer’s bank or card issuer. Each record groups information about the
-/// chargeback case, including the amount contested, provider reason codes,
-/// and the current chargeback status.
+/// Each row represents a chargeback event opened by a card issuer, bank, or
+/// wallet provider against a specific payment. It captures the disputed
+/// amount, status, stages of the dispute, and provider references.
 ///
-/// These rows link back to the original payment transaction and order and
-/// are used by platform admins and finance teams to manage responses, report
-/// loss due to chargebacks, and align with dispute-handling policies.
+/// This table enables risk and loss tracking, as well as coordination with
+/// order state and seller earnings adjustments.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -649,57 +562,48 @@ model shopping_mall_payment_chargebacks {
   //----
   // COLUMNS
   //----
-  /// Primary key of the chargeback record.
+  /// Primary key.
   id String @id
   
-  /// Payment transaction that this chargeback relates to. {@link
-  /// shopping_mall_payment_transactions.id}.
-  shopping_mall_payment_transaction_id String
+  /// Payment that this chargeback relates to. {@link
+  /// shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String
   
-  /// Order whose payment is being disputed through the chargeback. {@link
-  /// shopping_mall_orders.id}.
-  shopping_mall_order_id String
+  /// Optional admin overseeing this chargeback or responsible for manual
+  /// decisions. {@link shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
   
-  /// Customer associated with the order under dispute. {@link
-  /// shopping_mall_customer.id}.
-  shopping_mall_customer_id String?
-  
-  /// Platform-side identifier for the chargeback case, unique per payment
-  /// transaction for internal tracking.
-  case_reference String
-  
-  /// Identifier for the chargeback case at the payment provider or card
-  /// network.
-  provider_case_id String?
-  
-  /// Current business status of the chargeback, such as "chargeback_open",
-  /// "chargeback_won", or "chargeback_lost".
-  chargeback_status String
-  
-  /// Provider or scheme reason code indicating why the chargeback was opened,
-  /// such as fraud, non-receipt, or product dissatisfaction.
-  reason_code String
-  
-  /// Optional human readable explanation or description associated with the
-  /// reason code.
-  reason_message String?
-  
-  /// Amount that is being disputed through the chargeback, expressed in the
+  /// ISO 4217 currency code of the disputed amount. Usually matches the
   /// payment currency.
+  currency_code String
+  
+  /// Amount disputed by the issuer or payment provider.
   disputed_amount Float
   
-  /// ISO currency code for the disputed amount, usually matching the original
-  /// payment currency.
-  currency String
+  /// Amount that has actually been withdrawn from the platform due to this
+  /// chargeback, if any.
+  chargeback_amount Float
   
-  /// Datetime when the chargeback was first reported to the platform.
-  opened_at DateTime
+  /// Provider or scheme-defined chargeback reason code.
+  reason_code String?
   
-  /// Datetime when the chargeback case was closed, either in favor of the
-  /// customer or the platform.
-  closed_at DateTime?
+  /// Business status of the chargeback case (for example "open", "won",
+  /// "lost", "writing_off").
+  status String
   
-  /// Timestamp when this chargeback record was created in the system.
+  /// Optional stage indicator for the lifecycle of the chargeback (for example
+  /// "first_presentment", "pre_arbitration", "arbitration").
+  stage String?
+  
+  /// Chargeback reference identifier from the payment provider, card scheme,
+  /// or bank network.
+  provider_reference String?
+  
+  /// Optional serialized metadata including provider payloads, internal notes,
+  /// or evidence references.
+  metadata String?
+  
+  /// Timestamp when this chargeback record was created.
   created_at DateTime
   
   /// Timestamp when this chargeback record was last updated.
@@ -708,126 +612,280 @@ model shopping_mall_payment_chargebacks {
   //----
   // RELATIONS
   //----
-  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_disputes shopping_mall_disputes[]
+  
+  @@index([shopping_mall_admin_id])
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id], map: "shopping_mall_payment_chargebacks_shopping_mall_custom_196aeb8b")
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_payment_transaction_id, case_reference], map: "shopping_mall_payment_chargebacks_shopping_mall_paymen_a0a9ecc8")
-  // spellchecker: ignore-next-line
-  @@index([chargeback_status, opened_at], map: "shopping_mall_payment_chargebacks_chargeback_status_op_9fa7a2ac")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, opened_at], map: "shopping_mall_payment_chargebacks_shopping_mall_order__6fa22668")
+  @@index([shopping_mall_order_payment_id, status], map: "shopping_mall_payment_chargebacks_shopping_mall_order__d1bc186f")
+  @@index([status, created_at])
 }
 
-/// Payout batches that transfer funds from the platform to individual sellers.
+/// Reconciliation events recorded for payments.
 ///
-/// Each row aggregates net earnings, adjustments, and fees for a seller over
-/// a payout period, and maps them to a single outbound payment to the
-/// seller, such as a bank transfer. The table tracks payout status and
-/// provider identifiers and is the root for {@link
-/// shopping_mall_seller_payout_items} that detail per-order allocations.
+/// Each row captures a reconciliation finding or adjustment for a payment,
+/// such as mismatched amounts between provider and internal records, late
+/// notifications, or manual corrections.
 ///
-/// Finance and accounting teams use this entity to reconcile platform
-/// liabilities and to report on what has been paid out or is still pending
-/// for each seller.
+/// These events are subsidiary to {@link shopping_mall_order_payments} and
+/// help auditors and operations track how discrepancies were detected and
+/// resolved.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_payouts {
+model shopping_mall_payment_reconciliation_events {
   //----
   // COLUMNS
   //----
-  /// Primary key of the seller payout.
+  /// Primary key.
   id String @id
   
-  /// Seller that receives this payout. {@link shopping_mall_seller.id}.
-  shopping_mall_seller_id String
+  /// Payment that this reconciliation event concerns. {@link
+  /// shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String
   
-  /// Business identifier of the payout, unique per seller for reconciliation
-  /// and communication.
-  payout_number String
+  /// Optional admin who created or resolved this reconciliation event. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
   
-  /// Current status of the payout, such as "payout_pending",
-  /// "payout_in_progress", "payout_failed", or "payout_sent".
-  payout_status String
+  /// Type of reconciliation event (for example "amount_mismatch",
+  /// "late_capture", "provider_report_only").
+  event_type String
   
-  /// ISO currency code of the payout, usually the settlement currency agreed
-  /// with the seller.
-  currency String
+  /// Amount reported by the provider when this event was detected, if
+  /// applicable.
+  provider_amount Float?
   
-  /// Total gross amount of all positive earnings included in this payout
-  /// before fees and adjustments.
-  gross_amount Float
+  /// Internal amount recorded in the platform at the time of detection, if
+  /// applicable.
+  internal_amount Float?
   
-  /// Total amount of fees or commissions deducted from the seller as part of
-  /// this payout.
-  fee_amount Float?
+  /// Currency in which the mismatch was detected, typically matching the
+  /// payment currency.
+  currency_code String?
   
-  /// Net effect of manual adjustments, such as manual credits or debits,
-  /// included in this payout.
-  adjustment_amount Float?
+  /// Status of reconciliation (for example "open", "in_progress", "resolved",
+  /// "won_t_fix").
+  resolution_status String
   
-  /// Net amount that is actually paid out to the seller after fees and
-  /// adjustments.
-  net_amount Float
+  /// Optional human-readable explanation of how this reconciliation event is
+  /// being or was resolved.
+  resolution_note String?
   
-  /// Optional start of the earnings period covered by this payout, used for
-  /// reporting and reconciliation.
-  period_start DateTime?
-  
-  /// Optional end of the earnings period covered by this payout, used for
-  /// reporting and reconciliation.
-  period_end DateTime?
-  
-  /// Name or code of the external payment provider or bank used to send this
-  /// payout.
-  provider_name String?
-  
-  /// Identifier for this payout at the provider or bank, used for tracing
-  /// payouts.
-  provider_payout_id String?
-  
-  /// Optional code describing why the payout failed when payout_status
-  /// indicates failure.
-  failure_reason_code String?
-  
-  /// Optional human readable description giving more information about a
-  /// payout failure.
-  failure_reason_message String?
-  
-  /// Timestamp when this payout record was created.
+  /// Timestamp when this reconciliation event was recorded.
   created_at DateTime
   
-  /// Timestamp when this payout record was last updated.
+  /// Timestamp when this reconciliation event was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id], map: "shopping_mall_payment_reconciliation_events_shopping_m_b7bf718e")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id, resolution_status], map: "shopping_mall_payment_reconciliation_events_shopping_m_80ecaa0d")
+  // spellchecker: ignore-next-line
+  @@index([event_type, created_at], map: "shopping_mall_payment_reconciliation_events_event_type_6e0360ac")
+}
+
+/// Seller earnings records derived from orders and payments.
+///
+/// Each row represents a unit of earnings for a seller, typically linked to
+/// one order item or adjustment, after applying commissions, platform-funded
+/// discounts, and seller-funded discounts.
+///
+/// These records serve as the source of truth for payout eligibility and
+/// support KPI calculations such as GMV, NMV, and seller net earnings over
+/// time.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_earnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Seller who owns this earning. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Customer order from which this earning originates. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Specific order item that generated this earning, if applicable. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String?
+  
+  /// Payment associated with this earning when relevant (for example when
+  /// earnings depend on payment completion). {@link
+  /// shopping_mall_order_payments.id}.
+  shopping_mall_order_payment_id String?
+  
+  /// ISO 4217 currency code of this earning record.
+  currency_code String
+  
+  /// Gross merchandise amount associated with this earning before commissions
+  /// and platform-funded promotions.
+  gross_amount Float
+  
+  /// Amount of discount funded by the seller for this earning (reduces seller
+  /// gross earnings).
+  seller_discount_amount Float
+  
+  /// Amount of discount funded by the platform for this earning (does not
+  /// reduce seller gross earnings, but affects platform cost).
+  platform_discount_amount Float
+  
+  /// Commission amount charged by the platform for this earning.
+  commission_amount Float
+  
+  /// Any other fee amount that affects net earnings for this seller (for
+  /// example per-order fees or adjustments).
+  other_fee_amount Float
+  
+  /// Net amount owed to the seller for this earning after subtracting
+  /// commissions and seller-funded discounts, plus any adjustments.
+  net_earning_amount Float
+  
+  /// Type of earning (for example "order_item", "shipping",
+  /// "manual_adjustment").
+  earning_type String
+  
+  /// Lifecycle status of this earning (for example "pending", "eligible",
+  /// "paid_out", "reversed"). Pending and eligible control payout eligibility.
+  business_status String
+  
+  /// Timestamp at which this earning became eligible for payout (for example
+  /// after refund window closes).
+  eligible_at DateTime?
+  
+  /// Timestamp when this earning was reversed due to refund, chargeback, or
+  /// manual adjustment, if applicable.
+  reversed_at DateTime?
+  
+  /// Optional serialized metadata describing the commission rule applied,
+  /// campaign identifiers, or internal notes.
+  metadata String?
+  
+  /// Timestamp when this earning record was created.
+  created_at DateTime
+  
+  /// Timestamp when this earning record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  orderPayment shopping_mall_order_payments? @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
   
   shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
   
+  @@index([shopping_mall_order_item_id])
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_seller_id, payout_number], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_387c6922")
+  @@index([shopping_mall_order_payment_id], map: "shopping_mall_seller_earnings_shopping_mall_order_paym_c88f2985")
+  
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_c_98a481f9")
-  @@index([payout_status, created_at])
+  @@index([shopping_mall_seller_id, business_status], map: "shopping_mall_seller_earnings_shopping_mall_seller_id__d3ac07e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, eligible_at], map: "shopping_mall_seller_earnings_shopping_mall_seller_id__10ede0e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, shopping_mall_order_item_id], map: "shopping_mall_seller_earnings_shopping_mall_order_id_s_2462c46b")
 }
 
-/// Per-order and per-line components included in a seller payout.
+/// Payout batches aggregating multiple seller earnings for settlement.
 ///
-/// Each row represents a specific contribution to a seller payout such as
-/// revenue from a particular order line, a refund adjustment, or a manual
-/// correction. This breakdown links payout amounts back to underlying orders
-/// and seller segments to support transparent statements and reconciliation.
+/// Each row represents a payout run or batch in which multiple sellers may
+/// be paid, or a specific batch per seller depending on configuration. It
+/// captures the payout period, totals, and status.
 ///
-/// The table is a child of {@link shopping_mall_seller_payouts} and relies
-/// on order-centric tables for the underlying commercial context.
+/// Payout items attach individual seller earnings to a batch, and external
+/// references connect the batch to bank or payment processor instructions.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payout_batches {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Business identifier for this payout batch, unique for traceability (for
+  /// example "PO-2025-03-15-001").
+  batch_code String
+  
+  /// Start timestamp of the business period that this batch covers for
+  /// reporting purposes.
+  payout_period_start DateTime
+  
+  /// End timestamp of the business period that this batch covers for reporting
+  /// purposes.
+  payout_period_end DateTime
+  
+  /// ISO 4217 currency code used for monetary amounts in this payout batch.
+  currency_code String
+  
+  /// Total gross earnings included in this batch before any adjustments or
+  /// negative balances.
+  total_gross_amount Float
+  
+  /// Total commission amount associated with earnings included in this batch.
+  total_commission_amount Float
+  
+  /// Total amount to be transferred to sellers in this batch after commissions
+  /// and adjustments.
+  total_net_payout_amount Float
+  
+  /// Status of this payout batch at business level (for example "draft",
+  /// "processing", "completed", "failed", "cancelled").
+  status String
+  
+  /// Optional reference to a bank file, payout run ID, or external instruction
+  /// identifier associated with this batch.
+  external_reference String?
+  
+  /// Optional internal notes for finance or operations explaining special
+  /// handling or anomalies in this batch.
+  notes String?
+  
+  /// Timestamp when this payout batch was created.
+  created_at DateTime
+  
+  /// Timestamp when this payout batch was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
+  
+  @@unique([batch_code])
+  // spellchecker: ignore-next-line
+  @@index([status, payout_period_start, payout_period_end], map: "shopping_mall_seller_payout_batches_status_payout_peri_bc0500f3")
+}
+
+/// Payout batch items linking seller earnings to a batch.
+///
+/// Each row associates a single seller earning with a payout batch and
+/// records the amount being paid out in that batch. This table materializes
+/// which earnings were settled when and supports reconciliation with both
+/// seller statements and platform finance records.
+///
+/// The table is subsidiary to {@link shopping_mall_seller_payout_batches}
+/// and {@link shopping_mall_seller_earnings}.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -835,60 +893,55 @@ model shopping_mall_seller_payout_items {
   //----
   // COLUMNS
   //----
-  /// Primary key of the seller payout item.
+  /// Primary key.
   id String @id
   
-  /// Seller payout that this item contributes to. {@link
-  /// shopping_mall_seller_payouts.id}.
-  shopping_mall_seller_payout_id String
+  /// Payout batch that this payout item belongs to. {@link
+  /// shopping_mall_seller_payout_batches.id}.
+  shopping_mall_seller_payout_batch_id String
   
-  /// Order that this payout item is derived from when applicable. {@link
-  /// shopping_mall_orders.id}.
-  shopping_mall_order_id String?
+  /// Seller earning that is being paid in this batch item. {@link
+  /// shopping_mall_seller_earnings.id}.
+  shopping_mall_seller_earning_id String
   
-  /// Seller segment of the order that this payout item relates to, when
-  /// allocation is tracked at segment level. {@link
-  /// shopping_mall_order_seller_segments.id}.
-  shopping_mall_order_seller_segment_id String?
+  /// ISO 4217 currency code of the payout amount. Usually matches the batch
+  /// and earning currency.
+  currency_code String
   
-  /// Order line that this payout item relates to when the payout is calculated
-  /// at line level. {@link shopping_mall_order_lines.id}.
-  shopping_mall_order_line_id String?
+  /// Amount paid out for this earning in this batch. Normally equals the
+  /// net_earning_amount, but may differ if partial payouts or previous
+  /// adjustments exist.
+  payout_amount Float
   
-  /// Type of component included in the payout, such as "item_revenue",
-  /// "shipping_revenue", "refund_deduction", or "manual_adjustment".
-  component_type String
+  /// Status of this payout item (for example "pending", "included", "paid",
+  /// "reversed").
+  status String
   
-  /// Optional explanation shown in seller statements for this payout component.
-  description String?
+  /// Timestamp when this payout item was confirmed as paid to the seller, if
+  /// applicable.
+  paid_at DateTime?
   
-  /// Gross amount for this payout component before deducting platform fees.
-  gross_amount Float
+  /// Timestamp when this payout item was reversed due to negative adjustments,
+  /// chargebacks, or other corrections.
+  reversed_at DateTime?
   
-  /// Amount of platform fees allocated to this component when available.
-  fee_amount Float?
-  
-  /// Net amount from this component that contributes to the seller’s payout
-  /// after fees.
-  net_amount Float
-  
-  /// Timestamp when this payout item record was created.
+  /// Timestamp when this payout item was created.
   created_at DateTime
+  
+  /// Timestamp when this payout item was last updated.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  sellerPayout shopping_mall_seller_payouts @relation(fields: [shopping_mall_seller_payout_id], references: [id], onDelete: Cascade)
-  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  orderSellerSegment shopping_mall_order_seller_segments? @relation(fields: [shopping_mall_order_seller_segment_id], references: [id], onDelete: Cascade)
-  orderLine shopping_mall_order_lines? @relation(fields: [shopping_mall_order_line_id], references: [id], onDelete: Cascade)
+  payoutBatch shopping_mall_seller_payout_batches @relation(fields: [shopping_mall_seller_payout_batch_id], references: [id], onDelete: Cascade)
+  sellerEarning shopping_mall_seller_earnings @relation(fields: [shopping_mall_seller_earning_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_order_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_seller_segment_id], map: "shopping_mall_seller_payout_items_shopping_mall_order__d1746eca")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_line_id], map: "shopping_mall_seller_payout_items_shopping_mall_order__7a1ef624")
+  shopping_mall_seller_fee_charges shopping_mall_seller_fee_charges[]
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_payout_id, component_type], map: "shopping_mall_seller_payout_items_shopping_mall_seller_cbddbddf")
+  @@unique([shopping_mall_seller_earning_id], map: "shopping_mall_seller_payout_items_shopping_mall_seller_e9df2d51")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_payout_batch_id, status], map: "shopping_mall_seller_payout_items_shopping_mall_seller_96639ae0")
+  @@index([status, paid_at])
 }

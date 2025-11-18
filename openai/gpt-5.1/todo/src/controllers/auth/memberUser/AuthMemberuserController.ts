@@ -4,72 +4,68 @@ import typia from "typia";
 import { postAuthMemberUserJoin } from "../../../providers/postAuthMemberUserJoin";
 import { postAuthMemberUserLogin } from "../../../providers/postAuthMemberUserLogin";
 import { postAuthMemberUserRefresh } from "../../../providers/postAuthMemberUserRefresh";
-import { MemberuserAuth } from "../../../decorators/MemberuserAuth";
-import { MemberuserPayload } from "../../../decorators/payload/MemberuserPayload";
-import { postAuthMemberUserLogout } from "../../../providers/postAuthMemberUserLogout";
-import { postAuthMemberUserLogoutAll } from "../../../providers/postAuthMemberUserLogoutAll";
 
-import { ITodoAppMemberuser } from "../../../api/structures/ITodoAppMemberuser";
+import { ITodoAppMemberUser } from "../../../api/structures/ITodoAppMemberUser";
 import { ITodoAppMemberUserJoin } from "../../../api/structures/ITodoAppMemberUserJoin";
 import { ITodoAppMemberUserLogin } from "../../../api/structures/ITodoAppMemberUserLogin";
 import { ITodoAppMemberUserRefresh } from "../../../api/structures/ITodoAppMemberUserRefresh";
-import { ITodoAppMemberUserLogout } from "../../../api/structures/ITodoAppMemberUserLogout";
-import { ITodoAppMemberUserLogoutAll } from "../../../api/structures/ITodoAppMemberUserLogoutAll";
 
 @Controller("/auth/memberUser")
 export class AuthMemberuserController {
   /**
-   * Register a new member user account in the todo_app_memberusers table and
-   * return initial authorized tokens.
+   * Register a new member user in the todo_app_memberusers table and issue
+   * initial authorization tokens.
    *
-   * This operation registers a new member user account backed by the
-   * `todo_app_memberusers` table. It consumes the necessary registration data,
-   * including a unique `email` value and password information that will be
-   * transformed into the `password_hash` column. The `email` column is the
-   * primary login identifier and is constrained by a unique index, ensuring
-   * that no two member users share the same email. The business rules from the
-   * authentication requirements specify that the identifier format must be
-   * validated and that duplicates are rejected with a clear business error
-   * while still shielding internal database details.
+   * This API operation registers a new member user account in the todoApp
+   * service by inserting a record into the `todo_app_memberusers` table and
+   * then issuing authentication tokens. The underlying table stores
+   * authenticated member users who own personal todo items, and includes fields
+   * such as `email`, `password_hash`, `display_name`, `status`, `created_at`,
+   * and `updated_at`. When a client invokes this endpoint, the service
+   * validates the provided registration data (including checking that the
+   * `email` is unique due to the unique index on `email`), securely hashes the
+   * supplied password into `password_hash`, and sets an initial `status` such
+   * as `"active"` together with lifecycle timestamps `created_at` and
+   * `updated_at`.
    *
-   * On successful registration, the service will create a row in
-   * `todo_app_memberusers` with an application-defined `status` value (for
-   * example, an initial `active` status), initialize `failed_login_count` to
-   * zero, and populate `created_at` and `updated_at` timestamps to reflect the
-   * registration time. The optional `display_name` column may also be set if
-   * provided as part of the registration payload, but it is not required for
-   * authentication. The `deleted_at` column remains null for active accounts,
-   * reserving it for future lifecycle operations when accounts are logically
-   * removed according to data retention requirements.
+   * From a security perspective, this endpoint is intentionally unauthenticated
+   * (authorizationActor is null) because it is used to create new accounts.
+   * However, the implementation must treat user input with great care: the raw
+   * password must never be stored directly in the database and must always be
+   * transformed into `password_hash` using a strong one-way hashing algorithm.
+   * The endpoint must also enforce the uniqueness of `email` as required by the
+   * `todo_app_memberusers` model, rejecting registration attempts when a record
+   * with the same `email` already exists.
    *
-   * Security considerations are central to this operation. The raw password is
-   * never stored; instead, backend logic converts it into a secure
-   * `password_hash` value before persisting it. In combination with the
-   * `failed_login_count` and `last_login_at` fields, this enables later
-   * operations to enforce lockout and auditing behavior for login attempts.
-   * Registration must comply with the password complexity expectations set in
-   * the authentication requirements document, and must not leak whether an
-   * email had been previously used beyond generic error messaging.
+   * This operation directly relates to the `todo_app_memberusers` Prisma model,
+   * which represents the primary end-user actor with a unique `id` primary key
+   * and an `email` unique index. Upon successful creation, the service may also
+   * create an associated session in `todo_app_memberuser_sessions`, linking it
+   * via the `todo_app_memberuser_id` foreign key, capturing context such as
+   * `ip`, `href`, and `referrer` along with `created_at` and `expired_at`
+   * timestamps. While the exact session strategy is left to the implementation,
+   * the API contract assumes that a valid login context will be established.
    *
-   * The operation also integrates with the wider session and token concept by
-   * issuing an initial set of credentials for the new member user. While actual
-   * token artifacts are not stored in `todo_app_memberusers`, the endpoint
-   * returns an `ITodoAppMemberUser.IAuthorized` response, which encapsulates
-   * the initial access and refresh tokens and relevant member user identity
-   * data. This allows the client to start authenticated interactions
-   * immediately after registration without a separate login step.
+   * The business logic includes validation rules ensuring that required fields
+   * like `email`, `password_hash` (derived from the input), `status`,
+   * `created_at`, and `updated_at` are set. Optional fields such as
+   * `display_name` may be omitted or set to null at creation time. Error
+   * handling should clearly differentiate between validation failures (for
+   * example, malformed email or insufficient password complexity), conflicts
+   * such as duplicate `email`, and unexpected server errors.
    *
-   * From an API workflow perspective, this registration endpoint is typically
-   * the first authentication-related call made by a `guestUser` actor. It is
-   * complemented by the member user login and token refresh endpoints, which
-   * rely on the same underlying `todo_app_memberusers` record. Error handling
-   * must treat database constraint violations (such as duplicate `email`) and
-   * validation failures as business-level errors with user-friendly messages,
-   * without exposing internal column names or index structures.
+   * This registration endpoint works in concert with the memberUser login and
+   * refresh endpoints. After calling this join operation, clients will usually
+   * call the login endpoint only if the implementation does not automatically
+   * sign in the user; otherwise, they will use the returned
+   * `ITodoAppMemberUser.IAuthorized` structure to access protected resources
+   * and the refresh endpoint to maintain a valid session over time. Together,
+   * these operations form the complete authentication lifecycle for the
+   * memberUser actor.
    *
    * @param connection
-   * @param body Registration data for creating a new member user account,
-   *   including email and password information.
+   * @param body Registration payload for creating a new member user account,
+   *   including email, password, and optional displayName.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -79,8 +75,8 @@ export class AuthMemberuserController {
     @Ip()
     ip: string,
     @TypedBody()
-    body: ITodoAppMemberUserJoin.IRequest,
-  ): Promise<ITodoAppMemberuser.IAuthorized> {
+    body: ITodoAppMemberUserJoin.ICreate,
+  ): Promise<ITodoAppMemberUser.IAuthorized> {
     try {
       return await postAuthMemberUserJoin({
         body,
@@ -92,61 +88,59 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Authenticate an existing member user using the todo_app_memberusers table
-   * and return fresh authorized tokens.
+   * Authenticate an existing member user using todo_app_memberusers and record
+   * a session in todo_app_memberuser_sessions, returning authorization tokens.
    *
-   * This operation authenticates an existing member user whose account is
-   * stored in the `todo_app_memberusers` table. It expects the member user to
-   * provide their `email` as the unique login identifier and a password that
-   * will be checked against the stored `password_hash`. The `email` column is
-   * enforced as unique at the database level, and the authentication service
-   * must treat lookups and comparisons in a way that does not reveal whether a
-   * specific email exists, relying instead on generic error messages for
-   * invalid credentials.
+   * This API operation authenticates an existing member user of the todoApp
+   * service by validating their credentials against the `todo_app_memberusers`
+   * table and then establishing a session in `todo_app_memberuser_sessions`.
+   * The member table defines `email` as the primary login identifier, stored
+   * uniquely with a required `password_hash` and a `status` field describing
+   * the business state of the account. When the login request is received, the
+   * service locates the member record by `email`, ensures the `status`
+   * indicates that the account is allowed to authenticate (for example,
+   * `"active"` rather than `"blocked"` or `"disabled"`), and then verifies the
+   * supplied password against the stored `password_hash` using the same hashing
+   * algorithm used at registration.
    *
-   * During processing, the operation reads the `status` column to ensure that
-   * only accounts in allowed states (such as `active`) may log in. If the
-   * status indicates that the account is disabled, deleted, or otherwise
-   * blocked according to higher-level business semantics, the endpoint returns
-   * a business error signaling that the user cannot authenticate, again without
-   * exposing internal enumerations. The `failed_login_count` column is used to
-   * track recent consecutive authentication failures; when a password mismatch
-   * occurs, the operation increments this counter and may trigger temporary
-   * lockout behavior according to configured thresholds derived from the
-   * authentication requirements document.
+   * Because this endpoint is used for authentication, it is intentionally
+   * exposed without a prior authenticated context (`authorizationActor` is
+   * null), but internally it must enforce strict security checks. Failed lookup
+   * of `email`, disallowed `status` values, or password mismatch must all
+   * result in appropriate authentication error responses without leaking
+   * whether a specific `email` is registered. Additionally, rate limiting or
+   * additional security controls may be layered on top of this contract to
+   * protect the `todo_app_memberusers` table from brute-force attacks.
    *
-   * On successful credential validation, the service resets or adjusts
-   * `failed_login_count` to reflect recovery from prior failures, updates the
-   * `last_login_at` timestamp to the current time, and touches the `updated_at`
-   * field to reflect the latest security-related update to the account record.
-   * The `deleted_at` field remains null for active accounts and is consulted
-   * only indirectly when business logic interprets non-null values as
-   * non-authenticable states.
+   * Upon successful authentication, the service typically inserts a new session
+   * row into `todo_app_memberuser_sessions`. This subsidiary table references
+   * the member user via the `todo_app_memberuser_id` foreign key and captures
+   * connection metadata: `ip` (client IP address), `href` (full URL of the
+   * initial request), `referrer` (referring URL), and timestamps `created_at`
+   * and `expired_at`. At login time, `created_at` is set to the current
+   * timestamp and `expired_at` is initially null, indicating an active session.
+   * Future logout or expiration flows can later update `expired_at` for session
+   * invalidation.
    *
-   * Security is reinforced by the fact that no raw password or hashing details
-   * are ever returned. Instead, the response uses the
-   * `ITodoAppMemberUser.IAuthorized` DTO to convey authorized session
-   * information, including access and refresh tokens and sanitized member user
-   * profile data derived from safe columns such as `id`, `email`, and
-   * optionally `display_name`. The token pair follows the session and token
-   * design described in the authentication requirements document, allowing
-   * short-lived access tokens and longer-lived refresh tokens while enforcing
-   * revocation on logout or password changes.
+   * The login operation then issues an `ITodoAppMemberUser.IAuthorized`
+   * response containing access and refresh tokens plus selected profile details
+   * fed from `todo_app_memberusers` fields such as `id`, `email`,
+   * `display_name`, `status`, and timestamps. Clients store these tokens and
+   * use the access token to call member-protected resources, while preserving
+   * the refresh token for renewal via the refresh endpoint.
    *
-   * This login endpoint fits into a broader workflow with the registration and
-   * refresh endpoints. A `guestUser` first uses the join endpoint to create an
-   * entry in `todo_app_memberusers`. Subsequently, the same member user
-   * repeatedly calls this login endpoint when credentials need to be
-   * re-established, and pairs it with the refresh endpoint to maintain
-   * long-lived sessions without re-sending the password. Error handling
-   * includes generic messaging for invalid credentials and explicit signals
-   * when an account has been administratively disabled or requires additional
-   * security review, all grounded in the data stored in
+   * In terms of flow, clients will typically call this login operation after a
+   * successful registration or whenever a member returns to the service. The
+   * login endpoint works closely with the registration endpoint (join) that
+   * creates the initial `todo_app_memberusers` record, and with the refresh
+   * endpoint that rotates tokens based on valid session and refresh token
+   * state. Error handling must clearly distinguish between authentication
+   * failures and system errors, aligning with the `status` semantics defined on
    * `todo_app_memberusers`.
    *
    * @param connection
-   * @param body Login credentials for a member user, including email and
-   *   password.
+   * @param body Login payload containing member email and password, and
+   *   optionally connection metadata used for session creation.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -156,8 +150,8 @@ export class AuthMemberuserController {
     @Ip()
     ip: string,
     @TypedBody()
-    body: ITodoAppMemberUserLogin.IRequest,
-  ): Promise<ITodoAppMemberuser.IAuthorized> {
+    body: ITodoAppMemberUserLogin.ICreate,
+  ): Promise<ITodoAppMemberUser.IAuthorized> {
     try {
       return await postAuthMemberUserLogin({
         body,
@@ -169,209 +163,70 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Refresh authentication tokens for a member user by validating a refresh
-   * token and re-checking the todo_app_memberusers account state.
+   * Refresh authorization tokens for a member user using a valid refresh token
+   * and optional session validation against todo_app_memberuser_sessions.
    *
-   * This operation refreshes authentication tokens for an already authenticated
-   * member user, leveraging the account data stored in the
-   * `todo_app_memberusers` table. The request contains a refresh token
-   * structure defined by the `ITodoAppMemberUserRefresh.IRequest` schema, which
-   * the backend validates using its token management logic. Unlike registration
-   * and login, this endpoint does not require the user to submit a password
-   * again, instead relying on the trust chain established when the refresh
-   * token was originally issued.
+   * This API operation renews authentication tokens for a member user of the
+   * todoApp service by accepting a refresh token and issuing a new
+   * `ITodoAppMemberUser.IAuthorized` response. The underlying member identity
+   * and status are stored in `todo_app_memberusers`, which contains fields such
+   * as `id`, `email`, `password_hash`, `display_name`, `status`, `created_at`,
+   * and `updated_at`. The refresh implementation must ensure that only members
+   * whose `status` allows ongoing access (for instance, `"active"`) receive new
+   * tokens, denying refresh for accounts that have been blocked or disabled.
    *
-   * Once the refresh token has been validated, the endpoint loads the
-   * corresponding member user record from `todo_app_memberusers` using the
-   * embedded user identifier. It inspects the `status` column and any relevant
-   * lifecycle fields such as `deleted_at` to verify that the account is still
-   * eligible for authentication. If the status indicates that the account has
-   * been deactivated, disabled, or logically deleted, the operation rejects the
-   * refresh request even if the token structure itself is cryptographically
-   * valid, reflecting business rules that tokens must become unusable when
-   * accounts are no longer allowed to sign in.
+   * The refresh flow may also integrate with the `todo_app_memberuser_sessions`
+   * table, which tracks authentication sessions via `todo_app_memberuser_id`
+   * and stores context like `ip`, `href`, `referrer`, as well as `created_at`
+   * and `expired_at` timestamps. An implementation can require that a valid,
+   * non-expired session exists (e.g., `expired_at` remains null) before
+   * honoring the refresh token. This ties token renewal to the lifecycle of
+   * session records and enables session revocation by setting `expired_at` in
+   * the database.
    *
-   * Although the refresh operation does not alter `password_hash`, it may
-   * interact with other security metadata such as `failed_login_count` or
-   * `last_login_at` depending on how the implementation interprets token
-   * refresh events. A common pattern is to leave `failed_login_count` unchanged
-   * because no password comparison occurs, but still update `updated_at` and
-   * potentially `last_login_at` to track recent authenticated activity derived
-   * from the valid refresh token. The exact behavior must remain consistent
-   * with the authentication and session requirements, which emphasize
-   * auditability and security without artificially inflating failed attempt
-   * counters.
+   * From a security standpoint, this endpoint is not protected by standard
+   * login credentials but instead by the possession of a valid refresh token,
+   * so `authorizationActor` remains null in the API contract while the
+   * underlying logic validates token integrity and linkage to a member and
+   * session. The request body DTO `ITodoAppMemberUserRefresh.ICreate` carries
+   * the refresh token and, optionally, identifying information that helps the
+   * server correlate the token with a session, but specific field composition
+   * is determined in the interface schema design, not at the Prisma level.
    *
-   * The response once again uses the `ITodoAppMemberUser.IAuthorized` DTO,
-   * returning a new access token and, if applicable, a new refresh token, along
-   * with member user identity information sourced from safe columns such as
-   * `id`, `email`, and `display_name`. Sensitive fields like `password_hash`
-   * and `failed_login_count` are never exposed. The new token pair replaces the
-   * previous credentials according to token rotation rules, and the
-   * implementation must ensure that old refresh tokens are invalidated to
-   * prevent replay, especially after password changes or suspected compromise.
+   * Upon successful validation of the refresh token and any associated session
+   * checks, the service generates new access and refresh tokens and returns
+   * them in an `ITodoAppMemberUser.IAuthorized` response. This response
+   * includes key member fields sourced from `todo_app_memberusers`, such as the
+   * `id` primary key, `email`, optional `display_name`, current `status`, and
+   * relevant timestamps. The new tokens allow the client to continue performing
+   * operations on protected member resources without forcing the user to log in
+   * again using email and password.
    *
-   * Within the overall authentication workflow, this refresh endpoint is used
-   * by clients to maintain seamless sessions for member users without repeated
-   * credential entry. After initial registration or login, the client
-   * periodically calls this endpoint before access tokens expire. If the
-   * request fails due to expiration, revocation, or account status changes
-   * reflected in `todo_app_memberusers`, the client must fall back to the login
-   * endpoint, prompting the user for their password again. Error handling
-   * focuses on clear but non-revealing messages that distinguish between
-   * malformed or expired tokens and more permanent account issues while still
-   * protecting internal state details.
+   * This refresh endpoint works alongside the join and login operations to
+   * complete the memberUser authentication lifecycle. Clients typically call
+   * refresh when access tokens approach expiration, using the refresh token
+   * obtained either from join (if the implementation auto-logs in newly created
+   * members) or from login. Error handling must distinguish between invalid or
+   * expired refresh tokens, revoked or expired sessions (detected via
+   * `todo_app_memberuser_sessions.expired_at`), and member accounts whose
+   * `status` no longer permits access, as defined by the `todo_app_memberusers`
+   * schema.
    *
    * @param connection
-   * @param body Refresh token payload for a member user requesting new
-   *   authentication tokens.
+   * @param body Refresh payload containing the member refresh token and
+   *   optional session correlation data.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
-    @MemberuserAuth()
-    memberUser: MemberuserPayload,
     @TypedBody()
-    body: ITodoAppMemberUserRefresh.IRequest,
-  ): Promise<ITodoAppMemberuser.IAuthorized> {
+    body: ITodoAppMemberUserRefresh.ICreate,
+  ): Promise<ITodoAppMemberUser.IAuthorized> {
     try {
       return await postAuthMemberUserRefresh({
-        memberUser,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Log out the current member user by expiring their active session row in the
-   * todo_app_memberuser_sessions table.
-   *
-   * This operation performs a standard logout for an authenticated member user
-   * by terminating the session represented in the
-   * `todo_app_memberuser_sessions` table. A member user reaches this endpoint
-   * while already authenticated, so the server identifies the active session
-   * using internal token metadata that maps to a row in
-   * `todo_app_memberuser_sessions`, specifically via the
-   * `todo_app_memberuser_id` foreign key and session identifiers maintained by
-   * the token layer. The endpoint does not require explicit path parameters
-   * because it operates on the session associated with the calling context.
-   *
-   * Once the session row has been resolved, the service sets the `expired_at`
-   * column for that record to the current timestamp, indicating that the
-   * session is no longer valid. The `created_at` column remains unchanged,
-   * preserving the historical record of when the session began, and the `ip`,
-   * `href`, and `referrer` fields continue to capture the original connection
-   * context for audit and analytics. This approach matches the description of
-   * `todo_app_memberuser_sessions` as a minimal session store that records
-   * connection details and temporal lifetime information.
-   *
-   * The underlying member user account in `todo_app_memberusers` is not
-   * modified by a simple logout. Fields such as `status`, `password_hash`,
-   * `failed_login_count`, and `deleted_at` remain as they were, because logout
-   * does not represent a change to the account itself, only to an individual
-   * authenticated context. Implementations may optionally update `updated_at`
-   * on the user account if they consider logout to be noteworthy for audit, but
-   * the primary persistence effect occurs on the session row through
-   * `expired_at`.
-   *
-   * From a security perspective, this logout endpoint ensures that the access
-   * and refresh tokens associated with the terminated session cannot be reused.
-   * The server must revoke or blacklist those tokens in its token management
-   * subsystem in addition to marking the session expired. This guarantees that
-   * even if a token is later intercepted, it will no longer be accepted for
-   * authorizing member user actions. The operation is therefore a critical part
-   * of the lifecycle defined in the authentication requirements, complementing
-   * login and refresh to provide safe session termination.
-   *
-   * In a typical client workflow, a member user calls this endpoint when they
-   * explicitly choose to sign out from a particular device or browser. The
-   * endpoint returns a simple success response, represented here by
-   * `ITodoAppMemberUserLogout.IResponse`, indicating that the session has been
-   * closed. Subsequent requests without valid tokens are treated as coming from
-   * a `guestUser`, and attempts to use the old tokens will be rejected due to
-   * the session’s `expired_at` value and associated revocation logic.
-   *
-   * @param connection
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post("logout")
-  public async logout(
-    @MemberuserAuth()
-    memberUser: MemberuserPayload,
-  ): Promise<ITodoAppMemberUserLogout.IResponse> {
-    try {
-      return await postAuthMemberUserLogout({
-        memberUser,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Log out the member user from all devices by expiring all their active
-   * sessions in the todo_app_memberuser_sessions table.
-   *
-   * This operation performs a global logout for an authenticated member user by
-   * terminating all of their active sessions recorded in the
-   * `todo_app_memberuser_sessions` table. When the endpoint is invoked, the
-   * server uses the identity of the authenticated member user, derived from the
-   * current token, to query `todo_app_memberuser_sessions` by
-   * `todo_app_memberuser_id`. It selects every session row for that member
-   * where `expired_at` is null, representing still-active authenticated
-   * contexts across different devices or browsers.
-   *
-   * For each such session row, the service sets `expired_at` to the current
-   * timestamp, marking the session as invalid. The original `created_at` values
-   * and contextual fields (`ip`, `href`, `referrer`) remain intact to preserve
-   * a complete audit trail of where and when each session was created. This
-   * behavior aligns with the table’s description as a global session pattern,
-   * where connection and lifetime information are persisted for tracing and
-   * security analysis.
-   *
-   * The underlying account in `todo_app_memberusers` is left untouched by this
-   * operation in terms of core fields such as `email`, `password_hash`,
-   * `status`, and `failed_login_count`. Global logout is purely a session
-   * management action, not an account state change. Implementations may choose
-   * to update audit-related fields like `updated_at` on the member user account
-   * to reflect the bulk session termination event, but this is conceptually
-   * separate from the modification of session rows in
-   * `todo_app_memberuser_sessions`.
-   *
-   * Security-wise, global logout is a crucial safeguard when a member user
-   * suspects compromise or wants to ensure that no other device retains access.
-   * In addition to updating `expired_at` on all relevant sessions, the server
-   * must invalidate all corresponding access and refresh tokens in its token
-   * store or revocation list. This ensures that even tokens that have not yet
-   * expired by their own lifetime constraints become unusable, fully enforcing
-   * the user’s intent to sign out everywhere.
-   *
-   * In normal application flows, this endpoint is typically exposed as a "log
-   * out from all devices" action in the user interface. After it returns a
-   * response encoded by `ITodoAppMemberUserLogoutAll.IResponse`, the current
-   * device may also clear any locally cached credentials. Subsequent requests
-   * from any device using old tokens will be rejected due to the session
-   * termination reflected in `todo_app_memberuser_sessions`. This endpoint
-   * complements the single-session logout and token refresh endpoints, forming
-   * a complete set of session lifecycle controls backed by the Prisma schema.
-   *
-   * @param connection
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post("logoutAll")
-  public async logoutAll(
-    @MemberuserAuth()
-    memberUser: MemberuserPayload,
-  ): Promise<ITodoAppMemberUserLogoutAll.IResponse> {
-    try {
-      return await postAuthMemberUserLogoutAll({
-        memberUser,
       });
     } catch (error) {
       console.log(error);

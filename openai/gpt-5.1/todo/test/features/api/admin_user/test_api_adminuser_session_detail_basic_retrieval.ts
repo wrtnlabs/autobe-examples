@@ -4,169 +4,266 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import type { IPageITodoAppAdminuserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppAdminuserSession";
 import type { ITodoAppAdminUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminUser";
-import type { ITodoAppAdminuserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminuserSession";
+import type { ITodoAppAdminUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminUserSession";
+import type { ITodoAppMemberUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUser";
 import type { ITodoAppMemberUserJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUserJoin";
 import type { ITodoAppMemberUserLogin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberUserLogin";
-import type { ITodoAppMemberuser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberuser";
+import type { ITodoAppSystemSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppSystemSetting";
 import type { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 
 /**
- * Validate that an authenticated admin user can successfully call the admin
- * session detail endpoint and receive a well-typed session object.
+ * Validate that an authenticated admin user can retrieve detailed information
+ * for one of their own sessions and that the detail endpoint is read-only.
  *
- * Original business scenario:
+ * Business flow:
  *
- * - Admin joins/logs in, generating an authentication session
- * - Admin drills down into a specific session record using GET
- *   /todoApp/adminUser/adminUsers/{adminUserId}/sessions/{sessionId}
- * - Response contains detailed connection metadata (ip, href, referrer,
- *   created_at, expired_at)
- *
- * Practical constraint with provided SDK:
- *
- * - There is no sessions listing endpoint, so we cannot obtain a real sessionId
- *   belonging to the admin from prior calls.
- * - In simulate mode, the sessions.at call ignores real persistence and returns
- *   typia.random<ITodoAppAdminuserSession>(), so any valid UUID values for
- *   adminUserId and sessionId are acceptable.
- * - In real mode, we can at least use a real adminUserId for the admin, but
- *   sessionId must still be synthetically generated because we lack a discovery
- *   API; we rely on the backend to enforce foreign-key constraints.
- *
- * Therefore this E2E test focuses on:
- *
- * 1. Creating realistic authentication context and app activity
- *
- *    - Create an adminUser with /auth/adminUser/join
- *    - Create a memberUser and log them in
- *    - As the memberUser, create a todo via /todoApp/memberUser/todos
- *    - Log back in as the adminUser so the connection headers contain the admin
- *         token when we call the session detail endpoint
- * 2. Calling the admin session detail API
- *
- *    - Use the real admin.id as adminUserId
- *    - Use a randomly generated UUID as sessionId (since we cannot discover a
- *         concrete one through the public SDK)
- *    - Call api.functional.todoApp.adminUser.adminUsers.sessions.at(connection, {
- *         adminUserId, sessionId })
- * 3. Validating the result
- *
- *    - Use typia.assert to guarantee the response matches ITodoAppAdminuserSession
- *         at runtime
- *    - Use TestValidator.equals to ensure that the returned id is a non-empty string
- *         and matches its own value (sanity check)
- *    - Use TestValidator.predicate to document expectations about created_at and
- *         expired_at, acknowledging that expired_at may be null for active
- *         sessions
- *
- * The test deliberately avoids any type error scenarios or validation of
- * internal foreign-key relationships, which are beyond the capabilities of the
- * exposed SDK.
+ * 1. Register an admin account (join) which implicitly creates an initial admin
+ *    session; capture the admin id and ensure tokens are issued.
+ * 2. Log in again as the same admin to create at least one more adminUserSession
+ *    row.
+ * 3. While authenticated as that admin, create a system setting so the admin side
+ *    of the system has some configuration data.
+ * 4. Create a member user and at least one member todo so there is general
+ *    application activity (not strictly required by the API contract but
+ *    reflects realistic context).
+ * 5. Log in again as the admin to ensure a fresh, recent session exists and that
+ *    the Authorization header is set for admin-only APIs.
+ * 6. List the admin’s sessions using the PATCH
+ *    /todoApp/adminUser/adminUsers/{adminUserId}/sessions endpoint with a
+ *    simple IRequest filter; select one concrete session summary from the
+ *    returned page.
+ * 7. Call GET /todoApp/adminUser/adminUsers/{adminUserId}/sessions/{sessionId} for
+ *    the selected session and verify that the returned ITodoAppAdminUserSession
+ *    matches the summary: id matches, adminUser.id matches the admin id,
+ *    created_at matches, and expired_at is consistent.
+ * 8. Assert basic field-level sanity (ip is non-empty, href/referrer are non-empty
+ *    valid URIs via typia, etc.).
+ * 9. Call the same detail endpoint again for the same session id and assert that
+ *    the response is unchanged, confirming the detail view is read-only and
+ *    does not mutate session attributes on read.
  */
 export async function test_api_adminuser_session_detail_basic_retrieval(
   connection: api.IConnection,
 ) {
-  // 1. Register an admin user (this also authenticates the connection as that admin)
+  // 1. Register an admin account (join)
+  const adminEmail: string = typia.random<string & tags.Format<"email">>();
+  const adminPassword: string & tags.Format<"password"> = typia.random<
+    string & tags.Format<"password">
+  >();
+
   const adminJoinBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: typia.random<string & tags.Format<"password">>(),
+    email: adminEmail,
+    password: adminPassword,
     display_name: RandomGenerator.name(),
+    status: "active",
+    ip: RandomGenerator.mobile(),
+    href: "https://admin.todoapp.example.com/join",
+    referrer: "https://admin.todoapp.example.com/",
   } satisfies ITodoAppAdminUser.IJoin;
 
-  const admin: ITodoAppAdminUser.IAuthorized =
+  const joinedAdmin: ITodoAppAdminUser.IAuthorized =
     await api.functional.auth.adminUser.join(connection, {
       body: adminJoinBody,
     });
-  typia.assert(admin);
+  typia.assert(joinedAdmin);
 
-  // 2. Create a member user and associated activity (todo) to reflect real usage context
-  const memberJoinBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: typia.random<string & tags.Format<"password">>(),
-    display_name: RandomGenerator.name(),
-    ip: null,
-    href: "https://todo-app.example.com/signup",
-    referrer: "https://landing.example.com/ads/todo-app",
-  } satisfies ITodoAppMemberUserJoin.IRequest;
+  const adminId = joinedAdmin.id;
 
-  const member: ITodoAppMemberuser.IAuthorized =
-    await api.functional.auth.memberUser.join(connection, {
-      body: memberJoinBody,
-    });
-  typia.assert(member);
-
-  // Explicitly log in as the member to simulate ongoing usage
-  const memberLoginBody = {
-    email: member.email,
-    password: memberJoinBody.password,
-    ip: null,
-    href: "https://todo-app.example.com/login",
-    referrer: "https://todo-app.example.com/signup-complete",
-  } satisfies ITodoAppMemberUserLogin.IRequest;
-
-  const memberAfterLogin: ITodoAppMemberuser.IAuthorized =
-    await api.functional.auth.memberUser.login(connection, {
-      body: memberLoginBody,
-    });
-  typia.assert(memberAfterLogin);
-
-  // As the authenticated member, create a todo item
-  const todoCreateBody = {
-    title: RandomGenerator.paragraph({ sentences: 3 }),
-    description: RandomGenerator.paragraph({ sentences: 6 }),
-  } satisfies ITodoAppTodo.ICreate;
-
-  const todo: ITodoAppTodo =
-    await api.functional.todoApp.memberUser.todos.create(connection, {
-      body: todoCreateBody,
-    });
-  typia.assert(todo);
-
-  // 3. Switch authentication context back to the admin user
+  // 2. Log in again as the same admin to create additional session
   const adminLoginBody = {
-    email: admin.email,
-    password: adminJoinBody.password,
+    email: adminEmail,
+    password: adminPassword,
     ip: null,
-    href: "https://todo-app.example.com/admin/login",
-    referrer: "https://todo-app.example.com/admin",
-    user_agent: "E2E-Test-Agent/1.0",
+    href: "https://admin.todoapp.example.com/login",
+    referrer: "https://admin.todoapp.example.com/login",
   } satisfies ITodoAppAdminUser.ILogin;
 
-  const adminAfterLogin: ITodoAppAdminUser.IAuthorized =
+  const loggedInAdmin: ITodoAppAdminUser.IAuthorized =
     await api.functional.auth.adminUser.login(connection, {
       body: adminLoginBody,
     });
-  typia.assert(adminAfterLogin);
+  typia.assert(loggedInAdmin);
 
-  // 4. Call the admin session detail endpoint with a valid UUID pair
-  const adminUserId = adminAfterLogin.id;
-  const sessionId = typia.random<string & tags.Format<"uuid">>();
+  TestValidator.equals(
+    "admin id remains stable between join and login",
+    loggedInAdmin.id,
+    adminId,
+  );
 
-  const session: ITodoAppAdminuserSession =
-    await api.functional.todoApp.adminUser.adminUsers.sessions.at(connection, {
-      adminUserId,
-      sessionId,
+  // 3. Create at least one system setting as admin
+  const systemSettingBody = {
+    key: `max_active_todos_${RandomGenerator.alphaNumeric(8)}`,
+    value: "100",
+    type: "int",
+    description: RandomGenerator.paragraph({ sentences: 3 }),
+    group: "limits",
+    enabled: true,
+  } satisfies ITodoAppSystemSetting.ICreate;
+
+  const systemSetting: ITodoAppSystemSetting =
+    await api.functional.todoApp.adminUser.systemSettings.create(connection, {
+      body: systemSettingBody,
     });
-  typia.assert(session);
+  typia.assert(systemSetting);
 
-  // 5. Business-level sanity checks
-  TestValidator.predicate(
-    "session id should be non-empty string",
-    session.id.length > 0,
+  TestValidator.equals(
+    "system setting key matches input",
+    systemSetting.key,
+    systemSettingBody.key,
   );
 
-  TestValidator.predicate(
-    "session created_at should be a non-empty date-time string",
-    session.created_at.length > 0,
+  // 4. Create a member user and one todo for context
+  const memberEmail: string = typia.random<string & tags.Format<"email">>();
+  const memberJoinBody = {
+    email: memberEmail,
+    password: typia.random<string & tags.Format<"password">>(),
+    displayName: RandomGenerator.name(),
+    ip: null,
+    href: "https://todoapp.example.com/join",
+    referrer: "https://todoapp.example.com/",
+  } satisfies ITodoAppMemberUserJoin.ICreate;
+
+  const memberAuthorized: ITodoAppMemberUser.IAuthorized =
+    await api.functional.auth.memberUser.join(connection, {
+      body: memberJoinBody,
+    });
+  typia.assert(memberAuthorized);
+
+  const todoCreateBody = {
+    title: RandomGenerator.paragraph({ sentences: 3 }),
+    description: RandomGenerator.paragraph({ sentences: 6 }),
+    due_date: null,
+    state: "active",
+  } satisfies ITodoAppTodo.ICreate;
+
+  const createdTodo: ITodoAppTodo =
+    await api.functional.todoApp.memberUser.todos.create(connection, {
+      body: todoCreateBody,
+    });
+  typia.assert(createdTodo);
+
+  TestValidator.equals(
+    "todo title matches input",
+    createdTodo.title,
+    todoCreateBody.title,
   );
 
-  // expired_at is allowed to be null or a date-time string; we only assert
-  // that, when non-null, it is non-empty.
-  if (session.expired_at !== null && session.expired_at !== undefined) {
-    TestValidator.predicate(
-      "expired_at, when present, should be non-empty",
-      session.expired_at.length > 0,
+  // 5. Switch back to admin actor with another login to ensure a fresh session
+  const adminLoginForListingBody = {
+    email: adminEmail,
+    password: adminPassword,
+    ip: null,
+    href: "https://admin.todoapp.example.com/sessions",
+    referrer: "https://admin.todoapp.example.com/dashboard",
+  } satisfies ITodoAppAdminUser.ILogin;
+
+  const adminForListing: ITodoAppAdminUser.IAuthorized =
+    await api.functional.auth.adminUser.login(connection, {
+      body: adminLoginForListingBody,
+    });
+  typia.assert(adminForListing);
+
+  TestValidator.equals(
+    "admin id after relogin remains the same",
+    adminForListing.id,
+    adminId,
+  );
+
+  // 6. List sessions for this admin
+  const sessionIndexBody = {
+    page: 1 as number & tags.Type<"int32"> & tags.Minimum<1>,
+    limit: 10 as number & tags.Type<"int32"> & tags.Minimum<1>,
+    fromCreatedAt: null,
+    toCreatedAt: null,
+    ip: null,
+    orderByCreatedAt: "desc" as const,
+  } satisfies ITodoAppAdminUserSession.IRequest;
+
+  const sessionPage: IPageITodoAppAdminuserSession.ISummary =
+    await api.functional.todoApp.adminUser.adminUsers.sessions.index(
+      connection,
+      {
+        adminUserId: adminId,
+        body: sessionIndexBody,
+      },
     );
-  }
+  typia.assert(sessionPage);
+
+  TestValidator.predicate(
+    "at least one admin session is listed",
+    sessionPage.data.length > 0,
+  );
+
+  const targetSummary: ITodoAppAdminUserSession.ISummary = sessionPage.data[0];
+  typia.assert<ITodoAppAdminUserSession.ISummary>(targetSummary);
+
+  TestValidator.equals(
+    "session summary admin user id matches admin id",
+    targetSummary.adminUser.id,
+    adminId,
+  );
+
+  // 7. Retrieve detailed session information for the selected session
+  const detail1: ITodoAppAdminUserSession =
+    await api.functional.todoApp.adminUser.adminUsers.sessions.at(connection, {
+      adminUserId: adminId,
+      sessionId: targetSummary.id,
+    });
+  typia.assert(detail1);
+
+  TestValidator.equals(
+    "detailed session id matches summary id",
+    detail1.id,
+    targetSummary.id,
+  );
+
+  TestValidator.equals(
+    "detailed admin user id matches joined admin id",
+    detail1.adminUser.id,
+    adminId,
+  );
+
+  TestValidator.equals(
+    "detail created_at equals summary created_at",
+    detail1.created_at,
+    targetSummary.created_at,
+  );
+
+  TestValidator.equals(
+    "detail expired_at equals summary expired_at",
+    detail1.expired_at,
+    targetSummary.expired_at ?? null,
+  );
+
+  TestValidator.predicate(
+    "session ip is a non-empty string",
+    detail1.ip.length > 0,
+  );
+
+  TestValidator.predicate(
+    "session href is a non-empty string",
+    detail1.href.length > 0,
+  );
+
+  TestValidator.predicate(
+    "session referrer is a non-empty string",
+    detail1.referrer.length > 0,
+  );
+
+  // 8. Re-fetch the same session detail and verify it is stable (read-only)
+  const detail2: ITodoAppAdminUserSession =
+    await api.functional.todoApp.adminUser.adminUsers.sessions.at(connection, {
+      adminUserId: adminId,
+      sessionId: targetSummary.id,
+    });
+  typia.assert(detail2);
+
+  TestValidator.equals(
+    "session detail is stable between reads",
+    detail2,
+    detail1,
+  );
 }

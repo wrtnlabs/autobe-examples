@@ -16,61 +16,103 @@ export async function patchTodoListUserTodos(props: {
   user: UserPayload;
   body: ITodoListTodo.IRequest;
 }): Promise<IPageITodoListTodo.ISummary> {
-  // Pagination: default page=1, limit=100, clamp to bounds
+  // Calculate pagination parameters
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
 
-  // Primary user filter, always enforced
-  const baseWhere: Record<string, unknown> = {
+  // Build dynamic where conditions
+  const whereConditions: Record<string, unknown> = {
     user_id: props.user.id,
+    deleted_at: null,
   };
-  // Add completed filter if present
-  if (props.body.completed !== undefined) {
-    baseWhere.completed = props.body.completed;
+
+  // Add completion status filter if specified
+  if (props.body.completed !== undefined && props.body.completed !== null) {
+    whereConditions.completed = props.body.completed;
   }
-  // Add search filter (case-insensitive, partial match on title)
-  if (props.body.search !== undefined && props.body.search !== "") {
-    baseWhere.OR = [
-      { title: { contains: props.body.search, mode: "insensitive" } },
-      // Optionally could include description as well if allowed: { description: { contains: props.body.search, mode: "insensitive" } }
+
+  // Add priority filter if specified
+  if (props.body.priority !== undefined && props.body.priority !== null) {
+    whereConditions.priority = props.body.priority;
+  }
+
+  // Add full-text search if provided
+  if (props.body.search !== undefined && props.body.search !== null) {
+    whereConditions.OR = [
+      {
+        title: {
+          contains: props.body.search,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: props.body.search,
+          mode: "insensitive",
+        },
+      },
     ];
   }
-  // Sorting
-  const sortBy = props.body.sort_by ?? "created_at";
-  const sortOrder = props.body.order ?? "desc";
-  // Valid sort fields: created_at, updated_at, completed_at
-  const orderBy = { [sortBy]: sortOrder };
 
-  // Query paginated records & count concurrently
-  const [rows, total] = await Promise.all([
+  // Determine sort field and order
+  const sortBy = props.body.sort_by ?? "created_at";
+  const sortOrder: "asc" | "desc" = props.body.order ?? "desc";
+
+  const orderBy: Record<string, "asc" | "desc"> = {
+    [sortBy]: sortOrder,
+  };
+
+  // Execute concurrent queries for efficiency
+  const [todos, total] = await Promise.all([
     MyGlobal.prisma.todo_list_todos.findMany({
-      where: baseWhere,
-      orderBy: orderBy,
+      where: whereConditions,
       skip,
       take: limit,
+      orderBy,
     }),
     MyGlobal.prisma.todo_list_todos.count({
-      where: baseWhere,
+      where: whereConditions,
     }),
   ]);
-  // Map to ISummary (summary: id, title, completed, created_at, updated_at only)
-  const data: ITodoListTodo.ISummary[] = rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    completed: row.completed,
-    created_at: toISOStringSafe(row.created_at),
-    updated_at: toISOStringSafe(row.updated_at),
+
+  // Transform todos to ISummary format with proper date conversion
+  const data: ITodoListTodo.ISummary[] = todos.map((todo) => ({
+    id: todo.id as string & tags.Format<"uuid">,
+    title: todo.title,
+    completed: todo.completed,
+    priority:
+      todo.priority === null
+        ? undefined
+        : (todo.priority as "low" | "medium" | "high"),
+    due_date:
+      todo.due_date === null
+        ? undefined
+        : (toISOStringSafe(todo.due_date) as string & tags.Format<"date-time">),
+    created_at: toISOStringSafe(todo.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(todo.updated_at) as string &
+      tags.Format<"date-time">,
   }));
 
-  // IPage pagination shape
+  // Calculate total pages
+  const pages = Math.ceil(total / limit);
+
   return {
-    data,
     pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page satisfies number as number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      limit: limit satisfies number as number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      records: total satisfies number as number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      pages: pages satisfies number as number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     },
+    data,
   };
 }

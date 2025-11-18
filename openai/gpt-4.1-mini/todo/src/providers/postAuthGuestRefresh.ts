@@ -13,64 +13,95 @@ import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
+  body: ITodoListGuest.IRefresh;
 }): Promise<ITodoListGuest.IAuthorized> {
-  let payload: GuestPayload;
+  let decoded: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "guest";
+  };
   try {
-    payload = jwt.verify(
-      (props.guest as any).refreshToken,
+    decoded = jwt.verify(
+      props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as unknown as GuestPayload;
+    ) as {
+      id: string & tags.Format<"uuid">;
+      session_id: string & tags.Format<"uuid">;
+      type: "guest";
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (payload.type !== "guest") {
+  if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: { id: payload.id },
+  const session = await MyGlobal.prisma.todo_list_guest_sessions.findFirst({
+    where: {
+      id: decoded.session_id,
+      todo_list_guest_id: decoded.id,
+      expired_at: null,
+    },
   });
 
-  if (!user) {
-    throw new HttpException("Guest user not found", 404);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const nowIso = toISOStringSafe(new Date()) as string &
-    tags.Format<"date-time">;
-  const accessExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const refreshExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
+  // Calculate expiration times in ISO string format using toISOStringSafe
+  const now = Date.now();
+  const accessExpires = toISOStringSafe(new Date(now + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(now + 7 * 24 * 60 * 60 * 1000),
+  );
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: payload.type,
-        id: payload.id,
-        session_id: payload.session_id,
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: payload.type,
-        id: payload.id,
-        session_id: payload.session_id,
-        tokenType: "refresh",
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: toISOStringSafe(new Date(now)),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date(now)),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  await MyGlobal.prisma.todo_list_guest_sessions.update({
+    where: {
+      id: decoded.session_id,
+    },
+    data: {
+      expired_at: new Date(now + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return {
+    id: decoded.id,
+    token: {
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
-
-  return { id: payload.id, token };
 }

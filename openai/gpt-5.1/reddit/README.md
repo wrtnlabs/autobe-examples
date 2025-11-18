@@ -21,7 +21,7 @@ subgraph "Functional Agents"
   coder --"ERD"--> prisma("✅ Prisma")
   coder --"API Design"--> interface("✅ Interface")
   coder --"Test Codes" --> test("✅ Test")
-  coder --"Main Program" --> realize(" Realize")
+  coder --"Main Program" --> realize("⬜ Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -44,7 +44,7 @@ Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
 Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
 Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     |  Realize      | [API Provider Functions](src/providers)
+Development     | ⬜ Realize      | [API Provider Functions](src/providers)
 Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
@@ -117,11 +117,13 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ✅ prisma | namespaces: 9, models: 43 | 86.96 % | 1,349,407 | 418 sec
 ✅ interface | operations: 237, schemas: 299 | 70.46 % | 105,480,852 | 2669 sec
 ✅ test | functions: 779 | 99.06 % | 96,974,507 | 3319 sec
+⬜ realize | | | | 
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
 
 - **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
 - **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **FCSR**: Function calling success rate
 - **Token Consumption**: Total number of LLM tokens consumed during the phase
 - **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
 

@@ -1,23 +1,19 @@
-/// Authenticated user accounts for the Todo list application.
+/// Regular user accounts for the Todo list application.
 ///
-/// Stores core user identity and authentication credentials for individuals
-/// who register and use the system. Each user account provides complete data
-/// isolation, ensuring users can only access their own todo items and
-/// personal information.
+/// Represents authenticated users who can create and manage their personal
+/// todo items. Each user account is identified by a unique email address and
+/// secured with a hashed password. Users register through the public
+/// registration flow and gain immediate access to create their personal todo
+/// lists.
 ///
-/// Users authenticate using email and password, with passwords stored as
-/// cryptographically secure hashes using bcrypt. The email address serves as
-/// the unique identifier for login and account recovery purposes.
+/// User accounts are completely isolated from each other - users can only
+/// view and manage their own todo items. The system enforces strict data
+/// boundaries to ensure privacy and security across all user operations.
 ///
-/// User accounts support the complete lifecycle from registration through
-/// active use to optional deletion with 30-day soft delete recovery period.
-/// The system maintains creation and modification timestamps for audit
-/// purposes.
-///
-/// All user data is completely isolated - no user can access another user's
-/// information or todo items under any circumstances. This table forms the
-/// foundation of the application's security model through proper
-/// authentication and authorization enforcement.
+/// This table stores core authentication credentials and account metadata.
+/// Session management for users is handled through the related
+/// todo_list_user_sessions table, which tracks JWT refresh tokens and
+/// connection information for security and audit purposes.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -28,69 +24,52 @@ model todo_list_users {
   /// Primary Key.
   id String @id
   
-  /// User email address for authentication and communication. Must be unique
-  /// across all users and serves as the login identifier. Validated for proper
-  /// email format and used for account recovery.
+  /// User's email address used for authentication and unique identification.
+  /// Must be unique across all user accounts. Email addresses are normalized
+  /// to lowercase for consistency and case-insensitive comparison.
   email String
   
-  /// Cryptographically hashed password using bcrypt with cost factor of at
-  /// least 12. Never stored in plain text. Used for authentication
-  /// verification during login.
+  /// Securely hashed user password using industry-standard hashing algorithms
+  /// (bcrypt or argon2). The original password is never stored in plain text.
+  /// This hash is used to verify user credentials during authentication.
   password_hash String
   
-  /// User's display name for personalization. Optional field that can be
-  /// provided during registration or updated later. Used in welcome messages
-  /// and user interface personalization.
-  name String?
-  
-  /// Timestamp when the user account was created during registration.
-  /// Immutable after creation and used for account age tracking and audit
-  /// purposes.
+  /// Timestamp when the user account was created. Automatically set during
+  /// registration and never modified thereafter. Used for account lifecycle
+  /// tracking and analytics.
   created_at DateTime
   
-  /// Timestamp of the last modification to user profile information. Updated
-  /// whenever email, password, or name is changed. Used for tracking account
-  /// activity.
+  /// Timestamp of the last modification to the user account. Updated whenever
+  /// account information changes, such as password updates or email
+  /// modifications.
   updated_at DateTime
-  
-  /// Soft delete timestamp indicating when user requested account deletion.
-  /// Null for active accounts. When set, account enters 30-day recovery period
-  /// before permanent deletion. Used to support account recovery and data
-  /// retention policies.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_password_reset_tokens todo_list_password_reset_tokens[]
   todo_list_todos todo_list_todos[]
-  todo_list_categories todo_list_categories[]
   
   @@unique([email])
-  @@index([created_at])
 }
 
-/// User authentication session tracking for JWT token management.
+/// User authentication sessions for JWT refresh token management.
 ///
-/// Records active user sessions for authenticated access to the Todo list
-/// application. Each session represents a login instance from a specific
-/// device or browser, tracking connection context and session lifecycle.
+/// Tracks active user sessions to support JWT-based authentication with
+/// access and refresh tokens. Each session represents a user's authenticated
+/// connection from a specific device or browser. Sessions store connection
+/// context (IP address, URL, referrer) for security auditing and
+/// troubleshooting.
 ///
-/// Sessions are created upon successful user login and store connection
-/// metadata including IP address, connection URL, and referrer information
-/// for security auditing. The session tracks when it was created and when it
-/// expires to enforce authentication timeout policies.
+/// Sessions are created when users log in and expire based on the refresh
+/// token lifetime (typically 7-30 days). The expired_at field tracks when a
+/// session ends, either through explicit logout, token expiration, or
+/// security-related revocation (such as password changes).
 ///
-/// Supports multiple concurrent sessions per user, allowing login from
-/// different devices simultaneously. Sessions can be individually revoked
-/// through logout functionality or bulk revoked when user changes password
-/// or requests "logout from all devices".
-///
-/// Used for audit tracing of user actions and maintaining secure
-/// authentication state through JWT refresh token management. Session
-/// expiration follows configured timeout policies (7 days standard, 30 days
-/// with "Remember Me").
+/// This table enables session revocation capabilities essential for security
+/// operations like logout, password resets, and "logout from all devices"
+/// functionality. Multiple concurrent sessions per user are supported to
+/// allow access from different devices simultaneously.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -101,35 +80,159 @@ model todo_list_user_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the user who owns this session. {@link todo_list_users.id}
-  user_id String
+  /// User who owns this session. {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// IP address from which the user connected and created this session. Used
-  /// for security monitoring and detecting suspicious login patterns from
-  /// unusual locations.
+  /// IP address from which the session was established. Used for security
+  /// monitoring, audit trails, and identifying suspicious authentication
+  /// patterns.
   ip String
   
-  /// Connection URL where the session was initiated. Captures the full URL of
-  /// the login request for audit and debugging purposes.
+  /// Connection URL where the authentication request originated. Provides
+  /// context about the application entry point for this session.
   href String
   
-  /// Referrer URL indicating where the user came from before logging in. Used
-  /// for tracking user acquisition sources and navigation patterns.
+  /// Referrer URL indicating the page or source that led to the authentication
+  /// request. Helps track user navigation patterns and authentication flow
+  /// origins.
   referrer String
   
-  /// Timestamp when the session was created during user login. Marks the
-  /// beginning of the authenticated session period.
+  /// Timestamp when the session was created through user login. Marks the
+  /// beginning of this authenticated session period.
   created_at DateTime
   
-  /// Timestamp when the session expires or was explicitly terminated. Null for
-  /// active sessions. Set upon logout, password change, or automatic
-  /// expiration after timeout period.
+  /// Timestamp when the session ended or will end. Null for active sessions.
+  /// Set when user logs out, token expires, or session is revoked for security
+  /// reasons (password change, admin action).
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([user_id, created_at])
+  @@index([todo_list_user_id, created_at])
+}
+
+/// Administrator accounts with elevated system privileges.
+///
+/// Represents system administrators who have elevated permissions for user
+/// management, system monitoring, and administrative operations. Admins
+/// authenticate using the same JWT-based mechanism as regular users but
+/// receive tokens with admin role and expanded permissions.
+///
+/// Admins can perform operations beyond regular user capabilities including
+/// viewing all user accounts, managing user status
+/// (activation/deactivation), accessing system-wide statistics, and
+/// supporting users by viewing their data for troubleshooting purposes. All
+/// administrative actions are logged for accountability and security
+/// auditing.
+///
+/// Admins also have their own personal todo lists separate from their
+/// administrative functions. When managing todos, admins operate under the
+/// same constraints as regular users - they can only manage their own
+/// personal todo items.
+///
+/// Admin accounts are created through separate administrative processes
+/// rather than public registration. The authentication and session
+/// management follows the same secure patterns as regular users to maintain
+/// consistent security posture across all actor types.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address used for authentication and identification.
+  /// Must be unique across all admin accounts. Email addresses are normalized
+  /// to lowercase for consistency.
+  email String
+  
+  /// Securely hashed administrator password using industry-standard hashing
+  /// algorithms (bcrypt or argon2). Admins must use strong passwords meeting
+  /// the same security requirements as regular users.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created. Used for account
+  /// lifecycle tracking and administrative auditing purposes.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the administrator account. Updated
+  /// when account credentials or information changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_admin_sessions todo_list_admin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Administrator authentication sessions for JWT refresh token management.
+///
+/// Tracks active administrator sessions with the same JWT-based
+/// authentication pattern used for regular users. Admin sessions store
+/// refresh token information and connection context to enable secure session
+/// management and revocation capabilities.
+///
+/// Administrative sessions follow identical lifecycle patterns to user
+/// sessions but grant elevated permissions through the admin role encoded in
+/// JWT tokens. Session tracking enables security features like logout,
+/// password reset requiring re-authentication, and "logout from all devices"
+/// functionality.
+///
+/// Connection context (IP, URL, referrer) is recorded for each admin session
+/// to support security auditing and investigation of administrative actions.
+/// This provides accountability and helps detect unauthorized access
+/// attempts to administrative functions.
+///
+/// Multiple concurrent admin sessions are supported to allow administrators
+/// to access the system from different devices or browsers simultaneously
+/// without interfering with each other.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who owns this session. {@link todo_list_admins.id}.
+  todo_list_admin_id String
+  
+  /// IP address from which the admin session was established. Critical for
+  /// security monitoring and detecting unauthorized administrative access
+  /// attempts.
+  ip String
+  
+  /// Connection URL where the admin authentication request originated.
+  /// Provides context about the admin interface entry point for this session.
+  href String
+  
+  /// Referrer URL indicating the source that led to the admin authentication
+  /// request. Helps track administrative access patterns and entry points.
+  referrer String
+  
+  /// Timestamp when the admin session was created through administrator login.
+  /// Marks the beginning of this authenticated administrative session.
+  created_at DateTime
+  
+  /// Timestamp when the admin session ended or will end. Null for active
+  /// sessions. Set when admin logs out, token expires, or session is revoked
+  /// due to password change or security actions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_admin_id, created_at])
 }

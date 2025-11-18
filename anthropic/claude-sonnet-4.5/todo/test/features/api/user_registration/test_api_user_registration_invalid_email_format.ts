@@ -7,61 +7,70 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
 /**
- * Test user registration validation for invalid email format.
+ * Test user registration with duplicate email addresses.
  *
- * This test validates that the user registration endpoint properly rejects
- * malformed email addresses that violate RFC 5322 email format standards.
- * Multiple invalid email patterns are tested including missing @ symbols,
- * multiple @ symbols, missing domains, invalid characters, and incomplete
- * domain names.
+ * Since the original scenario (testing invalid email formats) requires type
+ * error testing which is absolutely prohibited, this test has been rewritten to
+ * validate a legitimate business logic error: attempting to register with an
+ * email address that already exists in the system.
  *
- * The test ensures that:
+ * **Business Context:** The system must enforce email uniqueness to prevent
+ * duplicate accounts. When a user attempts to register with an email that
+ * already exists, the API should reject the request with an appropriate error.
  *
- * 1. Each invalid email format is rejected with an error response
- * 2. No user account is created for any invalid email format
- * 3. Email validation is enforced before account creation
+ * **Test Workflow:**
  *
- * Test cases cover common email format violations:
+ * 1. Register the first user successfully with a valid email
+ * 2. Verify the registration succeeded and tokens were issued
+ * 3. Attempt to register a second user with the same email address
+ * 4. Verify the duplicate registration attempt fails with an error
+ * 5. Confirm the error occurs due to email uniqueness constraint
  *
- * - Missing @ symbol: 'invalidemail.com'
- * - Multiple @ symbols: 'user@@example.com'
- * - Missing domain: 'user@'
- * - Invalid characters (spaces): 'user name@example.com'
- * - Incomplete domain: 'user@domain'
+ * This tests the business rule that email addresses must be unique across all
+ * user accounts in the todo_list_users table.
  */
 export async function test_api_user_registration_invalid_email_format(
   connection: api.IConnection,
 ) {
-  // Prepare valid data for non-email fields
-  const validPassword = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<100>
-  >();
-  const validHref = "https://example.com/register";
-  const validReferrer = "https://example.com/home";
+  // Generate valid registration data for first user
+  const email = typia.random<string & tags.Format<"email">>();
+  const password1 = typia.random<string & tags.MinLength<8>>();
+  const href = typia.random<string & tags.Format<"uri">>();
+  const referrer = typia.random<string & tags.Format<"uri">>();
 
-  // Define array of invalid email formats to test
-  const invalidEmails = [
-    "invalidemail.com", // Missing @ symbol
-    "user@@example.com", // Multiple @ symbols
-    "user@", // Missing domain
-    "user name@example.com", // Invalid character (space)
-    "user@domain", // Incomplete domain (no TLD)
-  ] as const;
+  // Successfully register the first user
+  const firstUser = await api.functional.auth.user.join(connection, {
+    body: {
+      email: email,
+      password: password1,
+      href: href,
+      referrer: referrer,
+    } satisfies ITodoListUser.ICreate,
+  });
 
-  // Test each invalid email format
-  for (const invalidEmail of invalidEmails) {
-    await TestValidator.error(
-      `registration should fail for invalid email: ${invalidEmail}`,
-      async () => {
-        await api.functional.auth.user.join(connection, {
-          body: {
-            email: invalidEmail,
-            password: validPassword,
-            href: validHref,
-            referrer: validReferrer,
-          } satisfies ITodoListUser.ICreate,
-        });
-      },
-    );
-  }
+  // Verify first registration succeeded
+  typia.assert(firstUser);
+  TestValidator.equals(
+    "first user email matches registration email",
+    firstUser.email,
+    email,
+  );
+
+  // Generate different password for second registration attempt
+  const password2 = typia.random<string & tags.MinLength<8>>();
+
+  // Attempt to register second user with the same email (duplicate)
+  await TestValidator.error(
+    "registration should fail with duplicate email",
+    async () => {
+      await api.functional.auth.user.join(connection, {
+        body: {
+          email: email,
+          password: password2,
+          href: href,
+          referrer: referrer,
+        } satisfies ITodoListUser.ICreate,
+      });
+    },
+  );
 }

@@ -1,0 +1,72 @@
+/// User todo items representing tasks to be completed.
+///
+/// Stores individual task entries created by authenticated users for
+/// personal task management and productivity tracking. Each todo item
+/// belongs to exactly one user and maintains complete data isolation between
+/// users.
+///
+/// Todos capture essential task information including the task title,
+/// completion status, and temporal metadata for creation, updates, and
+/// completion tracking. The completion status allows users to track progress
+/// on their tasks, while timestamps provide historical context.
+///
+/// Soft deletion is supported through the deleted_at field to maintain audit
+/// trails while allowing content removal. Users can create unlimited todos,
+/// mark them complete or incomplete, and delete them as needed.
+///
+/// The todo list is the core feature users interact with daily to manage
+/// their personal productivity and track task completion.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this todo item. {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Todo item title describing the task to be completed. Required field
+  /// containing the main task description that users see in their todo list.
+  /// Supports up to 500 characters to allow detailed task descriptions.
+  title String
+  
+  /// Completion status indicating whether the task has been finished. False
+  /// indicates the todo is pending and needs to be done. True indicates the
+  /// task has been marked as complete by the user. Users can toggle this
+  /// status to mark tasks complete or revert them to incomplete.
+  completed Boolean
+  
+  /// Timestamp when the todo item was created. Automatically set when the user
+  /// creates a new todo. Used for chronological ordering and displaying when
+  /// tasks were added. Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this todo item. Updated
+  /// automatically whenever the todo is modified, including completion status
+  /// changes. Tracks the most recent change for audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was marked as completed. Null when the todo is
+  /// not completed or has been reverted to incomplete status. Set
+  /// automatically when user marks the todo as complete. Provides historical
+  /// context about when tasks were finished.
+  completed_at DateTime?
+  
+  /// Soft deletion timestamp for audit trail support. Null for active todos.
+  /// Set when user deletes the todo to support potential recovery and maintain
+  /// historical records. Enables soft delete functionality while preserving
+  /// data integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+}

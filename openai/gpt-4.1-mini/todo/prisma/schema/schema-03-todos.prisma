@@ -1,59 +1,51 @@
-/// Individual todo tasks managed privately by authenticated users.
+/// Todo list items representing individual tasks managed by registered users.
 ///
-/// This table stores all todo tasks created by users with strong ownership
-/// linkage via user ID. Each task has a unique identifier, title, optional
-/// description, timestamps for creation, update, completion, and soft
-/// deletion status. Tasks are always associated with exactly one user,
-/// ensuring data integrity and avoiding shared or public tasks.
+/// Each todo item is uniquely identified and owned by a user. The model
+/// supports task metadata including title, optional description, completion
+/// status, and standard timestamps for creation, updates, and soft deletion.
 ///
-/// The completion status is tracked as a boolean flag, and an optional
-/// completion timestamp records when the task was marked completed. Soft
-/// delete is enabled via nullable deleted_at field for task lifecycle
-/// management and audit.
+/// Ownership is enforced via a foreign key to the todo_list_users table
+/// ensuring that users can only manage their own todo items.
 ///
-/// User sessions and authentication details are handled exclusively in
-/// separate components to ensure modular design and single responsibility.
+/// Soft deletion is implemented to allow reversible deletion while
+/// preserving historical audit trails.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_tasks {
+model todo_list_todos {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the owning user. {@link todo_list_users.id}.
+  /// Owner user of the todo item. {@link todo_list_users.id}.
   todo_list_user_id String
   
-  /// Task title. Must be a non-empty string with a maximum length of 255
-  /// characters.
+  /// Title of the todo item, required and limited to a reasonable length for
+  /// usability.
   title String
   
-  /// Optional detailed description of the task. Limited to 1000 characters.
+  /// Optional detailed description of the todo item providing additional
+  /// context and information.
   description String?
   
-  /// Flag indicating whether the task has been completed (true) or is still
-  /// pending (false).
-  is_completed Boolean
+  /// Flag indicating whether the todo item is marked as completed.
+  is_complete Boolean
   
-  /// Timestamp when the task was marked completed. Null if task is incomplete.
-  completed_at DateTime?
-  
-  /// Task creation timestamp.
+  /// Timestamp when the todo item was created.
   created_at DateTime
   
-  /// Timestamp of the last task update.
+  /// Timestamp when the todo item was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp. Null indicates the task is active.
+  /// Timestamp indicating soft deletion status; null if not deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todoListUser todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
-  @@index([is_completed, updated_at])
+  @@index([todo_list_user_id])
 }

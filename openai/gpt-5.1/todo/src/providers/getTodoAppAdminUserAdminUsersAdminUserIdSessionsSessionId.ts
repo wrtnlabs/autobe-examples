@@ -7,32 +7,22 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppAdminuserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminuserSession";
+import { ITodoAppAdminUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminUserSession";
+import { ITodoAppAdminUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminUser";
 import { AdminuserPayload } from "../decorators/payload/AdminuserPayload";
 
 export async function getTodoAppAdminUserAdminUsersAdminUserIdSessionsSessionId(props: {
   adminUser: AdminuserPayload;
   adminUserId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
-}): Promise<ITodoAppAdminuserSession> {
-  // Ensure the target admin user exists and is active/non-deleted.
-  const targetAdminUser = await MyGlobal.prisma.todo_app_adminusers.findFirst({
-    where: {
-      id: props.adminUserId,
-      deleted_at: null,
-      status: "active",
-    },
-  });
-
-  if (targetAdminUser === null) {
-    throw new HttpException("Admin user not found", 404);
-  }
-
-  // Fetch the session ensuring it belongs to the specified admin user.
+}): Promise<ITodoAppAdminUserSession> {
   const session = await MyGlobal.prisma.todo_app_adminuser_sessions.findFirst({
     where: {
       id: props.sessionId,
       todo_app_adminuser_id: props.adminUserId,
+    },
+    include: {
+      adminUser: true,
     },
   });
 
@@ -40,17 +30,28 @@ export async function getTodoAppAdminUserAdminUsersAdminUserIdSessionsSessionId(
     throw new HttpException("Admin user session not found", 404);
   }
 
-  const createdAtIso = toISOStringSafe(session.created_at);
+  const adminUserSummary: ITodoAppAdminUser.ISummary = {
+    id: session.adminUser.id,
+    email: session.adminUser.email,
+    display_name:
+      session.adminUser.display_name === null
+        ? null
+        : session.adminUser.display_name,
+    status: session.adminUser.status,
+    created_at: toISOStringSafe(session.adminUser.created_at),
+    updated_at: toISOStringSafe(session.adminUser.updated_at),
+  };
 
-  const expiredAtIso =
-    session.expired_at === null ? null : toISOStringSafe(session.expired_at);
-
-  return {
+  const result: ITodoAppAdminUserSession = {
     id: session.id,
+    adminUser: adminUserSummary,
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,
-    created_at: createdAtIso,
-    expired_at: expiredAtIso,
+    created_at: toISOStringSafe(session.created_at),
+    expired_at:
+      session.expired_at === null ? null : toISOStringSafe(session.expired_at),
   };
+
+  return result;
 }

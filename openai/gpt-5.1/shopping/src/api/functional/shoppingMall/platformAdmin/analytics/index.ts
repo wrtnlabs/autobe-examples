@@ -1,9 +1,0 @@
-export * as payment_funnel from "./payment_funnel/index";
-export * as seller_earnings from "./seller_earnings/index";
-export * as adminActionAudits from "./adminActionAudits/index";
-export * as adminConfigurations from "./adminConfigurations/index";
-export * as sellerPerformance from "./sellerPerformance/index";
-export * as disputes from "./disputes/index";
-export * as fraudRules from "./fraudRules/index";
-export * as fraudViolations from "./fraudViolations/index";
-export * as logging from "./logging/index";

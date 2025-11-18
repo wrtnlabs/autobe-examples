@@ -7,92 +7,91 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoListTodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserJoin(props: {
   user: UserPayload;
-  body: ITodoListUser.ICreate;
-}): Promise<ITodoListUser.IAuthorized> {
-  const existing = await MyGlobal.prisma.todo_list_users.findUnique({
+  body: ITodoListTodoListUser.ICreate;
+}): Promise<ITodoListTodoListUser.IAuthorized> {
+  const existingUser = await MyGlobal.prisma.todo_list_users.findFirst({
     where: { email: props.body.email },
   });
 
-  if (existing !== null) {
-    throw new HttpException("Email is already registered", 409);
+  if (existingUser !== null) {
+    throw new HttpException("Email already registered", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  const hashedPassword = "";
 
-  const nowIso = toISOStringSafe(new Date()) as string &
-    tags.Format<"date-time">;
-  const id = v4() as string & tags.Format<"uuid">;
+  const userId = v4();
+  const now = new Date();
+  const nowISOString = toISOStringSafe(now);
 
-  const user = await MyGlobal.prisma.todo_list_users.create({
+  const createdUser = await MyGlobal.prisma.todo_list_users.create({
     data: {
-      id,
+      id: userId as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: hashedPassword,
-      created_at: nowIso,
-      updated_at: nowIso,
+      created_at: nowISOString,
+      updated_at: nowISOString,
+      deleted_at: null,
     },
   });
 
+  const sessionId = v4();
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const accessExpireIso = toISOStringSafe(accessExpires) as string &
-    tags.Format<"date-time">;
-  const refreshExpireIso = toISOStringSafe(refreshExpires) as string &
-    tags.Format<"date-time">;
-
-  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+  const createdSession = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      todo_list_user_id: user.id,
-      ip: props.body.ip ?? "",
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: nowIso,
-      expired_at: accessExpireIso,
+      id: sessionId as string & tags.Format<"uuid">,
+      todo_list_user_id: userId as string & tags.Format<"uuid">,
+      ip: "",
+      href: "",
+      referrer: "",
+      created_at: nowISOString,
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpireIso,
-    refreshable_until: refreshExpireIso,
-  };
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: createdUser.id,
+      session_id: createdSession.id,
+      created_at: nowISOString,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: createdUser.id,
+      session_id: createdSession.id,
+      tokenType: "refresh",
+      created_at: nowISOString,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
 
   return {
-    id: user.id,
-    token,
+    id: createdUser.id,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
   };
 }

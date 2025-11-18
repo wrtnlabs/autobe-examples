@@ -3,78 +3,86 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallSellerJoin } from "../../../structures/IShoppingMallSellerJoin";
+import { IShoppingMallSellerAuthJoin } from "../../../structures/IShoppingMallSellerAuthJoin";
 import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
-import { IShoppingMallSellerLogin } from "../../../structures/IShoppingMallSellerLogin";
-import { IShoppingMallSellerRefresh } from "../../../structures/IShoppingMallSellerRefresh";
-export * as email from "./email/index";
-export * as password from "./password/index";
+import { IShoppingMallSellerAuthLogin } from "../../../structures/IShoppingMallSellerAuthLogin";
+import { IShoppingMallSellerAuthRefresh } from "../../../structures/IShoppingMallSellerAuthRefresh";
 
 /**
- * Register a new seller account backed by shopping_mall_seller and
- * shopping_mall_auth_credentials and return initial authorization tokens.
+ * Register a new seller account in `shopping_mall_sellers` and issue initial
+ * authorized seller tokens.
  *
- * This operation registers a new seller member account by combining identity
- * records in the shopping_mall_auth_credentials table with business-facing
- * seller profile data in the shopping_mall_seller table.
+ * This API operation registers a new seller account by inserting a record into
+ * the `shopping_mall_sellers` table, which is described as "Registered seller
+ * accounts on the shoppingMall platform" and serves as the root identity for
+ * all seller-related operations. When the request body is valid, the service
+ * will generate a new `id` as the primary key, store the provided business
+ * contact `email`, and compute and persist a `password_hash` derived from the
+ * seller’s chosen credentials. The `status` column, which reflects lifecycle
+ * states such as `pending_review`, `active`, `suspended`, or `terminated`, will
+ * be initialized according to platform policy, commonly starting as
+ * `pending_review` or `active`. The boolean `email_verified` flag will be
+ * initialized as `false` until a separate verification process completes, and
+ * the `created_at` and `updated_at` timestamps will be set to the current
+ * server time while `deleted_at` remains `null` to indicate that the account is
+ * logically present.
  *
- * At the credentials layer, the handler checks whether the provided email is
- * already associated with an existing credentials row for actor_type "seller"
- * by querying the unique index on (actor_type, email) defined in
- * shopping_mall_auth_credentials. If a record exists and its status indicates
- * an active or locked account, the operation rejects the registration to
- * prevent duplicate seller identities. When no such record exists, the service
- * derives a secure password_hash from the supplied password and persists a new
- * row with actor_type set to "seller", status initialized according to policy
- * (for example "active" or "pending"), and created_at/updated_at timestamps
- * populated. The last_login_at field remains null until the seller successfully
- * logs in after registration.
+ * Security-wise, this operation is intentionally public and therefore uses
+ * `authorizationActor: null` combined with `authorizationType: "join"`, because
+ * no authenticated seller context exists prior to registration. Despite being
+ * public, it must strictly validate inputs such as `email` uniqueness using the
+ * unique index on `shopping_mall_sellers.email` and enforce password strength
+ * requirements before computing the `password_hash`. The implementation must
+ * ensure that the plain password never leaves the application boundary
+ * unencrypted and that the `password_hash` column is populated using a strong
+ * one-way hashing algorithm designed for credentials.
  *
- * At the seller profile layer, the operation creates a shopping_mall_seller
- * record using the provided store_name, email, and optionally contact_phone. It
- * respects the unique constraints on email and store_name declared in
- * shopping_mall_seller by returning a validation error rather than violating
- * the database indexes. The status column of shopping_mall_seller is
- * initialized to a value such as "pending" or "active" to represent the seller
- * lifecycle, and created_at/updated_at timestamps are set to the current time
- * while deleted_at remains null, indicating that the seller is not logically
- * closed.
+ * This join operation is tightly coupled to the underlying
+ * `shopping_mall_sellers` schema. By persisting the `email`, `password_hash`,
+ * and lifecycle `status`, it creates the seller identity referenced by
+ * `shopping_mall_seller_sessions.shopping_mall_seller_id`,
+ * `shopping_mall_actor_security_events_of_sellers.shopping_mall_seller_id`, and
+ * `shopping_mall_account_risk_flags_of_sellers.shopping_mall_seller_id`. These
+ * subsidiary tables rely on the seller identity to track login sessions,
+ * security incidents, and risk flags associated with each merchant, giving
+ * governance and risk engines a normalized anchor for all seller-related
+ * events.
  *
- * The registration workflow may also integrate with
- * shopping_mall_email_verification_tokens when email verification is required
- * by policy. In that case, the system generates a unique token string backed by
- * the unique index on token, associates it with the new credentials row via
- * shopping_mall_auth_credentials_id, and sets an appropriate expires_at value.
- * The created_at and updated_at timestamp fields on
- * shopping_mall_email_verification_tokens are used to track token lifecycle,
- * while consumed_at remains null until the seller completes verification via a
- * separate endpoint.
+ * In terms of validation rules and business logic, the request DTO
+ * `IShoppingMallSellerAuthJoin.IRequest` will contain fields such as `email`
+ * and `password`, and may include additional seller onboarding attributes as
+ * defined by higher-level requirements. The service must reject registration
+ * attempts when an account with the same `email` already exists, regardless of
+ * the `status` or `deleted_at` values, unless business policy explicitly allows
+ * reactivation flows. It should also normalize and trim incoming values before
+ * comparison, and record any suspicious registration attempts using the
+ * security event infrastructure if configured to do so.
  *
- * For observability and security, the handler records an entry in
- * shopping_mall_auth_logs to capture the join event, populating fields such as
- * event_type (for example "join" or "login_success" depending on
- * implementation), actor_type="seller", actor_email from the credentials email,
- * ip and user_agent from the request context, success=true, and created_at with
- * the current timestamp. Additional security context like correlation_id or
- * metadata_json may be attached when available. In parallel or via an
- * asynchronous side effect, a security event may be stored in
- * shopping_mall_security_events with event_type such as "REGISTER_SELLER" and
- * optional linkage to the new credentials row via
- * shopping_mall_auth_credentials_id, supporting future forensics.
+ * This operation is designed to be used in conjunction with the seller login
+ * and refresh endpoints. After successful registration, the implementation will
+ * typically issue an initial JWT access and refresh token pair encapsulated in
+ * the `IShoppingMallSeller.IAuthorized` response body, and may also create a
+ * new row in `shopping_mall_seller_sessions` capturing `ip`, `href`,
+ * `referrer`, and `created_at` to represent the newly established authenticated
+ * session. Future authentication requests to `/auth/seller/login` will validate
+ * credentials against the stored `email` and `password_hash`, while
+ * `/auth/seller/refresh` will rely on the refresh token originally issued from
+ * this join flow.
  *
- * Upon successful completion, the endpoint issues an authorization payload
- * matching IShoppingMallSeller.IAuthorized that encapsulates the seller's JWT
- * access and refresh tokens plus essential seller identity claims. The response
- * intentionally abstracts away internal password_hash and credential details
- * from shopping_mall_auth_credentials and instead surfaces only safe
- * identifiers needed by the client. If any constraint is violated, such as
- * duplicate email or store_name, the operation returns a business error without
- * creating partial records, ensuring that shopping_mall_seller and
- * shopping_mall_auth_credentials remain consistent.
+ * Error handling must clearly distinguish between validation errors (such as
+ * weak passwords or duplicate emails) and server-side issues (such as database
+ * write failures). Validation errors should return structured error responses
+ * that do not reveal whether the `email` is already associated with an account
+ * in a way that would encourage enumeration, while server-side errors should be
+ * logged internally with potential creation of
+ * `shopping_mall_actor_security_events` or
+ * `shopping_mall_account_risk_flags_of_sellers` entries when repeated failures
+ * indicate abuse patterns.
  *
  * @param props.connection
- * @param props.body Seller registration payload including login credentials and
- *   basic seller profile data.
+ * @param props.body Seller registration payload including email, password, and
+ *   related onboarding data required to create a new row in
+ *   `shopping_mall_sellers`.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/join
@@ -110,12 +118,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Seller registration payload including login credentials and basic
-     * seller profile data.
+     * Seller registration payload including email, password, and related
+     * onboarding data required to create a new row in
+     * `shopping_mall_sellers`.
      */
-    body: IShoppingMallSellerJoin.IRequest;
+    body: IShoppingMallSellerAuthJoin.IRequest;
   };
-  export type Body = IShoppingMallSellerJoin.IRequest;
+  export type Body = IShoppingMallSellerAuthJoin.IRequest;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {
@@ -160,66 +169,65 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing seller using shopping_mall_auth_credentials and
- * shopping_mall_seller and return authorization tokens.
+ * Authenticate an existing seller in `shopping_mall_sellers` using email and
+ * password, issuing authorized seller tokens and recording a session.
  *
- * This operation logs a seller member into the platform by authenticating
- * against the centralized shopping_mall_auth_credentials table while enforcing
- * seller-specific lifecycle constraints defined in shopping_mall_seller.
+ * This API operation authenticates sellers by validating credentials against
+ * the `shopping_mall_sellers` table, which represents registered merchant
+ * accounts and contains the primary login identifiers `email` and
+ * `password_hash`, as well as account lifecycle `status`. The service reads the
+ * row whose `email` matches the one provided in
+ * `IShoppingMallSellerAuthLogin.IRequest`, ensuring the query respects the
+ * unique index on `shopping_mall_sellers.email` to quickly locate the seller.
+ * It then uses a password verification algorithm to compare the plain-text
+ * password from the request with the stored `password_hash`, returning an
+ * authentication failure if the check does not succeed.
  *
- * The handler first locates a credentials record by querying
- * shopping_mall_auth_credentials using the composite unique index on
- * (actor_type, email), constraining actor_type to the seller value. If no
- * record is found, it records a failure event in shopping_mall_auth_logs with
- * success=false, event_type such as "login_failure", actor_type set to
- * "seller", actor_email set from the attempted email, and
- * failure_reason="invalid_credentials". A corresponding security event may be
- * captured in shopping_mall_security_events with event_type like
- * "LOGIN_FAILURE" and optional actor_identifier equal to the attempted email,
- * helping to identify brute-force attempts. In this case, the endpoint responds
- * with an authentication error without revealing whether the email exists.
+ * From a security perspective, this operation is the canonical seller login
+ * entry point and is therefore tagged with `authorizationType: "login"` and
+ * `authorizationActor: null`, exposing it publicly while performing sensitive
+ * credential processing. It must enforce platform security rules that depend on
+ * the `status` column of `shopping_mall_sellers`, rejecting access for
+ * lifecycle states such as `suspended` or `terminated` and possibly blocking
+ * `pending_review` accounts depending on business policy. It should also
+ * consider the `deleted_at` column, denying login attempts for logically
+ * removed seller accounts even if the underlying row still exists for audit
+ * reasons.
  *
- * When a matching credentials record is found, the service validates the
- * provided password against the stored password_hash in
- * shopping_mall_auth_credentials. If the password is incorrect or the status
- * column indicates a non-allowed value such as "locked" or "compromised", the
- * handler again logs events in shopping_mall_auth_logs and
- * shopping_mall_security_events with success=false and a relevant
- * failure_reason, then rejects the login. This leverages the actor_type and
- * status fields to enforce platform security policies across all actor types
- * while still allowing seller-specific reporting based on actor_type="seller".
+ * The login flow integrates directly with subsidiary session tracking in the
+ * `shopping_mall_seller_sessions` table. After successful authentication, the
+ * implementation typically inserts a new row in `shopping_mall_seller_sessions`
+ * referencing the seller via `shopping_mall_seller_id`, storing contextual
+ * metadata like `ip`, `href`, `referrer`, and the `created_at` timestamp. The
+ * `expired_at` field will remain `null` until the session is invalidated or
+ * naturally expires, allowing security and analytics tooling to query active
+ * and historical sessions based on the `shopping_mall_seller_id` and
+ * `created_at` index.
  *
- * On successful password validation and acceptable status, the operation
- * resolves the owning seller profile from shopping_mall_seller, using the
- * relationship modeled via subtype tables that link credentials to a concrete
- * seller. It verifies that the seller row has a status like "active" and that
- * deleted_at is null, ensuring the seller has not been logically closed. The
- * timestamps created_at and updated_at on shopping_mall_seller provide context
- * but do not directly affect authorization logic, whereas status and deleted_at
- * determine access.
+ * Additionally, repeated failed login attempts and high-risk behaviors surfaced
+ * during credential validation may be recorded as security events in tables
+ * such as `shopping_mall_actor_security_events_of_sellers`, which in turn
+ * attach to a shared `shopping_mall_actor_security_events` record via
+ * `shopping_mall_actor_security_event_id`. Corresponding
+ * `shopping_mall_account_risk_flags_of_sellers` rows may be added when risk
+ * scores cross thresholds, linking the risk flag to the seller with
+ * `shopping_mall_seller_id` and time-stamping the event in `created_at`. These
+ * linkages allow governance and risk systems to reason about the seller’s
+ * authentication risk posture over time.
  *
- * The handler then updates last_login_at and updated_at on
- * shopping_mall_auth_credentials to the current time and may also incrementally
- * adjust risk signals via auxiliary components such as shopping_mall_risk_flags
- * (not in the loaded schema set). It inserts a success entry into
- * shopping_mall_auth_logs with event_type="login_success", success=true, and
- * fills fields like actor_type="seller", actor_id with the seller id,
- * actor_email, ip, user_agent, and created_at, enriching the audit trail. A
- * matching entry in shopping_mall_security_events with
- * event_type="LOGIN_SUCCESS" and optional shopping_mall_auth_credentials_id
- * reference enables downstream anomaly detection and reporting.
- *
- * Finally, the endpoint issues a new access token and refresh token pair
- * encoded in the IShoppingMallSeller.IAuthorized response structure, which
- * contains seller identity claims necessary for client-side authorization.
- * Sensitive fields such as password_hash never leave
- * shopping_mall_auth_credentials, and the access pattern leverages the
- * composite index on actor_type and status to efficiently filter permissible
- * authentication attempts.
+ * The response body `IShoppingMallSeller.IAuthorized` aggregates the
+ * authenticated seller’s identity derived from `shopping_mall_sellers` and the
+ * newly issued JWT tokens (access and refresh) that encode this identity and
+ * its permissions. Clients will use the access token for subsequent
+ * authenticated seller API calls and the refresh token with
+ * `/auth/seller/refresh` to maintain session continuity. Error handling must
+ * remain careful not to disclose whether the `email` is registered, and
+ * business-specific lockout or MFA logic should be layered on top based on the
+ * contents of the security event and risk flag tables.
  *
  * @param props.connection
- * @param props.body Seller login payload containing email and password
- *   credentials.
+ * @param props.body Seller login credentials (email and password) to be
+ *   verified against `shopping_mall_sellers.password_hash`.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/login
@@ -254,10 +262,13 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Seller login payload containing email and password credentials. */
-    body: IShoppingMallSellerLogin.IRequest;
+    /**
+     * Seller login credentials (email and password) to be verified against
+     * `shopping_mall_sellers.password_hash`.
+     */
+    body: IShoppingMallSellerAuthLogin.IRequest;
   };
-  export type Body = IShoppingMallSellerLogin.IRequest;
+  export type Body = IShoppingMallSellerAuthLogin.IRequest;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {
@@ -302,64 +313,66 @@ export namespace login {
 }
 
 /**
- * Refresh seller JWT tokens while enforcing credential and seller status checks
- * using shopping_mall_auth_credentials, shopping_mall_seller,
- * shopping_mall_auth_logs, and shopping_mall_security_events.
+ * Refresh seller JWT tokens using a valid refresh token while validating seller
+ * and session state linked to `shopping_mall_sellers`.
  *
- * This operation renews the authorization context for a seller by exchanging a
- * valid refresh token for a fresh set of JWT tokens, without requiring the
- * seller to re-enter credentials. It is designed specifically for the seller
- * actor type, leveraging the existing authentication and security logging
- * tables.
+ * This API operation renews a seller’s authenticated context by accepting a
+ * refresh token packaged in `IShoppingMallSellerAuthRefresh.IRequest` and
+ * issuing a new authorized seller response of type
+ * `IShoppingMallSeller.IAuthorized`. Rather than validating an email and
+ * `password_hash` like the login endpoint, it validates the refresh token’s
+ * signature, expiration, and revocation status, then resolves the associated
+ * seller identity from the `shopping_mall_sellers` table. It ensures that the
+ * seller’s `status` still allows access (for example, it is not `suspended` or
+ * `terminated`) and that the account has not been logically removed via the
+ * `deleted_at` field.
  *
- * Upon receiving a refresh token, the handler validates it against the
- * platform's token store and decodes identity claims that relate back to a row
- * in shopping_mall_auth_credentials where actor_type is associated with
- * sellers. The decoded identifier enables the service to load the credentials
- * record and confirm that its status field still permits authentication (for
- * example "active" rather than "locked" or "compromised"). It also uses
- * actor_type to ensure that tokens issued for non-seller actors cannot be
- * replayed against this seller-specific refresh endpoint.
+ * From a security standpoint, this operation is categorized with
+ * `authorizationType: "refresh"` and uses `authorizationActor: null`, allowing
+ * it to be called with only a refresh token rather than an existing access
+ * token. Implementations must enforce strict token validation rules, honoring
+ * revocation lists or blacklists and respecting the configured session
+ * lifetime. If the refresh token is tied to a specific login session stored in
+ * `shopping_mall_seller_sessions`, the operation must verify that the session
+ * identified by `shopping_mall_seller_id` and any internal token/session
+ * identifier has not reached its `expired_at` time, and may update that session
+ * or record a new one depending on the session model.
  *
- * After confirming the credential state, the operation resolves the
- * corresponding seller profile entity from shopping_mall_seller through the
- * configured relationships. It ensures that the seller status remains in a
- * state such as "active" and that deleted_at is null, which indicates that the
- * seller account has not been logically closed. If the seller has been
- * suspended or terminated, the refresh attempt is rejected even if the token
- * itself remains structurally valid, honoring lifecycle controls enforced by
- * the status column of shopping_mall_seller.
+ * The refresh flow is closely integrated with the broader seller authentication
+ * lifecycle encompassing join and login. Sellers created via
+ * `/auth/seller/join` and authenticated via `/auth/seller/login` receive
+ * refresh tokens that point back to their identity in `shopping_mall_sellers`
+ * and possibly to a row in `shopping_mall_seller_sessions`. When this endpoint
+ * is called, it reconstructs the seller’s authorized context, re-deriving
+ * claims from the seller row, such as their unique `id` and current `status`,
+ * and then issues a fresh set of tokens as `IShoppingMallSeller.IAuthorized`.
+ * This allows long-lived sessions without requiring passwords to be sent
+ * frequently, while still enabling platform operators to revoke or limit access
+ * by updating the seller’s status or invalidating sessions.
  *
- * For observability, the endpoint records an entry in shopping_mall_auth_logs
- * regardless of success or failure. On successful refresh, it uses an
- * event_type like "token_refresh" with success=true, actor_type set to
- * "seller", and actor_id populated with the seller's id, optionally filling
- * actor_email, ip, user_agent, session_id, and correlation_id when available.
- * On failure, success is set to false and failure_reason may capture values
- * such as "invalid_token", "expired_token", or "seller_inactive". The
- * created_at field on shopping_mall_auth_logs captures the event time for later
- * analysis.
+ * The risk and security infrastructure around seller accounts may also
+ * influence the behavior of this endpoint. For example, if there are recent
+ * high-severity security events linked via
+ * `shopping_mall_actor_security_events_of_sellers` or critical flags recorded
+ * in `shopping_mall_account_risk_flags_of_sellers` for the seller’s
+ * `shopping_mall_seller_id`, the implementation may refuse to refresh tokens
+ * and instead demand a full reauthentication or escalate to manual review.
+ * These tables provide time-stamped linkages (`created_at`) that enable policy
+ * engines to make decisions based on recent activity.
  *
- * Complementing the auth logs, the operation may also generate a record in
- * shopping_mall_security_events, using event_type such as "TOKEN_REFRESH" or
- * "TOKEN_REFRESH_FAILED". When the credentials record could be resolved, the
- * handler populates shopping_mall_auth_credentials_id for correlation, and may
- * fill actor_type, actor_identifier, ip, user_agent, metadata, and created_at
- * to support anomaly detection use cases. These entries leverage the indexes on
- * event_type and actor_type to support efficient querying.
- *
- * If validation succeeds across the token store,
- * shopping_mall_auth_credentials, and shopping_mall_seller checks, the service
- * issues a new access token and refresh token for the seller, encoding them in
- * the IShoppingMallSeller.IAuthorized response structure. The payload focuses
- * on seller identity and authorization claims while abstracting away internal
- * storage details from shopping_mall_auth_credentials and the mechanics of
- * token persistence. Failed attempts produce structured errors that guide the
- * client to prompt re-login when appropriate.
+ * Error handling for the refresh operation must intentionally avoid leaking
+ * sensitive information about token internals or seller existence. Invalid or
+ * expired tokens, revoked sessions, or disallowed seller statuses should result
+ * in a generic unauthorized or forbidden response, while internal logs capture
+ * detailed context for audit and risk analysis. By relying on the normalized
+ * structures of `shopping_mall_sellers`, `shopping_mall_seller_sessions`,
+ * `shopping_mall_actor_security_events_of_sellers`, and
+ * `shopping_mall_account_risk_flags_of_sellers`, the implementation can
+ * maintain a robust, auditable seller authentication lifecycle.
  *
  * @param props.connection
- * @param props.body Seller token refresh payload containing the existing
- *   refresh token and related context.
+ * @param props.body Refresh token and related context used to renew the
+ *   seller’s JWT tokens without re-supplying credentials.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/refresh
@@ -395,12 +408,12 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Seller token refresh payload containing the existing refresh token
-     * and related context.
+     * Refresh token and related context used to renew the seller’s JWT
+     * tokens without re-supplying credentials.
      */
-    body: IShoppingMallSellerRefresh.IRequest;
+    body: IShoppingMallSellerAuthRefresh.IRequest;
   };
-  export type Body = IShoppingMallSellerRefresh.IRequest;
+  export type Body = IShoppingMallSellerAuthRefresh.IRequest;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {

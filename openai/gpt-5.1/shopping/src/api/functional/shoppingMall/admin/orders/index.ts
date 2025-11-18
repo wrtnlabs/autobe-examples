@@ -1,0 +1,543 @@
+import { IConnection, HttpError } from "@nestia/fetcher";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia from "typia";
+import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+
+import { IShoppingMallOrder } from "../../../../structures/IShoppingMallOrder";
+import { IPageIShoppingMallOrder } from "../../../../structures/IPageIShoppingMallOrder";
+import { IShoppingMallOrderCustomerContact } from "../../../../structures/IShoppingMallOrderCustomerContact";
+export * as itemSellers from "./itemSellers/index";
+export * as items from "./items/index";
+export * as priceSnapshots from "./priceSnapshots/index";
+export * as statusHistories from "./statusHistories/index";
+export * as customerContact from "./customerContact/index";
+export * as shippingAddress from "./shippingAddress/index";
+export * as shipments from "./shipments/index";
+export * as payments from "./payments/index";
+
+/**
+ * Search and paginate order headers from the `shopping_mall_orders` table for
+ * administrative use.
+ *
+ * Search and retrieve a filtered, paginated list of order headers from the
+ * `shopping_mall_orders` table.
+ *
+ * This operation accepts a complex search request body and returns a paginated
+ * collection of order summary DTOs. The underlying `shopping_mall_orders`
+ * Prisma model stores core order header attributes representing confirmed
+ * customer checkouts, including an order code used as the primary business
+ * identifier, customer or guest identity references, total amounts, currency,
+ * and high-level lifecycle status fields such as placed, paid, shipped,
+ * delivered, cancelled, and refunded. Subsidiary models like
+ * `shopping_mall_order_items`, `shopping_mall_order_status_histories`,
+ * `shopping_mall_order_payments`, and `shopping_mall_shipments` provide
+ * detailed breakdowns of items, status transitions, payments, and fulfillment,
+ * but this endpoint focuses on the header-level representation optimized for
+ * lists.
+ *
+ * The `IShoppingMallOrder.IRequest` request DTO is expected to encapsulate rich
+ * search criteria. Examples include filtering by order code fragments, customer
+ * identifiers, seller identifiers in multi-seller orders, time ranges such as
+ * order creation or completion dates, minimum and maximum order totals, and
+ * order lifecycle statuses. The DTO may also support flags to include or
+ * exclude logically cancelled or fully refunded orders, search by payment
+ * states (e.g., pending, paid, refunded, chargeback), or filter by shipment
+ * states (e.g., not shipped, in transit, delivered) through joins or subqueries
+ * on related tables. The implementation should interpret these filters
+ * strictly, ignoring unknown or unsupported filter fields, and return clear
+ * validation errors when filter values are out of range or in an invalid
+ * format.
+ *
+ * Security-wise, this endpoint is intended for administrative and operational
+ * tooling, such as an internal order management console or customer support
+ * backoffice. As a result, `authorizationActors` is restricted to `["admin"]`,
+ * and the controller layer must enforce that only authenticated administrators
+ * can call this API. The provider logic will receive the administrator’s
+ * identity for auditing and may log search activity to governance-related
+ * tables such as audit logs or risk cases when required by compliance rules.
+ *
+ * The response body uses `IPageIShoppingMallOrder.ISummary` to wrap both
+ * pagination metadata (such as total count, page size, and current page index)
+ * and a collection of `IShoppingMallOrder.ISummary` items. Each summary item
+ * should include key fields like order code, customer display information,
+ * primary status, total amount, currency, and key timestamps (e.g., createdAt,
+ * lastStatusChangedAt) but omit heavy nested structures like full item lists
+ * and detailed histories. Clients can then call the single-order detail
+ * endpoint (`GET /orders/{orderCode}`) when they need a complete view of a
+ * specific order. This separation ensures efficient list views while providing
+ * a clear path to detailed inspection for individual orders.
+ *
+ * Typical error scenarios for this endpoint include invalid pagination
+ * parameters (such as negative page numbers or excessive page sizes),
+ * unsupported sort field names, malformed date ranges, and unexpected internal
+ * failures. The implementation should translate these conditions into
+ * well-structured error responses following the platform’s standard error
+ * contract, while never leaking internal database details or stack traces to
+ * the client.
+ *
+ * @param props.connection
+ * @param props.body Search criteria, sorting options, and pagination settings
+ *   for querying orders stored in `shopping_mall_orders`. This structure
+ *   defines filters such as order codes, customer identifiers, status sets, and
+ *   date ranges, as well as page size and ordering.
+ * @path /shoppingMall/admin/orders
+ * @accessor api.functional.shoppingMall.admin.orders.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria, sorting options, and pagination settings for
+     * querying orders stored in `shopping_mall_orders`. This structure
+     * defines filters such as order codes, customer identifiers, status
+     * sets, and date ranges, as well as page size and ordering.
+     */
+    body: IShoppingMallOrder.IRequest;
+  };
+  export type Body = IShoppingMallOrder.IRequest;
+  export type Response = IPageIShoppingMallOrder.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/admin/orders",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/admin/orders";
+  export const random = (): IPageIShoppingMallOrder.ISummary =>
+    typia.random<IPageIShoppingMallOrder.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Get a single detailed order from `shopping_mall_orders` by its business
+ * orderCode.
+ *
+ * Retrieve a single detailed order record from the `shopping_mall_orders` table
+ * using its business identifier `orderCode`.
+ *
+ * This operation is designed to return a comprehensive view of one order,
+ * including its header attributes and related entities. The underlying
+ * `shopping_mall_orders` Prisma model provides the primary fields such as the
+ * order code, customer or guest references, total amounts and currency,
+ * high-level lifecycle status, and key timestamps. Through relations to other
+ * Prisma models like `shopping_mall_order_items`, `shopping_mall_shipments`,
+ * `shopping_mall_order_payments`, and various history and snapshot tables, the
+ * implementation can build the `IShoppingMallOrder` DTO so that consumers see
+ * the essential structure of the order and its payments, shipments,
+ * cancellations, refunds, and disputes.
+ *
+ * The path parameter `{orderCode}` is a human-readable business identifier,
+ * intended to be shared with customers and support staff and to appear in
+ * emails, invoices, and external systems. It is conceptually unique across the
+ * `shopping_mall_orders` table, allowing direct lookup without requiring
+ * internal database IDs. The parameter definition in this operation ensures
+ * that API consumers provide the code as a string. Implementations may impose
+ * additional format constraints (such as prefixes, date components, or checksum
+ * segments) enforced in validation prior to database access. If the provided
+ * order code does not match any record, the API should respond with a clear
+ * not-found error rather than an empty success response.
+ *
+ * Security and authorization considerations mirror those of the order search
+ * endpoint: this detail view is intended for administrators and internal
+ * operators who need full visibility into orders across all customers and
+ * sellers. Consequently, `authorizationActors` is set to `["admin"]`, and the
+ * controller should ensure that only authenticated admin actors can call this
+ * endpoint. Calls to this endpoint may be audited by writing entries to
+ * administrative audit logs or risk-related tables whenever sensitive fields
+ * are accessed or when certain high-risk statuses are observed.
+ *
+ * The success response uses the `IShoppingMallOrder` DTO type, which should
+ * include full order information that is safe and meaningful for administrative
+ * clients. This includes nested structures for items, shipments, payments, and
+ * status histories as defined in the type schema, but should avoid cycles and
+ * unnecessary internal-only diagnostics. Error scenarios mainly consist of
+ * invalid `orderCode` formats, missing orders, and internal server errors. All
+ * such errors should be surfaced in a standardized format consistent with the
+ * rest of the ShoppingMall platform, with particular care to avoid exposing
+ * database-specific details or stack traces in the API response.
+ *
+ * @param props.connection
+ * @param props.orderCode Business identifier code of the target order (global
+ *   scope). This is the human-readable order code exposed to customers and
+ *   admins and is unique within the `shopping_mall_orders` table.
+ * @path /shoppingMall/admin/orders/:orderCode
+ * @accessor api.functional.shoppingMall.admin.orders.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Business identifier code of the target order (global scope). This is
+     * the human-readable order code exposed to customers and admins and is
+     * unique within the `shopping_mall_orders` table.
+     */
+    orderCode: string;
+  };
+  export type Response = IShoppingMallOrder;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/admin/orders/:orderCode",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}`;
+  export const random = (): IShoppingMallOrder =>
+    typia.random<IShoppingMallOrder>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("orderCode")(() => typia.assert(props.orderCode));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Create a customer contact snapshot for an order in
+ * shopping_mall_order_customer_contacts using order_code.
+ *
+ * Create a customer contact information snapshot for a specific order
+ * referenced by its business order code.
+ *
+ * This operation targets the shopping_mall_orders and
+ * shopping_mall_order_customer_contacts Prisma tables. It first resolves the
+ * order whose order_code matches the {orderCode} path parameter, leveraging the
+ * unique index on shopping_mall_orders.order_code to ensure a single match.
+ * Once the order is found, it creates a new row in
+ * shopping_mall_order_customer_contacts with a foreign key
+ * shopping_mall_order_id pointing to shopping_mall_orders.id and, when
+ * appropriate, shopping_mall_customer_id pointing to the owning customer.
+ *
+ * The request body, typed as IShoppingMallOrderCustomerContact.ICreate, carries
+ * the snapshot values for contact_name, contact_email, and contact_phone. These
+ * fields correspond directly to the plainFields defined in the Prisma schema:
+ * contact_name (required), contact_email (required), and contact_phone
+ * (optional). The API validates that contact_email is well-formed and that
+ * required fields are present. Business logic should ensure that the snapshot
+ * reflects the state of the customer’s contact information at the time the
+ * order was placed or confirmed, so that future profile changes do not alter
+ * historical records used for notifications and support.
+ *
+ * From a security perspective, this operation is limited to administrative or
+ * internal system usage and is therefore exposed only to the "admin" actor.
+ * Normal customers and guest users do not have permission to call this endpoint
+ * directly. Implementations must ensure that only orders that actually exist
+ * can receive snapshots; an attempt to create a contact snapshot for a
+ * non-existent {orderCode} should result in a 404-like error. Additionally,
+ * because shopping_mall_order_customer_contacts.shopping_mall_order_id is
+ * unique, the service must check for the presence of an existing snapshot and
+ * return a conflict error if one already exists, rather than creating
+ * duplicates.
+ *
+ * This operation is typically used in conjunction with other order-related
+ * APIs: read operations on orders and shipments may use the snapshot data for
+ * consistent notification addresses, and analytics or audit views may rely on
+ * these immutable snapshots. The POST endpoint should be used only for initial
+ * creation; any subsequent modifications must use the PUT
+ * /orders/{orderCode}/customerContact operation described separately.
+ *
+ * @param props.connection
+ * @param props.orderCode Business-facing order code identifying the target
+ *   order (global scope, unique in shopping_mall_orders.order_code).
+ * @param props.body Contact name, email, and optional phone number used to
+ *   create an order customer contact snapshot.
+ * @path /shoppingMall/admin/orders/:orderCode
+ * @accessor api.functional.shoppingMall.admin.orders.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Business-facing order code identifying the target order (global
+     * scope, unique in shopping_mall_orders.order_code).
+     */
+    orderCode: string;
+
+    /**
+     * Contact name, email, and optional phone number used to create an
+     * order customer contact snapshot.
+     */
+    body: IShoppingMallOrderCustomerContact.ICreate;
+  };
+  export type Body = IShoppingMallOrderCustomerContact.ICreate;
+  export type Response = IShoppingMallOrderCustomerContact;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/admin/orders/:orderCode",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}`;
+  export const random = (): IShoppingMallOrderCustomerContact =>
+    typia.random<IShoppingMallOrderCustomerContact>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("orderCode")(() => typia.assert(props.orderCode));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Logically delete a shopping_mall_orders record by business order_code using
+ * deleted_at timestamp.
+ *
+ * Logically remove a shopping mall order identified by its business-facing
+ * order_code by setting the deleted_at column while preserving the record for
+ * audit and compliance.
+ *
+ * This operation targets the shopping_mall_orders table, which stores
+ * customer-facing order headers created at checkout confirmation. The model
+ * includes the primary key id (UUID), business code order_code, foreign keys to
+ * shopping_mall_customers, shopping_mall_guestusers, and shopping_mall_carts,
+ * as well as summary fields such as currency_code, current_status, item_count,
+ * grand_total_amount, placed_at, created_at, updated_at, and deleted_at. The
+ * description of deleted_at in the Prisma schema explicitly states that it is a
+ * soft deletion timestamp that is null for active orders and set when an order
+ * is logically removed from normal views while retained for audit and
+ * compliance. This API relies on that semantics by populating deleted_at
+ * instead of physically removing the row.
+ *
+ * From a security perspective, the endpoint must only be accessible to
+ * authorized actors, which in most deployments will be admins or internal
+ * operators. Although the interface declares authorizationActors generically,
+ * the actual NestJS guards and business logic will verify that the caller has
+ * rights to logically delete the order, often based on role, tenant, or
+ * ownership of the underlying customer or seller account. Implementations
+ * should ensure that orders in certain current_status values, such as refunded,
+ * chargebacked, or involved in active disputes, cannot be deleted or require
+ * additional checks. Any such constraint should result in a business error
+ * rather than a silent success.
+ *
+ * This operation tightly relates to other order lifecycle APIs that create and
+ * update shopping_mall_orders, as well as to listing operations that typically
+ * filter out logically deleted records by checking deleted_at is null. After a
+ * successful call to this DELETE /orders/{orderCode} endpoint, subsequent list
+ * or detail retrieval APIs should no longer expose the logically deleted order
+ * in normal customer or operator views unless those APIs are explicitly
+ * designed to include deleted data. In error scenarios, if the supplied
+ * orderCode does not exist, already refers to a logically deleted order, or the
+ * caller lacks permission, the API must respond with appropriate HTTP status
+ * codes and structured error payloads as per the platform’s standard error
+ * handling guidelines.
+ *
+ * @param props.connection
+ * @param props.orderCode Business-facing order code of the target order (global
+ *   scope). This is the unique, human-friendly identifier stored in
+ *   shopping_mall_orders.order_code.
+ * @path /shoppingMall/admin/orders/:orderCode
+ * @accessor api.functional.shoppingMall.admin.orders.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * Business-facing order code of the target order (global scope). This
+     * is the unique, human-friendly identifier stored in
+     * shopping_mall_orders.order_code.
+     */
+    orderCode: string;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/shoppingMall/admin/orders/:orderCode",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("orderCode")(() => typia.assert(props.orderCode));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}

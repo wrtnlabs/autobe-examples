@@ -13,42 +13,28 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthAdminUserRefresh(props: {
   body: ITodoAppAdminUser.IRefresh;
 }): Promise<ITodoAppAdminUser.IAuthorized> {
-  // 1. Verify and decode the refresh token
-  let decoded: any;
+  const verified = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      issuer: "autobe",
+    },
+  );
 
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    );
-  } catch (_error) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  const decoded: {
+    id: string;
+    session_id: string;
+    type: string;
+  } = verified as {
+    id: string;
+    session_id: string;
+    type: string;
+  };
+
+  if (decoded.type !== "adminUser") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  // Basic structural checks on decoded token (JWT payload is external input)
-  if (
-    !decoded ||
-    typeof decoded !== "object" ||
-    typeof decoded.id !== "string" ||
-    typeof decoded.session_id !== "string" ||
-    typeof decoded.type !== "string"
-  ) {
-    throw new HttpException("Invalid token payload", 401);
-  }
-
-  // 2. Validate that this is an admin refresh token
-  if (decoded.type !== "admin") {
-    throw new HttpException("Invalid token type for admin refresh", 403);
-  }
-
-  if (decoded.tokenType !== undefined && decoded.tokenType !== "refresh") {
-    throw new HttpException("Token is not a refresh token", 403);
-  }
-
-  // 3. Validate session exists and is active
   const session = await MyGlobal.prisma.todo_app_adminuser_sessions.findFirst({
     where: {
       id: decoded.session_id,
@@ -59,42 +45,44 @@ export async function postAuthAdminUserRefresh(props: {
     },
   });
 
-  if (session === null) {
+  if (!session || !session.adminUser) {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  const now = new Date();
-
-  if (
-    session.expired_at !== null &&
-    session.expired_at.getTime() <= now.getTime()
-  ) {
-    throw new HttpException("Session has expired", 401);
+  if (session.expired_at !== null) {
+    const nowMillis = Date.now();
+    const expiredMillis = session.expired_at.getTime();
+    if (expiredMillis <= nowMillis) {
+      throw new HttpException("Session expired or revoked", 401);
+    }
   }
 
   const admin = session.adminUser;
 
-  // 4. Validate admin account status and logical deletion
-  if (admin.deleted_at !== null) {
-    throw new HttpException("Admin account has been deleted", 403);
-  }
-
   if (admin.status !== "active") {
-    throw new HttpException("Admin account is not active", 403);
+    throw new HttpException("Administrative account is not active", 403);
   }
 
-  // 5. (Optional) Security hardening via login attempts could be added here.
+  const nowMillis = Date.now();
+  const accessExpiresMillis = nowMillis + 60 * 60 * 1000;
+  const refreshExpiresMillis = nowMillis + 7 * 24 * 60 * 60 * 1000;
 
-  // 6. Generate new access and refresh tokens using the SAME session_id
-  const accessExpiryDate = new Date(now.getTime() + 60 * 60 * 1000); // +1 hour
-  const refreshExpiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // +7 days
+  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(nowMillis),
+  );
+  const accessExpiresIso: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(accessExpiresMillis),
+  );
+  const refreshExpiresIso: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(refreshExpiresMillis),
+  );
 
   const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -109,7 +97,7 @@ export async function postAuthAdminUserRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -118,51 +106,27 @@ export async function postAuthAdminUserRefresh(props: {
     },
   );
 
-  const expiredAt = toISOStringSafe(accessExpiryDate);
-  const refreshableUntil = toISOStringSafe(refreshExpiryDate);
-
-  // 7. Update session expiration to reflect the new refresh token lifetime
   await MyGlobal.prisma.todo_app_adminuser_sessions.update({
     where: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: refreshExpiryDate,
+      expired_at: new Date(refreshExpiresMillis),
     },
   });
 
-  // 8. Update admin user timestamps to reflect recent security-related activity
-  const updatedAdmin = await MyGlobal.prisma.todo_app_adminusers.update({
-    where: { id: admin.id },
-    data: {
-      last_login_at: now,
-      updated_at: now,
-    },
-  });
-
-  // 9. Map database fields to ITodoAppAdminUser.IAuthorized response shape
   return {
-    id: updatedAdmin.id,
-    email: updatedAdmin.email,
-    display_name:
-      updatedAdmin.display_name === null ? null : updatedAdmin.display_name,
-    status: updatedAdmin.status,
-    failed_login_count: updatedAdmin.failed_login_count,
-    last_login_at:
-      updatedAdmin.last_login_at === null
-        ? null
-        : toISOStringSafe(updatedAdmin.last_login_at),
-    created_at: toISOStringSafe(updatedAdmin.created_at),
-    updated_at: toISOStringSafe(updatedAdmin.updated_at),
-    deleted_at:
-      updatedAdmin.deleted_at === null
-        ? null
-        : toISOStringSafe(updatedAdmin.deleted_at),
+    id: admin.id,
+    email: admin.email,
+    display_name: admin.display_name,
+    status: admin.status,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
   };
 }

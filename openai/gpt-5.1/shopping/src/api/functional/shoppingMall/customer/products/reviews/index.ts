@@ -3,58 +3,67 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallProductReview } from "../../../../../structures/IShoppingMallProductReview";
+import { IShoppingMallReview } from "../../../../../structures/IShoppingMallReview";
 
 /**
- * Create a new ShoppingMall product review row in shopping_mall_product_reviews
- * for a specific product.
+ * Create a new review row in shopping_mall_reviews for a given product.
  *
- * Create a new customer-authored product review for a specific product in the
- * ShoppingMall catalog.
+ * Create a new product review record in the shopping_mall_reviews table for the
+ * specified product.
  *
- * This operation writes to the `shopping_mall_product_reviews` table, which
- * represents the core storage for product reviews and ratings. Each inserted
- * row links to a product defined in `shopping_mall_products` and, typically, to
- * a customer actor in `shopping_mall_customer`. The request body is defined by
- * the `IShoppingMallProductReview.ICreate` DTO, which encapsulates
- * user-submitted data such as numeric rating, review title, main text content,
- * and any optional fields or media references that the Prisma schema defines.
- * Fields such as created timestamps and author identifiers are not expected to
- * come from the client, but rather from server-side context and the underlying
- * schema configuration.
+ * This operation is invoked as POST /products/{productId}/reviews and is
+ * intended for authenticated customers who have purchased or otherwise become
+ * eligible to review a product. The productId path parameter identifies the
+ * target product and is mapped internally to the
+ * shopping_mall_reviews.shopping_mall_product_id foreign key referencing
+ * shopping_mall_products.id. The request body, represented by the
+ * IShoppingMallReview.ICreate DTO, contains user-provided review details such
+ * as the integer rating on a discrete scale, optional short title, and optional
+ * free-form body text, alongside any flags indicating incentivized context. The
+ * application logic determines the correct visibility_status and
+ * moderation_state values based on platform policies, typically starting as
+ * visible or pending_moderation.
  *
- * From a security perspective, this endpoint should be restricted to
- * authenticated customers, represented by the `customer` actor, since only
- * logged-in customers are allowed to create reviews. The implementation must
- * verify the customer’s eligibility according to business rules defined in
- * requirement documents and policy tables like `shopping_mall_review_policies`.
- * Typical checks include ensuring the customer has purchased the product, has
- * not exceeded a limit on the number of reviews per product, and is not
- * currently blocked or flagged by risk-related entities. The operation should
- * also apply content validation rules to enforce rating ranges, disallow
- * disallowed language, and respect age or regional restrictions as specified in
- * models such as `shopping_mall_age_restriction_policies` and product
- * compliance flags.
+ * From a security and authorization standpoint, this operation requires an
+ * authenticated customer actor and should only be exposed to users mapped to
+ * shopping_mall_customers. The service must validate that the caller is allowed
+ * to review the product, commonly by verifying that a completed order item
+ * exists for the product or SKU in question and that review timing windows
+ * defined by business policy have not been violated. If the customer is not
+ * eligible, or if a review already exists for the same (customer, product, sku)
+ * key as constrained by the unique index on (shopping_mall_customer_id,
+ * shopping_mall_product_id, shopping_mall_sku_id), the endpoint must return a
+ * clear error rather than creating a duplicate record.
  *
- * On success, the endpoint returns the newly created review as an
- * `IShoppingMallProductReview` DTO, reflecting the persisted data from
- * `shopping_mall_product_reviews` and potentially any derived fields such as
- * normalized rating or moderation status. Implementations may also update or
- * recalculate aggregate rating data in
- * `shopping_mall_product_rating_aggregates` and emit domain events for further
- * processing, such as notification or moderation workflows. Error handling must
- * cover invalid product identifiers, ineligible customers, invalid rating or
- * content values, and conflicts such as duplicate reviews. This endpoint is
- * typically used in conjunction with review listing and detail retrieval APIs
- * for a complete review management experience.
+ * At the database level, the operation will insert a new row into
+ * shopping_mall_reviews, setting rating, title, body, verified_purchase,
+ * incentivized, and initializing helpfulness_score to zero. It must also
+ * populate created_at and updated_at timestamps, and must leave deleted_at as
+ * null to indicate that the review is active. The visibility_status,
+ * moderation_state, and verified_purchase fields should reflect review and
+ * moderation policies described in the schema comments, distinguishing between
+ * visible, hidden, pending_moderation, and removed, and between approved and
+ * flagged states. Related systems such as
+ * shopping_mall_product_rating_aggregates and
+ * shopping_mall_sku_rating_aggregates may react to review creation
+ * asynchronously to update aggregate scores.
+ *
+ * Clients typically call this endpoint after the customer has visited an order
+ * history or product page that indicates review eligibility. Related operations
+ * include any future endpoints for updating a review, retrieving a customer’s
+ * own reviews, or listing reviews for a product. Error conditions to handle
+ * include invalid or missing rating values, attempts to review non-existent or
+ * deleted products, conflicts with the unique constraints on the
+ * shopping_mall_reviews table, and authorization failures when the caller is
+ * not the expected customer actor.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product that the new review
- *   will be associated with. This corresponds to a row in the
- *   `shopping_mall_products` table and defines the product context for the
- *   created review.
- * @param props.body Payload containing rating, text content, and related fields
- *   used to create a new product review linked to the specified product.
+ * @param props.productId Unique identifier of the target product whose review
+ *   is being created. This corresponds to shopping_mall_products.id and is used
+ *   to populate shopping_mall_reviews.shopping_mall_product_id.
+ * @param props.body Customer-provided review creation payload including rating,
+ *   optional title and body, and any relevant flags or metadata for the new
+ *   review.
  * @path /shoppingMall/customer/products/:productId/reviews
  * @accessor api.functional.shoppingMall.customer.products.reviews.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -84,21 +93,21 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the product that the new review will be
-     * associated with. This corresponds to a row in the
-     * `shopping_mall_products` table and defines the product context for
-     * the created review.
+     * Unique identifier of the target product whose review is being
+     * created. This corresponds to shopping_mall_products.id and is used to
+     * populate shopping_mall_reviews.shopping_mall_product_id.
      */
-    productId: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Payload containing rating, text content, and related fields used to
-     * create a new product review linked to the specified product.
+     * Customer-provided review creation payload including rating, optional
+     * title and body, and any relevant flags or metadata for the new
+     * review.
      */
-    body: IShoppingMallProductReview.ICreate;
+    body: IShoppingMallReview.ICreate;
   };
-  export type Body = IShoppingMallProductReview.ICreate;
-  export type Response = IShoppingMallProductReview;
+  export type Body = IShoppingMallReview.ICreate;
+  export type Response = IShoppingMallReview;
 
   export const METADATA = {
     method: "POST",
@@ -115,8 +124,8 @@ export namespace create {
 
   export const path = (props: Omit<Props, "body">) =>
     `/shoppingMall/customer/products/${encodeURIComponent(props.productId ?? "null")}/reviews`;
-  export const random = (): IShoppingMallProductReview =>
-    typia.random<IShoppingMallProductReview>();
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -144,55 +153,63 @@ export namespace create {
 }
 
 /**
- * Update a single shopping_mall_product_reviews entry for a specific product
- * review.
+ * Update a specific product review record in the shopping_mall_reviews table
+ * for a given product.
  *
- * Update an existing product review for a given product in the shoppingMall
- * platform.
+ * Update an existing product review that belongs to a specific product,
+ * reflecting changes such as rating adjustment, edited review text, or status
+ * flags in the underlying reviews table.
  *
- * This operation targets a single row in the `shopping_mall_product_reviews`
- * table, identified by the combination of the `productId` and `reviewId` path
- * parameters. The `productId` parameter refers to the associated product entity
- * in the catalog, while `reviewId` uniquely identifies the specific review
- * record being modified. The service implementation must first verify that the
- * referenced review exists and that it belongs to the given product, preventing
- * accidental or malicious updates across unrelated products.
+ * This operation is associated with the Prisma model that stores product review
+ * records, conceptually represented by the `shopping_mall_reviews` table. That
+ * table typically includes fields for the review's unique identifier, the
+ * product identifier, the author (customer) identifier, the numeric rating
+ * value, textual content fields like title and body, and additional metadata
+ * for visibility or moderation. When this endpoint is called, the service loads
+ * the target review using the `reviewId` and verifies that its `product_id` (or
+ * corresponding foreign key) matches the `productId` supplied in the path,
+ * ensuring that clients cannot accidentally or maliciously update a review
+ * linked to a different product.
  *
- * The request body uses the `IShoppingMallProductReview.IUpdate` DTO, which
- * encapsulates all fields that are allowed to change on an existing review.
- * Typical updatable attributes include the review's textual content, rating
- * score within the allowed range defined by the Prisma schema, and any optional
- * metadata such as title or visibility flags. Fields that represent audit
- * trails, such as the creator account, original creation time, or immutable
- * system references, must not be modified even if they exist on the underlying
- * Prisma model.
+ * The request body uses the `IShoppingMallReview.IUpdate` DTO, which
+ * encapsulates only mutable aspects of a review. While the exact field set is
+ * defined by the DTO schema, typical examples include updated rating score
+ * within the allowed rating scale, modifications to the textual content within
+ * configured length constraints, and flags reflecting whether a review is
+ * edited, hidden by the author, or subject to moderation. Validation logic
+ * ensures that values respect business rules such as minimum and maximum
+ * rating, required content for certain states, and any locale-specific
+ * restrictions on content.
  *
- * Security and authorization should enforce that only permitted actors can
- * update a review. In most cases this is the original customer author within a
- * configurable time window, a seller responding within allowed capabilities, or
- * a platform administrator performing moderation operations. The concrete
- * authorization rules are enforced in the business logic, but this endpoint
- * exposes the necessary path and body structure to support those policies.
+ * From a security and authorization perspective, this operation should be
+ * restricted to authenticated actors. Ordinary customers may only update
+ * reviews they authored themselves, while administrative users may have
+ * extended permissions to adjust moderation-related fields. These checks are
+ * implemented in provider/service logic based on the authenticated user
+ * context. The API contract itself exposes a single, consistent update
+ * interface for all authorized actors.
  *
- * On successful update, the operation returns the latest state of the review as
- * an `IShoppingMallProductReview` instance, ensuring clients receive the
- * canonical, server-side representation after all validation and side effects
- * (such as recalculation of product rating aggregates) have completed. If the
- * review or product cannot be found, or if the caller lacks permission, the
- * service should respond with appropriate error statuses such as 404 Not Found
- * or 403 Forbidden.
+ * In terms of error handling, the operation returns an error when the specified
+ * review does not exist, when it does not belong to the product identified by
+ * `productId`, or when the caller lacks sufficient permissions to perform the
+ * requested update. Validation failures on the `IShoppingMallReview.IUpdate`
+ * payload—such as rating values out of range or text fields exceeding allowed
+ * length—are reported with appropriate validation error responses. Related
+ * operations in the same review domain include creating a review for a product,
+ * retrieving individual reviews, listing all reviews for a product, and
+ * deleting a review when necessary.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose review is being
- *   updated. This corresponds to the product referenced by the target row in
- *   `shopping_mall_product_reviews` and is used to ensure the review belongs to
- *   the correct product context.
- * @param props.reviewId Unique identifier of the review record in
- *   `shopping_mall_product_reviews` that should be updated.
- * @param props.body Payload containing the fields to update on the target
- *   product review, following the constraints and editable attributes defined
- *   for `shopping_mall_product_reviews`. Immutable audit and identity fields
- *   must be ignored even if present.
+ * @param props.productId Unique identifier of the product whose review set
+ *   includes the target review record. This parameter is used to scope the
+ *   operation to a specific product and to verify that the targeted review
+ *   belongs to this product.
+ * @param props.reviewId Unique identifier of the product review to be updated
+ *   within the shopping_mall_reviews table. The service uses this identifier to
+ *   load the review record and apply the requested changes.
+ * @param props.body Update payload describing the new values for mutable fields
+ *   of the product review, following the ShoppingMall review update DTO
+ *   schema.
  * @path /shoppingMall/customer/products/:productId/reviews/:reviewId
  * @accessor api.functional.shoppingMall.customer.products.reviews.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -222,29 +239,28 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the product whose review is being updated. This
-     * corresponds to the product referenced by the target row in
-     * `shopping_mall_product_reviews` and is used to ensure the review
-     * belongs to the correct product context.
+     * Unique identifier of the product whose review set includes the target
+     * review record. This parameter is used to scope the operation to a
+     * specific product and to verify that the targeted review belongs to
+     * this product.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
     /**
-     * Unique identifier of the review record in
-     * `shopping_mall_product_reviews` that should be updated.
+     * Unique identifier of the product review to be updated within the
+     * shopping_mall_reviews table. The service uses this identifier to load
+     * the review record and apply the requested changes.
      */
-    reviewId: string & tags.Format<"uuid">;
+    reviewId: string;
 
     /**
-     * Payload containing the fields to update on the target product review,
-     * following the constraints and editable attributes defined for
-     * `shopping_mall_product_reviews`. Immutable audit and identity fields
-     * must be ignored even if present.
+     * Update payload describing the new values for mutable fields of the
+     * product review, following the ShoppingMall review update DTO schema.
      */
-    body: IShoppingMallProductReview.IUpdate;
+    body: IShoppingMallReview.IUpdate;
   };
-  export type Body = IShoppingMallProductReview.IUpdate;
-  export type Response = IShoppingMallProductReview;
+  export type Body = IShoppingMallReview.IUpdate;
+  export type Response = IShoppingMallReview;
 
   export const METADATA = {
     method: "PUT",
@@ -261,8 +277,8 @@ export namespace update {
 
   export const path = (props: Omit<Props, "body">) =>
     `/shoppingMall/customer/products/${encodeURIComponent(props.productId ?? "null")}/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
-  export const random = (): IShoppingMallProductReview =>
-    typia.random<IShoppingMallProductReview>();
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -291,43 +307,45 @@ export namespace update {
 }
 
 /**
- * Delete a single shopping_mall_product_reviews entry for a specific product
- * review.
+ * Delete a specific product review record from the shopping_mall_reviews table
+ * for a given product.
  *
- * Permanently remove an existing product review for a specific product from the
- * shoppingMall platform.
+ * Delete an existing product review that belongs to a specific product by
+ * removing its corresponding record from the shopping_mall_reviews table.
  *
- * This operation operates on the `shopping_mall_product_reviews` table and
- * targets a single review entry determined by the `productId` and `reviewId`
- * path parameters. The `productId` ensures that the review is associated with
- * the correct catalog product, while `reviewId` uniquely identifies which
- * review entry should be removed. The service must confirm that a matching row
- * exists and that it belongs to the specified product before performing the
- * deletion.
+ * This operation is tied to the Prisma model that stores product reviews,
+ * conceptually represented by the `shopping_mall_reviews` table. That table
+ * contains one row per review, including identifiers for the associated product
+ * and customer, the rating score, textual content, and other metadata. When
+ * this endpoint is called, the service locates the review using `reviewId` and
+ * verifies that its product relationship matches the `productId` provided in
+ * the path. If the review cannot be found, or if it does not belong to the
+ * indicated product, the operation fails with an appropriate error response.
  *
- * Authorization rules are critical for this operation. Typically, only the
- * original customer who authored the review, the seller within well-defined
- * constraints, or a platform administrator with sufficient moderation
- * privileges may remove a review. The endpoint supports these actors explicitly
- * in `authorizationActors`, with the precise permission checks implemented in
- * the business logic layer. If the caller is not allowed to delete this review,
- * the service should respond with 403 Forbidden; if the review cannot be found
- * under the given product, it should respond with 404 Not Found.
+ * The endpoint is implemented as an HTTP DELETE and therefore does not accept a
+ * request body. On successful execution, the review record is removed from
+ * persistent storage, and the system may update related aggregates such as
+ * precomputed product rating statistics to reflect the absence of this review.
+ * Clients that maintain their own caches should treat a successful response as
+ * confirmation that the review no longer exists and should be removed from any
+ * local lists or detail views.
  *
- * When deletion is successful, the review row is removed from
- * `shopping_mall_product_reviews`. Any additional concerns such as updating
- * aggregate ratings in `shopping_mall_product_rating_aggregates`, recording
- * moderation events, or emitting integration events are handled as side effects
- * in the domain layer and are outside the OpenAPI contract of this endpoint.
- * The API does not return a response body on success, relying instead on HTTP
- * status codes (such as 204 No Content) to indicate outcome.
+ * From an authorization perspective, the operation should be accessible only to
+ * authenticated actors. Customers are generally allowed to delete their own
+ * reviews under business-defined conditions, such as within specific time
+ * windows after creation, while administrative users can remove reviews that
+ * violate content policies or legal requirements. These rules are enforced by
+ * application-level access control logic wrapping this operation. Error cases
+ * include attempts to delete non-existent reviews, mismatched product
+ * identifiers, and operations initiated by callers without sufficient
+ * permissions.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose review is being
- *   deleted. This scopes the delete to reviews belonging to a specific product
- *   in the catalog.
- * @param props.reviewId Unique identifier of the review record in
- *   `shopping_mall_product_reviews` that should be deleted.
+ * @param props.productId Unique identifier of the product whose review
+ *   collection includes the target review to be deleted. Used to scope and
+ *   validate the deletion operation.
+ * @param props.reviewId Unique identifier of the product review to delete from
+ *   the shopping_mall_reviews table.
  * @path /shoppingMall/customer/products/:productId/reviews/:reviewId
  * @accessor api.functional.shoppingMall.customer.products.reviews.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -356,17 +374,17 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the product whose review is being deleted. This
-     * scopes the delete to reviews belonging to a specific product in the
-     * catalog.
+     * Unique identifier of the product whose review collection includes the
+     * target review to be deleted. Used to scope and validate the deletion
+     * operation.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
     /**
-     * Unique identifier of the review record in
-     * `shopping_mall_product_reviews` that should be deleted.
+     * Unique identifier of the product review to delete from the
+     * shopping_mall_reviews table.
      */
-    reviewId: string & tags.Format<"uuid">;
+    reviewId: string;
   };
 
   export const METADATA = {

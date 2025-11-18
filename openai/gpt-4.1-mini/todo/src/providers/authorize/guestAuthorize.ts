@@ -1,7 +1,7 @@
 import { ForbiddenException } from "@nestjs/common";
+import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
-import { MyGlobal } from "../../MyGlobal";
 
 export async function guestAuthorize(request: { headers: { authorization?: string } }): Promise<GuestPayload> {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
@@ -10,16 +10,15 @@ export async function guestAuthorize(request: { headers: { authorization?: strin
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on Prisma Schema (todo_list_users table)
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  const session = await MyGlobal.prisma.todo_list_guest_sessions.findFirst({
     where: {
-      id: payload.id,
+      id: payload.session_id,
+      todo_list_guest_id: payload.id,
     },
   });
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (session === null) {
+    throw new ForbiddenException("Session is invalid or expired");
   }
 
   return payload;

@@ -1,22 +1,26 @@
 import { Module } from "@nestjs/common";
 
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodolistUserConfigurationsController } from "./controllers/TodolistUserConfigurationsController";
-import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
-import { TodolistUserUsersSessionsController } from "./controllers/todoList/user/users/sessions/TodolistUserUsersSessionsController";
-import { TodolistUsersSessionsController } from "./controllers/todoList/users/sessions/TodolistUsersSessionsController";
-import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
-import { TodolistUserTodosSnapshotsController } from "./controllers/todoList/user/todos/snapshots/TodolistUserTodosSnapshotsController";
+import { TodoappUserConfigurationsController } from "./controllers/todoApp/user/configurations/TodoappUserConfigurationsController";
+import { TodoappUserConfigurationsValuesController } from "./controllers/todoApp/user/configurations/values/TodoappUserConfigurationsValuesController";
+import { TodoappConfigurationsValuesController } from "./controllers/todoApp/configurations/values/TodoappConfigurationsValuesController";
+import { TodoappUserConfigurationsSnapshotsController } from "./controllers/todoApp/user/configurations/snapshots/TodoappUserConfigurationsSnapshotsController";
+import { TodoappUserSnapshotsController } from "./controllers/todoApp/user/snapshots/TodoappUserSnapshotsController";
+import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
+import { TodoappUserUsersSessionsController } from "./controllers/todoApp/user/users/sessions/TodoappUserUsersSessionsController";
+import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
 
 @Module({
   controllers: [
     AuthUserController,
-    TodolistUserConfigurationsController,
-    TodolistUserUsersController,
-    TodolistUserUsersSessionsController,
-    TodolistUsersSessionsController,
-    TodolistUserTodosController,
-    TodolistUserTodosSnapshotsController,
+    TodoappUserConfigurationsController,
+    TodoappUserConfigurationsValuesController,
+    TodoappConfigurationsValuesController,
+    TodoappUserConfigurationsSnapshotsController,
+    TodoappUserSnapshotsController,
+    TodoappUserUsersController,
+    TodoappUserUsersSessionsController,
+    TodoappUserTodosController,
   ],
 })
 export class MyModule {}

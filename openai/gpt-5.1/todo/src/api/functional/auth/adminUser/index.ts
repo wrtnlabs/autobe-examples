@@ -6,57 +6,68 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppAdminUser } from "../../../structures/ITodoAppAdminUser";
 
 /**
- * Register a new administrative user in todo_app_adminusers and issue initial
- * adminUser authorization tokens.
+ * Register a new admin account in todo_app_adminusers and create an initial
+ * session in todo_app_adminuser_sessions, returning
+ * ITodoAppAdminUser.IAuthorized.
  *
- * This operation registers a new administrative user in the todoApp service
- * backed by the todo_app_adminusers table. It takes a login identifier,
- * password, and optional profile data in the request body, validates them
- * against the business rules from the authentication requirements, and persists
- * a new admin user record.
+ * This endpoint registers a new administrative user by inserting a row into the
+ * todo_app_adminusers table and, upon success, establishes an initial
+ * authentication session in the todo_app_adminuser_sessions table.
  *
- * On the database side, the email column in todo_app_adminusers stores the
- * unique login identifier for the admin. The service must validate format and
- * then enforce that no existing row already uses the same email, relying on the
- * unique index over email to prevent duplicates. The password provided by the
- * caller is never stored directly; instead, the implementation derives a secure
- * password_hash value for the password_hash column, in line with the
- * description that raw passwords must never be stored.
+ * On the identity side, the handler uses the provided email to populate the
+ * email column, which is defined as a unique, non-nullable login identifier for
+ * administrative access. The plaintext password from the request is never
+ * stored directly; instead, it is transformed via a secure hashing algorithm
+ * and persisted into the password_hash column. Optionally, a display_name may
+ * be provided to populate the nullable display_name column, offering a
+ * human-readable label used in audit logs and dashboards. The status column is
+ * initialized from the request (typically to a value such as 'active') to
+ * determine whether the account is permitted to authenticate, while created_at
+ * and updated_at timestamps are set to the current server time to track account
+ * lifecycle.
  *
- * Newly created admin accounts are given an initial status value compatible
- * with allowed statuses such as active or similar, as indicated by the status
- * column description, and failed_login_count is initialized to zero so that
- * rate limiting logic works predictably. The created_at and updated_at columns
- * are set to the current timestamp, reflecting the provisioning time and last
- * modification time of the account. deleted_at remains null to indicate the
- * account is active and not logically removed.
+ * From a security perspective, this operation is publicly callable
+ * (authorizationActor is null) but must enforce strict validation of email
+ * uniqueness against the todo_app_adminusers unique index on email to prevent
+ * duplicate admin registrations. If an email conflict is detected, the
+ * operation returns a clear error without revealing whether the existing
+ * account is active or disabled. Password strength rules and format validation
+ * are applied before generating the password_hash value. Since this is an entry
+ * point for privileged actors, rate limiting and additional anti-abuse measures
+ * are strongly recommended at the infrastructure layer.
  *
- * After the todo_app_adminusers row is inserted, the service issues an
- * authorization payload following the rules from
- * 05-authentication-and-session-requirements.md: the response must indicate
- * that the authenticated actor is an adminUser and provide short-lived
- * credentials plus, where applicable, longer-lived renewal credentials. The
- * concrete token structures are encapsulated in the
- * ITodoAppAdminUser.IAuthorized schema referenced by this operation, which may
- * also include the admin’s id, email, display_name, and status copied from the
- * freshly created row.
+ * Immediately after creating the admin user, the system creates a new record in
+ * the todo_app_adminuser_sessions table, using the new admin user's id to
+ * populate the todo_app_adminuser_id foreign key. Connection metadata such as
+ * ip, href, and referrer are derived from the incoming request context and
+ * stored in the corresponding non-nullable columns to support future audit and
+ * incident investigation. The created_at column for the session is set to the
+ * current time, while expired_at remains null to represent an active session.
+ * Any failure to create the session after the user record is stored should
+ * trigger a transaction rollback to keep the system consistent.
  *
- * Error handling must align with the authentication document. If the email is
- * already in use, the operation responds with a clear but non-sensitive message
- * indicating that registration cannot proceed. If validation of password
- * complexity or other required fields fails, the caller receives descriptive
- * but safe error information. Internal details such as the hashing mechanism or
- * specific database constraint names must not be exposed in responses.
+ * The business logic then translates these persisted entities into an
+ * authorized admin principal and issues JWT tokens. The response conforms to
+ * ITodoAppAdminUser.IAuthorized, which encapsulates the admin user's identifier
+ * (linked to todo_app_adminusers.id), session context (linked to
+ * todo_app_adminuser_sessions.id), and token information required for
+ * subsequent authenticated calls. Related operations include the admin login
+ * endpoint for existing admins and the refresh endpoint that rotates tokens
+ * based on a still-valid session.
  *
- * This join operation is conceptually paired with the adminUser login and
- * refresh endpoints. Clients first call POST /auth/adminUser/join to bootstrap
- * an administrative account, then later calls to POST /auth/adminUser/login and
- * POST /auth/adminUser/refresh maintain authenticated access according to token
- * expiry and session management policies.
+ * Error handling ensures that database constraint violations (especially the
+ * unique index on email) are mapped to domain-specific responses and that any
+ * unexpected storage failure for todo_app_adminuser_sessions results in a safe
+ * error without exposing sensitive internals. Validation failures on fields
+ * such as email or password are surfaced with descriptive but
+ * security-conscious messages, while successful completion always returns a
+ * stable ITodoAppAdminUser.IAuthorized payload representing the newly
+ * registered and authenticated administrative user.
  *
  * @param props.connection
- * @param props.body Registration payload for creating an adminUser account,
- *   including login identifier and password.
+ * @param props.body Registration information required to create a new admin
+ *   user in todo_app_adminusers and establish an initial admin session in
+ *   todo_app_adminuser_sessions.
  * @setHeader token.access Authorization
  *
  * @path /auth/adminUser/join
@@ -92,8 +103,9 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Registration payload for creating an adminUser account, including
-     * login identifier and password.
+     * Registration information required to create a new admin user in
+     * todo_app_adminusers and establish an initial admin session in
+     * todo_app_adminuser_sessions.
      */
     body: ITodoAppAdminUser.IJoin;
   };
@@ -142,57 +154,60 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing adminUser using todo_app_adminusers and record the
- * login attempt in todo_app_login_attempts.
+ * Authenticate an existing admin using todo_app_adminusers credentials, create
+ * a session in todo_app_adminuser_sessions, and return
+ * ITodoAppAdminUser.IAuthorized.
  *
- * This operation performs credential-based login for an adminUser, using the
- * identity data stored in the todo_app_adminusers table and the audit log
- * structure in todo_app_login_attempts. The client submits a login identifier
- * and password in the request body; the service locates a candidate admin
- * account via the email column in todo_app_adminusers, applying normalization
- * rules described in the authentication requirements, and verifies the supplied
- * password against the stored password_hash.
+ * This endpoint logs in an existing administrative user by validating
+ * credentials against the todo_app_adminusers table and initiating a new record
+ * in the todo_app_adminuser_sessions table to represent the authenticated
+ * session.
  *
- * If a matching todo_app_adminusers row is found, the service checks the status
- * field to ensure the account is in an allowed state such as active. Accounts
- * marked with statuses representing inactive, disabled, or deleted are
- * rejected, consistent with the description that status represents account
- * state transitions controlled by higher-level business rules. The
- * failed_login_count column is used to track recent consecutive failures so
- * that the rate-limiting and lockout policy defined in
- * 05-authentication-and-session-requirements.md can be enforced for admin
- * accounts, preventing brute-force attacks.
+ * On each call, the handler retrieves a candidate admin record by matching the
+ * provided email to the non-nullable, unique email column in
+ * todo_app_adminusers. If no record exists, or if the status column indicates a
+ * non-operational state such as 'suspended' or 'disabled', the operation
+ * responds with a generic authentication failure to avoid disclosing whether
+ * the email is registered. When an admin record is found and status is
+ * acceptable (for example, 'active'), the provided password is hashed with the
+ * same algorithm used at registration and compared against the stored
+ * password_hash column, which never stores the plaintext password.
  *
- * Independently of success or failure, an entry is created in
- * todo_app_login_attempts. The login_identifier column captures the supplied
- * admin email after normalization, and actor_type is set to a value such as
- * adminUser to reflect that this attempt targets administrative credentials.
- * When the credentials are valid and the account is allowed to log in,
- * succeeded is true and failure_reason remains null. When credentials are
- * invalid, the system records succeeded as false and may populate
- * failure_reason with categories like invalid_credentials or account_locked,
- * matching the schema’s description while ensuring user-facing messages remain
- * generic.
+ * If credential verification succeeds, a new session is created in
+ * todo_app_adminuser_sessions. The session row uses the admin's id value from
+ * todo_app_adminusers.id to populate todo_app_adminuser_id, ensuring a proper
+ * foreign key link. Request context metadata such as the client IP address, the
+ * entry URL, and the HTTP referrer are persisted in the ip, href, and referrer
+ * columns, which are all non-nullable and support downstream security
+ * analytics. The created_at timestamp reflects the successful login time, while
+ * expired_at remains null until the session is later invalidated or naturally
+ * expires according to token policies.
  *
- * Upon a successful login, the operation issues new authorization credentials
- * encapsulated by the ITodoAppAdminUser.IAuthorized response type. This payload
- * should carry the admin’s id and email from todo_app_adminusers along with one
- * or more tokens that the client can use for subsequent authenticated calls
- * and, where applicable, for refresh. last_login_at and updated_at in
- * todo_app_adminusers are updated to the current timestamp to reflect the new
- * session, and failed_login_count is reset according to the security logic once
- * a successful authentication occurs.
+ * From a security standpoint, this operation is publicly accessible
+ * (authorizationActor is null), but it must apply robust protections:
+ * constant-time comparisons for password_hash verification, conservative error
+ * messages that do not differentiate between unknown email and invalid
+ * password, and rate limiting to mitigate brute force attempts. The business
+ * logic must also enforce status-based access control using the status column,
+ * preventing sign-in for any admin whose account has been administratively
+ * suspended or disabled, even if the password_hash matches.
  *
- * In case of failure, the response must align with the authentication
- * requirements by returning a generic error that does not reveal whether the
- * email exists or if the password is incorrect, while still logging the precise
- * reason internally via todo_app_login_attempts. The operation is designed to
- * work together with the adminUser join and refresh endpoints, forming a
- * complete authentication lifecycle for administrative actors.
+ * Upon successful authentication and session creation, the system constructs an
+ * ITodoAppAdminUser.IAuthorized response payload. This typed structure includes
+ * identifiers derived from todo_app_adminusers.id and
+ * todo_app_adminuser_sessions.id as well as JWT tokens that encode the
+ * adminUser actor, allowing the client to perform further administrative calls
+ * that require authenticated context. Related operations include the join
+ * endpoint, which creates initial admin records, and the refresh endpoint,
+ * which rotates tokens based on an existing, unexpired session. Failure modes
+ * are carefully mapped so that database errors, invalid credentials, and
+ * blocked statuses each result in safe and well-defined API responses without
+ * leaking implementation details.
  *
  * @param props.connection
- * @param props.body Login credentials for an adminUser, including login
- *   identifier and password.
+ * @param props.body Login credentials and connection context used to
+ *   authenticate an admin from todo_app_adminusers and create a session row in
+ *   todo_app_adminuser_sessions.
  * @setHeader token.access Authorization
  *
  * @path /auth/adminUser/login
@@ -228,8 +243,9 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Login credentials for an adminUser, including login identifier and
-     * password.
+     * Login credentials and connection context used to authenticate an
+     * admin from todo_app_adminusers and create a session row in
+     * todo_app_adminuser_sessions.
      */
     body: ITodoAppAdminUser.ILogin;
   };
@@ -278,56 +294,64 @@ export namespace login {
 }
 
 /**
- * Refresh authorization tokens for an existing adminUser using token validity
- * and todo_app_adminusers account state.
+ * Refresh administrative JWT tokens by validating a todo_app_adminuser_sessions
+ * record and its owner in todo_app_adminusers, returning
+ * ITodoAppAdminUser.IAuthorized.
  *
- * This operation renews authorization for an administrative user without
- * requiring the password again, using the token lifecycle defined in the
- * authentication and session requirements. The client sends a refresh token in
- * the request body; the server validates that token, confirms that it is tied
- * to a concrete adminUser account, and then issues new tokens if all checks
- * pass.
+ * This endpoint rotates administrative authentication tokens by inspecting and
+ * validating an existing session stored in the todo_app_adminuser_sessions
+ * table and ensuring that the owning admin record in todo_app_adminusers
+ * remains valid.
  *
- * On the persistence layer, the underlying admin identity is represented by a
- * row in todo_app_adminusers. Before issuing new credentials, the
- * implementation must ensure that the status column of this row still reflects
- * an allowed state for login; accounts marked as inactive, disabled, or deleted
- * through the status and deleted_at fields must not receive refreshed tokens.
- * The updated_at timestamp on todo_app_adminusers can be updated as part of
- * this operation to reflect changes in credential state or security-related
- * updates.
+ * The refresh workflow begins by extracting session identification data from
+ * the request body, which may represent a refresh token or signed reference to
+ * a todo_app_adminuser_sessions.id value. The application layer looks up the
+ * corresponding row in todo_app_adminuser_sessions, verifying the integrity of
+ * the reference and ensuring that the foreign key todo_app_adminuser_id points
+ * to a still-existing admin record. If no session is found, or if the
+ * association to todo_app_adminusers is broken, the refresh attempt fails with
+ * a generic error that does not reveal which check failed.
  *
- * While todo_app_adminuser_sessions is primarily used for one-off session
- * entries created during interactive logins, its audit trail may inform
- * additional checks in the refresh flow, such as verifying that the request
- * context is compatible with the session in which the refresh token was
- * originally issued. However, the core rules for when to accept or reject a
- * refresh are driven by the token’s validity and the admin account’s state, as
- * described in 05-authentication-and-session-requirements.md.
+ * Once a session is located, its temporal validity is evaluated using the
+ * created_at and expired_at columns. A session whose expired_at column is
+ * non-null and lies in the past is treated as invalid for further token
+ * issuance. Active sessions either have expired_at set to null or to a
+ * timestamp in the future, according to the system's session management
+ * policies. Implementations may also apply additional business rules, such as
+ * maximum refresh lifetime since created_at or constraints tied to the ip,
+ * href, or referrer columns to detect anomalies like sudden changes in client
+ * origin.
  *
- * For enhanced security, the implementation may consult todo_app_login_attempts
- * to detect abuse patterns around a specific admin account or IP address before
- * honoring a refresh. For example, if recent failed attempts or anomalous
- * activity are recorded, the service might reject the refresh and require a
- * full credential-based login, leveraging the actor_type, ip, and
- * failure_reason fields described in that table.
+ * In parallel, the owning admin's identity and status are validated by reading
+ * the referenced row from todo_app_adminusers using the todo_app_adminuser_id
+ * foreign key. The email and password_hash values are not re-authenticated
+ * during refresh, but the status column is used to enforce administrative
+ * restrictions; for example, if an account has been moved from 'active' to
+ * 'suspended' since the session was created, the refresh operation must deny
+ * token rotation even if the session itself appears time-valid. This ensures
+ * that central account policies can immediately neutralize existing sessions
+ * when needed.
  *
- * On success, the operation responds with ITodoAppAdminUser.IAuthorized, which
- * encapsulates freshly issued tokens and selected identity details from
- * todo_app_adminusers such as id, email, display_name, and status. The response
- * must not expose sensitive internal information about token structure beyond
- * what is required for the client to function, and error responses for invalid
- * or expired refresh tokens should clearly indicate that re-authentication is
- * required without disclosing underlying validation details.
+ * If all validations pass, the endpoint issues new JWT tokens describing the
+ * adminUser actor, often including claims derived from todo_app_adminusers.id
+ * and the session's id from todo_app_adminuser_sessions. Depending on security
+ * design, the implementation may also update the session record's expired_at
+ * column to a new expiration time or leave it unchanged while encoding updated
+ * lifetime in the tokens themselves. Any mutation of the session row must
+ * preserve the core audit trail captured in created_at as well as the original
+ * ip, href, and referrer values.
  *
- * This refresh operation complements adminUser join and login, completing the
- * authentication lifecycle for administrative actors in a way that respects the
- * database schema’s separation between admin accounts, sessions, and login
- * attempt logs.
+ * The response body conforms to ITodoAppAdminUser.IAuthorized, providing the
+ * refreshed authorized admin principal and updated tokens required for
+ * subsequent administrative API calls. This operation is closely related to the
+ * login endpoint, which creates sessions from credentials, and to any eventual
+ * logout or revocation operations that explicitly populate expired_at to mark
+ * the session as no longer valid for refresh.
  *
  * @param props.connection
- * @param props.body Refresh token or equivalent credential for renewing
- *   adminUser authorization.
+ * @param props.body Refresh token or equivalent session reference required to
+ *   validate an existing admin session in todo_app_adminuser_sessions and
+ *   rotate tokens.
  * @setHeader token.access Authorization
  *
  * @path /auth/adminUser/refresh
@@ -363,8 +387,9 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token or equivalent credential for renewing adminUser
-     * authorization.
+     * Refresh token or equivalent session reference required to validate an
+     * existing admin session in todo_app_adminuser_sessions and rotate
+     * tokens.
      */
     body: ITodoAppAdminUser.IRefresh;
   };

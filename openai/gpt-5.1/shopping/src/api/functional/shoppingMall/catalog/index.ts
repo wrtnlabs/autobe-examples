@@ -1,2 +1,2 @@
-export * as search from "./search/index";
-export * as products from "./products/index";
+export * as overview from "./overview/index";
+export * as statistics from "./statistics/index";

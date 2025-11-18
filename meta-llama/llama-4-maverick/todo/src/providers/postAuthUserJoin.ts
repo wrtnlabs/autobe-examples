@@ -7,56 +7,43 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoUser.ICreate;
-}): Promise<ITodoUser.IAuthorized> {
-  // 1. Email uniqueness check
-  const existing = await MyGlobal.prisma.todo_users.findFirst({
+  body: ITodoListUser.ICreate;
+}): Promise<ITodoListUser.IAuthorized> {
+  const existing = await MyGlobal.prisma.todo_list_users.findFirst({
     where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-
-  // 2. Password hashing
-  const password_hash = await PasswordUtil.hash(props.body.password);
-
-  // 3. User record creation
-  const userId = v4();
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
   const now = toISOStringSafe(new Date());
-  const user = await MyGlobal.prisma.todo_users.create({
+  const user = await MyGlobal.prisma.todo_list_users.create({
     data: {
-      id: userId,
+      id: v4() satisfies string as string & tags.Format<"uuid">,
+      username: props.body.name,
       email: props.body.email,
-      password_hash,
+      password_hash: hashedPassword,
       created_at: now,
       updated_at: now,
     },
   });
-
-  // 4. Session creation
-  const sessionId = v4();
-  let sessionData: any = {
-    id: sessionId,
-    todo_user_id: user.id,
-    href: props.body.href,
-    referrer: props.body.referrer,
-    created_at: now,
-    expired_at: null,
-  };
-  if (props.body.ip !== undefined && props.body.ip !== null) {
-    sessionData.ip = props.body.ip satisfies string as string;
-  }
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
-    data: sessionData,
-  });
-
-  // 5. JWT token generation
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+    data: {
+      id: v4() satisfies string as string & tags.Format<"uuid">,
+      user_id: user.id,
+      ip: "0.0.0.0" satisfies string as string,
+      href: "dummy_href" satisfies string as string,
+      referrer: "dummy_referrer" satisfies string as string,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpires),
+    },
+  });
   const token = {
     access: jwt.sign(
       {
@@ -66,10 +53,7 @@ export async function postAuthUserJoin(props: {
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
@@ -80,21 +64,13 @@ export async function postAuthUserJoin(props: {
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
     expired_at: toISOStringSafe(accessExpires),
     refreshable_until: toISOStringSafe(refreshExpires),
-  };
-
-  // 6. Return authorized user DTO
+  } satisfies IAuthorizationToken as IAuthorizationToken;
   return {
     id: user.id,
-    email: user.email,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
     token,
   };
 }

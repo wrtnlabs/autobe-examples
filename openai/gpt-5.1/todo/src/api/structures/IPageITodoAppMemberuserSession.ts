@@ -1,7 +1,7 @@
 import { IPage } from "./IPage";
-import { ITodoAppMemberuserSession } from "./ITodoAppMemberuserSession";
+import { ITodoAppMemberUserSession } from "./ITodoAppMemberUserSession";
 
-export namespace IPageITodoAppMemberuserSession {
+export namespace IPageITodoAppMemberUserSession {
   /**
    * A page.
    *
@@ -12,6 +12,6 @@ export namespace IPageITodoAppMemberuserSession {
     pagination: IPage.IPagination;
 
     /** List of records. */
-    data: ITodoAppMemberuserSession.ISummary[];
+    data: ITodoAppMemberUserSession.ISummary[];
   };
 }

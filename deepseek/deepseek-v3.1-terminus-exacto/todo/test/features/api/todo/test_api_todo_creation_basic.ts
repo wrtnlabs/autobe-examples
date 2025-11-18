@@ -4,70 +4,73 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test successful creation of a basic todo item with minimal required fields.
- *
- * This test validates that authenticated users can create todos with only the
- * required title field, using default 'pending' status and optional description
- * field. Ensures system generates proper ownership assignment and handles
- * minimal input scenarios correctly.
+ * Test basic todo creation workflow where an authenticated user creates a new
+ * todo item with valid text content. Validates that the creation operation
+ * returns the complete todo object with generated UUID, proper timestamps, and
+ * default completion status. Verifies that the todo text meets the 1-500
+ * character requirement and that the system correctly associates the todo with
+ * the authenticated user.
  */
 export async function test_api_todo_creation_basic(
   connection: api.IConnection,
 ) {
-  // Step 1: Create authenticated user context
+  // Step 1: Create an authenticated user account
   const userEmail = typia.random<string & tags.Format<"email">>();
-  const userPassword = "TestPassword123";
-
   const user = await api.functional.auth.user.join(connection, {
     body: {
       email: userEmail,
-      password: userPassword,
-    } satisfies ITodoListUser.ICreate,
+      password: "password123",
+      name: RandomGenerator.name(),
+      href: "https://example.com/todo",
+      referrer: "https://example.com",
+    } satisfies ITodoAppUser.ICreate,
   });
   typia.assert(user);
 
-  // Step 2: Create basic todo with minimal required fields
-  // Generate a realistic todo title that respects the 1-255 character constraint
-  const todoTitle = RandomGenerator.paragraph({
-    sentences: 2,
+  // Step 2: Generate valid todo text that meets the 1-500 character requirement
+  const todoText = RandomGenerator.paragraph({
+    sentences: 10,
     wordMin: 3,
-    wordMax: 7,
-  }).substring(0, 100); // Ensure it's within reasonable length
+    wordMax: 8,
+  });
 
-  const todo = await api.functional.todoList.user.todos.create(connection, {
+  // Step 3: Create a new todo item using the authenticated connection
+  const todo = await api.functional.todoApp.user.todos.create(connection, {
     body: {
-      title: todoTitle,
-      // Description and status are optional - testing minimal input scenario
-    } satisfies ITodoListTodo.ICreate,
+      text: todoText,
+    } satisfies ITodoAppTodo.ICreate,
   });
   typia.assert(todo);
 
-  // Step 3: Comprehensive validation of todo creation
-  TestValidator.equals("todo title matches input", todo.title, todoTitle);
-  TestValidator.equals(
-    "todo status defaults to pending",
-    todo.status,
-    "pending",
+  // Step 4: Validate the response contains all expected fields with proper types
+  TestValidator.equals("todo text matches input", todo.text, todoText);
+  TestValidator.predicate(
+    "todo has valid UUID format",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      todo.id,
+    ),
   );
   TestValidator.predicate(
-    "description is undefined when not provided",
-    todo.description === undefined,
+    "todo is not completed by default",
+    todo.completed === false,
   );
+  TestValidator.predicate(
+    "created_at is valid ISO date",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(todo.created_at),
+  );
+  TestValidator.predicate(
+    "updated_at is valid ISO date",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(todo.updated_at),
+  );
+  TestValidator.equals("deleted_at is undefined", todo.deleted_at, undefined);
 
-  // Additional business logic validation
-  TestValidator.predicate("title is not empty", todo.title.length > 0);
+  // Step 5: Verify the todo text length meets the 1-500 character requirement
   TestValidator.predicate(
-    "title length is within constraints",
-    todo.title.length >= 1 && todo.title.length <= 255,
-  );
-
-  // Validate that status is one of the allowed values
-  TestValidator.predicate(
-    "status is valid",
-    todo.status === "pending" || todo.status === "completed",
+    "todo text length between 1-500 characters",
+    todo.text.length >= 1 && todo.text.length <= 500,
   );
 }

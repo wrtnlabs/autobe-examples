@@ -4,89 +4,58 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test successful user registration workflow.
+ * Validates successful user registration workflow including email validation,
+ * password hashing, and immediate token generation.
  *
- * This E2E test validates the complete user registration process for the todo
- * list application. It creates a new user account with valid email and password
- * credentials, verifies that the system properly creates a unique user record,
- * generates authentication tokens, and returns complete user identity
- * information with proper timestamps.
- *
- * The test ensures that the response includes JWT access and refresh tokens
- * with expiration information, allowing the user to immediately access
- * protected endpoints after registration. This validates the seamless
- * onboarding experience for new users while maintaining data security and
- * system integrity.
+ * This test ensures that new users can register with valid credentials and
+ * receive JWT tokens for immediate authentication. It verifies account status
+ * assignment as 'pending_verification' and ensures all required fields are
+ * properly validated and stored.
  */
 export async function test_api_user_registration_success(
   connection: api.IConnection,
 ) {
-  // Generate valid random test data for user registration
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12);
+  // Generate realistic test data for user registration
+  const userEmail = typia.random<string & tags.Format<"email">>();
+  const userName = RandomGenerator.name();
 
-  // Call the user registration API endpoint
-  const user = await api.functional.auth.user.join(connection, {
-    body: {
-      email,
-      password,
-    } satisfies ITodoListUser.ICreate,
+  // Create registration request body with all required fields
+  const registrationData = {
+    email: userEmail,
+    password: "SecurePassword123!",
+    name: userName,
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+    href: "https://todoapp.example.com/register",
+    referrer: "https://todoapp.example.com",
+  } satisfies ITodoAppUser.ICreate;
+
+  // Execute user registration API call
+  const registeredUser = await api.functional.auth.user.join(connection, {
+    body: registrationData,
   });
 
-  // Validate the response structure and type safety - typia.assert does COMPLETE validation
-  typia.assert(user);
+  // Validate response type safety and structure
+  typia.assert(registeredUser);
 
-  // Verify business logic: user identity matches input and has proper status
+  // Verify user information matches registration data
   TestValidator.equals(
-    "registered user email matches input email",
-    user.email,
-    email,
-  );
-  TestValidator.equals(
-    "new user account status is active",
-    user.status,
-    "active",
+    "email should match registration input",
+    registeredUser.email,
+    userEmail,
   );
   TestValidator.equals(
-    "new user account has no deletion timestamp",
-    user.deleted_at,
-    undefined,
+    "name should match registration input",
+    registeredUser.name,
+    userName,
   );
 
-  // Validate authentication tokens are properly generated
-  TestValidator.predicate(
-    "access token is generated and non-empty",
-    user.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token is generated and non-empty",
-    user.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "token expiration timestamp is set",
-    user.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "token refreshability timestamp is set",
-    user.token.refreshable_until.length > 0,
-  );
-
-  // Verify timestamps are properly set (business logic validation)
-  const createdAt = new Date(user.created_at);
-  const updatedAt = new Date(user.updated_at);
-  TestValidator.predicate(
-    "created_at timestamp is valid",
-    !isNaN(createdAt.getTime()),
-  );
-  TestValidator.predicate(
-    "updated_at timestamp is valid",
-    !isNaN(updatedAt.getTime()),
-  );
-  TestValidator.predicate(
-    "created_at and updated_at are close for new account",
-    Math.abs(createdAt.getTime() - updatedAt.getTime()) < 5000,
+  // Validate account status defaults to 'pending_verification'
+  TestValidator.equals(
+    "account status should be pending_verification",
+    registeredUser.status,
+    "pending_verification",
   );
 }

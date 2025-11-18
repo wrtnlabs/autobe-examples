@@ -5,61 +5,51 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import type { IShoppingMallSellerJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerJoin";
+import type { IShoppingMallSellerAuthJoin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerAuthJoin";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 
 export async function test_api_seller_join_rejects_duplicate_email(
   connection: api.IConnection,
 ) {
-  // 1. Generate a unique, valid seller email
+  // 1. Prepare a deterministic but random-looking email and valid join payload
   const email: string & tags.Format<"email"> = typia.random<
     string & tags.Format<"email">
   >();
 
-  // 2. First join request body
   const firstJoinBody = {
     email,
-    password: RandomGenerator.alphaNumeric(16),
-    storeName: RandomGenerator.name(),
-    contactPhone: RandomGenerator.mobile(),
-  } satisfies IShoppingMallSellerJoin.IRequest;
+    password: typia.random<string & tags.Format<"password">>(),
+    // Let the backend derive IP if omitted; href/referrer must be valid URIs
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IShoppingMallSellerAuthJoin.IRequest;
 
-  // 3. Perform first join call and validate response
+  // 2. First join call should succeed and return an authorized seller
   const firstAuthorized: IShoppingMallSeller.IAuthorized =
     await api.functional.auth.seller.join(connection, {
       body: firstJoinBody,
     });
   typia.assert<IShoppingMallSeller.IAuthorized>(firstAuthorized);
 
-  // 4. Business-level validations for first join
-  TestValidator.equals(
-    "first join: email should match input",
-    firstAuthorized.email,
-    email,
-  );
-  TestValidator.equals(
-    "first join: store_name should match input storeName",
-    firstAuthorized.store_name,
-    firstJoinBody.storeName,
+  // Basic sanity checks on important fields
+  TestValidator.predicate(
+    "first join should return same email as requested",
+    firstAuthorized.email === email,
   );
 
-  // contact_phone is optional and nullable; just ensure it equals what we sent
-  TestValidator.equals(
-    "first join: contact_phone should match input contactPhone",
-    firstAuthorized.contact_phone ?? undefined,
-    firstJoinBody.contactPhone,
-  );
-
-  // 5. Second join attempt with same email but different storeName/password/phone
+  // 3. Second join attempt with the same email but different password/session
   const secondJoinBody = {
     email,
-    password: RandomGenerator.alphaNumeric(18),
-    storeName: RandomGenerator.name(),
-    contactPhone: RandomGenerator.mobile(),
-  } satisfies IShoppingMallSellerJoin.IRequest;
+    password: typia.random<string & tags.Format<"password">>(),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IShoppingMallSellerAuthJoin.IRequest;
 
-  // 6. Expect business error on duplicate email
+  // 4. Expect the second join to fail due to email uniqueness constraint.
+  // Use TestValidator.error to assert that some error is thrown, without
+  // checking concrete status codes or error payload details.
   await TestValidator.error(
-    "duplicate seller email must be rejected",
+    "duplicate seller join with same email must fail",
     async () => {
       await api.functional.auth.seller.join(connection, {
         body: secondJoinBody,

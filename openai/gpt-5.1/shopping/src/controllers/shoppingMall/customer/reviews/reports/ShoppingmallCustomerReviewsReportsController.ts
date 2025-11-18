@@ -2,56 +2,60 @@ import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
 import typia, { tags } from "typia";
 
-import { IShoppingMallProductReviewReport } from "../../../../../api/structures/IShoppingMallProductReviewReport";
+import { IShoppingMallReviewReport } from "../../../../../api/structures/IShoppingMallReviewReport";
 
 @Controller("/shoppingMall/customer/reviews/:reviewId/reports")
 export class ShoppingmallCustomerReviewsReportsController {
   /**
-   * Create a new shopping_mall_product_review_reports record for a given
-   * product review.
+   * Create a new shopping_mall_review_reports entry for a given
+   * shopping_mall_reviews record.
    *
-   * Submit a new report against a specific product review, so that moderation
-   * or administrative staff can later review and act on it.
+   * Create a new report against a specific review to flag potentially
+   * problematic content.
    *
-   * This POST operation is scoped to a particular product review, identified
-   * by the `reviewId` path parameter, which refers to a record in the
-   * `shopping_mall_product_reviews` table. The caller provides report details
-   * in the request body via the `IShoppingMallProductReviewReport.ICreate`
-   * DTO. Typical fields in this DTO, derived from the
-   * `shopping_mall_product_review_reports` Prisma model, include a
-   * categorical reason, optional textual explanation, and any structured
-   * fields the business requires for triage.
+   * This operation writes to the shopping_mall_review_reports table, which
+   * stores complaints and flags about reviews, while referencing a parent
+   * review in shopping_mall_reviews via shopping_mall_review_id. The review
+   * is identified by the path parameter reviewId, which is mapped to
+   * shopping_mall_reviews.id. Before inserting the new report, the service
+   * must verify that a review row exists for this identifier so that reports
+   * are not attached to non-existent reviews.
    *
-   * The implementation must verify that the referenced review exists and is
-   * eligible for reporting (for example, not already fully removed or
-   * locked), and then create a new row in the
-   * `shopping_mall_product_review_reports` table linked to that review and to
-   * the authenticated reporter. System‑managed columns such as the report
-   * identifier, creation timestamp, and initial status are set by the
-   * backend, not by the client.
+   * The request body follows the IShoppingMallReviewReport.ICreate contract,
+   * reflecting the schema fields of shopping_mall_review_reports. It includes
+   * actor_type to describe whether a customer, seller, or system submitted
+   * the report, reporter_actor_reference as an opaque UUID reference
+   * understood by higher layers, reason_code for categorized issues such as
+   * offensive_content or spam, and an optional description field for
+   * free-form details. The server initializes status to an appropriate
+   * starting state such as open if not explicitly provided, and sets
+   * created_at and updated_at timestamps to the current time.
    *
-   * From a security standpoint, authenticated customers are typically the
-   * primary reporters of problematic reviews. Therefore this endpoint is
-   * restricted to the `customer` actor, while detailed role‑specific behavior
-   * is left to the business logic (for example, allowing sellers or admins to
-   * use separate tools). Anti‑abuse protections such as rate limiting and
-   * duplicate detection are recommended and should be implemented in the
-   * service layer that handles inserts into
-   * `shopping_mall_product_review_reports`. Once created, follow‑up
-   * operations such as viewing, moderating, or resolving reports are handled
-   * by other endpoints (for example, admin-only GET or PUT routes).
+   * Security-wise, this endpoint is typically available to authenticated
+   * marketplace actors such as customers and sellers, and potentially certain
+   * automated system processes. To match the predefined actor roles within
+   * this service, authorizationActor is currently set to "customer", with
+   * downstream business logic responsible for ensuring the authenticated
+   * principal is allowed to report the targeted review and for interpreting
+   * actor_type and reporter_actor_reference consistently. Rate limiting and
+   * abuse detection using fields like actor_type and reason_code should be
+   * applied to prevent spam reporting.
+   *
+   * Error handling includes returning validation errors when required fields
+   * are missing or invalid, a not-found error when the reviewId does not
+   * correspond to a current review, and appropriate conflict or business
+   * errors when reporting is not allowed (for example, if a customer attempts
+   * to report their own review and policy forbids it). Related operations
+   * include listing all reports for a review (PATCH
+   * /shoppingMall/admin/reviews/{reviewId}/reports) and moderation endpoints
+   * that adjust the status field or create
+   * shopping_mall_review_moderation_actions records based on these reports.
    *
    * @param connection
-   * @param reviewId Unique identifier of the product review that is being
-   *   reported. This corresponds to a primary or unique key in the
-   *   `shopping_mall_product_reviews` table and determines which review the
-   *   new report record in `shopping_mall_product_review_reports` will be
-   *   associated with.
-   * @param body Payload describing the product review report to create, based
-   *   on fields defined in the `shopping_mall_product_review_reports` Prisma
-   *   model (such as reason category and description). The server will
-   *   additionally bind this report to the review identified by `reviewId`
-   *   and to the authenticated reporter.
+   * @param reviewId Unique identifier (UUID) of the review in
+   *   shopping_mall_reviews being reported.
+   * @param body Details of the report to be created for the specified review,
+   *   including actor type, reason, and optional description.
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -59,10 +63,10 @@ export class ShoppingmallCustomerReviewsReportsController {
     @TypedParam("reviewId")
     reviewId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IShoppingMallProductReviewReport.ICreate,
-  ): Promise<IShoppingMallProductReviewReport> {
+    body: IShoppingMallReviewReport.ICreate,
+  ): Promise<IShoppingMallReviewReport> {
     reviewId;
     body;
-    return typia.random<IShoppingMallProductReviewReport>();
+    return typia.random<IShoppingMallReviewReport>();
   }
 }

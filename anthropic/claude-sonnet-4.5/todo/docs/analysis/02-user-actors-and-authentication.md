@@ -1,908 +1,1025 @@
 # User Actors and Authentication Requirements
 
-## Document Overview
+## Introduction and Overview
 
-This document defines the complete user authentication and authorization foundation for the Todo list application. It establishes all user actor types, their permissions, and comprehensive authentication system requirements including registration, login, session management, password management, and security requirements.
+This document defines all user actors in the Todo list application and establishes comprehensive authentication requirements. It serves as the foundation for the security model and permission structure that governs all system interactions.
 
-This document describes **business requirements only** - all technical implementation decisions (architecture, API design, database schemas, encryption methods, etc.) are at the discretion of the development team.
+The Todo list application implements a JWT-based authentication system supporting two distinct user actor types. This document specifies the business requirements for user authentication, authorization, and permission management from a functional perspective.
+
+**Document Scope**: This document focuses on business requirements for authentication and user actors. All technical implementation details, including API endpoint design, database schema structure, cryptographic algorithm selection, and security implementation approaches, are at the discretion of the development team.
+
+**Authentication Strategy**: The system uses JSON Web Tokens (JWT) for stateless authentication, enabling secure, scalable user session management without server-side session storage. This approach allows the application to scale horizontally without session affinity requirements while maintaining strong security guarantees.
 
 ## User Actor Definitions
 
-The Todo list application supports two distinct user actor types, each with clearly defined permissions and capabilities.
-
-### Guest Actor (Unauthenticated Users)
-
-**Definition**: A Guest is any unauthenticated user who accesses the application without logging in.
-
-**Capabilities**:
-- Guests can view the application landing page
-- Guests can access the user registration form
-- Guests can access the login form
-- Guests can submit registration requests to create a new account
-- Guests can submit login requests to authenticate
-
-**Restrictions**:
-- Guests cannot create any todo items
-- Guests cannot view any todo items
-- Guests cannot access any user-specific functionality
-- Guests cannot access the main todo management interface
-- Guests have no persistent data or session beyond registration/login attempts
-
-**Business Purpose**: The Guest actor exists to allow new users to discover the application and create accounts, while protecting all todo data from unauthorized access.
-
-### User Actor (Authenticated Members)
-
-**Definition**: A User is an authenticated member who has successfully registered and logged into the application.
-
-**Capabilities**:
-- Users can create new todo items in their personal list
-- Users can view all their own todo items
-- Users can update their own todo items (title, description, status, etc.)
-- Users can delete their own todo items
-- Users can mark their todo items as complete or incomplete
-- Users can manage their account settings
-- Users can change their password
-- Users can log out to end their session
-- Users can filter and organize their own todo items
-
-**Restrictions**:
-- Users cannot view other users' todo items
-- Users cannot modify other users' todo items
-- Users cannot delete other users' todo items
-- Users cannot access other users' account information
-- Users have complete data isolation - each user operates in their own isolated workspace
-
-**Business Purpose**: The User actor represents the primary application user who manages their personal todo list with complete privacy and data isolation.
+The Todo list application supports two distinct user actor types, each with specific roles, responsibilities, and permissions. These actors represent the complete set of personas who will interact with the system.
 
 ### Actor Hierarchy
 
 ```mermaid
 graph LR
-    A["Guest (Unauthenticated)"] -->|"Successful Registration + Login"| B["User (Authenticated)"]
-    B -->|"Logout"| A
-    C["Public Access"] --> A
-    D["Personal Todo Management"] --> B
+    A["Unauthenticated Visitor"] -->|"Register"| B["User (Authenticated)"]
+    B -->|"Admin Promotion"| C["Admin"]
+    C -.->|"Can Manage"| B
+    A -->|"Login as Admin"| C
 ```
 
-**Actor Transition Rules**:
-- WHEN a guest successfully registers and logs in, THE system SHALL transition them to User actor status
-- WHEN a user logs out, THE system SHALL end their authenticated session and transition them to Guest actor status
-- THE system SHALL maintain strict boundaries between Guest and User capabilities
+### User Actor (Authenticated Member)
 
-## Complete Authentication System Requirements
+**Actor Name**: User
+
+**Actor Type**: Authenticated Member
+
+**Business Role**: Regular authenticated user who manages their personal todo list independently
+
+**Core Responsibilities**:
+- Manage personal account lifecycle (register, login, logout)
+- Create and organize personal todo items
+- View only their own todo items with complete data isolation
+- Mark their own todos as complete or incomplete to track progress
+- Delete their own todo items when no longer needed
+- Update account credentials for security maintenance
+
+**Data Isolation Requirement**: WHEN a user accesses the system, THE system SHALL ensure they can access ONLY their own todo items and account information. Users SHALL NOT have visibility into other users' data under any circumstances. This strict data isolation is fundamental to user privacy and security.
+
+**Account Lifecycle**: Users can self-register through the public registration flow, manage their own accounts independently, and use the service without administrative intervention for normal operations. The self-service model ensures users have autonomy while administrators focus on system-level concerns.
+
+**Typical User Journey**: A typical user registers an account, verifies their email address, logs in to access their personal todo list, creates and manages todo items throughout their daily workflow, and may periodically update their password or account settings for security purposes.
+
+### Admin Actor (System Administrator)
+
+**Actor Name**: Admin
+
+**Actor Type**: System Administrator
+
+**Business Role**: System administrator with elevated privileges for user management, system oversight, and user support operations
+
+**Core Responsibilities**:
+- Perform all operations available to regular users for their own personal todos
+- View and manage all user accounts across the entire system
+- Access system-wide statistics, reporting, and analytics
+- Monitor system health, usage patterns, and performance metrics
+- Support users by viewing their data when necessary for troubleshooting
+- Deactivate or delete user accounts when required by policy or compliance
+- Promote regular users to admin status when organizational needs change
+- Maintain audit trails for compliance and security purposes
+
+**Elevated Access**: WHEN an admin performs administrative functions, THE system SHALL grant them the ability to view and manage all users' data while maintaining comprehensive audit trails of administrative actions. This elevated access enables effective user support and system management while ensuring accountability.
+
+**Administrative Scope**: Admins have system-wide access but should use elevated privileges responsibly for legitimate administrative and support purposes only. The system logs all administrative actions to ensure transparency and enable security auditing.
+
+**Administrative Use Cases**: Admins typically handle user support requests, investigate reported issues by examining user data, manage user lifecycle events such as account closures, generate system reports for business stakeholders, and ensure system health through monitoring and maintenance activities.
+
+## Authentication Requirements
 
 ### Core Authentication Functions
 
-The authentication system provides essential identity management functions that users require to access and secure their accounts.
+The system must provide complete user authentication capabilities covering the entire user lifecycle from initial registration through daily access and account maintenance.
 
-**User Registration**:
-- Guests can register for a new account by providing required information
-- THE system SHALL validate all registration information before creating an account
-- WHEN registration is successful, THE system SHALL create a new user account
-- WHEN registration fails validation, THE system SHALL provide clear error messages
+#### User Registration
 
-**User Login**:
-- Users can log in to access their account by providing credentials
-- THE system SHALL validate user credentials against stored account information
-- WHEN login is successful, THE system SHALL create an authenticated session
-- WHEN login fails, THE system SHALL provide appropriate error messages without revealing security details
+**Business Purpose**: Enable new users to create accounts and begin using the Todo list application independently without administrative approval or intervention.
 
-**User Logout**:
-- Users can log out to end their authenticated session
-- WHEN a user logs out, THE system SHALL immediately invalidate their current session
-- WHEN a user logs out, THE system SHALL remove authentication tokens
-- THE system SHALL ensure no user data remains accessible after logout
+**Primary Requirement**: THE system SHALL provide user registration functionality allowing new users to create accounts with email address and password credentials.
 
-**Session Management**:
-- THE system SHALL maintain user sessions securely after successful login
-- THE system SHALL automatically expire sessions after a defined period of inactivity
-- THE system SHALL allow users to have only one active session or multiple sessions based on security policy
-- WHEN a session expires, THE system SHALL require re-authentication
+**Registration Process Requirements**:
 
-### Registration Process Requirements
+- WHEN a visitor submits registration information, THE system SHALL validate the email format using standard RFC 5322 email address pattern matching.
+- WHEN a visitor submits registration information, THE system SHALL validate the password meets defined strength requirements before accepting registration.
+- WHEN a visitor submits an email address that is already registered, THE system SHALL reject the registration attempt with error message "This email address is already registered".
+- WHEN registration data passes all validation checks, THE system SHALL create a new user account in an unverified state that requires email verification before login.
+- WHEN a new user account is created, THE system SHALL generate a time-limited email verification token valid for 24 hours.
+- WHEN an email verification token is generated, THE system SHALL send a verification email to the registered email address containing a clickable verification link.
+- WHEN the verification email is sent successfully, THE system SHALL provide clear feedback to the user: "Registration successful. Please check your email for a verification link to activate your account".
+- WHEN a user attempts to login with an unverified account, THE system SHALL prevent login and display message "Please verify your email address before logging in. Check your inbox for the verification link".
 
-The registration process allows new users to create accounts and begin using the Todo list application.
+**Email Verification Requirements**:
 
-```mermaid
-graph LR
-    A["Guest Visits Application"] --> B["Guest Clicks Register"]
-    B --> C["Guest Fills Registration Form"]
-    C --> D["Guest Submits Registration"]
-    D --> E{"Validation Successful?"}
-    E -->|"Yes"| F["System Creates Account"]
-    E -->|"No"| G["System Shows Error Message"]
-    G --> C
-    F --> H["System Sends Confirmation"]
-    H --> I["Guest Can Now Login"]
-```
+- WHEN a user clicks the email verification link, THE system SHALL validate the verification token for authenticity and expiration.
+- WHEN the verification token is valid and not expired, THE system SHALL activate the user account and mark the email address as verified.
+- WHEN email verification succeeds, THE system SHALL display success message "Your email has been verified. You can now log in to your account".
+- WHEN the verification token is invalid or expired, THE system SHALL display error message "This verification link is invalid or has expired. Please request a new verification email".
+- WHEN a user's verification token has expired, THE system SHALL allow the user to request a new verification email.
+- WHEN a user requests a new verification email, THE system SHALL generate a fresh verification token and send a new verification email.
+- WHILE a user account remains unverified, THE system SHALL prevent all login attempts for that account with appropriate messaging explaining the verification requirement.
 
-**Registration Information Requirements**:
-- THE system SHALL require an email address for registration
-- THE system SHALL require a password for registration
-- THE system SHALL require password confirmation to prevent typos
-- THE system SHALL optionally collect a display name or username
+**Registration Security Considerations**:
 
-**Registration Validation Requirements**:
-- WHEN a guest submits registration, THE system SHALL validate the email format
-- WHEN a guest submits registration, THE system SHALL check if the email is already registered
-- WHEN a guest submits registration, THE system SHALL validate password strength
-- WHEN a guest submits registration, THE system SHALL verify password and confirmation match
-- IF the email is already registered, THEN THE system SHALL reject registration with an appropriate message
-- IF validation fails, THEN THE system SHALL display specific error messages for each validation failure
+- THE system SHALL implement rate limiting on registration endpoint to prevent automated account creation attacks.
+- THE system SHALL validate email addresses to prevent malformed or malicious email input.
+- THE system SHALL implement CAPTCHA or similar protection if automated registration abuse is detected.
 
-**Email Validation Rules**:
-- THE system SHALL accept only valid email address formats
-- THE system SHALL treat email addresses as case-insensitive
-- THE system SHALL trim whitespace from email addresses
-- THE system SHALL reject email addresses exceeding 255 characters
+#### User Login
 
-**Password Validation Rules**:
-- THE system SHALL require passwords to be at least 8 characters long
-- THE system SHALL require passwords to contain at least one uppercase letter
-- THE system SHALL require passwords to contain at least one lowercase letter
-- THE system SHALL require passwords to contain at least one number
-- THE system SHALL optionally require passwords to contain at least one special character
-- THE system SHALL reject passwords exceeding 128 characters
-- THE system SHALL not store passwords in plain text
+**Business Purpose**: Authenticate users with their email and password credentials to establish secure sessions that enable access to their personal todo list and account management features.
 
-**Registration Success Behavior**:
-- WHEN registration is successful, THE system SHALL create a new user account
-- WHEN registration is successful, THE system SHALL send a confirmation to the user's email
-- WHEN registration is successful, THE system SHALL display a success message
-- WHEN registration is successful, THE system SHALL direct the user to the login page
-- THE system SHALL optionally verify the user's email before allowing login
+**Primary Requirement**: THE system SHALL authenticate users with email address and password credentials and establish secure sessions using JWT tokens.
 
-**Registration Error Scenarios**:
-- IF the email is already in use, THEN THE system SHALL display "This email is already registered"
-- IF the email format is invalid, THEN THE system SHALL display "Please enter a valid email address"
-- IF the password is too weak, THEN THE system SHALL display specific password requirements
-- IF passwords do not match, THEN THE system SHALL display "Passwords do not match"
-- IF required fields are missing, THEN THE system SHALL display "Please fill in all required fields"
+**Login Process Requirements**:
 
-### Login Process Requirements
+- WHEN a user submits login credentials, THE system SHALL validate the email address format before attempting authentication.
+- WHEN a user submits login credentials, THE system SHALL verify the email and password combination against stored account credentials.
+- WHEN the provided credentials match a valid account, THE system SHALL generate a JWT access token with 30-minute expiration time.
+- WHEN authentication succeeds, THE system SHALL generate a JWT refresh token with 30-day expiration time.
+- WHEN authentication tokens are generated, THE system SHALL return both access token and refresh token to the client application.
+- WHEN login request processing completes, THE system SHALL respond within 2 seconds under normal system load.
+- WHEN the provided credentials do not match any account, THE system SHALL return a generic authentication error "Invalid email or password" without revealing which credential was incorrect.
+- WHEN authentication succeeds, THE system SHALL reset the failed login attempt counter for that account to zero.
 
-The login process authenticates users and grants them access to their personal todo lists.
+**Account Status Validation**:
 
-```mermaid
-graph LR
-    A["Guest Visits Login Page"] --> B["Guest Enters Email and Password"]
-    B --> C["Guest Submits Login Form"]
-    C --> D{"Credentials Valid?"}
-    D -->|"Yes"| E["System Creates Session"]
-    E --> F["System Generates JWT Token"]
-    F --> G["User Accesses Dashboard"]
-    D -->|"No"| H["System Shows Error"]
-    H --> B
-```
+- WHEN a user attempts login, THE system SHALL verify the account email address has been verified.
+- WHEN a user attempts login with an unverified account, THE system SHALL prevent authentication and display message "Please verify your email address before logging in".
+- WHEN a user attempts login, THE system SHALL verify the account is in active status and not deactivated by administrators.
+- WHEN a user attempts login with a deactivated account, THE system SHALL prevent authentication and display message "This account has been deactivated. Please contact support for assistance".
 
-**Login Information Requirements**:
-- THE system SHALL require an email address for login
-- THE system SHALL require a password for login
-- THE system SHALL provide a "Remember Me" option for extended sessions
-- THE system SHALL provide a "Forgot Password" link for password recovery
+**Account Lockout Protection Requirements**:
 
-**Login Validation Requirements**:
-- WHEN a user submits login credentials, THE system SHALL validate the email format
-- WHEN a user submits login credentials, THE system SHALL verify the email exists in the system
-- WHEN a user submits login credentials, THE system SHALL verify the password matches the stored password
-- WHEN login validation succeeds, THE system SHALL respond within 2 seconds
-- WHEN login validation fails, THE system SHALL respond within 2 seconds to prevent timing attacks
+- WHEN a user fails login authentication, THE system SHALL increment the failed login attempt counter for that email address.
+- WHEN the failed login attempt counter reaches 5 failed attempts within a 15-minute sliding window, THE system SHALL temporarily lock the account for 30 minutes.
+- WHEN an account is locked due to failed login attempts, THE system SHALL send an email notification to the registered email address informing the user of the account lockout and when access will be restored.
+- WHEN an account is locked, THE system SHALL display error message "Your account has been temporarily locked due to multiple failed login attempts. Please try again in 30 minutes or contact support".
+- WHEN the 30-minute lockout period expires, THE system SHALL automatically unlock the account and reset the failed attempt counter.
+- WHEN an admin manually unlocks a locked account, THE system SHALL immediately restore access and reset the failed attempt counter.
+- WHEN a successful login occurs, THE system SHALL reset the failed login attempt counter to zero regardless of previous failed attempts.
 
-**Login Success Behavior**:
-- WHEN login is successful, THE system SHALL create an authenticated session
-- WHEN login is successful, THE system SHALL generate a JWT access token
-- WHEN login is successful, THE system SHALL generate a JWT refresh token
-- WHEN login is successful, THE system SHALL redirect the user to their todo dashboard
-- WHEN login is successful, THE system SHALL record the login timestamp
-- IF "Remember Me" is selected, THEN THE system SHALL extend the session duration
+**Login Security Requirements**:
 
-**Login Error Scenarios**:
-- IF credentials are invalid, THEN THE system SHALL display "Invalid email or password"
-- IF the email is not registered, THEN THE system SHALL display "Invalid email or password"
-- IF the password is incorrect, THEN THE system SHALL display "Invalid email or password"
-- IF the account is locked or suspended, THEN THE system SHALL display "Account access is restricted"
-- IF too many failed login attempts occur, THEN THE system SHALL temporarily lock the account
-- THE system SHALL not reveal whether the email exists when login fails
+- THE system SHALL never reveal whether a failed login was due to incorrect email or incorrect password to prevent account enumeration.
+- THE system SHALL implement rate limiting on login endpoint to prevent brute force attacks even before account lockout threshold.
+- THE system SHALL log all login attempts (successful and failed) for security auditing purposes.
 
-**Security Requirements for Login**:
-- THE system SHALL rate-limit login attempts to prevent brute force attacks
-- THE system SHALL lock accounts after 5 consecutive failed login attempts within 15 minutes
-- THE system SHALL unlock accounts automatically after 30 minutes or via password reset
-- THE system SHALL log all login attempts for security monitoring
-- THE system SHALL use secure password comparison methods that prevent timing attacks
+#### User Logout
 
-### Logout Process Requirements
+**Business Purpose**: Provide users the ability to terminate their authenticated session and invalidate their access tokens, particularly important when using shared or public computers.
 
-The logout process allows users to securely end their authenticated sessions.
+**Primary Requirement**: THE system SHALL provide logout functionality to terminate user sessions and invalidate authentication tokens.
 
-**Logout Action**:
-- Users can logout by clicking a logout button or link
-- WHEN a user initiates logout, THE system SHALL immediately invalidate the current session
-- WHEN a user initiates logout, THE system SHALL invalidate the current JWT access token
-- WHEN a user initiates logout, THE system SHALL invalidate the current JWT refresh token
-- WHEN a user initiates logout, THE system SHALL clear any client-side authentication data
-- WHEN logout is complete, THE system SHALL redirect the user to the login page or landing page
+**Logout Process Requirements**:
 
-**Logout Confirmation**:
-- THE system SHALL optionally ask for logout confirmation if the user has unsaved work
-- WHEN logout is successful, THE system SHALL display a confirmation message
-- THE system SHALL ensure no user data remains accessible after logout
+- WHEN a user initiates logout, THE system SHALL invalidate the current session by revoking the refresh token.
+- WHEN a user initiates logout, THE system SHALL instruct the client application to clear authentication tokens from client-side storage.
+- WHEN logout processing completes, THE system SHALL return confirmation of successful logout to the client.
+- WHEN logout completes, THE system SHALL display success message "You have been logged out successfully".
 
-**Session Invalidation Requirements**:
-- WHEN a user logs out, THE system SHALL immediately revoke all active tokens
-- WHEN a user logs out, THE system SHALL prevent those tokens from being used again
-- THE system SHALL maintain a token revocation list or equivalent mechanism
-- THE system SHALL clear all server-side session data associated with the user
+**Token Invalidation Strategy**:
 
-### Session Management Requirements
+- WHEN a refresh token is revoked during logout, THE system SHALL mark that specific refresh token as invalid in the token revocation tracking system.
+- WHEN a client attempts to use a revoked refresh token, THE system SHALL reject the token refresh request with authentication error.
+- THE system SHALL allow access tokens to remain valid until their natural expiration (30 minutes) as they cannot be revoked in a stateless JWT system without maintaining server-side state.
+- THE system SHALL rely on short access token lifetime (30 minutes) to minimize the window of vulnerability after logout.
 
-Session management ensures users remain authenticated during their interaction with the application while maintaining security.
+**Logout from All Devices**:
 
-**Session Creation**:
-- WHEN a user successfully logs in, THE system SHALL create a new session
-- WHEN a session is created, THE system SHALL generate a unique session identifier
-- WHEN a session is created, THE system SHALL record the session start time
-- WHEN a session is created, THE system SHALL associate the session with the user's account
+- THE system SHALL provide users the ability to revoke all sessions across all devices simultaneously.
+- WHEN a user requests logout from all devices, THE system SHALL revoke all refresh tokens associated with that user account.
+- WHEN all refresh tokens are revoked, THE system SHALL send email notification to the user confirming the security action.
 
-**Session Duration**:
-- THE system SHALL maintain sessions for 7 days with "Remember Me" enabled
-- THE system SHALL maintain sessions for 24 hours without "Remember Me"
-- THE system SHALL expire sessions after 30 minutes of inactivity
-- WHEN a session expires, THE system SHALL require the user to log in again
+#### Password Management
 
-**Session Activity**:
-- WHEN a user performs any action, THE system SHALL update the last activity timestamp
-- THE system SHALL consider sessions inactive when no actions occur within the timeout period
-- THE system SHALL automatically extend sessions when users are actively using the application
+**Business Purpose**: Enable users to maintain account security by changing passwords regularly and recover access when passwords are forgotten through secure password reset flows.
 
-**Session Termination**:
-- WHEN a user logs out, THE system SHALL terminate the session immediately
-- WHEN a session expires, THE system SHALL remove all session data
-- WHEN a user changes their password, THE system SHALL terminate all other sessions
-- THE system SHALL allow users to view and terminate active sessions from other devices
+**Change Password Requirements**:
 
-**Concurrent Session Handling**:
-- THE system SHALL allow users to have multiple concurrent sessions from different devices
-- THE system SHALL display active sessions to users in account settings
-- THE system SHALL allow users to revoke specific sessions remotely
-- WHEN a user selects "Logout from all devices", THE system SHALL terminate all active sessions
+- WHEN an authenticated user requests password change, THE system SHALL require entry of the current password for identity verification.
+- WHEN a user submits password change request, THE system SHALL validate the current password matches the stored password.
+- WHEN a user submits password change request, THE system SHALL validate the new password meets all password strength requirements.
+- WHEN the current password is incorrect, THE system SHALL reject the password change with error message "Current password is incorrect".
+- WHEN the new password fails strength requirements, THE system SHALL display specific error message indicating which requirements are not met.
+- WHEN password change is successful, THE system SHALL update the user's password in the system.
+- WHEN password is successfully changed, THE system SHALL invalidate all existing refresh tokens except the current session's refresh token to allow the user to remain logged in.
+- WHEN password is successfully changed, THE system SHALL send email notification to the registered email address confirming the password change.
+- WHEN password change email is sent, THE system SHALL include timestamp and originating IP address to help users detect unauthorized changes.
 
-## Password Management Requirements
+**Forgot Password / Password Reset Requirements**:
 
-Password management provides users with secure methods to create, change, and recover their passwords.
+**Reset Request Process**:
 
-### Password Creation and Strength Requirements
+- WHEN a user requests password reset, THE system SHALL prompt for the email address associated with the account.
+- WHEN a user submits email address for password reset, THE system SHALL display generic success message "If an account exists with that email address, you will receive password reset instructions" regardless of whether the email exists.
+- WHEN the submitted email address exists in the system, THE system SHALL generate a time-limited password reset token valid for 1 hour.
+- WHEN a password reset token is generated, THE system SHALL send a password reset email containing a clickable reset link to the registered email address.
+- WHEN a password reset email is sent, THE system SHALL include clear instructions and expiration time information.
+- THE system SHALL accept password reset requests for non-existent email addresses but provide generic confirmation messages to prevent email enumeration attacks.
 
-**Password Strength Validation**:
-- THE system SHALL enforce minimum password length of 8 characters
-- THE system SHALL require at least one uppercase letter (A-Z)
-- THE system SHALL require at least one lowercase letter (a-z)
-- THE system SHALL require at least one numeric digit (0-9)
-- THE system SHALL optionally require at least one special character (!@#$%^&*)
-- THE system SHALL reject passwords longer than 128 characters
-- THE system SHALL reject commonly used passwords (e.g., "Password123", "12345678")
+**Password Reset Completion Process**:
 
-**Password Strength Feedback**:
-- WHEN a user creates a password, THE system SHALL provide real-time strength feedback
-- THE system SHALL display password requirements clearly during registration and password change
-- THE system SHALL indicate which requirements are met and which are not
-- THE system SHALL show password strength level (weak, medium, strong)
+- WHEN a user clicks the password reset link, THE system SHALL validate the reset token for authenticity and expiration.
+- WHEN the reset token is valid and not expired, THE system SHALL display a password change form allowing the user to set a new password.
+- WHEN the reset token is invalid or expired, THE system SHALL display error message "This password reset link is invalid or has expired. Please request a new password reset".
+- WHEN a user submits new password through reset form, THE system SHALL validate the new password meets all strength requirements without requiring the old password.
+- WHEN the new password fails strength requirements, THE system SHALL display specific error messages indicating which requirements are not met.
+- WHEN the new password is valid, THE system SHALL update the user's password in the system.
+- WHEN password reset is successful, THE system SHALL invalidate all existing refresh tokens for that user to terminate all sessions.
+- WHEN password reset is successful, THE system SHALL send email confirmation to the registered email address confirming the password was reset.
+- WHEN password reset completes, THE system SHALL display success message "Your password has been reset successfully. Please log in with your new password".
+- WHEN password reset completes, THE system SHALL require the user to authenticate with the new password to access the system.
 
-### Password Reset Flow
+**Password Reset Security Requirements**:
 
-Users who forget their passwords can recover access through a secure password reset process.
+- THE system SHALL expire password reset links after 1 hour from generation.
+- THE system SHALL allow only one-time use of password reset tokens.
+- WHEN a password reset token is used successfully, THE system SHALL immediately invalidate that token to prevent reuse.
+- THE system SHALL implement rate limiting on password reset requests to prevent email flooding attacks.
+- THE system SHALL never reveal whether an email address is registered when processing password reset requests.
 
-```mermaid
-graph LR
-    A["User Clicks Forgot Password"] --> B["User Enters Email"]
-    B --> C["System Sends Reset Email"]
-    C --> D["User Clicks Reset Link"]
-    D --> E["User Enters New Password"]
-    E --> F{"Password Valid?"}
-    F -->|"Yes"| G["System Updates Password"]
-    F -->|"No"| H["System Shows Error"]
-    H --> E
-    G --> I["System Confirms Success"]
-    I --> J["User Can Login with New Password"]
-```
+#### Session Revocation
 
-**Password Reset Request**:
-- Users can request password reset by providing their email address
-- WHEN a user requests password reset, THE system SHALL validate the email format
-- WHEN a user requests password reset, THE system SHALL send a reset link to the email if it exists
-- WHEN a user requests password reset, THE system SHALL display a confirmation message regardless of email existence
-- THE system SHALL not reveal whether an email exists in the system
+**Business Purpose**: Provide users with security control to revoke access from all devices and sessions simultaneously, particularly useful when a device is lost or account compromise is suspected.
 
-**Password Reset Link Requirements**:
-- THE system SHALL generate a unique, secure reset token for each request
-- THE system SHALL include the reset token in the password reset email
-- THE system SHALL expire reset tokens after 1 hour
-- THE system SHALL invalidate reset tokens after they are used once
-- THE system SHALL prevent reset token reuse or sharing
+**Primary Requirement**: THE system SHALL allow users to revoke access from all devices and sessions in a single action.
 
-**Password Reset Email**:
-- THE system SHALL send password reset emails within 2 minutes of the request
-- THE system SHALL include a secure reset link in the email
-- THE system SHALL include instructions for resetting the password
-- THE system SHALL include a warning that the link expires in 1 hour
-- THE system SHALL include a note to ignore the email if the user did not request it
+**Revocation Process Requirements**:
 
-**Password Reset Completion**:
-- WHEN a user clicks the reset link, THE system SHALL validate the token
-- WHEN a user clicks the reset link, THE system SHALL check if the token has expired
-- IF the token is valid, THEN THE system SHALL display a password reset form
-- IF the token is invalid or expired, THEN THE system SHALL display an error and offer to send a new reset link
-- WHEN a user submits a new password, THE system SHALL validate password strength
-- WHEN the new password is valid, THE system SHALL update the user's password
-- WHEN the password is updated, THE system SHALL invalidate all existing sessions
-- WHEN the password is updated, THE system SHALL send a confirmation email
+- WHEN a user requests session revocation from all devices, THE system SHALL invalidate all refresh tokens associated with that user account.
+- WHEN all refresh tokens are revoked, THE system SHALL prevent any further token refresh requests using those tokens.
+- WHEN session revocation completes, THE system SHALL require re-authentication for all devices and applications attempting to access the user's account.
+- WHEN session revocation is successful, THE system SHALL send email notification to the user confirming the security action was taken.
+- WHEN session revocation email is sent, THE system SHALL include timestamp and originating IP address of the revocation request.
 
-**Password Reset Security**:
-- THE system SHALL rate-limit password reset requests to 3 per hour per email
-- THE system SHALL log all password reset attempts for security monitoring
-- THE system SHALL notify users via email when their password is changed
-- THE system SHALL require users to log in again after password reset
+**Use Case Examples**:
 
-### Password Change Flow
+- User suspects unauthorized access to their account
+- User loses a device (phone, tablet, laptop) that was logged into the application
+- User wants to force logout from all locations before password change
+- User leaves a device logged in at a public location and wants to immediately revoke access
 
-Authenticated users can change their passwords from their account settings.
+### Password Security Requirements
 
-**Password Change Requirements**:
-- Users can change their password while logged in
-- WHEN a user requests password change, THE system SHALL require the current password
-- WHEN a user requests password change, THE system SHALL require a new password
-- WHEN a user requests password change, THE system SHALL require new password confirmation
-- THE system SHALL validate the current password before allowing change
+**Business Purpose**: Establish password strength standards that balance security with usability, ensuring user accounts are protected against common attack vectors while remaining accessible to legitimate users.
 
-**Password Change Validation**:
-- WHEN a user submits password change, THE system SHALL verify the current password is correct
-- WHEN a user submits password change, THE system SHALL validate the new password meets strength requirements
-- WHEN a user submits password change, THE system SHALL verify new password and confirmation match
-- WHEN a user submits password change, THE system SHALL ensure new password differs from current password
-- IF current password is incorrect, THEN THE system SHALL reject the change with appropriate error
+**Password Strength Policy Requirements**:
 
-**Password Change Success**:
-- WHEN password change is successful, THE system SHALL update the stored password
-- WHEN password change is successful, THE system SHALL send a confirmation email
-- WHEN password change is successful, THE system SHALL optionally terminate other sessions
-- WHEN password change is successful, THE system SHALL display a success message
-- WHEN password change is successful, THE system SHALL log the password change event
+- THE system SHALL require passwords to be at least 8 characters in length to provide baseline security.
+- THE system SHALL require passwords to contain at least one uppercase letter (A-Z).
+- THE system SHALL require passwords to contain at least one lowercase letter (a-z).
+- THE system SHALL require passwords to contain at least one numeric digit (0-9).
+- THE system SHALL require passwords to contain at least one special character from the set: !@#$%^&*()_+-=[]{}|;:,.<>?
+- THE system SHALL reject passwords that appear in common password lists or known breach databases.
+- THE system SHALL reject passwords that are dictionary words in common languages.
+- THE system SHALL provide real-time feedback during password creation showing which requirements have been met and which remain.
+- WHEN a user types a password, THE system SHALL display visual indicators (checkmarks or color coding) showing which strength requirements are satisfied.
 
-## Token Management (JWT) Requirements
+**Password Storage Security Requirements**:
 
-The application uses JSON Web Tokens (JWT) for secure, stateless authentication. Tokens carry user identity and permissions, enabling the system to verify authenticated requests.
+- THE system SHALL never store passwords in plain text format under any circumstances.
+- THE system SHALL use industry-standard password hashing algorithms with computational cost factors to resist brute force attacks.
+- THE system SHALL use unique cryptographic salts for each password to prevent rainbow table attacks.
+- THE system SHALL never transmit passwords in plain text over any communication channel.
+- THE system SHALL never include passwords or password hashes in application logs, error messages, or debugging output.
+- THE system SHALL never display passwords to users, admins, or support staff under any circumstances.
 
-### JWT Structure and Payload
+**Password Validation and Feedback**:
 
-**JWT Payload Requirements**:
-- THE system SHALL include the user's unique identifier (userId) in the JWT payload
-- THE system SHALL include the user's role or actor type in the JWT payload
-- THE system SHALL include the user's email address in the JWT payload
-- THE system SHALL include the token issue timestamp (iat) in the JWT payload
-- THE system SHALL include the token expiration timestamp (exp) in the JWT payload
-- THE system SHALL include a unique token identifier (jti) in the JWT payload for revocation tracking
+- WHEN a user enters a password that is too short, THE system SHALL display error "Password must be at least 8 characters long".
+- WHEN a user enters a password missing required character types, THE system SHALL display specific error indicating which character types are missing.
+- WHEN a user enters a commonly-used password, THE system SHALL display error "This password is too common. Please choose a more unique password".
+- WHEN password meets all requirements, THE system SHALL display confirmation "Password meets all security requirements".
 
-**Example JWT Payload Structure**:
-```
+## JWT Token Management
+
+### Token Architecture
+
+The system implements JWT (JSON Web Tokens) for authentication with a dual-token architecture: short-lived access tokens for API authorization and long-lived refresh tokens for obtaining new access tokens without repeated user authentication.
+
+**Architectural Benefits**:
+
+- **Stateless Authentication**: Access tokens are self-contained and can be validated without database queries, enabling horizontal scalability.
+- **Security**: Short-lived access tokens minimize exposure window while long-lived refresh tokens reduce authentication friction.
+- **Flexibility**: Refresh token revocation provides logout and session management capabilities while maintaining stateless access token benefits.
+
+### JWT Access Token Specification
+
+**Token Purpose**: Short-lived token used to authorize API requests and prove user identity for resource access
+
+**Token Lifetime Requirement**: THE system SHALL set access token expiration to 30 minutes from issuance timestamp.
+
+**Lifetime Rationale**: The 30-minute lifetime balances security (limiting exposure if token is compromised) with user experience (reducing frequency of token refresh operations). This duration is appropriate for interactive web applications where users maintain active sessions.
+
+**Token Payload Structure**:
+
+The access token JWT payload SHALL include the following claims:
+
+```json
 {
-  "userId": "unique-user-identifier",
-  "email": "user@example.com",
-  "role": "user",
-  "iat": 1678901234,
-  "exp": 1678903034,
-  "jti": "unique-token-id"
+  "userId": "unique user identifier",
+  "email": "user email address",
+  "role": "user or admin",
+  "permissions": ["array of specific permissions"],
+  "iat": "issued at timestamp",
+  "exp": "expiration timestamp"
 }
 ```
 
-**JWT Security Requirements**:
-- THE system SHALL sign all JWTs with a secure secret key
-- THE system SHALL use a strong signing algorithm (e.g., HS256 or RS256)
-- THE system SHALL validate JWT signatures on every request
-- THE system SHALL reject JWTs with invalid signatures
-- THE system SHALL reject expired JWTs
-- THE system SHALL reject JWTs with missing required claims
+**Required Claims**:
+- **userId**: Unique identifier for the user account, used to associate requests with specific user records
+- **email**: User's registered email address, provided for display purposes and logging
+- **role**: User actor type ("user" or "admin"), used for high-level authorization decisions
+- **permissions**: Array of specific permission strings granted to this actor, enabling fine-grained access control
+- **iat**: Token issuance timestamp in Unix epoch format (standard JWT claim)
+- **exp**: Token expiration timestamp in Unix epoch format (standard JWT claim)
 
-### Access Token Specifications
+**Token Usage Requirements**:
 
-Access tokens provide short-lived authentication for user requests.
+- WHEN a client makes an API request to a protected endpoint, THE client SHALL include the access token in the Authorization header using Bearer scheme.
+- WHEN the system receives a request with an access token, THE system SHALL validate the token signature using the configured secret key or public key.
+- WHEN the system receives a request with an access token, THE system SHALL validate the token expiration timestamp to ensure the token has not expired.
+- WHEN an access token is expired, THE system SHALL reject the request with HTTP 401 Unauthorized status and error message "Access token has expired. Please refresh your token".
+- WHEN an access token signature is invalid, THE system SHALL reject the request with HTTP 401 Unauthorized status and error message "Invalid access token".
+- WHEN an access token is valid, THE system SHALL extract user identity and permissions from the token claims for authorization decisions.
 
-**Access Token Properties**:
-- THE system SHALL generate access tokens upon successful login
-- THE system SHALL set access token expiration to 30 minutes
-- THE system SHALL include user identity and permissions in access tokens
-- WHEN an access token is used, THE system SHALL validate its signature and expiration
-- WHEN an access token expires, THE system SHALL require refresh or re-authentication
+**Token Refresh Requirement**:
 
-**Access Token Usage**:
-- Users must include the access token in requests to access protected resources
-- WHEN a request includes an access token, THE system SHALL validate the token before processing
-- WHEN a request includes an invalid access token, THE system SHALL reject the request with authentication error
-- WHEN a request includes an expired access token, THE system SHALL reject the request and prompt for refresh
+- WHEN an access token expires, THE client application SHALL use the refresh token to obtain a new access token without prompting the user for credentials.
+- THE system SHALL support seamless token refresh to maintain continuous user sessions without authentication interruptions.
 
-**Access Token Renewal**:
-- WHEN an access token expires, THE system SHALL allow renewal using a valid refresh token
-- THE system SHALL issue a new access token when a valid refresh token is provided
-- THE system SHALL maintain the same user identity and permissions in the renewed token
+### JWT Refresh Token Specification
 
-### Refresh Token Specifications
+**Token Purpose**: Long-lived token used exclusively to obtain new access tokens without requiring the user to re-authenticate with email and password
 
-Refresh tokens provide long-lived authentication renewal capability without requiring users to re-enter credentials frequently.
+**Token Lifetime Requirement**: THE system SHALL set refresh token expiration to 30 days from issuance timestamp.
 
-**Refresh Token Properties**:
-- THE system SHALL generate refresh tokens upon successful login
-- THE system SHALL set refresh token expiration to 7 days for standard sessions
-- THE system SHALL set refresh token expiration to 30 days when "Remember Me" is enabled
-- THE system SHALL store refresh tokens securely
-- THE system SHALL allow refresh tokens to be used only for obtaining new access tokens
+**Lifetime Rationale**: The 30-day lifetime provides a balance between security and user convenience. Users remain logged in for a month without re-authentication, but compromised tokens have a limited window of validity. This duration is typical for consumer web applications.
 
-**Refresh Token Usage**:
-- WHEN an access token expires, users can request a new access token using their refresh token
-- WHEN a refresh token is used, THE system SHALL validate its signature and expiration
-- WHEN a refresh token is valid, THE system SHALL issue a new access token
-- WHEN a refresh token is valid, THE system SHALL optionally issue a new refresh token (token rotation)
-- WHEN a refresh token is invalid or expired, THE system SHALL require full re-authentication
+**Token Payload Structure**:
 
-**Refresh Token Revocation**:
-- WHEN a user logs out, THE system SHALL revoke the associated refresh token
-- WHEN a user changes password, THE system SHALL revoke all refresh tokens for that user
-- WHEN a user selects "Logout from all devices", THE system SHALL revoke all refresh tokens
-- THE system SHALL maintain a revocation list to prevent revoked tokens from being used
+The refresh token JWT payload SHALL include:
 
-**Refresh Token Security**:
-- THE system SHALL implement token rotation (issue new refresh token with each use)
-- THE system SHALL detect and prevent refresh token reuse attacks
-- IF a revoked refresh token is used, THEN THE system SHALL log the security event
-- THE system SHALL rate-limit refresh token requests to prevent abuse
+```json
+{
+  "userId": "unique user identifier",
+  "tokenFamily": "unique token family identifier",
+  "iat": "issued at timestamp",
+  "exp": "expiration timestamp"
+}
+```
 
-### Token Storage and Security
+**Required Claims**:
+- **userId**: Unique identifier for the user account
+- **tokenFamily**: Unique identifier for this token family, used to detect token reuse and prevent token theft
+- **iat**: Token issuance timestamp in Unix epoch format (standard JWT claim)
+- **exp**: Token expiration timestamp in Unix epoch format (standard JWT claim)
 
-**Client-Side Token Storage**:
-- THE system SHALL store access tokens in browser localStorage or sessionStorage
-- THE system SHALL optionally store refresh tokens in httpOnly cookies for enhanced security
-- THE system SHALL never store tokens in plain text in URLs or logs
-- THE system SHALL clear all tokens from storage upon logout
+**Token Family Concept**:
+
+- THE system SHALL use token families to detect token reuse attacks and prevent token theft.
+- WHEN a refresh token is first issued during login, THE system SHALL generate a unique token family identifier.
+- WHEN a refresh token is used to obtain new tokens, THE system SHALL issue a new refresh token with the same family ID.
+- WHEN a refresh token is used, THE system SHALL mark that specific token as consumed to prevent reuse.
+- WHEN a previously-consumed refresh token is presented again, THE system SHALL detect this as potential token theft.
+- WHEN token theft is detected through reuse of consumed token, THE system SHALL revoke the entire token family to protect the user account.
+
+**Token Usage Requirements**:
+
+- WHEN an access token expires, THE client SHALL present the refresh token to the token refresh endpoint.
+- WHEN the system receives a refresh token, THE system SHALL validate the token signature and expiration.
+- WHEN a refresh token is valid and not previously used, THE system SHALL mark the token as consumed.
+- WHEN a refresh token is valid, THE system SHALL generate a new access token with 30-minute expiration.
+- WHEN a refresh token is valid, THE system SHALL generate a new refresh token with the same family ID and 30-day expiration.
+- WHEN new tokens are generated, THE system SHALL return both new access token and new refresh token to the client.
+- WHEN a refresh token is expired, THE system SHALL reject the token refresh request and require full user re-authentication.
+- WHEN a refresh token is invalid or has been revoked, THE system SHALL reject the token refresh request and require full user re-authentication.
+
+### Token Storage Strategy
+
+**Client-Side Storage Requirements**:
+
+- FOR web applications, THE system SHALL recommend storing access tokens in memory (JavaScript variables) to prevent XSS token theft.
+- FOR web applications, THE system SHALL recommend storing refresh tokens in httpOnly cookies to prevent XSS access while allowing automatic transmission.
+- FOR mobile applications, THE system SHALL support secure device storage mechanisms such as iOS Keychain or Android Keystore.
+- FOR single-page applications, THE system SHALL support storing refresh tokens in httpOnly, Secure, SameSite cookies.
+
+**Storage Security Considerations**:
+
+- Access tokens stored in memory are lost on page reload but provide maximum XSS protection
+- Refresh tokens in httpOnly cookies are inaccessible to JavaScript, preventing XSS theft
+- Secure flag ensures cookies are only transmitted over HTTPS
+- SameSite flag prevents CSRF attacks
+
+**Token Transmission Requirements**:
+
+- THE system SHALL require all token transmission to occur exclusively over HTTPS encrypted connections.
+- THE system SHALL include access tokens in the Authorization header using the format: `Authorization: Bearer <access_token>`.
+- THE system SHALL never expose tokens in URL query parameters, which may be logged by proxies and browsers.
+- THE system SHALL never log token values in application logs, error logs, or debugging output.
+- THE system SHALL never transmit tokens in plain text over unencrypted HTTP connections.
+
+### Token Lifecycle Management
+
+**Token Issuance Requirements**:
+
+- WHEN a user successfully authenticates through login, THE system SHALL generate both access token and refresh token.
+- WHEN tokens are generated, THE system SHALL include all required claims in the token payload.
+- WHEN tokens are generated, THE system SHALL sign tokens using the configured secret key or private key.
+- WHEN tokens are generated, THE system SHALL return both tokens securely to the client application.
+
+**Token Refresh Flow Requirements**:
+
+- WHEN a client requests token refresh, THE system SHALL require presentation of a valid refresh token.
+- WHEN a valid refresh token is received, THE system SHALL validate the token signature and expiration.
+- WHEN the refresh token is valid, THE system SHALL verify the token has not been previously consumed.
+- WHEN validation succeeds, THE system SHALL mark the old refresh token as consumed.
+- WHEN validation succeeds, THE system SHALL generate a new access token with 30-minute expiration.
+- WHEN validation succeeds, THE system SHALL generate a new refresh token with same family ID and 30-day expiration.
+- WHEN new tokens are generated, THE system SHALL return both new access token and new refresh token to the client.
+- THE system SHALL complete token refresh operations within 1 second under normal load.
+
+**Token Refresh Failure Scenarios**:
+
+- WHEN the refresh token is expired, THE system SHALL reject refresh request with error "Refresh token has expired. Please log in again".
+- WHEN the refresh token signature is invalid, THE system SHALL reject refresh request with error "Invalid refresh token. Please log in again".
+- WHEN the refresh token has been revoked, THE system SHALL reject refresh request with error "Refresh token has been revoked. Please log in again".
+- WHEN a consumed refresh token is presented (token reuse detected), THE system SHALL revoke entire token family and require full re-authentication.
+
+**Token Revocation Requirements**:
+
+- WHEN a user logs out, THE system SHALL revoke the current refresh token to prevent future token refresh.
+- WHEN a user changes password, THE system SHALL revoke all refresh tokens except the current session to maintain user's active session.
+- WHEN a user requests "logout from all devices", THE system SHALL revoke all refresh tokens for that user across all sessions.
+- WHEN an admin deactivates a user account, THE system SHALL revoke all refresh tokens for that user immediately.
+- WHEN token theft is detected through token reuse, THE system SHALL revoke all tokens in the affected token family.
+
+### Token Security Requirements
+
+**Token Signing Requirements**:
+
+- THE system SHALL sign all JWT tokens using a cryptographically secure algorithm (RS256 with RSA keys or HS256 with strong secret).
+- WHEN using symmetric signing (HS256), THE system SHALL use a secret key of at least 256 bits (32 bytes) of random data.
+- WHEN using asymmetric signing (RS256), THE system SHALL use RSA key pairs of at least 2048 bits.
+- THE system SHALL protect signing keys with appropriate access controls and never expose them in source code or configuration files.
+- THE system SHALL implement periodic key rotation for enhanced security, rotating signing keys at least annually.
+
+**Token Validation Requirements**:
+
+- WHEN receiving a JWT token, THE system SHALL validate the token signature matches the expected signature computed with the signing key.
+- WHEN receiving a JWT token, THE system SHALL validate the expiration time (exp claim) has not passed.
+- WHEN receiving a JWT token, THE system SHALL validate the token has not been revoked by checking against the revocation list.
+- WHEN receiving a JWT token, THE system SHALL validate all required claims are present in the payload.
+- WHEN any validation check fails, THE system SHALL reject the token and deny the request with appropriate error.
+
+**Token Theft Detection and Prevention**:
+
+- THE system SHALL implement token family tracking for all refresh tokens to enable theft detection.
+- WHEN a refresh token is used more than once, THE system SHALL treat this as potential token theft.
+- WHEN token theft is detected, THE system SHALL revoke all tokens in that token family to protect the user account.
+- WHEN token theft is detected, THE system SHALL send email notification to the user alerting them of suspicious activity.
+- THE system SHALL log all token theft detection events for security monitoring and investigation.
 
 **Token Transmission Security**:
-- THE system SHALL transmit tokens only over HTTPS connections
-- THE system SHALL include tokens in HTTP Authorization headers (Bearer scheme)
-- THE system SHALL never include tokens in URL query parameters
-- THE system SHALL protect tokens from cross-site scripting (XSS) attacks
 
-**Token Lifecycle Management**:
-- THE system SHALL track all issued tokens for security auditing
-- THE system SHALL allow administrators to revoke tokens if necessary
-- THE system SHALL clean up expired tokens from storage regularly
-- THE system SHALL provide users with visibility into active tokens/sessions
+- THE system SHALL reject any token transmission over unencrypted HTTP connections.
+- THE system SHALL enforce HTTPS for all API endpoints that accept authentication tokens.
+- THE system SHALL configure HTTP Strict Transport Security (HSTS) headers to prevent protocol downgrade attacks.
 
 ## Permission Matrix
 
-The permission matrix defines exactly what actions each user actor can perform in the Todo list application.
+The following table defines exact permissions for each user actor across all system features. This matrix serves as the definitive authorization reference for developers implementing access control.
 
-### Complete Feature Access Control
+| Feature / Action | Unauthenticated Visitor | User (Authenticated) | Admin |
+|-----------------|------------------------|---------------------|-------|
+| **Account Management** | | | |
+| Register new account | ✅ | ❌ | ❌ |
+| Login to account | ✅ | ✅ | ✅ |
+| Logout from account | ❌ | ✅ | ✅ |
+| View own profile | ❌ | ✅ | ✅ |
+| Change own password | ❌ | ✅ | ✅ |
+| Reset forgotten password | ✅ | ✅ | ✅ |
+| Verify email address | ✅ | ✅ | ✅ |
+| Revoke all sessions | ❌ | ✅ | ✅ |
+| Delete own account | ❌ | ✅ | ✅ |
+| **Todo Item Management** | | | |
+| Create todo item | ❌ | ✅ (own only) | ✅ (own only) |
+| View todo list | ❌ | ✅ (own only) | ✅ (all users) |
+| View single todo item | ❌ | ✅ (own only) | ✅ (any user) |
+| Mark todo as complete | ❌ | ✅ (own only) | ✅ (own only) |
+| Mark todo as incomplete | ❌ | ✅ (own only) | ✅ (own only) |
+| Delete todo item | ❌ | ✅ (own only) | ✅ (any user) |
+| **User Management** | | | |
+| View all users list | ❌ | ❌ | ✅ |
+| View any user profile | ❌ | ❌ | ✅ |
+| Deactivate user account | ❌ | ❌ | ✅ |
+| Delete user account | ❌ | ❌ | ✅ |
+| Promote user to admin | ❌ | ❌ | ✅ |
+| Reset any user password | ❌ | ❌ | ✅ |
+| **System Administration** | | | |
+| View system statistics | ❌ | ❌ | ✅ |
+| Monitor system health | ❌ | ❌ | ✅ |
+| Access admin dashboard | ❌ | ❌ | ✅ |
+| View audit logs | ❌ | ❌ | ✅ |
 
-| Feature / Action | Guest (Unauthenticated) | User (Authenticated) |
-|-----------------|------------------------|---------------------|
-| **Authentication & Account** |
-| View landing page | ✅ Allowed | ✅ Allowed |
-| Access registration form | ✅ Allowed | ✅ Allowed |
-| Submit registration | ✅ Allowed | ✅ Allowed |
-| Access login form | ✅ Allowed | ✅ Allowed |
-| Submit login request | ✅ Allowed | ✅ Allowed |
-| Logout | ❌ Not applicable | ✅ Allowed |
-| Change password | ❌ Denied | ✅ Allowed (own account) |
-| Reset password | ✅ Allowed (via email) | ✅ Allowed (via email) |
-| View account settings | ❌ Denied | ✅ Allowed (own account) |
-| **Todo Management** |
-| View todo dashboard | ❌ Denied | ✅ Allowed (own todos only) |
-| Create new todo | ❌ Denied | ✅ Allowed |
-| View todo list | ❌ Denied | ✅ Allowed (own todos only) |
-| View todo details | ❌ Denied | ✅ Allowed (own todos only) |
-| Update todo | ❌ Denied | ✅ Allowed (own todos only) |
-| Delete todo | ❌ Denied | ✅ Allowed (own todos only) |
-| Mark todo complete | ❌ Denied | ✅ Allowed (own todos only) |
-| Mark todo incomplete | ❌ Denied | ✅ Allowed (own todos only) |
-| Filter todos | ❌ Denied | ✅ Allowed (own todos only) |
-| Search todos | ❌ Denied | ✅ Allowed (own todos only) |
-| **Data Access** |
-| View own data | ❌ No data | ✅ Allowed |
-| View other users' data | ❌ Denied | ❌ Denied |
-| Modify own data | ❌ No data | ✅ Allowed |
-| Modify other users' data | ❌ Denied | ❌ Denied |
-| Delete own data | ❌ No data | ✅ Allowed |
-| Delete other users' data | ❌ Denied | ❌ Denied |
+### Permission Enforcement Rules
 
-### Actor-Based Access Rules
+**Data Isolation for Users**:
 
-**Guest Actor Access Rules**:
-- WHEN a guest attempts to access todo management features, THE system SHALL deny access and redirect to login
-- WHEN a guest attempts to view todo data, THE system SHALL deny access and display authentication required message
-- WHEN a guest attempts to create a todo, THE system SHALL deny access and prompt for login
-- THE system SHALL allow guests to access only public pages and authentication forms
+- WHEN a user requests their todo list, THE system SHALL return ONLY todo items they created, filtering by user ID.
+- WHEN a user attempts to view a specific todo item, THE system SHALL verify the todo item belongs to the requesting user before returning data.
+- WHEN a user attempts to modify a todo item, THE system SHALL verify ownership before allowing modification.
+- WHEN a user attempts to delete a todo item, THE system SHALL verify ownership before allowing deletion.
+- WHEN a user attempts to access another user's todo item, THE system SHALL deny access with HTTP 403 Forbidden status and error message "You do not have permission to access this resource".
 
-**User Actor Access Rules**:
-- WHEN a user attempts to view todos, THE system SHALL return only that user's own todos
-- WHEN a user attempts to modify a todo, THE system SHALL verify the todo belongs to that user
-- WHEN a user attempts to delete a todo, THE system SHALL verify the todo belongs to that user
-- IF a user attempts to access another user's todo, THEN THE system SHALL deny access with authorization error
-- THE system SHALL enforce complete data isolation between users
+**Admin Elevated Access**:
 
-**Data Isolation Requirements**:
-- THE system SHALL never display one user's todos to another user
-- THE system SHALL prevent users from accessing todo IDs that do not belong to them
-- THE system SHALL filter all database queries by the authenticated user's ID
-- IF a user guesses or constructs a URL to another user's todo, THEN THE system SHALL deny access
-- THE system SHALL log unauthorized access attempts for security monitoring
+- WHEN an admin views the todo list, THE system SHALL support filtering by user ID or viewing all todos across the entire system.
+- WHEN an admin views a specific todo item, THE system SHALL allow access to any todo item regardless of ownership.
+- WHEN an admin deletes a todo item, THE system SHALL allow deletion of any user's todo item.
+- WHEN an admin performs actions affecting other users' data, THE system SHALL log the action including admin user ID, target user ID, action type, and timestamp.
+- WHEN an admin views user data for support purposes, THE system SHALL log the data access for audit trail.
 
-## Authentication Workflows
+**Unauthenticated Access Restrictions**:
 
-These workflows describe the complete user journeys through authentication processes, showing the step-by-step interactions from the user's perspective.
+- THE system SHALL require authentication (valid access token) for all todo management operations.
+- THE system SHALL allow registration, login, email verification, and password reset operations for unauthenticated visitors.
+- WHEN an unauthenticated visitor attempts any protected operation, THE system SHALL return HTTP 401 Unauthorized status with error message "Authentication required. Please log in to access this resource".
+- THE system SHALL not reveal any user data or system information to unauthenticated visitors.
 
-### User Registration Journey
+**Permission Check Process**:
 
-This workflow shows how a new user creates an account and gains access to the Todo list application.
+- WHEN any API request is received, THE system SHALL first validate the access token is present and valid.
+- WHEN the access token is valid, THE system SHALL extract the user ID and role from token claims.
+- WHEN processing a resource request, THE system SHALL verify the user has permission to perform the requested action on the specified resource.
+- WHEN permission check fails, THE system SHALL deny the request with appropriate error message.
+- THE system SHALL enforce permission checks before executing any business logic or database operations.
 
-```mermaid
-graph LR
-    A["New User Visits Application"] --> B["User Views Landing Page"]
-    B --> C["User Clicks Register Button"]
-    C --> D["System Displays Registration Form"]
-    D --> E["User Enters Email"]
-    E --> F["User Enters Password"]
-    F --> G["User Confirms Password"]
-    G --> H["User Submits Registration"]
-    H --> I{"System Validates Data"}
-    I -->|"Validation Failed"| J["System Shows Error Messages"]
-    J --> D
-    I -->|"Validation Passed"| K["System Creates Account"]
-    K --> L["System Sends Confirmation Email"]
-    L --> M["System Shows Success Message"]
-    M --> N["System Redirects to Login"]
-    N --> O["User Can Login"]
-```
+## Authentication Flows
 
-**Registration Journey Steps**:
-1. New user visits the application landing page
-2. User views information about the Todo list application
-3. User clicks the "Register" or "Sign Up" button
-4. System displays the registration form with required fields
-5. User enters their email address
-6. User creates a password
-7. User confirms the password by entering it again
-8. User submits the registration form
-9. System validates all entered information
-10. If validation fails, system displays specific error messages and user corrects the information
-11. If validation succeeds, system creates the new user account
-12. System sends a confirmation email to the user's email address
-13. System displays a success message confirming registration
-14. System redirects the user to the login page
-15. User can now log in with their new credentials
+### User Registration Flow
 
-**Registration Error Handling**:
-- IF email is invalid format, THEN system shows "Please enter a valid email address" and highlights the email field
-- IF email is already registered, THEN system shows "This email is already registered" and suggests login instead
-- IF password is too weak, THEN system shows specific requirements not met and highlights the password field
-- IF passwords don't match, THEN system shows "Passwords do not match" and highlights the confirmation field
-- IF required fields are empty, THEN system shows "Please fill in all required fields" and highlights empty fields
-
-### User Login Journey
-
-This workflow shows how existing users authenticate and access their todo lists.
+The following diagram illustrates the complete user registration process from initial sign-up through email verification and first login.
 
 ```mermaid
-graph LR
-    A["User Visits Application"] --> B["User Clicks Login"]
-    B --> C["System Displays Login Form"]
-    C --> D["User Enters Email"]
-    D --> E["User Enters Password"]
-    E --> F["User Optionally Selects Remember Me"]
-    F --> G["User Submits Login"]
-    G --> H{"System Validates Credentials"}
-    H -->|"Invalid Credentials"| I["System Shows Error"]
-    I --> C
-    H -->|"Valid Credentials"| J["System Creates Session"]
-    J --> K["System Generates JWT Tokens"]
-    K --> L["System Stores Tokens"]
-    L --> M["System Redirects to Dashboard"]
-    M --> N["User Accesses Todo List"]
+graph TB
+    A["Visitor Accesses Registration"] --> B["Visitor Submits Email and Password"]
+    B --> C{"Email Already Registered?"}
+    C -->|"Yes"| D["Show Error: Email Already Exists"]
+    C -->|"No"| E{"Password Meets Requirements?"}
+    E -->|"No"| F["Show Error: Password Too Weak"]
+    E -->|"Yes"| G["Create User Account (Unverified)"]
+    G --> H["Generate Email Verification Token"]
+    H --> I["Send Verification Email"]
+    I --> J["Show Success: Check Email for Verification"]
+    
+    K["User Clicks Verification Link"] --> L{"Verification Token Valid?"}
+    L -->|"No"| M["Show Error: Invalid or Expired Link"]
+    L -->|"Yes"| N["Activate User Account"]
+    N --> O["Show Success: Account Verified"]
+    O --> P["User Can Now Login"]
 ```
 
-**Login Journey Steps**:
-1. User visits the application or clicks the login link
-2. System displays the login form
-3. User enters their registered email address
-4. User enters their password
-5. User optionally checks the "Remember Me" option for extended session
-6. User submits the login form
-7. System validates the provided credentials
-8. If credentials are invalid, system displays error message and user tries again
-9. If credentials are valid, system creates an authenticated session
-10. System generates JWT access token and refresh token
-11. System stores tokens securely (localStorage or httpOnly cookie)
-12. System redirects user to their todo dashboard
-13. User can now access and manage their todo list
+**Registration Business Requirements**:
 
-**Login Error Handling**:
-- IF credentials are invalid, THEN system shows "Invalid email or password" without specifying which is wrong
-- IF account is locked, THEN system shows "Account is temporarily locked. Please try again later or reset your password"
-- IF too many failed attempts, THEN system locks account and shows "Too many failed login attempts. Account locked for 30 minutes"
-- IF email field is empty, THEN system shows "Please enter your email address"
-- IF password field is empty, THEN system shows "Please enter your password"
+- WHEN a visitor accesses the registration page, THE system SHALL display a form requesting email address and password.
+- WHEN a visitor submits registration information, THE system SHALL validate email format using standard RFC 5322 email address pattern matching.
+- WHEN a visitor submits registration information, THE system SHALL validate the password meets all strength requirements (length, character types, not common password).
+- WHEN the submitted email is already registered in the system, THE system SHALL reject registration with HTTP 409 Conflict status and error message "This email address is already registered. Please use a different email or try logging in".
+- WHEN registration data passes all validation, THE system SHALL create a new user account in unverified state with verified flag set to false.
+- WHEN a user account is created, THE system SHALL generate a cryptographically random email verification token valid for 24 hours.
+- WHEN an email verification token is generated, THE system SHALL send a verification email to the registered email address.
+- WHEN verification email is sent, THE email SHALL contain a clickable verification link with the verification token as parameter.
+- WHEN verification email is sent, THE system SHALL display success message "Registration successful! Please check your email for a verification link to activate your account".
+- WHEN a user clicks the verification link, THE system SHALL validate the token for authenticity, expiration, and that it matches an unverified user account.
+- WHEN the verification token is valid, THE system SHALL update the user account to set verified flag to true.
+- WHEN account verification succeeds, THE system SHALL display success message "Your email has been verified successfully! You can now log in to your account".
+- WHEN the verification token is invalid or expired, THE system SHALL display error message "This verification link is invalid or has expired. Please request a new verification email".
+- WHEN a verification token has expired, THE system SHALL provide functionality to request a new verification email.
 
-### Password Recovery Journey
+**Registration Flow Edge Cases**:
 
-This workflow shows how users recover access when they forget their passwords.
+- WHEN a user with unverified account tries to register again with the same email, THE system SHALL provide option to resend verification email rather than creating duplicate account.
+- WHEN verification email fails to send due to invalid email address, THE system SHALL log the error but still show success message to prevent email validation abuse.
+- WHEN a user verifies their account multiple times using the same valid token, THE system SHALL accept the verification idempotently without error.
+
+### Login Authentication Flow
+
+The following diagram shows the authentication process when users login and how JWT tokens are issued and used.
 
 ```mermaid
-graph LR
-    A["User Clicks Forgot Password"] --> B["System Displays Email Form"]
-    B --> C["User Enters Email"]
-    C --> D["User Submits Request"]
-    D --> E["System Sends Reset Email"]
-    E --> F["User Checks Email"]
-    F --> G["User Clicks Reset Link"]
-    G --> H{"Token Valid?"}
-    H -->|"Expired/Invalid"| I["System Shows Error"]
-    I --> J["System Offers to Resend"]
-    H -->|"Valid"| K["System Shows Password Form"]
-    K --> L["User Enters New Password"]
-    L --> M["User Confirms Password"]
-    M --> N["User Submits"]
-    N --> O{"Password Valid?"}
-    O -->|"Invalid"| P["System Shows Requirements"]
-    P --> K
-    O -->|"Valid"| Q["System Updates Password"]
-    Q --> R["System Sends Confirmation Email"]
-    R --> S["System Shows Success"]
-    S --> T["User Can Login"]
+graph TB
+    A["User Submits Login Credentials"] --> B{"Email Exists?"}
+    B -->|"No"| C["Show Error: Invalid Credentials"]
+    B -->|"Yes"| D{"Password Correct?"}
+    D -->|"No"| E["Increment Failed Attempts"]
+    E --> F{"Failed Attempts >= 5?"}
+    F -->|"Yes"| G["Lock Account for 30 Minutes"]
+    G --> H["Send Account Locked Email"]
+    H --> I["Show Error: Account Locked"]
+    F -->|"No"| C
+    
+    D -->|"Yes"| J{"Account Verified?"}
+    J -->|"No"| K["Show Error: Please Verify Email"]
+    J -->|"Yes"| L{"Account Active?"}
+    L -->|"No"| M["Show Error: Account Deactivated"]
+    L -->|"Yes"| N["Generate JWT Access Token"]
+    N --> O["Generate JWT Refresh Token"]
+    O --> P["Reset Failed Login Attempts"]
+    P --> Q["Return Tokens to Client"]
+    Q --> R["User Successfully Authenticated"]
 ```
 
-**Password Recovery Steps**:
-1. User clicks "Forgot Password" link on login page
-2. System displays email entry form
-3. User enters their registered email address
-4. User submits the password reset request
-5. System sends password reset email with secure link (if email exists)
-6. System displays confirmation message "If the email exists, a reset link has been sent"
-7. User checks their email inbox
-8. User clicks the password reset link in the email
-9. System validates the reset token
-10. If token is expired or invalid, system shows error and offers to send a new link
-11. If token is valid, system displays password reset form
-12. User enters their new password
-13. User confirms the new password
-14. User submits the new password
-15. System validates password strength requirements
-16. If password is invalid, system shows specific requirements and user corrects it
-17. If password is valid, system updates the user's password
-18. System sends confirmation email about password change
-19. System displays success message
-20. System redirects user to login page
-21. User can now log in with the new password
+**Login Business Requirements**:
 
-**Password Recovery Security**:
-- THE system SHALL expire reset links after 1 hour
-- THE system SHALL invalidate reset links after one use
-- THE system SHALL not reveal whether an email exists in the system
-- THE system SHALL rate-limit password reset requests to prevent abuse
-- THE system SHALL notify users via email when password is changed
+- WHEN a user accesses the login page, THE system SHALL display a form requesting email address and password.
+- WHEN a user submits login credentials, THE system SHALL validate both email format and that password field is not empty.
+- WHEN a user submits login credentials, THE system SHALL query the database to verify the email exists.
+- WHEN the submitted email does not exist in the system, THE system SHALL return HTTP 401 Unauthorized with generic error message "Invalid email or password".
+- WHEN the email exists, THE system SHALL verify the submitted password matches the stored password hash.
+- WHEN the password is incorrect, THE system SHALL increment the failed login attempt counter for that email address.
+- WHEN the password is incorrect, THE system SHALL return HTTP 401 Unauthorized with generic error message "Invalid email or password".
+- WHEN failed login attempts for an email reach 5 attempts within a 15-minute sliding window, THE system SHALL lock that account for 30 minutes.
+- WHEN an account is locked, THE system SHALL send email notification to the registered address with message "Your account has been temporarily locked due to multiple failed login attempts. Access will be restored in 30 minutes".
+- WHEN an account is locked, THE system SHALL return HTTP 403 Forbidden with error message "Your account has been temporarily locked due to multiple failed login attempts. Please try again in 30 minutes or contact support".
+- WHEN credentials are correct, THE system SHALL verify the account's email has been verified (verified flag is true).
+- WHEN the account is unverified, THE system SHALL return HTTP 403 Forbidden with error message "Please verify your email address before logging in. Check your inbox for the verification link".
+- WHEN the account is verified, THE system SHALL check if the account is active (not deactivated by admin).
+- WHEN the account is deactivated, THE system SHALL return HTTP 403 Forbidden with error message "This account has been deactivated. Please contact support for assistance".
+- WHEN all checks pass (credentials valid, account verified, account active), THE system SHALL generate a JWT access token containing user ID, email, role, and permissions with 30-minute expiration.
+- WHEN authentication succeeds, THE system SHALL generate a JWT refresh token containing user ID and new token family ID with 30-day expiration.
+- WHEN authentication succeeds, THE system SHALL reset the failed login attempt counter to zero for that email.
+- WHEN tokens are generated, THE system SHALL return both access token and refresh token to the client with HTTP 200 OK status.
+- THE system SHALL complete the entire login process within 2 seconds under normal system load.
 
-### Session Lifecycle
+**Login Security Considerations**:
 
-This workflow shows how user sessions are created, maintained, and terminated.
+- THE system SHALL use constant-time password comparison to prevent timing attacks.
+- THE system SHALL never reveal whether login failure was due to incorrect email or incorrect password.
+- THE system SHALL rate limit login attempts from the same IP address to prevent distributed brute force attacks.
+- THE system SHALL log all login attempts (successful and failed) including timestamp, IP address, user agent for security monitoring.
+
+### Token Refresh Flow
+
+The following diagram illustrates how clients obtain new access tokens using refresh tokens without requiring full re-authentication.
 
 ```mermaid
-graph LR
-    A["User Logs In"] --> B["System Creates Session"]
-    B --> C["System Generates Tokens"]
-    C --> D["User Access Resources"]
-    D --> E{"Token Expired?"}
-    E -->|"No"| D
-    E -->|"Yes"| F{"Refresh Token Valid?"}
-    F -->|"Yes"| G["System Issues New Access Token"]
-    G --> D
-    F -->|"No"| H["System Requires Re-authentication"]
-    H --> I["User Logs In Again"]
-    D --> J["User Logs Out"]
-    J --> K["System Revokes Tokens"]
-    K --> L["System Ends Session"]
+graph TB
+    A["Access Token Expired"] --> B["Client Presents Refresh Token"]
+    B --> C{"Refresh Token Valid?"}
+    C -->|"No"| D["Show Error: Authentication Required"]
+    D --> E["Redirect to Login"]
+    
+    C -->|"Yes"| F{"Refresh Token Expired?"}
+    F -->|"Yes"| D
+    F -->|"No"| G{"Token Previously Used?"}
+    G -->|"Yes"| H["Detect Token Theft"]
+    H --> I["Revoke Entire Token Family"]
+    I --> J["Send Security Alert Email"]
+    J --> K["Require Full Re-Authentication"]
+    
+    G -->|"No"| L["Mark Refresh Token as Used"]
+    L --> M["Generate New Access Token"]
+    M --> N["Generate New Refresh Token (Same Family)"]
+    N --> O["Return New Tokens to Client"]
+    O --> P["Client Continues with New Access Token"]
 ```
 
-**Session Lifecycle Steps**:
-1. User successfully logs in
-2. System creates a new session
-3. System generates access token (30-minute expiration) and refresh token (7-30 day expiration)
-4. User makes requests to access their todos using the access token
-5. System validates the access token on each request
-6. When access token expires, system checks if refresh token is valid
-7. If refresh token is valid, system issues a new access token
-8. User continues accessing resources with the new access token
-9. If refresh token is invalid or expired, system requires full re-authentication
-10. When user clicks logout, system revokes all tokens
-11. System ends the session and clears all authentication data
-12. User is redirected to login page
+**Token Refresh Business Requirements**:
 
-**Session Maintenance**:
-- WHILE the user is active, THE system SHALL automatically extend session duration
-- WHEN the user is inactive for 30 minutes, THE system SHALL expire the session
-- WHEN the access token expires, THE system SHALL attempt automatic renewal using refresh token
-- IF refresh token renewal fails, THEN THE system SHALL prompt user to log in again
+- WHEN an access token expires during active user session, THE client application SHALL automatically request new access token using the refresh token.
+- WHEN the client requests token refresh, THE client SHALL present the refresh token to the token refresh endpoint.
+- WHEN the system receives a refresh token, THE system SHALL validate the token signature using the configured signing key.
+- WHEN the token signature is invalid, THE system SHALL reject the request with HTTP 401 Unauthorized and error message "Invalid refresh token. Please log in again".
+- WHEN the token signature is valid, THE system SHALL validate the token expiration timestamp.
+- WHEN the refresh token is expired, THE system SHALL reject the request with HTTP 401 Unauthorized and error message "Refresh token has expired. Please log in again".
+- WHEN the refresh token is valid and not expired, THE system SHALL check if this token has been previously used (consumed).
+- WHEN a previously-consumed refresh token is presented, THE system SHALL detect this as potential token theft.
+- WHEN token theft is detected, THE system SHALL revoke all refresh tokens in the same token family to protect the user account.
+- WHEN token theft is detected, THE system SHALL send email security alert to the user notifying them of suspicious activity.
+- WHEN token theft is detected, THE system SHALL reject the request and require full user re-authentication.
+- WHEN the refresh token is valid and has not been previously used, THE system SHALL mark the token as consumed to prevent future reuse.
+- WHEN validation succeeds, THE system SHALL generate a new JWT access token with 30-minute expiration containing user ID, email, role, and permissions.
+- WHEN validation succeeds, THE system SHALL generate a new JWT refresh token with the same token family ID and 30-day expiration.
+- WHEN new tokens are generated, THE system SHALL return both new access token and new refresh token to the client with HTTP 200 OK status.
+- THE system SHALL complete token refresh operations within 1 second under normal system load to minimize user experience interruption.
+
+**Token Refresh Edge Cases**:
+
+- WHEN a user's account is deactivated by admin, THE system SHALL reject token refresh attempts for that user.
+- WHEN a user changes their password, previously-issued refresh tokens SHALL be revoked and token refresh SHALL fail.
+- WHEN a user logs out from all devices, all refresh tokens SHALL be revoked and token refresh SHALL fail.
+
+### Password Reset Flow
+
+The following diagram shows the password reset process for users who have forgotten their passwords.
+
+```mermaid
+graph TB
+    A["User Requests Password Reset"] --> B["User Provides Email Address"]
+    B --> C{"Email Exists in System?"}
+    C -->|"Yes"| D["Generate Password Reset Token"]
+    C -->|"No"| E["Show Generic Success Message"]
+    
+    D --> F["Send Password Reset Email"]
+    F --> E
+    E --> G["User Checks Email"]
+    
+    H["User Clicks Reset Link"] --> I{"Reset Token Valid?"}
+    I -->|"No"| J["Show Error: Invalid or Expired Link"]
+    I -->|"Yes"| K["Display New Password Form"]
+    K --> L["User Submits New Password"]
+    L --> M{"Password Meets Requirements?"}
+    M -->|"No"| N["Show Error: Password Too Weak"]
+    M -->|"Yes"| O["Update User Password"]
+    O --> P["Revoke All User Sessions"]
+    P --> Q["Send Password Changed Email"]
+    Q --> R["Show Success: Password Updated"]
+    R --> S["User Can Login with New Password"]
+```
+
+**Password Reset Business Requirements**:
+
+**Reset Request Phase**:
+
+- WHEN a user accesses the password reset page, THE system SHALL display a form requesting email address.
+- WHEN a user submits email address for password reset, THE system SHALL validate the email format.
+- WHEN email format is invalid, THE system SHALL display error "Please enter a valid email address".
+- WHEN email format is valid, THE system SHALL check if the email exists in the user database.
+- WHEN the email exists in the system, THE system SHALL generate a cryptographically random password reset token valid for 1 hour.
+- WHEN a reset token is generated, THE system SHALL store the token associated with the user account with expiration timestamp.
+- WHEN a reset token is generated, THE system SHALL send password reset email to the registered email address.
+- WHEN reset email is sent, THE email SHALL contain a clickable password reset link with the token as parameter.
+- WHEN reset email is sent, THE email SHALL include clear instructions and expiration time information (1 hour).
+- WHEN a password reset request is submitted, THE system SHALL always display generic success message "If an account exists with that email address, you will receive password reset instructions" regardless of whether email exists.
+- THE system SHALL never reveal whether an email address is registered to prevent account enumeration attacks.
+
+**Password Reset Completion Phase**:
+
+- WHEN a user clicks the password reset link, THE system SHALL extract and validate the reset token from the URL parameter.
+- WHEN the reset token is validated, THE system SHALL check token signature, expiration, and that it matches a valid user account.
+- WHEN the reset token is invalid or does not match any user account, THE system SHALL display error "This password reset link is invalid or has expired. Please request a new password reset".
+- WHEN the reset token is expired (more than 1 hour old), THE system SHALL display error "This password reset link has expired. Password reset links are valid for 1 hour. Please request a new password reset".
+- WHEN the reset token is valid and not expired, THE system SHALL display a password change form allowing the user to enter a new password.
+- WHEN the user submits new password through the reset form, THE system SHALL validate the new password meets all password strength requirements.
+- WHEN the new password fails strength requirements, THE system SHALL display specific error messages indicating which requirements are not met (minimum length, required character types, etc.).
+- WHEN the new password meets all requirements, THE system SHALL update the user's password in the database with proper hashing and salting.
+- WHEN the password is successfully updated, THE system SHALL mark the reset token as used to prevent reuse.
+- WHEN the password is successfully updated, THE system SHALL revoke all existing refresh tokens for that user to terminate all active sessions.
+- WHEN the password is successfully updated, THE system SHALL send confirmation email to the user's registered email address.
+- WHEN password change confirmation email is sent, THE email SHALL include timestamp and originating IP address of the password change.
+- WHEN the password reset is complete, THE system SHALL display success message "Your password has been reset successfully. Please log in with your new password".
+- WHEN password reset completes, THE system SHALL redirect the user to the login page.
+
+**Password Reset Security Requirements**:
+
+- THE system SHALL expire password reset tokens after 1 hour from generation.
+- THE system SHALL allow only one-time use of password reset tokens.
+- WHEN a password reset token is successfully used, THE system SHALL immediately mark it as consumed to prevent reuse.
+- THE system SHALL implement rate limiting on password reset requests to prevent email flooding (maximum 5 requests per email address per hour).
+- THE system SHALL log all password reset requests and completions for security auditing.
+
+## Actor-Specific Business Requirements
+
+### User Actor Business Requirements
+
+**Account Self-Management Capabilities**:
+
+- THE system SHALL allow any visitor to register a new user account without requiring administrative approval or intervention.
+- THE system SHALL allow users to login and logout independently without administrative assistance.
+- THE system SHALL allow users to view and update their own account profile information.
+- THE system SHALL allow users to change their own passwords after verifying their current password.
+- THE system SHALL allow users to reset forgotten passwords through email verification without contacting administrators.
+- THE system SHALL allow users to request new email verification if the original verification email is lost or expired.
+- THE system SHALL allow users to delete their own accounts, which permanently removes their account and all associated data.
+
+**Todo Item Ownership and Isolation**:
+
+- WHEN a user creates a todo item, THE system SHALL assign exclusive ownership of that item to the creating user.
+- WHEN a user creates a todo item, THE system SHALL store the user ID with the todo item to track ownership.
+- WHEN a user views their todo list, THE system SHALL display ONLY todo items where the user ID matches the authenticated user's ID.
+- WHEN a user requests a specific todo item, THE system SHALL verify the todo item's user ID matches the authenticated user before returning data.
+- THE system SHALL prevent users from viewing any other user's todo items through any interface or API.
+- THE system SHALL prevent users from modifying any other user's todo items through any interface or API.
+- THE system SHALL prevent users from deleting any other user's todo items through any interface or API.
+- WHEN a user attempts to access another user's todo item, THE system SHALL return HTTP 403 Forbidden error.
+
+**Todo Item Operations**:
+
+- THE system SHALL allow users to create unlimited todo items for their personal use.
+- THE system SHALL allow users to view a complete list of all their own todo items.
+- THE system SHALL allow users to view detailed information for any of their own todo items.
+- THE system SHALL allow users to mark their own todo items as complete to track task completion.
+- THE system SHALL allow users to mark their own previously-completed todo items as incomplete if status changes.
+- THE system SHALL allow users to delete their own todo items when no longer needed.
+- THE system SHALL immediately reflect todo item changes (create, update, delete) in the user's todo list.
+
+**User Data Privacy**:
+
+- THE system SHALL ensure users cannot discover other users' email addresses through any interface or API.
+- THE system SHALL ensure users cannot view other users' account information or profile details.
+- THE system SHALL ensure users cannot determine how many other users exist in the system.
+- THE system SHALL ensure users cannot determine what todo items other users have created.
+- THE system SHALL isolate user data completely from other users at the application and database level.
+- THE system SHALL never expose user identifiers or user count information to regular users.
+
+**Account Deletion**:
+
+- WHEN a user requests account deletion, THE system SHALL permanently delete the user account from the database.
+- WHEN a user account is deleted, THE system SHALL also permanently delete all todo items belonging to that user.
+- WHEN a user account is deleted, THE system SHALL revoke all authentication tokens for that user.
+- WHEN a user account is deleted, THE system SHALL send confirmation email to the user's email address.
+- THE system SHALL make account deletion irreversible - deleted accounts and data cannot be recovered.
+
+### Admin Actor Business Requirements
+
+**Inherited User Capabilities**:
+
+- THE system SHALL grant admins all capabilities available to regular users for managing their own personal todo items.
+- WHEN an admin creates a todo item for themselves, THE system SHALL assign it to the admin's personal user account.
+- WHEN an admin views their own todo list, THE system SHALL display their personal todo items like a regular user.
+- THE system SHALL allow admins to manage their own personal todo list using the same interfaces available to regular users.
+- Admins SHALL experience the same todo item creation, viewing, completion, and deletion flows as regular users for their own items.
+
+**User Management Capabilities**:
+
+- THE system SHALL allow admins to view a paginated list of all registered users in the system.
+- WHEN an admin views the user list, THE system SHALL display user email addresses, registration dates, account status, and role for each user.
+- THE system SHALL allow admins to view detailed information for any user account including profile data and account metadata.
+- THE system SHALL allow admins to deactivate user accounts to prevent login while preserving user data.
+- WHEN an admin deactivates a user account, THE system SHALL prevent that user from logging in.
+- WHEN an admin deactivates a user account, THE system SHALL revoke all active authentication tokens for that user.
+- THE system SHALL allow admins to reactivate previously deactivated user accounts to restore login access.
+- THE system SHALL allow admins to permanently delete user accounts from the system.
+- WHEN an admin deletes a user account, THE system SHALL also delete all todo items belonging to that user.
+- WHEN an admin deletes a user account, THE system SHALL revoke all authentication tokens for that user.
+- THE system SHALL allow admins to promote regular user accounts to admin status.
+- WHEN an admin promotes a user to admin, THE system SHALL update the user's role to "admin" and grant all admin permissions.
+- THE system SHALL allow admins to reset any user's password without requiring the current password.
+- WHEN an admin resets a user's password, THE system SHALL send email notification to that user.
+
+**Cross-User Data Access**:
+
+- THE system SHALL allow admins to view any user's todo list by specifying the user ID.
+- WHEN an admin views another user's todo list, THE system SHALL display all todo items belonging to that user.
+- THE system SHALL allow admins to view detailed information for any user's todo items.
+- THE system SHALL allow admins to delete any user's todo items when necessary for content moderation or user support.
+- WHEN an admin deletes another user's todo item, THE system SHALL remove the item immediately.
+- THE system SHALL NOT allow admins to modify or complete other users' todo items - only view and delete.
+- WHEN an admin performs any action on another user's data, THE system SHALL log the action for audit purposes.
+
+**System Oversight Capabilities**:
+
+- THE system SHALL allow admins to view system-wide statistics including total registered users, total active users, and total todo items.
+- THE system SHALL allow admins to access a dashboard displaying system health metrics and usage patterns.
+- THE system SHALL allow admins to monitor user activity and system performance.
+- THE system SHALL provide admins with reporting capabilities for business intelligence and system management.
+- THE system SHALL allow admins to view and search audit logs of administrative actions.
+
+**Admin Audit Trail Requirements**:
+
+- WHEN an admin views another user's account details, THE system SHALL log the access with timestamp, admin user ID, and viewed user ID.
+- WHEN an admin views another user's todo list, THE system SHALL log the access with timestamp, admin user ID, and viewed user ID.
+- WHEN an admin modifies another user's account (deactivate, delete, role change), THE system SHALL log the action with timestamp, admin user ID, target user ID, and action type.
+- WHEN an admin deletes another user's todo item, THE system SHALL log the action with timestamp, admin user ID, todo item ID, and owning user ID.
+- THE system SHALL maintain audit logs for compliance, security monitoring, and accountability.
+- THE system SHALL allow admins to review audit logs to investigate user reports or security incidents.
+- THE system SHALL retain audit logs for a sufficient period to support compliance requirements (at least 90 days).
+
+**Admin Account Security**:
+
+- THE system SHALL require admins to use the same strong password requirements as regular users.
+- THE system SHALL subject admin accounts to the same account lockout protection as regular users.
+- THE system SHALL send email notifications to admins for critical account events (password changes, role changes).
+- THE system SHALL log all admin authentication events for security monitoring.
 
 ## Security Requirements
 
-Security requirements ensure user data protection, authentication integrity, and system safety from unauthorized access.
+### Account Security Measures
 
-### Authentication Security
+**Password Protection Requirements**:
 
-**Credential Protection**:
-- THE system SHALL never store passwords in plain text
-- THE system SHALL hash all passwords using secure, industry-standard algorithms
-- THE system SHALL use unique salt values for each password hash
-- THE system SHALL reject passwords that match common password lists
-- THE system SHALL enforce password complexity requirements
+- THE system SHALL never store passwords in plain text format under any circumstances.
+- THE system SHALL use cryptographic hashing algorithms (such as bcrypt, scrypt, or Argon2) with appropriate computational cost factors for password storage.
+- THE system SHALL use unique cryptographic salts for each password to prevent rainbow table attacks.
+- THE system SHALL never transmit passwords in plain text over any communication channel.
+- THE system SHALL require all password transmission to occur over HTTPS encrypted connections only.
+- THE system SHALL never log passwords, password hashes, or password-related data in application logs, error logs, or debugging output.
+- THE system SHALL never display passwords to users, admins, or support staff in any interface.
+- THE system SHALL never include passwords in email communications or notifications.
 
-**Brute Force Protection**:
-- THE system SHALL rate-limit login attempts to prevent brute force attacks
-- THE system SHALL limit failed login attempts to 5 per 15-minute period per account
-- WHEN failed login attempts exceed the limit, THE system SHALL lock the account for 30 minutes
-- THE system SHALL log all failed login attempts with timestamp and IP address
-- THE system SHALL alert users via email when their account is locked
+**Brute Force Protection Requirements**:
 
-**Session Security**:
-- THE system SHALL generate cryptographically secure session identifiers
-- THE system SHALL ensure session identifiers are unpredictable and unique
-- THE system SHALL invalidate sessions immediately upon logout
-- THE system SHALL expire sessions after defined timeout periods
-- THE system SHALL prevent session fixation attacks
+- WHEN a user fails login authentication, THE system SHALL increment a failed login attempt counter associated with that email address.
+- WHEN the failed login attempt counter reaches 5 attempts within a 15-minute sliding time window, THE system SHALL temporarily lock the account for 30 minutes.
+- WHEN an account is locked due to failed login attempts, THE system SHALL send email notification to the registered email address.
+- WHEN account lockout email is sent, THE email SHALL include information about when access will be automatically restored (30 minutes).
+- WHEN an account is locked, THE system SHALL prevent all login attempts for that account until the lockout period expires.
+- WHEN the 30-minute lockout period expires, THE system SHALL automatically unlock the account and reset the failed attempt counter.
+- THE system SHALL allow admins to manually unlock user accounts before the automatic unlock time if needed.
+- WHEN an admin manually unlocks an account, THE system SHALL immediately restore access and reset the failed attempt counter.
+- WHEN a successful login occurs, THE system SHALL reset the failed login attempt counter to zero.
+- THE system SHALL track failed login attempts using a sliding time window to prevent circumvention by spacing out attempts.
 
-### Data Isolation Requirements
+**Session Security Requirements**:
 
-**User Data Separation**:
-- THE system SHALL ensure complete data isolation between users
-- THE system SHALL never return one user's data to another user
-- THE system SHALL filter all data queries by authenticated user ID
-- THE system SHALL verify ownership before any data modification or deletion
-- IF a user attempts to access another user's data, THEN THE system SHALL deny access and log the attempt
+- THE system SHALL enforce JWT access token expiration after 30 minutes from issuance.
+- THE system SHALL enforce JWT refresh token expiration after 30 days from issuance.
+- THE system SHALL not allow use of expired tokens for any purpose.
+- WHEN a user changes their password, THE system SHALL invalidate all existing refresh tokens except the current session.
+- WHEN a user requests logout from all devices, THE system SHALL invalidate all refresh tokens for that user.
+- THE system SHALL provide users the ability to view and revoke individual sessions if multiple device session management is implemented.
+- WHEN an admin deactivates a user account, THE system SHALL immediately invalidate all tokens for that user.
 
-**Authorization Enforcement**:
-- WHEN a user requests todo data, THE system SHALL verify the user owns the requested todos
-- WHEN a user modifies todo data, THE system SHALL verify the user owns the todos being modified
-- WHEN a user deletes todo data, THE system SHALL verify the user owns the todos being deleted
-- IF authorization check fails, THEN THE system SHALL return authorization error without revealing data existence
+### Token Security Requirements
 
-**Data Access Controls**:
-- THE system SHALL implement row-level security for all user data
-- THE system SHALL prevent direct object reference vulnerabilities
-- THE system SHALL use user-specific identifiers that cannot be guessed or enumerated
-- THE system SHALL validate all user input to prevent injection attacks
+**Token Transmission Security Requirements**:
 
-### Token Security
+- THE system SHALL require all authentication token transmission to occur exclusively over HTTPS encrypted connections.
+- THE system SHALL reject any requests containing authentication tokens over unencrypted HTTP connections.
+- THE system SHALL never include authentication tokens in URL query parameters where they may be logged by proxies, browsers, or web servers.
+- THE system SHALL transmit access tokens in the HTTP Authorization header using Bearer authentication scheme.
+- THE system SHALL never log token values (access tokens or refresh tokens) in application logs, error logs, web server logs, or debugging output.
+- THE system SHALL configure web servers and proxies to exclude Authorization headers from access logs.
 
-**JWT Security Requirements**:
-- THE system SHALL sign all JWTs with a strong, secret key
-- THE system SHALL rotate signing keys periodically
-- THE system SHALL validate JWT signatures on every request
-- THE system SHALL reject JWTs with invalid or missing signatures
-- THE system SHALL verify JWT expiration timestamps
+**Token Validation Security Requirements**:
 
-**Token Transmission Security**:
-- THE system SHALL transmit tokens only over HTTPS connections
-- THE system SHALL never include tokens in URL parameters or query strings
-- THE system SHALL include tokens in HTTP Authorization headers using Bearer scheme
-- THE system SHALL protect tokens from cross-site scripting (XSS) attacks
-- THE system SHALL implement Content Security Policy headers to prevent token theft
+- WHEN the system receives a JWT token, THE system SHALL validate the cryptographic signature matches the expected signature computed with the signing key.
+- WHEN the system receives a JWT token, THE system SHALL validate the token has not expired by checking the exp claim against current timestamp.
+- WHEN the system receives a refresh token, THE system SHALL validate the token has not been revoked by checking against the token revocation list.
+- WHEN the system receives a JWT token, THE system SHALL validate all required claims (userId, email, role, etc.) are present in the token payload.
+- WHEN any token validation check fails, THE system SHALL reject the token and deny the request with appropriate HTTP status code and error message.
+- THE system SHALL perform all token validation checks before executing any business logic or database operations.
 
-**Token Revocation**:
-- THE system SHALL maintain a revocation list for invalidated tokens
-- WHEN a token is revoked, THE system SHALL prevent its further use immediately
-- THE system SHALL check token revocation status on every request
-- THE system SHALL clean up expired tokens from revocation list regularly
+**Token Theft Prevention Requirements**:
 
-### Password Security
+- THE system SHALL implement token family tracking for all refresh tokens to enable detection of token reuse.
+- WHEN a refresh token is first issued during login, THE system SHALL generate a unique token family identifier.
+- WHEN a refresh token is used to obtain new tokens, THE system SHALL mark that token as consumed.
+- WHEN a previously-consumed refresh token is presented for token refresh, THE system SHALL treat this as potential token theft.
+- WHEN token theft is detected through refresh token reuse, THE system SHALL revoke all tokens in that token family.
+- WHEN token theft is detected, THE system SHALL send email security alert to the user notifying them of suspicious activity.
+- WHEN token theft is detected, THE system SHALL log the security event including IP addresses, user agents, and timestamps for investigation.
+- WHEN token theft is detected, THE system SHALL require full re-authentication (email and password) to restore access.
 
-**Password Storage Security**:
-- THE system SHALL use strong hashing algorithms (bcrypt, scrypt, or Argon2)
-- THE system SHALL configure hash algorithms with appropriate work factors
-- THE system SHALL never log passwords or include them in error messages
-- THE system SHALL prevent password exposure in system outputs or debugging information
+### Email Security Requirements
 
-**Password Transmission Security**:
-- THE system SHALL accept passwords only over HTTPS connections
-- THE system SHALL never transmit passwords in URLs or query parameters
-- THE system SHALL clear password fields after submission failures
-- THE system SHALL protect password input fields from keylogging and capture
+**Email Verification Requirements**:
 
-**Password Change Security**:
-- WHEN a password is changed, THE system SHALL require current password verification
-- WHEN a password is changed, THE system SHALL send notification to user's email
-- WHEN a password is changed, THE system SHALL optionally invalidate all existing sessions
-- WHEN a password is changed, THE system SHALL revoke all existing tokens
+- THE system SHALL require email verification before allowing users to login to their accounts.
+- THE system SHALL generate cryptographically random email verification tokens that cannot be guessed or predicted.
+- THE system SHALL expire email verification tokens after 24 hours from generation.
+- THE system SHALL allow users to request new verification emails if the original is lost or expired.
+- WHEN verification email is sent, THE system SHALL include clear instructions and a clickable verification link.
+- THE system SHALL validate email addresses to prevent invalid or malicious email formats from being registered.
 
-## Error Handling for Authentication
+**Email Communication Security Requirements**:
 
-This section defines all error scenarios that can occur during authentication processes and how the system should respond from the user's perspective.
+- THE system SHALL send email notifications for critical security events including password changes, password resets, account lockouts, and suspicious activity.
+- THE system SHALL never include sensitive information such as passwords, password hashes, or full authentication tokens in emails.
+- THE system SHALL use time-limited tokens for password reset links and email verification links.
+- THE system SHALL validate email format and structure to prevent email injection attacks.
+- WHEN sending emails, THE system SHALL use authenticated SMTP connections to prevent email spoofing.
+- WHEN sending emails, THE system SHALL implement SPF, DKIM, and DMARC records to verify email authenticity.
 
-### Registration Errors
+### Data Privacy and Protection Requirements
 
-**Email Validation Errors**:
-- IF email format is invalid, THEN THE system SHALL display "Please enter a valid email address"
-- IF email is already registered, THEN THE system SHALL display "This email is already registered. Please login instead."
-- IF email exceeds 255 characters, THEN THE system SHALL display "Email address is too long"
-- IF email field is empty, THEN THE system SHALL display "Email address is required"
+**Personal Data Protection Requirements**:
 
-**Password Validation Errors**:
-- IF password is shorter than 8 characters, THEN THE system SHALL display "Password must be at least 8 characters long"
-- IF password lacks uppercase letter, THEN THE system SHALL display "Password must contain at least one uppercase letter"
-- IF password lacks lowercase letter, THEN THE system SHALL display "Password must contain at least one lowercase letter"
-- IF password lacks numeric digit, THEN THE system SHALL display "Password must contain at least one number"
-- IF password is too common, THEN THE system SHALL display "This password is too common. Please choose a stronger password"
-- IF password exceeds 128 characters, THEN THE system SHALL display "Password is too long"
+- THE system SHALL encrypt sensitive user data at rest in the database.
+- THE system SHALL encrypt all data in transit using TLS/HTTPS with strong cipher suites.
+- THE system SHALL isolate user data to prevent unauthorized cross-user access at both application and database levels.
+- THE system SHALL provide users the ability to permanently delete their accounts and all associated data.
+- WHEN a user deletes their account, THE system SHALL permanently remove all personal data including profile information and todo items.
+- THE system SHALL implement data retention policies that define how long deleted data is retained in backups.
 
-**Password Confirmation Errors**:
-- IF passwords do not match, THEN THE system SHALL display "Passwords do not match. Please try again"
-- IF confirmation field is empty, THEN THE system SHALL display "Please confirm your password"
+**Admin Access Controls Requirements**:
 
-**System Errors During Registration**:
-- IF registration fails due to system error, THEN THE system SHALL display "Registration failed. Please try again later"
-- IF email sending fails, THEN THE system SHALL still create the account and display "Account created, but confirmation email could not be sent"
-- IF database is unavailable, THEN THE system SHALL display "Service temporarily unavailable. Please try again later"
+- THE system SHALL require admin authentication using the same JWT token mechanism as regular users.
+- THE system SHALL validate admin role and permissions before allowing access to administrative operations.
+- THE system SHALL log all admin access to user data for accountability and compliance.
+- WHEN an admin accesses user data, THE system SHALL record which admin user accessed what data at what time.
+- THE system SHALL prevent privilege escalation attacks where regular users attempt to gain admin privileges.
+- THE system SHALL validate user role from trusted source (JWT token claims) rather than client-supplied data.
 
-### Login Errors
+### Application Security Best Practices
 
-**Credential Validation Errors**:
-- IF email or password is incorrect, THEN THE system SHALL display "Invalid email or password"
-- IF email field is empty, THEN THE system SHALL display "Please enter your email address"
-- IF password field is empty, THEN THE system SHALL display "Please enter your password"
-- THE system SHALL use the same error message for wrong email and wrong password to prevent account enumeration
+**Input Validation Requirements**:
 
-**Account Status Errors**:
-- IF account is locked due to failed attempts, THEN THE system SHALL display "Account temporarily locked due to multiple failed login attempts. Please try again in 30 minutes or reset your password"
-- IF account is suspended, THEN THE system SHALL display "Account access is restricted. Please contact support"
-- IF account requires email verification, THEN THE system SHALL display "Please verify your email address before logging in"
+- THE system SHALL validate and sanitize all user input before processing to prevent injection attacks (SQL injection, NoSQL injection, XSS).
+- THE system SHALL enforce input length limits to prevent buffer overflow and denial of service attacks.
+- THE system SHALL validate data types and formats match expected values before processing.
+- THE system SHALL reject input containing potentially malicious patterns or characters.
+- THE system SHALL use parameterized queries or ORM frameworks to prevent SQL injection.
 
-**Rate Limiting Errors**:
-- IF too many login attempts from same IP, THEN THE system SHALL display "Too many login attempts. Please wait before trying again"
-- IF account reaches failed attempt limit, THEN THE system SHALL lock account and display lockout message
-- THE system SHALL log all rate-limiting events for security monitoring
+**Error Handling Requirements**:
 
-**System Errors During Login**:
-- IF authentication service is unavailable, THEN THE system SHALL display "Login service temporarily unavailable. Please try again later"
-- IF token generation fails, THEN THE system SHALL display "Login failed. Please try again"
-- IF session creation fails, THEN THE system SHALL display "Unable to create session. Please try again"
+- THE system SHALL never expose sensitive system information in error messages shown to users.
+- THE system SHALL provide generic error messages for authentication failures that do not reveal whether email or password was incorrect.
+- THE system SHALL log detailed error information securely on the server for debugging while showing user-friendly messages to clients.
+- THE system SHALL never expose stack traces, database errors, or internal system details in API responses.
+- THE system SHALL implement global exception handling to catch unexpected errors and return safe error messages.
 
-### Token Errors
+**Rate Limiting Requirements**:
 
-**Access Token Errors**:
-- IF access token is missing, THEN THE system SHALL return "Authentication required. Please log in"
-- IF access token is expired, THEN THE system SHALL return "Session expired. Please refresh or log in again"
-- IF access token signature is invalid, THEN THE system SHALL return "Invalid authentication token. Please log in again"
-- IF access token is malformed, THEN THE system SHALL return "Invalid authentication. Please log in again"
+- THE system SHALL implement rate limiting on authentication endpoints (login, registration, password reset) to prevent abuse.
+- THE system SHALL limit login attempts to prevent brute force attacks (maximum 10 attempts per IP address per minute).
+- THE system SHALL limit registration attempts to prevent automated account creation (maximum 5 registrations per IP address per hour).
+- THE system SHALL limit password reset requests to prevent email flooding (maximum 5 requests per email address per hour).
+- THE system SHALL implement rate limiting on API endpoints to prevent denial of service attacks.
+- WHEN rate limits are exceeded, THE system SHALL return HTTP 429 Too Many Requests status with appropriate retry-after information.
 
-**Refresh Token Errors**:
-- IF refresh token is missing, THEN THE system SHALL require full re-authentication
-- IF refresh token is expired, THEN THE system SHALL return "Session expired. Please log in again"
-- IF refresh token is invalid, THEN THE system SHALL return "Invalid session. Please log in again"
-- IF refresh token has been revoked, THEN THE system SHALL return "Session invalidated. Please log in again"
-- IF refresh token reuse is detected, THEN THE system SHALL revoke all tokens and require re-authentication
+## Conclusion and Developer Autonomy
 
-**Token Renewal Errors**:
-- IF token renewal fails, THEN THE system SHALL prompt user to log in again
-- IF token refresh service is unavailable, THEN THE system SHALL display "Unable to refresh session. Please log in again"
+This document provides comprehensive business requirements for user actors and authentication in the Todo list application. It defines two user actor types (User and Admin), specifies complete authentication flows using JWT tokens, establishes a detailed permission matrix, and outlines security requirements from a business and functional perspective.
 
-### Session Errors
+The document describes WHAT the authentication system must accomplish from the user's perspective and HOW users will experience authentication, authorization, and account management. It specifies business rules, security requirements, and user workflows that the system must support.
 
-**Session Validation Errors**:
-- IF session is expired, THEN THE system SHALL redirect to login and display "Your session has expired. Please log in again"
-- IF session is invalid, THEN THE system SHALL redirect to login and display "Invalid session. Please log in again"
-- IF session does not exist, THEN THE system SHALL redirect to login and display "Please log in to continue"
+All technical implementation decisions—including specific API endpoint design, HTTP methods and request/response formats, database schema and table structures, ORM configuration, token storage mechanisms in database, cryptographic algorithm selection, password hashing library choice, JWT signing algorithm, email service provider selection, and security implementation approaches—are at the full discretion of the development team.
 
-**Session Timeout Errors**:
-- WHEN session timeout is approaching, THE system SHALL optionally warn user "Your session will expire in 5 minutes"
-- WHEN session expires due to inactivity, THE system SHALL display "Session expired due to inactivity. Please log in again"
-
-**Concurrent Session Errors**:
-- IF session limit is reached, THEN THE system SHALL optionally display "Maximum sessions reached. Please log out from another device"
-- IF user's session is terminated remotely, THEN THE system SHALL display "Your session was ended. Please log in again"
-
----
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (authentication architecture, API design, database schemas, encryption algorithms, token storage mechanisms, etc.) are at the discretion of the development team.*
+Backend developers should use this specification to understand business requirements, user expectations, and security standards, then apply their technical expertise and best practices to implement a secure, scalable, production-ready authentication system that meets these requirements using NestJS, Prisma, and other appropriate technologies.

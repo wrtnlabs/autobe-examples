@@ -1,53 +1,65 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallProduct } from "../../../structures/IShoppingMallProduct";
 import { IPageIShoppingMallProduct } from "../../../structures/IPageIShoppingMallProduct";
-export * as media from "./media/index";
-export * as optionTypes from "./optionTypes/index";
+export * as images from "./images/index";
+export * as tags from "./tags/index";
 export * as skus from "./skus/index";
 export * as reviews from "./reviews/index";
 export * as ratingAggregates from "./ratingAggregates/index";
 
 /**
- * Search and retrieve a paginated list of products from the
- * shopping_mall_products table using complex filters.
+ * Search and paginate products based on filters using the
+ * shopping_mall_products table.
  *
- * Retrieve a filtered and paginated list of products from the shopping mall
- * catalog using a JSON-based search request.
+ * Search and retrieve a filtered, paginated list of products from the
+ * ShoppingMall catalog.
  *
- * This endpoint is backed by the `shopping_mall_products` Prisma model, which
- * defines the core product entities used throughout the shopping mall platform.
- * Clients send an `IShoppingMallProduct.IRequest` object in the request body to
- * describe their search: this can include free-text keywords, category
- * identifiers, brand identifiers, price boundaries, stock availability filters,
- * sort orders, and pagination controls. The server converts this DTO into
- * Prisma queries over `shopping_mall_products` and its related models, ensuring
- * that only fields actually present in the schema are referenced.
+ * This operation targets the Prisma table `shopping_mall_products`, which
+ * represents the core product catalog entity owned by sellers on the
+ * ShoppingMall platform. While the underlying schema may include relations to
+ * images, localized content, categories, tags, and visibility rules, this
+ * endpoint focuses on returning an efficient summary representation of each
+ * product, suitable for list and grid views. Only fields necessary for
+ * listing—such as product identifiers, display name, primary image, key pricing
+ * information, and essential status flags—are included in
+ * `IShoppingMallProduct.ISummary`.
  *
- * The response body uses `IPageIShoppingMallProduct.ISummary` to return a page
- * of product summary records along with pagination metadata such as total
- * record count and current page information. Each summary is tailored for
- * catalog listing views and typically includes only the most relevant product
- * fields, while more detailed product information can be retrieved using
- * dedicated detail endpoints. This search API is designed for high-frequency
- * read scenarios used by both guests and authenticated users when browsing or
- * filtering products, so it is exposed as a public operation with
- * `authorizationActors: []`, while internal rules for hiding inactive,
- * restricted, or region-specific products are enforced internally based on the
- * data in `shopping_mall_products` and its related tables.
+ * The request body typed as `IShoppingMallProduct.IRequest` allows clients to
+ * specify rich search criteria. Typical filters may include category or subtree
+ * of categories, seller identifiers, tag-based inclusion/exclusion, minimum and
+ * maximum price ranges, stock or availability conditions, and generic keyword
+ * search that integrates with catalog search indices. Pagination parameters
+ * (such as page number or cursor tokens, and page size) and sorting preferences
+ * (e.g., newest, price ascending/descending, best-selling, or relevance) are
+ * also expressed via this DTO. The design ensures that list queries remain
+ * stable and predictable even when result sets are large.
  *
- * Error handling should validate the structure of the
- * `IShoppingMallProduct.IRequest` payload and respond with clear messages when
- * unsupported filters, sort fields, or pagination parameters are supplied. This
- * ensures that clients can reliably construct complex catalog queries without
- * depending on undocumented behavior.
+ * From a security perspective, the endpoint is read-only and exposed publicly,
+ * so `authorizationActors` is an empty array. Business-logic level visibility
+ * filtering—such as hiding blocked products, respecting catalog visibility
+ * rules, and excluding items constrained by legal or policy restrictions—is
+ * enforced inside the implementation using information from related models like
+ * `shopping_mall_catalog_visibility_rules` and
+ * `shopping_mall_catalog_block_reasons`. Sensitive internal fields (for
+ * example, seller cost structures or internal risk flags on products) are never
+ * exposed in the summary DTO.
+ *
+ * This operation is typically used alongside the product detail endpoint `GET
+ * /products/{productId}`. Clients first call this search endpoint to obtain a
+ * paginated set of `IShoppingMallProduct.ISummary` items, then invoke the
+ * detail endpoint for specific products when the user opens a product detail
+ * page. Errors returned by this endpoint mainly relate to invalid search
+ * parameters, unsupported sort options, or paging arguments outside allowed
+ * bounds; in all cases, the API should return clear validation error messages
+ * so that the client can correct the request.
  *
  * @param props.connection
- * @param props.body Search, filtering, sorting, and pagination criteria for
- *   querying products from the shopping_mall_products table
+ * @param props.body Search criteria, pagination, and sorting options for
+ *   querying ShoppingMall products.
  * @path /shoppingMall/products
  * @accessor api.functional.shoppingMall.products.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -77,8 +89,8 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search, filtering, sorting, and pagination criteria for querying
-     * products from the shopping_mall_products table
+     * Search criteria, pagination, and sorting options for querying
+     * ShoppingMall products.
      */
     body: IShoppingMallProduct.IRequest;
   };
@@ -127,44 +139,54 @@ export namespace index {
 }
 
 /**
- * Get a shopping_mall_products record by its unique product code.
+ * Retrieve a single product detail from the shopping_mall_products table by
+ * productId.
  *
- * Retrieve detailed information for a single catalog product identified by its
- * business-visible product code from the shopping_mall_products table.
+ * Retrieve detailed information for a single ShoppingMall product identified by
+ * its unique product identifier.
  *
- * The primary purpose of this operation is to provide all core product
- * attributes needed to render a product detail page or to support internal
- * business workflows that require a canonical view of a product. It exposes
- * fields defined in the Prisma model such as `code`, `name`,
- * `short_description`, `description`, `status`, `is_multi_sku`,
- * `primary_image_uri`, `additional_data`, `created_at`, `updated_at`, and
- * `deleted_at`, as well as foreign key links to the owning seller
- * (`shopping_mall_seller_id`) and optional brand (`shopping_mall_brand_id`).
- * The `code` column is described in the schema as a business-visible identifier
- * and is globally unique, which is why this API uses `{productCode}` as its
- * path parameter.
+ * This operation is backed by the Prisma model `shopping_mall_products`, the
+ * primary table that models sellable product concepts on the ShoppingMall
+ * platform. Each row in this table typically contains core product attributes
+ * such as the owning seller, base name, descriptive fields, primary
+ * categorization, and other fundamental attributes. The endpoint resolves the
+ * product by the `productId` path parameter, which maps directly to the primary
+ * key of `shopping_mall_products` and is usually encoded as a UUID string.
  *
- * From a security perspective, this endpoint is public and does not require
- * authentication, because product catalog data is typically visible to all
- * visitors of the shopping mall. However, the underlying implementation should
- * still respect business rules related to the `status` and `deleted_at` fields.
- * For example, products with a lifecycle status like `draft` or
- * `pending_review`, or with a non-null `deleted_at` timestamp, should generally
- * be excluded from public responses or handled according to specific visibility
- * rules configured elsewhere in the system.
+ * The response type `IShoppingMallProduct` is designed as the canonical
+ * full-detail view of a product. It may include nested structures for
+ * subsidiary data coming from related models, such as a collection of images
+ * from `shopping_mall_product_images`, localized titles and descriptions from
+ * `shopping_mall_product_localizations`, and summary rating information from
+ * aggregate tables like `shopping_mall_product_rating_aggregates` and
+ * `shopping_mall_sku_rating_aggregates`. While it exposes rich information
+ * necessary to render product detail pages, it intentionally omits
+ * internal-only fields like seller cost breakdowns or internal moderation
+ * flags.
  *
- * This operation reads directly from the shopping_mall_products table and does
- * not perform any mutations. If there is no product with the given `code`, the
- * implementation should return a suitable 404-style error. For successful
- * responses, it returns an `IShoppingMallProduct` instance. Other related
- * operations include a future list/search endpoint for products (e.g., PATCH
- * /products) and administrative endpoints for managing product lifecycle and
- * visibility, which are not part of this specification.
+ * From a security and business-rule standpoint, this endpoint is read-only and
+ * exposed without authentication (`authorizationActors` is an empty array).
+ * However, the implementation must still enforce catalog visibility policies
+ * and legal constraints, which may be defined in models such as
+ * `shopping_mall_catalog_visibility_rules` and
+ * `shopping_mall_catalog_block_reasons`. If a product is blocked, removed from
+ * sale, or otherwise not visible to the public, the implementation should
+ * respond with a 404 or an appropriate error status instead of exposing the
+ * product data. The operation is commonly paired with the search endpoint
+ * `PATCH /products`, where clients obtain product identifiers via search and
+ * then call this detail endpoint for specific selections.
+ *
+ * Typical error scenarios include invalid identifier format for `productId`,
+ * attempting to access a product that does not exist, or accessing a product
+ * that is not visible under current catalog rules. In all such cases, the API
+ * should respond with clear error messages, while successful calls return a
+ * single `IShoppingMallProduct` instance describing the requested product in
+ * full detail.
  *
  * @param props.connection
- * @param props.productCode Unique business-visible product code of the target
- *   product (global scope).
- * @path /shoppingMall/products/:productCode
+ * @param props.productId Unique identifier of the target product in the
+ *   shopping_mall_products table, typically represented as a UUID string.
+ * @path /shoppingMall/products/:productId
  * @accessor api.functional.shoppingMall.products.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -192,16 +214,16 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique business-visible product code of the target product (global
-     * scope).
+     * Unique identifier of the target product in the shopping_mall_products
+     * table, typically represented as a UUID string.
      */
-    productCode: string;
+    productId: string & tags.Format<"uuid">;
   };
   export type Response = IShoppingMallProduct;
 
   export const METADATA = {
     method: "GET",
-    path: "/shoppingMall/products/:productCode",
+    path: "/shoppingMall/products/:productId",
     request: null,
     response: {
       type: "application/json",
@@ -210,7 +232,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/products/${encodeURIComponent(props.productCode ?? "null")}`;
+    `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}`;
   export const random = (): IShoppingMallProduct =>
     typia.random<IShoppingMallProduct>();
   export const simulate = (
@@ -224,7 +246,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("productCode")(() => typia.assert(props.productCode));
+      assert.param("productId")(() => typia.assert(props.productId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

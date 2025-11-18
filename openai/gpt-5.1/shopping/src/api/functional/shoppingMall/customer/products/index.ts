@@ -1,2 +1,2 @@
-export * as skus from "./skus/index";
+export * as categories from "./categories/index";
 export * as reviews from "./reviews/index";

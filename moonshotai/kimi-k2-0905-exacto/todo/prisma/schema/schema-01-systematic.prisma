@@ -1,299 +1,59 @@
-/// System configuration and application-wide settings that govern the
-/// baseline behavior and operational parameters of the todo application.
+/// User account information for the Todo application.
 ///
-/// This table stores critical application settings including rate limits,
-/// feature toggles, maintenance modes, and global configuration options.
-/// Settings are typically managed by system administrators and referenced by
-/// application logic to enforce constraints and control application
-/// behavior.
+/// Stores authentication credentials and basic user profile information.
+/// Each user has exclusive access to their own tasks and data. User accounts
+/// support JWT-based authentication with session management across multiple
+/// devices.
 ///
-/// The configuration is designed to be flexible and scalable, supporting
-/// different deployment environments and operational requirements without
-/// requiring code changes. Settings include both technical parameters and
-/// business rule definitions that control the user experience across the
-/// entire application.
+/// Users can create, manage, and complete their personal todo tasks while
+/// maintaining data isolation from other accounts. The system supports
+/// password-based authentication with modern security standards.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_system_settings {
+model todo_app_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting. Used as a reference key
-  /// in application code to retrieve specific configuration values.
-  setting_key String
+  /// User email address for authentication and account identification. Must be
+  /// unique across all user accounts and follow valid email format.
+  email String
   
-  /// The actual configuration value for this setting. Can store various data
-  /// types as serialized strings including numbers, JSON objects, or simple
-  /// text.
-  setting_value String
+  /// Hashed password for secure authentication. Uses bcrypt or comparable
+  /// strong hashing algorithm to protect user credentials.
+  password_hash String
   
-  /// Data type classification for this setting (e.g., 'string', 'number',
-  /// 'boolean', 'json'). Used by the application to properly parse and
-  /// validate setting values.
-  setting_type String
+  /// User display name for personalization. Optional field that can be updated
+  /// by the user at any time.
+  name String?
   
-  /// Human-readable description explaining the purpose and usage of this
-  /// configuration setting. Helps administrators understand what each setting
-  /// controls.
-  description String
+  /// Account status indicating active or inactive state. Valid values: active,
+  /// inactive. Used for account management and administrative controls.
+  status String
   
-  /// Whether this configuration setting is currently active and should be
-  /// considered by the application. Allows for soft-disabling without
-  /// deletion. Default: true.
-  is_active Boolean
-  
-  /// Deployment environment where this setting applies (e.g., 'development',
-  /// 'staging', 'production'). Supports different configs per environment.
-  environment_scope String
-  
-  /// Timestamp when this configuration setting was created. Used for audit
-  /// purposes and change tracking.
+  /// Timestamp when the user account was created. Automatically set during
+  /// registration process.
   created_at DateTime
   
-  /// Timestamp when this configuration setting was last modified. Tracks
-  /// configuration changes over time.
+  /// Timestamp of the most recent account modification. Updated automatically
+  /// when profile information changes.
   updated_at DateTime
+  
+  /// Timestamp when the user account was soft deleted. Null for active
+  /// accounts, set when user requests account deletion.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([setting_key, environment_scope])
-  @@index([setting_type])
-  @@index([is_active])
-  @@index([environment_scope])
-}
-
-/// Validation rules and constraints that enforce data quality and business
-/// logic across the todo application.
-///
-/// This table defines the validation criteria for various data inputs
-/// including field length limits, format requirements, and business rule
-/// constraints. Validation rules are referenced by application logic to
-/// ensure data integrity and provide consistent error messages to users.
-///
-/// Rules include format validation for emails, data type checks, range
-/// constraints, and custom business logic validations that apply
-/// system-wide. The flexible rule definition system allows for easy updates
-/// and additions as business requirements evolve.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_validation_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  todo_app_sessions todo_app_sessions[]
+  todo_app_tasks todo_app_tasks[]
   
-  /// Unique identifier for this validation rule. Used as a reference key in
-  /// application logic to apply specific validation criteria.
-  rule_key String
-  
-  /// Human-readable name for this validation rule. Used for administrative
-  /// interfaces and error message generation.
-  rule_name String
-  
-  /// Type of validation rule (e.g., 'length', 'format', 'range', 'custom').
-  /// Determines how the rule is applied during validation.
-  validation_type String
-  
-  /// Target field or data type this rule applies to (e.g., 'task.title',
-  /// 'user.email', 'category.name'). Specifies what the rule validates.
-  field_target String
-  
-  /// JSON definition of the validation constraints including min/max values,
-  /// patterns, or custom logic. Defines the actual validation criteria.
-  constraint_definition String
-  
-  /// Template for error messages when this rule fails validation. Supports
-  /// placeholders for field names and constraint values.
-  error_message_template String
-  
-  /// Whether this validation rule is currently enforced. Allows disabling
-  /// rules without deletion for maintenance or temporary issues. Default:
-  /// true.
-  is_active Boolean
-  
-  /// Priority order for rule application when multiple rules apply to the same
-  /// field. Lower numbers have higher priority (executed first).
-  priority Int
-  
-  /// Timestamp when this validation rule was created. Tracks when rules were
-  /// introduced into the system.
-  created_at DateTime
-  
-  /// Timestamp when this validation rule was last modified. Tracks changes to
-  /// validation criteria over time.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  todo_app_user_limits todo_app_user_limits[]
-  
-  @@unique([rule_key])
-  @@index([validation_type])
-  @@index([field_target])
-  @@index([is_active])
-  @@index([priority])
-}
-
-/// User-specific limits and quotas that control access to system resources
-/// and prevent abuse of the todo application.
-///
-/// This table defines operational limits such as maximum tasks per user,
-/// category creation limits, bulk operation constraints, and API rate
-/// limits. Limits are customizable per user and help ensure fair resource
-/// usage across all users of the application.
-///
-/// The table supports both system-wide defaults and custom limits for
-/// specific users or user groups. Limits can be adjusted based on user
-/// activity patterns, premium features, or administrative decisions to
-/// optimize system performance and user experience.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_limits {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the user this limit applies to. Null values indicate
-  /// system-wide default limits.
-  user_id String?
-  
-  /// Reference to the validation rule that defines this limit. Links to
-  /// detailed constraint definitions from validation rules table.
-  constraint_rule_id String?
-  
-  /// Type of limit being enforced (e.g., 'task_count', 'category_count',
-  /// 'bulk_operation_size', 'api_rate'). Defines what resource is being
-  /// limited.
-  limit_type String
-  
-  /// The maximum allowed value for this limit (e.g., 1000 for max tasks, 50
-  /// for max categories). Zero or negative values indicate no limit.
-  limit_value Int
-  
-  /// Time period for which this limit applies (e.g., 'lifetime', 'daily',
-  /// 'weekly', 'monthly'). Determines how limits reset or accumulate.
-  period_type String
-  
-  /// Human-readable description explaining the purpose and implications of
-  /// this user limit. Helps with administrative decisions and user
-  /// communication.
-  description String
-  
-  /// Whether this user limit is currently enforced. Allows for temporary
-  /// relaxation or permanent removal of limits without data deletion. Default:
-  /// true.
-  is_active Boolean
-  
-  /// Timestamp when this user limit was created or customized for this user.
-  /// Tracks when limits were established.
-  created_at DateTime
-  
-  /// Timestamp when this user limit was last modified. Tracks changes to
-  /// user-specific limits over time.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  constraintRule todo_app_validation_rules? @relation(fields: [constraint_rule_id], references: [id], onDelete: Cascade)
-  
-  @@index([constraint_rule_id])
-  
-  @@unique([user_id, limit_type, period_type])
-  @@index([limit_type])
-  @@index([period_type])
-  @@index([is_active])
+  @@unique([email])
   @@index([created_at])
-}
-
-/// Operational audit log tracking system events, user actions, and
-/// administrative activities for compliance and troubleshooting purposes.
-///
-/// This table records detailed information about various operations
-/// including task creation, modification, and deletion events, system
-/// configuration changes, and administrative actions. Logs support system
-/// monitoring, usage analytics, and troubleshooting capabilities.
-///
-/// The audit trail includes comprehensive event details, user attribution,
-/// timing information, and outcome status. Logs are designed for analytical
-/// purposes and may be archived or rotated based on retention policies to
-/// manage storage requirements while maintaining necessary audit trails.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_operation_logs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the user who initiated this operation. Null for
-  /// system-initiated events or operations by guest users.
-  user_id String?
-  
-  /// Type of operation being logged (e.g., 'task.create', 'task.update',
-  /// 'system.config_change', 'admin.user_management'). Categorizes events for
-  /// filtering and analysis.
-  operation_type String
-  
-  /// Type of resource affected by this operation (e.g., 'task', 'category',
-  /// 'user', 'system'). Links operations to application entities.
-  resource_type String
-  
-  /// Identifier of the specific resource affected by this operation. May
-  /// reference tasks, users, or other entities depending on resource_type.
-  resource_id String?
-  
-  /// JSON structure containing detailed operation information including
-  /// before/after states, parameter values, and operation-specific data.
-  /// Supports comprehensive audit trails.
-  operation_details String?
-  
-  /// IP address from which the operation was initiated. Used for location
-  /// analysis and security monitoring. Stored as string to support IPv6.
-  ip_address String?
-  
-  /// Browser or client user agent string providing device and software
-  /// information. Useful for analytics and troubleshooting.
-  user_agent String?
-  
-  /// Outcome of the operation (e.g., 'success', 'failure', 'partial_success').
-  /// Tracks whether operations completed successfully.
-  operation_status String
-  
-  /// Error details if the operation failed. Stores specific failure
-  /// information for debugging and analysis purposes.
-  error_message String?
-  
-  /// Time taken to complete the operation in milliseconds. Useful for
-  /// performance monitoring and optimization analysis.
-  operation_duration_ms Int?
-  
-  /// When this operation was performed. Represents the precise time of the
-  /// logged event.
-  timestamp DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  initiatingUser todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  @@index([operation_type])
-  @@index([user_id, timestamp])
-  @@index([resource_type, resource_id])
-  @@index([operation_status])
-  @@index([timestamp])
+  @@index([status])
+  @@index([deleted_at])
 }

@@ -1,69 +1,23 @@
-/// Brand entities used to label products in the catalog.
+/// Core product catalog entity representing a sellable product concept owned
+/// by a single seller.
 ///
-/// Represents manufacturers, labels, or store brands that own or market
-/// products. Brands are shared across many products and can be searched and
-/// filtered independently.
+/// Each product aggregates shared attributes that apply to all of its SKUs,
+/// such as title, summary, detailed description, brand, and primary media.
+/// It serves as the main business anchor for catalog browsing, search, and
+/// reviews.
 ///
-/// Brand information is global and is not tied to a specific seller account,
-/// although business policy may restrict which sellers can use which brands.
-/// Historical references from orders and reviews rely on brand data
-/// remaining available, so soft deletion is supported.
+/// Products are linked to sellers from the seller domain and to navigation
+/// categories via {@link shopping_mall_product_categories}. Localized
+/// content is stored in {@link shopping_mall_product_localizations}, images
+/// in {@link shopping_mall_product_images}, attributes in {@link
+/// shopping_mall_product_attributes}, and tags via {@link
+/// shopping_mall_product_tag_links}.
 ///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_brands {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the brand record.
-  id String @id
-  
-  /// Display name of the brand. Must be unique across the platform for
-  /// consistent filtering and search.
-  name String
-  
-  /// URL-friendly identifier for the brand, typically derived from the name.
-  /// Used in catalog routing and SEO contexts.
-  slug String
-  
-  /// Optional descriptive text about the brand, presented on brand landing
-  /// pages or product detail sections.
-  description String?
-  
-  /// URI pointing to the primary brand logo image stored in a media service or
-  /// CDN.
-  logo_uri String?
-  
-  /// Timestamp when the brand record was first created.
-  created_at DateTime
-  
-  /// Timestamp when the brand record was last updated.
-  updated_at DateTime
-  
-  /// Timestamp marking when the brand was soft-deleted. Null when the brand is
-  /// active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_products shopping_mall_products[]
-  
-  @@unique([name])
-  @@unique([slug])
-  @@index([deleted_at])
-}
-
-/// Core product definitions in the shoppingMall catalog.
-///
-/// Each product groups one or more purchasable SKUs under a common name,
-/// descriptions, media, and category associations. Products belong to
-/// exactly one seller and may optionally reference a brand.
-///
-/// Product lifecycle and visibility (draft, active, inactive, discontinued)
-/// are driven by status and related visibility/compliance rules. SKUs hold
-/// price and inventory links, while catalog products provide the structure
-/// used for browsing and search.
+/// The table stores only the current state of a product; historical price
+/// and description snapshots are captured in order and review domains. Soft
+/// deletion is supported so that orders and reviews can continue to
+/// reference historical products even after they are removed from the live
+/// catalog.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -71,119 +25,230 @@ model shopping_mall_products {
   //----
   // COLUMNS
   //----
-  /// Primary key for the product record.
+  /// Primary key of the product. {@link shopping_mall_products.id}.
   id String @id
   
-  /// Owning seller for this product. Links the catalog entry to a single
-  /// merchant entity. {@link shopping_mall_seller.id}.
+  /// Owning seller of this product. {@link shopping_mall_sellers.id}.
   shopping_mall_seller_id String
   
-  /// Optional brand associated with this product. If null, the product may be
-  /// treated as unbranded or seller-branded. {@link shopping_mall_brands.id}.
-  shopping_mall_brand_id String?
-  
-  /// Business-visible product code or identifier used internally and in
-  /// integrations. Unique per platform for stable references.
+  /// Business-level product code unique per seller, used for internal
+  /// references and integrations.
   code String
   
-  /// Primary product name displayed in catalog listings and product detail
-  /// pages.
-  name String
+  /// Primary product title in default locale, used for product detail and
+  /// search when localization is not available.
+  title String
   
-  /// Short description or tagline suitable for list views and summaries.
-  short_description String?
+  /// Short summary description suitable for listing views in the default
+  /// locale.
+  summary String
   
-  /// Full product description used on product detail pages. May include
-  /// rich-text content serialized as text.
-  description String?
+  /// Detailed product description in the default locale, including features
+  /// and usage information.
+  description String
   
-  /// Lifecycle status of the product such as draft, pending_review, active,
-  /// inactive, or discontinued. Business logic constrains allowed values.
+  /// Optional brand associated with the product.
+  brand String?
+  
+  /// Optional model name or number that further identifies the product.
+  model_name String?
+  
+  /// Lifecycle status of the product such as draft, active, inactive,
+  /// discontinued, or admin_unpublished.
   status String
   
-  /// Flag indicating whether this product has multiple SKUs (variants). If
-  /// false, the product typically has a single SKU.
-  is_multi_sku Boolean
-  
-  /// URI of the primary image displayed in listings. A convenience pointer to
-  /// one of the media records or an external image.
+  /// URI of the primary product image used in listings and product detail
+  /// pages.
   primary_image_uri String?
   
-  /// Optional JSON-encoded metadata string for custom catalog attributes not
-  /// modeled as separate fields.
-  additional_data String?
+  /// IETF language tag representing the default locale used for title and
+  /// descriptions when localized records are missing.
+  default_locale String
   
-  /// Timestamp when the product was created.
+  /// Timestamp when the product record was created.
   created_at DateTime
   
-  /// Timestamp when the product was last updated.
+  /// Timestamp when the product record was last updated.
   updated_at DateTime
   
-  /// Timestamp when the product was soft-deleted. Null when the product is
-  /// active in the catalog.
+  /// Timestamp when the product was soft-deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  brand shopping_mall_brands? @relation(fields: [shopping_mall_brand_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_product_category_assignments shopping_mall_product_category_assignments[]
-  shopping_mall_product_media shopping_mall_product_media[]
-  shopping_mall_product_option_types shopping_mall_product_option_types[]
-  shopping_mall_product_skus shopping_mall_product_skus[]
-  shopping_mall_product_visibility_rules shopping_mall_product_visibility_rules[]
-  shopping_mall_product_compliance_flags shopping_mall_product_compliance_flags[]
-  shopping_mall_guest_cart_items shopping_mall_guest_cart_items[]
-  shopping_mall_customer_cart_items shopping_mall_customer_cart_items[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_localizations shopping_mall_product_localizations[]
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_product_tag_links shopping_mall_product_tag_links[]
+  shopping_mall_product_attributes shopping_mall_product_attributes[]
+  shopping_mall_skus shopping_mall_skus[]
+  shopping_mall_catalog_visibility_rules shopping_mall_catalog_visibility_rules[]
+  shopping_mall_catalog_search_index_entries shopping_mall_catalog_search_index_entries[]
   shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  shopping_mall_order_lines shopping_mall_order_lines[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_product_rating_aggregates shopping_mall_product_rating_aggregates[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_product_rating_aggregates shopping_mall_product_rating_aggregates?
+  shopping_mall_review_eligibilities shopping_mall_review_eligibilities[]
   
-  @@unique([code])
-  @@index([shopping_mall_seller_id, status])
-  @@index([shopping_mall_brand_id, status])
-  @@index([status, deleted_at])
+  @@unique([shopping_mall_seller_id, code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, status, created_at], map: "shopping_mall_products_shopping_mall_seller_id_status__07ff26cd")
+  @@index([status, created_at])
 }
 
-/// Junction table linking products to categories in the catalog hierarchy.
+/// Additional image resources associated with a product for gallery-style
+/// display.
 ///
-/// Represents both primary and secondary category associations for a
-/// product. This allows products to appear under multiple categories for
-/// navigation and search while delegating category structure to the separate
-/// categories component.
+/// Each record represents a single image or media resource that belongs to a
+/// {@link shopping_mall_products} row. Images can be ordered for
+/// presentation, and may include alternative text for accessibility.
 ///
-/// Assignments are maintained by sellers or admins and are used heavily in
-/// catalog browsing and filtering.
+/// These records are subsidiary because they are always managed through the
+/// parent product and never manipulated independently at business level.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_category_assignments {
+model shopping_mall_product_images {
   //----
   // COLUMNS
   //----
-  /// Primary key for the category assignment record.
+  /// Primary key of the product image. {@link shopping_mall_product_images.id}.
   id String @id
   
-  /// Product that is assigned to the category. {@link
+  /// Product that this image belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URI of the image or media resource.
+  image_uri String
+  
+  /// Optional human-readable alternative text describing the image for
+  /// accessibility.
+  alt_text String?
+  
+  /// Numeric ordering value used to control gallery image sequence for the
+  /// product.
+  display_order Int
+  
+  /// Timestamp when this image entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this image entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this image entry was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__5e0eacb7")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_images_shopping_mall_product_id__2b5dc062")
+}
+
+/// Localized product content per locale for a given product.
+///
+/// Each record stores localized versions of title, summary, and description
+/// fields for a {@link shopping_mall_products} entry. This allows the
+/// catalog to serve localized content without duplicating the core product
+/// entity.
+///
+/// Content is always managed relative to a parent product and locale; thus
+/// the table is classified as subsidiary.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_localizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the product localization. {@link
+  /// shopping_mall_product_localizations.id}.
+  id String @id
+  
+  /// Product that this localization belongs to. {@link
   /// shopping_mall_products.id}.
   shopping_mall_product_id String
   
-  /// Target category under which the product should appear. {@link
+  /// IETF language tag for this localization such as en-US or ko-KR.
+  locale String
+  
+  /// Localized product title for this locale.
+  title String
+  
+  /// Localized short summary description suitable for listing views.
+  summary String
+  
+  /// Localized detailed product description.
+  description String
+  
+  /// Timestamp when this localization was created.
+  created_at DateTime
+  
+  /// Timestamp when this localization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this localization was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, locale], map: "shopping_mall_product_localizations_shopping_mall_prod_a62dca47")
+  @@index([locale])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_localizations_shopping_mall_prod_4c4e209c")
+}
+
+/// Junction table linking products to navigation categories.
+///
+/// This table represents many-to-many assignments between {@link
+/// shopping_mall_products} and {@link shopping_mall_categories}. It supports
+/// primary and secondary category relationships via the is_primary flag.
+///
+/// It is subsidiary because assignments are managed through product or
+/// category management flows and not as a standalone business entity. Soft
+/// deletion is supported so historical category assignments remain for audit
+/// and reporting without blocking new active assignments.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the product-category link. {@link
+  /// shopping_mall_product_categories.id}.
+  id String @id
+  
+  /// Product that is assigned to a category. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Category to which the product is assigned. {@link
   /// shopping_mall_categories.id}.
   shopping_mall_category_id String
   
-  /// Indicates whether this category is the primary category for the product.
-  /// Only one assignment per product should typically be primary.
+  /// Flag indicating whether this assignment is the primary category for the
+  /// product. At most one active (non-deleted) row per product should be
+  /// primary, enforced at application level.
   is_primary Boolean
   
-  /// Timestamp when the category assignment was created.
+  /// Timestamp when this category assignment was created.
   created_at DateTime
   
-  /// Timestamp when the category assignment was last updated.
+  /// Timestamp when this category assignment was last updated.
   updated_at DateTime
+  
+  /// Timestamp when this category assignment was soft-deleted, if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
@@ -192,116 +257,160 @@ model shopping_mall_product_category_assignments {
   category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_category_assignments_shopping_ma_915c9e21")
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_shopping_mall_product_b5030199")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_category_id, is_primary], map: "shopping_mall_product_category_assignments_shopping_ma_42b568c8")
+  @@index([shopping_mall_category_id, created_at], map: "shopping_mall_product_categories_shopping_mall_categor_bf830b56")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, is_primary], map: "shopping_mall_product_category_assignments_shopping_ma_7139c7e6")
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_categories_shopping_mall_product_edaf4707")
 }
 
-/// Media assets associated with catalog products.
+/// Master list of tags that can be associated with products for discovery
+/// and search.
 ///
-/// Stores references to images or other media files used in product listings
-/// and detail pages. Each record points to one media asset and includes
-/// ordering information and role flags such as whether it is featured.
+/// Each record defines a tag label that may be linked to multiple products
+/// via {@link shopping_mall_product_tag_links}. Tags can be created and
+/// managed by admins to support curated navigation and search facets.
 ///
-/// Media URIs are typically stored in object storage or a CDN, and this
-/// table only holds references and metadata.
+/// This is a primary table because tags can be independently managed,
+/// searched, and reported on across all products, beyond their individual
+/// associations.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_media {
+model shopping_mall_product_tags {
   //----
   // COLUMNS
   //----
-  /// Primary key for the product media record.
+  /// Primary key of the product tag. {@link shopping_mall_product_tags.id}.
   id String @id
   
-  /// Product to which this media asset belongs. {@link
-  /// shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// URI pointing to the media asset (image, video thumbnail, etc.) in storage
-  /// or CDN.
-  uri String
-  
-  /// Optional alternative text describing the media asset for accessibility
-  /// and SEO.
-  alt_text String?
-  
-  /// Type of media such as image, video, or other supported categories.
-  /// Business rules define allowed values.
-  media_type String
-  
-  /// Order index used to sort media assets for display. Lower numbers usually
-  /// appear first.
-  display_order Int
-  
-  /// Flag indicating whether this media asset is the primary one for the
-  /// product, typically reflected in primary_image_uri on the product.
-  is_primary Boolean
-  
-  /// Timestamp when the media record was created.
-  created_at DateTime
-  
-  /// Timestamp when the media record was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the media record was soft-deleted. Null when the media is
-  /// active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_media_shopping_mall_product_id_d_bd3104bb")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, is_primary], map: "shopping_mall_product_media_shopping_mall_product_id_i_4af73268")
-}
-
-/// Option dimensions that define variant structures for a product.
-///
-/// Each record represents an option type such as color, size, material, or
-/// style, scoped to a single product. Option types organize option values
-/// and drive variant selection UI and SKU composition.
-///
-/// Option types are only meaningful in the context of their product and are
-/// managed when defining or editing product variants.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_option_types {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key for the product option type record.
-  id String @id
-  
-  /// Product that owns this option type. {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Human-readable name of the option type, such as "Color" or "Size". Unique
-  /// per product.
+  /// Canonical tag label used for classification and search.
   name String
   
-  /// Optional display name or label shown in UI. When null, the name value is
-  /// typically used.
-  display_name String?
+  /// URL-friendly slug version of the tag name used in navigation or search
+  /// URLs.
+  slug String
   
-  /// Ordering index specifying the sequence in which option types appear for
-  /// the product.
-  display_order Int
+  /// Optional description explaining how the tag should be used in curation or
+  /// search.
+  description String?
   
-  /// Timestamp when the option type was created.
+  /// Timestamp when the tag was created.
   created_at DateTime
   
-  /// Timestamp when the option type was last updated.
+  /// Timestamp when the tag was last updated.
   updated_at DateTime
   
-  /// Timestamp when the option type was soft-deleted. Null when active.
+  /// Timestamp when the tag was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_product_tag_links shopping_mall_product_tag_links[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([created_at])
+}
+
+/// Junction table representing associations between products and tags.
+///
+/// Each record links a {@link shopping_mall_products} entry to a {@link
+/// shopping_mall_product_tags} tag. This enables tagging products for
+/// search, filtering, and curation features.
+///
+/// The table is subsidiary because links are always created and managed
+/// through product or tag flows and do not represent independent business
+/// entities.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_tag_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the product-tag link. {@link
+  /// shopping_mall_product_tag_links.id}.
+  id String @id
+  
+  /// Product that is tagged. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Tag applied to the product. {@link shopping_mall_product_tags.id}.
+  shopping_mall_product_tag_id String
+  
+  /// Timestamp when this tag link was created.
+  created_at DateTime
+  
+  /// Timestamp when this tag link was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this tag link was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  tag shopping_mall_product_tags @relation(fields: [shopping_mall_product_tag_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_product_tag_id], map: "shopping_mall_product_tag_links_shopping_mall_product__0ca9fb4d")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_tag_id, created_at], map: "shopping_mall_product_tag_links_shopping_mall_product__0fe42676")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_tag_links_shopping_mall_product__eb461f87")
+}
+
+/// Definitions of variant-capable attributes for a specific product.
+///
+/// Each record represents an attribute such as color, size, or capacity that
+/// is applicable to SKUs under a {@link shopping_mall_products} entry.
+/// Attributes are used to structure SKU variants and for faceted filtering.
+///
+/// This table is primary because attributes must be managed independently
+/// for each product, searched in admin tools, and referenced from value and
+/// SKU mapping tables.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the product attribute. {@link
+  /// shopping_mall_product_attributes.id}.
+  id String @id
+  
+  /// Product that this attribute belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Internal attribute name such as color or size used in configuration.
+  name String
+  
+  /// Human-readable name of the attribute shown to customers.
+  display_name String
+  
+  /// Attribute data type such as string, int, or double used for validation
+  /// and filtering.
+  data_type String
+  
+  /// Flag indicating whether this attribute participates in SKU variant
+  /// uniqueness.
+  is_variant_dimension Boolean
+  
+  /// Numeric ordering value used to sort attributes in product detail and
+  /// filter UIs.
+  display_order Int
+  
+  /// Timestamp when the attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attribute was soft-deleted, if applicable.
   deleted_at DateTime?
   
   //----
@@ -309,129 +418,126 @@ model shopping_mall_product_option_types {
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_product_option_values shopping_mall_product_option_values[]
+  shopping_mall_product_attribute_values shopping_mall_product_attribute_values[]
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, name], map: "shopping_mall_product_option_types_shopping_mall_produ_f2580df8")
+  @@unique([shopping_mall_product_id, name], map: "shopping_mall_product_attributes_shopping_mall_product_cb1ddfa1")
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_option_types_shopping_mall_produ_c6bf7d4b")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, deleted_at], map: "shopping_mall_product_option_types_shopping_mall_produ_7e51ce04")
+  @@index([shopping_mall_product_id, display_order], map: "shopping_mall_product_attributes_shopping_mall_product_d1fcc32e")
 }
 
-/// Concrete option values under a product's option types.
+/// Allowed values for a given product attribute.
 ///
-/// Each record represents a selectable value such as "Red", "Blue", "Small",
-/// or "XL" associated with a specific option type. These values are combined
-/// through SKU option assignments to define distinct purchasable variants.
+/// Each record defines a permissible value for a {@link
+/// shopping_mall_product_attributes} entry, such as "Red" for color or "XL"
+/// for size. These values are referenced by {@link
+/// shopping_mall_sku_attribute_values} when binding values to specific SKUs.
 ///
-/// Option values are scoped to a product via their option type and
-/// participate in SKU uniqueness constraints when composing variant
-/// combinations.
+/// The table is primary because attribute values can be managed
+/// independently within each product and are reused across many SKUs, making
+/// them a stable business concept.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_option_values {
+model shopping_mall_product_attribute_values {
   //----
   // COLUMNS
   //----
-  /// Primary key for the product option value record.
+  /// Primary key of the product attribute value. {@link
+  /// shopping_mall_product_attribute_values.id}.
   id String @id
   
-  /// Parent option type that this value belongs to. {@link
-  /// shopping_mall_product_option_types.id}.
-  shopping_mall_product_option_type_id String
+  /// Product attribute that this value belongs to. {@link
+  /// shopping_mall_product_attributes.id}.
+  shopping_mall_product_attribute_id String
   
-  /// Canonical value label such as "Red" or "XL". Unique per option type.
+  /// Canonical representation of the attribute value, for example Red or XL.
   value String
   
-  /// Optional display label for this value, allowing localized or
-  /// user-friendly text.
-  display_name String?
+  /// Human-readable display value for the attribute value, which may differ
+  /// slightly from the canonical form.
+  display_value String
   
-  /// Ordering index specifying how values are presented within the option type.
+  /// Numeric ordering value controlling the order of possible values in
+  /// selection UIs.
   display_order Int
   
-  /// Timestamp when the option value was created.
+  /// Timestamp when this attribute value was created.
   created_at DateTime
   
-  /// Timestamp when the option value was last updated.
+  /// Timestamp when this attribute value was last updated.
   updated_at DateTime
   
-  /// Timestamp when the option value was soft-deleted. Null when active.
+  /// Timestamp when this attribute value was soft-deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  optionType shopping_mall_product_option_types @relation(fields: [shopping_mall_product_option_type_id], references: [id], onDelete: Cascade)
+  attribute shopping_mall_product_attributes @relation(fields: [shopping_mall_product_attribute_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_sku_option_value_assignments shopping_mall_sku_option_value_assignments[]
+  shopping_mall_sku_attribute_values shopping_mall_sku_attribute_values[]
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_option_type_id, value], map: "shopping_mall_product_option_values_shopping_mall_prod_23995538")
+  @@unique([shopping_mall_product_attribute_id, value], map: "shopping_mall_product_attribute_values_shopping_mall_p_c8de6afa")
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_option_type_id, display_order], map: "shopping_mall_product_option_values_shopping_mall_prod_eda6765d")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_option_type_id, deleted_at], map: "shopping_mall_product_option_values_shopping_mall_prod_0c7b3391")
+  @@index([shopping_mall_product_attribute_id, display_order], map: "shopping_mall_product_attribute_values_shopping_mall_p_d3d2c847")
 }
 
-/// Purchasable product variants represented as SKUs.
+/// Stock keeping units representing concrete sellable variants of products.
 ///
-/// Each SKU corresponds to a concrete combination of option values (such as
-/// a specific color and size) for a product and carries pricing information
-/// and lifecycle status. Inventory quantities and reservations are handled
-/// in the Inventory component, but SKUs provide the catalog-facing identity
-/// for those records.
+/// Each SKU belongs to exactly one {@link shopping_mall_products} record and
+/// describes a specific combination of attribute values, its own price and
+/// inventory quantity. It is the atomic unit for cart, order, inventory, and
+/// eligibility logic across the platform.
 ///
-/// SKUs are the unit of cart lines, order lines, and inventory tracking;
-/// prices, compare-at prices, and SKU-level status determine availability in
-/// the catalog and checkout flows.
+/// This table stores the authoritative current inventory quantity and
+/// SKU-level status. Detailed adjustment history is kept in inventory
+/// adjustment tables in the SellerPortal domain. Attribute combinations are
+/// modeled via {@link shopping_mall_sku_attribute_values}, and optional
+/// external identifiers via {@link shopping_mall_sku_external_ids}.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_skus {
+model shopping_mall_skus {
   //----
   // COLUMNS
   //----
-  /// Primary key for the SKU record.
+  /// Primary key of the SKU. {@link shopping_mall_skus.id}.
   id String @id
   
   /// Product that this SKU belongs to. {@link shopping_mall_products.id}.
   shopping_mall_product_id String
   
-  /// Business-defined SKU code used in inventory systems and order line
-  /// references. Unique per product.
+  /// Current inventory state of the SKU describing availability semantics.
+  /// {@link shopping_mall_sku_inventory_states.id}.
+  shopping_mall_sku_inventory_state_id String
+  
+  /// Business-level SKU code unique per product or seller, used in operations
+  /// and integrations.
   code String
   
-  /// Optional external code such as a seller-specific identifier or
-  /// marketplace reference.
-  external_code String?
-  
-  /// Optional machine-readable code such as UPC or EAN for scanning and
-  /// logistics.
+  /// Optional barcode or similar identifier used for physical warehouse
+  /// operations.
   barcode String?
   
-  /// Lifecycle status of the SKU such as active, inactive, or discontinued.
-  /// Determines catalog and checkout eligibility together with product and
-  /// inventory status.
+  /// Lifecycle status of the SKU such as draft, active, inactive,
+  /// discontinued, or blocked_by_admin.
   status String
   
-  /// Current unit price for the SKU in the platform’s base currency or in a
-  /// currency defined elsewhere.
-  price_amount Float
+  /// Current selling price for this SKU in the platform base currency.
+  price Float
   
-  /// Optional original or reference price used to display discounts when lower
-  /// than this value.
-  compare_at_price_amount Float?
+  /// Optional reference or list price used for showing discount information.
+  original_price Float?
   
-  /// Currency code for price fields, such as USD or EUR. The allowed set is
-  /// managed by configuration tables.
-  currency_code String
+  /// Authoritative current on-hand inventory quantity for this SKU, not
+  /// including external reservations.
+  inventory_quantity Int
   
-  /// Optional JSON-encoded metadata for SKU-level catalog attributes beyond
-  /// standard fields.
-  additional_data String?
+  /// Optional threshold at or below which the SKU is considered low stock for
+  /// seller alerts.
+  low_stock_threshold Int?
   
   /// Timestamp when the SKU was created.
   created_at DateTime
@@ -439,121 +545,254 @@ model shopping_mall_product_skus {
   /// Timestamp when the SKU was last updated.
   updated_at DateTime
   
-  /// Timestamp when the SKU was soft-deleted. Null when active.
+  /// Timestamp when the SKU was soft-deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  inventoryState shopping_mall_sku_inventory_states @relation(fields: [shopping_mall_sku_inventory_state_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_sku_option_value_assignments shopping_mall_sku_option_value_assignments[]
-  shopping_mall_guest_cart_items shopping_mall_guest_cart_items[]
-  shopping_mall_customer_cart_items shopping_mall_customer_cart_items[]
+  shopping_mall_sku_attribute_values shopping_mall_sku_attribute_values[]
+  shopping_mall_sku_external_ids shopping_mall_sku_external_ids[]
+  shopping_mall_catalog_visibility_rules shopping_mall_catalog_visibility_rules[]
+  shopping_mall_catalog_search_index_entries shopping_mall_catalog_search_index_entries[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
   shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  shopping_mall_order_lines shopping_mall_order_lines[]
-  shopping_mall_inventory_items shopping_mall_inventory_items?
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_product_rating_aggregates shopping_mall_product_rating_aggregates[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_sku_rating_aggregates shopping_mall_sku_rating_aggregates?
+  shopping_mall_review_eligibilities shopping_mall_review_eligibilities[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  
+  @@index([shopping_mall_sku_inventory_state_id])
   
   @@unique([shopping_mall_product_id, code])
-  @@index([shopping_mall_product_id, status])
-  @@index([status, deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, status, created_at], map: "shopping_mall_skus_shopping_mall_product_id_status_cre_0e03305a")
+  // spellchecker: ignore-next-line
+  @@index([status, shopping_mall_sku_inventory_state_id], map: "shopping_mall_skus_status_shopping_mall_sku_inventory__d25f4d35")
 }
 
-/// Assignments connecting SKUs to specific option values.
+/// Junction table binding attribute values to specific SKUs, defining
+/// variant combinations.
 ///
-/// Represents the mapping from a SKU to the set of option values (for
-/// example, Color: Red, Size: M) that define its variant combination. This
-/// structure allows flexible modeling of multi-dimensional options while
-/// enforcing uniqueness of combinations per product.
+/// Each record links a {@link shopping_mall_skus} entry to a {@link
+/// shopping_mall_product_attribute_values} entry for the parent product. The
+/// complete set of rows for a SKU describes its selected values across all
+/// variant dimensions and non-variant attributes.
 ///
-/// Assignments are used to reconstruct variant selections in UI and to
-/// validate that each SKU corresponds to a unique combination of values
-/// under its product.
+/// This table is subsidiary because it exists purely to model the
+/// many-to-many relationship between SKUs and attribute values and is always
+/// managed through product and SKU flows.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sku_option_value_assignments {
+model shopping_mall_sku_attribute_values {
   //----
   // COLUMNS
   //----
-  /// Primary key for the SKU option value assignment record.
+  /// Primary key of the SKU-attribute-value link. {@link
+  /// shopping_mall_sku_attribute_values.id}.
   id String @id
   
-  /// SKU that this option value is assigned to. {@link
-  /// shopping_mall_product_skus.id}.
-  shopping_mall_product_sku_id String
+  /// SKU that uses the attribute value. {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String
   
-  /// Option value that participates in the SKU’s variant combination. {@link
-  /// shopping_mall_product_option_values.id}.
-  shopping_mall_product_option_value_id String
+  /// Attribute value applied to the SKU. {@link
+  /// shopping_mall_product_attribute_values.id}.
+  shopping_mall_product_attribute_value_id String
   
-  /// Timestamp when the assignment was created.
+  /// Timestamp when this SKU attribute value link was created.
   created_at DateTime
   
-  /// Timestamp when the assignment was last updated.
+  /// Timestamp when this SKU attribute value link was last updated.
   updated_at DateTime
+  
+  /// Timestamp when this SKU attribute value link was soft-deleted, if
+  /// applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
-  optionValue shopping_mall_product_option_values @relation(fields: [shopping_mall_product_option_value_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  attributeValue shopping_mall_product_attribute_values @relation(fields: [shopping_mall_product_attribute_value_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_sku_id, shopping_mall_product_option_value_id], map: "shopping_mall_sku_option_value_assignments_shopping_ma_ca34cb57")
+  @@unique([shopping_mall_sku_id, shopping_mall_product_attribute_value_id], map: "shopping_mall_sku_attribute_values_shopping_mall_sku_i_e9f7da68")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_sku_id], map: "shopping_mall_sku_option_value_assignments_shopping_ma_c517bf43")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_option_value_id], map: "shopping_mall_sku_option_value_assignments_shopping_ma_befcb4d7")
+  @@index([shopping_mall_product_attribute_value_id, shopping_mall_sku_id], map: "shopping_mall_sku_attribute_values_shopping_mall_produ_7700ecd5")
 }
 
-/// Per-product visibility configuration for regions and channels.
+/// External system identifiers associated with SKUs for integrations.
 ///
-/// Encapsulates rules that determine where and to whom a product is visible
-/// in the catalog. Rules may specify region constraints, sales channels, and
-/// override visibility states relative to the product’s base lifecycle
-/// status.
+/// Each record stores an identifier used by an external system, such as a
+/// warehouse management system, marketplace integration, or barcode
+/// registry, and links it to a {@link shopping_mall_skus} entry.
 ///
-/// This table enables flexible configurations such as region-restricted
-/// products, channel-specific offerings, or temporary hiding in certain
-/// markets without changing the core product status.
+/// The table is subsidiary because these identifiers are managed in the
+/// context of a SKU and are not independently searchable by business users
+/// outside of integration and operations tooling.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_visibility_rules {
+model shopping_mall_sku_external_ids {
   //----
   // COLUMNS
   //----
-  /// Primary key for the product visibility rule record.
+  /// Primary key of the SKU external identifier. {@link
+  /// shopping_mall_sku_external_ids.id}.
   id String @id
   
-  /// Product that this visibility rule applies to. {@link
-  /// shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// SKU that this external identifier refers to. {@link
+  /// shopping_mall_skus.id}.
+  shopping_mall_sku_id String
   
-  /// Optional region settings record that scopes this rule to a specific
-  /// geographic region. Null means the rule is global. {@link
-  /// shopping_mall_region_settings.id}.
-  shopping_mall_region_setting_id String?
+  /// Code identifying the external system, such as WMS, ERP, or marketplace
+  /// code.
+  system_code String
   
-  /// Optional sales channel identifier such as web, mobile, or marketplace.
-  /// Null indicates the rule is not channel-specific.
-  channel String?
+  /// Identifier value used by the external system for this SKU.
+  external_id String
   
-  /// Visibility effect of this rule, such as visible, hidden, or restricted.
-  /// Combined with product status and compliance flags to determine final
-  /// exposure.
-  visibility String
+  /// Timestamp when this external identifier was created.
+  created_at DateTime
   
-  /// Optional start timestamp from which the rule becomes effective. Null
-  /// means it is effective immediately.
+  /// Timestamp when this external identifier was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this external identifier was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([system_code, external_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sku_id, system_code], map: "shopping_mall_sku_external_ids_shopping_mall_sku_id_sy_cac98d69")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_sku_external_ids_shopping_mall_sku_id_cr_1484d58a")
+}
+
+/// Reference table defining inventory state semantics used by SKUs.
+///
+/// Each entry represents a business-level inventory state such as in_stock,
+/// out_of_stock, preorder, or discontinued. {@link shopping_mall_skus}
+/// records reference this table to describe how inventory quantities should
+/// be interpreted in cart and checkout flows.
+///
+/// The table is a primary entity because the set of inventory states is
+/// centrally configured and reused across all SKUs and is important for
+/// reporting and rule configuration.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_inventory_states {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the SKU inventory state. {@link
+  /// shopping_mall_sku_inventory_states.id}.
+  id String @id
+  
+  /// Machine-readable code for the inventory state such as in_stock or
+  /// preorder.
+  code String
+  
+  /// Human-readable name of the inventory state shown in admin tools.
+  name String
+  
+  /// Optional description explaining how this inventory state behaves in
+  /// catalog and checkout flows.
+  description String?
+  
+  /// Flag indicating whether SKUs in this state are eligible to be added to
+  /// carts and orders.
+  is_purchasable Boolean
+  
+  /// Timestamp when the inventory state was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory state was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the inventory state was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_skus shopping_mall_skus[]
+  
+  @@unique([code])
+  @@index([is_purchasable])
+}
+
+/// Catalog visibility rules that control which products or SKUs are visible
+/// to which actors under what conditions.
+///
+/// Each row represents a rule created typically by admins to hide or show
+/// subsets of the catalog based on actor type, region, lifecycle status, or
+/// configuration flags. Rules can target an entire catalog, a specific
+/// seller, a product, or a SKU by using foreign keys where applicable.
+///
+/// This is a primary table because visibility rules are managed and audited
+/// as first-class business entities and influence catalog behavior across
+/// multiple components.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_catalog_visibility_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the catalog visibility rule. {@link
+  /// shopping_mall_catalog_visibility_rules.id}.
+  id String @id
+  
+  /// Admin who created this visibility rule. {@link shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// Optional seller that this rule applies to, if the rule is seller-scoped.
+  /// {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Optional product that this rule applies to, if the rule is
+  /// product-specific. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String?
+  
+  /// Optional SKU that this rule applies to, if the rule is SKU-specific.
+  /// {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String?
+  
+  /// Type of the rule such as hide, show_only_to_registered, or
+  /// region_restricted.
+  rule_type String
+  
+  /// Optional actor type the rule targets, for example guestUser, customer,
+  /// seller, or admin.
+  actor_type String?
+  
+  /// Optional region or market code used when the rule is region-specific.
+  region_code String?
+  
+  /// Flag indicating whether this visibility rule is currently active.
+  enabled Boolean
+  
+  /// Optional timestamp from which the rule becomes effective.
   starts_at DateTime?
   
-  /// Optional end timestamp after which the rule no longer applies. Null means
-  /// it has no scheduled end.
+  /// Optional timestamp after which the rule no longer applies.
   ends_at DateTime?
+  
+  /// Optional human-readable explanation of why this rule exists, useful for
+  /// governance and audit views.
+  reason String?
   
   /// Timestamp when the visibility rule was created.
   created_at DateTime
@@ -561,81 +800,145 @@ model shopping_mall_product_visibility_rules {
   /// Timestamp when the visibility rule was last updated.
   updated_at DateTime
   
+  /// Timestamp when the visibility rule was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  regionSetting shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, shopping_mall_region_setting_id, channel, starts_at, ends_at], map: "shopping_mall_product_visibility_rules_shopping_mall_p_7bb9b968")
+  @@index([shopping_mall_admin_id], map: "shopping_mall_catalog_visibility_rules_shopping_mall_a_38179746")
+  
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, visibility], map: "shopping_mall_product_visibility_rules_shopping_mall_p_0d374d1d")
+  @@index([enabled, rule_type, actor_type], map: "shopping_mall_catalog_visibility_rules_enabled_rule_ty_b8f5c281")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_region_setting_id, visibility], map: "shopping_mall_product_visibility_rules_shopping_mall_r_c43fe2b7")
+  @@index([shopping_mall_product_id, enabled], map: "shopping_mall_catalog_visibility_rules_shopping_mall_p_071821c2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sku_id, enabled], map: "shopping_mall_catalog_visibility_rules_shopping_mall_s_f26a4918")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, enabled], map: "shopping_mall_catalog_visibility_rules_shopping_mall_s_8b9437f7")
 }
 
-/// Compliance and restriction metadata applied to products.
+/// Denormalized search index entries for products and SKUs used to
+/// accelerate catalog search.
 ///
-/// Captures regulatory and policy-related flags such as age restrictions,
-/// hazardous materials indicators, region-based sales restrictions, or
-/// custom policy tags. These flags influence catalog visibility, checkout
-/// eligibility, and downstream processes in other domains.
+/// Each record aggregates search-relevant fields such as titles, summaries,
+/// tags, and attribute text for a single target entity, typically a {@link
+/// shopping_mall_products} or {@link shopping_mall_skus} record. The index
+/// supports full-text search and ranking without touching all normalized
+/// tables at query time.
 ///
-/// Compliance flags are additive and may be combined to express multiple
-/// restrictions on a single product. They are managed primarily by admins or
-/// trusted sellers according to platform policy.
+/// Although it stores derived data, it is modeled as a regular table rather
+/// than an mv_ view to allow flexible rebuilding strategies. It is
+/// subsidiary because it is populated and maintained by background processes
+/// and never edited directly by business users.
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_compliance_flags {
+model shopping_mall_catalog_search_index_entries {
   //----
   // COLUMNS
   //----
-  /// Primary key for the product compliance flag record.
+  /// Primary key of the catalog search index entry. {@link
+  /// shopping_mall_catalog_search_index_entries.id}.
   id String @id
   
-  /// Product that this compliance flag applies to. {@link
-  /// shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// Product that this index entry refers to, if the entry is product-scoped.
+  /// {@link shopping_mall_products.id}.
+  shopping_mall_product_id String?
   
-  /// Optional reference to a predefined age restriction policy that applies to
-  /// this product. {@link shopping_mall_age_restriction_policies.id}.
-  shopping_mall_age_restriction_policy_id String?
+  /// SKU that this index entry refers to, if the entry is SKU-scoped. {@link
+  /// shopping_mall_skus.id}.
+  shopping_mall_sku_id String?
   
-  /// Type of compliance flag such as age_restriction, hazardous_material, or
-  /// region_restricted. Business configuration defines valid values.
-  flag_type String
+  /// Locale of the indexed text, such as en-US or ko-KR.
+  locale String
   
-  /// Optional detailed value for the flag, such as a specific regulation code
-  /// or descriptive tag.
-  flag_value String?
+  /// Concatenated and normalized text used for full-text search, including
+  /// titles, summaries, tags, and attribute labels.
+  search_text String
   
-  /// Indicates whether this flag blocks sale entirely under certain conditions
-  /// or only affects visibility and messaging.
-  is_blocking_sale Boolean
+  /// Precomputed numeric boost used to influence ranking, for example based on
+  /// popularity or recency.
+  boost_score Float
   
-  /// Optional internal notes describing why this flag was applied or
-  /// additional regulatory context.
-  notes String?
-  
-  /// Timestamp when the compliance flag was created.
+  /// Timestamp when this index entry was created or last rebuilt.
   created_at DateTime
   
-  /// Timestamp when the compliance flag was last updated.
+  /// Timestamp when this index entry metadata was last updated.
   updated_at DateTime
+  
+  /// Timestamp when this index entry was soft-deleted, if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  ageRestrictionPolicy shopping_mall_age_restriction_policies? @relation(fields: [shopping_mall_age_restriction_policy_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_age_restriction_policy_id], map: "shopping_mall_product_compliance_flags_shopping_mall_a_093daf8c")
+  @@index([shopping_mall_sku_id], map: "shopping_mall_catalog_search_index_entries_shopping_ma_0c888037")
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, flag_type], map: "shopping_mall_product_compliance_flags_shopping_mall_p_f7f2b96e")
+  @@unique([shopping_mall_product_id, shopping_mall_sku_id, locale], map: "shopping_mall_catalog_search_index_entries_shopping_ma_e50f9f61")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, is_blocking_sale], map: "shopping_mall_product_compliance_flags_shopping_mall_p_24b5b2e2")
+  @@index([locale, boost_score], map: "shopping_mall_catalog_search_index_entries_locale_boos_e2f0ec2f")
+}
+
+/// Reference table describing reasons why catalog entities are blocked or
+/// removed from sale.
+///
+/// Each record defines a reusable business-level reason such as
+/// policy_violation, legal_request, counterfeit_suspected, or safety_issue.
+/// These reasons can be referenced by governance and moderation components
+/// when blocking products or SKUs via visibility rules or other mechanisms.
+///
+/// The table is a primary entity because block reasons are centrally
+/// configured, audited, and reused across many enforcement actions and
+/// reports.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_catalog_block_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the catalog block reason. {@link
+  /// shopping_mall_catalog_block_reasons.id}.
+  id String @id
+  
+  /// Machine-readable code representing the block reason, such as
+  /// policy_violation or legal_request.
+  code String
+  
+  /// Human-readable name of the block reason displayed in admin tools.
+  name String
+  
+  /// Optional detailed description of when this block reason should be used.
+  description String?
+  
+  /// Business-level severity classification such as low, medium, or high used
+  /// for risk reporting.
+  severity_level String
+  
+  /// Timestamp when the block reason was created.
+  created_at DateTime
+  
+  /// Timestamp when the block reason was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the block reason was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([severity_level])
 }

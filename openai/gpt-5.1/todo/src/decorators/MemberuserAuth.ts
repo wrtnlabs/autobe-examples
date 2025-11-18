@@ -3,18 +3,13 @@ import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
 
 import { memberuserAuthorize } from "../providers/authorize/memberuserAuthorize";
-import type { MemberuserPayload } from "./payload/MemberuserPayload";
 
 /**
- * Parameter decorator that injects authenticated MemberuserPayload.
+ * Parameter decorator for authenticating regular member users.
  *
- * Usage:
- * ```ts
- * @Get("/me")
- * public async getMe(@MemberuserAuth() me: MemberuserPayload) {
- *   return me;
- * }
- * ```
+ * When applied to a controller method parameter, it:
+ * - Registers bearer authentication in the Swagger documentation
+ * - Resolves the parameter value to the authenticated MemberuserPayload
  */
 export const MemberuserAuth =
   (): ParameterDecorator =>
@@ -29,15 +24,12 @@ export const MemberuserAuth =
         bearer: [],
       });
     })(target, propertyKey as string, undefined!);
-
     singleton.get()(target, propertyKey, parameterIndex);
   };
 
 const singleton = new Singleton(() =>
-  createParamDecorator(
-    async (_data: unknown, ctx: ExecutionContext): Promise<MemberuserPayload> => {
-      const request = ctx.switchToHttp().getRequest();
-      return memberuserAuthorize(request);
-    },
-  )(),
+  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return memberuserAuthorize(request);
+  })(),
 );

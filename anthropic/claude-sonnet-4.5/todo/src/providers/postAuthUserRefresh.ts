@@ -13,12 +13,12 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthUserRefresh(props: {
   body: ITodoListUser.IRefresh;
 }): Promise<ITodoListUser.IAuthorized> {
+  // Phase 1: Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: "user";
   };
-
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
@@ -33,15 +33,16 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
+  // Phase 2: Validate type matches expected actor type
   if (decoded.type !== "user") {
     throw new HttpException("Invalid token type", 403);
   }
 
+  // Phase 3: Validate session exists and is active
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
-      user_id: decoded.id,
-      expired_at: null,
+      todo_list_user_id: decoded.id,
     },
     include: {
       user: true,
@@ -52,64 +53,67 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (session.user.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
+  // Phase 4: Validate user account exists
+  const user = session.user;
+  if (!user) {
+    throw new HttpException("User account not found", 404);
   }
 
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Phase 5: Calculate token expiration timestamps
+  const now = Date.now();
+  const accessExpiresMs = now + 60 * 60 * 1000;
+  const refreshExpiresMs = now + 7 * 24 * 60 * 60 * 1000;
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: new Date(now).toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
 
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: new Date(now).toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // Phase 6: Update session expiration time
   await MyGlobal.prisma.todo_list_user_sessions.update({
     where: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: refreshExpires,
+      expired_at: new Date(refreshExpiresMs),
     },
   });
 
+  // Phase 7: Return user data with new token pair
   return {
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name === null ? undefined : session.user.name,
-    created_at: toISOStringSafe(session.user.created_at),
-    updated_at: toISOStringSafe(session.user.updated_at),
-    deleted_at:
-      session.user.deleted_at === null
-        ? undefined
-        : toISOStringSafe(session.user.deleted_at),
-    token,
+    id: user.id,
+    email: user.email,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(new Date(accessExpiresMs)),
+      refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)),
+    },
   };
 }

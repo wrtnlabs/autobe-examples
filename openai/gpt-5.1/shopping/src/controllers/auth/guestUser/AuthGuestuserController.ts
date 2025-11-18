@@ -3,79 +3,79 @@ import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 
 import { IShoppingMallGuestUser } from "../../../api/structures/IShoppingMallGuestUser";
-import { IShoppingMallGuestUserJoin } from "../../../api/structures/IShoppingMallGuestUserJoin";
-import { IShoppingMallGuestUserRefresh } from "../../../api/structures/IShoppingMallGuestUserRefresh";
 
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Register a new guestUser identity using shopping_mall_guestuser and issue
-   * an initial IShoppingMallGuestUser.IAuthorized token payload.
+   * Create a new guest user identity in shopping_mall_guestusers and issue
+   * initial JWT tokens for the guestUser actor.
    *
-   * This operation registers an unauthenticated visitor as a tracked guest
-   * user by creating a new record in the shopping_mall_guestuser table and
-   * issuing an initial JWT authorization payload tailored for the guestUser
-   * actor.
+   * This API operation creates a new logical guest user identity in the
+   * shoppingMall platform using the shopping_mall_guestusers table and
+   * immediately issues initial JWT tokens for subsequent guestUser
+   * interactions.
    *
-   * At the persistence layer, the implementation will primarily insert into
-   * shopping_mall_guestuser, populating fields such as temporary_identifier
-   * for correlating pre-registration activity, user_agent for device
-   * analytics, and the mandatory created_at and updated_at timestamps. The
-   * deleted_at field is kept null for active guests; if a record is later
-   * soft deleted by setting deleted_at, this API must ensure those logically
-   * removed identities are not inadvertently reused, protecting historical
-   * analytics integrity.
+   * From a database perspective, the operation inserts a row into
+   * shopping_mall_guestusers, whose description states that it represents
+   * "Logical identities for guest users of the shoppingMall platform" and
+   * that it "represents unauthenticated visitors who may still own transient
+   * business data such as temporary carts or wishlists before converting to
+   * registered customers." The primary key id is generated to uniquely
+   * identify this guest identity, while created_at and updated_at are
+   * populated with the current timestamp to reflect record creation time and
+   * last update time. If the client provides correlation information, it is
+   * stored in the external_reference column, which the schema describes as an
+   * "Optional external or device-based reference used to correlate guest
+   * sessions, such as a cookie or device identifier, stored in a
+   * privacy-aware way." The deleted_at column remains null to indicate that
+   * the record is active.
    *
-   * Security-wise, the endpoint is publicly accessible (authorizationActor is
-   * null) but all requests must be strictly validated. The request body will
-   * carry benign context only (no passwords or emails) and is limited to
-   * fields that can be safely stored: for example, a temporary_identifier
-   * derived from cookies, IP and user_agent strings, and an optional guest
-   * cart token from shopping_mall_guest_carts.guest_token to indicate that an
-   * existing cart should be associated with the newly created guest. Input
-   * validation should enforce reasonable string lengths and ensure that any
-   * URI-like referrer values match their documented expectations in
-   * shopping_mall_guest_carts.
+   * From a security and authorization standpoint, this operation has
+   * authorizationType set to "join" and authorizationActor set to null,
+   * meaning that it is publicly accessible and does not require any existing
+   * authentication context. The join classification reflects that the
+   * endpoint creates a new account-like identity and returns an authorization
+   * payload for the guestUser actor in a single step. The response body uses
+   * the IShoppingMallGuestUser.IAuthorized schema, which encapsulates access
+   * and refresh tokens and basic guest identity context suitable for
+   * client-side storage.
    *
-   * From a relational standpoint, this operation does not write directly into
-   * shopping_mall_guest_carts or shopping_mall_guest_cart_items, but the
-   * application layer can use the provided guest cart token to look up an
-   * existing shopping_mall_guest_carts row (by its unique guest_token index)
-   * and link it to the new guestUser via shopping_mall_guestuser.id and
-   * shopping_mall_guest_carts.shopping_mall_guestuser_id. This design
-   * leverages the optional foreign key
-   * shopping_mall_guest_carts.shopping_mall_guestuser_id to gradually
-   * transition anonymous carts into identified guest or customer flows.
+   * In relation to other database entities, the created
+   * shopping_mall_guestusers.id may later be referenced by
+   * shopping_mall_guestuser_sessions as the owner of individual browsing
+   * sessions, by shopping_mall_actor_security_events_of_guestusers when
+   * security-related events must be linked to a particular guest identity,
+   * and by shopping_mall_account_risk_flags_of_guestusers when risk
+   * evaluation results need to be attached to this guest. None of these
+   * subsidiary tables are written directly by this operation; instead, they
+   * are populated by downstream authentication/session management and risk
+   * subsystems when tokens are used.
    *
-   * For observability and security analytics, the implementation should
-   * insert log entries into shopping_mall_auth_logs and
-   * shopping_mall_security_events. In shopping_mall_auth_logs, fields like
-   * event_type (for example, "guest_join"), actor_type ("guestUser"),
-   * actor_id (the new guestUser.id), ip, user_agent, success, and created_at
-   * enable later analysis of funnel behavior and anomaly detection. In
-   * shopping_mall_security_events, a complementary record with event_type
-   * such as LOGIN_SUCCESS or a guest-specific registration category,
-   * actor_type "guestUser", actor_identifier based on the
-   * temporary_identifier, and metadata describing the request context helps
-   * risk and compliance teams.
+   * Validation rules for this endpoint are intentionally minimal, aligning
+   * with the schema which does not impose unique constraints beyond the
+   * primary key and exposes external_reference as a nullable string. The
+   * implementation should validate that any provided external_reference
+   * respects length or format limits defined in the corresponding DTO but
+   * does not attempt to enforce uniqueness or specific semantics, because the
+   * Prisma schema for shopping_mall_guestusers declares no unique indexes on
+   * this column. The timestamps created_at and updated_at must always be
+   * non-null at creation time as indicated by their non-nullable
+   * definitions.
    *
-   * This endpoint is part of the broader guest lifecycle: after join, callers
-   * use the /auth/guestUser/refresh endpoint to renew tokens without
-   * re-registering, and platform flows may later upgrade a guestUser into a
-   * customer by linking shopping_mall_guestuser to shopping_mall_customer and
-   * shopping_mall_auth_credentials_of_customers. Error handling should return
-   * validation errors for malformed inputs, and internal errors should be
-   * logged but not leak sensitive implementation details.
-   *
-   * Note that this API intentionally does not touch
-   * shopping_mall_auth_credentials or passwords because guestUser actors do
-   * not authenticate with credentials; they rely solely on issued guest
-   * tokens managed by this join and the refresh operation.
+   * This join endpoint is typically used as the first step in a guest
+   * browsing flow, and is closely related to the /auth/guestUser/refresh
+   * operation that allows rotating tokens using a refresh token. Clients are
+   * expected to call this operation once when they need a stable guest
+   * identity (for example on initial app launch), store the returned tokens,
+   * and later call the refresh endpoint as needed. If the guest later
+   * converts to a registered customer, other higher-level business APIs will
+   * be responsible for migrating carts, wishlists, and risk data from this
+   * guest user identity to the new customer account, leveraging the stable id
+   * and related linkage tables.
    *
    * @param connection
-   * @param body Guest registration payload carrying optional correlation
-   *   identifiers and cart context needed to create a shopping_mall_guestuser
-   *   record and optionally associate existing guest carts.
+   * @param body Registration payload for initializing a guestUser identity
+   *   using optional device or external correlation data.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -83,74 +83,78 @@ export class AuthGuestuserController {
   @TypedRoute.Post("join")
   public async join(
     @TypedBody()
-    body: IShoppingMallGuestUserJoin.IRequest,
+    body: IShoppingMallGuestUser.IJoin,
   ): Promise<IShoppingMallGuestUser.IAuthorized> {
     body;
     return typia.random<IShoppingMallGuestUser.IAuthorized>();
   }
 
   /**
-   * Refresh an existing guestUser JWT session by validating the refresh token
-   * against shopping_mall_guestuser state and logging outcomes in
-   * shopping_mall_auth_logs and shopping_mall_security_events.
+   * Refresh JWT tokens for an existing guest user identity in
+   * shopping_mall_guestusers, updating guest session state as needed.
    *
-   * This operation renews JWT-based authorization for an existing guestUser
-   * by validating a refresh token, confirming the underlying guest identity
-   * in shopping_mall_guestuser is still valid, and issuing a new
-   * IShoppingMallGuestUser.IAuthorized payload.
+   * This API operation refreshes JWT tokens for an existing guestUser actor
+   * by validating a refresh token, reusing the existing logical identity
+   * stored in the shopping_mall_guestusers table, and returning a new
+   * authorization payload.
    *
-   * At the data layer, the implementation must first derive or look up the
-   * guestUser identity from the presented refresh token. While the refresh
-   * token itself is not stored in shopping_mall_guestuser, the resolved
-   * guestUser.id is used to check the current state of the record. In
-   * particular, the system must ensure that the guest has not been logically
-   * removed by verifying that deleted_at remains null. The temporal fields
-   * created_at and updated_at may also be used for heuristic checks or
-   * cleanup processes, but they do not block refresh by themselves.
+   * At the database layer, the core identity for the guestUser is represented
+   * by shopping_mall_guestusers, whose description emphasizes that it
+   * contains "Logical identities for guest users of the shoppingMall
+   * platform" and that these identities correspond to unauthenticated
+   * visitors who may still hold temporary business data. The refresh
+   * operation must ensure that the guest identity referenced by the incoming
+   * refresh token still exists and is active, which in practice means its id
+   * is present and its deleted_at column remains null. The fields created_at
+   * and updated_at on shopping_mall_guestusers remain authoritative for when
+   * the identity was created and last changed; the refresh itself normally
+   * does not modify these columns unless business rules require touching
+   * updated_at.
    *
-   * Because this endpoint operates on security-sensitive tokens, it should be
-   * available only to callers presenting a valid refresh token, though the
-   * HTTP path remains under /auth/guestUser. No password or email fields are
-   * involved because guestUser actors do not own rows in
-   * shopping_mall_auth_credentials. Instead, the token infrastructure treats
-   * the guestUser.id as the primary subject and encodes temporary identity
-   * claims derived from shopping_mall_guestuser. The request body structure
-   * must therefore focus on the refresh token and optional telemetry such as
-   * ip and user_agent for logging.
+   * Session continuity is captured by shopping_mall_guestuser_sessions, where
+   * each row is a session record for a guest user including ip, href,
+   * referrer, created_at, and expired_at fields. When this refresh endpoint
+   * is called, the implementation may either create a new session record or
+   * update an existing one associated with the same
+   * shopping_mall_guestuser_id, adjusting expired_at to reflect the extended
+   * session lifetime that results from token rotation. The plain index on
+   * (shopping_mall_guestuser_id, created_at) supports efficient lookup of
+   * session history for a given guest identity.
    *
-   * From an observability and risk perspective, the operation must write to
-   * shopping_mall_auth_logs and shopping_mall_security_events. In
-   * shopping_mall_auth_logs, each attempt should produce a row with
-   * event_type "token_refresh", actor_type "guestUser", actor_id equal to the
-   * resolved guestUser.id when known, ip, user_agent, success indicating
-   * whether a new token was issued, an optional failure_reason when the token
-   * is invalid or expired, and created_at as the event timestamp. These
-   * records help security and operations teams analyze token usage patterns
-   * and troubleshoot issues.
+   * From a security and auditing perspective, calls to this endpoint may be
+   * mirrored into shopping_mall_actor_security_events_of_guestusers and
+   * shopping_mall_account_risk_flags_of_guestusers depending on outcomes. The
+   * former links conceptual security events from
+   * shopping_mall_actor_security_events to a specific guest user via the
+   * shopping_mall_guestuser_id, allowing behavior such as repeated failed
+   * refresh attempts or anomalous IP changes to be recorded. The latter links
+   * entries in shopping_mall_account_risk_flags to guest identities, which
+   * can be used by the risk engine to track abusive or suspicious activity
+   * originating from anonymous users even before they register.
    *
-   * In shopping_mall_security_events, the system should create or update
-   * records reflecting security outcomes such as TOKEN_REFRESH for successful
-   * renewals or TOKEN_REVOKED / LOGIN_FAILURE-style events for suspicious or
-   * invalid tokens. Fields such as actor_type, actor_identifier (which may
-   * reuse the temporary_identifier from shopping_mall_guestuser or a masked
-   * token identifier), ip, user_agent, metadata with structured JSON
-   * describing token age or risk signals, and created_at allow downstream
-   * fraud and compliance processes to consume these events.
+   * The request body for this operation is defined by the
+   * IShoppingMallGuestUser.IRefresh DTO and must minimally carry the refresh
+   * token issued during the join flow or a prior refresh call. The endpoint
+   * is classified with authorizationType "refresh" and authorizationActor
+   * null, indicating that it operates as an authentication endpoint and uses
+   * token-level verification rather than session-based authorization. On
+   * success, it returns an IShoppingMallGuestUser.IAuthorized payload
+   * containing freshly minted access (and potentially refresh) tokens bound
+   * to the same guest identity.
    *
-   * This endpoint works together with POST /auth/guestUser/join, which
-   * initially creates the guestUser record and issues the first
-   * IShoppingMallGuestUser.IAuthorized payload. Client applications are
-   * expected to call /auth/guestUser/refresh before access tokens expire to
-   * maintain a seamless guest experience while retaining the ability to
-   * revoke or expire tokens based on changes in shopping_mall_guestuser state
-   * or security policy. Error responses should distinguish between
-   * invalid/expired tokens and broader server errors without revealing
-   * sensitive token validation logic.
+   * This refresh operation is expected to be used in conjunction with
+   * /auth/guestUser/join. Clients initially obtain tokens by calling the join
+   * endpoint and then call this refresh endpoint whenever their access token
+   * is close to expiry, thereby maintaining a continuous guest session tied
+   * to a single shopping_mall_guestusers.id. If the refresh token is invalid,
+   * expired, or bound to a guest identity that has been flagged or logically
+   * removed, the operation should return an authentication error and avoid
+   * creating new session or security event records except where needed for
+   * risk tracking.
    *
    * @param connection
-   * @param body Guest token refresh payload containing the refresh token and
-   *   optional telemetry data needed to validate and renew guestUser
-   *   authorization.
+   * @param body Refresh-token based request to renew guestUser JWT
+   *   credentials without re-creating the guest identity.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -158,7 +162,7 @@ export class AuthGuestuserController {
   @TypedRoute.Post("refresh")
   public async refresh(
     @TypedBody()
-    body: IShoppingMallGuestUserRefresh.IRequest,
+    body: IShoppingMallGuestUser.IRefresh,
   ): Promise<IShoppingMallGuestUser.IAuthorized> {
     body;
     return typia.random<IShoppingMallGuestUser.IAuthorized>();

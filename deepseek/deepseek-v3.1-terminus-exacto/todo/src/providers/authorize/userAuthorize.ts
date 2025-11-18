@@ -16,29 +16,22 @@ export async function userAuthorize(request: {
   }
 
   // Verify user exists and is active
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: {
-      id: payload.id,
-      deleted_at: null,
-      status: "active",
-    },
-  });
-
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
-  }
-
-  // Verify session is valid
-  const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
+  const userSession = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
       id: payload.session_id,
-      todo_list_user_id: payload.id,
+      todo_app_user_id: payload.id,
       expired_at: null,
-    },
+      user: {
+        deleted_at: null,
+        status: {
+          in: ["active", "verified"]
+        }
+      }
+    }
   });
 
-  if (session === null) {
-    throw new ForbiddenException("Session expired");
+  if (userSession === null) {
+    throw new ForbiddenException("Invalid session or user not found");
   }
 
   return payload;

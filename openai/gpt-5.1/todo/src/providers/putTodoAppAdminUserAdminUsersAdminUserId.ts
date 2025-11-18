@@ -15,11 +15,10 @@ export async function putTodoAppAdminUserAdminUsersAdminUserId(props: {
   adminUserId: string & tags.Format<"uuid">;
   body: ITodoAppAdminUser.IUpdate;
 }): Promise<ITodoAppAdminUser> {
-  // Ensure target admin user exists and is not logically deleted
+  // Step 1: locate existing admin user by primary key
   const existing = await MyGlobal.prisma.todo_app_adminusers.findFirst({
     where: {
       id: props.adminUserId,
-      deleted_at: null,
     },
   });
 
@@ -27,75 +26,82 @@ export async function putTodoAppAdminUserAdminUsersAdminUserId(props: {
     throw new HttpException("Admin user not found", 404);
   }
 
-  const body = props.body;
+  // Determine which fields are present in the request body
+  const hasEmail: boolean = Object.prototype.hasOwnProperty.call(
+    props.body,
+    "email",
+  );
+  const hasDisplayName: boolean = Object.prototype.hasOwnProperty.call(
+    props.body,
+    "display_name",
+  );
+  const hasStatus: boolean = Object.prototype.hasOwnProperty.call(
+    props.body,
+    "status",
+  );
 
-  // Build update payload from provided fields only
-  const data = {
-    ...(body.email !== undefined && { email: body.email }),
-    ...(body.display_name !== undefined && { display_name: body.display_name }),
-    ...(body.status !== undefined && { status: body.status }),
-    ...(body.failed_login_count !== undefined && {
-      failed_login_count: body.failed_login_count,
-    }),
-    ...(body.last_login_at !== undefined && {
-      last_login_at:
-        body.last_login_at === null
-          ? null
-          : toISOStringSafe(body.last_login_at),
-    }),
-    ...(body.deleted_at !== undefined && {
-      deleted_at:
-        body.deleted_at === null ? null : toISOStringSafe(body.deleted_at),
-    }),
-  };
+  // If no updatable fields are provided, return the existing record mapped to DTO
+  if (!hasEmail && !hasDisplayName && !hasStatus) {
+    return {
+      id: existing.id,
+      email: existing.email,
+      display_name: existing.display_name,
+      status: existing.status,
+      created_at: toISOStringSafe(existing.created_at),
+      updated_at: toISOStringSafe(existing.updated_at),
+    };
+  }
 
-  try {
-    const updated = await MyGlobal.prisma.todo_app_adminusers.update({
-      where: { id: props.adminUserId },
-      data,
+  // Step 2: enforce unique email when updating email
+  if (hasEmail && props.body.email !== undefined) {
+    const duplicate = await MyGlobal.prisma.todo_app_adminusers.findFirst({
+      where: {
+        email: props.body.email,
+        NOT: {
+          id: existing.id,
+        },
+      },
     });
 
-    // Basic runtime consistency checks for required timestamp fields
-    if (updated.created_at === null || updated.created_at === undefined) {
+    if (duplicate !== null) {
       throw new HttpException(
-        "Invalid admin user data: created_at is missing",
-        500,
+        "Email is already in use by another admin user",
+        400,
       );
     }
-    if (updated.updated_at === null || updated.updated_at === undefined) {
-      throw new HttpException(
-        "Invalid admin user data: updated_at is missing",
-        500,
-      );
-    }
-
-    // Map database record to API DTO
-    const result: ITodoAppAdminUser = {
-      id: updated.id,
-      email: updated.email,
-      display_name: updated.display_name === null ? null : updated.display_name,
-      status: updated.status,
-      failed_login_count: updated.failed_login_count,
-      last_login_at:
-        updated.last_login_at === null || updated.last_login_at === undefined
-          ? null
-          : toISOStringSafe(updated.last_login_at),
-      created_at: toISOStringSafe(updated.created_at),
-      updated_at: toISOStringSafe(updated.updated_at),
-      deleted_at:
-        updated.deleted_at === null || updated.deleted_at === undefined
-          ? null
-          : toISOStringSafe(updated.deleted_at),
-    };
-
-    return result;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        // Unique constraint failed, likely on email
-        throw new HttpException("Email is already in use", 409);
-      }
-    }
-    throw error;
   }
+
+  // Step 3: perform the update
+  const updated = await MyGlobal.prisma.todo_app_adminusers.update({
+    where: {
+      id: props.adminUserId,
+    },
+    data: {
+      ...(hasEmail && props.body.email !== undefined
+        ? { email: props.body.email }
+        : {}),
+      ...(hasDisplayName
+        ? {
+            display_name:
+              props.body.display_name === undefined
+                ? existing.display_name
+                : props.body.display_name,
+          }
+        : {}),
+      ...(hasStatus && props.body.status !== undefined
+        ? { status: props.body.status }
+        : {}),
+      // Rely on database or Prisma middleware to manage updated_at automatically.
+    },
+  });
+
+  // Step 4: map updated record to DTO, never exposing password_hash
+  return {
+    id: updated.id,
+    email: updated.email,
+    display_name: updated.display_name,
+    status: updated.status,
+    created_at: toISOStringSafe(updated.created_at),
+    updated_at: toISOStringSafe(updated.updated_at),
+  };
 }

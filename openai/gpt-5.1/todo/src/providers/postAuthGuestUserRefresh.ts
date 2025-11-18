@@ -8,88 +8,77 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppGuestUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppGuestUser";
-import { ITodoAppGuestUserMetadata } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppGuestUserMetadata";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { GuestuserPayload } from "../decorators/payload/GuestuserPayload";
 
 export async function postAuthGuestUserRefresh(props: {
-  guestUser: GuestuserPayload;
-  body: ITodoAppGuestUser.IRefresh;
+  body: ITodoAppGuestUser.IRefreshRequest;
 }): Promise<ITodoAppGuestUser.IAuthorized> {
-  // Step 1: verify the refresh token from request body
-  let decodedRaw: unknown;
-
+  // 1. Decode and verify the incoming refresh token
+  let decoded: unknown;
   try {
-    decodedRaw = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    );
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    });
   } catch (_error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Narrow the decoded payload shape without relying on `as any`.
-  const decodedObject = typeof decodedRaw === "string" ? undefined : decodedRaw;
-
-  if (
-    !decodedObject ||
-    typeof (decodedObject as jwt.JwtPayload).id !== "string" ||
-    typeof (decodedObject as jwt.JwtPayload).session_id !== "string" ||
-    (decodedObject as jwt.JwtPayload).type !== "guestUser"
-  ) {
-    throw new HttpException("Invalid refresh token payload for guestUser", 401);
+  // 2. Validate decoded payload shape for guestUser refresh tokens
+  if (!decoded || typeof decoded !== "object") {
+    throw new HttpException("Invalid token payload", 401);
   }
 
-  const decoded = decodedObject as jwt.JwtPayload;
+  const decodedPayload = decoded as {
+    id?: string;
+    session_id?: string;
+    type?: string;
+    tokenType?: string;
+  };
 
-  const decodedId = decoded.id as string;
-  const decodedSessionId = decoded.session_id as string;
-
-  // Step 2: validate that the token type and identity align with the injected guestUser payload
-  if (decoded.type !== "guestUser") {
-    throw new HttpException("Invalid token type for guestUser refresh", 403);
+  if (decodedPayload.type !== "guestUser") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  if (
-    decodedId !== props.guestUser.id ||
-    decodedSessionId !== props.guestUser.session_id
-  ) {
-    throw new HttpException(
-      "Token subject does not match authenticated guest user",
-      403,
-    );
+  if (decodedPayload.tokenType && decodedPayload.tokenType !== "refresh") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 3: ensure the underlying guest actor still exists and is not soft-deleted
-  const guest = await MyGlobal.prisma.todo_app_guestusers.findFirst({
+  if (!decodedPayload.id || !decodedPayload.session_id) {
+    throw new HttpException("Invalid token payload", 401);
+  }
+
+  const guestId = decodedPayload.id;
+  const sessionId = decodedPayload.session_id;
+
+  // 3. Load current guest state from database
+  const guest = await MyGlobal.prisma.todo_app_guestusers.findUnique({
     where: {
-      id: props.guestUser.id,
-      deleted_at: null,
+      id: guestId,
     },
   });
 
-  if (guest === null) {
-    throw new HttpException(
-      "Guest user has been deleted or does not exist",
-      403,
-    );
+  if (!guest) {
+    // Guest record removed or never existed: treat as expired/revoked
+    throw new HttpException("Guest session expired or revoked", 401);
   }
 
-  // Step 4: compute new token expiration instants
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // 4. Prepare new token expiry timestamps as ISO strings (no Date type annotations)
+  const nowMillis = Date.now();
+  const accessExpiryMillis = nowMillis + 60 * 60 * 1000; // 1 hour
+  const refreshExpiryMillis = nowMillis + 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  // Step 5: issue new JWT access and refresh tokens preserving the same session_id
+  const accessExpiresAt = toISOStringSafe(new Date(accessExpiryMillis));
+  const refreshExpiresAt = toISOStringSafe(new Date(refreshExpiryMillis));
+
+  const createdAtForToken = toISOStringSafe(new Date(nowMillis));
+
+  // 5. Generate new access and refresh JWTs, preserving guest id and session id
   const accessToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decodedId,
-      session_id: decodedSessionId,
-      created_at: now.toISOString(),
+      type: decodedPayload.type,
+      id: guestId,
+      session_id: sessionId,
+      created_at: createdAtForToken,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -100,11 +89,11 @@ export async function postAuthGuestUserRefresh(props: {
 
   const refreshToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decodedId,
-      session_id: decodedSessionId,
+      type: decodedPayload.type,
+      id: guestId,
+      session_id: sessionId,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: createdAtForToken,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -113,26 +102,32 @@ export async function postAuthGuestUserRefresh(props: {
     },
   );
 
+  // 6. Update guest.updated_at to reflect latest interaction
+  const updatedGuest = await MyGlobal.prisma.todo_app_guestusers.update({
+    where: {
+      id: guest.id,
+    },
+    data: {
+      updated_at: new Date(nowMillis),
+    },
+  });
+
+  // 7. Build IAuthorizationToken structure
   const token: IAuthorizationToken = {
     access: accessToken,
     refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpiresAt,
+    refreshable_until: refreshExpiresAt,
   };
 
-  // Step 6: construct the authorized guest user payload.
-  const createdAt = toISOStringSafe(guest.created_at);
-  const updatedAt = toISOStringSafe(guest.updated_at);
-
-  const deletedAt = guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null;
-
+  // 8. Map DB guest record to ITodoAppGuestUser.IAuthorized
   return {
-    id: guest.id,
-    display_name: guest.display_name === null ? null : guest.display_name,
-    created_at: createdAt,
-    updated_at: updatedAt,
-    deleted_at: deletedAt,
-    metadata: undefined,
+    id: updatedGuest.id,
+    external_ref: updatedGuest.external_ref ?? null,
+    created_at: toISOStringSafe(updatedGuest.created_at),
+    updated_at: toISOStringSafe(updatedGuest.updated_at),
+    accessToken,
+    refreshToken,
     token,
   };
 }
