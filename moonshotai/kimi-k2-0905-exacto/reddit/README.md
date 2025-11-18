@@ -17,11 +17,11 @@ subgraph "Backend Coding Agent"
   coder("Facade Controller")
 end
 subgraph "Functional Agents"
-  coder --"Requirements Analysis"--> analyze("Analyze")
-  coder --"ERD"--> prisma("Prisma")
-  coder --"API Design"--> interface("Interface")
-  coder --"Test Codes" --> test("Test")
-  coder --"Main Program" --> realize("Realize")
+  coder --"Requirements Analysis"--> analyze("✅ Analyze")
+  coder --"ERD"--> prisma("✅ Prisma")
+  coder --"API Design"--> interface("✅ Interface")
+  coder --"Test Codes" --> test("✅ Test")
+  coder --"Main Program" --> realize(" Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -40,12 +40,12 @@ Below table shows the mapping between waterfall phases, corresponding [`@autobe`
 
 Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
-Requirements    | Facade       | Conversation History
-Analysis        | Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          | Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | Realize      | [API Provider Functions](src/providers)
-Testing         | Test         | [E2E Test Functions](test/features/api)
+Requirements    | ✅ Facade       | Conversation History
+Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     |  Realize      | [API Provider Functions](src/providers)
+Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -106,6 +106,65 @@ When you've created a new backend project through this template project, you can
 | PROJECT      | Your own project name
 | AUTHOR       | Author name
 | https://github.com/samchon/nestia-start | Your repository URL
+
+## Benchmark
+
+### Aggregate
+
+Phase | Generated | FCSR | Token Consumption | Elapsed Time
+------|-----------|------|-------------------|--------------
+✅ analyze | actors: 4, documents: 15 | 100.00 % | 1,084,761 | 773 sec
+✅ prisma | namespaces: 8, models: 41 | 91.30 % | 1,082,956 | 1423 sec
+✅ interface | operations: 85, schemas: 92 | 77.13 % | 51,729,577 | 4615 sec
+✅ test | functions: 240 | 91.77 % | 41,784,727 | 2133 sec
+
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+
+- **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
+- **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **Token Consumption**: Total number of LLM tokens consumed during the phase
+- **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
+
+These aggregate metrics provide visibility into the computational cost and time requirements of the entire generation process, helping identify resource-intensive phases and overall pipeline efficiency.
+
+### Function Calling
+
+Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
+:----|------:|-------------------:|-----------------:|---------:|-------------:
+total | 1,222 | 175 | 11 | 1,024 | 83.80 %
+analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
+analyzeWrite | 15 | 0 | 0 | 15 | 100.00 %
+analyzeReview | 15 | 0 | 0 | 15 | 100.00 %
+prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
+prismaSchema | 10 | 2 | 0 | 8 | 80.00 %
+prismaReview | 10 | 0 | 0 | 10 | 100.00 %
+prismaCorrect | 2 | 0 | 0 | 2 | 100.00 %
+interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
+interfaceAuthorization | 11 | 1 | 0 | 9 | 81.82 %
+interfaceEndpoint | 14 | 0 | 0 | 14 | 100.00 %
+interfaceEndpointReview | 1 | 0 | 0 | 1 | 100.00 %
+interfaceOperation | 101 | 21 | 0 | 80 | 79.21 %
+interfaceOperationReview | 52 | 12 | 0 | 42 | 80.77 %
+interfaceSchema | 146 | 33 | 1 | 111 | 76.03 %
+interfaceSchemaReview | 236 | 37 | 3 | 199 | 84.32 %
+interfaceComplement | 69 | 42 | 0 | 27 | 39.13 %
+interfaceSchemaRename | 2 | 0 | 0 | 2 | 100.00 %
+interfacePrerequisite | 49 | 9 | 0 | 40 | 81.63 %
+testScenario | 74 | 10 | 0 | 44 | 59.46 %
+testWrite | 412 | 8 | 7 | 402 | 97.57 %
+
+This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
+
+- **Type**: The AI agent operation name
+- **Trial**: Total number of function calling attempts made by the agent
+- **Validation Failure**: Calls that produced valid JSON but failed type validation
+- **JSON Parse Error**: Calls that produced malformed JSON that couldn't be parsed
+- **Success**: Calls that completed successfully with valid, validated responses
+- **Success Rate**: Percentage of successful calls out of total attempts
+
+These metrics reveal the effectiveness of AutoBE's validation feedback strategy powered by [`typia.llm.application<Class, Model>()`](https://typia.io/docs/llm/application/). When function calls fail type validation, detailed error messages are fed back to the AI agent, enabling iterative correction through self-healing spiral loops.
+
+Success rates vary based on model size and capability - smaller models may have lower initial success rates. However, validation feedback enables even weaker models to achieve high success rates through automatic correction cycles, demonstrating the power of compiler-driven development.
 
 ## License
 

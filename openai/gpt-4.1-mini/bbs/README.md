@@ -17,11 +17,11 @@ subgraph "Backend Coding Agent"
   coder("Facade Controller")
 end
 subgraph "Functional Agents"
-  coder --"Requirements Analysis"--> analyze("Analyze")
-  coder --"ERD"--> prisma("Prisma")
-  coder --"API Design"--> interface("Interface")
-  coder --"Test Codes" --> test("Test")
-  coder --"Main Program" --> realize("Realize")
+  coder --"Requirements Analysis"--> analyze("✅ Analyze")
+  coder --"ERD"--> prisma("✅ Prisma")
+  coder --"API Design"--> interface("✅ Interface")
+  coder --"Test Codes" --> test("✅ Test")
+  coder --"Main Program" --> realize("✅ Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -40,12 +40,12 @@ Below table shows the mapping between waterfall phases, corresponding [`@autobe`
 
 Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
-Requirements    | Facade       | Conversation History
-Analysis        | Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          | Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | Realize      | [API Provider Functions](src/providers)
-Testing         | Test         | [E2E Test Functions](test/features/api)
+Requirements    | ✅ Facade       | Conversation History
+Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     | ✅ Realize      | [API Provider Functions](src/providers)
+Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -106,6 +106,69 @@ When you've created a new backend project through this template project, you can
 | PROJECT      | Your own project name
 | AUTHOR       | Author name
 | https://github.com/samchon/nestia-start | Your repository URL
+
+## Benchmark
+
+### Aggregate
+
+Phase | Generated | FCSR | Token Consumption | Elapsed Time
+------|-----------|------|-------------------|--------------
+✅ analyze | actors: 3, documents: 11 | 100.00 % | 471,988 | 170 sec
+✅ prisma | namespaces: 3, models: 9 | 77.78 % | 293,407 | 108 sec
+✅ interface | operations: 53, schemas: 63 | 60.44 % | 25,750,540 | 1333 sec
+✅ test | functions: 41 | 82.65 % | 7,158,107 | 754 sec
+✅ realize | functions: 53 | 94.44 % | 7,076,867 | 1060 sec
+
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+
+- **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
+- **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **Token Consumption**: Total number of LLM tokens consumed during the phase
+- **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
+
+These aggregate metrics provide visibility into the computational cost and time requirements of the entire generation process, helping identify resource-intensive phases and overall pipeline efficiency.
+
+### Function Calling
+
+Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
+:----|------:|-------------------:|-----------------:|---------:|-------------:
+total | 832 | 229 | 0 | 621 | 74.64 %
+analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
+analyzeWrite | 11 | 0 | 0 | 11 | 100.00 %
+analyzeReview | 11 | 0 | 0 | 11 | 100.00 %
+prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
+prismaSchema | 3 | 0 | 0 | 3 | 100.00 %
+prismaReview | 5 | 2 | 0 | 3 | 60.00 %
+interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
+interfaceAuthorization | 5 | 1 | 0 | 4 | 80.00 %
+interfaceEndpoint | 3 | 0 | 0 | 3 | 100.00 %
+interfaceEndpointReview | 2 | 1 | 0 | 1 | 50.00 %
+interfaceOperation | 58 | 19 | 0 | 39 | 67.24 %
+interfaceOperationReview | 117 | 97 | 0 | 38 | 32.48 %
+interfaceSchema | 61 | 11 | 0 | 50 | 81.97 %
+interfaceComplement | 3 | 2 | 0 | 1 | 33.33 %
+interfaceSchemaReview | 141 | 34 | 0 | 107 | 75.89 %
+interfaceSchemaRename | 1 | 0 | 0 | 1 | 100.00 %
+interfacePrerequisite | 58 | 31 | 0 | 27 | 46.55 %
+testScenario | 30 | 2 | 0 | 28 | 93.33 %
+testWrite | 68 | 15 | 0 | 53 | 77.94 %
+realizeAuthorizationWrite | 6 | 0 | 0 | 6 | 100.00 %
+realizeAuthorizationCorrect | 15 | 0 | 0 | 15 | 100.00 %
+realizeWrite | 62 | 0 | 0 | 62 | 100.00 %
+realizeCorrect | 169 | 14 | 0 | 155 | 91.72 %
+
+This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
+
+- **Type**: The AI agent operation name
+- **Trial**: Total number of function calling attempts made by the agent
+- **Validation Failure**: Calls that produced valid JSON but failed type validation
+- **JSON Parse Error**: Calls that produced malformed JSON that couldn't be parsed
+- **Success**: Calls that completed successfully with valid, validated responses
+- **Success Rate**: Percentage of successful calls out of total attempts
+
+These metrics reveal the effectiveness of AutoBE's validation feedback strategy powered by [`typia.llm.application<Class, Model>()`](https://typia.io/docs/llm/application/). When function calls fail type validation, detailed error messages are fed back to the AI agent, enabling iterative correction through self-healing spiral loops.
+
+Success rates vary based on model size and capability - smaller models may have lower initial success rates. However, validation feedback enables even weaker models to achieve high success rates through automatic correction cycles, demonstrating the power of compiler-driven development.
 
 ## License
 

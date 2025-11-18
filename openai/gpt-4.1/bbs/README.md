@@ -17,11 +17,11 @@ subgraph "Backend Coding Agent"
   coder("Facade Controller")
 end
 subgraph "Functional Agents"
-  coder --"Requirements Analysis"--> analyze("Analyze")
-  coder --"ERD"--> prisma("Prisma")
-  coder --"API Design"--> interface("Interface")
-  coder --"Test Codes" --> test("Test")
-  coder --"Main Program" --> realize("Realize")
+  coder --"Requirements Analysis"--> analyze("✅ Analyze")
+  coder --"ERD"--> prisma("✅ Prisma")
+  coder --"API Design"--> interface("✅ Interface")
+  coder --"Test Codes" --> test("✅ Test")
+  coder --"Main Program" --> realize("✅ Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -40,12 +40,12 @@ Below table shows the mapping between waterfall phases, corresponding [`@autobe`
 
 Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
-Requirements    | Facade       | Conversation History
-Analysis        | Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          | Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | Realize      | [API Provider Functions](src/providers)
-Testing         | Test         | [E2E Test Functions](test/features/api)
+Requirements    | ✅ Facade       | Conversation History
+Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     | ✅ Realize      | [API Provider Functions](src/providers)
+Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -106,6 +106,69 @@ When you've created a new backend project through this template project, you can
 | PROJECT      | Your own project name
 | AUTHOR       | Author name
 | https://github.com/samchon/nestia-start | Your repository URL
+
+## Benchmark
+
+### Aggregate
+
+Phase | Generated | FCSR | Token Consumption | Elapsed Time
+------|-----------|------|-------------------|--------------
+✅ analyze | actors: 2, documents: 11 | 79.31 % | 701,425 | 402 sec
+✅ prisma | namespaces: 5, models: 12 | 100.00 % | 367,309 | 146 sec
+✅ interface | operations: 63, schemas: 71 | 82.01 % | 19,487,354 | 1446 sec
+✅ test | functions: 71 | 97.32 % | 8,214,971 | 566 sec
+✅ realize | functions: 63 | 100.00 % | 7,044,783 | 4162 sec
+
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+
+- **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
+- **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **Token Consumption**: Total number of LLM tokens consumed during the phase
+- **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
+
+These aggregate metrics provide visibility into the computational cost and time requirements of the entire generation process, helping identify resource-intensive phases and overall pipeline efficiency.
+
+### Function Calling
+
+Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
+:----|------:|-------------------:|-----------------:|---------:|-------------:
+total | 713 | 48 | 0 | 643 | 90.18 %
+analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
+analyzeWrite | 13 | 2 | 0 | 11 | 84.62 %
+analyzeReview | 15 | 4 | 0 | 11 | 73.33 %
+prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
+prismaSchema | 5 | 0 | 0 | 5 | 100.00 %
+prismaReview | 5 | 0 | 0 | 5 | 100.00 %
+prismaCorrect | 1 | 0 | 0 | 1 | 100.00 %
+interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
+interfaceAuthorization | 4 | 0 | 0 | 3 | 75.00 %
+interfaceEndpoint | 5 | 0 | 0 | 5 | 100.00 %
+interfaceEndpointReview | 1 | 0 | 0 | 1 | 100.00 %
+interfaceOperation | 60 | 0 | 0 | 48 | 80.00 %
+interfaceOperationReview | 32 | 9 | 0 | 23 | 71.88 %
+interfaceSchema | 72 | 6 | 0 | 57 | 79.17 %
+interfaceSchemaReview | 130 | 20 | 0 | 110 | 84.62 %
+interfaceSchemaRename | 1 | 0 | 0 | 1 | 100.00 %
+interfacePrerequisite | 33 | 4 | 0 | 29 | 87.88 %
+testScenario | 32 | 0 | 0 | 32 | 100.00 %
+testWrite | 80 | 3 | 0 | 77 | 96.25 %
+realizeAuthorizationWrite | 4 | 0 | 0 | 4 | 100.00 %
+realizeAuthorizationCorrect | 10 | 0 | 0 | 10 | 100.00 %
+realizeWrite | 125 | 0 | 0 | 125 | 100.00 %
+realizeCorrect | 82 | 0 | 0 | 82 | 100.00 %
+
+This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
+
+- **Type**: The AI agent operation name
+- **Trial**: Total number of function calling attempts made by the agent
+- **Validation Failure**: Calls that produced valid JSON but failed type validation
+- **JSON Parse Error**: Calls that produced malformed JSON that couldn't be parsed
+- **Success**: Calls that completed successfully with valid, validated responses
+- **Success Rate**: Percentage of successful calls out of total attempts
+
+These metrics reveal the effectiveness of AutoBE's validation feedback strategy powered by [`typia.llm.application<Class, Model>()`](https://typia.io/docs/llm/application/). When function calls fail type validation, detailed error messages are fed back to the AI agent, enabling iterative correction through self-healing spiral loops.
+
+Success rates vary based on model size and capability - smaller models may have lower initial success rates. However, validation feedback enables even weaker models to achieve high success rates through automatic correction cycles, demonstrating the power of compiler-driven development.
 
 ## License
 

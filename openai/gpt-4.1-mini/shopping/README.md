@@ -17,11 +17,11 @@ subgraph "Backend Coding Agent"
   coder("Facade Controller")
 end
 subgraph "Functional Agents"
-  coder --"Requirements Analysis"--> analyze("Analyze")
-  coder --"ERD"--> prisma("Prisma")
-  coder --"API Design"--> interface("Interface")
-  coder --"Test Codes" --> test("Test")
-  coder --"Main Program" --> realize("Realize")
+  coder --"Requirements Analysis"--> analyze("✅ Analyze")
+  coder --"ERD"--> prisma("✅ Prisma")
+  coder --"API Design"--> interface("✅ Interface")
+  coder --"Test Codes" --> test("✅ Test")
+  coder --"Main Program" --> realize("✅ Realize")
 end
 subgraph "Compiler Feedback"
   prisma --"validates" --> prismaCompiler("Prisma Compiler")
@@ -40,12 +40,12 @@ Below table shows the mapping between waterfall phases, corresponding [`@autobe`
 
 Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
-Requirements    | Facade       | Conversation History
-Analysis        | Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          | Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | Realize      | [API Provider Functions](src/providers)
-Testing         | Test         | [E2E Test Functions](test/features/api)
+Requirements    | ✅ Facade       | Conversation History
+Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     | ✅ Realize      | [API Provider Functions](src/providers)
+Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -106,6 +106,70 @@ When you've created a new backend project through this template project, you can
 | PROJECT      | Your own project name
 | AUTHOR       | Author name
 | https://github.com/samchon/nestia-start | Your repository URL
+
+## Benchmark
+
+### Aggregate
+
+Phase | Generated | FCSR | Token Consumption | Elapsed Time
+------|-----------|------|-------------------|--------------
+✅ analyze | actors: 4, documents: 12 | 100.00 % | 628,469 | 670 sec
+✅ prisma | namespaces: 10, models: 40 | 91.67 % | 791,050 | 140 sec
+✅ interface | operations: 211, schemas: 248 | 80.14 % | 90,152,793 | 2478 sec
+✅ test | functions: 177 | 88.35 % | 27,955,419 | 745 sec
+✅ realize | functions: 211 | 96.41 % | 17,844,006 | 2333 sec
+
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+
+- **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
+- **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
+- **Token Consumption**: Total number of LLM tokens consumed during the phase
+- **Elapsed Time**: Wall-clock time taken to complete the phase, including all AI agent operations and compiler feedback loops
+
+These aggregate metrics provide visibility into the computational cost and time requirements of the entire generation process, helping identify resource-intensive phases and overall pipeline efficiency.
+
+### Function Calling
+
+Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
+:----|------:|-------------------:|-----------------:|---------:|-------------:
+total | 2,533 | 362 | 0 | 2,186 | 86.30 %
+analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
+analyzeWrite | 12 | 0 | 0 | 12 | 100.00 %
+analyzeReview | 12 | 0 | 0 | 12 | 100.00 %
+prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
+prismaSchema | 10 | 0 | 0 | 10 | 100.00 %
+prismaReview | 12 | 2 | 0 | 10 | 83.33 %
+prismaCorrect | 1 | 0 | 0 | 1 | 100.00 %
+interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
+interfaceAuthorization | 10 | 4 | 0 | 6 | 60.00 %
+interfaceEndpoint | 10 | 0 | 0 | 10 | 100.00 %
+interfaceEndpointReview | 2 | 0 | 0 | 2 | 100.00 %
+interfaceOperation | 225 | 55 | 0 | 170 | 75.56 %
+interfaceOperationReview | 233 | 98 | 0 | 151 | 64.81 %
+interfaceSchema | 340 | 58 | 0 | 281 | 82.65 %
+interfaceSchemaReview | 427 | 40 | 0 | 387 | 90.63 %
+interfaceComplement | 3 | 2 | 0 | 1 | 33.33 %
+interfaceSchemaRename | 3 | 0 | 0 | 3 | 100.00 %
+interfacePrerequisite | 136 | 34 | 0 | 102 | 75.00 %
+testScenario | 114 | 6 | 0 | 108 | 94.74 %
+testWrite | 255 | 37 | 0 | 218 | 85.49 %
+realizeAuthorizationWrite | 8 | 0 | 0 | 8 | 100.00 %
+realizeAuthorizationCorrect | 24 | 4 | 0 | 20 | 83.33 %
+realizeWrite | 374 | 1 | 0 | 373 | 99.73 %
+realizeCorrect | 319 | 21 | 0 | 298 | 93.42 %
+
+This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
+
+- **Type**: The AI agent operation name
+- **Trial**: Total number of function calling attempts made by the agent
+- **Validation Failure**: Calls that produced valid JSON but failed type validation
+- **JSON Parse Error**: Calls that produced malformed JSON that couldn't be parsed
+- **Success**: Calls that completed successfully with valid, validated responses
+- **Success Rate**: Percentage of successful calls out of total attempts
+
+These metrics reveal the effectiveness of AutoBE's validation feedback strategy powered by [`typia.llm.application<Class, Model>()`](https://typia.io/docs/llm/application/). When function calls fail type validation, detailed error messages are fed back to the AI agent, enabling iterative correction through self-healing spiral loops.
+
+Success rates vary based on model size and capability - smaller models may have lower initial success rates. However, validation feedback enables even weaker models to achieve high success rates through automatic correction cycles, demonstrating the power of compiler-driven development.
 
 ## License
 
