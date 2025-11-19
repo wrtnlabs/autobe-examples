@@ -9,7 +9,6 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postDiscussionBoardUserArticles(props: {
@@ -17,41 +16,44 @@ export async function postDiscussionBoardUserArticles(props: {
   body: IDiscussionBoardArticle.ICreate;
 }): Promise<IDiscussionBoardArticle> {
   const now = toISOStringSafe(new Date());
-  const result = await MyGlobal.prisma.discussion_board_articles.create({
+  // Create article
+  const article = await MyGlobal.prisma.discussion_board_articles.create({
     data: {
       id: v4(),
-      title: props.body.title,
-      body: props.body.body,
-      author_user_id: props.user.id,
-      author_admin_id: null,
+      user_id: props.user.id,
+      title: props.body.title.trim(),
+      content: props.body.content.trim(),
       created_at: now,
       updated_at: now,
-    },
-    include: {
-      authorUser: true,
+      deleted_at: null,
     },
   });
-  return {
-    id: result.id,
-    title: result.title,
-    body: result.body,
-    author_user: result.authorUser
-      ? {
-          id: result.authorUser.id,
-          email: result.authorUser.email,
-          is_email_verified: result.authorUser.is_email_verified,
-          is_active: result.authorUser.is_active,
-          is_blocked: result.authorUser.is_blocked,
-          created_at: toISOStringSafe(result.authorUser.created_at),
-          updated_at: toISOStringSafe(result.authorUser.updated_at),
-          deleted_at:
-            result.authorUser.deleted_at === null
-              ? null
-              : toISOStringSafe(result.authorUser.deleted_at),
-        }
-      : undefined,
-    author_admin: null,
-    created_at: toISOStringSafe(result.created_at),
-    updated_at: toISOStringSafe(result.updated_at),
+  // Fetch author summary
+  const user = await MyGlobal.prisma.discussion_board_users.findUnique({
+    where: { id: article.user_id },
+  });
+  if (!user) {
+    throw new HttpException("Author not found", 500);
+  }
+
+  const result: IDiscussionBoardArticle = {
+    id: article.id,
+    title: article.title,
+    content: article.content,
+    author: {
+      id: user.id,
+      email: user.email,
+      created_at: toISOStringSafe(user.created_at),
+      updated_at: toISOStringSafe(user.updated_at),
+      deleted_at:
+        user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
+    },
+    created_at: toISOStringSafe(article.created_at),
+    updated_at: toISOStringSafe(article.updated_at),
+    deleted_at:
+      article.deleted_at === null
+        ? undefined
+        : toISOStringSafe(article.deleted_at),
   };
+  return result;
 }

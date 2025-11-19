@@ -6,40 +6,48 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Register temporary guest account and issue session tokens for anonymous
- * browsing.
+ * Register new guest session for anonymous browsing access to discussion board
+ * content.
  *
- * Creates a temporary guest account for unauthenticated visitors and issues JWT
- * tokens for session tracking.
+ * Creates a new guest session for unauthenticated visitors to browse the
+ * discussion board with read-only access to public content.
  *
- * This operation registers an anonymous guest user in the system by generating
- * a unique guest identifier and establishing a temporary session. The guest
- * account is created in the discussion_board_guests table without requiring any
- * personal information, email verification, or password. Upon successful
- * registration, the system issues both access and refresh JWT tokens that
- * enable the guest to browse public articles and discussions with a tracked
- * session.
+ * This operation registers a new guest user by generating a unique session
+ * identifier and capturing essential browsing analytics. The session identifier
+ * is stored in the browser to track the guest's activity across visits,
+ * enabling analytics on traffic patterns and potential conversion to registered
+ * membership. The endpoint collects IP address and user agent information for
+ * security monitoring and device analytics while maintaining privacy through
+ * anonymous session tracking.
  *
- * The implementation creates a new record in the discussion_board_guests table
- * with a system-generated unique identifier. No authentication credentials are
- * stored since guest users do not authenticate with passwords. The response
- * includes JWT tokens (access token and refresh token) that the guest client
- * must use for subsequent API requests to maintain their temporary session.
+ * The operation writes to the discussion_board_guests table, creating a record
+ * with session_identifier (unique browser-stored token), ip_address (for
+ * security monitoring), user_agent (for device analytics), first_visit_at and
+ * last_visit_at timestamps (both set to current time), and page_views
+ * initialized to zero. All fields are non-nullable as defined in the Prisma
+ * schema.
  *
- * Guest accounts are designed for read-only access to public content. They
- * cannot post articles, submit comments, or perform any write operations. The
- * guest session is temporary and may be subject to expiration policies defined
- * by the system. This operation is completely public and requires no prior
- * authentication.
+ * Guests receive JWT tokens upon registration that grant read-only access to
+ * published articles, article lists, and public discussions. They cannot create
+ * content, comment, upload attachments, or access moderation features. When
+ * guests later register as members, this guest record can be linked to track
+ * the conversion journey from anonymous browsing to active participation.
  *
- * This endpoint integrates with the broader authentication system by providing
- * the entry point for anonymous users to establish trackable sessions. Guest
- * users may later choose to upgrade to full member accounts through the member
- * registration flow if they wish to gain posting and interaction capabilities.
+ * Security considerations include rate limiting on guest session creation to
+ * prevent abuse, IP-based tracking for security monitoring per the schema's
+ * ip_address field, and automatic session expiration based on the last_visit_at
+ * timestamp. The unique session_identifier index ensures each guest session is
+ * distinct and prevents duplicate session creation.
+ *
+ * This is a public endpoint with authorizationActor set to null, as it must be
+ * accessible to unauthenticated visitors. The response returns JWT tokens
+ * (access and refresh) along with the guest session details, following the
+ * IDiscussionBoardGuest.IAuthorized response type pattern for authentication
+ * operations.
  *
  * @param props.connection
- * @param props.body Guest registration request (may be empty or contain
- *   optional device/session metadata)
+ * @param props.body Guest session creation data including session identifier,
+ *   IP address, and user agent
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -75,8 +83,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Guest registration request (may be empty or contain optional
-     * device/session metadata)
+     * Guest session creation data including session identifier, IP address,
+     * and user agent
      */
     body: IDiscussionBoardGuest.ICreate;
   };
@@ -125,39 +133,44 @@ export namespace join {
 }
 
 /**
- * Refresh guest user access token using valid refresh token.
+ * Refresh guest JWT tokens to extend browsing session and maintain read-only
+ * access.
  *
- * Refreshes JWT access tokens for guest users using a valid refresh token.
+ * Refreshes JWT access tokens for guest users to maintain continuous browsing
+ * sessions and read-only access to discussion board content.
  *
- * This operation enables guest users to renew their access tokens without
- * creating a new guest account. When a guest's access token expires, they can
- * use their refresh token to obtain a new access token, maintaining session
- * continuity. The system validates the provided refresh token against the
- * discussion_board_guests table and associated session records to ensure it is
- * authentic, not expired, and belongs to a valid guest account.
+ * This operation enables guests to renew their authentication tokens using a
+ * valid refresh token, extending their session lifetime without interrupting
+ * their browsing experience. The endpoint is essential for maintaining seamless
+ * access as guests navigate through articles and discussions, automatically
+ * handling token expiration in the background.
  *
- * The implementation verifies the refresh token's signature and expiration,
- * checks that the associated guest account still exists in the
- * discussion_board_guests table, and that the session has not been invalidated.
- * Upon successful validation, a new access token is generated and returned to
- * the client. The refresh token itself may also be rotated depending on the
- * system's token rotation policy.
+ * The operation requires a valid refresh token in the request and updates the
+ * discussion_board_guests table by setting last_visit_at to the current
+ * timestamp, tracking the guest's ongoing engagement. This timestamp update is
+ * crucial for analytics on guest activity patterns, session duration, and
+ * engagement frequency as defined in the Prisma schema.
  *
- * This operation is critical for maintaining guest user sessions beyond the
- * initial access token lifetime. It allows guests to continue browsing public
- * articles and discussions without interruption. The refresh token must be
- * included in the request, typically in the Authorization header or request
- * body as defined by the authentication strategy.
+ * Upon successful token refresh, the endpoint returns new JWT access and
+ * refresh tokens along with the guest session details. The page_views counter
+ * is not incremented during token refresh (only during actual page navigation),
+ * maintaining accurate analytics. Guests retain their read-only permissions,
+ * unable to create content, comment, or upload attachments.
  *
- * Security considerations include rate limiting to prevent token refresh abuse,
- * validation of token authenticity to prevent forgery, and proper session
- * management to ensure that invalidated or expired refresh tokens are rejected.
- * This endpoint requires a valid refresh token but does not require an active
- * access token since it is specifically designed for token renewal scenarios.
+ * Security considerations include validating the refresh token's authenticity
+ * and expiration, checking that the guest session still exists and hasn't been
+ * invalidated, and updating the last_visit_at field to enable session timeout
+ * policies. The unique session_identifier ensures the refresh operation targets
+ * the correct guest record.
+ *
+ * This endpoint requires a valid refresh token for authorization, so
+ * authorizationActor is set to "guest" to ensure only authenticated guest
+ * sessions can refresh their tokens. The response follows the
+ * IDiscussionBoardGuest.IAuthorized pattern, providing fresh tokens and session
+ * details to maintain the guest's browsing session.
  *
  * @param props.connection
- * @param props.body Refresh token request containing the valid refresh token to
- *   exchange for new access token
+ * @param props.body Refresh token for generating new guest access tokens
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -192,10 +205,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Refresh token request containing the valid refresh token to exchange
-     * for new access token
-     */
+    /** Refresh token for generating new guest access tokens */
     body: IDiscussionBoardGuest.IRefresh;
   };
   export type Body = IDiscussionBoardGuest.IRefresh;

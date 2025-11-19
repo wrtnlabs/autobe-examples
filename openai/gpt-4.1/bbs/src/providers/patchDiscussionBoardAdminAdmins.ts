@@ -18,68 +18,72 @@ export async function patchDiscussionBoardAdminAdmins(props: {
 }): Promise<IPageIDiscussionBoardAdmin.ISummary> {
   const {
     email,
-    is_email_verified,
-    is_active,
-    is_blocked,
-    created_from,
-    created_to,
+    created_after,
+    created_before,
+    updated_after,
+    updated_before,
+    deleted,
     page = 1,
-    page_size = 100,
-    order_by = "created_at",
-    order_direction = "desc",
-  } = props.body;
-
-  // Build filter conditions
-  const where: Record<string, any> = {
-    ...(typeof email === "string" && { email }),
-    ...(typeof is_email_verified === "boolean" && { is_email_verified }),
-    ...(typeof is_active === "boolean" && { is_active }),
-    ...(typeof is_blocked === "boolean" && { is_blocked }),
-    ...((created_from || created_to) && {
-      created_at: {
-        ...(created_from && { gte: created_from }),
-        ...(created_to && { lte: created_to }),
-      },
-    }),
-    deleted_at: null, // Soft-deletion: only active (non-deleted) admins
-  };
-
-  // Sorting
-  const orderBy = [{ [order_by]: order_direction }];
-
-  const skip = (page - 1) * page_size;
-  const take = page_size;
-
-  // Fetch results & total count concurrently
+    limit = 100,
+    sort_by = "created_at",
+    sort_dir = "desc",
+  } = props.body ?? {};
+  const safe_limit = Math.max(1, Math.min(100, Number(limit)));
+  const safe_page = Math.max(1, Number(page));
+  const skip = (safe_page - 1) * safe_limit;
+  const take = safe_limit;
+  const where: Record<string, unknown> = {};
+  if (email !== undefined) {
+    where.email = { contains: email };
+  }
+  if (created_after !== undefined || created_before !== undefined) {
+    where.created_at = {};
+    if (created_after !== undefined)
+      (where.created_at as any).gte = created_after;
+    if (created_before !== undefined)
+      (where.created_at as any).lte = created_before;
+  }
+  if (updated_after !== undefined || updated_before !== undefined) {
+    where.updated_at = {};
+    if (updated_after !== undefined)
+      (where.updated_at as any).gte = updated_after;
+    if (updated_before !== undefined)
+      (where.updated_at as any).lte = updated_before;
+  }
+  if (deleted === true) {
+    where.deleted_at = { not: null };
+  } else if (deleted === false) {
+    where.deleted_at = null;
+  }
+  const allowedSortBy = ["email", "created_at", "updated_at"];
+  const allowedSortDir = ["asc", "desc"];
+  const orderField = allowedSortBy.includes(sort_by ?? "")
+    ? sort_by
+    : "created_at";
+  const orderDir = allowedSortDir.includes(sort_dir ?? "") ? sort_dir : "desc";
+  const orderBy = { [orderField]: orderDir };
   const [admins, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_admins.findMany({
       where,
       skip,
       take,
       orderBy,
-      select: {
-        id: true,
-        email: true,
-      },
     }),
     MyGlobal.prisma.discussion_board_admins.count({ where }),
   ]);
-
-  // Summary info for response: display_name is the admin's email
-  const data = admins.map((admin) => ({
-    id: admin.id,
-    display_name: admin.email,
-  }));
-
-  // Pagination metadata
-  const pages = total === 0 ? 0 : Math.ceil(total / page_size);
   return {
     pagination: {
-      current: page,
-      limit: page_size,
+      current: safe_page,
+      limit: safe_limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / safe_limit),
     },
-    data,
+    data: admins.map((a) => ({
+      id: a.id,
+      email: a.email,
+      created_at: toISOStringSafe(a.created_at),
+      updated_at: toISOStringSafe(a.updated_at),
+      deleted_at: a.deleted_at === null ? null : toISOStringSafe(a.deleted_at),
+    })),
   };
 }

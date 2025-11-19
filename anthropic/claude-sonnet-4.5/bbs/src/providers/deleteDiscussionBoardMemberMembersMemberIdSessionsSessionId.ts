@@ -16,10 +16,15 @@ export async function deleteDiscussionBoardMemberMembersMemberIdSessionsSessionI
   memberId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardMemberSession> {
+  if (props.member.id !== props.memberId) {
+    throw new HttpException("You can only delete your own sessions", 403);
+  }
+
   const session =
-    await MyGlobal.prisma.discussion_board_member_sessions.findUnique({
+    await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
       where: {
         id: props.sessionId,
+        discussion_board_member_id: props.memberId,
       },
       include: {
         member: true,
@@ -30,46 +35,31 @@ export async function deleteDiscussionBoardMemberMembersMemberIdSessionsSessionI
     throw new HttpException("Session not found", 404);
   }
 
-  if (session.discussion_board_member_id !== props.memberId) {
-    throw new HttpException(
-      "Session does not belong to the specified member",
-      400,
-    );
-  }
-
-  if (session.discussion_board_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-
-  const deleted = await MyGlobal.prisma.discussion_board_member_sessions.delete(
-    {
-      where: {
-        id: props.sessionId,
-      },
-      include: {
-        member: true,
-      },
-    },
-  );
+  const now = new Date();
+  const updatedSession =
+    await MyGlobal.prisma.discussion_board_member_sessions.update({
+      where: { id: props.sessionId },
+      data: { expired_at: now },
+      include: { member: true },
+    });
 
   return {
-    id: deleted.id,
-    discussion_board_member_id: deleted.discussion_board_member_id,
+    id: updatedSession.id as string & tags.Format<"uuid">,
+    discussion_board_member_id:
+      updatedSession.discussion_board_member_id as string & tags.Format<"uuid">,
     member: {
-      id: deleted.member.id,
-      username: deleted.member.username,
-      email: deleted.member.email,
-      status: deleted.member.status,
-      email_verified: deleted.member.email_verified,
-      created_at: toISOStringSafe(deleted.member.created_at),
+      id: updatedSession.member.id as string & tags.Format<"uuid">,
+      username: updatedSession.member.username,
+      display_name: updatedSession.member.display_name ?? undefined,
     },
-    ip: deleted.ip,
-    href: deleted.href,
-    referrer: deleted.referrer,
-    created_at: toISOStringSafe(deleted.created_at),
-    expired_at:
-      deleted.expired_at === null
-        ? undefined
-        : toISOStringSafe(deleted.expired_at),
+    created_at: toISOStringSafe(updatedSession.created_at) as string &
+      tags.Format<"date-time">,
+    expired_at: updatedSession.expired_at
+      ? (toISOStringSafe(updatedSession.expired_at) as string &
+          tags.Format<"date-time">)
+      : undefined,
+    ip: updatedSession.ip,
+    href: updatedSession.href as string & tags.Format<"uri">,
+    referrer: updatedSession.referrer as string & tags.Format<"uri">,
   };
 }

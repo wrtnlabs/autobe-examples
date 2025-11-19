@@ -7,43 +7,60 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardMember";
+import { ICommon } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommon";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function postAuthMemberRefresh(props: {
   member: MemberPayload;
-  body: IEconPolDiscussionBoardMember.IRefresh;
-}): Promise<IEconPolDiscussionBoardMember.IAuthorized> {
+  body: ICommon.IRefreshTokenRequest;
+}): Promise<IDiscussionBoardMember.IAuthorized> {
   let decoded: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "member";
   };
+
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
-      id: string & tags.Format<"uuid">;
-      session_id: string & tags.Format<"uuid">;
-      type: "member";
+    const decodedRaw = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+
+    if (typeof decodedRaw !== "object" || decodedRaw === null) {
+      throw new HttpException("Invalid token payload", 401);
+    }
+
+    if (
+      !("id" in decodedRaw && typeof decodedRaw.id === "string") ||
+      !(
+        "session_id" in decodedRaw && typeof decodedRaw.session_id === "string"
+      ) ||
+      !("type" in decodedRaw && decodedRaw.type === "member")
+    ) {
+      throw new HttpException("Invalid token payload", 401);
+    }
+
+    decoded = {
+      id: decodedRaw.id as string & tags.Format<"uuid">,
+      session_id: decodedRaw.session_id as string & tags.Format<"uuid">,
+      type: "member",
     };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (decoded.type !== "member") {
-    throw new HttpException("Invalid token type", 403);
-  }
-
   const session =
-    await MyGlobal.prisma.econ_pol_discussion_board_member_sessions.findFirst({
+    await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
       where: {
         id: decoded.session_id,
-        econ_pol_discussion_board_member_id: decoded.id,
-      },
-      select: {
-        created_at: true,
+        discussion_board_member_id: decoded.id,
+        expired_at: null,
+        discussionBoardMember: {
+          deleted_at: null,
+        },
       },
     });
 
@@ -51,23 +68,11 @@ export async function postAuthMemberRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  const member =
-    await MyGlobal.prisma.econ_pol_discussion_board_members.findUnique({
-      where: { id: decoded.id },
-      select: {
-        username: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-  if (!member) {
-    throw new HttpException("Member not found", 404);
-  }
-
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const now = Date.now();
+  const accessExpires = toISOStringSafe(new Date(now + 1000 * 60 * 60));
+  const refreshExpires = toISOStringSafe(
+    new Date(now + 1000 * 60 * 60 * 24 * 7),
+  );
 
   const accessToken = jwt.sign(
     {
@@ -98,26 +103,18 @@ export async function postAuthMemberRefresh(props: {
     },
   );
 
-  await MyGlobal.prisma.econ_pol_discussion_board_member_sessions.update({
-    where: {
-      id: decoded.session_id,
-    },
-    data: {
-      expired_at: refreshExpires,
-    },
+  await MyGlobal.prisma.discussion_board_member_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpires },
   });
 
   return {
     id: decoded.id,
-    username: member.username,
-    email: member.email,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

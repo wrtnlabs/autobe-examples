@@ -14,38 +14,43 @@ export async function deleteDiscussionBoardUserArticlesArticleIdAttachmentsAttac
   articleId: string & tags.Format<"uuid">;
   attachmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Check attachment exists and retrieve
+  // Find the attachment and confirm linkage + not deleted
   const attachment =
-    await MyGlobal.prisma.discussion_board_article_attachments.findUnique({
-      where: { id: props.attachmentId },
+    await MyGlobal.prisma.discussion_board_article_attachments.findFirst({
+      where: {
+        id: props.attachmentId,
+        article_id: props.articleId,
+        deleted_at: null,
+      },
+      include: {
+        article: true,
+      },
     });
-  if (!attachment) throw new HttpException("Attachment not found", 404);
-
-  // 2. Verify the attachment is for the correct article
-  if (attachment.article_id !== props.articleId)
+  if (!attachment) {
+    throw new HttpException("Attachment not found or already deleted.", 404);
+  }
+  if (
+    !attachment.article ||
+    (attachment.article.deleted_at !== null &&
+      typeof attachment.article.deleted_at === "string")
+  ) {
     throw new HttpException(
-      "Attachment does not belong to the specified article",
-      404,
+      "Cannot delete attachment from deleted article.",
+      400,
     );
-
-  // 3. Retrieve the article
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
+  }
+  // Only author allowed
+  if (attachment.article.user_id !== props.user.id) {
+    throw new HttpException("No permission to delete this attachment.", 403);
+  }
+  // Set deleted_at timestamp
+  const deletedAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
+  ) as string & tags.Format<"date-time">;
+  await MyGlobal.prisma.discussion_board_article_attachments.update({
+    where: { id: props.attachmentId },
+    data: {
+      deleted_at: deletedAt,
+    },
   });
-  if (!article) throw new HttpException("Article not found", 404);
-
-  // 4. Permission check: Only article author can delete
-  if (article.author_user_id !== props.user.id)
-    throw new HttpException(
-      "Forbidden: Only the article author may delete attachments",
-      403,
-    );
-
-  // 5. Remove from DB atomically
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.discussion_board_article_attachments.delete({
-      where: { id: props.attachmentId },
-    }),
-  ]);
-  // File removal from backend storage omitted because MyGlobal has no storage property.
 }

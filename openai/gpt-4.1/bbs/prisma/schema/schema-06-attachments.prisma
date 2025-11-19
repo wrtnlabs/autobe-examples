@@ -1,0 +1,78 @@
+/// Technical metadata and storage abstraction for all uploaded attachments
+/// (images, files) in the discussion board platform.
+///
+/// This model acts as the canonical store for attachment objects, capturing
+/// all necessary file and storage characteristics without direct reference
+/// to business entities such as articles or comments. Attachments are
+/// uniquely identified and managed within this table, enabling seamless
+/// handling of files uploaded to articles, comments, or potential future
+/// features.
+///
+/// Fields capture original and storage filenames, file size, MIME type,
+/// checksum for duplicate/prevention/security, and storage provider details
+/// for local or cloud locations. The model supports lifecycle and security
+/// management via soft delete, complete audit of creation and update times,
+/// and enables orphan cleanup procedures. Foreign keys (e.g., uploader, link
+/// references) are not present—business-layer tables provide those indirect
+/// linkages. The table is designed for both immediate production deployment
+/// and robust future extensibility, enforcing strict data normalization and
+/// supporting file security best practices.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Universally unique file identifier for attachment record.
+  id String @id
+  
+  /// Original filename as submitted by user; displayed in download links.
+  /// Preserves the name provided on file upload.
+  original_filename String
+  
+  /// Internal reference or generated filename used for storage (server, cloud
+  /// bucket, etc.), never exposed to the user. Ensures collision-free and
+  /// unguessable storage location.
+  storage_filename String
+  
+  /// Exact file size in bytes as stored. Used to validate application and
+  /// storage constraints (max 10 MB per requirements).
+  size_bytes Int
+  
+  /// IANA MIME type of the uploaded file (e.g., 'image/png',
+  /// 'application/pdf'). Required for attachment accept/serve validation and
+  /// display.
+  mime_type String
+  
+  /// SHA-256 hash checksum of file content, used for duplicate detection,
+  /// integrity verification, and security audit logging. Uniqueness enforces
+  /// single storage per identical file.
+  checksum_sha256 String
+  
+  /// Provider identifier or physical/cloud storage reference (e.g., S3 bucket,
+  /// server path, etc.). Used exclusively by backend for file I/O routing. Not
+  /// visible to application frontends.
+  storage_location String
+  
+  /// Timestamp of attachment deletion (soft delete). Null if active; set when
+  /// attachment is removed, orphaned, or expunged. Supports compliance and
+  /// orphan cleanup workflows.
+  deleted_at DateTime?
+  
+  /// File metadata creation timestamp. Set on initial upload and immutable
+  /// thereafter for audit/compliance purposes.
+  created_at DateTime
+  
+  /// File metadata last modification timestamp. Updated on any admin or system
+  /// change to technical information (not business linkage).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([checksum_sha256])
+  @@index([original_filename, mime_type])
+  @@index([storage_location])
+  @@index([deleted_at])
+}

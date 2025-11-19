@@ -14,20 +14,18 @@ export async function deleteDiscussionBoardAdminUsersUserIdSessionsSessionId(pro
   userId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const session =
-    await MyGlobal.prisma.discussion_board_user_sessions.findFirst({
+  const result =
+    await MyGlobal.prisma.discussion_board_user_sessions.deleteMany({
       where: {
         id: props.sessionId,
-        discussion_board_user_id: props.userId,
+        user_id: props.userId,
       },
     });
-  if (!session) {
-    throw new HttpException("Session not found", 404);
+
+  if (result.count === 0) {
+    throw new HttpException("Session not found for the specified user.", 404);
   }
-  await MyGlobal.prisma.discussion_board_user_sessions.delete({
-    where: {
-      id: props.sessionId,
-      discussion_board_user_id: props.userId,
-    },
-  });
+
+  // Optionally, this is where audit logging would occur per security standards.
+  return;
 }

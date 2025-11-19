@@ -9,8 +9,10 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestRefresh(props: {
+  guest: GuestPayload;
   body: IDiscussionBoardGuest.IRefresh;
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
   let decoded: {
@@ -44,47 +46,71 @@ export async function postAuthGuestRefresh(props: {
   });
 
   if (!guest) {
-    throw new HttpException("Guest account not found", 404);
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const now = new Date();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const nowTimestamp = Date.now();
+  const nowISO = new Date(nowTimestamp).toISOString();
+  const accessExpiresISO = new Date(
+    nowTimestamp + 60 * 60 * 1000,
+  ).toISOString();
+  const refreshExpiresISO = new Date(
+    nowTimestamp + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+  const accessToken = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowISO,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: nowISO,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  const updated = await MyGlobal.prisma.discussion_board_guests.update({
+    where: {
+      id: guest.id,
+    },
+    data: {
+      last_visit_at: new Date(nowTimestamp),
+    },
+  });
 
   return {
-    id: decoded.id,
-    token,
+    id: updated.id,
+    session_identifier: updated.session_identifier,
+    ip_address: updated.ip_address,
+    user_agent: updated.user_agent,
+    first_visit_at: toISOStringSafe(updated.first_visit_at),
+    last_visit_at: toISOStringSafe(updated.last_visit_at),
+    page_views: updated.page_views,
+    created_at: toISOStringSafe(updated.created_at),
+    updated_at: toISOStringSafe(updated.updated_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresISO as string & tags.Format<"date-time">,
+      refreshable_until: refreshExpiresISO as string & tags.Format<"date-time">,
+    },
   };
 }

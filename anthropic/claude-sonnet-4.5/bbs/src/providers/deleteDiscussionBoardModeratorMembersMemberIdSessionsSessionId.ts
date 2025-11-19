@@ -17,10 +17,12 @@ export async function deleteDiscussionBoardModeratorMembersMemberIdSessionsSessi
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardMemberSession> {
   const session =
-    await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
+    await MyGlobal.prisma.discussion_board_member_sessions.findUnique({
       where: {
         id: props.sessionId,
-        discussion_board_member_id: props.memberId,
+      },
+      include: {
+        member: true,
       },
     });
 
@@ -28,37 +30,46 @@ export async function deleteDiscussionBoardModeratorMembersMemberIdSessionsSessi
     throw new HttpException("Session not found", 404);
   }
 
-  const member = await MyGlobal.prisma.discussion_board_members.findUnique({
-    where: {
-      id: session.discussion_board_member_id,
-    },
-  });
-
-  if (!member) {
-    throw new HttpException("Member not found", 404);
+  if (session.discussion_board_member_id !== props.memberId) {
+    throw new HttpException("Session not found", 404);
   }
 
-  await MyGlobal.prisma.discussion_board_member_sessions.delete({
-    where: {
-      id: props.sessionId,
+  if (session.expired_at !== null) {
+    throw new HttpException("Session is already expired", 400);
+  }
+
+  const nowString = toISOStringSafe(new Date());
+  const updated = await MyGlobal.prisma.discussion_board_member_sessions.update(
+    {
+      where: {
+        id: props.sessionId,
+      },
+      data: {
+        expired_at: nowString,
+      },
+      include: {
+        member: true,
+      },
     },
-  });
+  );
 
   return {
-    id: session.id,
-    discussion_board_member_id: session.discussion_board_member_id,
+    id: updated.id,
+    discussion_board_member_id: updated.discussion_board_member_id,
     member: {
-      id: member.id,
-      username: member.username,
-      email: member.email,
-      status: member.status,
-      email_verified: member.email_verified,
-      created_at: toISOStringSafe(member.created_at),
+      id: updated.member.id,
+      username: updated.member.username,
+      display_name:
+        updated.member.display_name === null
+          ? undefined
+          : updated.member.display_name,
     },
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at),
-    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
+    created_at: toISOStringSafe(updated.created_at),
+    expired_at: updated.expired_at
+      ? toISOStringSafe(updated.expired_at)
+      : undefined,
+    ip: updated.ip,
+    href: updated.href,
+    referrer: updated.referrer,
   };
 }

@@ -10,7 +10,6 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { IDiscussionBoardModerationLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerationLog";
 import { IPageIDiscussionBoardModerationLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardModerationLog";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function patchDiscussionBoardAdminModerationLogs(props: {
@@ -18,82 +17,89 @@ export async function patchDiscussionBoardAdminModerationLogs(props: {
   body: IDiscussionBoardModerationLog.IRequest;
 }): Promise<IPageIDiscussionBoardModerationLog.ISummary> {
   const {
-    admin_id,
+    action,
+    outcome,
     target_type,
     target_id,
-    action_code,
-    note,
-    created_at_from,
-    created_at_to,
-    sort_by,
-    sort_order,
+    admin_id,
+    date_from,
+    date_to,
+    search,
     page,
     limit,
-  } = props.body || {};
-  const take =
-    typeof limit === "number" ? Math.max(1, Math.min(limit, 100)) : 20;
-  const currentPage = typeof page === "number" && page >= 1 ? page : 1;
-  const skip = (currentPage - 1) * take;
-  const filters = {
-    deleted_at: null,
-    ...(admin_id && { admin_id }),
+    sort_by,
+    sort_order,
+  } = props.body;
+
+  // Pagination
+  const pageNum = page && page > 0 ? page : 1;
+  const perPage = limit && limit > 0 && limit <= 100 ? limit : 100;
+  const skip = (pageNum - 1) * perPage;
+
+  // Filtering and search
+  const where: Record<string, unknown> = {
+    ...(action && { action }),
+    ...(outcome && { outcome }),
     ...(target_type && { target_type }),
     ...(target_id && { target_id }),
-    ...(action_code && { action_code }),
-    ...(note && {
-      note: { contains: note, mode: "insensitive" as Prisma.QueryMode },
-    }),
-    ...((created_at_from || created_at_to) && {
+    ...(admin_id && { admin_id }),
+    ...(date_from && { created_at: { gte: date_from } }),
+    ...(date_to && {
       created_at: {
-        ...(created_at_from && { gte: created_at_from }),
-        ...(created_at_to && { lte: created_at_to }),
+        ...(date_from ? { gte: date_from } : {}),
+        lte: date_to,
       },
+    }),
+    ...(search && {
+      OR: [
+        { reason: { contains: search } },
+        { action: { contains: search } },
+        { outcome: { contains: search } },
+      ],
     }),
   };
-  const allowedSortFields = ["created_at", "admin_id", "action_code"];
-  const sortField = allowedSortFields.includes(sort_by || "")
-    ? sort_by
-    : "created_at";
-  const direction = sort_order === "asc" ? "asc" : "desc";
-  const [rows, total] = await Promise.all([
+
+  // Remove empty created_at field if not set
+  if (!date_from && !date_to && where.created_at) {
+    delete where.created_at;
+  }
+
+  // Ordering
+  let orderBy: Record<string, "asc" | "desc"> = { created_at: "desc" };
+  if (sort_by) {
+    orderBy = { [sort_by]: sort_order === "asc" ? "asc" : "desc" };
+  }
+
+  // Query moderation logs and count in parallel
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_moderation_logs.findMany({
-      where: filters,
-      orderBy: { [sortField as string]: direction },
+      where,
       skip,
-      take,
-      include: {
-        admin: true,
-      },
+      take: perPage,
+      orderBy,
     }),
-    MyGlobal.prisma.discussion_board_moderation_logs.count({ where: filters }),
+    MyGlobal.prisma.discussion_board_moderation_logs.count({ where }),
   ]);
-  const data = rows.map((row) => ({
-    id: row.id,
-    admin: {
-      id: row.admin.id,
-      display_name: row.admin.email,
-    },
-    target_type: row.target_type,
-    target_id: row.target_id,
-    action_code: row.action_code,
-    note:
-      typeof row.note === "string"
-        ? row.note
-        : row.note === null
-          ? null
-          : undefined,
-    created_at: toISOStringSafe(row.created_at),
-    updated_at: toISOStringSafe(row.updated_at),
-    deleted_at: row.deleted_at ? toISOStringSafe(row.deleted_at) : undefined,
+
+  // Map each log to API summary DTO
+  const records = data.map((log) => ({
+    id: log.id,
+    target_type: log.target_type,
+    target_id: log.target_id,
+    admin_id: log.admin_id,
+    action: log.action,
+    reason: log.reason,
+    outcome: log.outcome,
+    created_at: toISOStringSafe(log.created_at),
   }));
-  const pages = take > 0 ? Math.ceil(total / take) : 0;
+
   return {
-    data,
+    data: records,
     pagination: {
-      current: currentPage,
-      limit: take,
+      current: pageNum,
+      limit: perPage,
       records: total,
-      pages,
+      pages: Math.ceil(total / perPage),
     },
   };
 }

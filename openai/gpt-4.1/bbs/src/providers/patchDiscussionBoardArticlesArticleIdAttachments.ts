@@ -12,129 +12,94 @@ import { IPageIDiscussionBoardArticleAttachment } from "@ORGANIZATION/PROJECT-ap
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 
 export async function patchDiscussionBoardArticlesArticleIdAttachments(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleAttachment.IRequest;
 }): Promise<IPageIDiscussionBoardArticleAttachment.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 25;
-  const skip = (page - 1) * limit;
+  const cappedLimit =
+    props.body.limit !== undefined
+      ? Math.max(1, Math.min(50, props.body.limit))
+      : 20;
+  const skip = (page - 1) * cappedLimit;
+  const sortBy = props.body.sort_by ?? "created_at";
+  const order = props.body.order ?? "desc";
 
-  // Ensure the article exists (not deleted)
+  // Verify the parent article exists, is not soft-deleted
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
+    where: {
+      id: props.articleId,
+      deleted_at: null,
+    },
+    include: {
+      user: true,
+    },
   });
   if (!article) {
-    throw new HttpException("Article not found", 404);
+    throw new HttpException("Article not found or deleted.", 404);
   }
 
-  // WHERE conditions for attachments
-  const whereConditions: Record<string, unknown> = {
+  // Build where clause for attachments filtering
+  const whereClause: Record<string, any> = {
     article_id: props.articleId,
+    deleted_at: null,
+    ...(props.body.search
+      ? { file_name: { contains: props.body.search, mode: "insensitive" } }
+      : {}),
   };
-  if (props.body.file_name) {
-    whereConditions.file_name = { contains: props.body.file_name };
-  }
-  if (props.body.file_type) {
-    whereConditions.file_type = props.body.file_type;
-  }
-  if (props.body.uploaded_date_start || props.body.uploaded_date_end) {
-    const uploadedRange: Record<string, string> = {};
-    if (props.body.uploaded_date_start) {
-      uploadedRange.gte = props.body.uploaded_date_start;
-    }
-    if (props.body.uploaded_date_end) {
-      uploadedRange.lte = props.body.uploaded_date_end;
-    }
-    whereConditions.uploaded_at = uploadedRange;
-  }
 
-  // Sorting
-  let orderBy: Record<string, "asc" | "desc"> = { uploaded_at: "desc" };
-  if (
-    props.body.sort_by &&
-    ["uploaded_at", "file_name", "file_type"].includes(props.body.sort_by)
-  ) {
-    orderBy = {
-      [props.body.sort_by]: props.body.sort_order === "asc" ? "asc" : "desc",
-    };
-  }
-
-  // Fetch attachments and count
-  const [attachments, totalCount] = await Promise.all([
+  // Attachments fetch with sorting and pagination
+  const [attachments, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_article_attachments.findMany({
-      where: whereConditions,
+      where: whereClause,
       skip,
-      take: limit,
-      orderBy,
+      take: cappedLimit,
+      orderBy: { [sortBy]: order },
     }),
     MyGlobal.prisma.discussion_board_article_attachments.count({
-      where: whereConditions,
+      where: whereClause,
     }),
   ]);
 
-  // Author summary for article
-  let authorSummary: IDiscussionBoardArticle.ISummary["author"] | undefined;
-  if (article.author_user_id) {
-    const user = await MyGlobal.prisma.discussion_board_users.findUnique({
-      where: { id: article.author_user_id },
-    });
-    if (user) {
-      authorSummary = {
-        id: user.id,
-        email: user.email,
-        is_email_verified: user.is_email_verified,
-        is_active: user.is_active,
-        is_blocked: user.is_blocked,
-        created_at: toISOStringSafe(user.created_at),
-        updated_at: toISOStringSafe(user.updated_at),
-        deleted_at:
-          user.deleted_at === null
-            ? undefined
-            : toISOStringSafe(user.deleted_at),
-      };
-    }
-  } else if (article.author_admin_id) {
-    const admin = await MyGlobal.prisma.discussion_board_admins.findUnique({
-      where: { id: article.author_admin_id },
-    });
-    if (admin) {
-      authorSummary = {
-        id: admin.id,
-        display_name: admin.email, // Placeholder; ideally use real display_name
-      };
-    }
-  }
-
-  // Article summary structure
-  const articleSummary: IDiscussionBoardArticle.ISummary = {
+  // Article user summary
+  const userSummary = {
+    id: article.user.id,
+    email: article.user.email,
+    created_at: toISOStringSafe(article.user.created_at),
+    updated_at: toISOStringSafe(article.user.updated_at),
+    deleted_at: article.user.deleted_at
+      ? toISOStringSafe(article.user.deleted_at)
+      : undefined,
+  };
+  // Article summary
+  const articleSummary = {
     id: article.id,
     title: article.title,
+    user: userSummary,
     created_at: toISOStringSafe(article.created_at),
     updated_at: toISOStringSafe(article.updated_at),
-    author: authorSummary!,
   };
 
-  // Compose attachment summaries
-  const data = attachments.map((a) => ({
-    id: a.id,
-    uri: a.uri,
-    file_name: a.file_name,
-    file_type: a.file_type,
-    file_size: a.file_size,
-    uploaded_at: toISOStringSafe(a.uploaded_at),
+  // Attachments summary map
+  const records = attachments.map((att) => ({
+    id: att.id,
     article: articleSummary,
+    file_name: att.file_name,
+    mime_type: att.mime_type,
+    file_size: att.file_size,
+    file_uri: att.file_uri,
+    created_at: toISOStringSafe(att.created_at),
+    deleted_at: att.deleted_at ? toISOStringSafe(att.deleted_at) : undefined,
   }));
 
   return {
     pagination: {
-      current: page satisfies number as number,
-      limit: limit satisfies number as number,
-      records: totalCount,
-      pages: limit > 0 ? Math.ceil(totalCount / limit) : 0,
+      current: page,
+      limit: cappedLimit,
+      records: total,
+      pages: Math.ceil(total / cappedLimit),
     },
-    data,
+    data: records,
   };
 }

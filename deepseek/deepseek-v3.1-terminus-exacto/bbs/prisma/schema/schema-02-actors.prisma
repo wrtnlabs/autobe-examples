@@ -1,15 +1,18 @@
-/// Guest users who can browse content without authentication.
+/// Guest users who can browse content without authentication but may
+/// register for full access.
 ///
-/// Represents unauthenticated users who have limited access to the
-/// discussion board. Guests can view public content but cannot create posts,
-/// upload attachments, or participate in discussions. This entity tracks
-/// guest interactions for analytics and potential conversion to member
-/// status.
+/// Stores basic guest information for tracking anonymous interactions with
+/// the discussion board. Guests can view public content but cannot create
+/// posts, comments, or upload attachments until they register as members.
 ///
-/// Guest accounts are temporary and may be converted to member accounts
-/// through the registration process. Each guest has a unique identifier and
-/// tracking information for session management and user experience
-/// optimization.
+/// Guest accounts serve as temporary identifiers for users exploring the
+/// platform before committing to registration. Unlike members and
+/// moderators, guests do not require authentication credentials until they
+/// complete the registration process.
+///
+/// Guest records may be converted to member accounts upon successful
+/// registration, maintaining continuity of user identity while transitioning
+/// from anonymous to authenticated status.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -20,50 +23,90 @@ model discussion_board_guests {
   /// Primary Key.
   id String @id
   
-  /// Guest email address for identification and potential conversion to member
-  /// account.
-  email String
+  /// Unique anonymous identifier for guest tracking without authentication
+  /// requirements.
+  guest_token String
   
-  /// Timestamp when the guest record was created.
+  /// Timestamp when the guest account was created.
   created_at DateTime
   
-  /// Timestamp when the guest record was last updated.
+  /// Timestamp when the guest account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the guest record was soft deleted.
+  /// Timestamp when the guest account was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([email])
+  discussion_board_guest_sessions discussion_board_guest_sessions[]
+  
+  @@unique([guest_token])
   @@index([created_at])
 }
 
-/// Authenticated member users with full discussion participation rights.
+/// Anonymous session tracking for guest users.
 ///
-/// Represents registered members who can create posts, upload attachments,
-/// comment on discussions, and participate fully in the community. Members
-/// have complete access to discussion board features and can manage their
-/// content and profile.
+/// Tracks guest browsing sessions with connection context information
+/// including IP address, access URLs, and session timestamps. Each session
+/// belongs to a specific guest user and maintains browsing state without
+/// authentication requirements.
 ///
-/// Each member has authentication credentials and profile information.
-/// Members can be promoted to moderator status based on community
-/// participation and trustworthiness. The system tracks member activity for
-/// engagement analytics and community management.
+/// Sessions are used for audit tracing of guest actions and provide
+/// temporary state management for users exploring the platform before
+/// registration. Guest sessions have shorter expiration times compared to
+/// authenticated sessions.
 ///
-/// **Security Enhancements:**
-/// - Multi-factor authentication (MFA) support with secret storage and
-/// backup codes
-/// - Email verification status tracking for account security
-/// - Password reset token and expiration tracking
-/// - Last login timestamp for security monitoring
-/// - Failed login attempt tracking for brute force protection
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link discussion_board_guests.id}.
+  discussion_board_guest_id String
+  
+  /// IP address of the guest session connection.
+  ip String
+  
+  /// Connection URL where the guest session was established.
+  href String
+  
+  /// Referrer URL that directed the guest to the session.
+  referrer String
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest session expired or was terminated.
+  expired_at DateTime?
+  
+  /// Timestamp when the guest session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guest discussion_board_guests @relation(fields: [discussion_board_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_guest_id, created_at], map: "discussion_board_guest_sessions_discussion_board_guest_b6816fda")
+}
+
+/// Registered member users with full discussion board access.
 ///
-/// **Compliance Features:**
-/// - GDPR consent tracking for data processing
-/// - Account activity logging for audit trails
-/// - Data retention policy support
+/// Stores authenticated member information including authentication
+/// credentials and profile data. Members can create posts, comments, upload
+/// attachments, and participate in all discussion features.
+///
+/// Members represent the core user base of the discussion board with full
+/// participation privileges.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -78,46 +121,18 @@ model discussion_board_members {
   /// unique across all members.
   email String
   
-  /// Hashed password for secure authentication using industry-standard
-  /// algorithms.
-  password_hash String
-  
-  /// Display name used for member identification in discussions. Must be
-  /// unique across all members.
+  /// Member username for display and identification. Must be unique across all
+  /// members.
   username String
   
-  /// Member account status (active, suspended, banned, pending_verification).
-  status String
+  /// Hashed password for member authentication.
+  password_hash String
   
-  /// Encrypted multi-factor authentication secret for enhanced security.
-  mfa_secret String?
+  /// Optional display name for member profile customization.
+  display_name String?
   
-  /// JSON array of backup codes for MFA recovery scenarios.
-  mfa_backup_codes String?
-  
-  /// Whether multi-factor authentication is enabled for this account.
-  mfa_enabled Boolean
-  
-  /// Whether the member's email address has been verified.
-  email_verified Boolean
-  
-  /// Temporary token for password reset requests.
-  password_reset_token String?
-  
-  /// Expiration timestamp for password reset token.
-  password_reset_expires DateTime?
-  
-  /// Timestamp of the member's last successful login.
-  last_login_at DateTime?
-  
-  /// Count of consecutive failed login attempts for brute force protection.
-  failed_login_attempts Int
-  
-  /// Whether the member has given GDPR consent for data processing.
-  gdpr_consent_given Boolean
-  
-  /// Timestamp when GDPR consent was given.
-  gdpr_consent_date DateTime?
+  /// Optional biography or description for member profile.
+  bio String?
   
   /// Timestamp when the member account was created.
   created_at DateTime
@@ -132,47 +147,90 @@ model discussion_board_members {
   // RELATIONS
   //----
   discussion_board_member_sessions discussion_board_member_sessions[]
-  discussion_board_article_of_members discussion_board_article_of_members[]
-  discussion_board_comments_of_members discussion_board_comments_of_members[]
-  discussion_board_comment_votes discussion_board_comment_votes[]
-  discussion_board_article_votes discussion_board_article_votes[]
-  discussion_board_content_reports discussion_board_content_reports[]
-  discussion_board_user_violations discussion_board_user_violations[]
-  discussion_board_moderation_action_of_users discussion_board_moderation_action_of_users[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_post_attachments discussion_board_post_attachments[]
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  discussion_board_content_reports_of_members_of_discuss_1bb3b5aa discussion_board_content_reports_of_members[] @relation("discussion_board_content_reports_of_members_of_discuss_1bb3b5aa")
+  discussion_board_content_reports_of_members_of_discuss_6715d651 discussion_board_content_reports_of_members[] @relation("discussion_board_content_reports_of_members_of_discuss_6715d651")
+  discussion_board_content_reports_of_moderators discussion_board_content_reports_of_moderators[]
+  discussion_board_post_views discussion_board_post_views[]
+  discussion_board_post_likes discussion_board_post_likes[]
+  discussion_board_comment_likes discussion_board_comment_likes[]
+  discussion_board_user_bookmarks discussion_board_user_bookmarks[]
+  discussion_board_user_notifications discussion_board_user_notifications[]
+  discussion_board_notification_preferences discussion_board_notification_preferences?
   
   @@unique([email])
   @@unique([username])
   @@index([created_at])
-  @@index([status])
-  @@index([email_verified])
-  @@index([last_login_at])
-  @@index([failed_login_attempts])
 }
 
-/// Administrative users responsible for content moderation and community
-/// management.
+/// Authentication sessions for member users.
 ///
-/// Represents trusted users with elevated permissions for maintaining
-/// community standards and ensuring respectful discourse. Moderators can
-/// review reported content, manage user accounts, and enforce platform
-/// policies.
+/// Tracks member login sessions with connection context information
+/// including IP address, access URLs, and session timestamps. Each session
+/// belongs to a specific member user and maintains authentication state.
 ///
-/// Moderators are typically promoted from active, trusted members. Each
-/// moderator has additional permissions and responsibilities beyond regular
-/// members. The system tracks moderator actions for accountability and audit
-/// purposes.
+/// Sessions are used for audit tracing of member actions and are managed
+/// through member authentication flows. Member sessions provide access to
+/// all platform features including post creation, commenting, and attachment
+/// uploads.
 ///
-/// **Security Enhancements:**
-/// - Multi-factor authentication (MFA) support with enhanced security
-/// requirements
-/// - Administrative session tracking with additional security measures
-/// - Permission level granularity for different moderator roles
-/// - Enhanced audit trail capabilities
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// IP address of the member session connection.
+  ip String
+  
+  /// Connection URL where the member session was established.
+  href String
+  
+  /// Referrer URL that directed the member to the session.
+  referrer String
+  
+  /// Timestamp when the member session was created.
+  created_at DateTime
+  
+  /// Timestamp when the member session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member session expired or was terminated.
+  expired_at DateTime?
+  
+  /// Timestamp when the member session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_post_attachments discussion_board_post_attachments[]
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  discussion_board_content_reports_of_members discussion_board_content_reports_of_members[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
+}
+
+/// Moderator users with administrative privileges for content management.
 ///
-/// **Administrative Features:**
-/// - Permission scope definitions for different moderator levels
-/// - Action logging for accountability and compliance
-/// - Enhanced security requirements for administrative access
+/// Stores moderator information including authentication credentials and
+/// moderation capabilities. Moderators can review reported content, remove
+/// inappropriate posts/comments, suspend users, and manage discussion
+/// categories.
+///
+/// Moderators ensure community guidelines are followed and maintain
+/// discussion quality.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,63 +241,25 @@ model discussion_board_moderators {
   /// Primary Key.
   id String @id
   
-  /// Moderator email address for authentication and official communications.
-  /// Must be unique across all moderators.
+  /// Moderator email address used for authentication and communication. Must
+  /// be unique across all moderators.
   email String
   
-  /// Hashed password for secure authentication using enhanced security
-  /// standards.
-  password_hash String
-  
-  /// Display name used for moderator identification. Must be unique across all
-  /// moderators.
+  /// Moderator username for display and identification. Must be unique across
+  /// all moderators.
   username String
   
-  /// Moderator permission level (junior, senior, admin) with defined scope
-  /// boundaries.
-  moderator_level String
+  /// Hashed password for moderator authentication.
+  password_hash String
   
-  /// Moderator account status (active, suspended, inactive, pending_review).
-  status String
+  /// Optional display name for moderator profile customization.
+  display_name String?
   
-  /// Encrypted multi-factor authentication secret with enhanced security
-  /// requirements.
-  mfa_secret String?
+  /// Optional biography or description for moderator profile.
+  bio String?
   
-  /// JSON array of backup codes for MFA recovery scenarios.
-  mfa_backup_codes String?
-  
-  /// Whether multi-factor authentication is enabled for this account. Required
-  /// for administrative access.
-  mfa_enabled Boolean
-  
-  /// Whether the moderator's email address has been verified. Required for
-  /// administrative privileges.
-  email_verified Boolean
-  
-  /// Temporary token for password reset requests with enhanced security
-  /// validation.
-  password_reset_token String?
-  
-  /// Expiration timestamp for password reset token.
-  password_reset_expires DateTime?
-  
-  /// Timestamp of the moderator's last successful login. Used for security
-  /// monitoring.
-  last_login_at DateTime?
-  
-  /// Count of consecutive failed login attempts with lower thresholds for
-  /// administrative accounts.
-  failed_login_attempts Int
-  
-  /// JSON definition of specific permissions granted to this moderator level.
-  permission_scope String?
-  
-  /// Whether the moderator has given GDPR consent for data processing.
-  gdpr_consent_given Boolean
-  
-  /// Timestamp when GDPR consent was given.
-  gdpr_consent_date DateTime?
+  /// Moderator privilege level (e.g., basic, senior, admin).
+  moderation_level String
   
   /// Timestamp when the moderator account was created.
   created_at DateTime
@@ -254,106 +274,27 @@ model discussion_board_moderators {
   // RELATIONS
   //----
   discussion_board_moderator_sessions discussion_board_moderator_sessions[]
-  discussion_board_article_of_moderators discussion_board_article_of_moderators[]
-  discussion_board_comments_of_moderators discussion_board_comments_of_moderators[]
+  discussion_board_content_reports_of_moderators discussion_board_content_reports_of_moderators[]
   discussion_board_moderation_actions discussion_board_moderation_actions[]
-  discussion_board_user_violations discussion_board_user_violations[]
+  discussion_board_moderation_queues discussion_board_moderation_queues[]
   
   @@unique([email])
   @@unique([username])
   @@index([created_at])
-  @@index([moderator_level])
-  @@index([status])
-  @@index([email_verified])
-  @@index([last_login_at])
-  @@index([failed_login_attempts])
-}
-
-/// Authentication sessions for member users.
-///
-/// Tracks active login sessions for member accounts, providing security and
-/// session management capabilities. Each session records connection context
-/// including IP address, access time, and session expiration.
-///
-/// Sessions are used for audit tracing of member actions and authentication
-/// state management. Multiple concurrent sessions are supported per member
-/// account. Session data helps maintain secure authentication and provides
-/// insights into user engagement patterns.
-///
-/// **Performance Enhancements:**
-/// - Additional indexes for session cleanup and management operations
-/// - Enhanced security tracking for suspicious activity detection
-/// - Improved query performance for session validation workflows
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_member_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the member account. {@link discussion_board_members.id}
-  discussion_board_member_id String
-  
-  /// IP address of the connection for security and geographic tracking.
-  ip String
-  
-  /// Connection URL for session context and analytics.
-  href String
-  
-  /// Referrer URL for traffic source analysis.
-  referrer String
-  
-  /// Client user agent string for device and browser identification.
-  user_agent String?
-  
-  /// Whether the session is currently active for quick status checks.
-  is_active Boolean
-  
-  /// Timestamp of last activity within this session for timeout management.
-  last_activity_at DateTime
-  
-  /// Session creation time.
-  created_at DateTime
-  
-  /// Session end time for automatic cleanup operations.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
-  
-  discussion_board_article_of_members discussion_board_article_of_members[]
-  discussion_board_comments_of_members discussion_board_comments_of_members[]
-  discussion_board_comment_votes discussion_board_comment_votes[]
-  discussion_board_article_votes discussion_board_article_votes[]
-  
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
-  @@index([expired_at])
-  @@index([is_active])
-  @@index([last_activity_at])
+  @@index([moderation_level])
 }
 
 /// Authentication sessions for moderator users.
 ///
-/// Tracks active login sessions for moderator accounts, providing enhanced
-/// security and session management for administrative users. Each session
-/// records connection context including IP address, access time, and session
-/// expiration.
+/// Tracks moderator login sessions with connection context information
+/// including IP address, access URLs, and session timestamps. Each session
+/// belongs to a specific moderator user and maintains authentication state
+/// with administrative privileges.
 ///
-/// Moderator sessions include additional security considerations due to
-/// elevated permissions. Session data helps maintain accountability for
-/// moderator actions and provides audit trails for administrative
-/// activities.
-///
-/// **Security Enhancements:**
-/// - Enhanced security tracking for administrative sessions
-/// - Additional audit trail capabilities for moderator actions
-/// - Improved performance for session management operations
+/// Sessions are used for audit tracing of moderator actions and are managed
+/// through moderator authentication flows. Moderator sessions provide access
+/// to administrative functions including content moderation, user
+/// management, and system configuration.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -364,49 +305,38 @@ model discussion_board_moderator_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the moderator account. {@link discussion_board_moderators.id}
+  /// Belonged moderator's {@link discussion_board_moderators.id}.
   discussion_board_moderator_id String
   
-  /// IP address of the connection for enhanced security monitoring.
+  /// IP address of the moderator session connection.
   ip String
   
-  /// Connection URL for administrative session context.
+  /// Connection URL where the moderator session was established.
   href String
   
-  /// Referrer URL for administrative access tracking.
+  /// Referrer URL that directed the moderator to the session.
   referrer String
   
-  /// Client user agent string for security auditing.
-  user_agent String?
-  
-  /// Whether the session is currently active for administrative monitoring.
-  is_active Boolean
-  
-  /// Timestamp of last activity within this session for security timeout
-  /// management.
-  last_activity_at DateTime
-  
-  /// Security level assigned to this session (standard, elevated, critical).
-  security_level String
-  
-  /// Session creation time.
+  /// Timestamp when the moderator session was created.
   created_at DateTime
   
-  /// Session end time for administrative session management.
+  /// Timestamp when the moderator session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator session expired or was terminated.
   expired_at DateTime?
+  
+  /// Timestamp when the moderator session was soft deleted.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
   
-  discussion_board_article_of_moderators discussion_board_article_of_moderators[]
-  discussion_board_comments_of_moderators discussion_board_comments_of_moderators[]
+  discussion_board_content_reports_of_moderators discussion_board_content_reports_of_moderators[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
   
   // spellchecker: ignore-next-line
   @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderator_sessions_discussion_board_m_086f6f8b")
-  @@index([expired_at])
-  @@index([is_active])
-  @@index([last_activity_at])
-  @@index([security_level])
 }

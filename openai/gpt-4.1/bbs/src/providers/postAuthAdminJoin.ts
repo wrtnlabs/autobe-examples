@@ -8,107 +8,104 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuthorizationToken";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthAdminJoin(props: {
   body: IDiscussionBoardAdmin.IJoin;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  // Step 1: Check for duplicate email
-  const existingAdmin = await MyGlobal.prisma.discussion_board_admins.findFirst(
-    {
-      where: { email: props.body.email },
+  // 1. Check if email already exists
+  const existing = await MyGlobal.prisma.discussion_board_admins.findFirst({
+    where: {
+      email: props.body.email,
     },
-  );
-  if (existingAdmin) {
-    throw new HttpException("Email already registered.", 409);
+  });
+  if (existing) {
+    throw new HttpException("Email already registered as an admin", 409);
   }
 
-  // Step 2: Password strength validation
-  const password = props.body.password;
-  const hasMinLen = password.length >= 8;
-  const hasLetter = /[A-Za-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[^A-Za-z0-9]/.test(password);
-  if (!(hasMinLen && hasLetter && hasNumber && hasSpecial)) {
-    throw new HttpException(
-      "Password must be at least 8 characters and include a letter, a number, and a special character.",
-      400,
-    );
-  }
+  // 2. Hash password
+  const password_hash = await PasswordUtil.hash(props.body.password);
 
-  // Step 3: Hash the password
-  const hashedPassword = await PasswordUtil.hash(password);
-
-  // Step 4: Create the admin record
+  // 3. Prepare timestamp strings
   const now = toISOStringSafe(new Date());
-  const adminId = v4();
+
+  // 4. Create admin
   const admin = await MyGlobal.prisma.discussion_board_admins.create({
     data: {
-      id: adminId,
+      id: v4(),
       email: props.body.email,
-      password_hash: hashedPassword,
-      is_active: true,
-      is_email_verified: false,
-      is_blocked: false,
+      password_hash,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
   });
 
-  // Step 5: Create the admin session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
+  // 5. Access and refresh token settings
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  // 6. Create admin session with required string ip property
   const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
     data: {
-      id: sessionId,
-      discussion_board_admin_id: admin.id,
-      ip: props.body.ip ?? "",
+      id: v4(),
+      admin_id: admin.id,
+      ip:
+        props.body.ip !== undefined && props.body.ip !== null
+          ? (props.body.ip satisfies string as string)
+          : "",
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
+      expired_at: accessExpiredAt,
     },
   });
 
-  // Step 6: JWT tokens
-  const jwtPayload = {
-    type: "admin",
-    id: admin.id,
-    session_id: session.id,
-    created_at: now,
+  // 7. JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        id: admin.id,
+        session_id: session.id,
+        type: "admin",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        id: admin.id,
+        session_id: session.id,
+        type: "admin",
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshExpiredAt,
   };
-  const accessToken = jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(
-    { ...jwtPayload, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
 
+  // 8. Return full authorized admin DTO
   return {
     id: admin.id,
     email: admin.email,
-    is_email_verified: admin.is_email_verified,
-    is_active: admin.is_active,
-    is_blocked: admin.is_blocked,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
     deleted_at:
-      admin.deleted_at !== null && admin.deleted_at !== undefined
-        ? toISOStringSafe(admin.deleted_at)
-        : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+      admin.deleted_at != null ? toISOStringSafe(admin.deleted_at) : undefined,
+    token,
   };
 }

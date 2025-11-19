@@ -21,28 +21,28 @@ export async function memberAuthorize(request: {
       discussion_board_member_id: payload.id,
       expired_at: null,
     },
-    select: {
-      id: true,
-      member: {
-        select: {
-          id: true,
-          status: true,
-          email_verified: true,
-        },
-      },
+    include: {
+      member: true,
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Invalid or expired session");
   }
 
-  if (session.member.status !== "active") {
-    throw new ForbiddenException("Your account is not active");
+  if (session.member.deleted_at !== null) {
+    throw new ForbiddenException("Account has been deleted");
   }
 
-  if (session.member.email_verified !== true) {
-    throw new ForbiddenException("Your email is not verified");
+  if (session.member.is_suspended) {
+    throw new ForbiddenException(
+      session.member.suspension_reason ??
+        "Account is suspended"
+    );
+  }
+
+  if (!session.member.email_verified) {
+    throw new ForbiddenException("Email verification required");
   }
 
   return payload;

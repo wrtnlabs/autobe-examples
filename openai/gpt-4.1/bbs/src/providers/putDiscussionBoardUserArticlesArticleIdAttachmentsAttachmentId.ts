@@ -16,63 +16,114 @@ export async function putDiscussionBoardUserArticlesArticleIdAttachmentsAttachme
   attachmentId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleAttachment.IUpdate;
 }): Promise<IDiscussionBoardArticleAttachment> {
-  // Check if the article exists and is authored by the current user (regular users only edit their own articles)
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
-    select: { id: true, author_user_id: true },
+  // Step 1: Lookup article (ensure exists and not deleted)
+  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
+    where: {
+      id: props.articleId,
+      deleted_at: null,
+    },
   });
   if (!article) {
     throw new HttpException("Article not found", 404);
   }
-  if (article.author_user_id !== props.user.id) {
-    throw new HttpException(
-      "You do not have permission to modify attachments for this article",
-      403,
-    );
-  }
-  // Check if the attachment exists and is linked to the target article
+
+  // Step 2: Lookup attachment (ensure belongs to article and is not deleted)
   const attachment =
-    await MyGlobal.prisma.discussion_board_article_attachments.findUnique({
-      where: { id: props.attachmentId },
+    await MyGlobal.prisma.discussion_board_article_attachments.findFirst({
+      where: {
+        id: props.attachmentId,
+        article_id: props.articleId,
+        deleted_at: null,
+      },
     });
   if (!attachment) {
     throw new HttpException("Attachment not found", 404);
   }
-  if (attachment.article_id !== props.articleId) {
-    throw new HttpException(
-      "Attachment does not belong to the specified article",
-      400,
-    );
-  }
-  // Only file_name and file_type can be updated (business logic: cannot update uri or article_id)
-  if ("uri" in props.body || "article_id" in props.body) {
-    throw new HttpException(
-      "You cannot update file URI or article/article_id",
-      400,
-    );
-  }
-  // Perform update
-  const updated =
-    await MyGlobal.prisma.discussion_board_article_attachments.update({
-      where: { id: props.attachmentId },
-      data: {
-        file_name:
-          props.body.file_name !== undefined
-            ? props.body.file_name
-            : attachment.file_name,
-        file_type:
-          props.body.file_type !== undefined
-            ? props.body.file_type
-            : attachment.file_type,
+
+  // Step 3: Permission check (user is article owner or admin)
+  const isOwner = article.user_id === props.user.id;
+  let isAdmin = false;
+  if (!isOwner) {
+    const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
+      where: {
+        id: props.user.id,
+        deleted_at: null,
       },
     });
+    isAdmin = Boolean(admin);
+  }
+  if (!isOwner && !isAdmin) {
+    throw new HttpException(
+      "Forbidden: Not authorized to edit this attachment",
+      403,
+    );
+  }
+
+  // Step 4: Business validation - enforce file size, type, name, uri if present
+  if (
+    props.body.file_name !== undefined &&
+    (props.body.file_name.length < 1 || props.body.file_name.length > 255)
+  ) {
+    throw new HttpException("File name must be 1 to 255 characters", 400);
+  }
+  if (
+    props.body.mime_type !== undefined &&
+    (props.body.mime_type.length < 3 || props.body.mime_type.length > 63)
+  ) {
+    throw new HttpException("Mime type must be 3 to 63 characters", 400);
+  }
+  if (
+    props.body.file_size !== undefined &&
+    (props.body.file_size < 1 || props.body.file_size > 10485760)
+  ) {
+    throw new HttpException(
+      "File size must be between 1 and 10485760 bytes",
+      400,
+    );
+  }
+  if (props.body.file_uri !== undefined && props.body.file_uri.length < 1) {
+    throw new HttpException("File uri must be a non-empty string", 400);
+  }
+
+  // Step 5: Update the attachment with provided fields
+  const updated =
+    await MyGlobal.prisma.discussion_board_article_attachments.update({
+      where: {
+        id: props.attachmentId,
+      },
+      data: {
+        ...(props.body.file_name !== undefined
+          ? { file_name: props.body.file_name }
+          : {}),
+        ...(props.body.mime_type !== undefined
+          ? { mime_type: props.body.mime_type }
+          : {}),
+        ...(props.body.file_size !== undefined
+          ? { file_size: props.body.file_size }
+          : {}),
+        ...(props.body.file_uri !== undefined
+          ? { file_uri: props.body.file_uri }
+          : {}),
+        ...(props.body.deleted_at !== undefined
+          ? { deleted_at: props.body.deleted_at }
+          : {}),
+      },
+    });
+
+  // Step 6: Return updated metadata (no Date objects)
   return {
     id: updated.id,
     article_id: updated.article_id,
-    uri: updated.uri,
     file_name: updated.file_name,
-    file_type: updated.file_type,
+    mime_type: updated.mime_type,
     file_size: updated.file_size,
-    uploaded_at: toISOStringSafe(updated.uploaded_at),
+    file_uri: updated.file_uri,
+    created_at: toISOStringSafe(updated.created_at),
+    deleted_at:
+      typeof updated.deleted_at === "string"
+        ? updated.deleted_at
+        : updated.deleted_at
+          ? toISOStringSafe(updated.deleted_at)
+          : undefined,
   };
 }

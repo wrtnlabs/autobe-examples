@@ -1,5 +1,5 @@
-export * as dashboard from "./dashboard/index";
-export * as pending_articles from "./pending_articles/index";
-export * as content_reports from "./content_reports/index";
-export * as actions from "./actions/index";
-export * as member_activity from "./member_activity/index";
+export * as queue from "./queue/index";
+export * as violations from "./violations/index";
+export * as audit_log from "./audit_log/index";
+export * as suspensions from "./suspensions/index";
+export * as restrictions from "./restrictions/index";

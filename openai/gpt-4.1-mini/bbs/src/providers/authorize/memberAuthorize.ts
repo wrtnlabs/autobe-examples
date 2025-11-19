@@ -1,31 +1,28 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { MemberPayload } from "../../decorators/payload/MemberPayload";
 
-export async function memberAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
-}): Promise<MemberPayload> {
-  const payload: MemberPayload = jwtAuthorize({ request }) as MemberPayload;
+export async function memberAuthorize(request: { headers: { authorization?: string } }): Promise<MemberPayload> {
+  const payload = jwtAuthorize({ request }) as MemberPayload;
 
   if (payload.type !== "member") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  
-  const member = await MyGlobal.prisma.econ_pol_discussion_board_members.findFirst({
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-    },
+      id: payload.session_id,
+      discussionBoardMember: {
+        id: payload.id,
+        deleted_at: null
+      },
+      expired_at: null
+    }
   });
 
-  if (member === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (session === null) {
+    throw new ForbiddenException("Session is invalid or expired");
   }
 
   return payload;

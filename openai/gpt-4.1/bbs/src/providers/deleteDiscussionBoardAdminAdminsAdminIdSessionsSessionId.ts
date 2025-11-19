@@ -14,20 +14,37 @@ export async function deleteDiscussionBoardAdminAdminsAdminIdSessionsSessionId(p
   adminId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const session =
+  // Step 1: Fetch admin by ID and ensure existence
+  const adminAccount = await MyGlobal.prisma.discussion_board_admins.findFirst({
+    where: {
+      id: props.adminId,
+      deleted_at: null,
+    },
+  });
+  if (!adminAccount) {
+    throw new HttpException("Admin account not found or deactivated", 404);
+  }
+
+  // Step 2: Fetch the session to delete
+  const targetSession =
     await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
       where: {
         id: props.sessionId,
-        discussion_board_admin_id: props.adminId,
+        admin_id: props.adminId,
       },
     });
-  if (!session) {
-    throw new HttpException(
-      "Admin session not found for the specified admin.",
-      404,
-    );
+  if (!targetSession) {
+    throw new HttpException("Session not found for this admin", 404);
   }
+
+  // Step 3: Allow only if (A) own session or (B) any admin (all admins privileged)
+  // In this system, any admin can delete any admin session, so no extra check needed
+  // (Actor privilege checked by system; endpoint requires admin auth)
+
+  // Step 4: Delete the session
   await MyGlobal.prisma.discussion_board_admin_sessions.delete({
-    where: { id: props.sessionId },
+    where: {
+      id: props.sessionId,
+    },
   });
 }

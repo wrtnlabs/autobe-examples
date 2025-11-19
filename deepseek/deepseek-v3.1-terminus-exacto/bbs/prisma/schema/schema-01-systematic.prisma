@@ -1,18 +1,14 @@
-/// Discussion board channels that organize content by broad topic areas.
+/// Discussion board channels that categorize content by broad topics such as
+/// Economics and Politics.
 ///
-/// Channels represent the highest level of content organization, grouping
-/// related discussions under common themes like Economics, Politics, or
-/// Policy. Each channel can contain multiple categories and serves as the
-/// primary navigation structure for users browsing content.
+/// Each channel represents a major discussion category that contains
+/// multiple sections. Channels define the primary organizational structure
+/// of the discussion board and determine how content is grouped and
+/// displayed to users.
 ///
-/// Channels support activation/deactivation status to allow administrators
-/// to manage platform content organization without deleting historical data.
-/// Users can browse channels independently and need to filter discussions by
-/// channel when searching or browsing.
-///
-/// Soft deletion is supported through the deleted_at field, allowing
-/// channels to be removed from user view while maintaining referential
-/// integrity for historical data.
+/// Channels can be activated or deactivated by administrators to control
+/// which topics are available for discussion. Each channel maintains its own
+/// configuration settings and moderation policies.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,14 +19,15 @@ model discussion_board_channels {
   /// Primary Key.
   id String @id
   
-  /// Channel name displayed to users. Must be unique across all channels.
+  /// Channel name that identifies the discussion category (e.g., 'Economics',
+  /// 'Politics').
   name String
   
-  /// Optional description explaining the channel's purpose and content focus.
-  description String?
+  /// Detailed description explaining the channel's purpose and discussion
+  /// scope.
+  description String
   
-  /// Channel status indicating whether it's active or inactive. Valid values:
-  /// 'active', 'inactive', 'archived'. Controls visibility to users.
+  /// Channel status indicating whether it is active, inactive, or archived.
   status String
   
   /// Timestamp when the channel was created.
@@ -39,66 +36,61 @@ model discussion_board_channels {
   /// Timestamp when the channel was last updated.
   updated_at DateTime
   
-  /// Timestamp when the channel was soft deleted. Null indicates active
-  /// channel.
+  /// Timestamp when the channel was soft deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_categories discussion_board_categories[]
-  discussion_board_articles discussion_board_articles[]
+  discussion_board_sections discussion_board_sections[]
+  discussion_board_posts discussion_board_posts[]
   
   @@unique([name])
   @@index([status, created_at])
-  @@index([deleted_at])
 }
 
-/// Discussion board categories that organize content within channels.
+/// Sections within discussion board channels that provide finer content
+/// organization.
 ///
-/// Categories provide secondary organization within channels, allowing
-/// finer-grained content classification. For example, an Economics channel
-/// might have categories like Macroeconomic Policy, Market Analysis, and
-/// Personal Finance.
+/// Sections allow administrators to create subcategories within channels for
+/// more specific topic organization. For example, an Economics channel might
+/// have sections for 'Monetary Policy', 'Fiscal Policy', and 'International
+/// Trade'.
 ///
-/// Categories are managed independently from channels and require their own
-/// API endpoints for creation, editing, and management. Users need to browse
-/// and filter by categories across the platform.
-///
-/// Soft deletion is supported to maintain referential integrity while
-/// allowing content reorganization.
+/// Sections inherit the parent channel's configuration and moderation
+/// settings but can have section-specific overrides. Users can browse
+/// content by section to find discussions on specific topics.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_categories {
+model discussion_board_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent channel that contains this category. {@link
+  /// Parent channel that contains this section. {@link
   /// discussion_board_channels.id}
   discussion_board_channel_id String
   
-  /// Category name displayed to users. Must be unique within the same channel.
+  /// Section name that identifies the specific topic within the parent channel.
   name String
   
-  /// Optional description explaining the category's purpose and content scope.
-  description String?
+  /// Detailed description explaining the section's specific focus and
+  /// discussion guidelines.
+  description String
   
-  /// Category status indicating whether it's active or inactive. Valid values:
-  /// 'active', 'inactive', 'archived'. Controls visibility to users.
+  /// Section status indicating whether it is active, inactive, or archived.
   status String
   
-  /// Timestamp when the category was created.
+  /// Timestamp when the section was created.
   created_at DateTime
   
-  /// Timestamp when the category was last updated.
+  /// Timestamp when the section was last updated.
   updated_at DateTime
   
-  /// Timestamp when the category was soft deleted. Null indicates active
-  /// category.
+  /// Timestamp when the section was soft deleted, if applicable.
   deleted_at DateTime?
   
   //----
@@ -106,28 +98,23 @@ model discussion_board_categories {
   //----
   channel discussion_board_channels @relation(fields: [discussion_board_channel_id], references: [id], onDelete: Cascade)
   
-  discussion_board_articles discussion_board_articles[]
+  discussion_board_posts discussion_board_posts[]
   
+  @@unique([discussion_board_channel_id, name])
   // spellchecker: ignore-next-line
-  @@unique([discussion_board_channel_id, name], map: "discussion_board_categories_discussion_board_channel_i_421d5c33")
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_channel_id, status], map: "discussion_board_categories_discussion_board_channel_i_cd31695c")
+  @@index([discussion_board_channel_id, status], map: "discussion_board_sections_discussion_board_channel_id__e5821d33")
   @@index([status, created_at])
-  @@index([deleted_at])
 }
 
-/// System-wide configuration settings for the discussion board platform.
+/// System configuration settings for the discussion board platform.
 ///
-/// Stores platform configuration values that control system behavior,
-/// feature flags, and operational parameters. These settings are managed
-/// through administrative interfaces rather than direct user interaction.
+/// Stores platform-wide settings such as moderation policies, attachment
+/// limits, content guidelines, and system behavior parameters. These
+/// configurations control how the discussion board operates and can be
+/// modified by administrators.
 ///
-/// Configuration values support different data types and are organized by
-/// functional areas. Changes to configuration settings may require system
-/// restarts or cache invalidation to take effect.
-///
-/// Soft deletion allows configuration settings to be disabled without
-/// removing historical audit data.
+/// Each configuration setting has a unique key and value pair, allowing
+/// flexible system customization without requiring code changes.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -138,37 +125,32 @@ model discussion_board_configurations {
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key used to identify the setting.
-  key String
+  /// Unique identifier for the configuration setting (e.g.,
+  /// 'max_attachment_size', 'post_moderation_enabled').
+  config_key String
   
-  /// Configuration value stored as string. May represent different data types
-  /// when parsed.
-  value String
+  /// Value associated with the configuration key, stored as string for
+  /// flexibility.
+  config_value String
   
-  /// Data type of the configuration value (string, boolean, number, json).
-  data_type String
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration.
+  description String
   
-  /// Human-readable description explaining the configuration setting's purpose.
-  description String?
-  
-  /// Functional category grouping related configuration settings.
-  category String
+  /// Data type of the configuration value (e.g., 'boolean', 'number',
+  /// 'string', 'json').
+  config_type String
   
   /// Timestamp when the configuration was created.
   created_at DateTime
   
-  /// Timestamp when the configuration was last updated.
+  /// Timestamp when the configuration was last modified.
   updated_at DateTime
-  
-  /// Timestamp when the configuration was soft deleted. Null indicates active
-  /// setting.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([key])
-  @@index([category])
+  @@unique([config_key])
+  @@index([config_type])
   @@index([created_at])
-  @@index([deleted_at])
 }

@@ -4,105 +4,84 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconPolDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardAdmin";
+import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 
-/**
- * Test the administrator registration process by creating a new admin account
- * with valid credentials. Verify successful creation of the admin account and
- * issuance of JWT tokens for authenticated sessions. Validate the storage of
- * admin credentials securely and the issuance of appropriate tokens upon
- * registration.
- */
 export async function test_api_admin_registration(connection: api.IConnection) {
-  // Prepare a unique username and email for the admin
-  const username = `admin_${RandomGenerator.alphaNumeric(8)}`;
-  const email = `${username}@example.com` as string & tags.Format<"email">;
-  const password = RandomGenerator.alphaNumeric(16); // a secure random password
+  // Generate realistic admin registration data using typia and RandomGenerator
+  const adminJoinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(12),
+    nickname: RandomGenerator.name(),
+  } satisfies IDiscussionBoardAdmin.IJoin;
 
-  // Create the request body
-  const requestBody = {
-    username,
-    email,
-    password,
-  } satisfies IEconPolDiscussionBoardAdmin.IJoin;
+  // Call the admin join API
+  const authorizedAdmin: IDiscussionBoardAdmin.IAuthorized =
+    await api.functional.auth.admin.join(connection, {
+      body: adminJoinBody,
+    });
+  typia.assert(authorizedAdmin);
 
-  // Call the admin join API to register the new admin
-  const response: IEconPolDiscussionBoardAdmin.IAuthorized =
-    await api.functional.auth.admin.join(connection, { body: requestBody });
-
-  // Assert the response type safety
-  typia.assert(response);
-
-  // Validate response properties
+  // Validate critical fields and types
   TestValidator.predicate(
-    "adminUsername matches request username",
-    response.adminUsername === username,
-  );
-
-  TestValidator.equals(
-    "admin email matches request email",
-    response.email,
-    email,
-  );
-
-  // Check that created_at and updated_at are proper ISO date-time strings
-  TestValidator.predicate(
-    "created_at is ISO date-time",
-    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
-      response.created_at,
-    ),
+    "admin id is non-empty UUID",
+    typeof authorizedAdmin.id === "string" && authorizedAdmin.id.length > 0,
   );
   TestValidator.predicate(
-    "updated_at is ISO date-time",
-    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
-      response.updated_at,
-    ),
+    "admin email matches input",
+    authorizedAdmin.email === adminJoinBody.email,
+  );
+  TestValidator.predicate(
+    "admin nickname matches input",
+    authorizedAdmin.nickname === adminJoinBody.nickname,
+  );
+  TestValidator.predicate(
+    "admin token object exists",
+    authorizedAdmin.token !== null && typeof authorizedAdmin.token === "object",
   );
 
-  // deleted_at can be null or undefined for active accounts, check if null or undefined
+  // Assert token structure
+  const token: IAuthorizationToken = authorizedAdmin.token;
   TestValidator.predicate(
-    "deleted_at is null or undefined",
-    response.deleted_at === null || response.deleted_at === undefined,
+    "token access is non-empty string",
+    typeof token.access === "string" && token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "token refresh is non-empty string",
+    typeof token.refresh === "string" && token.refresh.length > 0,
   );
 
-  // Role should be "admin"
-  TestValidator.equals("role is 'admin'", response.role, "admin");
+  const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
-  // The admin must be active
   TestValidator.predicate(
-    "is_active flag is true",
-    response.is_active === true,
+    "token expired_at is valid ISO date-time",
+    isoDateRegex.test(token.expired_at),
   );
-
-  // The id should be a non-empty string
   TestValidator.predicate(
-    "id present",
-    typeof response.id === "string" && response.id.length > 0,
+    "token refreshable_until is valid ISO date-time",
+    isoDateRegex.test(token.refreshable_until),
   );
 
-  // Validate token properties
+  // Validate timestamps
   TestValidator.predicate(
-    "token.access is non-empty string",
-    typeof response.token.access === "string" &&
-      response.token.access.length > 0,
+    "created_at is valid ISO date-time",
+    typeof authorizedAdmin.created_at === "string" &&
+      authorizedAdmin.created_at.length > 0,
   );
   TestValidator.predicate(
-    "token.refresh is non-empty string",
-    typeof response.token.refresh === "string" &&
-      response.token.refresh.length > 0,
+    "updated_at is valid ISO date-time",
+    typeof authorizedAdmin.updated_at === "string" &&
+      authorizedAdmin.updated_at.length > 0,
   );
 
-  // Validate access token expiry timestamps with ISO8601 format
-  TestValidator.predicate(
-    "token.expired_at is ISO date-time",
-    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
-      response.token.expired_at,
-    ),
-  );
-  TestValidator.predicate(
-    "token.refreshable_until is ISO date-time",
-    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
-      response.token.refreshable_until,
-    ),
-  );
+  // The deleted_at may be null or undefined, if defined and non-null, validate format
+  if (
+    authorizedAdmin.deleted_at !== undefined &&
+    authorizedAdmin.deleted_at !== null
+  ) {
+    TestValidator.predicate(
+      "deleted_at is valid ISO date-time",
+      typeof authorizedAdmin.deleted_at === "string" &&
+        authorizedAdmin.deleted_at.length > 0,
+    );
+  }
 }

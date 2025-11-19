@@ -7,56 +7,48 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 
 /**
- * Test moderator registration behavior when attempting to register with a
+ * Test moderator registration rejection when attempting to register with a
  * duplicate username.
  *
- * This test validates that the discussion board moderator registration system
- * properly enforces username uniqueness constraints. It creates a moderator
- * account with a specific username, then attempts to create a second moderator
- * account using the same username but different email and password.
+ * This test validates the unique constraint enforcement on the username field
+ * in the discussion_board_moderators table. It ensures that the system properly
+ * rejects duplicate username registrations, which is critical for maintaining
+ * unique moderator identifiers for audit trails and moderation action
+ * attribution.
  *
- * The test ensures that:
+ * Test Flow:
  *
- * 1. First moderator registration succeeds with valid credentials
- * 2. Second registration attempt with duplicate username fails
- * 3. System properly rejects duplicate username registration
- * 4. First moderator account remains valid and unaffected
- *
- * Test Steps:
- *
- * 1. Generate unique test username and two different email addresses
- * 2. Create first moderator account with username, email1, and password1
- * 3. Verify first registration succeeds and returns valid moderator data
- * 4. Attempt to create second moderator with same username but email2 and
- *    password2
- * 5. Validate that second registration fails with appropriate error
+ * 1. Successfully register first moderator with unique credentials
+ * 2. Validate successful registration response
+ * 3. Attempt to register second moderator with same username but different email
+ * 4. Verify that duplicate username registration is rejected with appropriate
+ *    error
  */
 export async function test_api_moderator_registration_duplicate_username(
   connection: api.IConnection,
 ) {
-  // Generate test data
+  // Step 1: Generate unique test data for the first moderator
   const sharedUsername = RandomGenerator.name(1);
   const firstEmail = typia.random<string & tags.Format<"email">>();
-  const secondEmail = typia.random<string & tags.Format<"email">>();
   const firstPassword = RandomGenerator.alphaNumeric(12);
-  const secondPassword = RandomGenerator.alphaNumeric(12);
-  const testHref = typia.random<string & tags.Format<"uri">>();
-  const testReferrer = typia.random<string & tags.Format<"uri">>();
 
-  // Step 1: Create first moderator account successfully
   const firstModeratorData = {
     email: firstEmail,
     password: firstPassword,
     username: sharedUsername,
-    href: testHref,
-    referrer: testReferrer,
+    display_name: RandomGenerator.name(2),
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
   } satisfies IDiscussionBoardModerator.ICreate;
 
-  const firstModerator = await api.functional.auth.moderator.join(connection, {
-    body: firstModeratorData,
-  });
+  // Step 2: Successfully register the first moderator
+  const firstModerator: IDiscussionBoardModerator.IAuthorized =
+    await api.functional.auth.moderator.join(connection, {
+      body: firstModeratorData,
+    });
 
-  // Validate first moderator creation
+  // Step 3: Validate the successful registration response
   typia.assert(firstModerator);
   TestValidator.equals(
     "first moderator username matches",
@@ -69,18 +61,25 @@ export async function test_api_moderator_registration_duplicate_username(
     firstEmail,
   );
 
-  // Step 2: Attempt to create second moderator with duplicate username
+  // Step 4: Generate different credentials for second registration attempt
+  const secondEmail = typia.random<string & tags.Format<"email">>();
+  const secondPassword = RandomGenerator.alphaNumeric(12);
+
+  const secondModeratorData = {
+    email: secondEmail,
+    password: secondPassword,
+    username: sharedUsername, // SAME username as first moderator
+    display_name: RandomGenerator.name(2),
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardModerator.ICreate;
+
+  // Step 5: Attempt to register second moderator with duplicate username
+  // This should fail due to unique constraint on username field
   await TestValidator.error(
     "duplicate username registration should fail",
     async () => {
-      const secondModeratorData = {
-        email: secondEmail,
-        password: secondPassword,
-        username: sharedUsername,
-        href: testHref,
-        referrer: testReferrer,
-      } satisfies IDiscussionBoardModerator.ICreate;
-
       await api.functional.auth.moderator.join(connection, {
         body: secondModeratorData,
       });

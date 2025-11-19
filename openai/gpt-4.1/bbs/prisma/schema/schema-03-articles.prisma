@@ -1,13 +1,17 @@
-/// Discussion board articles representing user- or admin-authored posts as
-/// primary content for economic and political debate.
+/// Main table for user-generated discussion articles on economic or
+/// political topics.
 ///
-/// Each article contains essential business data such as title and body,
-/// subject to length limits and business rules described in requirements.
-/// Articles are attributed to the creating user or admin. File and image
-/// attachments are handled via a separate table. Articles are the main entry
-/// point for debate, searchable by title or content. Edits and deletions are
-/// fully audit-trailed by related snapshot and moderation tables. Removal
-/// will cascade to attachments and comments.
+/// Each record represents a single article authored by a registered user.
+/// Includes a required textual title and content, as well as audit fields
+/// for creation/update and soft deletion. Supports edit/audit history via
+/// the related {@link discussion_board_article_snapshots}. Attachments such
+/// as images or files are managed by the subsidiary {@link
+/// discussion_board_article_attachments} table.
+///
+/// Articles are directly managed as standalone business entities and linked
+/// to their author via user ID. Deletion is soft for traceability and
+/// moderation. No business-calculated fields are included; statistics or
+/// aggregates are handled externally.
 ///
 ///
 /// @namespace Articles
@@ -16,50 +20,57 @@ model discussion_board_articles {
   //----
   // COLUMNS
   //----
-  /// Primary key. Unique article identifier.
+  /// Primary Key.
   id String @id
   
-  /// Optional reference to the user who authored this article. Null if
-  /// authored by an admin. {@link discussion_board_users.id}.
-  author_user_id String?
+  /// Author of the article. References the {@link discussion_board_users.id}.
+  user_id String
   
-  /// Optional reference to the admin who authored this article. Null if
-  /// authored by a user. {@link discussion_board_admins.id}.
-  author_admin_id String?
-  
-  /// Article headline. Required. Must be between 5 and 150 characters.
+  /// Title of the article, required for submission. Limited to 200 characters,
+  /// whitespace-trimmed, and sanitized.
   title String
   
-  /// Main content of the article. Must be between 20 and 5000 characters.
-  body String
+  /// Full text body of the article, required. Limited to 10000 characters,
+  /// supports only plain text.
+  content String
   
-  /// Timestamp when article was created.
+  /// Article creation datetime (ISO 8601 UTC). Never changes after insertion.
   created_at DateTime
   
-  /// Timestamp when article was last updated.
+  /// Datetime of last update to the article content or attachments.
   updated_at DateTime
+  
+  /// Soft delete timestamp. Null unless the article is deleted either by owner
+  /// or admin.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  authorUser discussion_board_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
-  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
   discussion_board_article_attachments discussion_board_article_attachments[]
   discussion_board_article_snapshots discussion_board_article_snapshots[]
   discussion_board_comments discussion_board_comments[]
+  discussion_board_comment_snapshots discussion_board_comment_snapshots[]
   
-  @@index([author_user_id, created_at])
-  @@index([author_admin_id, created_at])
+  @@index([user_id, created_at])
 }
 
-/// Attachments associated with articles, such as images or documents,
-/// supporting evidence-based discussion.
+/// Attachment metadata and reference table for images or files linked to
+/// articles.
 ///
-/// Each attachment is directly tied to a single article. Allowed file types
-/// and size limits are enforced at business logic layer. Attachments are
-/// stored as URIs referencing backend storage locations. Deletion of the
-/// parent article cascades to attachments.
+/// Each record indicates a file (image/document) attached to a specific
+/// article, capturing both a unique UUID and metadata about the original
+/// file, storage, size, and type for validation, audit, and secure
+/// retrieval.
+///
+/// Attachments are always managed as secondary to the parent article; they
+/// cannot exist without an owning article. This structure supports
+/// moderator/admin removal of individual files and business constraints on
+/// allowed types. Records reference the owning article, store original
+/// filename, MIME type, size, and storage URI, and support soft deletion per
+/// article deletion or direct moderation.
 ///
 ///
 /// @namespace Articles
@@ -68,44 +79,54 @@ model discussion_board_article_attachments {
   //----
   // COLUMNS
   //----
-  /// Primary key. Unique attachment identifier.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the article this attachment belongs to. {@link
-  /// discussion_board_articles.id}.
+  /// Parent article. Indicates which {@link discussion_board_articles.id} this
+  /// attachment belongs to.
   article_id String
   
-  /// Storage URI for the file or image attachment.
-  uri String
-  
-  /// Original filename of the uploaded attachment.
+  /// Original name of the uploaded file (user-visible), including extension.
   file_name String
   
-  /// MIME type of the attachment, as checked on upload.
-  file_type String
+  /// MIME type of the upload, validated and whitelisted per business rules.
+  mime_type String
   
-  /// Size of attachment in bytes. Enforced maximum 10MB via business rules.
+  /// Attachment size in bytes. Maximum per requirements is 10MB.
   file_size Int
   
-  /// Timestamp when the attachment was uploaded.
-  uploaded_at DateTime
+  /// Storage URI for the actual file (external S3 or local path as
+  /// configured). Not directly accessible by users.
+  file_uri String
+  
+  /// Datetime when the attachment record was created (upload timestamp).
+  created_at DateTime
+  
+  /// Soft deletion timestamp; indicates if attachment was removed by the
+  /// article owner or admin moderation.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
   
-  @@index([article_id, uploaded_at])
+  @@index([article_id, created_at])
 }
 
-/// Historical snapshots of article states for versioning, edit trails, and
-/// audit purposes.
+/// Table for storing immutable snapshots of articles, supporting edit
+/// history, recovery, and audit trails for moderation.
 ///
-/// Stores a copy of article content, title, and author information at each
-/// versioning event. New snapshot records are created whenever an article is
-/// edited. Snapshots ensure a complete edit history for compliance,
-/// moderation, and rollback analysis. Snapshots are never modified or
-/// deleted outside of full article or system purge events.
+/// Each snapshot records a historical version of its parent article,
+/// including title, content, the editing user, and all audit timestamps. All
+/// fields are captured at the moment of edit or update, providing
+/// traceability for changes and supports roll-back or admin review of
+/// edited/deleted content.
+///
+/// Snapshots are created on every edit to {@link discussion_board_articles},
+/// referencing the current article. Not editable after insertion; only
+/// appended for new versions. Accessible by admin for moderation and
+/// compliance auditing.
 ///
 ///
 /// @namespace Articles
@@ -114,39 +135,33 @@ model discussion_board_article_snapshots {
   //----
   // COLUMNS
   //----
-  /// Primary key. Snapshot identifier.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the article whose state this snapshot captures. {@link
+  /// Reference to the target article whose version is being saved. {@link
   /// discussion_board_articles.id}.
   article_id String
   
-  /// Reference to the user author at the time of this snapshot. Nullable if
-  /// authored or modified by admin. {@link discussion_board_users.id}.
-  author_user_id String?
+  /// User who performed the edit (could be the original author or an admin).
+  /// References {@link discussion_board_users.id}.
+  editor_user_id String
   
-  /// Reference to the admin author at the time of this snapshot. Nullable if
-  /// authored/modified by user. {@link discussion_board_admins.id}.
-  author_admin_id String?
+  /// Snapshot of the article title as captured at edit.
+  snapshot_title String
   
-  /// Snapshot of the article title at the time of snapshot creation.
-  title String
+  /// Snapshot of the article content as captured at edit.
+  snapshot_content String
   
-  /// Snapshot of the main article content at the snapshot time.
-  body String
-  
-  /// When the snapshot was created.
+  /// Datetime when this snapshot was recorded (edit or moderation time).
   created_at DateTime
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
-  authorUser discussion_board_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
-  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
-  
-  @@index([author_user_id])
-  @@index([author_admin_id])
+  editorUser discussion_board_users @relation(fields: [editor_user_id], references: [id], onDelete: Cascade)
   
   @@index([article_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([editor_user_id, created_at], map: "discussion_board_article_snapshots_editor_user_id_crea_771f3bd4")
 }

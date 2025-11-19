@@ -7,95 +7,63 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardGuest";
+import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestJoin(props: {
   guest: GuestPayload;
-  body: IEconPolDiscussionBoardGuest.ICreate;
-}): Promise<IEconPolDiscussionBoardGuest.IAuthorized> {
-  const existing =
-    await MyGlobal.prisma.econ_pol_discussion_board_guests.findFirst({
-      where: { username: props.body.username },
-    });
+  body: IDiscussionBoardGuest.IJoin;
+}): Promise<IDiscussionBoardGuest.IAuthorized> {
+  const now = toISOStringSafe(new Date());
+  const guestId = v4();
+  const sessionId = v4();
 
-  if (existing !== null) {
-    throw new HttpException("Username already exists", 409);
-  }
-
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  const guestId: string & tags.Format<"uuid"> = v4();
-
-  const guest = await MyGlobal.prisma.econ_pol_discussion_board_guests.create({
+  const created = await MyGlobal.prisma.discussion_board_guest.create({
     data: {
       id: guestId,
-      username: props.body.username,
+      nickname: `Guest-${guestId.slice(0, 8)}`,
       created_at: now,
       updated_at: now,
+      deleted_at: null,
     },
   });
 
-  const accessExpireDate: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpireDate: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  const sessionId: string & tags.Format<"uuid"> = v4();
-
-  const session =
-    await MyGlobal.prisma.econ_pol_discussion_board_guest_sessions.create({
-      data: {
-        id: sessionId,
-        econ_pol_discussion_board_guest_id: guestId,
-        href: props.body.href satisfies string as string,
-        referrer: props.body.referrer satisfies string as string,
-        created_at: now,
-        expired_at: accessExpireDate,
-        ip: (props.body.ip ?? "") satisfies string,
-      },
-    });
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const token = {
     access: jwt.sign(
       {
         type: "guest",
-        id: guest.id,
-        session_id: session.id,
+        id: guestId,
+        session_id: sessionId,
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "guest",
-        id: guest.id,
-        session_id: session.id,
+        id: guestId,
+        session_id: sessionId,
         tokenType: "refresh",
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpireDate,
-    refreshable_until: refreshExpireDate,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
 
   return {
-    id: guest.id,
-    username: guest.username,
-    ip: props.body.ip ?? undefined,
-    user_agent: props.body.user_agent ?? undefined,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
+    id: created.id,
+    nickname: created.nickname,
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
+    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
     token,
   };
 }

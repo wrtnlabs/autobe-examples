@@ -113,8 +113,8 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 3, documents: 12 | 100.00 % | 642,649 | 130 sec
-✅ prisma | namespaces: 3, models: 14 | 100.00 % | 403,367 | 151 sec
+✅ analyze | actors: 3, documents: 11 | 100.00 % | 540,644 | 302 sec
+✅ prisma | namespaces: 3, models: 8 | 100.00 % | 323,519 | 231 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 
@@ -135,12 +135,11 @@ Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
 total | 35 | 0 | 0 | 35 | 100.00 %
 analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 12 | 0 | 0 | 12 | 100.00 %
-analyzeReview | 12 | 0 | 0 | 12 | 100.00 %
+analyzeWrite | 11 | 0 | 0 | 11 | 100.00 %
+analyzeReview | 15 | 0 | 0 | 15 | 100.00 %
 prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
 prismaSchema | 3 | 0 | 0 | 3 | 100.00 %
-prismaReview | 5 | 0 | 0 | 5 | 100.00 %
-prismaCorrect | 1 | 0 | 0 | 1 | 100.00 %
+prismaReview | 4 | 0 | 0 | 4 | 100.00 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

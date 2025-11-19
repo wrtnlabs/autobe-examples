@@ -13,30 +13,28 @@ export async function deleteDiscussionBoardAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Find target admin (ensure not already deleted)
-  const targetAdmin = await MyGlobal.prisma.discussion_board_admins.findUnique({
-    where: { id: props.adminId },
-  });
-  if (!targetAdmin || targetAdmin.deleted_at !== null) {
-    throw new HttpException("Administrator not found or already deleted", 404);
-  }
-  // Step 2: Remove the admin record permanently
-  await MyGlobal.prisma.discussion_board_admins.delete({
-    where: { id: props.adminId },
-  });
-  // Step 3: Audit log the action
-  const now = toISOStringSafe(new Date());
-  await MyGlobal.prisma.discussion_board_moderation_logs.create({
-    data: {
-      id: v4(),
-      admin_id: props.admin.id,
-      target_type: "admin",
-      target_id: props.adminId,
-      action_code: "delete",
-      note: "Permanent administrator deletion via erase endpoint.",
-      created_at: now,
-      updated_at: now,
+  // Lookup admin to ensure existence and not already deleted
+  const target = await MyGlobal.prisma.discussion_board_admins.findFirst({
+    where: {
+      id: props.adminId,
       deleted_at: null,
+    },
+  });
+  if (!target) {
+    throw new HttpException("Admin account not found or already deleted.", 404);
+  }
+
+  // Delete all admin sessions for target admin
+  await MyGlobal.prisma.discussion_board_admin_sessions.deleteMany({
+    where: {
+      admin_id: props.adminId,
+    },
+  });
+
+  // Hard delete the admin account
+  await MyGlobal.prisma.discussion_board_admins.delete({
+    where: {
+      id: props.adminId,
     },
   });
 }

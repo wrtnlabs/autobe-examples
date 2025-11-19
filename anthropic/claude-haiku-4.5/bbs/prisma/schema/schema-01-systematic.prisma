@@ -1,87 +1,75 @@
-/// Predefined article categories that organize and structure all discussions
-/// on the platform.
+/// Article category reference data that organizes discussion board content
+/// into logical topic areas.
 ///
-/// Stores the fixed set of categories available for article classification:
-/// Economics, Politics, Economic Policy, Political Analysis, and Other.
-/// Categories define the organizational structure for the entire discussion
-/// board, allowing users to browse and discover discussions by topic area.
+/// Every article published on the discussion board must belong to exactly
+/// one category from this predefined set. Categories provide the primary
+/// organizational structure enabling users to browse articles by topic area.
+/// The system maintains a fixed set of categories rather than allowing
+/// unlimited user-created categories, ensuring consistent content
+/// organization and preventing category fragmentation.
 ///
-/// Categories are foundational reference data maintained by system
-/// administrators. Articles must belong to exactly one category. Members
-/// cannot create custom categories—only system administrators can add or
-/// modify the category list to ensure consistent organization.
+/// Categories include metadata describing their purpose, character limits
+/// for article content within the category, and validity status. Soft
+/// deletion is supported to maintain data integrity when categories are
+/// deprecated while preserving the ability to reference them from historical
+/// articles.
 ///
-/// Each category includes metadata for display and tracking:
-/// - name: Display name shown to users (e.g., 'Economics')
-/// - slug: URL-safe identifier for filtering and programmatic reference
-/// - description: Purpose and scope of this category
-/// - display_order: Sequence for showing categories in navigation (lower
-/// numbers appear first)
-/// - is_active: Whether category is currently available for article selection
-/// - article_count: Denormalized count of published articles in this
-/// category (updated when articles are published or archived)
-///
-/// Categories support the discovery workflow by providing a navigation path
-/// complementary to search functionality. While not directly transactional,
-/// categories are essential infrastructure supporting article organization
-/// and member navigation.
+/// Related entities: discussion_board_articles references this table via
+/// category_id when articles are created or updated.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_categories {
+model article_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Display name of the category shown to users. Examples: 'Economics',
-  /// 'Politics', 'Economic Policy'. Maximum 50 characters for consistent
-  /// display in UI.
+  /// Unique machine-readable identifier for the category (e.g.,
+  /// 'economic-policy', 'political-governance'). Used in APIs and internal
+  /// references. Must be 5-50 lowercase alphanumeric characters with hyphens.
+  code String
+  
+  /// Human-readable display name for the category (e.g., 'Economic Policy',
+  /// 'Political Governance'). Shown in user interfaces, category listings, and
+  /// article filters. 10-100 characters.
   name String
   
-  /// URL-safe identifier for the category used in filtering, search, and API
-  /// endpoints. Examples: 'economics', 'political-analysis'. Lowercase
-  /// alphanumeric with hyphens only. Must be unique across all categories.
-  slug String
-  
-  /// Detailed description of the category's purpose and scope. Explains what
-  /// types of discussions belong here. Displayed to users when browsing or
-  /// creating articles. Maximum 500 characters.
+  /// Detailed explanation of the category scope and purpose. Helps users
+  /// understand which category their article should belong to. Maximum 500
+  /// characters. Examples: 'Articles about taxation, trade, regulation, and
+  /// economic policy decisions' for Economic Policy category.
   description String?
   
-  /// Integer sequence number determining category display order in navigation
-  /// menus. Lower numbers appear first. Categories are sorted by this field
-  /// for consistent UI presentation. Typical values: 1 (Economics), 2
-  /// (Politics), 3 (Economic Policy), 4 (Political Analysis), 5 (Other).
+  /// Numeric order for displaying categories in user interfaces. Lower numbers
+  /// appear first in category menus and navigation. Defaults to 0. Used by
+  /// sort order when displaying category lists.
   display_order Int
   
-  /// Whether this category is currently available for article selection.
-  /// Active categories appear in the category filter dropdown and navigation.
-  /// Inactive categories hide from member selections but retain existing
-  /// articles. Allows administrators to retire unused categories without data
-  /// loss.
+  /// Whether this category is currently available for article submission.
+  /// Active categories appear in category selection dropdowns when users
+  /// create articles. Inactive categories persist for historical reference but
+  /// prevent new articles from being assigned. Defaults to true.
   is_active Boolean
   
-  /// Denormalized count of published articles currently in this category.
-  /// Provides quick access for display purposes (e.g., 'Economics (42
-  /// articles'). Automatically updated when articles are published or
-  /// archived. Initialized to 0 when category is created.
+  /// Denormalized count of published articles in this category. Used for
+  /// display purposes (e.g., 'Economic Policy (47 articles'). Updated when
+  /// articles are published or unpublished. Defaults to 0. Should be
+  /// recalculated periodically for accuracy.
   article_count Int
   
-  /// Timestamp when category was created. Records the initial creation time of
-  /// the category in UTC timezone. Immutable after creation.
+  /// Timestamp when the category was created. ISO 8601 format. Set
+  /// automatically on record creation.
   created_at DateTime
   
-  /// Timestamp of the most recent modification to category properties. Updated
-  /// whenever category name, description, display order, or active status
-  /// changes. Supports audit trail and change tracking.
+  /// Timestamp when the category was last modified. ISO 8601 format. Updated
+  /// whenever any field changes.
   updated_at DateTime
   
-  /// Timestamp when category was soft-deleted. NULL indicates active category.
-  /// When set, category is hidden from UI but preserved in database for audit
-  /// trail and historical integrity. Allows category retirement without
-  /// breaking historical article references.
+  /// Timestamp when the category was soft-deleted (made inactive). ISO 8601
+  /// format. Null for active categories. Soft deletion preserves historical
+  /// category data while removing the category from active use.
   deleted_at DateTime?
   
   //----
@@ -89,123 +77,183 @@ model discussion_board_categories {
   //----
   discussion_board_articles discussion_board_articles[]
   
-  @@unique([name])
-  @@unique([slug])
-  @@index([display_order])
-  @@index([is_active])
+  @@unique([code])
+  @@index([is_active, display_order])
   @@index([created_at])
 }
 
-/// System-wide configuration and settings that control platform behavior and
-/// features.
+/// Content policy rules and moderation guidelines that define community
+/// standards for articles and comments.
 ///
-/// Stores key-value pairs for application configuration, feature flags, and
-/// operational settings. Provides centralized management of system behavior
-/// without requiring code changes or redeployment. Administrators modify
-/// settings through admin panels to control platform features and behavior.
+/// The content guidelines table stores the authoritative rules that
+/// moderators enforce when reviewing articles and monitoring comments. Each
+/// guideline entry specifies a policy rule, whether it applies to articles
+/// or comments, the severity level if violated, and examples to help
+/// moderators make consistent decisions.
 ///
-/// Common settings include:
-/// - Site metadata: site_name, site_description, support_email
-/// - Feature flags: enable_new_user_registrations, enable_comments,
-/// enable_file_uploads, enable_search
-/// - Moderation settings: require_article_approval, auto_moderate_comments,
-/// spam_detection_enabled
-/// - Rate limiting: max_articles_per_day, max_comments_per_day,
-/// max_comment_burst
-/// - System behavior: maintenance_mode, maintenance_message,
-/// session_timeout_minutes
+/// Guidelines are organized by policy area (hate speech, misinformation,
+/// spam, off-topic, etc.) and include detailed descriptions of prohibited
+/// behavior. The system maintains the complete set of active guidelines for
+/// reference by moderators and contributors. Soft deletion is supported to
+/// preserve historical policy changes while maintaining audit trails of
+/// previous guidelines.
 ///
-/// Each setting consists of:
-/// - setting_key: Unique identifier for the configuration parameter (e.g.,
-/// 'maintenance_mode')
-/// - setting_value: The actual configuration value (string format, parsed by
-/// application as needed)
-/// - setting_type: Data type hint ('string', 'integer', 'boolean', 'json')
-/// helping application parse the value
-/// - description: Purpose and usage of this setting for administrator reference
-/// - is_active: Whether this setting is currently applied; inactive settings
-/// are ignored
-/// - updated_by: Moderator or admin who last modified this setting (for
-/// audit trail)
-/// - updated_at: When setting was last changed
-///
-/// The system_settings table is the single source of truth for
-/// configuration, eliminating the need to modify environment variables or
-/// restart the application. Changes are applied immediately or on next
-/// request depending on setting type and system design.
-///
-/// All settings are immutable once set—modifications create new entries with
-/// updated timestamps rather than overwriting previous values. This
-/// preserves configuration history and supports audit trail requirements.
-///
-/// Settings support the operational requirements of the platform by allowing
-/// administrators to control feature availability, user behavior
-/// constraints, and system maintenance without technical intervention.
+/// Moderation decisions reference specific guidelines when removing content
+/// or issuing warnings, creating accountability and transparency about why
+/// content was removed.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_system_settings {
+model content_guidelines {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting. Examples:
-  /// 'maintenance_mode', 'max_articles_per_day', 'site_name',
-  /// 'enable_user_registrations'. Used by application code to retrieve
-  /// specific configuration values. Maximum 100 characters. Must be unique
-  /// combined with category.
-  setting_key String
+  /// Machine-readable identifier for the guideline (e.g., 'hate-speech',
+  /// 'misinformation', 'spam'). 5-50 lowercase alphanumeric characters with
+  /// hyphens. Used in moderation logs and audit trails.
+  code String
   
-  /// The actual configuration value as string. Format depends on setting_type:
-  /// boolean settings stored as 'true'/'false', integer settings as numeric
-  /// strings (e.g., '30'), JSON settings as serialized JSON. Application code
-  /// is responsible for parsing based on setting_type. Maximum 10,000
-  /// characters for complex values.
-  setting_value String
+  /// Short, descriptive title of the guideline (e.g., 'Hate Speech',
+  /// 'Misinformation', 'Commercial Spam'). 10-100 characters. Displayed in
+  /// moderation dashboards and violation notices.
+  title String
   
-  /// Data type hint for parsing the setting_value. Allowed values: 'string',
-  /// 'integer', 'boolean', 'json'. Helps application correctly interpret the
-  /// stored value. For example, 'true' string interpreted as boolean true when
-  /// type is 'boolean'.
-  setting_type String
+  /// Detailed explanation of the policy and what content violates it. Should
+  /// include clear examples of prohibited behavior and the rationale for the
+  /// policy. Maximum 2000 characters. Moderators use this when making judgment
+  /// calls about borderline content.
+  description String
   
-  /// Human-readable description of the setting's purpose, usage, and impact.
-  /// Displayed to administrators in settings management UI to explain what
-  /// each configuration controls. Helps administrators understand
-  /// configuration consequences. Maximum 500 characters.
-  description String?
+  /// Whether this guideline applies to article content. If true, moderators
+  /// review articles against this guideline during approval. Defaults to true
+  /// for most guidelines.
+  applies_to_articles Boolean
   
-  /// Whether this setting is currently active and applied by the system.
-  /// Active settings (true) are retrieved and used by application code.
-  /// Inactive settings (false) are stored but ignored by the application.
-  /// Allows administrators to disable specific settings without deleting
-  /// configuration history.
+  /// Whether this guideline applies to comment content. If true, moderators
+  /// monitor comments for violations of this guideline. Defaults to true for
+  /// most guidelines.
+  applies_to_comments Boolean
+  
+  /// Classification of violation severity: 'minor' (edit/warning), 'moderate'
+  /// (removal/warning), 'severe' (removal/suspension). Guides moderator
+  /// response proportionality. Severity level informs escalation decisions.
+  severity_level String
+  
+  /// Description of typical consequences for violating this guideline (e.g.,
+  /// 'comment removal', 'article rejection with feedback', 'account suspension
+  /// after 3 violations'). Maximum 500 characters. Helps set contributor
+  /// expectations.
+  violation_consequence String?
+  
+  /// Numeric order for displaying guidelines in user-facing policy
+  /// documentation. Lower numbers appear first. Defaults to 0. Used to
+  /// organize guidelines by importance or category.
+  display_order Int
+  
+  /// Whether this guideline is currently enforced. Active guidelines are
+  /// displayed in policy documentation and used by moderators. Inactive
+  /// guidelines are retained for historical reference but not actively
+  /// enforced. Defaults to true.
   is_active Boolean
   
-  /// Identifier of the moderator or administrator who last modified this
-  /// setting. Used for audit trail to track who made configuration changes and
-  /// when. Supports accountability and troubleshooting of configuration
-  /// issues.
-  updated_by String?
-  
-  /// Timestamp when this setting was initially created or first recorded.
-  /// Marks the beginning of this configuration entry for audit purposes.
-  /// Immutable after creation.
+  /// Timestamp when the guideline was created. ISO 8601 format. Marks when the
+  /// policy rule was first established.
   created_at DateTime
   
-  /// Timestamp of the most recent modification to this setting's value or
-  /// active status. Updated whenever the setting_value, is_active, or other
-  /// properties change. Helps identify recently modified settings and track
-  /// configuration changes over time.
+  /// Timestamp when the guideline was last modified. ISO 8601 format. Updated
+  /// when policy descriptions or enforcement rules change.
+  updated_at DateTime
+  
+  /// Timestamp when the guideline was soft-deleted or made inactive. ISO 8601
+  /// format. Null for active guidelines. Soft deletion preserves historical
+  /// audit trail of policy changes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([is_active, severity_level])
+  @@index([applies_to_articles, applies_to_comments])
+  @@index([created_at])
+}
+
+/// Application-wide configuration settings and system parameters that
+/// control platform behavior.
+///
+/// The system configurations table stores site-wide settings and operational
+/// parameters that control how the discussion board functions. Settings
+/// include password requirements, session timeouts, rate limits, file upload
+/// constraints, and feature flags that determine which features are enabled.
+///
+/// Configuration entries use a key-value structure with a configuration key
+/// (e.g., 'password_min_length', 'session_timeout_minutes',
+/// 'file_upload_max_size_mb') and corresponding value. Each setting includes
+/// a description explaining its purpose and impact on the system.
+///
+/// Administrators manage system configurations to tune platform behavior
+/// without requiring code changes. Changes to configurations take effect
+/// immediately or after specified cache expiration periods. All
+/// configuration changes are audited with timestamps for accountability.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique machine-readable identifier for the configuration setting (e.g.,
+  /// 'password_min_length', 'session_timeout_minutes',
+  /// 'file_upload_max_size_mb'). 10-100 lowercase alphanumeric characters with
+  /// underscores. Used as primary lookup key for retrieving configuration
+  /// values.
+  config_key String
+  
+  /// The actual configuration value as a string (e.g., '8' for
+  /// password_min_length, '30' for session_timeout_minutes). Values are stored
+  /// as strings and should be parsed to appropriate types (int, boolean, etc.)
+  /// by application code. Maximum 5000 characters for complex values like
+  /// policy text.
+  config_value String
+  
+  /// Data type classification for the configuration value: 'string',
+  /// 'integer', 'boolean', 'decimal', 'json'. Indicates how the config_value
+  /// should be parsed by the application. Helps validate configuration values.
+  config_type String
+  
+  /// Explanation of what this configuration controls and why it matters.
+  /// Examples: 'Minimum number of characters required for user passwords',
+  /// 'Session timeout in minutes after which users must re-authenticate',
+  /// 'Maximum file size in MB for article attachments'. Maximum 1000
+  /// characters.
+  description String?
+  
+  /// Whether administrators can modify this configuration through the admin
+  /// interface. Some core settings (like schema version) are read-only and
+  /// marked as false to prevent accidental changes. Defaults to true for most
+  /// settings.
+  is_modifiable Boolean
+  
+  /// Timestamp when the configuration setting was created. ISO 8601 format.
+  /// Marks when this setting was first established.
+  created_at DateTime
+  
+  /// Timestamp when the configuration value was last modified. ISO 8601
+  /// format. Updated whenever an administrator changes the configuration
+  /// value.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([setting_key])
-  @@index([is_active])
-  @@index([setting_type])
+  @@unique([config_key])
+  @@index([config_type])
+  @@index([is_modifiable])
   @@index([updated_at])
 }

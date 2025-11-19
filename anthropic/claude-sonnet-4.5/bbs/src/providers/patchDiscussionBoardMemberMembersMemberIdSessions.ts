@@ -19,85 +19,53 @@ export async function patchDiscussionBoardMemberMembersMemberIdSessions(props: {
   body: IDiscussionBoardMemberSession.IRequest;
 }): Promise<IPageIDiscussionBoardMemberSession.ISummary> {
   if (props.member.id !== props.memberId) {
-    throw new HttpException(
-      "Forbidden: You can only access your own sessions",
-      403,
-    );
+    throw new HttpException("You can only view your own sessions", 403);
   }
 
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const sortBy = props.body.sort_by ?? "created_at";
+  const order = props.body.order ?? "desc";
 
-  const [sessions, totalCount] = await Promise.all([
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_member_sessions.findMany({
       where: {
         discussion_board_member_id: props.memberId,
-        ...(props.body.ip !== undefined && { ip: props.body.ip }),
-        ...(props.body.href !== undefined && {
-          href: { contains: props.body.href },
+        ...(props.body.status === "active" && { expired_at: null }),
+        ...(props.body.status === "expired" && { expired_at: { not: null } }),
+        ...(props.body.created_after && {
+          created_at: { gte: new Date(props.body.created_after) },
         }),
-        ...(props.body.referrer !== undefined && {
-          referrer: { contains: props.body.referrer },
+        ...(props.body.created_before && {
+          created_at: { lte: new Date(props.body.created_before) },
         }),
-        ...((props.body.created_after !== undefined ||
-          props.body.created_before !== undefined) && {
-          created_at: {
-            ...(props.body.created_after !== undefined && {
-              gte: props.body.created_after,
-            }),
-            ...(props.body.created_before !== undefined && {
-              lte: props.body.created_before,
-            }),
-          },
+        ...(props.body.ip_pattern && {
+          ip: { contains: props.body.ip_pattern },
         }),
-        ...(props.body.expired_at_is_null === true && { expired_at: null }),
-        ...(props.body.expired_at_is_null === false && {
-          expired_at: { not: null },
-        }),
+      },
+      include: {
+        member: true,
+      },
+      orderBy: {
+        [sortBy]: order,
       },
       skip,
       take: limit,
-      orderBy: {
-        created_at: props.body.sort === "created_at" ? "asc" : "desc",
-      },
-      include: {
-        member: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-            status: true,
-            email_verified: true,
-            created_at: true,
-          },
-        },
-      },
     }),
     MyGlobal.prisma.discussion_board_member_sessions.count({
       where: {
         discussion_board_member_id: props.memberId,
-        ...(props.body.ip !== undefined && { ip: props.body.ip }),
-        ...(props.body.href !== undefined && {
-          href: { contains: props.body.href },
+        ...(props.body.status === "active" && { expired_at: null }),
+        ...(props.body.status === "expired" && { expired_at: { not: null } }),
+        ...(props.body.created_after && {
+          created_at: { gte: new Date(props.body.created_after) },
         }),
-        ...(props.body.referrer !== undefined && {
-          referrer: { contains: props.body.referrer },
+        ...(props.body.created_before && {
+          created_at: { lte: new Date(props.body.created_before) },
         }),
-        ...((props.body.created_after !== undefined ||
-          props.body.created_before !== undefined) && {
-          created_at: {
-            ...(props.body.created_after !== undefined && {
-              gte: props.body.created_after,
-            }),
-            ...(props.body.created_before !== undefined && {
-              lte: props.body.created_before,
-            }),
-          },
-        }),
-        ...(props.body.expired_at_is_null === true && { expired_at: null }),
-        ...(props.body.expired_at_is_null === false && {
-          expired_at: { not: null },
+        ...(props.body.ip_pattern && {
+          ip: { contains: props.body.ip_pattern },
         }),
       },
     }),
@@ -106,26 +74,22 @@ export async function patchDiscussionBoardMemberMembersMemberIdSessions(props: {
   return {
     pagination: {
       current: page,
-      limit,
-      records: totalCount,
-      pages: Math.ceil(totalCount / limit),
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
-    data: sessions.map((session) => ({
+    data: data.map((session) => ({
       id: session.id,
-      discussion_board_member_id: session.discussion_board_member_id,
-      member: {
-        id: session.member.id,
-        username: session.member.username,
-        email: session.member.email,
-        status: session.member.status,
-        email_verified: session.member.email_verified,
-        created_at: toISOStringSafe(session.member.created_at),
-      },
       ip: session.ip,
       created_at: toISOStringSafe(session.created_at),
       expired_at: session.expired_at
         ? toISOStringSafe(session.expired_at)
         : null,
+      member: {
+        id: session.member.id,
+        username: session.member.username,
+        display_name: session.member.display_name,
+      },
     })),
   };
 }

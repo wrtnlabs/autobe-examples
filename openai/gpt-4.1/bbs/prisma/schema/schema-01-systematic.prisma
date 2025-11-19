@@ -1,50 +1,49 @@
-/// Platform-wide configuration and placeholder for systematic board settings.
+/// System-wide configuration table for board-level settings and feature flags.
 ///
-/// This model holds system-level settings, toggles, or infrastructure
-/// parameters that may affect platform-wide policy, appearance, or technical
-/// operation. It allows for minimal, future-proof configuration management,
-/// ensuring the backend can support extension or modification without schema
-/// disruption.
-///
-/// Initially designed as a placeholder, this table supports single or
-/// multiple business-defined settings through a key/value pattern. All
-/// change events (creation, updates, and deletion) are tracked for audit and
-/// rollback. The model enables admins or operators to programmatically
-/// control or audit system-wide states, without duplicating config in other
-/// domain schemas.
+/// Stores key-value pairs representing runtime tunable parameters or
+/// business policies. Used as a foundation for global configuration, such as
+/// toggling features, maintenance mode, upload limits, or descriptive
+/// metadata that governs the entire discussion board. No foreign keys as
+/// this is an isolated domain for maintainability. Allows for future
+/// extensibility and immediate board-wide change management without database
+/// migrations. All updates are auditable thanks to temporal fields.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_system_settings {
+model discussion_board_system_configs {
   //----
   // COLUMNS
   //----
-  /// Primary Key for the system settings entry.
+  /// Primary Key for each configuration entry.
   id String @id
   
-  /// Unique identifier for this configuration setting or policy entry. Used to
-  /// retrieve or update specific settings programmatically.
-  key String
+  /// Unique key identifying the configuration item, e.g.,
+  /// 'feature_upload_enabled', 'max_file_size_mb'. Must be unique for each
+  /// system setting.
+  config_key String
   
-  /// Value for this system setting. May encode raw value, serialized JSON, or
-  /// application-specific policy text.
-  value String
+  /// Configuration value as a string. May contain JSON or plain scalar values
+  /// depending on application logic. Stores the current value for the given
+  /// setting.
+  config_value String
   
-  /// Optional human-readable explanation or policy summary for this setting.
+  /// Optional human-readable explanation of this setting's business role and
+  /// usage.
   description String?
   
-  /// Timestamp for creation of this settings entry.
+  /// Timestamp of configuration entry creation for audit purposes.
   created_at DateTime
   
-  /// Timestamp for last update or modification.
+  /// Timestamp of the last update to this configuration record.
   updated_at DateTime
   
-  /// Soft deletion timestamp for audit and rollback; null unless marked for
-  /// deletion.
+  /// If set, marks this configuration as deprecated or inactive; preserves
+  /// audit trail.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([key])
+  @@unique([config_key])
+  @@index([config_key, deleted_at])
 }

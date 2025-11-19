@@ -3,31 +3,36 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IEconPolDiscussionBoardGuest } from "../../../structures/IEconPolDiscussionBoardGuest";
+import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Create guest user account and issue temporary JWT tokens.
+ * Create a temporary guest account and issue access tokens (no authentication
+ * required).
  *
- * This operation creates a new guest user account in the
- * econ_pol_discussion_board_guests table, enabling guests to interact with the
- * system in an unauthenticated session mode. It issues initial JWT tokens for
- * temporary access. The join operation leverages the absence of password
- * requirements in the guest schema and focuses on session initiation.
+ * This operation enables unauthenticated users (guest actor) to register
+ * temporary guest accounts. It creates basic records in the guest data table
+ * and issues short-lived JWT tokens to allow read-only access to public
+ * articles and discussions. No credentials or password are needed since guests
+ * do not log in traditionally. This operation complements the subsequent token
+ * refresh operation to maintain session continuity.
  *
- * The operation does not require credentials and is accessible publicly without
- * authentication, serving to track guest activity and session state.
+ * Implementation details: A temporary guest record is created in the
+ * discussion_board_guest table with minimal required fields. Token issuance
+ * follows JWT standards leveraged by the application.
  *
- * This operation complements the refresh token process to maintain guest
- * sessions without explicit login.
+ * Actor-specific integration: Specifically designed for the guest actor role
+ * with limited permissions and no login capabilities.
  *
- * Security considerations include ensuring no elevated permissions are granted
- * to guest accounts and tokens are scoped appropriately to limit access.
+ * Security: Since this is a public endpoint, careful rate limiting and
+ * validation are expected to avoid abuse. No password or sensitive data is
+ * handled.
  *
- * Related operations: refresh - to renew tokens and extend sessions for the
- * guest user.
+ * Related operations: This operation works with the refresh endpoint to
+ * maintain stateless session tokens across visits.
  *
  * @param props.connection
- * @param props.body New guest creation request payload.
+ * @param props.body Join request body for guest registration without credential
+ *   fields
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -62,11 +67,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** New guest creation request payload. */
-    body: IEconPolDiscussionBoardGuest.ICreate;
+    /** Join request body for guest registration without credential fields */
+    body: IDiscussionBoardGuest.IJoin;
   };
-  export type Body = IEconPolDiscussionBoardGuest.ICreate;
-  export type Response = IEconPolDiscussionBoardGuest.IAuthorized;
+  export type Body = IDiscussionBoardGuest.IJoin;
+  export type Response = IDiscussionBoardGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -82,8 +87,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/guest/join";
-  export const random = (): IEconPolDiscussionBoardGuest.IAuthorized =>
-    typia.random<IEconPolDiscussionBoardGuest.IAuthorized>();
+  export const random = (): IDiscussionBoardGuest.IAuthorized =>
+    typia.random<IDiscussionBoardGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -110,27 +115,27 @@ export namespace join {
 }
 
 /**
- * Refresh guest user's temporary access tokens.
+ * Refresh the access tokens using a valid refresh token for guests.
  *
- * This operation takes a valid guest refresh token and returns a new set of JWT
- * tokens, enabling continued temporary session access without creating a new
- * guest account. It ensures session continuity for guest users in the
- * econ_pol_discussion_board_guests table.
+ * This operation enables token renewal for temporary guest accounts. The client
+ * must provide a valid refresh token obtained from a prior join or refresh
+ * operation. Upon validation, new JWT access and refresh tokens are issued to
+ * permit continued read-only access without requiring re-registration.
  *
- * Access to this endpoint requires a valid refresh token and is limited to
- * guest actor scope.
+ * Implementation details: Refresh token validity and revocation mechanisms rely
+ * on the discussion_board_guest sessions tables and JWT standards.
  *
- * Security measures include validation of refresh tokens and token invalidation
- * upon expiration or logout.
+ * Actor-specific integration: This endpoint is restricted to guests, ensuring
+ * tokens are only refreshed for authorized guest sessions.
  *
- * Related operations include join - which creates the initial guest account and
- * issues tokens.
+ * Security: Implementing short token lifetimes and proper validation is
+ * essential to prevent token abuse.
  *
- * This operation completes the guest authentication lifecycle with token
- * renewal capabilities.
+ * Related operations: Works closely with the join operation to maintain
+ * stateless session continuity for guest users.
  *
  * @param props.connection
- * @param props.body Refresh token request payload.
+ * @param props.body Refresh token request body
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -165,11 +170,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request payload. */
-    body: IEconPolDiscussionBoardGuest.IRequestRefresh;
+    /** Refresh token request body */
+    body: IDiscussionBoardGuest.IRefresh;
   };
-  export type Body = IEconPolDiscussionBoardGuest.IRequestRefresh;
-  export type Response = IEconPolDiscussionBoardGuest.IAuthorized;
+  export type Body = IDiscussionBoardGuest.IRefresh;
+  export type Response = IDiscussionBoardGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -185,8 +190,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/guest/refresh";
-  export const random = (): IEconPolDiscussionBoardGuest.IAuthorized =>
-    typia.random<IEconPolDiscussionBoardGuest.IAuthorized>();
+  export const random = (): IDiscussionBoardGuest.IAuthorized =>
+    typia.random<IDiscussionBoardGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

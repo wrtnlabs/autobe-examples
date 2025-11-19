@@ -1,5 +1,4 @@
-/// Configuration table for storing system-wide settings as key-value pairs
-/// with additional metadata.
+/// Configuration settings for the discussion board system.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -10,13 +9,13 @@ model discussion_board_configurations {
   /// Primary Key.
   id String @id
   
-  /// Configuration key representing the setting name.
+  /// Configuration key.
   key String
   
-  /// Configuration value associated with the key.
+  /// Configuration value.
   value String
   
-  /// Detailed description of the configuration setting and its purpose.
+  /// Description of the configuration.
   description String?
   
   /// Timestamp when the configuration was created.
@@ -24,9 +23,6 @@ model discussion_board_configurations {
   
   /// Timestamp when the configuration was last updated.
   updated_at DateTime
-  
-  /// Timestamp when the configuration was soft-deleted.
-  deleted_at DateTime?
   
   //----
   // RELATIONS

@@ -7,59 +7,45 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardModeratorSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModeratorSession";
-import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function deleteDiscussionBoardModeratorModeratorsModeratorIdSessionsSessionId(props: {
   moderator: ModeratorPayload;
   moderatorId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardModeratorSession> {
+}): Promise<void> {
+  // Verify the authenticated moderator matches the moderatorId parameter
   if (props.moderator.id !== props.moderatorId) {
     throw new HttpException("You can only delete your own sessions", 403);
   }
 
+  // Find the session to verify it exists and belongs to the moderator
   const session =
     await MyGlobal.prisma.discussion_board_moderator_sessions.findUnique({
-      where: { id: props.sessionId },
-      include: {
-        moderator: true,
+      where: {
+        id: props.sessionId,
       },
     });
 
-  if (!session) {
+  // If session doesn't exist, return 404
+  if (session === null) {
     throw new HttpException("Session not found", 404);
   }
 
+  // Verify the session belongs to the moderator
   if (session.discussion_board_moderator_id !== props.moderatorId) {
-    throw new HttpException(
-      "This session does not belong to the specified moderator",
-      403,
-    );
+    throw new HttpException("You can only delete your own sessions", 403);
   }
 
-  await MyGlobal.prisma.discussion_board_moderator_sessions.delete({
-    where: { id: props.sessionId },
-  });
+  // Check if session is already expired
+  if (session.expired_at !== null) {
+    throw new HttpException("Session is already expired", 400);
+  }
 
-  return {
-    id: session.id,
-    discussion_board_moderator_id: session.discussion_board_moderator_id,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at),
-    expired_at:
-      session.expired_at === null
-        ? undefined
-        : toISOStringSafe(session.expired_at),
-    moderator: {
-      id: session.moderator.id,
-      email: session.moderator.email,
-      username: session.moderator.username,
-      created_at: toISOStringSafe(session.moderator.created_at),
-      updated_at: toISOStringSafe(session.moderator.updated_at),
+  // Delete the session from the database
+  await MyGlobal.prisma.discussion_board_moderator_sessions.delete({
+    where: {
+      id: props.sessionId,
     },
-  };
+  });
 }

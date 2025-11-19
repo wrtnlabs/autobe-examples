@@ -1,105 +1,102 @@
-/// Channels for organizing discussion topics. Each channel represents a
-/// broad category of discussion topics. Channels contain sections that
-/// further organize content within the channel.
+/// Represents discussion channels where users can post and discuss economic
+/// topics. Each channel has a unique identifier and name, and can belong to
+/// a specific section.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_political_discussion_board_channels {
+model economic_discussion_board_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Name of the channel.
+  /// The section this channel belongs to. {@link
+  /// economic_discussion_board_sections.id}
+  economic_discussion_board_section_id String
+  
+  /// The name of the channel.
   name String
   
-  /// Description of the channel.
+  /// A brief description of the channel's purpose.
   description String?
   
-  /// Timestamp when the channel was created.
+  /// The date and time when the channel was created.
   created_at DateTime
   
-  /// Timestamp when the channel was last updated.
+  /// The date and time when the channel was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  economic_political_discussion_board_sections economic_political_discussion_board_sections[]
-  economic_political_discussion_board_articles economic_political_discussion_board_articles[]
+  section economic_discussion_board_sections @relation(fields: [economic_discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  economic_discussion_board_posts economic_discussion_board_posts[]
+  
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_section_id], map: "economic_discussion_board_channels_economic_discussion_c8129c8b")
+}
+
+/// Represents sections within the discussion board, grouping related
+/// channels together. Each section has a unique identifier and name.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The name of the section.
+  name String
+  
+  /// A brief description of the section's purpose.
+  description String?
+  
+  /// The date and time when the section was created.
+  created_at DateTime
+  
+  /// The date and time when the section was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  economic_discussion_board_channels economic_discussion_board_channels[]
+  economic_discussion_board_posts economic_discussion_board_posts[]
   
   @@unique([name])
 }
 
-/// Sections within channels for organizing discussion topics. Each section
-/// represents a specific topic within a channel. Sections contain articles
-/// that discuss the topic.
+/// Stores configuration settings for the economic discussion board, such as
+/// default settings, feature flags, and system-wide parameters.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_political_discussion_board_sections {
+model economic_discussion_board_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel that this section belongs to. {@link
-  /// economic_political_discussion_board_channels.id}
-  economic_political_discussion_board_channel_id String
-  
-  /// Name of the section.
-  name String
-  
-  /// Description of the section.
-  description String?
-  
-  /// Timestamp when the section was created.
-  created_at DateTime
-  
-  /// Timestamp when the section was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  channel economic_political_discussion_board_channels @relation(fields: [economic_political_discussion_board_channel_id], references: [id], onDelete: Cascade)
-  
-  economic_political_discussion_board_articles economic_political_discussion_board_articles[]
-  
-  // spellchecker: ignore-next-line
-  @@unique([economic_political_discussion_board_channel_id, name], map: "economic_political_discussion_board_sections_economic__cdef8d35")
-  // spellchecker: ignore-next-line
-  @@index([economic_political_discussion_board_channel_id], map: "economic_political_discussion_board_sections_economic__b64b2a68")
-}
-
-/// Configuration settings for the discussion board. Each configuration
-/// represents a specific setting that controls the behavior of the
-/// discussion board.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_political_discussion_board_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Key of the configuration setting.
+  /// The configuration key.
   key String
   
-  /// Value of the configuration setting.
+  /// The configuration value.
   value String
   
-  /// Description of the configuration setting.
+  /// A brief description of the configuration setting.
   description String?
   
-  /// Timestamp when the configuration setting was created.
+  /// The date and time when the configuration was created.
   created_at DateTime
   
-  /// Timestamp when the configuration setting was last updated.
+  /// The date and time when the configuration was last updated.
   updated_at DateTime
   
   //----

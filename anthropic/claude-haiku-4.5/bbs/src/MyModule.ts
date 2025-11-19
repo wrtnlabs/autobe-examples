@@ -1,100 +1,70 @@
 import { Module } from "@nestjs/common";
 
 import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
-import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
+import { AuthContributorController } from "./controllers/auth/contributor/AuthContributorController";
 import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
+import { DiscussionboardAuthRequest_password_resetController } from "./controllers/discussionBoard/auth/request-password-reset/DiscussionboardAuthRequest_password_resetController";
+import { DiscussionboardAuthReset_passwordController } from "./controllers/discussionBoard/auth/reset-password/DiscussionboardAuthReset_passwordController";
+import { DiscussionboardContributorProfileController } from "./controllers/discussionBoard/contributor/profile/DiscussionboardContributorProfileController";
+import { DiscussionboardModeratorProfileController } from "./controllers/discussionBoard/moderator/profile/DiscussionboardModeratorProfileController";
+import { MyProfileController } from "./controllers/my/profile/MyProfileController";
+import { DiscussionboardContributorProfileChange_passwordController } from "./controllers/discussionBoard/contributor/profile/change-password/DiscussionboardContributorProfileChange_passwordController";
+import { DiscussionboardContributorProfile_deleteController } from "./controllers/discussionBoard/contributor/profile/delete/DiscussionboardContributorProfile_deleteController";
+import { DiscussionboardContributorsController } from "./controllers/discussionBoard/contributors/DiscussionboardContributorsController";
 import { DiscussionboardArticlesController } from "./controllers/discussionBoard/articles/DiscussionboardArticlesController";
-import { DiscussionboardMemberArticlesController } from "./controllers/discussionBoard/member/articles/DiscussionboardMemberArticlesController";
+import { DiscussionboardContributorArticlesController } from "./controllers/discussionBoard/contributor/articles/DiscussionboardContributorArticlesController";
 import { DiscussionboardModeratorArticlesController } from "./controllers/discussionBoard/moderator/articles/DiscussionboardModeratorArticlesController";
+import { DiscussionboardContributorArticlesAttachmentsController } from "./controllers/discussionBoard/contributor/articles/attachments/DiscussionboardContributorArticlesAttachmentsController";
+import { DiscussionboardModeratorArticlesAttachmentsController } from "./controllers/discussionBoard/moderator/articles/attachments/DiscussionboardModeratorArticlesAttachmentsController";
 import { DiscussionboardArticlesCommentsController } from "./controllers/discussionBoard/articles/comments/DiscussionboardArticlesCommentsController";
-import { DiscussionboardMemberArticlesCommentsController } from "./controllers/discussionBoard/member/articles/comments/DiscussionboardMemberArticlesCommentsController";
-import { DiscussionboardModeratorArticlesCommentsController } from "./controllers/discussionBoard/moderator/articles/comments/DiscussionboardModeratorArticlesCommentsController";
-import { DiscussionboardMemberArticlesAttachmentsController } from "./controllers/discussionBoard/member/articles/attachments/DiscussionboardMemberArticlesAttachmentsController";
-import { DiscussionboardArticlesAttachmentsController } from "./controllers/discussionBoard/articles/attachments/DiscussionboardArticlesAttachmentsController";
+import { DiscussionboardContributorArticlesCommentsController } from "./controllers/discussionBoard/contributor/articles/comments/DiscussionboardContributorArticlesCommentsController";
+import { DiscussionboardContributorArticlesCommentsAttachmentsController } from "./controllers/discussionBoard/contributor/articles/comments/attachments/DiscussionboardContributorArticlesCommentsAttachmentsController";
+import { DiscussionboardModeratorArticlesCommentsAttachmentsController } from "./controllers/discussionBoard/moderator/articles/comments/attachments/DiscussionboardModeratorArticlesCommentsAttachmentsController";
+import { DiscussionboardArticlesCommentsAttachmentsController } from "./controllers/discussionBoard/articles/comments/attachments/DiscussionboardArticlesCommentsAttachmentsController";
 import { DiscussionboardCategoriesController } from "./controllers/discussionBoard/categories/DiscussionboardCategoriesController";
-import { DiscussionboardModeratorCategoriesController } from "./controllers/discussionBoard/moderator/categories/DiscussionboardModeratorCategoriesController";
-import { DiscussionboardSearchController } from "./controllers/discussionBoard/search/DiscussionboardSearchController";
-import { DiscussionboardMembersController } from "./controllers/discussionBoard/members/DiscussionboardMembersController";
-import { DiscussionboardMemberMembersController } from "./controllers/discussionBoard/member/members/DiscussionboardMemberMembersController";
-import { DiscussionboardMemberprofilesController } from "./controllers/discussionBoard/memberProfiles/DiscussionboardMemberprofilesController";
-import { DiscussionboardMemberMemberprofilesController } from "./controllers/discussionBoard/member/memberProfiles/DiscussionboardMemberMemberprofilesController";
-import { DiscussionboardMemberMemberpreferencesController } from "./controllers/discussionBoard/member/memberPreferences/DiscussionboardMemberMemberpreferencesController";
-import { DiscussionboardMemberMembersPasswordController } from "./controllers/discussionBoard/member/members/password/DiscussionboardMemberMembersPasswordController";
-import { DiscussionboardMemberMembersEmailController } from "./controllers/discussionBoard/member/members/email/DiscussionboardMemberMembersEmailController";
-import { DiscussionboardMemberMembersProfilepictureController } from "./controllers/discussionBoard/member/members/profilePicture/DiscussionboardMemberMembersProfilepictureController";
-import { DiscussionboardMemberAuthMemberController } from "./controllers/discussionBoard/member/auth/member/logout/DiscussionboardMemberAuthMemberController";
-import { DiscussionboardMemberAuthMemberVerify_emailController } from "./controllers/discussionBoard/member/auth/member/verify-email/DiscussionboardMemberAuthMemberVerify_emailController";
-import { DiscussionboardMemberAuthMemberResend_verificationController } from "./controllers/discussionBoard/member/auth/member/resend-verification/DiscussionboardMemberAuthMemberResend_verificationController";
-import { DiscussionboardAuthMemberPassword_reset_requestController } from "./controllers/discussionBoard/auth/member/password-reset-request/DiscussionboardAuthMemberPassword_reset_requestController";
-import { DiscussionboardAuthMemberPassword_reset_confirmController } from "./controllers/discussionBoard/auth/member/password-reset-confirm/DiscussionboardAuthMemberPassword_reset_confirmController";
-import { DiscussionboardMemberAuthMemberSessionsController } from "./controllers/discussionBoard/member/auth/member/sessions/DiscussionboardMemberAuthMemberSessionsController";
-import { DiscussionboardAuthMemberValidate_tokenController } from "./controllers/discussionBoard/auth/member/validate-token/DiscussionboardAuthMemberValidate_tokenController";
-import { DiscussionboardMemberSessionsController } from "./controllers/discussionBoard/member/sessions/DiscussionboardMemberSessionsController";
-import { DiscussionboardModeratorAuthModeratorController } from "./controllers/discussionBoard/moderator/auth/moderator/logout/DiscussionboardModeratorAuthModeratorController";
-import { DiscussionboardModeratorAuthModeratorSessionsController } from "./controllers/discussionBoard/moderator/auth/moderator/sessions/DiscussionboardModeratorAuthModeratorSessionsController";
-import { DiscussionboardModeratorAuthModeratorValidate_tokenController } from "./controllers/discussionBoard/moderator/auth/moderator/validate-token/DiscussionboardModeratorAuthModeratorValidate_tokenController";
-import { DiscussionboardModeratorMembersController } from "./controllers/discussionBoard/moderator/members/DiscussionboardModeratorMembersController";
-import { DiscussionboardModeratorModerationDashboardController } from "./controllers/discussionBoard/moderator/moderation/dashboard/DiscussionboardModeratorModerationDashboardController";
-import { DiscussionboardModeratorModerationPending_articlesController } from "./controllers/discussionBoard/moderator/moderation/pending-articles/DiscussionboardModeratorModerationPending_articlesController";
-import { DiscussionboardModeratorModerationContent_reportsController } from "./controllers/discussionBoard/moderator/moderation/content-reports/DiscussionboardModeratorModerationContent_reportsController";
-import { DiscussionboardModeratorModerationActionsController } from "./controllers/discussionBoard/moderator/moderation/actions/DiscussionboardModeratorModerationActionsController";
-import { DiscussionboardModeratorModerationMember_activityController } from "./controllers/discussionBoard/moderator/moderation/member-activity/DiscussionboardModeratorModerationMember_activityController";
-import { DiscussionboardMemberReportsController } from "./controllers/discussionBoard/member/reports/DiscussionboardMemberReportsController";
-import { DiscussionboardModeratorReportsController } from "./controllers/discussionBoard/moderator/reports/DiscussionboardModeratorReportsController";
-import { DiscussionboardMemberArticlesReportsController } from "./controllers/discussionBoard/member/articles/reports/DiscussionboardMemberArticlesReportsController";
-import { DiscussionboardMemberCommentsReportsController } from "./controllers/discussionBoard/member/comments/reports/DiscussionboardMemberCommentsReportsController";
-import { DiscussionboardModeratorReportsAssignController } from "./controllers/discussionBoard/moderator/reports/assign/DiscussionboardModeratorReportsAssignController";
-import { DiscussionboardModeratorReportsNotesController } from "./controllers/discussionBoard/moderator/reports/notes/DiscussionboardModeratorReportsNotesController";
-import { DiscussionboardModeratorSystemsettingsController } from "./controllers/discussionBoard/moderator/systemSettings/DiscussionboardModeratorSystemsettingsController";
+import { DiscussionboardGuidelinesController } from "./controllers/discussionBoard/guidelines/DiscussionboardGuidelinesController";
+import { DiscussionboardModeratorModerationQueueController } from "./controllers/discussionBoard/moderator/moderation/queue/DiscussionboardModeratorModerationQueueController";
+import { DiscussionboardModeratorModerationViolationsController } from "./controllers/discussionBoard/moderator/moderation/violations/DiscussionboardModeratorModerationViolationsController";
+import { DiscussionboardModeratorModerationAudit_logController } from "./controllers/discussionBoard/moderator/moderation/audit-log/DiscussionboardModeratorModerationAudit_logController";
+import { DiscussionboardModeratorModerationSuspensionsController } from "./controllers/discussionBoard/moderator/moderation/suspensions/DiscussionboardModeratorModerationSuspensionsController";
+import { DiscussionboardModeratorModerationRestrictionsController } from "./controllers/discussionBoard/moderator/moderation/restrictions/DiscussionboardModeratorModerationRestrictionsController";
+import { DiscussionboardModeratorContributorsSuspendController } from "./controllers/discussionBoard/moderator/contributors/suspend/DiscussionboardModeratorContributorsSuspendController";
+import { DiscussionboardModeratorContributorsController } from "./controllers/discussionBoard/moderator/contributors/restrict/DiscussionboardModeratorContributorsController";
+import { DiscussionboardModeratorContributorsLift_restrictionController } from "./controllers/discussionBoard/moderator/contributors/lift-restriction/DiscussionboardModeratorContributorsLift_restrictionController";
 
 @Module({
   controllers: [
     AuthGuestController,
-    AuthMemberController,
+    AuthContributorController,
     AuthModeratorController,
+    DiscussionboardAuthRequest_password_resetController,
+    DiscussionboardAuthReset_passwordController,
+    DiscussionboardContributorProfileController,
+    DiscussionboardModeratorProfileController,
+    MyProfileController,
+    DiscussionboardContributorProfileChange_passwordController,
+    DiscussionboardContributorProfile_deleteController,
+    DiscussionboardContributorsController,
     DiscussionboardArticlesController,
-    DiscussionboardMemberArticlesController,
+    DiscussionboardContributorArticlesController,
     DiscussionboardModeratorArticlesController,
+    DiscussionboardContributorArticlesAttachmentsController,
+    DiscussionboardModeratorArticlesAttachmentsController,
     DiscussionboardArticlesCommentsController,
-    DiscussionboardMemberArticlesCommentsController,
-    DiscussionboardModeratorArticlesCommentsController,
-    DiscussionboardMemberArticlesAttachmentsController,
-    DiscussionboardArticlesAttachmentsController,
+    DiscussionboardContributorArticlesCommentsController,
+    DiscussionboardContributorArticlesCommentsAttachmentsController,
+    DiscussionboardModeratorArticlesCommentsAttachmentsController,
+    DiscussionboardArticlesCommentsAttachmentsController,
     DiscussionboardCategoriesController,
-    DiscussionboardModeratorCategoriesController,
-    DiscussionboardSearchController,
-    DiscussionboardMembersController,
-    DiscussionboardMemberMembersController,
-    DiscussionboardMemberprofilesController,
-    DiscussionboardMemberMemberprofilesController,
-    DiscussionboardMemberMemberpreferencesController,
-    DiscussionboardMemberMembersPasswordController,
-    DiscussionboardMemberMembersEmailController,
-    DiscussionboardMemberMembersProfilepictureController,
-    DiscussionboardMemberAuthMemberController,
-    DiscussionboardMemberAuthMemberVerify_emailController,
-    DiscussionboardMemberAuthMemberResend_verificationController,
-    DiscussionboardAuthMemberPassword_reset_requestController,
-    DiscussionboardAuthMemberPassword_reset_confirmController,
-    DiscussionboardMemberAuthMemberSessionsController,
-    DiscussionboardAuthMemberValidate_tokenController,
-    DiscussionboardMemberSessionsController,
-    DiscussionboardModeratorAuthModeratorController,
-    DiscussionboardModeratorAuthModeratorSessionsController,
-    DiscussionboardModeratorAuthModeratorValidate_tokenController,
-    DiscussionboardModeratorMembersController,
-    DiscussionboardModeratorModerationDashboardController,
-    DiscussionboardModeratorModerationPending_articlesController,
-    DiscussionboardModeratorModerationContent_reportsController,
-    DiscussionboardModeratorModerationActionsController,
-    DiscussionboardModeratorModerationMember_activityController,
-    DiscussionboardMemberReportsController,
-    DiscussionboardModeratorReportsController,
-    DiscussionboardMemberArticlesReportsController,
-    DiscussionboardMemberCommentsReportsController,
-    DiscussionboardModeratorReportsAssignController,
-    DiscussionboardModeratorReportsNotesController,
-    DiscussionboardModeratorSystemsettingsController,
+    DiscussionboardGuidelinesController,
+    DiscussionboardModeratorModerationQueueController,
+    DiscussionboardModeratorModerationViolationsController,
+    DiscussionboardModeratorModerationAudit_logController,
+    DiscussionboardModeratorModerationSuspensionsController,
+    DiscussionboardModeratorModerationRestrictionsController,
+    DiscussionboardModeratorContributorsSuspendController,
+    DiscussionboardModeratorContributorsController,
+    DiscussionboardModeratorContributorsLift_restrictionController,
   ],
 })
 export class MyModule {}

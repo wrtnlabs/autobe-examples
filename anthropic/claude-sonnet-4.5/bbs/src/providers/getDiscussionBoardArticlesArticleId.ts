@@ -9,6 +9,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IDiscussionBoardArticleCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleCategory";
 
 export async function getDiscussionBoardArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
@@ -16,7 +17,8 @@ export async function getDiscussionBoardArticlesArticleId(props: {
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
     include: {
-      member: true,
+      author: true,
+      category: true,
     },
   });
 
@@ -24,31 +26,46 @@ export async function getDiscussionBoardArticlesArticleId(props: {
     throw new HttpException("Article not found", 404);
   }
 
-  const updated = await MyGlobal.prisma.discussion_board_articles.update({
-    where: { id: props.articleId },
-    data: {
-      view_count: { increment: 1 },
-    },
-    include: {
-      member: true,
-    },
-  });
+  if (article.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
+  }
 
   return {
-    id: updated.id,
-    title: updated.title,
-    body: updated.body,
-    view_count: updated.view_count,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    body: article.body,
+    excerpt: article.excerpt === null ? undefined : article.excerpt,
+    status: typia.assert<"draft" | "published" | "archived">(article.status),
+    view_count: article.view_count,
+    is_edited: article.is_edited,
+    published_at: article.published_at
+      ? toISOStringSafe(article.published_at)
+      : undefined,
+    created_at: toISOStringSafe(article.created_at),
+    updated_at: toISOStringSafe(article.updated_at),
+    deleted_at: article.deleted_at
+      ? toISOStringSafe(article.deleted_at)
+      : undefined,
     author: {
-      id: updated.member.id,
-      username: updated.member.username,
-      email: updated.member.email,
-      status: updated.member.status,
-      email_verified: updated.member.email_verified,
-      created_at: toISOStringSafe(updated.member.created_at),
+      id: article.author.id,
+      username: article.author.username,
+      display_name:
+        article.author.display_name === null
+          ? undefined
+          : article.author.display_name,
+    },
+    category: {
+      id: article.category.id,
+      name: article.category.name,
+      slug: article.category.slug,
+      description:
+        article.category.description === null
+          ? undefined
+          : article.category.description,
+      sort_order: article.category.sort_order,
+      created_at: toISOStringSafe(article.category.created_at),
+      updated_at: toISOStringSafe(article.category.updated_at),
     },
   };
 }

@@ -9,7 +9,6 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function putDiscussionBoardUserArticlesArticleId(props: {
@@ -17,60 +16,76 @@ export async function putDiscussionBoardUserArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticle.IUpdate;
 }): Promise<IDiscussionBoardArticle> {
-  // 1. Fetch the article
+  // Step 1: Find the article and verify authorization
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
   });
-  if (!article) {
-    throw new HttpException("Article not found.", 404);
+  if (!article || article.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
   }
-  if (!article.author_user_id || article.author_user_id !== props.user.id) {
-    throw new HttpException(
-      "You are not authorized to update this article.",
-      403,
-    );
+  if (article.user_id !== props.user.id) {
+    throw new HttpException("You are not authorized to edit this article", 403);
   }
-  if (!props.body.title && !props.body.body) {
-    throw new HttpException(
-      "At least one of title or body must be provided for update.",
-      400,
-    );
+
+  // Step 2: Prepare patch fields
+  const updates: Record<string, unknown> = {
+    updated_at: toISOStringSafe(new Date()),
+  };
+  if (
+    Object.prototype.hasOwnProperty.call(props.body, "title") &&
+    typeof props.body.title !== "undefined"
+  ) {
+    updates.title = props.body.title;
   }
-  const now = toISOStringSafe(new Date());
+  if (
+    Object.prototype.hasOwnProperty.call(props.body, "content") &&
+    typeof props.body.content !== "undefined"
+  ) {
+    updates.content = props.body.content;
+  }
+  if (Object.keys(updates).length === 1) {
+    throw new HttpException("No fields to update", 400);
+  }
+
+  // Step 3: Perform update
   const updated = await MyGlobal.prisma.discussion_board_articles.update({
     where: { id: props.articleId },
-    data: {
-      ...(props.body.title ? { title: props.body.title } : {}),
-      ...(props.body.body ? { body: props.body.body } : {}),
-      updated_at: now,
-    },
+    data: updates,
   });
-  const user = article.author_user_id
-    ? await MyGlobal.prisma.discussion_board_users.findUnique({
-        where: { id: article.author_user_id },
-      })
-    : undefined;
+
+  // Step 4: Fetch author info
+  const user = await MyGlobal.prisma.discussion_board_users.findUnique({
+    where: { id: updated.user_id },
+  });
+  if (!user) {
+    throw new HttpException("Author not found", 500);
+  }
+
+  const author: IDiscussionBoardUser.ISummary = {
+    id: user.id,
+    email: user.email,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at:
+      typeof user.deleted_at === "undefined"
+        ? undefined
+        : user.deleted_at === null
+          ? null
+          : toISOStringSafe(user.deleted_at),
+  };
+
   return {
     id: updated.id,
     title: updated.title,
-    body: updated.body,
-    author_user: user
-      ? {
-          id: user.id,
-          email: user.email,
-          is_email_verified: user.is_email_verified,
-          is_active: user.is_active,
-          is_blocked: user.is_blocked,
-          created_at: toISOStringSafe(user.created_at),
-          updated_at: toISOStringSafe(user.updated_at),
-          deleted_at:
-            user.deleted_at !== null
-              ? toISOStringSafe(user.deleted_at)
-              : undefined,
-        }
-      : undefined,
-    author_admin: undefined,
+    content: updated.content,
+    author,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
+    deleted_at:
+      typeof updated.deleted_at === "undefined"
+        ? undefined
+        : updated.deleted_at === null
+          ? null
+          : toISOStringSafe(updated.deleted_at),
   };
 }

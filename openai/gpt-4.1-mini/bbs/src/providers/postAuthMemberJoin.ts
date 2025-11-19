@@ -7,121 +7,91 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardMember";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function postAuthMemberJoin(props: {
   member: MemberPayload;
-  body: IEconPolDiscussionBoardMember.ICreate;
-}): Promise<IEconPolDiscussionBoardMember.IAuthorized> {
-  // Check if username already exists
-  const existingUserByUsername =
-    await MyGlobal.prisma.econ_pol_discussion_board_members.findFirst({
-      where: { username: props.body.username, deleted_at: null },
-    });
-  if (existingUserByUsername) {
-    throw new HttpException("Username already exists", 409);
-  }
+  body: IDiscussionBoardMember.ICreate;
+}): Promise<IDiscussionBoardMember.IAuthorized> {
+  const existing = await MyGlobal.prisma.discussion_board_member.findFirst({
+    where: { email: props.body.email, deleted_at: null },
+  });
 
-  // Check if email already exists
-  const existingUserByEmail =
-    await MyGlobal.prisma.econ_pol_discussion_board_members.findFirst({
-      where: { email: props.body.email, deleted_at: null },
-    });
-  if (existingUserByEmail) {
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Generate current datetime string
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const now = toISOStringSafe(new Date()) satisfies string &
+    tags.Format<"date-time">;
+  const memberId = v4() as string & tags.Format<"uuid">;
+  const sessionId = v4() as string & tags.Format<"uuid">;
 
-  // Create member record
-  const memberId: string & tags.Format<"uuid"> = v4();
-  const member = await MyGlobal.prisma.econ_pol_discussion_board_members.create(
-    {
-      data: {
-        id: memberId,
-        username: props.body.username,
-        email: props.body.email,
-        password_hash: hashedPassword,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
+  const member = await MyGlobal.prisma.discussion_board_member.create({
+    data: {
+      id: memberId,
+      email: props.body.email,
+      password_hash: hashedPassword,
+      nickname: props.body.nickname,
+      created_at: now,
+      updated_at: now,
     },
-  );
+  });
 
-  // Calculate expiry timestamps
-  const accessExpireAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpireAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpiresMs = Date.now() + 60 * 60 * 1000;
+  const refreshExpiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const accessExpires = toISOStringSafe(
+    new Date(accessExpiresMs),
+  ) satisfies string & tags.Format<"date-time">;
+  const refreshExpires = toISOStringSafe(
+    new Date(refreshExpiresMs),
+  ) satisfies string & tags.Format<"date-time">;
 
-  // Create session record
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const session =
-    await MyGlobal.prisma.econ_pol_discussion_board_member_sessions.create({
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
       data: {
         id: sessionId,
-        econ_pol_discussion_board_member_id: memberId,
+        discussion_board_member_id: member.id,
         created_at: now,
-        expired_at: accessExpireAt,
-        ip: "127.0.0.1",
-        href: "https://example.com",
+        expired_at: accessExpires,
+        ip: "",
+        href: "",
         referrer: "",
       },
-    });
-
-  // Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "member",
-      id: memberId,
-      session_id: sessionId,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
     },
   );
 
-  const refreshToken = jwt.sign(
-    {
-      type: "member",
-      id: memberId,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
     id: member.id,
-    username: member.username,
-    email: member.email,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at: null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: session.expired_at
-        ? toISOStringSafe(session.expired_at)
-        : toISOStringSafe(new Date()),
-      refreshable_until: refreshExpireAt,
-    },
-  } satisfies IEconPolDiscussionBoardMember.IAuthorized;
+    token,
+  };
 }

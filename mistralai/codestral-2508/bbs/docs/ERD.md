@@ -4,7 +4,7 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Articles](#articles)
+- [Posts](#posts)
 - [Comments](#comments)
 - [Attachments](#attachments)
 
@@ -12,22 +12,22 @@
 
 ```mermaid
 erDiagram
-"economic_political_discussion_board_channels" {
+"economic_discussion_board_channels" {
+  String id PK
+  String economic_discussion_board_section_id FK
+  String name UK
+  String description "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"economic_discussion_board_sections" {
   String id PK
   String name UK
   String description "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"economic_political_discussion_board_sections" {
-  String id PK
-  String economic_political_discussion_board_channel_id FK
-  String name
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"economic_political_discussion_board_configurations" {
+"economic_discussion_board_configurations" {
   String id PK
   String key UK
   String value
@@ -35,550 +35,573 @@ erDiagram
   DateTime created_at
   DateTime updated_at
 }
-"economic_political_discussion_board_sections" }o--|| "economic_political_discussion_board_channels" : channel
+"economic_discussion_board_channels" }o--|| "economic_discussion_board_sections" : section
 ```
 
-### `economic_political_discussion_board_channels`
+### `economic_discussion_board_channels`
 
-Channels for organizing discussion topics. Each channel represents a
-broad category of discussion topics. Channels contain sections that
-further organize content within the channel.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`: Name of the channel.
-- `description`: Description of the channel.
-- `created_at`: Timestamp when the channel was created.
-- `updated_at`: Timestamp when the channel was last updated.
-
-### `economic_political_discussion_board_sections`
-
-Sections within channels for organizing discussion topics. Each section
-represents a specific topic within a channel. Sections contain articles
-that discuss the topic.
+Represents discussion channels where users can post and discuss economic
+topics. Each channel has a unique identifier and name, and can belong to
+a specific section.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_channel_id`
-  > Channel that this section belongs to. {@link
-  > economic_political_discussion_board_channels.id}
-- `name`: Name of the section.
-- `description`: Description of the section.
-- `created_at`: Timestamp when the section was created.
-- `updated_at`: Timestamp when the section was last updated.
+- `economic_discussion_board_section_id`
+  > The section this channel belongs to. {@link
+  > economic_discussion_board_sections.id}
+- `name`: The name of the channel.
+- `description`: A brief description of the channel's purpose.
+- `created_at`: The date and time when the channel was created.
+- `updated_at`: The date and time when the channel was last updated.
 
-### `economic_political_discussion_board_configurations`
+### `economic_discussion_board_sections`
 
-Configuration settings for the discussion board. Each configuration
-represents a specific setting that controls the behavior of the
-discussion board.
+Represents sections within the discussion board, grouping related
+channels together. Each section has a unique identifier and name.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`: Key of the configuration setting.
-- `value`: Value of the configuration setting.
-- `description`: Description of the configuration setting.
-- `created_at`: Timestamp when the configuration setting was created.
-- `updated_at`: Timestamp when the configuration setting was last updated.
+- `name`: The name of the section.
+- `description`: A brief description of the section's purpose.
+- `created_at`: The date and time when the section was created.
+- `updated_at`: The date and time when the section was last updated.
+
+### `economic_discussion_board_configurations`
+
+Stores configuration settings for the economic discussion board, such as
+default settings, feature flags, and system-wide parameters.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `key`: The configuration key.
+- `value`: The configuration value.
+- `description`: A brief description of the configuration setting.
+- `created_at`: The date and time when the configuration was created.
+- `updated_at`: The date and time when the configuration was last updated.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"economic_political_discussion_board_guests" {
-  String id PK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"economic_political_discussion_board_guest_sessions" {
-  String id PK
-  String economic_political_discussion_board_guest_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"economic_political_discussion_board_members" {
+"economic_discussion_board_users" {
   String id PK
   String email UK
   String password_hash
+  String nickname
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_member_sessions" {
+"economic_discussion_board_user_sessions" {
   String id PK
-  String economic_political_discussion_board_member_id FK
+  String economic_discussion_board_user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"economic_political_discussion_board_moderators" {
+"economic_discussion_board_admins" {
   String id PK
   String email UK
   String password_hash
+  String nickname
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_moderator_sessions" {
+"economic_discussion_board_admin_sessions" {
   String id PK
-  String economic_political_discussion_board_moderator_id FK
+  String economic_discussion_board_admin_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"economic_political_discussion_board_guest_sessions" }o--|| "economic_political_discussion_board_guests" : guest
-"economic_political_discussion_board_member_sessions" }o--|| "economic_political_discussion_board_members" : member
-"economic_political_discussion_board_moderator_sessions" }o--|| "economic_political_discussion_board_moderators" : moderator
+"economic_discussion_board_user_sessions" }o--|| "economic_discussion_board_users" : user
+"economic_discussion_board_admin_sessions" }o--|| "economic_discussion_board_admins" : admin
 ```
 
-### `economic_political_discussion_board_guests`
+### `economic_discussion_board_users`
 
-Guest users who can view public content but cannot create or modify
-content. Guests must register to become members. {@link
-economic_political_discussion_board_members} for registered users.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `created_at`: When the guest was created.
-- `updated_at`: When the guest was last updated.
-- `deleted_at`: When the guest was deleted (soft delete).
-
-### `economic_political_discussion_board_guest_sessions`
-
-Session records for guest users. Tracks guest activity and session
-context. [economic_political_discussion_board_guests](#economic_political_discussion_board_guests) for the
-associated guest.
+User accounts for the economic discussion board platform. Stores
+authentication credentials and basic profile information for registered
+users. Each user can create posts, comments, and manage their own
+content. User accounts are required for all interactive features of the
+platform.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_guest_id`: Guest user's [economic_political_discussion_board_guests.id](#economic_political_discussion_board_guests).
-- `ip`: IP address of the guest's connection.
-- `href`: URL of the guest's connection.
-- `referrer`: Referrer URL of the guest's connection.
-- `created_at`: When the session was created.
-- `expired_at`: When the session expired.
+- `email`
+  > User's email address used for authentication and communication. Must be
+  > unique across all users.
+- `password_hash`
+  > Secure hash of the user's password for authentication purposes. Never
+  > store plain text passwords.
+- `nickname`: Display name chosen by the user for public identification.
+- `created_at`: Timestamp when the user account was created.
+- `updated_at`: Timestamp when the user account was last updated.
+- `deleted_at`
+  > Timestamp when the user account was soft-deleted. Null if account is
+  > active.
 
-### `economic_political_discussion_board_members`
+### `economic_discussion_board_user_sessions`
 
-Registered members who can create and manage their own content. Members
-have full access to the platform's features. {@link
-economic_political_discussion_board_articles} for member-created content.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Member's email address for authentication and communication.
-- `password_hash`: Hashed password for authentication.
-- `created_at`: When the member was created.
-- `updated_at`: When the member was last updated.
-- `deleted_at`: When the member was deleted (soft delete).
-
-### `economic_political_discussion_board_member_sessions`
-
-Session records for member users. Tracks member activity and session
-context. [economic_political_discussion_board_members](#economic_political_discussion_board_members) for the
-associated member.
+Authentication sessions for users on the economic discussion board.
+Tracks active user sessions with connection details and temporal
+information. Each session is associated with a specific user account and
+provides audit trail for user activities.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_member_id`: Member user's [economic_political_discussion_board_members.id](#economic_political_discussion_board_members).
-- `ip`: IP address of the member's connection.
-- `href`: URL of the member's connection.
-- `referrer`: Referrer URL of the member's connection.
-- `created_at`: When the session was created.
-- `expired_at`: When the session expired.
+- `economic_discussion_board_user_id`
+  > Reference to the user account that owns this session. {@link
+  > economic_discussion_board_users.id}
+- `ip`: IP address from which the session was initiated.
+- `href`: URL of the page where the session was initiated.
+- `referrer`: Referrer URL that led to the session initiation.
+- `created_at`: Timestamp when the session was created.
+- `expired_at`
+  > Timestamp when the session expired or was terminated. Null if session is
+  > active.
 
-### `economic_political_discussion_board_moderators`
+### `economic_discussion_board_admins`
 
-Moderators who manage the platform's content and users. Moderators have
-elevated permissions for content moderation and user management. {@link
-economic_political_discussion_board_articles} for moderator-managed
-content.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Moderator's email address for authentication and communication.
-- `password_hash`: Hashed password for authentication.
-- `created_at`: When the moderator was created.
-- `updated_at`: When the moderator was last updated.
-- `deleted_at`: When the moderator was deleted (soft delete).
-
-### `economic_political_discussion_board_moderator_sessions`
-
-Session records for moderator users. Tracks moderator activity and
-session context. [economic_political_discussion_board_moderators](#economic_political_discussion_board_moderators)
-for the associated moderator.
+Administrator accounts for managing the economic discussion board
+platform. Stores authentication credentials and basic profile information
+for administrators. Admins have elevated privileges to moderate content
+and manage platform settings.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_moderator_id`
-  > Moderator user's {@link
-  > economic_political_discussion_board_moderators.id}.
-- `ip`: IP address of the moderator's connection.
-- `href`: URL of the moderator's connection.
-- `referrer`: Referrer URL of the moderator's connection.
-- `created_at`: When the session was created.
-- `expired_at`: When the session expired.
+- `email`
+  > Admin's email address used for authentication and communication. Must be
+  > unique across all admins.
+- `password_hash`
+  > Secure hash of the admin's password for authentication purposes. Never
+  > store plain text passwords.
+- `nickname`: Display name chosen by the admin for public identification.
+- `created_at`: Timestamp when the admin account was created.
+- `updated_at`: Timestamp when the admin account was last updated.
+- `deleted_at`
+  > Timestamp when the admin account was soft-deleted. Null if account is
+  > active.
 
-## Articles
+### `economic_discussion_board_admin_sessions`
+
+Authentication sessions for administrators on the economic discussion
+board. Tracks active admin sessions with connection details and temporal
+information. Each session is associated with a specific admin account and
+provides audit trail for admin activities.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_board_admin_id`
+  > Reference to the admin account that owns this session. {@link
+  > economic_discussion_board_admins.id}
+- `ip`: IP address from which the session was initiated.
+- `href`: URL of the page where the session was initiated.
+- `referrer`: Referrer URL that led to the session initiation.
+- `created_at`: Timestamp when the session was created.
+- `expired_at`
+  > Timestamp when the session expired or was terminated. Null if session is
+  > active.
+
+## Posts
 
 ```mermaid
 erDiagram
-"economic_political_discussion_board_articles" {
+"economic_discussion_board_posts" {
   String id PK
-  String economic_political_discussion_board_channel_id FK
-  String economic_political_discussion_board_section_id FK
-  String economic_political_discussion_board_member_id FK
+  String economic_discussion_board_channel_id FK
+  String economic_discussion_board_section_id FK
+  String economic_discussion_board_user_id FK
+  String economic_discussion_board_user_session_id FK
   String title
   String body
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_article_snapshots" {
+"economic_discussion_board_post_snapshots" {
   String id PK
-  String economic_political_discussion_board_article_id FK
+  String economic_discussion_board_post_id FK
   String title
   String body
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_article_tags" {
-  String id PK
-  String economic_political_discussion_board_article_id FK
-  String name
-  DateTime created_at
-}
-"economic_political_discussion_board_article_snapshots" }o--|| "economic_political_discussion_board_articles" : article
-"economic_political_discussion_board_article_tags" }o--|| "economic_political_discussion_board_articles" : article
+"economic_discussion_board_post_snapshots" }o--|| "economic_discussion_board_posts" : post
 ```
 
-### `economic_political_discussion_board_articles`
+### `economic_discussion_board_posts`
 
-Primary article content management table.
+Primary entity for user-generated content in the economic discussion board.
 
-Stores the core content of articles including title, body, and metadata.
-Each article belongs to a specific channel and section, and is created by a
-member. Articles support soft deletion for content recovery and maintain
-audit trail through snapshots.
+Represents the core content creation feature where users can share their
+thoughts, insights, and questions about economic and political topics.
+Each post belongs to a specific channel and section, and is created by an
+authenticated user through their active session.
 
-Articles can have multiple tags and attachments, and are the subject of
-comments. The table includes fields for tracking creation, modification,
-and deletion times to support content lifecycle management.
+Posts can be edited or deleted by their authors, and can accumulate
+comments and attachments. The content includes title and body fields for
+structured information presentation.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `economic_political_discussion_board_channel_id`
-  > Channel where the article is published. {@link
-  > economic_political_discussion_board_channels.id}
-- `economic_political_discussion_board_section_id`
-  > Section within the channel where the article is categorized. {@link
-  > economic_political_discussion_board_sections.id}
-- `economic_political_discussion_board_member_id`
-  > Member who created the article. {@link
-  > economic_political_discussion_board_members.id}
-- `title`: Title of the article. Used for display in listings and search results.
-- `body`
-  > Main content of the article. Contains the detailed information and
-  > analysis.
-- `created_at`: Timestamp when the article was created. Used for sorting and filtering.
-- `updated_at`: Timestamp when the article was last modified. Used for tracking changes.
-- `deleted_at`
-  > Timestamp when the article was soft-deleted. Null if the article is
-  > active.
-
-### `economic_political_discussion_board_article_snapshots`
-
-Historical states of articles for audit trails and version control.
-
-Stores point-in-time copies of article content to preserve historical
-information. Each snapshot captures the complete state of an article at a
-specific moment, including all fields from the main article table. This
-allows for tracking changes over time and recovering previous versions if
-needed.
-
-Snapshots are created whenever an article is modified and are never
-deleted or modified after creation. They provide a complete audit trail
-of all
-changes to articles.
+Soft deletion is supported to maintain audit trails while allowing
+content moderation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_article_id`
-  > Article that this snapshot represents. {@link
-  > economic_political_discussion_board_articles.id}
-- `title`: Title of the article at the time of this snapshot.
-- `body`: Content of the article at the time of this snapshot.
-- `created_at`
-  > Timestamp when this snapshot was created. Represents the point-in-time
-  > state of the article.
-- `updated_at`
-  > Timestamp when the article was last modified before this snapshot was
-  > taken.
-- `deleted_at`
-  > Timestamp when the article was soft-deleted at the time of this snapshot.
-  > Null if the article was active.
+- `economic_discussion_board_channel_id`
+  > Channel where the post is published. {@link
+  > economic_discussion_board_channels.id}.
+- `economic_discussion_board_section_id`
+  > Section within the channel where the post is categorized. {@link
+  > economic_discussion_board_sections.id}.
+- `economic_discussion_board_user_id`: User who created the post. [economic_discussion_board_users.id](#economic_discussion_board_users).
+- `economic_discussion_board_user_session_id`
+  > Session during which the post was created. {@link
+  > economic_discussion_board_user_sessions.id}.
+- `title`: Title of the post summarizing its content.
+- `body`: Main content of the post containing detailed information.
+- `created_at`: Timestamp when the post was created.
+- `updated_at`: Timestamp when the post was last updated.
+- `deleted_at`: Timestamp when the post was deleted (soft delete).
 
-### `economic_political_discussion_board_article_tags`
+### `economic_discussion_board_post_snapshots`
 
-Tags associated with articles for categorization and search.
+Historical record of post states for audit trail and content change
+tracking.
 
-Stores tags that describe the content of articles, enabling better
-categorization and search functionality. Each tag is associated with one
-or more articles, allowing for flexible content organization.
+Captures point-in-time states of economic_discussion_board_posts to
+maintain a complete history of all modifications. Each snapshot records
+the complete state of a post at a specific moment, including all content
+fields and metadata.
 
-Tags are used to improve search results and help users find relevant
-articles based on their interests. The table maintains a many-to-many
-relationship with articles through a junction table.
+Snapshots are created whenever a post is created, updated, or deleted,
+providing a complete audit trail of all changes. The snapshot data
+includes all fields from the original post to ensure historical accuracy.
+
+This table supports content moderation by allowing administrators to
+review the complete history of a post's evolution.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_article_id`
-  > Article that this tag is associated with. {@link
-  > economic_political_discussion_board_articles.id}
-- `name`: Name of the tag. Used for display and search functionality.
-- `created_at`
-  > Timestamp when the tag was created. Used for tracking when tags were
-  > added to articles.
+- `economic_discussion_board_post_id`
+  > Post that this snapshot records. {@link
+  > economic_discussion_board_posts.id}.
+- `title`: Title of the post at the time of snapshot.
+- `body`: Main content of the post at the time of snapshot.
+- `created_at`: Timestamp when the snapshot was created.
+- `updated_at`: Timestamp when the post was last updated (from original post).
+- `deleted_at`: Timestamp when the post was deleted (from original post).
 
 ## Comments
 
 ```mermaid
 erDiagram
-"economic_political_discussion_board_comments" {
+"economic_discussion_board_comments" {
   String id PK
-  String economic_political_discussion_board_article_id FK
-  String economic_political_discussion_board_member_id FK "nullable"
-  String economic_political_discussion_board_moderator_id FK "nullable"
-  String parent_id FK "nullable"
-  String actor_type
+  String economic_discussion_board_post_id FK
+  String economic_discussion_board_user_id FK
+  String economic_discussion_board_user_session_id FK
   String body
-  Boolean flagged
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_comment_snapshots" {
+"economic_discussion_board_comment_snapshots" {
   String id PK
-  String economic_political_discussion_board_comment_id FK
-  String actor_type
+  String economic_discussion_board_comment_id FK
   String body
-  Boolean flagged
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  DateTime snapshot_created_at
 }
-"economic_political_discussion_board_comments" }o--o| "economic_political_discussion_board_comments" : parent
-"economic_political_discussion_board_comment_snapshots" }o--|| "economic_political_discussion_board_comments" : comment
+"economic_discussion_board_comment_snapshots" }o--|| "economic_discussion_board_comments" : comment
 ```
 
-### `economic_political_discussion_board_comments`
+### `economic_discussion_board_comments`
 
-User comments on articles in the economic/political discussion board.
+User comments on economic discussion board posts.
 
-Stores user-generated content that engages with articles, allowing for
-discussion and debate. Each comment is associated with a specific article
-and created by an authenticated member or moderator through their active
-session.
-
-Comments can be nested to support threaded discussions, and they can be
-edited or deleted by their authors. The comment content includes a body
-field for the text of the comment.
-
-Soft deletion is supported to maintain audit trails while allowing
-content moderation. Comments can be flagged for review by moderators.
-
-The comment system supports:
-- Threaded discussions through parent_id field
-- User authentication tracking through member/moderator relationships
-- Content moderation through deleted_at and flagged fields
-- Historical tracking through snapshot tables
-- Soft delete capability for content management
+Stores user comments with content, timestamps, and relationships to posts
+and users.
+Each comment is associated with a specific post and created by an
+authenticated user.
+Comments support soft deletion for content moderation while maintaining
+audit trails.
+The comment content includes body text and timestamps for creation and
+modification.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_article_id`
-  > Article that this comment belongs to. {@link
-  > economic_political_discussion_board_articles.id}
-- `economic_political_discussion_board_member_id`
-  > Member who created this comment. {@link
-  > economic_political_discussion_board_members.id}
-- `economic_political_discussion_board_moderator_id`
-  > Moderator who created this comment. {@link
-  > economic_political_discussion_board_moderators.id}
-- `parent_id`
-  > Parent comment for threaded discussions. {@link
-  > economic_political_discussion_board_comments.id}
-- `actor_type`
-  > Type of actor who created the comment. Valid values: 'member' or
-  > 'moderator'
-- `body`: Text content of the comment
-- `flagged`: Whether the comment has been flagged for moderator review
-- `created_at`: When the comment was created
-- `updated_at`: When the comment was last updated
-- `deleted_at`: When the comment was soft-deleted (null if active)
+- `economic_discussion_board_post_id`: Target post's [economic_discussion_board_posts.id](#economic_discussion_board_posts).
+- `economic_discussion_board_user_id`: Comment creator's [economic_discussion_board_users.id](#economic_discussion_board_users).
+- `economic_discussion_board_user_session_id`
+  > Session used to create comment's {@link
+  > economic_discussion_board_user_sessions.id}.
+- `body`: Comment content text.
+- `created_at`: Comment creation timestamp.
+- `updated_at`: Comment modification timestamp.
+- `deleted_at`: Comment deletion timestamp for soft delete.
 
-### `economic_political_discussion_board_comment_snapshots`
+### `economic_discussion_board_comment_snapshots`
 
-Historical snapshots of comments for audit trails and change tracking.
+Historical snapshots of economic discussion board comments.
 
-Stores point-in-time states of comments to maintain a complete history of
-all changes made to comments. Each snapshot captures the complete state
-of a comment at a specific moment in time, including the comment content,
-author information, and timestamps.
-
-Snapshots are created whenever a comment is created, updated, or deleted.
-They provide a complete audit trail for content moderation and user
-accountability.
-
-The snapshot system supports:
-- Complete historical tracking of all comment changes
-- Restoration of previous comment states if needed
-- Content moderation through historical review
-- User accountability through author tracking
-- Change tracking for content analysis
+Stores point-in-time states of comments for audit trails and change
+tracking.
+Each snapshot captures the complete state of a comment at a specific
+moment in time.
+Snapshots are created whenever a comment is modified and are never
+updated or deleted.
+The snapshot includes all comment fields at the time of creation for
+historical accuracy.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_comment_id`
-  > Comment that this snapshot belongs to. {@link
-  > economic_political_discussion_board_comments.id}
-- `actor_type`
-  > Type of actor who created the comment. Valid values: 'member' or
-  > 'moderator'
-- `body`: Text content of the comment
-- `flagged`: Whether the comment was flagged for moderator review at this point in time
-- `created_at`: When the comment was created
-- `updated_at`: When the comment was last updated
-- `deleted_at`: When the comment was soft-deleted (null if active)
-- `snapshot_created_at`: When this snapshot was created
+- `economic_discussion_board_comment_id`: Source comment's [economic_discussion_board_comments.id](#economic_discussion_board_comments).
+- `body`: Comment content text at snapshot time.
+- `created_at`: Snapshot creation timestamp.
+- `updated_at`: Comment modification timestamp at snapshot time.
+- `deleted_at`: Comment deletion timestamp at snapshot time.
 
 ## Attachments
 
 ```mermaid
 erDiagram
-"economic_political_discussion_board_attachments" {
+"economic_discussion_board_attachments" {
   String id PK
-  String economic_political_discussion_board_article_id FK "nullable"
-  String economic_political_discussion_board_comment_id FK "nullable"
-  String actor_type
-  String file_path
+  String economic_discussion_board_post_id FK "nullable"
+  String economic_discussion_board_comment_id FK "nullable"
   String file_type
   Int file_size
+  String file_path
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_political_discussion_board_attachment_snapshots" {
+"economic_discussion_board_attachment_snapshots" {
   String id PK
-  String economic_political_discussion_board_attachment_id FK
-  String actor_type
-  String file_path
+  String economic_discussion_board_attachment_id FK
   String file_type
   Int file_size
+  String file_path
   DateTime created_at
 }
-"economic_political_discussion_board_attachment_snapshots" }o--|| "economic_political_discussion_board_attachments" : attachment
+"economic_discussion_board_post_attachments" {
+  String id PK
+  String economic_discussion_board_post_id FK
+  String file_type
+  Int file_size
+  String file_path
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economic_discussion_board_comment_attachments" {
+  String id PK
+  String economic_discussion_board_comment_id FK
+  String file_type
+  Int file_size
+  String file_path
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economic_discussion_board_post_attachment_snapshots" {
+  String id PK
+  String economic_discussion_board_post_attachment_id FK
+  String file_type
+  Int file_size
+  String file_path
+  DateTime created_at
+}
+"economic_discussion_board_comment_attachment_snapshots" {
+  String id PK
+  String economic_discussion_board_comment_attachment_id FK
+  String file_type
+  Int file_size
+  String file_path
+  DateTime created_at
+}
+"economic_discussion_board_attachment_snapshots" }o--|| "economic_discussion_board_attachments" : attachment
+"economic_discussion_board_post_attachment_snapshots" }o--|| "economic_discussion_board_post_attachments" : postAttachment
+"economic_discussion_board_comment_attachment_snapshots" }o--|| "economic_discussion_board_comment_attachments" : commentAttachment
 ```
 
-### `economic_political_discussion_board_attachments`
+### `economic_discussion_board_attachments`
 
-File and image attachments for articles and comments in the
-economic/political discussion board.
+Attachment files uploaded by users to support posts and comments.
 
-Stores all file attachments including images, documents, and other media
-types
-associated with articles and comments. Each attachment is linked to
-either an
-article or a comment through polymorphic ownership. The system supports soft
-deletion to allow for content moderation while maintaining audit trails.
+Stores metadata about uploaded files including file type, size, and
+storage location.
+Each attachment is associated with a specific post or comment and created
+by an authenticated user.
+Attachments remain attached to their parent entity even if the parent is
+modified or deleted.
+The system supports multiple attachments per post or comment.
 
-Attachments are created by users (members or moderators) and include
-metadata
-such as file type, size, and upload timestamp. The attachment content is
-stored
-in the file system with the database containing only references to these
-files.
-
-The attachment system supports versioning through snapshots, allowing for
-the
-preservation of historical states of attachments. This is particularly
-useful for
-content moderation and historical analysis.
+Soft deletion is supported to maintain audit trails while allowing
+content moderation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_article_id`
-  > Article that this attachment belongs to. {@link
-  > economic_political_discussion_board_articles.id}
-- `economic_political_discussion_board_comment_id`
+- `economic_discussion_board_post_id`
+  > Post that this attachment belongs to. {@link
+  > economic_discussion_board_posts.id}.
+- `economic_discussion_board_comment_id`
   > Comment that this attachment belongs to. {@link
-  > economic_political_discussion_board_comments.id}
-- `actor_type`
-  > Type of actor who created the attachment. Valid values: 'member',
-  > 'moderator'.
-- `file_path`: Path to the stored file in the file system.
-- `file_type`: MIME type of the file (e.g., 'image/jpeg', 'application/pdf').
+  > economic_discussion_board_comments.id}.
+- `file_type`: MIME type of the uploaded file.
 - `file_size`: Size of the file in bytes.
+- `file_path`: Storage path of the file in the system.
 - `created_at`: Timestamp when the attachment was created.
 - `updated_at`: Timestamp when the attachment was last updated.
-- `deleted_at`
-  > Timestamp when the attachment was soft-deleted. Null if the attachment is
-  > active.
+- `deleted_at`: Timestamp when the attachment was deleted (soft delete).
 
-### `economic_political_discussion_board_attachment_snapshots`
+### `economic_discussion_board_attachment_snapshots`
 
-Historical snapshots of file and image attachments in the
-economic/political discussion board.
+Historical snapshots of attachment metadata.
 
-Stores point-in-time states of attachments for audit trails and version
-control.
-Each snapshot captures the state of an attachment at a specific moment,
-including
-metadata and file references. This allows for the preservation of historical
-states of attachments, which is essential for content moderation and
-historical analysis.
+Captures point-in-time states of attachments for audit trails and change
+tracking.
+Each snapshot records the attachment metadata at a specific point in time.
+Snapshots are created whenever an attachment is modified or when
+significant changes occur.
+The system maintains a complete history of attachment changes for
+compliance and auditing purposes.
 
-Snapshots are created automatically whenever an attachment is created or
-updated. They are immutable and cannot be modified or deleted, ensuring the
-integrity of the audit trail. Each snapshot is linked to the original
-attachment
-and includes a timestamp indicating when the snapshot was taken.
+Snapshots are immutable and cannot be modified after creation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_political_discussion_board_attachment_id`
+- `economic_discussion_board_attachment_id`
   > Attachment that this snapshot belongs to. {@link
-  > economic_political_discussion_board_attachments.id}
-- `actor_type`
-  > Type of actor who created the attachment. Valid values: 'member',
-  > 'moderator'.
-- `file_path`: Path to the stored file in the file system.
-- `file_type`: MIME type of the file (e.g., 'image/jpeg', 'application/pdf').
+  > economic_discussion_board_attachments.id}.
+- `file_type`: MIME type of the uploaded file at snapshot time.
+- `file_size`: Size of the file in bytes at snapshot time.
+- `file_path`: Storage path of the file in the system at snapshot time.
+- `created_at`: Timestamp when the snapshot was created.
+
+### `economic_discussion_board_post_attachments`
+
+Attachment files uploaded by users to support posts.
+
+Stores metadata about uploaded files including file type, size, and
+storage location.
+Each attachment is associated with a specific post and created by an
+authenticated user.
+Attachments remain attached to their parent entity even if the parent is
+modified or deleted.
+The system supports multiple attachments per post.
+
+Soft deletion is supported to maintain audit trails while allowing
+content moderation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_board_post_id`
+  > Post that this attachment belongs to. {@link
+  > economic_discussion_board_posts.id}.
+- `file_type`: MIME type of the uploaded file.
 - `file_size`: Size of the file in bytes.
+- `file_path`: Storage path of the file in the system.
+- `created_at`: Timestamp when the attachment was created.
+- `updated_at`: Timestamp when the attachment was last updated.
+- `deleted_at`: Timestamp when the attachment was deleted (soft delete).
+
+### `economic_discussion_board_comment_attachments`
+
+Attachment files uploaded by users to support comments.
+
+Stores metadata about uploaded files including file type, size, and
+storage location.
+Each attachment is associated with a specific comment and created by an
+authenticated user.
+Attachments remain attached to their parent entity even if the parent is
+modified or deleted.
+The system supports multiple attachments per comment.
+
+Soft deletion is supported to maintain audit trails while allowing
+content moderation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_board_comment_id`
+  > Comment that this attachment belongs to. {@link
+  > economic_discussion_board_comments.id}.
+- `file_type`: MIME type of the uploaded file.
+- `file_size`: Size of the file in bytes.
+- `file_path`: Storage path of the file in the system.
+- `created_at`: Timestamp when the attachment was created.
+- `updated_at`: Timestamp when the attachment was last updated.
+- `deleted_at`: Timestamp when the attachment was deleted (soft delete).
+
+### `economic_discussion_board_post_attachment_snapshots`
+
+Historical snapshots of post attachment metadata.
+
+Captures point-in-time states of post attachments for audit trails and
+change tracking.
+Each snapshot records the attachment metadata at a specific point in time.
+Snapshots are created whenever an attachment is modified or when
+significant changes occur.
+The system maintains a complete history of attachment changes for
+compliance and auditing purposes.
+
+Snapshots are immutable and cannot be modified after creation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_board_post_attachment_id`
+  > Post attachment that this snapshot belongs to. {@link
+  > economic_discussion_board_post_attachments.id}.
+- `file_type`: MIME type of the uploaded file at snapshot time.
+- `file_size`: Size of the file in bytes at snapshot time.
+- `file_path`: Storage path of the file in the system at snapshot time.
+- `created_at`: Timestamp when the snapshot was created.
+
+### `economic_discussion_board_comment_attachment_snapshots`
+
+Historical snapshots of comment attachment metadata.
+
+Captures point-in-time states of comment attachments for audit trails and
+change tracking.
+Each snapshot records the attachment metadata at a specific point in time.
+Snapshots are created whenever an attachment is modified or when
+significant changes occur.
+The system maintains a complete history of attachment changes for
+compliance and auditing purposes.
+
+Snapshots are immutable and cannot be modified after creation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_board_comment_attachment_id`
+  > Comment attachment that this snapshot belongs to. {@link
+  > economic_discussion_board_comment_attachments.id}.
+- `file_type`: MIME type of the uploaded file at snapshot time.
+- `file_size`: Size of the file in bytes at snapshot time.
+- `file_path`: Storage path of the file in the system at snapshot time.
 - `created_at`: Timestamp when the snapshot was created.

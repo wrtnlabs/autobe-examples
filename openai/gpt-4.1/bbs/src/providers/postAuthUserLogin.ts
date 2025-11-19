@@ -8,97 +8,90 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuthorizationToken";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: IDiscussionBoardUser.ILoginRequest;
+  body: IDiscussionBoardUser.ILogin;
 }): Promise<IDiscussionBoardUser.IAuthorized> {
-  // 1. Find the user by email, who is active, not blocked, and not deleted
+  // 1. Find user by email
   const user = await MyGlobal.prisma.discussion_board_users.findFirst({
-    where: {
-      email: props.body.email,
-      is_active: true,
-      is_blocked: false,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
   });
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // 2. Validate password using PasswordUtil
-  const passwordValid = await PasswordUtil.verify(
+  // 2. Verify password using PasswordUtil
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-  if (!passwordValid) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // 3. Create new session
-  const sessionId = v4();
+  // 3. Compute expiration timestamps as string & tags.Format<'date-time'> only
   const now = new Date();
-  const accessExpire = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpire = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  await MyGlobal.prisma.discussion_board_user_sessions.create({
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nowISOString = toISOStringSafe(now);
+  const accessExpiredISOString = toISOStringSafe(accessExpires);
+  const refreshExpiredISOString = toISOStringSafe(refreshExpires);
+
+  // 4. Create a new session record (discussion_board_user_sessions)
+  const session = await MyGlobal.prisma.discussion_board_user_sessions.create({
     data: {
-      id: sessionId,
-      discussion_board_user_id: user.id,
-      ip: "",
-      href: "",
-      referrer: "",
-      created_at: toISOStringSafe(now),
-      expired_at: toISOStringSafe(accessExpire),
+      id: v4(),
+      user_id: user.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: nowISOString,
+      expired_at: accessExpiredISOString,
     },
   });
 
-  // 4. Generate JWT tokens
-  const token = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: sessionId,
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: sessionId,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpire),
-    refreshable_until: toISOStringSafe(refreshExpire),
-  };
+  // 5. Generate JWT access and refresh tokens per requirements
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      created_at: nowISOString,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: nowISOString,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
 
-  // 5. Prepare deleted_at (nullable)
-  const deletedAt =
-    user.deleted_at === null ? null : toISOStringSafe(user.deleted_at);
-
-  // 6. Return user profile & token
+  // 6. Prepare output with correct DTO contract, handle null vs undefined
   return {
     id: user.id,
     email: user.email,
-    is_email_verified: user.is_email_verified,
-    is_active: user.is_active,
-    is_blocked: user.is_blocked,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: deletedAt,
-    token,
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiredISOString,
+      refreshable_until: refreshExpiredISOString,
+    },
   };
 }

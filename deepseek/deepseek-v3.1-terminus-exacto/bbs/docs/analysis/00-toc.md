@@ -1,176 +1,165 @@
-# Economic/Political Discussion Board - Documentation Table of Contents
+# Table of Contents - Economic/Political Discussion Board
 
 ## Project Overview
 
-This documentation set provides comprehensive requirements and specifications for building a simple economic/political discussion board platform. The system supports discussion posts with image and file attachments, user authentication, and basic moderation capabilities.
+This documentation set provides complete requirements for building a simple economic and political discussion board platform. The system enables users to engage in meaningful discussions about economic and political topics while supporting image and file attachments. The platform maintains a straightforward, minimal design focused on core discussion functionality without unnecessary complexity.
 
-**Project Scope**: Minimal, straightforward discussion board focused on economic and political topics with attachment support.
+### Core Platform Philosophy
+The discussion board prioritizes quality discourse over engagement metrics, creating an environment conducive to substantive conversations about complex topics. Unlike general social media platforms that often prioritize viral content, this platform emphasizes evidence-based arguments, respectful debate, and knowledge sharing among users genuinely interested in economic and political subjects.
 
-**Key Stakeholders**:
-- Business stakeholders defining platform requirements
-- Development team implementing the technical solution
-- Moderators managing community content
-- End users participating in discussions
+### Business Value Proposition
+The platform addresses a specific market gap by providing a dedicated space for serious economic/political discourse that combines the accessibility of social media with the substance of academic platforms. Users benefit from specialized moderation, robust attachment support for research materials, and a community focused on these specific subject areas.
 
-**Core Business Objectives**:
-- Create a dedicated space for thoughtful economic and political conversations
-- Support evidence-based discussions with attachment capabilities
-- Maintain simple, user-friendly interface that encourages participation
-- Ensure respectful discourse through clear moderation guidelines
+## Documentation Structure
 
-## Document List
+The project documentation is organized into 11 comprehensive documents that cover all aspects of the discussion board requirements:
 
 ### Core Documentation
+- **[Service Overview Document](./01-service-overview.md)** - Defines the business purpose, target audience, and value proposition for the discussion board platform
+- **[User Actors and Authentication Guide](./02-user-actors.md)** - Documents all user roles, authentication requirements, and permission matrices
 
-**[01-service-overview.md](./01-service-overview.md)** - **Service Overview**
-- Executive summary and business model
-- Target audience and core value proposition
-- Key features and success metrics
-- *Audience: Business stakeholders*
+### User Experience Documentation
+- **[User Journey Documentation](./03-user-journey.md)** - Describes complete user flows from registration to content creation and engagement
+- **[Functional Requirements Specification](./04-functional-requirements.md)** - Defines all system features and functionality using EARS format
 
-**[02-user-actors.md](./02-user-actors.md)** - **User Actors and Authentication**
-- Complete user actor definitions (Guest, Member, Moderator)
-- Authentication requirements and permission matrix
-- Security considerations and actor responsibilities
-- *Audience: Development team*
+### Business Logic Documentation
+- **[Business Rules and Validation Guide](./05-business-rules.md)** - Documents content validation, user behavior guidelines, and moderation policies
+- **[Error Handling and Recovery Procedures](./06-error-handling.md)** - Defines user-facing error scenarios and recovery workflows
 
-**[03-functional-requirements.md](./03-functional-requirements.md)** - **Functional Requirements**
-- Discussion board features and capabilities
-- Post creation, management, and attachment handling
-- Comment system and content moderation
-- Search and discovery functionality
-- *Audience: Development team*
+### Technical Requirements Documentation
+- **[Performance Requirements Specification](./07-performance-requirements.md)** - Defines response time expectations and scalability targets
+- **[Security Requirements Guide](./08-security-requirements.md)** - Documents authentication security and data protection requirements
 
-**[04-user-journey.md](./04-user-journey.md)** - **User Journey Mapping**
-- Guest, member, and moderator interaction flows
-- Registration, onboarding, and content creation processes
-- Visual flow diagrams for key user scenarios
-- *Audience: Product managers*
-
-### Policy and Operations Documentation
-
-**[05-content-policy.md](./05-content-policy.md)** - **Content Policy and Moderation**
-- Content guidelines and community standards
-- Moderation policies and violation handling
-- User reporting system and appeal process
-- *Audience: Moderators and administrators*
-
-**[06-performance-requirements.md](./06-performance-requirements.md)** - **Performance Requirements**
-- Performance expectations and scalability requirements
-- Availability targets and data management
-- Backup and recovery procedures
-- *Audience: Development team*
-
-**[07-security-privacy.md](./07-security-privacy.md)** - **Security and Privacy**
-- Authentication security and data privacy protections
-- Content security and user data protection
-- Compliance requirements and standards
-- *Audience: Development team*
-
-**[08-error-handling.md](./08-error-handling.md)** - **Error Handling and Support**
-- User-facing error scenarios and recovery processes
-- Support channels and troubleshooting guides
-- User-friendly error messaging
-- *Audience: Development team*
-
-### Strategic Documentation
-
-**[09-future-roadmap.md](./09-future-roadmap.md)** - **Future Roadmap**
-- Phase-based feature development plan
-- Long-term vision and enhancement priorities
-- Development timeline and prioritization criteria
-- *Audience: Business stakeholders*
+### Content Management Documentation
+- **[Content Lifecycle Management](./09-content-lifecycle.md)** - Defines content creation, moderation, archival, and deletion procedures
+- **[Future Considerations and Enhancements](./10-future-considerations.md)** - Outlines potential future features and scalability opportunities
 
 ## Navigation Guide
 
-### Recommended Reading Order
+### For Backend Developers
+Start with these documents to understand implementation requirements:
+1. **[Functional Requirements Specification](./04-functional-requirements.md)** - Core feature specifications including post creation, commenting, and attachment handling
+2. **[User Actors and Authentication Guide](./02-user-actors.md)** - User management, authentication flows, and security implementation
+3. **[Business Rules and Validation Guide](./05-business-rules.md)** - Content validation logic and moderation workflows
 
-**For Business Stakeholders**:
-1. [Service Overview](./01-service-overview.md) - Understand the business context and value proposition
-2. [Future Roadmap](./09-future-roadmap.md) - Review strategic development plans
-3. [Content Policy](./05-content-policy.md) - Understand community management approach
+### For Product Managers
+Focus on user experience and business requirements:
+1. **[Service Overview Document](./01-service-overview.md)** - Business context, target audience analysis, and success metrics
+2. **[User Journey Documentation](./03-user-journey.md)** - Complete user interaction flows from discovery through active participation
+3. **[Content Lifecycle Management](./09-content-lifecycle.md)** - Content management processes and moderation escalation procedures
 
-**For Development Team**:
-1. [Service Overview](./01-service-overview.md) - Business context and requirements
-2. [User Actors](./02-user-actors.md) - Authentication and permission requirements
-3. [Functional Requirements](./03-functional-requirements.md) - Core feature specifications
-4. [Performance Requirements](./06-performance-requirements.md) - Technical performance standards
-5. [Security and Privacy](./07-security-privacy.md) - Security implementation requirements
-
-**For Moderators**:
-1. [Content Policy](./05-content-policy.md) - Moderation guidelines and procedures
-2. [User Journey](./04-user-journey.md) - Understanding user interactions and workflows
-3. [User Actors](./02-user-actors.md) - Permission levels and responsibilities
-
-### Quick Reference by Topic
-
-**Authentication & Users**: [User Actors](./02-user-actors.md)
-- Complete user role definitions and permission matrices
-- Authentication flow requirements and security considerations
-- User management and session handling specifications
-
-**Core Features**: [Functional Requirements](./03-functional-requirements.md)
-- Discussion board functionality specifications
-- Post and comment creation requirements
-- Attachment handling and content management
-
-**User Experience**: [User Journey](./04-user-journey.md)
-- Complete user interaction flows and scenarios
-- Registration, onboarding, and content creation processes
-- Error handling and recovery procedures
-
-**Content Management**: [Content Policy](./05-content-policy.md)
-- Moderation guidelines and community standards
-- Violation handling and appeal processes
-- Content quality and safety requirements
-
-**Technical Performance**: [Performance Requirements](./06-performance-requirements.md)
-- Response time benchmarks and scalability requirements
-- Availability targets and data management specifications
-- Backup, recovery, and monitoring requirements
+### For Business Stakeholders
+Review strategic documents for project understanding:
+1. **[Service Overview Document](./01-service-overview.md)** - Business model, competitive positioning, and value proposition
+2. **[Future Considerations and Enhancements](./10-future-considerations.md)** - Growth opportunities and strategic roadmap
 
 ## Document Relationships
 
-The documentation follows a logical progression from high-level business requirements to detailed technical specifications:
-
 ```mermaid
 graph LR
-    A["01-service-overview.md<br/>Business Context"] --> B["02-user-actors.md<br/>User Definitions"]
-    B --> C["03-functional-requirements.md<br/>Core Features"]
-    B --> D["04-user-journey.md<br/>User Experience"]
-    C --> E["06-performance-requirements.md<br/>Technical Performance"]
-    C --> F["07-security-privacy.md<br/>Security & Privacy"]
-    D --> G["05-content-policy.md<br/>Moderation Policies"]
-    C --> H["08-error-handling.md<br/>Error Management"]
-    A --> I["09-future-roadmap.md<br/>Strategic Planning"]
+    A["00-toc.md<br/>Table of Contents"] --> B["01-service-overview.md<br/>Business Context"]
+    A --> C["02-user-actors.md<br/>Authentication"]
+    A --> D["03-user-journey.md<br/>User Flows"]
+    A --> E["04-functional-requirements.md<br/>Features"]
+    
+    B --> F["10-future-considerations.md<br/>Future Planning"]
+    C --> G["08-security-requirements.md<br/>Security"]
+    D --> E
+    E --> H["05-business-rules.md<br/>Validation"]
+    E --> I["06-error-handling.md<br/>Error Recovery"]
+    E --> J["07-performance-requirements.md<br/>Performance"]
+    H --> K["09-content-lifecycle.md<br/>Content Management"]
 ```
 
-### Document Dependencies
+## Quick Reference by Topic
 
-**Foundation Documents**: [Service Overview](./01-service-overview.md) provides the business context that informs all other documents. This document establishes the core purpose, target audience, and business objectives that guide all subsequent requirements.
+### Authentication & Security
+- User registration and login: **[User Actors Guide](./02-user-actors.md)**
+- Security requirements: **[Security Requirements](./08-security-requirements.md)**
+- Permission management: **[User Actors Guide](./02-user-actors.md)**
+- Session management and token handling: **[User Actors Guide](./02-user-actors.md)**
 
-**Core Implementation Documents**: [User Actors](./02-user-actors.md) and [Functional Requirements](./03-functional-requirements.md) are prerequisites for technical implementation. These documents define the complete user permission system and feature specifications that developers need to build the platform.
+### Content Management
+- Post creation and editing: **[Functional Requirements](./04-functional-requirements.md)**
+- Attachment handling: **[Functional Requirements](./04-functional-requirements.md)**
+- Content validation: **[Business Rules](./05-business-rules.md)**
+- Moderation workflows: **[Content Lifecycle](./09-content-lifecycle.md)**
+- Content archival and deletion: **[Content Lifecycle](./09-content-lifecycle.md)**
 
-**Operational Documents**: [Content Policy](./05-content-policy.md) builds upon user journey and actor definitions to provide comprehensive moderation guidelines. This document relies on understanding user interactions and permission levels to define effective community management procedures.
+### User Experience
+- Registration process: **[User Journey](./03-user-journey.md)**
+- Discussion flows: **[User Journey](./03-user-journey.md)**
+- Error handling: **[Error Handling Guide](./06-error-handling.md)**
+- Performance expectations: **[Performance Requirements](./07-performance-requirements.md)**
 
-**Technical Specifications**: [Performance Requirements](./06-performance-requirements.md) and [Security & Privacy](./07-security-privacy.md) depend on functional requirements to establish appropriate technical standards. These documents translate business needs into measurable performance and security criteria.
+### Technical Specifications
+- Performance targets: **[Performance Requirements](./07-performance-requirements.md)**
+- Security implementation: **[Security Requirements](./08-security-requirements.md)**
+- System architecture: Distributed across functional documents
+- Business requirements in natural language: **[Functional Requirements](./04-functional-requirements.md)**
 
-### Cross-Reference Usage
+## Document Update History
 
-When reading any document, refer to related documents for complete context:
+This table of contents will be maintained as the primary navigation tool throughout the project lifecycle. All new documents will be added here with appropriate descriptions and relationships.
 
-**Authentication Implementation**: When implementing user authentication, developers should reference both [User Actors](./02-user-actors.md) for permission definitions and [Security & Privacy](./07-security-privacy.md) for security requirements.
+| Document | Version | Last Updated | Primary Audience | Key Focus Areas |
+|----------|---------|--------------|------------------|----------------|
+| 00-toc.md | 1.0 | 2025-11-18 | All Stakeholders | Navigation structure, document relationships |
+| 01-service-overview.md | 1.0 | 2025-11-18 | Business Stakeholders | Business model, target audience, value proposition |
+| 02-user-actors.md | 1.0 | 2025-11-18 | Development Team | Authentication, user roles, permission matrices |
+| 03-user-journey.md | 1.0 | 2025-11-18 | Product Managers | User flows, interaction patterns, error scenarios |
+| 04-functional-requirements.md | 1.0 | 2025-11-18 | Development Team | Feature specifications, EARS requirements |
+| 05-business-rules.md | 1.0 | 2025-11-18 | Development Team | Content validation, moderation policies, community guidelines |
+| 06-error-handling.md | 1.0 | 2025-11-18 | Development Team | Error scenarios, recovery workflows, user messaging |
+| 07-performance-requirements.md | 1.0 | 2025-11-18 | Development Team | Response times, scalability, performance targets |
+| 08-security-requirements.md | 1.0 | 2025-11-18 | Development Team | Authentication security, data protection, attachment security |
+| 09-content-lifecycle.md | 1.0 | 2025-11-18 | Development Team | Content states, moderation workflows, archival policies |
+| 10-future-considerations.md | 1.0 | 2025-11-18 | Business Stakeholders | Growth opportunities, feature roadmap, scalability planning |
 
-**Moderation Workflows**: Moderators should understand both the technical capabilities defined in [Functional Requirements](./03-functional-requirements.md) and the policy guidelines in [Content Policy](./05-content-policy.md) to effectively manage community content.
+## Implementation Guidelines
 
-**Technical Architecture**: When planning technical architecture, reference [Performance Requirements](./06-performance-requirements.md) for scalability needs and [Security & Privacy](./07-security-privacy.md) for security implementation requirements.
+### For Development Teams
+WHEN implementing the discussion board platform, THE development team SHALL reference the complete documentation set to ensure all business requirements are met.
 
-## Document Updates
+WHERE technical decisions are required, THE team SHALL prioritize the simple, minimal design philosophy outlined in the service overview.
 
-This table of contents will be updated as new documents are created or existing documents are modified. All documents follow a consistent naming convention and organization structure to facilitate easy navigation.
+### For Quality Assurance
+WHEN testing the platform, THE QA team SHALL verify that all functional requirements from the specification documents are properly implemented.
 
-**Version Control**: Each document maintains version history with change logs to track updates and modifications. When documents are updated, corresponding cross-references in this table of contents will be verified for accuracy.
+WHERE performance testing is conducted, THE team SHALL use the targets defined in the performance requirements document as success criteria.
 
-**Stakeholder Notifications**: Significant document updates will be communicated to relevant stakeholders through appropriate channels to ensure all team members work with current requirements.
+### For Project Management
+WHEN planning development iterations, THE project manager SHALL ensure that all core functionality from the requirements documents is prioritized.
+
+WHERE scope changes are considered, THE manager SHALL evaluate impact against the documented business requirements.
+
+## Cross-Document Dependencies
+
+### Critical Dependencies
+- **Authentication System**: Requires coordination between User Actors, Security Requirements, and User Journey documents
+- **Content Moderation**: Integrates requirements from Business Rules, Content Lifecycle, and Functional Requirements
+- **Attachment Handling**: Spans Functional Requirements, Security Requirements, and Performance Requirements
+
+### Implementation Sequencing
+1. **Foundation Phase**: Implement core authentication and user management based on User Actors documentation
+2. **Content Phase**: Build post and comment functionality following Functional Requirements
+3. **Moderation Phase**: Add content moderation features using Business Rules and Content Lifecycle guidelines
+4. **Optimization Phase**: Enhance performance and security based on Performance and Security Requirements
+
+## Quality Assurance Checklist
+
+### Documentation Completeness
+- [ ] All 11 documents are properly referenced and described
+- [ ] Navigation structure supports all stakeholder types
+- [ ] Quick reference sections cover all major functional areas
+- [ ] Document relationships are clearly documented
+- [ ] Update history is maintained for version tracking
+
+### Business Requirements Coverage
+- [ ] Simple discussion board functionality is fully specified
+- [ ] Image and file attachment requirements are documented
+- [ ] Authentication and user management workflows are defined
+- [ ] Content moderation processes are specified
+- [ ] Performance and security expectations are established
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

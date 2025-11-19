@@ -1,16 +1,17 @@
 import { tags } from "typia";
 
 /**
- * Payload for authenticated administrator user. Contains root admin account ID,
- * session info, and discriminator type.
+ * Payload injected for authenticated admin users.
+ *
+ * - Id: UUID of admin (primary key for discussion_board_admins)
+ * - Session_id: UUID of related session (discussion_board_admin_sessions.id)
+ * - Type: Discriminator identifying administrator payload
  */
 export interface AdminPayload {
-  /** Top-level admin table ID (discussion_board_admins.id) */
+  /** Admin account ID (primary key of discussion_board_admins) */
   id: string & tags.Format<"uuid">;
-
-  /** Session ID associated with this admin session */
+  /** Session ID (primary key of discussion_board_admin_sessions) */
   session_id: string & tags.Format<"uuid">;
-
-  /** Discriminator for admin role */
+  /** Discriminator for admin role. */
   type: "admin";
 }

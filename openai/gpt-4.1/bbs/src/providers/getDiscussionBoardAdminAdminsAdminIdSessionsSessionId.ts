@@ -8,6 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function getDiscussionBoardAdminAdminsAdminIdSessionsSessionId(props: {
@@ -15,36 +16,37 @@ export async function getDiscussionBoardAdminAdminsAdminIdSessionsSessionId(prop
   adminId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardAdminSession> {
-  // 1. Authorization: Must only allow access to own adminId
-  if (props.admin.id !== props.adminId) {
-    throw new HttpException(
-      "Forbidden: Cannot access sessions of another admin.",
-      403,
-    );
-  }
-
-  // 2. Query the session with both admin and session IDs
-  const record =
+  // Find session and linked admin in one query
+  const session =
     await MyGlobal.prisma.discussion_board_admin_sessions.findUnique({
-      where: {
-        id: props.sessionId,
-        discussion_board_admin_id: props.adminId,
-      },
+      where: { id: props.sessionId },
+      include: { admin: true },
     });
 
-  if (!record) {
-    throw new HttpException("Admin session not found.", 404);
+  // Check session exists, belongs to the correct admin, and admin is not deleted
+  if (
+    !session ||
+    session.admin_id !== props.adminId ||
+    session.admin.deleted_at !== null
+  ) {
+    throw new HttpException("Session not found or inaccessible", 404);
   }
 
   return {
-    id: record.id,
-    discussion_board_admin_id: record.discussion_board_admin_id,
-    ip: record.ip,
-    href: record.href,
-    referrer: record.referrer,
-    created_at: toISOStringSafe(record.created_at),
-    expired_at: record.expired_at
-      ? toISOStringSafe(record.expired_at)
-      : undefined,
+    id: session.id,
+    admin: {
+      id: session.admin.id,
+      email: session.admin.email,
+      created_at: toISOStringSafe(session.admin.created_at),
+      updated_at: toISOStringSafe(session.admin.updated_at),
+      deleted_at: session.admin.deleted_at
+        ? toISOStringSafe(session.admin.deleted_at)
+        : undefined,
+    },
+    ip: session.ip,
+    href: session.href,
+    referrer: session.referrer,
+    created_at: toISOStringSafe(session.created_at),
+    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
   };
 }

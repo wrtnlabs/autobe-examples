@@ -1,3 +1,12 @@
 export * as members from "./members/index";
 export * as moderators from "./moderators/index";
+export * as guests from "./guests/index";
+export * as emailVerifications from "./emailVerifications/index";
+export * as passwordResets from "./passwordResets/index";
+export * as accountActions from "./accountActions/index";
 export * as articles from "./articles/index";
+export * as categories from "./categories/index";
+export * as contentReports from "./contentReports/index";
+export * as moderationLogs from "./moderationLogs/index";
+export * as dashboard from "./dashboard/index";
+export * as statistics from "./statistics/index";

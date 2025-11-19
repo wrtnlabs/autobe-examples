@@ -4,296 +4,297 @@
 
 - [Actors](#actors)
 - [Articles](#articles)
+- [Attachments](#attachments)
 - [Comments](#comments)
 
 ## Actors
 
 ```mermaid
 erDiagram
-"econ_pol_discussion_board_guests" {
+"discussion_board_guest" {
   String id PK
-  String username
-  DateTime created_at
-  DateTime updated_at
-}
-"econ_pol_discussion_board_guest_sessions" {
-  String id PK
-  String econ_pol_discussion_board_guest_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"econ_pol_discussion_board_members" {
-  String id PK
-  String username UK
-  String password_hash
-  String email UK
+  String nickname
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_pol_discussion_board_member_sessions" {
+"discussion_board_member" {
   String id PK
-  String econ_pol_discussion_board_member_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"econ_pol_discussion_board_admins" {
-  String id PK
-  String username UK
-  String password_hash
   String email UK
+  String password_hash
+  String nickname
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_pol_discussion_board_admin_sessions" {
+"discussion_board_member_sessions" {
   String id PK
-  String econ_pol_discussion_board_admin_id FK
+  String discussion_board_member_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"econ_pol_discussion_board_guest_sessions" }o--|| "econ_pol_discussion_board_guests" : guest
-"econ_pol_discussion_board_member_sessions" }o--|| "econ_pol_discussion_board_members" : member
-"econ_pol_discussion_board_admin_sessions" }o--|| "econ_pol_discussion_board_admins" : admin
+"discussion_board_admin" {
+  String id PK
+  String email UK
+  String password_hash
+  String nickname
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_admin_sessions" {
+  String id PK
+  String discussion_board_admin_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"discussion_board_member_sessions" }o--|| "discussion_board_member" : discussionBoardMember
+"discussion_board_admin_sessions" }o--|| "discussion_board_admin" : discussionBoardAdmin
 ```
 
-### `econ_pol_discussion_board_guests`
+### `discussion_board_guest`
 
-Guests of the econPolDiscussionBoard system who may browse content
-without authentication.
+Unauthenticated guest users, representing visitors with read-only access
+to the discussion board.
 
-This entity represents unauthenticated visitors with minimal data stored
-for tracking and basic audit purposes. Guests do not log in and have
-limited access rights.
+Guests cannot create accounts or sessions, and have minimal identifying
+information mainly for tracking or analytics.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`: Username chosen by the guest user for identification during visits.
-- `created_at`: Timestamp when this guest record was created.
-- `updated_at`: Timestamp of the last modification to the guest record.
-
-### `econ_pol_discussion_board_guest_sessions`
-
-Session records for guest users tracking individual browsing sessions.
-
-Each session links to exactly one guest and records connection metadata
-such as IP address, referrer, and timestamps.
-Sessions enable audit of guest activity without requiring login credentials.
+This table allows the system to recognize guest interactions while
+maintaining privacy and simplicity.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `econ_pol_discussion_board_guest_id`
-  > Reference to the guest who owns this session. {@link
-  > econ_pol_discussion_board_guests.id}.
-- `ip`: IP address of the guest during the session.
-- `href`: URL accessed during the session.
-- `referrer`: Referrer URL indicating the previous page.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired, if applicable.
+- `id`: Primary key.
+- `nickname`
+  > Guest user display nickname, optional and may be used for distinguishing
+  > guests in anonymous interactions.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null means active.
 
-### `econ_pol_discussion_board_members`
+### `discussion_board_member`
 
-Members with authenticated accounts on econPolDiscussionBoard who can
-post articles, comment, and upload attachments.
+Registered members of the discussion board capable of creating articles
+and comments.
 
-Holds securely hashed password and essential data to control identity and
+Members can log in with credentials and manage their content.
+
+This table stores essential user information including authentication
+data and timestamps for auditing and soft deletion.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `email`
+  > Email address for authentication and communication. Must be unique across
+  > members.
+- `password_hash`: Hashed password for secure authentication.
+- `nickname`: Display name chosen by the member for identification.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null means active.
+
+### `discussion_board_member_sessions`
+
+Active session records for registered members, tracking login state and
+connection details.
+
+Each session is linked to a member and stores IP address, URL, referrer,
+creation time, and expiry time.
+
+This supports authentication session management and audit logging.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `discussion_board_member_id`
+  > Reference to the member who owns this session. {@link
+  > discussion_board_member.id}.
+- `ip`: IP address from which the session originated.
+- `href`: Full URL of the connection request.
+- `referrer`: HTTP referrer URL.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiry timestamp; null means session is active.
+
+### `discussion_board_admin`
+
+System administrators with full permissions over the discussion board.
+
+Admins can manage all content and users, with login credentials for
 authentication.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`: Unique user name chosen by the member.
-- `password_hash`: Hashed password for secure authentication.
-- `email`: Email address for member communication and login identification.
-- `created_at`: Account creation timestamp.
-- `updated_at`: Last update timestamp for this member record.
-- `deleted_at`: Soft deletion timestamp if the member account is deactivated.
-
-### `econ_pol_discussion_board_member_sessions`
-
-Session records for authenticated members maintaining login sessions.
-
-Each session is linked to exactly one member and stores connection
-metadata used for auditing and session management.
+Timestamps and soft deletion fields help track administrative activity
+and account state.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `econ_pol_discussion_board_member_id`
-  > Reference to the member who owns this session. {@link
-  > econ_pol_discussion_board_members.id}.
-- `ip`: IP address of the member during the session.
-- `href`: URL accessed during the session.
-- `referrer`: Referrer URL indicating the previous page.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired, if applicable.
+- `id`: Primary key.
+- `email`
+  > Email address for administrator login and communication. Must be unique
+  > among admins.
+- `password_hash`: Hashed password used for authentication.
+- `nickname`: Display name for the administrator user.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last update timestamp.
+- `deleted_at`: Soft deletion timestamp; null means active.
 
-### `econ_pol_discussion_board_admins`
+### `discussion_board_admin_sessions`
 
-Administrator accounts responsible for content moderation, user
-management, and overall system maintenance.
+Active session records for administrators, enabling authentication and
+audit logging.
 
-Admins have elevated privileges and securely stored credentials to
-control system access and administration.
+Sessions include IP address, connection URL, referrer, creation time, and
+optional expiration timestamp.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`: Unique administrator username.
-- `password_hash`: Securely hashed password for admin authentication.
-- `email`: Administrator email address for notifications and recovery.
-- `created_at`: Timestamp when the admin account was created.
-- `updated_at`: Timestamp of the last update to the admin record.
-- `deleted_at`: Soft deletion timestamp if the admin account is disabled.
-
-### `econ_pol_discussion_board_admin_sessions`
-
-Session records for administrator accounts keeping track of login sessions.
-
-Each session maintains a reference to its owner and stores connection
-information important for security audits.
+Linked to the administrator who owns the session, supporting secure
+session management.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `econ_pol_discussion_board_admin_id`
-  > Reference to the admin who owns this session. {@link
-  > econ_pol_discussion_board_admins.id}.
-- `ip`: IP address of the admin during the session.
-- `href`: URL accessed during the session.
-- `referrer`: Referrer URL indicating previous page.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expired, if applicable.
+- `id`: Primary key.
+- `discussion_board_admin_id`
+  > Reference to the administrator owning this session. {@link
+  > discussion_board_admin.id}.
+- `ip`: IP address of connection origin.
+- `href`: Connection URL.
+- `referrer`: Referrer URL.
+- `created_at`: Session start timestamp.
+- `expired_at`: Session end timestamp; null if ongoing.
 
 ## Articles
 
 ```mermaid
 erDiagram
-"econ_pol_discussion_board_articles" {
+"discussion_board_articles" {
   String id PK
-  String econ_pol_discussion_board_member_id FK
+  String discussion_board_member_id FK
   String title
   String content
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"econ_pol_discussion_board_attachments" {
-  String id PK
-  String econ_pol_discussion_board_article_id FK
-  String type
-  String url
-  String file_name
-  DateTime uploaded_at
-}
-"econ_pol_discussion_board_attachments" }o--|| "econ_pol_discussion_board_articles" : article
 ```
 
-### `econ_pol_discussion_board_articles`
+### `discussion_board_articles`
 
-Articles posted by members on the econPolDiscussionBoard.
+Articles posted by registered members on economic and political topics.
 
-This table stores plain-text articles created by authenticated members.
-Each article includes an author reference to the member who created it,
-ensuring accountability and traceability. Articles are timestamped upon
-creation and update to support audit trails and order listings by
-recency.
+Each article includes a title and textual content, an author reference to
+the registered member who created it, and temporal fields for creation,
+updates, and soft deletion. Articles serve as the primary content entity
+for the discussion board.
 
-Attachments are stored separately in the attachments table to avoid
-nullable fields and maintain normalization. This design supports multiple
-attachments per article, enriching content with images or documents.
+Attachments and comments related to articles are managed separately in
+other components to maintain modularity and normalize content storage.
+
+This design supports efficient browsing, editing, and moderation with
+clear ownership and audit trail capabilities.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `econ_pol_discussion_board_member_id`
+- `discussion_board_member_id`
   > Reference to the member who authored the article. {@link
-  > econ_pol_discussion_board_members.id}.
-- `title`: Title of the article, summarizing its content.
-- `content`: Plain-text content body of the article.
-- `created_at`: Timestamp when the article was created.
-- `updated_at`: Timestamp when the article was last updated.
+  > discussion_board_member.id}.
+- `title`: Title of the article representing its main subject or headline.
+- `content`
+  > Body content of the article containing detailed economic or political
+  > discussion.
+- `created_at`: Timestamp marking when the article was created.
+- `updated_at`: Timestamp marking the last update to the article.
+- `deleted_at`: Timestamp for soft deletion; null if the article is active.
 
-### `econ_pol_discussion_board_attachments`
+## Attachments
 
-Attachments associated with articles on the econPolDiscussionBoard.
+```mermaid
+erDiagram
+"discussion_board_attachments" {
+  String id PK
+  String discussion_board_article_id FK
+  String type
+  String url
+  String filename
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+```
 
-This table stores metadata for files and images attached to articles.
-Each attachment links to a single article and includes detailed
-information such as type (image or file), URL location, original
-filename, and upload timestamp.
+### `discussion_board_attachments`
 
-Attachments enhance articles by allowing multimedia content and document
-references, supporting the core value proposition of rich content in a
-focused discussion board. Attachments are non-editable and depend on
-their parent article lifecycle.
+Attachments linked to discussion board articles.
+
+Supports both images and files uploaded by members to complement article
+content. Each attachment is associated with a single article and contains
+metadata such as type (image or file), file URL, and filename.
+
+Attachments are soft deletable to retain audit trails and support content
+management workflows.
+
+This table is a subsidiary entity managed through its parent article.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `econ_pol_discussion_board_article_id`
-  > Reference to the parent article. {@link
-  > econ_pol_discussion_board_articles.id}.
-- `type`: Type of attachment, either 'image' or 'file'.
-- `url`: URL location where the attachment file is stored.
-- `file_name`: Original filename of the attachment.
-- `uploaded_at`: Timestamp when the attachment was uploaded.
+- `discussion_board_article_id`: Reference to the parent article. [discussion_board_articles.id](#discussion_board_articles).
+- `type`
+  > Attachment type indicating whether this is an image or other file. Valid
+  > values: 'image', 'file'.
+- `url`: URL path to the stored attachment resource.
+- `filename`: Original name of the uploaded file.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record update timestamp.
+- `deleted_at`: Soft deletion timestamp; if set, this record is considered deleted.
 
 ## Comments
 
 ```mermaid
 erDiagram
-"econ_pol_discussion_board_comments" {
+"discussion_board_comments" {
   String id PK
-  String econ_pol_discussion_board_article_id FK
-  String econ_pol_discussion_board_member_id FK
-  String parent_comment_id FK "nullable"
-  String body
+  String discussion_board_article_id FK
+  String discussion_board_member_id FK
+  String content
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"econ_pol_discussion_board_comments" }o--o| "econ_pol_discussion_board_comments" : parentComment
 ```
 
-### `econ_pol_discussion_board_comments`
+### `discussion_board_comments`
 
-Comments posted by members on economic and political discussion board
-articles.
+User comments on articles in the discussion board.
 
-Each comment is associated with a specific article and authored by a
-registered member. Comments support nesting by allowing a parent comment
-reference for up to two levels of replies.
+Each comment is authored by a registered member and linked to a specific
+article. Comments contain text-only content, supporting the core
+discussion functionality without attachments. The model supports
+creation, update, and soft deletion timestamps to enable auditability and
+moderation.
 
-The comments table tracks creation and update timestamps for audit and
-moderation purposes. Comments are designed for minimal complexity,
-enabling straightforward querying and management within the discussion
-board.
+This model has a primary stance reflecting its role as an independently
+managed business entity requiring full CRUD operations and search
+capabilities across all comments.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `econ_pol_discussion_board_article_id`
-  > Reference to the article that this comment belongs to. {@link
-  > econ_pol_discussion_board_articles.id}.
-- `econ_pol_discussion_board_member_id`
-  > Author of the comment, a registered member. {@link
-  > econ_pol_discussion_board_members.id}.
-- `parent_comment_id`
-  > Optional reference to the parent comment for nested replies, allowing up
-  > to two levels of nesting within the discussion board. {@link
-  > econ_pol_discussion_board_comments.id}.
-- `body`
-  > Plain text content of the comment. Limited to 500 characters as per
-  > business requirements.
+- `id`: Primary key.
+- `discussion_board_article_id`
+  > Reference to the article being commented on. {@link
+  > discussion_board_articles.id}.
+- `discussion_board_member_id`
+  > Reference to the member who authored the comment. {@link
+  > discussion_board_member.id}.
+- `content`
+  > Text content of the comment, supporting the discussion without
+  > attachments.
 - `created_at`: Timestamp when the comment was created.
 - `updated_at`: Timestamp when the comment was last updated.
+- `deleted_at`: Timestamp for soft deletion; null if not deleted.

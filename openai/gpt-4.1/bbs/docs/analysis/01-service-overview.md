@@ -1,54 +1,107 @@
-# Service Overview for Economic/Political Discussion Board
+# Requirements Specification: Minimal Economic/Political Discussion Board
 
-## Introduction
+## 1. Introduction & Scope
 
-The economic/political discussion board is an online service dedicated to fostering thoughtful, civil, and robust discussion on economics, politics, and related issues. The platform is simple and streamlined by design, focusing on core functions that allow users to post articles, participate in debates, and supplement their contributions with images or file attachments. By cultivating a dedicated space for these vital topics, the service aims to elevate online conversation beyond what is achievable on generic, crowded platforms.
+The mission of the economic/political discussion board is to provide a bare-minimum, accessible online forum designed for substantive, civil debate on economic and political themes. The platform prioritizes simplicity and usability for users of all backgrounds. The board enables article posting, discussion via comments, and basic attachment handling (images/files), while minimizing technical, navigation, or moderation complexity.
 
-## Business Vision
+## 2. Key User Needs
 
-The vision for this service is to nurture a vibrant, informed digital community centered around economic and political discourse. At its core, the service strives to:
-- Facilitate the exchange of well-supported ideas and information on pressing policy, economic, and political developments
-- Lower barriers to meaningful participation, allowing anyone with interest or expertise to join the conversation with minimal setup or complexity
-- Provide a trustworthy space for civic education and engagement, especially for those underserved by mainstream social media
-- Empower responsible community building by supporting both grassroots and expert-generated content
+- Laypersons, students, and professionals require an easy-to-use, low-friction forum to share and debate ideas about economic and political matters.
+- Users must be able to read content without registration, encouraging spontaneous exploration and participation.
+- Authenticity and civil discourse are encouraged, where each poster is accountable for their content.
+- Minimal disruption—no feature bloat, unnecessary notifications, or pressure to engage in non-core activities.
+- Simple visual attachment handling enhances context and clarity for discussions.
 
-By doing so, the service endeavors to set a new standard for intelligent, focused dialogue on critical issues impacting society.
+## 3. Business Objectives & Success Metrics
 
-## Core Value Proposition
+- WHEN the board is in operation, THE system SHALL aim for high user retention (monthly/quarterly periods) and month-over-month growth in active users.
+- WHEN articles are posted, THE system SHALL maximize engagement through discussion and attachment interaction, measured by the number of comments and the percentage of articles containing at least one attachment.
+- THE system SHALL ensure community health by minimizing content requiring moderator intervention relative to total contributions.
+- Success measured by ease-of-use, quality of civil discourse, and traction in the target audience.
 
-The economic/political discussion board makes several key commitments to its users:
+## 4. Functional Requirements
 
-- **Simplicity as a Feature**: THE platform SHALL prioritize ease of use and minimize distractions to ensure users can focus on ideas, not navigation or superfluous features.
-- **Open Participation**: WHEN a user completes registration, THE system SHALL permit the user to contribute articles and comments on economic or political topics.
-- **Rich Argumentation**: WHEN a user submits an article, THE system SHALL allow the user to attach images and files that support their arguments or analysis.
-- **Focused Moderation**: WHERE content or user behavior violates community guidelines, THE admin SHALL have tools to remove, edit, or restrict content/users to maintain safety and civility.
-- **Respect for Diversity of Views**: THE platform SHALL encourage a respectful exchange of differing perspectives on economic and political subjects.
+### Article Posting
+- WHEN a registered user submits a new article, THE system SHALL save the article with a timestamp and display it on the main board in reverse chronological order.
+- THE system SHALL allow users to view all public articles without authentication.
+- THE system SHALL allow authenticated users to edit and delete only their own articles.
+- THE system SHALL ensure titles and content are required fields for article creation.
 
-What truly differentiates the service is its deliberate avoidance of over-complexity, instead concentrating on a clean, accessible interface and straightforward feature set. This enables deeper, distraction-free exploration of ideas, supporting both broad discussions and in-depth analysis.
+### Image/File Attachments
+- WHEN creating or editing an article, THE system SHALL allow a user to attach one or more images/files.
+- THE system SHALL support common image formats (jpg, png, gif) and common document formats (pdf, docx, txt).
+- IF a user uploads an unsupported file type or a file exceeding size limits (e.g., 10MB per file), THEN THE system SHALL reject the upload and provide an error message within 2 seconds.
+- WHEN a user views an article, THE system SHALL display thumbnails/previews for image attachments and download links for files.
+- THE system SHALL relate all attachments to the authoring user's article and only permit removal or replacement by the article's author or an administrator.
 
-## Target Audience
+### Comments & Discussions
+- WHEN viewing an article, THE system SHALL display a list of all associated comments in chronological order.
+- THE system SHALL allow registered and authenticated users to post, edit, or delete their own comments on any article.
+- THE system SHALL allow administrators to edit or remove any comment in accordance with community guidelines.
+- WHEN a comment is deleted, THE system SHALL remove it immediately from the visible comment list for all users.
 
-The platform is intended for a broad but focused group:
+### User Registration & Authentication
+- THE system SHALL allow any new user to register an account with an email and password.
+- WHEN a user attempts to post an article, comment, or attachment without being logged in, THE system SHALL redirect to the login/registration page.
+- WHEN a user is not logged in, THE system SHALL allow full read-only access to all publicly posted content, attachments, and discussions.
+- THE system SHALL provide password recovery by email.
 
-- Individuals seeking high-quality discussion about economics or politics
-- Students, professionals, academics, journalists, or casual readers with interest in these topics
-- Users who value supporting their points with evidence: news articles, charts, research papers, and datasets
-- Community organizers, civic educators, or moderators committed to robust, respectful conversation
-- Those dissatisfied with divisive or shallow comment sections on major platforms
+### Moderation & Administration
+- THE system SHALL assign administrator roles capable of:
+    - Removing or editing any article, comment, or attachment
+    - Managing user accounts (suspending, reactivating, or deleting users)
+    - Monitoring and resolving flagged or reported content
+- THE system SHALL provide clear audit logs for all administrative actions for traceability.
+- WHEN content is removed by administrators, THE system SHALL notify the original author by email (if configured).
 
-Access is open to all registered users, reflecting a commitment to inclusivity and the democratization of public debate.
+## 5. Non-Functional Requirements
 
-## Strategic Goals
+### Usability
+- THE system SHALL be fully usable with keyboard navigation and screen readers.
+- THE interface SHALL be intuitive, requiring minimal steps for all core actions.
+- WHEN users encounter errors, THE system SHALL provide clear, actionable messages within 2 seconds.
 
-1. **Simplicity First**: THE system SHALL provide a minimal, intuitive experience for posting, reading, commenting, and attaching files/images.
-2. **User Empowerment**: WHEN registered, THE user SHALL be able to create, edit, and delete their own articles and comments, with full control over any attached materials.
-3. **Evidence-Based Discussion**: WHEN article or comment content is submitted, THE system SHALL support file and image attachments to facilitate credible, substantiated debate.
-4. **Effective Moderation and Safety**: WHEN inappropriate content or disruptive user behavior is detected, THE admin SHALL be able to remove or limit access as necessary, ensuring platform integrity.
-5. **Privacy and Ethics**: THE system SHALL safeguard user privacy and maintain ethical standards in user data handling and content moderation.
-6. **High Availability and Engagement**: THE service SHALL be reliably accessible and foster healthy user activity through regular posting, comments, and content updates.
-7. **Distinct Community Identity**: THE discussion board SHALL become a destination known for substantive, respectful economic and political debate—unlike unfocused, high-noise alternatives.
+### Performance
+- THE system SHALL return all article lists, comment threads, and attachment previews in under 1.5 seconds for 95% of requests under normal server load (fewer than 100 concurrent users).
+- WHEN serving large attachments, THE system SHALL use background upload/download with progress indication for files over 5MB.
 
----
+### Security
+- THE system SHALL use secure, hashed password storage conforming to current industry standards.
+- THE system SHALL prevent XSS, CSRF, and basic injection attacks on all form and file inputs.
+- Attachments SHALL be virus-scanned before acceptance, and rejected with notification if malware is detected.
 
-This overview establishes the guiding purpose, value, and differentiators for the economic/political discussion board. It will inform and underpin all further requirements documentation (problem detail, business model, user stories, and more), ensuring consistent alignment with the service's vision and strategic goals.
+### Privacy & Compliance
+- THE system SHALL NOT expose user email addresses publicly.
+- All data SHALL be encrypted at rest and in transit (HTTPS only).
+- WHEN users delete their account, THE system SHALL purge their personal data and all articles/comments authored by them within 48 hours, unless retention is required by legal authorities.
 
+### Simplicity/Minimalism Principles
+- THE interface SHALL avoid unnecessary features, modules, or complexity not central to article posting, discussion, and attachments.
+- Error messages and confirmations SHALL be concise and free of jargon.
+
+## 6. Business Model & Constraints
+
+- THE platform SHALL remain freely accessible for its initial phase, relying on donations or grant funding as needed. No paywalls, premium tiers, or distracting advertising SHALL be applied.
+- IF minimal, tasteful advertising is ever introduced for sustainability, THEN it SHALL not disrupt reading or posting experiences.
+- The product scope SHALL remain tightly focused on the fundamental needs described; scope creep SHALL be actively resisted.
+- The platform SHALL avoid integrations or features not essential to core use cases, such as external logins or social sharing in the initial deployment.
+- All processes and policies SHALL comply with applicable privacy laws (e.g., GDPR, CCPA).
+
+## 7. Mermaid Diagram: Core User Journey
+
+```mermaid
+graph LR
+  A["User Arrives"] --> B["Reads Articles"]
+  B --> C["Registers/Logs In"]
+  C --> D["Posts Article"]
+  D --> E["Attaches Image/File"]
+  D --> F["Comments/Engages in Discussion"]
+  E --> G["Attachment Displayed to Readers"]
+  F --> H["Other Users Comment"]
+  H --> F
+  G --> B
+```
+
+## 8. Summary & Implementation Readiness
+
+The guiding philosophy for this discussion board is restraint, transparency, and directness. All requirements are phrased using EARS for clarity and are closely derived from user/business needs. Requirements are minimal yet sufficient for a well-governed platform. All workflows, permission models, error handlings, and business constraints are explicitly defined to remove ambiguity for development teams. Further expansion and complexity are considered out-of-scope unless strictly mapped to measurable user value or regulatory requirement.

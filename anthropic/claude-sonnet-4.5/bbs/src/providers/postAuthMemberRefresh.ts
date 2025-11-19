@@ -42,6 +42,7 @@ export async function postAuthMemberRefresh(props: {
       where: {
         id: decoded.session_id,
         discussion_board_member_id: decoded.id,
+        expired_at: null,
       },
       include: {
         member: true,
@@ -52,31 +53,48 @@ export async function postAuthMemberRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  const nowMs = Date.now();
-  const accessExpiresMs = nowMs + 60 * 60 * 1000;
-  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000;
+  if (session.member.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
 
-  const accessToken = jwt.sign(
+  if (session.member.is_suspended) {
+    throw new HttpException(
+      session.member.suspension_reason ?? "Account is suspended",
+      403,
+    );
+  }
+
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const accessExpiresMs: number = Date.now() + 30 * 60 * 1000;
+  const refreshExpiresMs: number = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(accessExpiresMs),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(refreshExpiresMs),
+  );
+
+  const accessToken: string = jwt.sign(
     {
-      type: decoded.type,
+      type: "member",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date(nowMs).toISOString(),
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "1h",
+      expiresIn: "30m",
       issuer: "autobe",
     },
   );
 
-  const refreshToken = jwt.sign(
+  const refreshToken: string = jwt.sign(
     {
-      type: decoded.type,
+      type: "member",
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date(nowMs).toISOString(),
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -94,21 +112,37 @@ export async function postAuthMemberRefresh(props: {
     },
   });
 
-  const member = session.member;
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
-    id: member.id,
-    username: member.username,
-    email: member.email,
-    status: member.status,
-    email_verified: member.email_verified,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(new Date(accessExpiresMs)),
-      refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)),
-    },
+    id: session.member.id,
+    email: session.member.email,
+    username: session.member.username,
+    display_name: session.member.display_name ?? undefined,
+    bio: session.member.bio ?? undefined,
+    avatar_url: session.member.avatar_url ?? undefined,
+    email_verified: session.member.email_verified,
+    email_verified_at: session.member.email_verified_at
+      ? toISOStringSafe(session.member.email_verified_at)
+      : undefined,
+    is_suspended: session.member.is_suspended,
+    suspension_reason: session.member.suspension_reason ?? undefined,
+    suspended_until: session.member.suspended_until
+      ? toISOStringSafe(session.member.suspended_until)
+      : undefined,
+    last_login_at: session.member.last_login_at
+      ? toISOStringSafe(session.member.last_login_at)
+      : undefined,
+    created_at: toISOStringSafe(session.member.created_at),
+    updated_at: toISOStringSafe(session.member.updated_at),
+    deleted_at: session.member.deleted_at
+      ? toISOStringSafe(session.member.deleted_at)
+      : undefined,
+    token,
   };
 }

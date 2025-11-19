@@ -15,60 +15,86 @@ export async function putDiscussionBoardAdminAdminsAdminId(props: {
   adminId: string & tags.Format<"uuid">;
   body: IDiscussionBoardAdmin.IUpdate;
 }): Promise<IDiscussionBoardAdmin> {
-  // Step 1: Retrieve existing admin
+  // Step 1: Fetch target admin record by ID
   const existing = await MyGlobal.prisma.discussion_board_admins.findUnique({
     where: { id: props.adminId },
   });
-  if (!existing || existing.deleted_at !== null) {
+  if (!existing) {
     throw new HttpException("Admin not found", 404);
   }
 
-  // Step 2: Enforce business logic
-  // Cannot have both active and blocked set to true
-  if (props.body.is_active && props.body.is_blocked) {
-    throw new HttpException("Account cannot be both active and blocked", 400);
+  // Step 2: Prepare changes
+  let emailToSet: string | undefined = undefined;
+  if (
+    typeof props.body.email === "string" &&
+    props.body.email !== existing.email
+  ) {
+    // Check uniqueness (ignore self and deleted)
+    const emailExists = await MyGlobal.prisma.discussion_board_admins.findFirst(
+      {
+        where: {
+          email: props.body.email,
+          id: { not: props.adminId },
+          deleted_at: null,
+        },
+      },
+    );
+    if (emailExists) {
+      throw new HttpException("Admin email must be unique", 409);
+    }
+    emailToSet = props.body.email;
   }
 
-  // Email must be unique (ignore this record)
-  const duplicate = await MyGlobal.prisma.discussion_board_admins.findFirst({
-    where: {
-      email: props.body.email,
-      id: { not: props.adminId },
-      deleted_at: null,
-    },
-  });
-  if (duplicate) {
-    throw new HttpException("Email already in use by another admin", 409);
+  // Step 3: Password hashing
+  let passwordHashToSet: string | undefined = undefined;
+  if (
+    typeof props.body.password === "string" &&
+    props.body.password.length > 0
+  ) {
+    passwordHashToSet = await PasswordUtil.hash(props.body.password);
   }
 
-  // Step 3: Hash new password
-  const password_hash = await PasswordUtil.hash(props.body.password);
+  // Step 4: Handle soft delete/reactivation for deleted_at
+  let deletedAtToSet: string | null | undefined = undefined;
+  if (Object.prototype.hasOwnProperty.call(props.body, "deleted_at")) {
+    // Accept either null (reactivation) or valid string
+    deletedAtToSet =
+      props.body.deleted_at === undefined
+        ? undefined
+        : props.body.deleted_at === null
+          ? null
+          : props.body.deleted_at;
+  }
 
-  // Step 4: Update record
-  const now = toISOStringSafe(new Date());
+  // Step 5: Construct update fields
+  const dataToUpdate: Record<string, unknown> = {
+    ...(emailToSet !== undefined && { email: emailToSet }),
+    ...(passwordHashToSet !== undefined && {
+      password_hash: passwordHashToSet,
+    }),
+    ...(deletedAtToSet !== undefined && { deleted_at: deletedAtToSet }),
+    updated_at: toISOStringSafe(
+      /* current timestamp, cannot use Date type */ new Date(),
+    ),
+  };
+
+  // Step 6: Update record
   const updated = await MyGlobal.prisma.discussion_board_admins.update({
     where: { id: props.adminId },
-    data: {
-      email: props.body.email,
-      password_hash,
-      is_email_verified: props.body.is_email_verified,
-      is_active: props.body.is_active,
-      is_blocked: props.body.is_blocked,
-      updated_at: now,
-    },
+    data: dataToUpdate,
   });
 
+  // Step 7: Return API-safe admin entity
   return {
     id: updated.id,
     email: updated.email,
-    is_email_verified: updated.is_email_verified,
-    is_active: updated.is_active,
-    is_blocked: updated.is_blocked,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at:
-      updated.deleted_at === null
-        ? undefined
-        : toISOStringSafe(updated.deleted_at),
+      typeof updated.deleted_at === "string"
+        ? updated.deleted_at
+        : updated.deleted_at === null
+          ? null
+          : undefined,
   };
 }

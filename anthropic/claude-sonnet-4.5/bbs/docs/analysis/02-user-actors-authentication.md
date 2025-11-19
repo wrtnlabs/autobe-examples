@@ -1,873 +1,661 @@
-# User Actors and Authentication Requirements
+# User Actors and Authentication
 
 ## Introduction
 
-This document defines all user actors (types) in the discussion board system, their permissions, and the complete authentication system requirements. It provides backend developers with clear business requirements for implementing user management, access control, and authentication workflows.
+This document defines all user actor types in the discussion board system and specifies the complete authentication and authorization requirements. The discussion board supports three distinct actor types—Guest, Member, and Moderator—each with specific permissions and capabilities designed to maintain a simple yet secure platform for economic and political discussions.
 
-The discussion board supports three distinct user actors: Guests (unauthenticated visitors), Members (registered users), and Moderators (administrators). Each actor has specific permissions that control what they can and cannot do within the system.
+The authentication system uses JWT (JSON Web Tokens) to manage user sessions and enforce permission-based access control. This document focuses on business requirements and user-facing behavior, leaving technical implementation details to the development team.
+
+For related information, see the [Core Features Document](./03-core-features.md) for feature-level capabilities and [Article Management Document](./04-article-management.md) for content-specific permissions.
 
 ## User Actor Definitions
 
-### Guest (Unauthenticated Visitor)
+### Guest
 
-**Role**: Unauthenticated visitors who browse the discussion board without creating an account.
+**Definition**: Unauthenticated visitors who access the discussion board without creating an account or logging in.
 
-**Purpose**: Allow public access to discussion content to encourage discovery and potential member registration.
+**Purpose**: Guests represent the public audience who want to explore economic and political discussions before committing to registration. They provide the foundation for content discovery and community growth.
 
 **Capabilities**:
 - Browse and read published articles
-- View article details including text content and attached images
-- Read comments on articles
-- Search for articles by keywords or topics
-- View public user profiles
-- Navigate discussion categories
-- Download attached files from articles
+- View article lists organized by category or topic
+- Search for articles using keywords
+- View public discussion threads
+- Access article metadata (author, publication date, category)
+- View attached images within articles
+- Navigate between pages and sections
 
 **Limitations**:
-- Cannot create articles or comments
-- Cannot upload files or images
-- Cannot edit any content
-- Cannot vote or interact with content
-- Cannot access member-only features
-- No personalization or saved preferences
-- Cannot report content to moderators
-- Cannot manage account settings
+- Cannot create, edit, or delete any content
+- Cannot upload attachments or images
+- Cannot participate in discussions or comment
+- Cannot access member-only features or draft articles
+- Cannot save preferences or personalize experience
+- Cannot download file attachments
 
-### Member (Registered User)
+**Business Context**: Guests serve as potential future members and help drive content visibility through organic discovery. Their read-only access ensures content reaches a wide audience while protecting the platform from anonymous abuse.
 
-**Role**: Registered authenticated users who actively participate in discussions.
+### Member
 
-**Purpose**: Enable full participation in the discussion board community through content creation and interaction.
+**Definition**: Registered and authenticated users who have created an account and successfully logged in to the system.
+
+**Purpose**: Members are the core contributors to the discussion board, creating economic and political articles, sharing insights, uploading supporting materials, and building the community knowledge base.
 
 **Capabilities**:
-- All Guest capabilities plus:
-- Create new articles with titles, content, and optional attachments
-- Upload and attach images to articles (up to 10 images per article)
-- Upload and attach files to articles (up to 5 files per article)
-- Write comments on any published article
+- All Guest capabilities
+- Create new discussion articles with rich text content
+- Upload and attach images to articles (JPEG, PNG, GIF formats)
+- Upload and attach document files to articles (PDF, DOC, DOCX, XLS, XLSX formats)
 - Edit their own articles at any time
-- Edit their own comments within 24 hours of posting
-- Delete their own articles (if no comments exist, or request moderator assistance)
-- Delete their own comments at any time
-- Manage their user profile information
-- Change their account password
-- View their content history (articles and comments)
-- Report inappropriate content to moderators
-- Request password reset via email
-- Delete their own account and associated content
+- Delete their own articles
+- Manage their own attachments (add, remove, replace)
+- View and manage their profile information
+- Change their password
+- Update account settings
+- View their own draft and published articles
+- Save articles as drafts before publishing
 
 **Limitations**:
-- Cannot edit or delete other users' content
-- Cannot moderate or manage other users
-- Cannot access administrative functions
-- Cannot bypass content publishing rules set by moderators
-- Cannot view moderation dashboard or reports
-- Cannot manage user accounts or suspend users
-- Cannot configure system settings or categories
+- Cannot edit or delete other members' content
+- Cannot access moderator tools or administrative features
+- Cannot modify other users' accounts or permissions
+- Cannot bypass content validation rules
+- Cannot restore deleted content without moderator assistance
 
-### Moderator (Administrator)
+**Business Context**: Members are authenticated contributors who drive the value of the platform through quality economic and political discourse. Their permissions balance creative freedom with accountability through content ownership.
 
-**Role**: Trusted administrators who maintain community standards and manage the platform.
+### Moderator
 
-**Purpose**: Ensure discussions remain civil, on-topic, and compliant with community guidelines while managing platform operations.
+**Definition**: Trusted administrators with elevated privileges to manage content quality, enforce community guidelines, and maintain the integrity of economic and political discussions.
+
+**Purpose**: Moderators ensure the discussion board remains focused, civil, and valuable by reviewing content, managing inappropriate materials, and supporting the community.
 
 **Capabilities**:
-- All Member capabilities plus:
-- Review all articles and comments regardless of author
-- Delete any inappropriate articles with reason documentation
-- Delete any inappropriate comments with reason documentation
-- Edit any article to remove inappropriate content (preserving original author)
-- Edit any comment to remove inappropriate content (preserving original commenter)
-- Manage user accounts (suspend, activate, delete)
-- Access moderation dashboard and content reports
-- View complete content history across all users
-- Monitor platform activity and usage statistics
-- Configure discussion categories and topics
-- Set and enforce community guidelines
-- Override content visibility settings
-- View moderation action logs for accountability
-- Reactivate suspended user accounts
-- Prioritize and review user-reported content
+- All Member capabilities
+- View, edit, or delete any article regardless of author
+- Remove inappropriate attachments from any article
+- Manage user accounts (activate, suspend, delete)
+- Review reported content and take appropriate action
+- Access moderation logs and activity history
+- Enforce community guidelines
+- Restore accidentally deleted content
+- Override content validation rules when necessary
+- View draft articles from any member
+- Manage categories and organizational structures
 
 **Limitations**:
-- Must follow fair moderation practices
-- Should document reasons for moderation actions
-- Cannot access users' private passwords or password hashes
-- Cannot bypass security protocols
-- Should apply guidelines consistently across all users
+- Cannot change system configuration or infrastructure settings
+- Cannot access raw user passwords or sensitive authentication data
+- Cannot grant or revoke moderator privileges (requires system administrator)
 
-## Permission Matrix
+**Business Context**: Moderators are essential for maintaining discussion quality and preventing abuse. Their elevated permissions enable rapid response to issues while maintaining transparent oversight of community content.
 
-| Action | Guest | Member | Moderator |
-|--------|-------|--------|-----------|
-| **Article Management** |
-| Browse published articles | ✅ | ✅ | ✅ |
-| View article details | ✅ | ✅ | ✅ |
-| Create new article | ❌ | ✅ | ✅ |
-| Edit own article | ❌ | ✅ | ✅ |
-| Delete own article | ❌ | ✅ | ✅ |
-| Edit other's article | ❌ | ❌ | ✅ |
-| Delete other's article | ❌ | ❌ | ✅ |
-| **Commenting** |
-| Read comments | ✅ | ✅ | ✅ |
-| Write comments | ❌ | ✅ | ✅ |
-| Edit own comments | ❌ | ✅ | ✅ |
-| Delete own comments | ❌ | ✅ | ✅ |
-| Edit other's comments | ❌ | ❌ | ✅ |
-| Delete other's comments | ❌ | ❌ | ✅ |
-| **File Attachments** |
-| View attached images | ✅ | ✅ | ✅ |
-| Download attached files | ✅ | ✅ | ✅ |
-| Upload images to article | ❌ | ✅ | ✅ |
-| Upload files to article | ❌ | ✅ | ✅ |
-| Remove own attachments | ❌ | ✅ | ✅ |
-| **Search and Discovery** |
-| Search articles | ✅ | ✅ | ✅ |
-| Filter by category | ✅ | ✅ | ✅ |
-| View user profiles | ✅ | ✅ | ✅ |
-| Sort articles by date/engagement | ✅ | ✅ | ✅ |
-| **User Management** |
-| Register account | ✅ | ❌ | ❌ |
-| Login to account | ❌ | ✅ | ✅ |
-| Edit own profile | ❌ | ✅ | ✅ |
-| Change own password | ❌ | ✅ | ✅ |
-| Delete own account | ❌ | ✅ | ✅ |
-| Manage other users | ❌ | ❌ | ✅ |
-| Suspend user accounts | ❌ | ❌ | ✅ |
-| View user account details | ❌ | Own only | ✅ |
-| **Moderation** |
-| Report content | ❌ | ✅ | ✅ |
-| Review reports | ❌ | ❌ | ✅ |
-| Access moderation tools | ❌ | ❌ | ✅ |
-| Configure categories | ❌ | ❌ | ✅ |
-| View moderation logs | ❌ | ❌ | ✅ |
+## Actor Hierarchy and Transitions
+
+### Permission Hierarchy
+
+The discussion board implements a hierarchical permission model where higher-level actors inherit all capabilities from lower levels:
+
+```
+Moderator (highest privileges)
+    ↑ inherits all from
+Member (authenticated user privileges)
+    ↑ inherits all from
+Guest (public read-only access)
+```
+
+### Actor Lifecycle and Transitions
+
+```mermaid
+graph LR
+    A["Anonymous Visitor"] -->|"Register Account"| B["Member (Email Unverified)"]
+    B -->|"Verify Email"| C["Member (Active)"]
+    A -->|"Browse Without Account"| D["Guest"]
+    D -->|"Register Account"| B
+    C -->|"Appointed by Admin"| E["Moderator"]
+    C -->|"Account Suspension"| F["Member (Suspended)"]
+    F -->|"Reinstatement"| C
+    E -->|"Privilege Revocation"| C
+```
+
+**Transition Rules**:
+
+- **WHEN** an anonymous visitor completes registration, **THE** system **SHALL** create a Member account in unverified status.
+- **WHEN** a new member verifies their email address, **THE** system **SHALL** activate their account and grant full Member privileges.
+- **WHEN** a system administrator appoints a Member as Moderator, **THE** system **SHALL** grant elevated privileges immediately.
+- **WHEN** a Moderator's privileges are revoked, **THE** system **SHALL** downgrade the account to standard Member status.
+- **WHEN** a Member account is suspended, **THE** system **SHALL** revoke all content creation and editing privileges while maintaining account data.
 
 ## Authentication System Requirements
 
 ### Core Authentication Functions
 
-THE system SHALL provide user registration with email and password.
+The discussion board provides comprehensive authentication capabilities to manage user access securely and efficiently.
 
-THE system SHALL provide user login to access authenticated features.
+#### User Registration
 
-THE system SHALL provide user logout to terminate sessions securely.
+**WHEN** a visitor chooses to register, **THE** system **SHALL** collect email address, password, and display name.
 
-THE system SHALL maintain user sessions using JWT tokens.
+**THE** system **SHALL** validate that email addresses are in valid format before accepting registration.
 
-THE system SHALL provide email verification for new accounts.
+**THE** system **SHALL** reject registration **IF** the email address is already associated with an existing account.
 
-THE system SHALL provide password reset functionality for users who forget their credentials.
+**THE** system **SHALL** enforce password requirements: minimum 8 characters, at least one letter and one number.
 
-THE system SHALL allow users to change their password after authentication.
+**WHEN** registration is submitted, **THE** system **SHALL** create an account in unverified status and send a verification email.
 
-THE system SHALL allow users to revoke access from all devices by invalidating all tokens.
+**THE** verification email **SHALL** contain a unique, time-limited verification link valid for 24 hours.
 
-### Registration Requirements
+**WHEN** a user clicks the verification link, **THE** system **SHALL** activate the account and grant full Member privileges.
 
-WHEN a user submits registration information, THE system SHALL validate the email address format.
+**IF** the verification link expires, **THE** system **SHALL** allow users to request a new verification email.
 
-WHEN a user submits registration information, THE system SHALL check that the email is not already registered.
+#### User Login
 
-WHEN a user registers, THE system SHALL require a password with minimum 8 characters including at least one letter and one number.
+**WHEN** a user submits login credentials, **THE** system **SHALL** validate the email and password combination within 2 seconds.
 
-WHEN a user completes registration, THE system SHALL send an email verification link to the provided address.
+**IF** credentials are valid and the account is active, **THE** system **SHALL** generate a JWT access token and refresh token.
 
-WHEN a user clicks the verification link, THE system SHALL activate the account and allow login.
+**IF** credentials are invalid, **THE** system **SHALL** return an authentication error without revealing whether the email or password was incorrect.
 
-IF a user attempts to login without email verification, THEN THE system SHALL deny access and prompt for verification.
+**IF** the account is unverified, **THE** system **SHALL** deny login and prompt the user to verify their email.
 
-WHEN registration validation fails, THE system SHALL provide specific error messages indicating which field requires correction.
+**IF** the account is suspended, **THE** system **SHALL** deny login and display a suspension notice.
 
-THE system SHALL limit registration attempts to 3 per hour per IP address to prevent spam accounts.
+**THE** system **SHALL** limit login attempts to 5 failures per email address within 15 minutes to prevent brute force attacks.
 
-### Login Requirements
+**WHEN** login attempt limit is exceeded, **THE** system **SHALL** temporarily block login attempts for that email for 15 minutes.
 
-WHEN a user submits login credentials, THE system SHALL validate the email and password combination.
+#### Session Management with JWT
 
-WHEN login credentials are valid, THE system SHALL generate JWT access and refresh tokens.
+**THE** system **SHALL** use JWT (JSON Web Tokens) for managing authenticated sessions.
 
-WHEN login credentials are valid, THE system SHALL return user information including actor type (member or moderator).
+**THE** access token **SHALL** expire after 30 minutes of issuance.
 
-WHEN login succeeds, THE system SHALL respond within 2 seconds under normal conditions.
+**THE** refresh token **SHALL** expire after 7 days of issuance.
 
-IF login credentials are invalid, THEN THE system SHALL return an error message without revealing which field was incorrect.
+**THE** JWT payload **SHALL** include: user ID, actor role (member, moderator), email address, and issued-at timestamp.
 
-IF a user attempts login 5 times with incorrect credentials within 15 minutes, THEN THE system SHALL temporarily lock the account for 30 minutes.
+**WHEN** an access token expires, **THE** system **SHALL** allow users to obtain a new access token using a valid refresh token.
 
-WHEN an account is locked, THE system SHALL send notification email to the account owner.
+**WHEN** a user logs out, **THE** system **SHALL** invalidate the current refresh token.
 
-THE system SHALL allow users to unlock their account via email verification link.
+**THE** system **SHALL** store JWT tokens on the client side in browser localStorage for convenient access.
 
-### Session Management Requirements
+**WHEN** a user requests a protected resource, **THE** system **SHALL** validate the JWT token signature and expiration before granting access.
 
-THE system SHALL use JWT (JSON Web Tokens) for session management.
+**IF** a JWT token is invalid or expired, **THE** system **SHALL** return HTTP 401 Unauthorized status.
 
-THE system SHALL issue access tokens with 30 minute expiration time.
+#### Email Verification
 
-THE system SHALL issue refresh tokens with 7 day expiration time.
+**THE** system **SHALL** require email verification before granting full Member privileges.
 
-WHEN an access token expires, THE system SHALL allow the user to obtain a new access token using a valid refresh token.
+**WHEN** a user registers, **THE** system **SHALL** automatically send a verification email to the provided address.
 
-WHEN a user logs out, THE system SHALL invalidate the current refresh token.
+**THE** verification email **SHALL** include a clear call-to-action and verification link.
 
-THE system SHALL include user ID, actor role, and permissions array in the JWT payload.
+**WHEN** a user clicks the verification link, **THE** system **SHALL** mark the account as verified and redirect to the login page.
 
-THE system SHALL store tokens securely in the client using httpOnly cookies or secure localStorage.
+**IF** a user has not verified their email, **THE** system **SHALL** provide an option to resend the verification email.
 
-WHEN a refresh token is used, THE system SHALL optionally generate a new refresh token (refresh token rotation for enhanced security).
+**THE** system **SHALL** allow unlimited verification email resends with a rate limit of one email per 5 minutes.
 
-IF a refresh token is used after it has been revoked, THEN THE system SHALL reject the request and log a security event.
+#### Password Management
 
-### Password Recovery Requirements
+**WHEN** a user forgets their password, **THE** system **SHALL** provide a password reset flow initiated by email address.
 
-WHEN a user requests password reset, THE system SHALL send a secure reset link to the registered email address.
+**WHEN** password reset is requested, **THE** system **SHALL** send a password reset email with a unique, time-limited reset link valid for 1 hour.
 
-THE system SHALL generate password reset tokens that expire after 1 hour.
+**THE** password reset email **SHALL** be sent only to verified email addresses.
 
-WHEN a user clicks a password reset link, THE system SHALL verify the token is valid and not expired.
+**WHEN** a user clicks the reset link, **THE** system **SHALL** allow them to set a new password meeting all password requirements.
 
-WHEN a user submits a new password via reset link, THE system SHALL validate password strength requirements.
+**WHEN** a password is successfully reset, **THE** system **SHALL** invalidate all existing refresh tokens for that account.
 
-WHEN password reset completes successfully, THE system SHALL invalidate all existing sessions for that user.
+**WHEN** an authenticated user changes their password, **THE** system **SHALL** require the current password for verification.
 
-IF a password reset token is invalid or expired, THEN THE system SHALL display an error and offer to send a new reset link.
+**WHEN** a password change is successful, **THE** system **SHALL** invalidate all refresh tokens except the current session.
 
-THE system SHALL always return success message when password reset is requested, regardless of whether email exists (security measure to prevent email enumeration).
+#### Logout Process
 
-THE system SHALL limit password reset requests to 3 per hour per email address.
+**WHEN** a user initiates logout, **THE** system **SHALL** invalidate the current refresh token immediately.
 
-### Password Change Requirements
+**WHEN** logout completes, **THE** system **SHALL** clear all authentication tokens from browser storage.
 
-WHEN an authenticated user requests to change password, THE system SHALL require the current password for verification.
+**THE** system **SHALL** redirect users to the public homepage after logout.
 
-WHEN changing password, THE system SHALL validate the new password meets strength requirements.
+**THE** system **SHALL** provide a "logout from all devices" option that invalidates all refresh tokens for the user account.
 
-WHEN password change succeeds, THE system SHALL invalidate all other sessions except the current one.
+### Authentication Flow Diagrams
 
-WHEN password change succeeds, THE system SHALL send a confirmation email to the user's registered address.
-
-THE system SHALL check that the new password is different from the current password.
-
-IF the current password verification fails, THEN THE system SHALL return error message "Current password is incorrect".
-
-## JWT Token Specification
-
-### Token Structure
-
-THE system SHALL use JWT tokens for authentication and authorization.
-
-THE JWT access token payload SHALL include:
-- User ID (unique identifier)
-- Actor role (guest, member, or moderator)
-- Permissions array (list of allowed actions)
-- Token issue timestamp
-- Token expiration timestamp
-
-THE JWT refresh token payload SHALL include:
-- User ID (unique identifier)
-- Token ID (for revocation tracking)
-- Token issue timestamp
-- Token expiration timestamp
-
-### Token Expiration
-
-THE system SHALL set access token expiration to 30 minutes from issue time.
-
-THE system SHALL set refresh token expiration to 7 days from issue time.
-
-WHEN an access token expires, THE system SHALL require the client to use the refresh token to obtain a new access token.
-
-WHEN a refresh token expires, THE system SHALL require the user to login again with credentials.
-
-### Token Storage and Security
-
-THE system SHALL sign JWT tokens with a secure secret key stored in environment configuration.
-
-THE system SHALL use HS256 (HMAC with SHA-256) algorithm for token signing.
-
-THE system SHALL validate token signatures on every authenticated request.
-
-IF a token signature is invalid, THEN THE system SHALL reject the request and return HTTP 401 Unauthorized.
-
-THE system SHALL recommend storing tokens in httpOnly cookies for maximum security, with fallback to secure localStorage.
-
-THE system SHALL never store JWT secret keys in source code or version control.
-
-### Token Refresh Mechanism
-
-WHEN a client presents a valid refresh token, THE system SHALL generate a new access token.
-
-WHEN a client presents a valid refresh token, THE system SHALL optionally generate a new refresh token (refresh token rotation).
-
-THE system SHALL allow token refresh requests without requiring full re-authentication.
-
-IF a refresh token is used after it has been revoked, THEN THE system SHALL reject the request and log a security event.
-
-WHEN refresh token rotation is enabled, THE system SHALL invalidate the old refresh token after issuing a new one.
-
-THE system SHALL respond to token refresh requests within 500 milliseconds.
-
-## Detailed Authentication Flows
-
-### User Registration Flow
-
-**Step 1: Registration Request**
-- User provides email address and password
-- User agrees to terms of service
-- THE system SHALL validate email format is correct
-- THE system SHALL check email is not already registered
-- THE system SHALL validate password meets strength requirements (minimum 8 characters, at least one letter, one number)
-
-**Step 2: Account Creation**
-- WHEN validation passes, THE system SHALL create a new user account in inactive status
-- THE system SHALL assign "member" actor role by default
-- THE system SHALL generate a unique email verification token
-- THE system SHALL store the verification token with 24 hour expiration
-
-**Step 3: Email Verification**
-- THE system SHALL send verification email to the provided address
-- The email SHALL contain a verification link with the token
-- WHEN user clicks verification link, THE system SHALL validate the token
-- WHEN token is valid, THE system SHALL activate the user account
-- WHEN activation succeeds, THE system SHALL redirect user to login page
-
-**Step 4: Error Handling**
-- IF email is already registered, THEN THE system SHALL return "Email already in use" error
-- IF password is too weak, THEN THE system SHALL return specific password requirements
-- IF email verification token expires, THEN THE system SHALL allow user to request a new verification email
-
-**Step 5: Post-Registration**
-- THE system SHALL log the successful registration event with timestamp
-- THE system SHALL make the user profile publicly visible after activation
-- THE system SHALL initialize user content counters (article count: 0, comment count: 0)
-
-### Registration Flow Diagram
+#### Registration and Verification Flow
 
 ```mermaid
-graph TD
-    A["User Enters Email and Password"] --> B{"Email Format Valid?"}
-    B -->|"No"| C["Show Format Error"]
-    C --> A
-    B -->|"Yes"| D{"Email Already Registered?"}
-    D -->|"Yes"| E["Show 'Email Already In Use' Error"]
-    E --> A
-    D -->|"No"| F{"Password Meets Requirements?"}
-    F -->|"No"| G["Show Password Requirements"]
-    G --> A
-    F -->|"Yes"| H["Create Account (Inactive)"]
-    H --> I["Generate Verification Token"]
-    I --> J["Send Verification Email"]
-    J --> K["User Clicks Verification Link"]
-    K --> L{"Token Valid?"}
-    L -->|"No/Expired"| M["Show Error, Offer Resend"]
-    L -->|"Yes"| N["Activate Account"]
+graph LR
+    A["Visitor Starts Registration"] --> B["Enter Email, Password, Display Name"]
+    B --> C{"Valid Input?"}
+    C -->|"No"| D["Show Validation Error"]
+    D --> B
+    C -->|"Yes"| E{"Email Already Exists?"}
+    E -->|"Yes"| F["Show Email Taken Error"]
+    F --> B
+    E -->|"No"| G["Create Unverified Account"]
+    G --> H["Send Verification Email"]
+    H --> I["Show Success Message"]
+    I --> J["User Clicks Verification Link"]
+    J --> K{"Link Valid and Not Expired?"}
+    K -->|"No"| L["Show Expired Link Message"]
+    L --> M["Offer Resend Option"]
+    K -->|"Yes"| N["Activate Account"]
     N --> O["Redirect to Login"]
 ```
 
-### Login Flow
-
-**Step 1: Login Request**
-- User provides email and password
-- THE system SHALL validate both fields are provided
-- THE system SHALL check if the account exists
-
-**Step 2: Credential Verification**
-- THE system SHALL verify the password matches the stored hash
-- THE system SHALL check if the account is activated (email verified)
-- THE system SHALL check if the account is not suspended or locked
-
-**Step 3: Token Generation**
-- WHEN credentials are valid, THE system SHALL generate JWT access token with 30 minute expiration
-- THE system SHALL generate JWT refresh token with 7 day expiration
-- THE system SHALL include user ID, actor role (member or moderator), and permissions in access token payload
-
-**Step 4: Successful Login Response**
-- THE system SHALL return access token and refresh token
-- THE system SHALL return user profile information (ID, email, display name, actor role)
-- THE system SHALL log the successful login event with timestamp
-
-**Step 5: Error Handling**
-- IF credentials are invalid, THEN THE system SHALL return "Invalid email or password" error without specifying which field is wrong
-- IF account is not verified, THEN THE system SHALL return "Please verify your email address" with option to resend verification
-- IF account is locked due to failed attempts, THEN THE system SHALL return "Account temporarily locked due to multiple failed login attempts"
-- IF account is suspended, THEN THE system SHALL return "Account has been suspended, please contact support"
-
-### Login Flow Diagram
+#### Login Flow
 
 ```mermaid
-graph TD
-    A["User Enters Credentials"] --> B{"Account Exists?"}
-    B -->|"No"| C["Show 'Invalid Email or Password'"]
-    B -->|"Yes"| D{"Email Verified?"}
-    D -->|"No"| E["Show 'Please Verify Email'"]
-    E --> F["Offer Resend Verification"]
-    D -->|"Yes"| G{"Account Locked?"}
-    G -->|"Yes"| H["Show 'Account Locked' Message"]
-    G -->|"No"| I{"Password Correct?"}
-    I -->|"No"| J["Increment Failed Attempts"]
-    J --> K{"Failed Attempts >= 5?"}
-    K -->|"Yes"| L["Lock Account for 30 Minutes"]
-    L --> M["Send Notification Email"]
-    M --> C
-    K -->|"No"| C
-    I -->|"Yes"| N["Generate Access Token"]
-    N --> O["Generate Refresh Token"]
-    O --> P["Return Tokens and User Info"]
-    P --> Q["Log Successful Login"]
+graph LR
+    A["User Enters Credentials"] --> B["Submit Email and Password"]
+    B --> C{"Credentials Valid?"}
+    C -->|"No"| D["Increment Failed Attempt Counter"]
+    D --> E{"Exceeded Attempt Limit?"}
+    E -->|"Yes"| F["Block Login for 15 Minutes"]
+    E -->|"No"| G["Show Authentication Error"]
+    G --> A
+    C -->|"Yes"| H{"Account Verified?"}
+    H -->|"No"| I["Show Verification Required Message"]
+    I --> J["Offer Resend Verification"]
+    H -->|"Yes"| K{"Account Active?"}
+    K -->|"No"| L["Show Account Suspended Message"]
+    K -->|"Yes"| M["Generate JWT Access Token"]
+    M --> N["Generate JWT Refresh Token"]
+    N --> O["Store Tokens in Browser"]
+    O --> P["Redirect to Dashboard"]
 ```
 
-### Logout Flow
-
-**Step 1: Logout Request**
-- Authenticated user requests to logout
-- THE system SHALL validate the current refresh token is provided
-
-**Step 2: Session Termination**
-- THE system SHALL add the refresh token to a revocation list
-- THE system SHALL mark the token as invalid in the database
-- THE system SHALL clear any server-side session data
-
-**Step 3: Client Cleanup**
-- THE system SHALL instruct the client to delete stored tokens
-- THE system SHALL return successful logout confirmation
-
-**Step 4: Logging**
-- THE system SHALL log the logout event with timestamp and user ID
-
-### Logout Flow Diagram
+#### Session Refresh Flow
 
 ```mermaid
-graph TD
-    A["User Clicks Logout"] --> B["Submit Refresh Token"]
-    B --> C{"Token Valid?"}
-    C -->|"No"| D["Already Logged Out"]
-    C -->|"Yes"| E["Add Token to Revocation List"]
-    E --> F["Clear Server Session Data"]
-    F --> G["Instruct Client to Delete Tokens"]
-    G --> H["Log Logout Event"]
-    H --> I["Return Success Confirmation"]
+graph LR
+    A["User Makes Request"] --> B{"Access Token Valid?"}
+    B -->|"Yes"| C["Process Request"]
+    B -->|"No"| D{"Refresh Token Valid?"}
+    D -->|"No"| E["Redirect to Login"]
+    D -->|"Yes"| F["Generate New Access Token"]
+    F --> G["Return New Token to Client"]
+    G --> H["Retry Original Request"]
+    H --> C
 ```
 
-### Password Reset Flow
+## Authorization and Permission Model
 
-**Step 1: Reset Request**
-- User requests password reset by providing email address
-- THE system SHALL validate email format
-- THE system SHALL check if account exists (but not reveal this to prevent email enumeration)
+### Permission Matrix
 
-**Step 2: Reset Token Generation**
-- WHEN email exists in system, THE system SHALL generate a secure password reset token
-- THE system SHALL set token expiration to 1 hour from generation
-- THE system SHALL store the token associated with the user account
+The following table defines the complete permission model for all major system actions across the three actor types:
 
-**Step 3: Email Delivery**
-- THE system SHALL send password reset email to the registered address
-- The email SHALL contain a secure reset link with the token
-- THE system SHALL always return success message regardless of whether email exists (security measure)
+| Action | Guest | Member | Moderator |
+|--------|-------|--------|-----------|
+| **Article Browsing** |
+| View published articles | ✅ | ✅ | ✅ |
+| View article lists | ✅ | ✅ | ✅ |
+| Search articles | ✅ | ✅ | ✅ |
+| View article metadata | ✅ | ✅ | ✅ |
+| View draft articles (own) | ❌ | ✅ | ✅ |
+| View draft articles (others) | ❌ | ❌ | ✅ |
+| **Article Management** |
+| Create new article | ❌ | ✅ | ✅ |
+| Edit own article | ❌ | ✅ | ✅ |
+| Edit others' articles | ❌ | ❌ | ✅ |
+| Delete own article | ❌ | ✅ | ✅ |
+| Delete others' articles | ❌ | ❌ | ✅ |
+| Publish article | ❌ | ✅ | ✅ |
+| Unpublish article (own) | ❌ | ✅ | ✅ |
+| Unpublish article (others) | ❌ | ❌ | ✅ |
+| **Attachment Management** |
+| View images in articles | ✅ | ✅ | ✅ |
+| Download file attachments | ❌ | ✅ | ✅ |
+| Upload attachments (own article) | ❌ | ✅ | ✅ |
+| Delete attachments (own article) | ❌ | ✅ | ✅ |
+| Delete attachments (any article) | ❌ | ❌ | ✅ |
+| **Account Management** |
+| Register new account | ✅ | ❌ | ❌ |
+| Login to account | ✅ | ✅ | ✅ |
+| Logout | ❌ | ✅ | ✅ |
+| Change own password | ❌ | ✅ | ✅ |
+| Reset forgotten password | ✅ | ✅ | ✅ |
+| Update own profile | ❌ | ✅ | ✅ |
+| View own profile | ❌ | ✅ | ✅ |
+| View others' profiles | ✅ | ✅ | ✅ |
+| Suspend user accounts | ❌ | ❌ | ✅ |
+| Delete user accounts | ❌ | ❌ | ✅ |
+| **Moderation** |
+| Report inappropriate content | ❌ | ✅ | ✅ |
+| Review reported content | ❌ | ❌ | ✅ |
+| Remove inappropriate content | ❌ | ❌ | ✅ |
+| View moderation logs | ❌ | ❌ | ✅ |
+| Restore deleted content | ❌ | ❌ | ✅ |
 
-**Step 4: Password Reset Submission**
-- User clicks reset link and provides new password
-- THE system SHALL validate the reset token is valid and not expired
-- THE system SHALL validate new password meets strength requirements
-- THE system SHALL check new password is different from current password
+### Access Control Rules
 
-**Step 5: Password Update**
-- WHEN validation passes, THE system SHALL update the password hash
-- THE system SHALL invalidate all existing refresh tokens for the user
-- THE system SHALL mark the reset token as used
-- THE system SHALL send confirmation email that password was changed
+**WHEN** a Guest attempts to access a Member-only feature, **THE** system **SHALL** redirect to the login page with a message indicating authentication is required.
 
-**Step 6: Error Handling**
-- IF reset token is expired, THEN THE system SHALL return "Reset link has expired, please request a new one"
-- IF reset token is invalid, THEN THE system SHALL return "Invalid reset link"
-- IF new password is too weak, THEN THE system SHALL return password requirement details
+**WHEN** a Member attempts to access a Moderator-only feature, **THE** system **SHALL** return HTTP 403 Forbidden with an access denied message.
 
-### Password Reset Flow Diagram
+**WHEN** a Member attempts to edit another member's article, **THE** system **SHALL** deny the request and return an ownership error message.
 
-```mermaid
-graph TD
-    A["User Requests Password Reset"] --> B["Enter Email Address"]
-    B --> C{"Email Format Valid?"}
-    C -->|"No"| D["Show Format Error"]
-    D --> B
-    C -->|"Yes"| E{"Account Exists?"}
-    E -->|"No"| F["Return Success (Don't Reveal)"]
-    E -->|"Yes"| G["Generate Reset Token"]
-    G --> H["Set 1 Hour Expiration"]
-    H --> I["Send Reset Email"]
-    I --> F
-    F --> J["User Clicks Reset Link"]
-    J --> K{"Token Valid and Not Expired?"}
-    K -->|"No"| L["Show Error, Offer New Link"]
-    K -->|"Yes"| M["User Enters New Password"]
-    M --> N{"Password Meets Requirements?"}
-    N -->|"No"| O["Show Requirements Error"]
-    O --> M
-    N -->|"Yes"| P{"Different from Current?"}
-    P -->|"No"| Q["Show 'Must Be Different' Error"]
-    Q --> M
-    P -->|"Yes"| R["Update Password Hash"]
-    R --> S["Invalidate All User Tokens"]
-    S --> T["Mark Reset Token as Used"]
-    T --> U["Send Confirmation Email"]
-```
+**WHEN** a Member attempts to delete another member's article, **THE** system **SHALL** deny the request and return an ownership error message.
 
-### Token Refresh Flow
+**WHEN** a suspended Member attempts to create or edit content, **THE** system **SHALL** deny the request and display account suspension notice.
 
-**Step 1: Refresh Request**
-- Client detects access token is expired or about to expire
-- Client sends refresh token to token refresh endpoint
-- THE system SHALL validate refresh token signature
+**THE** system **SHALL** validate user permissions on every protected action before processing the request.
 
-**Step 2: Token Validation**
-- THE system SHALL verify refresh token is not expired
-- THE system SHALL check refresh token is not in revocation list
-- THE system SHALL verify user account associated with token still exists and is active
+**IF** a user's session expires during an action, **THE** system **SHALL** prompt for re-authentication before completing the action.
 
-**Step 3: New Token Generation**
-- WHEN refresh token is valid, THE system SHALL generate new access token with fresh 30 minute expiration
-- THE system SHALL copy user ID and actor role from refresh token
-- THE system SHALL optionally generate new refresh token (refresh token rotation for enhanced security)
+**WHEN** a Moderator edits another user's content, **THE** system **SHALL** log the moderation action with timestamp and moderator identity.
 
-**Step 4: Response**
-- THE system SHALL return new access token
-- THE system SHALL return new refresh token if rotation is enabled
-- IF rotation is enabled, THE system SHALL invalidate the old refresh token
+### Content Ownership Rules
 
-**Step 5: Error Handling**
-- IF refresh token is expired, THEN THE system SHALL return "Session expired, please login again" with HTTP 401
-- IF refresh token is revoked, THEN THE system SHALL return "Invalid session" and log security event
-- IF user account is suspended, THEN THE system SHALL return "Account suspended" and prevent token refresh
+**THE** system **SHALL** associate every article with the Member who created it as the owner.
 
-### Token Refresh Flow Diagram
+**THE** system **SHALL** allow only the article owner to edit or delete their own articles, except for Moderators.
 
-```mermaid
-graph TD
-    A["Access Token Expires"] --> B["Client Sends Refresh Token"]
-    B --> C{"Signature Valid?"}
-    C -->|"No"| D["Return 401 Unauthorized"]
-    C -->|"Yes"| E{"Token Expired?"}
-    E -->|"Yes"| F["Return 'Session Expired'"]
-    E -->|"No"| G{"Token Revoked?"}
-    G -->|"Yes"| H["Log Security Event"]
-    H --> I["Return 'Invalid Session'"]
-    G -->|"No"| J{"User Account Active?"}
-    J -->|"No"| K["Return 'Account Suspended'"]
-    J -->|"Yes"| L["Generate New Access Token"]
-    L --> M{"Rotation Enabled?"}
-    M -->|"Yes"| N["Generate New Refresh Token"]
-    N --> O["Invalidate Old Refresh Token"]
-    O --> P["Return Both Tokens"]
-    M -->|"No"| Q["Return New Access Token"]
-```
+**THE** system **SHALL** allow only the article owner to manage attachments on their own articles, except for Moderators.
 
-## Actor-Specific Permissions in Detail
+**WHEN** a Member's account is deleted, **THE** system **SHALL** either delete all their articles or reassign them to an anonymous author based on moderation policy.
 
-### Guest Permissions
+**THE** system **SHALL** preserve author attribution permanently even if the account is later deleted.
 
-**What Guests CAN Do:**
-- THE system SHALL allow guests to browse all published articles without authentication
-- THE system SHALL allow guests to view article content including text, images, and downloadable files
-- THE system SHALL allow guests to read all comments on articles
-- THE system SHALL allow guests to search articles by keywords
-- THE system SHALL allow guests to filter articles by category or topic
-- THE system SHALL allow guests to view public user profiles
-- THE system SHALL allow guests to access the registration page
-- THE system SHALL allow guests to sort articles by date, views, or comments
+## Actor-Specific Capabilities
 
-**What Guests CANNOT Do:**
-- WHEN a guest attempts to create an article, THE system SHALL deny access and prompt for login
-- WHEN a guest attempts to write a comment, THE system SHALL deny access and prompt for login
-- WHEN a guest attempts to upload files, THE system SHALL deny access and prompt for login
-- THE system SHALL prevent guests from accessing member-only features
-- THE system SHALL prevent guests from editing any content
-- THE system SHALL prevent guests from personalizing their experience
-- THE system SHALL prevent guests from reporting content
-- THE system SHALL prevent guests from deleting content
+### Guest User Capabilities
 
-### Member Permissions
+#### Content Discovery
 
-**Article Creation and Management:**
-- THE system SHALL allow members to create new articles with title and content
-- THE system SHALL allow members to attach up to 10 images per article
-- THE system SHALL allow members to attach up to 5 files per article with maximum 25MB per file
-- THE system SHALL allow members to edit their own articles at any time
-- THE system SHALL allow members to delete their own articles if no comments exist
-- IF a member attempts to delete an article with comments, THEN THE system SHALL prevent deletion and suggest requesting moderator assistance
+**THE** system **SHALL** allow Guests to browse all published articles without authentication.
 
-**Commenting:**
-- THE system SHALL allow members to write comments on any published article
-- THE system SHALL allow members to edit their own comments within 24 hours of posting
-- THE system SHALL allow members to delete their own comments at any time
-- THE system SHALL limit comment length to 2000 characters
-- WHEN a member posts a comment, THE system SHALL display it immediately without moderation
+**THE** system **SHALL** display article lists organized by publication date, category, or topic to Guests.
 
-**File and Image Handling:**
-- THE system SHALL allow members to upload JPEG, PNG, GIF, and WebP image formats
-- THE system SHALL allow members to upload PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, and ZIP file formats
-- THE system SHALL validate file types before accepting uploads
-- THE system SHALL scan uploaded files for malware before storage
-- IF file upload fails due to size limit, THEN THE system SHALL display clear error message with maximum allowed size
+**WHEN** a Guest searches for content, **THE** system **SHALL** return results from published articles only.
 
-**Profile Management:**
-- THE system SHALL allow members to edit their display name
-- THE system SHALL allow members to edit their profile description
-- THE system SHALL allow members to change their password
-- THE system SHALL allow members to view their article and comment history
-- THE system SHALL allow members to delete their account and all associated content
+**THE** system **SHALL** display full article content including embedded images to Guests.
 
-**What Members CANNOT Do:**
-- WHEN a member attempts to edit another user's article, THE system SHALL deny access with "You can only edit your own content" message
-- WHEN a member attempts to delete another user's comment, THE system SHALL deny access
-- THE system SHALL prevent members from accessing moderation tools
-- THE system SHALL prevent members from managing other user accounts
-- THE system SHALL prevent members from configuring system settings
+**THE** system **SHALL** show article metadata (author name, publication date, view count, category) to Guests.
 
-### Moderator Permissions
+#### Navigation and Exploration
 
-**Content Moderation:**
-- THE system SHALL allow moderators to view all articles and comments regardless of author
-- THE system SHALL allow moderators to delete any article that violates community guidelines
-- THE system SHALL allow moderators to delete any comment that violates community guidelines
-- WHEN a moderator deletes content, THE system SHALL require a reason selection from predefined categories
-- WHEN a moderator deletes content, THE system SHALL notify the content author via email
-- THE system SHALL maintain a moderation log of all deleted content with moderator ID and reason
+**THE** system **SHALL** allow Guests to navigate between article pages, categories, and search results.
 
-**User Management:**
-- THE system SHALL allow moderators to suspend user accounts temporarily
-- THE system SHALL allow moderators to permanently delete user accounts
-- WHEN a moderator suspends an account, THE system SHALL require specifying suspension duration and reason
-- WHEN a moderator suspends an account, THE system SHALL invalidate all user tokens immediately
-- THE system SHALL allow moderators to reactivate suspended accounts
-- THE system SHALL prevent moderators from viewing user passwords or password hashes
+**THE** system **SHALL** provide Guests with pagination controls for article lists.
 
-**Administrative Functions:**
-- THE system SHALL provide moderators access to a moderation dashboard
-- THE system SHALL show moderators recent activity reports and statistics
-- THE system SHALL allow moderators to configure discussion categories and topics
-- THE system SHALL allow moderators to create and update community guidelines
-- THE system SHALL allow moderators to view content reports from members
-- THE system SHALL prioritize reported content in the moderation queue
+**WHEN** a Guest clicks on an article, **THE** system **SHALL** display the complete published article.
 
-**Moderation Best Practices:**
-- WHEN moderating content, moderators SHOULD document clear reasons for actions
-- WHEN moderating content, moderators SHOULD apply guidelines consistently across all users
-- Moderators SHOULD review reported content within 24 hours
-- THE system SHALL log all moderation actions for accountability and audit purposes
+**THE** system **SHALL** suggest related articles to Guests based on category or topic.
+
+#### Registration Prompts
+
+**WHEN** a Guest attempts to perform a Member-only action (create article, download attachment), **THE** system **SHALL** prompt them to register or login.
+
+**THE** system **SHALL** provide clear calls-to-action encouraging Guests to register for full access.
+
+**WHEN** a Guest clicks register, **THE** system **SHALL** redirect to the registration page.
+
+### Member Capabilities
+
+#### Article Creation and Management
+
+**WHEN** a Member creates a new article, **THE** system **SHALL** allow them to enter a title, rich text content, select category, and add tags.
+
+**THE** system **SHALL** allow Members to save articles as drafts without publishing.
+
+**THE** system **SHALL** allow Members to upload images during article creation and embed them in content.
+
+**THE** system **SHALL** allow Members to attach document files (PDF, DOC, XLSX) to articles.
+
+**WHEN** a Member publishes an article, **THE** system **SHALL** make it immediately visible to all users.
+
+**WHEN** a Member edits their published article, **THE** system **SHALL** save changes and update the last-modified timestamp.
+
+**WHEN** a Member deletes their article, **THE** system **SHALL** permanently remove it and all associated attachments.
+
+#### Profile and Account Management
+
+**THE** system **SHALL** allow Members to view and update their display name, bio, and profile information.
+
+**THE** system **SHALL** allow Members to change their password by providing the current password.
+
+**THE** system **SHALL** allow Members to view a list of all their articles (drafts and published).
+
+**THE** system **SHALL** display account statistics to Members including total articles, total views, and account creation date.
+
+#### Content Interaction
+
+**THE** system **SHALL** allow Members to download file attachments from any published article.
+
+**THE** system **SHALL** allow Members to view images in full resolution.
+
+**WHEN** a Member encounters inappropriate content, **THE** system **SHALL** provide a report function to flag it for moderator review.
+
+### Moderator Capabilities
+
+#### Content Moderation
+
+**THE** system **SHALL** allow Moderators to view all articles including drafts from any member.
+
+**THE** system **SHALL** allow Moderators to edit any article regardless of author to fix issues or remove inappropriate content.
+
+**THE** system **SHALL** allow Moderators to delete any article that violates community guidelines.
+
+**THE** system **SHALL** allow Moderators to remove individual attachments from any article.
+
+**WHEN** a Moderator deletes or edits another user's content, **THE** system **SHALL** log the action with timestamp, moderator identity, and reason.
+
+**THE** system **SHALL** allow Moderators to unpublish articles and move them back to draft status.
+
+**THE** system **SHALL** allow Moderators to restore recently deleted articles within 30 days of deletion.
+
+#### User Management
+
+**THE** system **SHALL** allow Moderators to view a list of all user accounts with registration dates and activity status.
+
+**THE** system **SHALL** allow Moderators to suspend Member accounts, revoking their ability to create or edit content.
+
+**THE** system **SHALL** allow Moderators to reactivate suspended accounts.
+
+**THE** system **SHALL** allow Moderators to permanently delete user accounts and optionally remove or anonymize their content.
+
+**WHEN** a Moderator suspends an account, **THE** system **SHALL** notify the affected user via email with the reason for suspension.
+
+#### Moderation Tools and Reporting
+
+**THE** system **SHALL** provide Moderators with a queue of reported content flagged by Members.
+
+**THE** system **SHALL** allow Moderators to review reported content and take action (approve, edit, delete, or warn user).
+
+**THE** system **SHALL** maintain a moderation activity log showing all moderation actions with timestamps and details.
+
+**THE** system **SHALL** allow Moderators to view user activity history including all articles and moderation incidents.
+
+**THE** system **SHALL** provide Moderators with statistics on content volume, reports handled, and user growth.
+
+#### Category and Organization Management
+
+**THE** system **SHALL** allow Moderators to create new article categories for organizing discussions.
+
+**THE** system **SHALL** allow Moderators to edit or delete categories.
+
+**THE** system **SHALL** allow Moderators to move articles between categories.
+
+**THE** system **SHALL** allow Moderators to feature important articles on the homepage.
 
 ## Security Requirements
 
 ### Password Security
 
-THE system SHALL require passwords to be at least 8 characters long.
+**THE** system **SHALL** enforce password requirements: minimum 8 characters, at least one letter, and at least one number.
 
-THE system SHALL require passwords to contain at least one letter and one number.
+**THE** system **SHALL** hash all passwords using industry-standard cryptographic hashing before storage.
 
-THE system SHALL recommend but not require special characters and mixed case for stronger passwords.
+**THE** system **SHALL** never store or transmit passwords in plain text.
 
-THE system SHALL hash all passwords using bcrypt with minimum cost factor of 10 before storage.
+**THE** system **SHALL** never display passwords back to users after creation.
 
-THE system SHALL never store passwords in plain text.
+**WHEN** a user enters a weak password, **THE** system **SHALL** reject it and display specific requirements.
 
-THE system SHALL never display or transmit passwords in clear text.
+**THE** system **SHALL** implement rate limiting on password reset requests to prevent abuse (maximum 3 requests per email per hour).
 
-WHEN a user creates or changes password, THE system SHALL validate against common password lists to prevent easily guessable passwords.
+### JWT Token Security
 
-THE system SHALL reject passwords that are identical to the user's email address.
+**THE** system **SHALL** sign all JWT tokens using a secure secret key.
+
+**THE** system **SHALL** validate JWT signatures on every authenticated request.
+
+**THE** system **SHALL** reject expired tokens and require refresh or re-authentication.
+
+**THE** system **SHALL** include token expiration time in the JWT payload.
+
+**THE** system **SHALL** use HTTPS for all authentication requests to prevent token interception.
+
+**IF** a token signature is invalid, **THE** system **SHALL** immediately reject the request and return HTTP 401 Unauthorized.
 
 ### Account Protection
 
-THE system SHALL implement rate limiting on login attempts to prevent brute force attacks.
+**THE** system **SHALL** limit failed login attempts to 5 per email address within 15 minutes.
 
-WHEN a user fails login 5 times within 15 minutes, THE system SHALL temporarily lock the account for 30 minutes.
+**WHEN** the login attempt limit is exceeded, **THE** system **SHALL** temporarily block that email from login attempts for 15 minutes.
 
-WHEN an account is locked due to failed attempts, THE system SHALL send notification email to the account owner.
+**THE** system **SHALL** send email notifications to users when password is changed or reset.
 
-THE system SHALL allow users to unlock their account via email verification link.
+**THE** system **SHALL** send email notifications when login occurs from a new device or location (optional security enhancement).
 
-THE system SHALL monitor for suspicious login patterns (e.g., login attempts from multiple countries within short time).
+**THE** system **SHALL** provide users with the ability to logout from all devices simultaneously.
 
-IF suspicious activity is detected, THEN THE system SHALL send security alert email to the user.
-
-THE system SHALL log all failed login attempts with IP address and timestamp for security analysis.
+**THE** system **SHALL** invalidate all refresh tokens when a user changes their password.
 
 ### Session Security
 
-THE system SHALL use HTTPS for all authentication requests and token transmission.
+**THE** system **SHALL** generate cryptographically random tokens for email verification and password reset.
 
-THE system SHALL include CSRF tokens for state-changing operations when using cookie-based authentication.
+**THE** system **SHALL** expire email verification links after 24 hours.
 
-THE system SHALL validate JWT token signatures on every authenticated request.
+**THE** system **SHALL** expire password reset links after 1 hour.
 
-THE system SHALL reject expired tokens and return HTTP 401 Unauthorized.
+**THE** system **SHALL** allow each verification or reset link to be used only once.
 
-THE system SHALL implement token refresh mechanism to minimize access token lifetime exposure.
+**WHEN** a user successfully resets their password, **THE** system **SHALL** invalidate the reset link immediately.
 
-WHEN a user changes password, THE system SHALL invalidate all existing sessions except the current one.
+**THE** system **SHALL** prevent session fixation by generating new tokens upon login.
 
-THE system SHALL provide "logout from all devices" functionality that invalidates all refresh tokens.
+## Business Rules for User Management
 
-THE system SHALL set httpOnly and secure flags on authentication cookies when using cookie-based token storage.
+### Account Creation Rules
 
-### Data Privacy
+**THE** system **SHALL** require unique email addresses for each account.
 
-THE system SHALL never expose user email addresses publicly without explicit user consent.
+**THE** system **SHALL** require display names to be between 3 and 50 characters.
 
-THE system SHALL hash and salt all passwords before storage.
+**THE** system **SHALL** reject registration with disposable or temporary email addresses (optional quality control).
 
-THE system SHALL store JWT secret keys in secure environment variables, never in code.
+**THE** system **SHALL** create all new accounts in unverified status until email verification is complete.
 
-THE system SHALL implement access controls to ensure users can only access their own data.
+**THE** system **SHALL** allow users to register only as Members, not Moderators.
 
-THE system SHALL log all authentication events (login, logout, password changes) for security auditing.
+**THE** system **SHALL** prevent automated bot registration through rate limiting (maximum 5 registrations per IP address per hour).
 
-THE system SHALL anonymize or pseudonymize user data in system logs to protect privacy.
+### Account Status Management
 
-THE system SHALL comply with data protection regulations regarding user personal information.
+**THE** system **SHALL** support account statuses: Unverified, Active, Suspended, Deleted.
 
-### Rate Limiting
+**WHEN** an account is Unverified, **THE** system **SHALL** deny login and prompt for email verification.
 
-THE system SHALL limit login attempts to 5 per 15 minute window per IP address.
+**WHEN** an account is Active, **THE** system **SHALL** grant full permissions based on actor role.
 
-THE system SHALL limit registration attempts to 3 per hour per IP address to prevent spam accounts.
+**WHEN** an account is Suspended, **THE** system **SHALL** allow login but deny all content creation and editing actions.
 
-THE system SHALL limit password reset requests to 3 per hour per email address.
+**WHEN** an account is Deleted, **THE** system **SHALL** permanently remove authentication credentials and personal data.
 
-THE system SHALL limit token refresh requests to 10 per minute per user.
+**THE** system **SHALL** allow Moderators to change account status between Active and Suspended.
 
-IF rate limit is exceeded, THEN THE system SHALL return HTTP 429 Too Many Requests with retry-after information.
+**THE** system **SHALL** retain deleted account usernames to prevent impersonation after deletion.
 
-THE system SHALL implement exponential backoff for repeated rate limit violations.
+### User Data Privacy
 
-## Error Handling and User Feedback
+**THE** system **SHALL** store only essential user information: email, hashed password, display name, account status, and registration date.
 
-### Authentication Failure Scenarios
+**THE** system **SHALL** allow users to view all their stored personal data upon request.
 
-**Invalid Credentials:**
-- WHEN login credentials are incorrect, THE system SHALL return "Invalid email or password" message
-- THE system SHALL not specify whether email or password was wrong to prevent account enumeration
-- THE system SHALL log failed login attempts with timestamp and IP address
-- THE system SHALL track failed attempt count for account locking mechanism
+**THE** system **SHALL** allow users to request account deletion, which removes all personal data within 7 days.
 
-**Unverified Email:**
-- WHEN a user attempts login without email verification, THE system SHALL return "Please verify your email address to login"
-- THE system SHALL provide "Resend verification email" option
-- WHEN user requests new verification email, THE system SHALL send it immediately if account exists
-- THE system SHALL limit verification email resend requests to 3 per hour
+**WHEN** an account is deleted, **THE** system **SHALL** anonymize or remove all associated content based on content retention policy.
 
-**Account Locked:**
-- WHEN a locked account attempts login, THE system SHALL return "Account temporarily locked due to multiple failed attempts. Please try again in X minutes"
-- THE system SHALL include exact time remaining until unlock
-- THE system SHALL provide email unlock option as alternative
-- THE system SHALL send unlock instructions via email to account owner
+**THE** system **SHALL** never share user email addresses publicly or with third parties.
 
-**Account Suspended:**
-- WHEN a suspended account attempts login, THE system SHALL return "Your account has been suspended. Please contact support for assistance"
-- THE system SHALL include suspension reason if available
-- THE system SHALL provide support contact information
-- THE system SHALL log suspension-related login attempts
+**THE** system **SHALL** send authentication-related emails only (verification, password reset, security notifications).
 
-### Token Validation Errors
+### Moderator Appointment
 
-**Expired Access Token:**
-- WHEN an expired access token is presented, THE system SHALL return HTTP 401 with "Access token expired, please refresh"
-- THE system SHALL indicate that token refresh endpoint should be used
-- THE system SHALL not process the request with expired token
+**THE** system **SHALL** allow only system administrators to grant Moderator privileges to Member accounts.
 
-**Invalid Token Signature:**
-- WHEN a token with invalid signature is presented, THE system SHALL return HTTP 401 with "Invalid authentication token"
-- THE system SHALL log the security event with details for investigation
-- THE system SHALL not reveal technical details about signature validation
+**THE** system **SHALL** require Moderator candidates to have active Member accounts for at least 30 days.
 
-**Expired Refresh Token:**
-- WHEN an expired refresh token is used, THE system SHALL return "Session expired, please login again"
-- THE system SHALL clear any client-side stored tokens
-- THE system SHALL redirect to login page
+**THE** system **SHALL** log all Moderator privilege grants and revocations with timestamps.
 
-**Malformed Token:**
-- WHEN a malformed token is presented, THE system SHALL return HTTP 401 with "Invalid authentication token"
-- THE system SHALL log the malformed token attempt
-- THE system SHALL not expose token parsing errors to the client
+**THE** system **SHALL** notify users via email when they are granted or revoked Moderator privileges.
 
-### Permission Denial
+**WHEN** Moderator privileges are revoked, **THE** system **SHALL** immediately downgrade the account to standard Member permissions.
 
-**Insufficient Permissions:**
-- WHEN a user attempts an action they lack permission for, THE system SHALL return HTTP 403 Forbidden
-- THE system SHALL provide clear message like "You don't have permission to perform this action"
-- THE system SHALL suggest what actor role is required if appropriate
+## Error Handling and Edge Cases
 
-**Guest Access Attempt:**
-- WHEN a guest attempts member-only action, THE system SHALL return "Please login to continue"
-- THE system SHALL provide direct link to login page
-- THE system SHALL preserve the intended action to redirect after successful login
+### Authentication Errors
 
-**Member Attempting Admin Action:**
-- WHEN a member attempts moderator-only action, THE system SHALL return "This action requires moderator privileges"
-- THE system SHALL not provide instructions on how to become moderator
-- THE system SHALL log the attempt for security monitoring
+**IF** a user attempts to register with an existing email, **THE** system **SHALL** return a clear error message indicating the email is already registered.
 
-### Registration and Password Reset Errors
+**IF** a user enters invalid credentials during login, **THE** system **SHALL** return a generic authentication error without revealing whether the email or password was incorrect.
 
-**Email Already Registered:**
-- WHEN registration attempts with existing email, THE system SHALL return "An account with this email already exists"
-- THE system SHALL suggest using password reset if user forgot their password
-- THE system SHALL provide link to login page
+**IF** a user's account is suspended, **THE** system **SHALL** display a suspension notice with reason and contact information for appeal.
 
-**Weak Password:**
-- WHEN password doesn't meet requirements, THE system SHALL return specific requirements not met
-- THE system SHALL display "Password must be at least 8 characters and contain at least one letter and one number"
-- THE system SHALL allow user to correct and resubmit
+**IF** a verification link is expired, **THE** system **SHALL** provide an option to resend the verification email.
 
-**Invalid Reset Token:**
-- WHEN password reset token is invalid or expired, THE system SHALL return "This password reset link is invalid or has expired"
-- THE system SHALL provide option to request new reset link
-- THE system SHALL clear any stored token from URL
+**IF** a password reset link is expired or already used, **THE** system **SHALL** prompt the user to request a new reset link.
 
-**Email Format Invalid:**
-- WHEN email format is invalid during registration, THE system SHALL return "Please enter a valid email address"
-- THE system SHALL provide examples of valid email formats
-- THE system SHALL highlight the email field for correction
+### Session and Token Errors
 
-### Edge Cases
+**IF** a JWT access token expires during a user session, **THE** system **SHALL** automatically attempt to refresh using the refresh token without interrupting the user.
 
-**Concurrent Session Conflicts:**
-- WHEN user logs in from multiple devices, THE system SHALL allow all sessions to coexist
-- WHEN password is changed from one device, THE system SHALL invalidate all other device sessions
-- THE system SHALL notify user of active sessions when viewing account security settings
+**IF** both access and refresh tokens are expired, **THE** system **SHALL** redirect the user to login with a session expired message.
 
-**Token Revocation Race Conditions:**
-- WHEN a refresh token is used immediately after logout, THE system SHALL reject it as revoked
-- THE system SHALL handle race conditions gracefully without exposing system errors
-- THE system SHALL maintain token revocation list with sufficient TTL
+**IF** a JWT token signature is invalid, **THE** system **SHALL** immediately clear all tokens and redirect to login.
 
-**Account Deletion:**
-- WHEN a user deletes their account, THE system SHALL immediately invalidate all tokens
-- THE system SHALL mark all user content as "deleted user" rather than removing it to preserve discussion continuity
-- THE system SHALL allow users to export their data before deletion if requested
+**IF** a user attempts to use the same verification or reset link twice, **THE** system **SHALL** reject it and display an "already used" message.
 
-**Email Verification Expiration:**
-- WHEN a verification token expires, THE system SHALL allow requesting a new verification email
-- THE system SHALL invalidate old verification tokens when new ones are generated
-- THE system SHALL limit verification email requests to prevent abuse
+### Permission Errors
 
-## Performance Requirements
+**IF** a Guest attempts a Member-only action, **THE** system **SHALL** redirect to login with a clear message about authentication requirements.
 
-THE system SHALL respond to login requests within 2 seconds under normal load.
+**IF** a Member attempts a Moderator-only action, **THE** system **SHALL** return HTTP 403 Forbidden with an access denied message.
 
-THE system SHALL respond to token refresh requests within 500 milliseconds.
+**IF** a Member attempts to edit another member's article, **THE** system **SHALL** return an ownership error indicating they can only edit their own content.
 
-THE system SHALL process registration requests within 3 seconds including email sending.
+**IF** a suspended user attempts to create content, **THE** system **SHALL** display a suspension notice and deny the action.
 
-THE system SHALL handle at least 100 concurrent authentication requests without degradation.
+### Rate Limiting and Abuse Prevention
 
-WHEN database is under heavy load, THE system SHALL still validate JWT tokens locally without database queries for better performance.
+**IF** login attempts exceed 5 failures in 15 minutes for an email, **THE** system **SHALL** block further login attempts for 15 minutes.
 
-THE system SHALL cache user permissions in JWT payload to avoid database lookups on every request.
+**IF** verification email resend is requested more than once per 5 minutes, **THE** system **SHALL** reject the request and display a rate limit message.
 
-THE system SHALL implement efficient indexing on user email and ID fields for fast authentication queries.
+**IF** password reset requests exceed 3 per hour for an email, **THE** system **SHALL** reject further requests and display a rate limit message.
 
-THE system SHALL send verification and password reset emails within 5 seconds of request.
+**IF** registration attempts from a single IP exceed 5 per hour, **THE** system **SHALL** temporarily block registration from that IP for 1 hour.
 
----
+## Summary
 
-*Developer Note: This document defines business requirements for user actors and authentication. All technical implementations (JWT library selection, database schema for user storage, password hashing implementation, token storage mechanisms, etc.) are at the discretion of the development team.*
+This document defines the complete user actor system and authentication requirements for the discussion board platform. The three actor types—Guest, Member, and Moderator—provide a clear hierarchy of permissions that balance openness with security and content quality.
+
+The authentication system uses JWT-based tokens for session management, implements comprehensive security measures including rate limiting and account protection, and provides complete workflows for registration, login, email verification, and password management.
+
+All permission rules are clearly defined in the permission matrix, ensuring backend developers understand exactly what each actor type can and cannot do. The system prioritizes simplicity while maintaining robust security and enabling effective content moderation for economic and political discussions.
+
+For implementation details on how these actors interact with specific features, refer to:
+- [Core Features Document](./03-core-features.md) for feature-level capabilities
+- [Article Management Document](./04-article-management.md) for content-specific permissions
+- [Content Moderation Document](./06-content-moderation.md) for moderator workflows
+- [Attachments Document](./05-attachments.md) for file and image upload permissions

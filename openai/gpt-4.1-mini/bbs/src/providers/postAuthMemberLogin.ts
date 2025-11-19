@@ -7,62 +7,62 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardMember";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function postAuthMemberLogin(props: {
   member: MemberPayload;
-  body: IEconPolDiscussionBoardMember.ILogin;
-}): Promise<IEconPolDiscussionBoardMember.IAuthorized> {
-  const now = new Date().toISOString();
-  const accessExpires = new Date(Date.parse(now) + 1 * 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.parse(now) + 7 * 24 * 60 * 60 * 1000);
+  body: IDiscussionBoardMember.ILogin;
+}): Promise<IDiscussionBoardMember.IAuthorized> {
+  const found = await MyGlobal.prisma.discussion_board_member.findFirst({
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
+  });
 
-  const member =
-    await MyGlobal.prisma.econ_pol_discussion_board_members.findFirst({
-      where: {
-        OR: [
-          { username: props.body.username_or_email },
-          { email: props.body.username_or_email },
-        ],
-        deleted_at: null,
-      },
-    });
-
-  if (!member) {
+  if (!found) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const passwordValid = await PasswordUtil.verify(
+  const isValid = await PasswordUtil.verify(
     props.body.password,
-    member.password_hash,
+    found.password_hash,
+  );
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  const nowISO: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const accessExpiresISO: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresISO: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  if (!passwordValid) {
-    throw new HttpException("Invalid credentials", 401);
-  }
-
-  const session =
-    await MyGlobal.prisma.econ_pol_discussion_board_member_sessions.create({
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
       data: {
-        id: v4() as string & import("typia").tags.Format<"uuid">,
-        econ_pol_discussion_board_member_id: member.id,
+        id: v4(),
+        discussion_board_member_id: found.id,
         ip: (props.body.ip ?? "") satisfies string as string,
         href: props.body.href,
         referrer: props.body.referrer,
-        created_at: now,
-        expired_at: toISOStringSafe(accessExpires),
+        created_at: nowISO,
+        expired_at: accessExpiresISO,
       },
-    });
+    },
+  );
 
   const token = {
     access: jwt.sign(
       {
         type: "member",
-        id: member.id,
+        id: found.id,
         session_id: session.id,
-        created_at: now,
+        created_at: nowISO,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -73,10 +73,10 @@ export async function postAuthMemberLogin(props: {
     refresh: jwt.sign(
       {
         type: "member",
-        id: member.id,
+        id: found.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: nowISO,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -84,18 +84,12 @@ export async function postAuthMemberLogin(props: {
         issuer: "autobe",
       },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpiresISO,
+    refreshable_until: refreshExpiresISO,
   };
 
   return {
-    id: member.id,
-    username: member.username,
-    email: member.email,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at:
-      member.deleted_at === null ? null : toISOStringSafe(member.deleted_at),
+    id: found.id,
     token,
   };
 }

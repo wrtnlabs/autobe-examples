@@ -1,237 +1,196 @@
-/// Anonymous visitors who browse and view public articles and discussions
-/// without requiring authentication or account creation.
-///
-/// Guests represent the primary audience for the discussion board content,
-/// consuming economic and political analysis through articles and threaded
-/// comments. They provide implicit feedback through browsing patterns and
-/// serve as potential conversion points to member registration.
-///
-/// While guests cannot create content or participate in discussions, their
-/// access patterns help inform content strategy and platform optimization
-/// for the economic discussion community.
+/// Anonymous guest users who can browse and view published articles,
+/// comments, and attachments without requiring authentication or
+/// registration. Guests represent the general public accessing economic and
+/// political discussion content. This table tracks guest-level interactions
+/// and access patterns for platform analytics, though guests have no
+/// personal information or managed entities.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_guests {
+model economic_discussion_board_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp when the guest first accessed the platform.
+  /// Timestamp when the guest record was created for tracking access patterns.
   created_at DateTime
   
-  /// Timestamp of the last access or activity.
+  /// Timestamp when the guest record was last updated.
   updated_at DateTime
+  
+  /// Soft delete timestamp to mark inactive guest records.
+  deleted_at DateTime?
 }
 
-/// Registered users who can actively participate in discussions by creating
-/// articles, posting comments, and managing their contributions to the
-/// economic and political discourse.
-///
-/// Members create the primary content for the discussion board, sharing
-/// their insights through comprehensive articles supported by image and file
-/// attachments. They engage in threaded discussions, report inappropriate
-/// content, and build community reputation through quality contributions.
-///
-/// All members must verify their email address before gaining full
-/// publishing capabilities, ensuring a baseline of account authenticity for
-/// the serious content standards of the platform.
+/// Registered member users who can create articles with attachments, post
+/// comments, and participate actively in economic and political discussions.
+/// Members have authenticated accounts with secure password-based login and
+/// can manage their own content independently. They represent the core
+/// community of contributors who require email verification and session
+/// management for platform access and content creation permissions.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_members {
+model economic_discussion_board_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for registration, password reset, and platform
-  /// notifications. Must be unique and verified before article publishing.
+  /// Member's email address used for authentication and account management.
+  /// Must be unique across all members.
   email String
   
-  /// Unique username for public display in articles and comments. Follows
-  /// platform naming conventions.
-  username String
-  
-  /// Hashed password for secure authentication. Generated from user-provided
-  /// password during registration.
+  /// Hashed password for secure authentication. Stored using industry-standard
+  /// hashing algorithms.
   password_hash String
-  
-  /// Timestamp when email verification was completed, null until verified.
-  email_verified_at DateTime?
   
   /// Timestamp when the member account was created.
   created_at DateTime
   
-  /// Timestamp of the last account update or activity.
+  /// Timestamp when the member account was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp for account deactivation.
+  /// Soft delete timestamp to mark deactivated member accounts while
+  /// preserving content history.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_member_sessions discussion_board_member_sessions[]
-  discussion_board_articles discussion_board_articles[]
-  discussion_board_comments discussion_board_comments[]
+  economic_discussion_board_member_sessions economic_discussion_board_member_sessions[]
+  economic_discussion_board_articles economic_discussion_board_articles[]
+  economic_discussion_board_comments economic_discussion_board_comments[]
   
   @@unique([email])
-  @@unique([username])
 }
 
-/// Session records for authenticated member logins, tracking access patterns
-/// and supporting account security for discussion board members.
-///
-/// Each member login creates a session record that maintains authentication
-/// state across browser refreshes and page navigation. Sessions expire after
-/// 30 days of inactivity to ensure continuous security for the economic and
-/// political discussion platform.
-///
-/// Session tracking enables activity monitoring, security enforcement, and
-/// helps identify authorized access patterns during content creation and
-/// discussion participation.
+/// Administrator users with elevated permissions to manage platform content,
+/// moderate inappropriate material, and oversee user accounts. Admins have
+/// authenticated accounts with secure login and can perform administrative
+/// actions across all platform content including articles, comments, and
+/// user management. They maintain platform integrity and community standards
+/// through content review and moderation capabilities.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_member_sessions {
+model economic_discussion_board_admins {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged member who initiated this session. {@link
-  /// discussion_board_members.id}
-  discussion_board_member_id String
-  
-  /// IP address of the connection.
-  ip String
-  
-  /// URL where the session was initiated.
-  href String
-  
-  /// Referrer URL for tracking session origin.
-  referrer String
-  
-  /// Session creation timestamp.
-  created_at DateTime
-  
-  /// Session expiration timestamp.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
-}
-
-/// Privileged users responsible for system governance, content moderation,
-/// and user management to ensure the discussion board operates effectively
-/// and safely.
-///
-/// Administrators maintain platform quality and enforce community standards
-/// for economic and political discourse through comprehensive moderation
-/// powers. They review flagged content, manage user accounts, and access
-/// advanced analytics to support healthy community growth.
-///
-/// Admin accounts follow the same registration pattern as members but
-/// include enhanced permissions for moderation, user management, and system
-/// configuration access.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Email address used for registration, password reset, and admin
-  /// notifications. Must be unique and verified.
+  /// Administrator's email address used for authentication and account
+  /// management. Must be unique across all administrators.
   email String
   
-  /// Unique username for admin display in moderation logs. Follows platform
-  /// naming conventions.
-  username String
-  
-  /// Hashed password for secure admin authentication. Generated from
-  /// user-provided password.
+  /// Hashed password for secure authentication. Stored using industry-standard
+  /// hashing algorithms.
   password_hash String
   
-  /// Timestamp when email verification was completed, null until verified.
-  email_verified_at DateTime?
-  
-  /// Timestamp when the admin account was created.
+  /// Timestamp when the administrator account was created.
   created_at DateTime
   
-  /// Timestamp of the last admin activity or account update.
+  /// Timestamp when the administrator account was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp for admin account deactivation.
+  /// Soft delete timestamp to mark removed administrator accounts.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  economic_discussion_board_admin_sessions economic_discussion_board_admin_sessions[]
   
   @@unique([email])
-  @@unique([username])
 }
 
-/// Session records for authenticated admin logins, tracking access patterns
-/// and supporting enhanced security for administrative system access.
-///
-/// Each admin login creates a privileged session that enables content
-/// moderation, user management, and system configuration. Sessions expire
-/// after 30 days of inactivity to protect sensitive administrative
-/// functions.
-///
-/// Session tracking provides audit trails for administrative actions,
-/// security monitoring for privileged access, and supports secure management
-/// operations within the economic and political discussion platform.
+/// Authentication sessions for member users, tracking login activity and
+/// connection details for security monitoring and audit purposes. Sessions
+/// are managed through member login/logout processes and include connection
+/// metadata for platform security. Each session expires after inactivity or
+/// explicit logout, ensuring secure access control for member accounts.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admin_sessions {
+model economic_discussion_board_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged admin who initiated this session. {@link
-  /// discussion_board_admins.id}
-  discussion_board_admin_id String
+  /// Belonged member's {@link economic_discussion_board_members.id}.
+  economic_discussion_board_member_id String
   
-  /// IP address of the admin connection.
+  /// IP address from which the member logged in.
   ip String
   
-  /// URL where the admin session was initiated.
+  /// URL where the login session originated.
   href String
   
-  /// Referrer URL for tracking admin session origin.
+  /// Referrer URL for tracking login source.
   referrer String
   
-  /// Session creation timestamp.
+  /// Timestamp when the session was created at login.
   created_at DateTime
   
-  /// Session expiration timestamp.
+  /// Timestamp when the session expired or was terminated.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  member economic_discussion_board_members @relation(fields: [economic_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  economic_discussion_board_comments economic_discussion_board_comments[]
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
+  @@index([economic_discussion_board_member_id, created_at], map: "economic_discussion_board_member_sessions_economic_dis_099c537f")
+}
+
+/// Authentication sessions for administrator users, recording login details
+/// and administrative access for security auditing and system monitoring.
+/// Admin sessions track critical platform access and include connection
+/// information for compliance and security review. Sessions automatically
+/// expire and are audited for administrative accountability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin's {@link economic_discussion_board_admins.id}.
+  economic_discussion_board_admin_id String
+  
+  /// IP address from which the administrator logged in.
+  ip String
+  
+  /// URL where the administrative login originated.
+  href String
+  
+  /// Referrer URL for tracking administrative login source.
+  referrer String
+  
+  /// Timestamp when the administrative session was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrative session expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin economic_discussion_board_admins @relation(fields: [economic_discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_admin_id, created_at], map: "economic_discussion_board_admin_sessions_economic_disc_eba1ce0f")
 }

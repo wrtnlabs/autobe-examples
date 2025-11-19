@@ -7,128 +7,143 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 
 /**
- * Test successful member authentication token refresh workflow.
+ * Test successful JWT token refresh flow for authenticated members.
  *
- * This test validates that a member can obtain new access and refresh tokens
- * using a valid refresh token without re-entering credentials. The test ensures
- * that the token refresh mechanism works correctly and returns valid, updated
- * authentication tokens.
+ * This test validates the complete token refresh workflow:
  *
- * Test Steps:
+ * 1. Creates a new member account via join endpoint
+ * 2. Obtains initial authentication tokens (30-minute access token, 7-day refresh
+ *    token)
+ * 3. Uses the refresh token to obtain new JWT tokens
+ * 4. Verifies that refresh operation returns renewed tokens with updated
+ *    expiration times
+ * 5. Confirms that member profile information is included in the refresh response
+ * 6. Validates that the session remains active with the new access token
  *
- * 1. Create a new member account via join endpoint to obtain initial tokens
- * 2. Extract the refresh token from the join response
- * 3. Use the refresh token to call the refresh endpoint
- * 4. Validate that new tokens are issued successfully
- * 5. Verify the response contains valid access token, refresh token, and
- *    expiration timestamps
- * 6. Ensure the new tokens differ from the original tokens
- * 7. Confirm token expiration times are set appropriately in the future
- * 8. Verify member information matches between join and refresh responses
+ * The refresh operation is critical for maintaining long-lived authenticated
+ * sessions across the 30-minute access token expiration boundary without
+ * requiring credential re-entry.
  */
 export async function test_api_member_token_refresh_success(
   connection: api.IConnection,
 ) {
   // Step 1: Create a new member account to obtain initial tokens
-  const joinRequestBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: typia.random<string & tags.MinLength<8>>(),
-    username: RandomGenerator.name(),
+  const memberEmail = typia.random<string & tags.Format<"email">>();
+  const memberPassword = typia.random<string & tags.Format<"password">>();
+  const memberUsername = typia.random<
+    string & tags.MinLength<3> & tags.MaxLength<30>
+  >();
+
+  const joinBody = {
+    email: memberEmail,
+    password: memberPassword,
+    username: memberUsername,
+    display_name: RandomGenerator.name(2),
+    bio: RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
     href: typia.random<string & tags.Format<"uri">>(),
     referrer: typia.random<string & tags.Format<"uri">>(),
   } satisfies IDiscussionBoardMember.ICreate;
 
-  const initialMember: IDiscussionBoardMember.IAuthorized =
-    await api.functional.auth.member.join(connection, {
-      body: joinRequestBody,
-    });
-  typia.assert(initialMember);
+  const initialAuth = await api.functional.auth.member.join(connection, {
+    body: joinBody,
+  });
+  typia.assert(initialAuth);
 
-  // Step 2: Extract the refresh token from initial authentication
-  const initialRefreshToken = initialMember.token.refresh;
-  const initialAccessToken = initialMember.token.access;
-
-  // Step 3: Call the refresh endpoint with the refresh token
-  const refreshedMember: IDiscussionBoardMember.IAuthorized =
-    await api.functional.auth.member.refresh(connection, {
-      body: {
-        refresh_token: initialRefreshToken,
-      } satisfies IDiscussionBoardMember.IRefresh,
-    });
-  typia.assert(refreshedMember);
-
-  // Step 4 & 5: Validate that new tokens are issued with all required fields
+  // Validate initial authentication response structure
   TestValidator.predicate(
-    "refreshed response contains access token",
-    refreshedMember.token.access.length > 0,
+    "initial auth should have valid token structure",
+    initialAuth.token !== null && initialAuth.token !== undefined,
   );
   TestValidator.predicate(
-    "refreshed response contains refresh token",
-    refreshedMember.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "refreshed response contains expired_at timestamp",
-    refreshedMember.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "refreshed response contains refreshable_until timestamp",
-    refreshedMember.token.refreshable_until.length > 0,
+    "initial auth should have refresh token",
+    initialAuth.token.refresh.length > 0,
   );
 
-  // Step 6: Ensure the new tokens differ from the original tokens
+  // Store initial token expiration times for comparison
+  const initialExpiredAt = initialAuth.token.expired_at;
+  const initialRefreshableUntil = initialAuth.token.refreshable_until;
+
+  // Step 2: Use the refresh token to obtain new JWT tokens
+  const refreshBody = {
+    refresh_token: initialAuth.token.refresh,
+  } satisfies IDiscussionBoardMember.IRefresh;
+
+  const refreshedAuth = await api.functional.auth.member.refresh(connection, {
+    body: refreshBody,
+  });
+  typia.assert(refreshedAuth);
+
+  // Step 3: Validate refreshed authentication response
+  TestValidator.predicate(
+    "refreshed auth should have valid token structure",
+    refreshedAuth.token !== null && refreshedAuth.token !== undefined,
+  );
+
+  // Validate new tokens are different from initial tokens
   TestValidator.notEquals(
-    "new access token differs from original",
-    refreshedMember.token.access,
-    initialAccessToken,
+    "new access token should differ from initial",
+    refreshedAuth.token.access,
+    initialAuth.token.access,
   );
   TestValidator.notEquals(
-    "new refresh token differs from original",
-    refreshedMember.token.refresh,
-    initialRefreshToken,
+    "new refresh token should differ from initial",
+    refreshedAuth.token.refresh,
+    initialAuth.token.refresh,
   );
 
-  // Step 7: Confirm token expiration times are in the future
-  const now = new Date();
-  const expiredAt = new Date(refreshedMember.token.expired_at);
-  const refreshableUntil = new Date(refreshedMember.token.refreshable_until);
-
+  // Validate token expiration times are updated
   TestValidator.predicate(
-    "access token expiration is in the future",
-    expiredAt > now,
+    "new access token expiration should be updated",
+    refreshedAuth.token.expired_at !== initialExpiredAt,
   );
   TestValidator.predicate(
-    "refresh token expiration is in the future",
-    refreshableUntil > now,
-  );
-  TestValidator.predicate(
-    "refreshable_until is after expired_at",
-    refreshableUntil > expiredAt,
+    "new refresh token expiration should be updated",
+    refreshedAuth.token.refreshable_until !== initialRefreshableUntil,
   );
 
-  // Step 8: Verify member information matches between join and refresh responses
+  // Step 4: Validate complete member profile is included in refresh response
   TestValidator.equals(
-    "member id matches original",
-    refreshedMember.id,
-    initialMember.id,
+    "member id should match",
+    refreshedAuth.id,
+    initialAuth.id,
   );
   TestValidator.equals(
-    "member username matches original",
-    refreshedMember.username,
-    initialMember.username,
+    "member email should match",
+    refreshedAuth.email,
+    initialAuth.email,
   );
   TestValidator.equals(
-    "member email matches original",
-    refreshedMember.email,
-    initialMember.email,
+    "member username should match",
+    refreshedAuth.username,
+    initialAuth.username,
   );
   TestValidator.equals(
-    "member status matches original",
-    refreshedMember.status,
-    initialMember.status,
+    "member display_name should match",
+    refreshedAuth.display_name,
+    initialAuth.display_name,
   );
   TestValidator.equals(
-    "email verification status matches original",
-    refreshedMember.email_verified,
-    initialMember.email_verified,
+    "member bio should match",
+    refreshedAuth.bio,
+    initialAuth.bio,
+  );
+  TestValidator.equals(
+    "email verification status should match",
+    refreshedAuth.email_verified,
+    initialAuth.email_verified,
+  );
+  TestValidator.equals(
+    "suspension status should match",
+    refreshedAuth.is_suspended,
+    initialAuth.is_suspended,
+  );
+
+  // Step 5: Validate session remains active with new access token
+  // The connection.headers.Authorization should be automatically updated by the SDK
+  TestValidator.predicate(
+    "new access token should be set in connection headers",
+    connection.headers !== null &&
+      connection.headers !== undefined &&
+      connection.headers.Authorization === refreshedAuth.token.access,
   );
 }

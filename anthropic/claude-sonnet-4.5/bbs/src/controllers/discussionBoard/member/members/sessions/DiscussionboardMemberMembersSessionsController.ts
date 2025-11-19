@@ -4,7 +4,6 @@ import typia, { tags } from "typia";
 import { patchDiscussionBoardMemberMembersMemberIdSessions } from "../../../../../providers/patchDiscussionBoardMemberMembersMemberIdSessions";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
-import { getDiscussionBoardMemberMembersMemberIdSessionsSessionId } from "../../../../../providers/getDiscussionBoardMemberMembersMemberIdSessionsSessionId";
 import { deleteDiscussionBoardMemberMembersMemberIdSessionsSessionId } from "../../../../../providers/deleteDiscussionBoardMemberMembersMemberIdSessionsSessionId";
 
 import { IPageIDiscussionBoardMemberSession } from "../../../../../api/structures/IPageIDiscussionBoardMemberSession";
@@ -13,37 +12,45 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/member/members/:memberId/sessions")
 export class DiscussionboardMemberMembersSessionsController {
   /**
-   * Search and retrieve paginated list of member authentication sessions.
+   * Retrieve paginated list of authentication sessions for a specific member.
    *
-   * Retrieve a filtered and paginated list of authentication sessions for a
-   * specific discussion board member. This operation provides comprehensive
-   * session management capabilities, allowing members to view all their active
-   * login sessions across different devices, browsers, and locations.
+   * Retrieve a filtered and paginated list of authentication sessions
+   * associated with a specific member account from the discussion board
+   * platform.
    *
-   * The operation supports advanced filtering options including session
-   * creation date ranges, IP address filtering, user agent matching, and
-   * session status filtering. Members can sort sessions by creation date, last
-   * activity time, or expiration date to easily identify and manage their
-   * active sessions.
+   * This operation provides session management and security monitoring
+   * capabilities by allowing retrieval of all sessions (both active and
+   * expired) for a particular member. It supports filtering by session status
+   * (active vs expired), creation date ranges, IP address patterns, and
+   * connection context. Results can be sorted by creation date, expiration
+   * date, or other session attributes to identify suspicious activity patterns
+   * or manage concurrent sessions.
    *
-   * Security considerations include strict authorization to ensure members can
-   * only access their own session data. The operation implements rate limiting
-   * to prevent abuse and includes detailed audit logging for security
-   * monitoring. Session data includes device information, IP addresses, and
-   * activity timestamps to help members identify unauthorized access attempts.
+   * The operation enforces strict authorization controls - members can only
+   * view their own session history for security awareness and device management
+   * purposes. Moderators and administrators have elevated permissions to view
+   * any member's sessions for security investigations, abuse detection, and
+   * support troubleshooting. The session data includes connection metadata such
+   * as IP address, referrer URL, and session lifecycle timestamps.
+   *
+   * Security considerations include proper access control verification to
+   * prevent unauthorized session enumeration, rate limiting to prevent brute
+   * force session discovery attempts, and careful handling of sensitive session
+   * context data. Session tokens themselves are never exposed through this API
+   * - only session metadata and lifecycle information are returned.
    *
    * This operation integrates with the discussion_board_member_sessions table
-   * as defined in the Prisma schema. The response includes session summary
-   * information optimized for session management interfaces, with options to
-   * include additional security-relevant details based on the member's needs.
-   * Members can use this information to revoke suspicious sessions or monitor
-   * their account security.
+   * as defined in the Prisma schema, using the discussion_board_member_id
+   * foreign key to establish session ownership. The response includes session
+   * summary information displaying connection context, session duration, and
+   * current status to help members manage their active sessions and review
+   * historical authentication activity.
    *
    * @param connection
-   * @param memberId Unique identifier of the target discussion board member
-   *   (global scope)
-   * @param body Search criteria and pagination parameters for filtering member
-   *   sessions
+   * @param memberId Unique identifier of the target member whose authentication
+   *   sessions are being retrieved
+   * @param body Search criteria, filtering options, pagination parameters, and
+   *   sorting preferences for member sessions
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -68,90 +75,38 @@ export class DiscussionboardMemberMembersSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific member authentication
-   * session.
+   * Terminate a specific member authentication session.
    *
-   * Retrieve complete details of a specific authentication session for a
-   * discussion board member. This operation provides comprehensive session
-   * information to help members verify the authenticity of their login sessions
-   * and identify potential security issues.
+   * Remove a specific active authentication session for a member, logging them
+   * out from the associated device or browser.
    *
-   * The returned session data includes critical security information such as
-   * the IP address from which the session was created, user agent details
-   * identifying the browser and device, session creation timestamp, expiration
-   * time, and last activity timestamp. This information enables members to
-   * verify that all their sessions are legitimate and identify any unauthorized
-   * access attempts.
+   * This operation allows members to manage their active sessions by
+   * terminating specific sessions on devices they no longer use or suspect of
+   * unauthorized access. When a session is deleted, the associated JWT refresh
+   * token is invalidated immediately, preventing further authentication using
+   * that session's credentials. The member will need to log in again from that
+   * device to establish a new session.
    *
-   * Security measures include strict authorization verification to ensure
-   * members can only access their own session details. The operation implements
-   * request validation to prevent session enumeration attacks and includes
-   * comprehensive audit logging for security monitoring purposes. Rate limiting
-   * is applied to prevent abuse of the session information retrieval endpoint.
+   * Security considerations: Members can only delete their own sessions unless
+   * they are moderators. Moderators have elevated privileges to terminate any
+   * member's session for security enforcement, such as when investigating
+   * suspicious activity or enforcing account restrictions. All session deletion
+   * actions by moderators are logged in the moderation audit trail.
    *
-   * This operation integrates with the discussion_board_member_sessions table
-   * as defined in the Prisma schema, incorporating all available session fields
-   * and security-relevant metadata. The detailed response provides all
-   * information necessary for members to make informed decisions about session
-   * management and account security. Related operations include session list
-   * retrieval (PATCH /members/{memberId}/sessions) for viewing all sessions and
-   * session revocation for terminating suspicious sessions.
+   * The operation validates that the session belongs to the specified member
+   * before deletion. If the session does not exist or belongs to a different
+   * member, the operation returns an error. The session record is marked with
+   * an expired_at timestamp rather than being permanently deleted, maintaining
+   * an audit trail of session lifecycle for security monitoring.
    *
-   * @param connection
-   * @param memberId Unique identifier of the target discussion board member
-   *   (global scope)
-   * @param sessionId Unique identifier of the target authentication session
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":sessionId")
-  public async at(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("memberId")
-    memberId: string & tags.Format<"uuid">,
-    @TypedParam("sessionId")
-    sessionId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardMemberSession> {
-    try {
-      return await getDiscussionBoardMemberMembersMemberIdSessionsSessionId({
-        member,
-        memberId,
-        sessionId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a member's authentication session to log them out.
-   *
-   * Terminate and permanently remove an active authentication session for a
-   * registered discussion board member.
-   *
-   * This operation performs an immediate logout by deleting the session record
-   * from the discussion_board_member_sessions table. Once deleted, the session
-   * token becomes invalid and cannot be used for further API authentication.
-   * This is typically used when a member explicitly logs out or when an
-   * administrator needs to force-terminate a session for security reasons.
-   *
-   * Security considerations: The operation validates that the requesting actor
-   * has permission to delete the target session. Members can delete their own
-   * sessions (self-logout), while moderators may have elevated permissions to
-   * terminate any member's session for moderation purposes. The session is
-   * permanently removed with no soft-delete mechanism.
-   *
-   * The operation requires both the member identifier and the specific session
-   * identifier to prevent accidental deletion of all member sessions. After
-   * successful deletion, the member must authenticate again to create a new
-   * session and continue using the discussion board.
+   * Related operations: Members typically view their active sessions via GET
+   * /members/{memberId}/sessions before selecting specific sessions to
+   * terminate. The "logout from all devices" functionality is implemented by
+   * calling DELETE on each active session for the member.
    *
    * @param connection
-   * @param memberId Unique identifier of the discussion board member who owns
-   *   the session
-   * @param sessionId Unique identifier of the specific authentication session
-   *   to terminate
+   * @param memberId Unique identifier of the member who owns the session
+   * @param sessionId Unique identifier of the specific session to terminate
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":sessionId")

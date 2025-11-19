@@ -18,12 +18,13 @@ export async function getDiscussionBoardArticlesArticleIdAttachmentsAttachmentId
       where: {
         id: props.attachmentId,
         article_id: props.articleId,
+        deleted_at: null,
       },
     });
 
   if (!record) {
     throw new HttpException(
-      "Attachment not found for the specified article.",
+      "Attachment not found or does not belong to this article.",
       404,
     );
   }
@@ -31,10 +32,14 @@ export async function getDiscussionBoardArticlesArticleIdAttachmentsAttachmentId
   return {
     id: record.id,
     article_id: record.article_id,
-    uri: record.uri,
     file_name: record.file_name,
-    file_type: record.file_type,
+    mime_type: record.mime_type,
     file_size: record.file_size,
-    uploaded_at: toISOStringSafe(record.uploaded_at),
+    file_uri: record.file_uri,
+    created_at: toISOStringSafe(record.created_at),
+    deleted_at:
+      record.deleted_at === null || record.deleted_at === undefined
+        ? undefined
+        : toISOStringSafe(record.deleted_at),
   };
 }

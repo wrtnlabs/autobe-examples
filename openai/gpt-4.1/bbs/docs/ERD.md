@@ -7,15 +7,16 @@
 - [Articles](#articles)
 - [Comments](#comments)
 - [Moderation](#moderation)
+- [Attachments](#attachments)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"discussion_board_system_settings" {
+"discussion_board_system_configs" {
   String id PK
-  String key UK
-  String value
+  String config_key UK
+  String config_value
   String description "nullable"
   DateTime created_at
   DateTime updated_at
@@ -23,38 +24,37 @@ erDiagram
 }
 ```
 
-### `discussion_board_system_settings`
+### `discussion_board_system_configs`
 
-Platform-wide configuration and placeholder for systematic board settings.
+System-wide configuration table for board-level settings and feature flags.
 
-This model holds system-level settings, toggles, or infrastructure
-parameters that may affect platform-wide policy, appearance, or technical
-operation. It allows for minimal, future-proof configuration management,
-ensuring the backend can support extension or modification without schema
-disruption.
-
-Initially designed as a placeholder, this table supports single or
-multiple business-defined settings through a key/value pattern. All
-change events (creation, updates, and deletion) are tracked for audit and
-rollback. The model enables admins or operators to programmatically
-control or audit system-wide states, without duplicating config in other
-domain schemas.
+Stores key-value pairs representing runtime tunable parameters or
+business policies. Used as a foundation for global configuration, such as
+toggling features, maintenance mode, upload limits, or descriptive
+metadata that governs the entire discussion board. No foreign keys as
+this is an isolated domain for maintainability. Allows for future
+extensibility and immediate board-wide change management without database
+migrations. All updates are auditable thanks to temporal fields.
 
 Properties as follows:
 
-- `id`: Primary Key for the system settings entry.
-- `key`
-  > Unique identifier for this configuration setting or policy entry. Used to
-  > retrieve or update specific settings programmatically.
-- `value`
-  > Value for this system setting. May encode raw value, serialized JSON, or
-  > application-specific policy text.
-- `description`: Optional human-readable explanation or policy summary for this setting.
-- `created_at`: Timestamp for creation of this settings entry.
-- `updated_at`: Timestamp for last update or modification.
+- `id`: Primary Key for each configuration entry.
+- `config_key`
+  > Unique key identifying the configuration item, e.g.,
+  > 'feature_upload_enabled', 'max_file_size_mb'. Must be unique for each
+  > system setting.
+- `config_value`
+  > Configuration value as a string. May contain JSON or plain scalar values
+  > depending on application logic. Stores the current value for the given
+  > setting.
+- `description`
+  > Optional human-readable explanation of this setting's business role and
+  > usage.
+- `created_at`: Timestamp of configuration entry creation for audit purposes.
+- `updated_at`: Timestamp of the last update to this configuration record.
 - `deleted_at`
-  > Soft deletion timestamp for audit and rollback; null unless marked for
-  > deletion.
+  > If set, marks this configuration as deprecated or inactive; preserves
+  > audit trail.
 
 ## Actors
 
@@ -64,16 +64,13 @@ erDiagram
   String id PK
   String email UK
   String password_hash
-  Boolean is_email_verified
-  Boolean is_active
-  Boolean is_blocked
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "discussion_board_user_sessions" {
   String id PK
-  String discussion_board_user_id FK
+  String user_id FK
   String ip
   String href
   String referrer
@@ -84,16 +81,13 @@ erDiagram
   String id PK
   String email UK
   String password_hash
-  Boolean is_email_verified
-  Boolean is_active
-  Boolean is_blocked
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "discussion_board_admin_sessions" {
   String id PK
-  String discussion_board_admin_id FK
+  String admin_id FK
   String ip
   String href
   String referrer
@@ -106,109 +100,113 @@ erDiagram
 
 ### `discussion_board_users`
 
-User accounts for platform participants.
+Registered user identities for standard discussion board participants.
 
-Represents each registered end-user on the discussion board. Contains
-identity fields for login, authentication, account status, and minimal
-profile information. Every user may have multiple concurrent active
-sessions tracked in the discussion_board_user_sessions table. Business
-logic ensures email is unique for secure login. Temporal fields enable
-soft deletion and audit trails. Fields facilitate account recovery and
-future extensibility for additional user profile attributes.
+Each user entity represents a distinct account able to post, comment, and
+upload attachments within the platform. Account includes essential
+authentication data, such as email and password_hash, for secure login.
+Created/updated/deleted timestamps track account lifecycle. Only accounts
+of this type can manage their own content; administrative privileges are
+not granted by this entity. User data is minimal per privacy
+requirements, and no extra profile fields or roles are included.
 
 Properties as follows:
 
-- `id`: Primary key. Universally unique identifier for the user.
+- `id`: Primary Key.
 - `email`
-  > User's email address for login and notification purposes. Must be unique.
-  > Used for authentication and password recovery.
+  > User's unique email address for registration and login. Serves as natural
+  > key for authentication; must be unique across all users.
 - `password_hash`
-  > Secure hash of the user's password. Used for authentication. Plain
-  > passwords are never stored.
-- `is_email_verified`
-  > Indicates whether the user's email address has been verified. Email
-  > verification is required before participation.
-- `is_active`
-  > Denotes if the user account is active and allowed to log in. Blocked
-  > users have this set to false.
-- `is_blocked`
-  > Indicates if the user is blocked for rule violations. Blocked users
-  > cannot log in or participate until reactivated.
-- `created_at`: Timestamp when the user account was created.
-- `updated_at`: Timestamp when the user account was last updated.
+  > Bcrypt-hashed user password for secure authentication. Raw passwords are
+  > never stored; field holds the hashed value only.
+- `created_at`: Timestamp of account creation. Immutable after initial registration.
+- `updated_at`
+  > Timestamp of most recent account modification, including password or
+  > email changes.
 - `deleted_at`
-  > Optional timestamp for soft deletion. If set, the account is considered
-  > deleted but can be restored.
+  > Timestamp marking user account as soft-deleted. Nullable; null indicates
+  > active account.
 
 ### `discussion_board_user_sessions`
 
-Session records for user authentication.
+Login session records for standard discussion board users.
 
-Tracks each login session established by a user. Enables multiple
-concurrent sessions for a single user (multi-device support). Stores IP
-and contextual metadata for audits and access control. Sessions are
-associated with discussion_board_users via a foreign key. Expired
-sessions are notable for audit and security purposes. No other business
-data is stored in this subsidiary table.
+Each session records an authenticated login event, supporting JWT or
+refresh token handling for auditing and revocation. Linked to parent user
+via user_id foreign key, not unique (multiple concurrent sessions per
+user allowed). Session stores connection metadata (IP address, request
+referrer, href) for traceability and potential abuse investigation.
+Session expiration is recorded for proper logout/idle handling.
 
 Properties as follows:
 
-- `id`: Primary key. Universally unique identifier for the session.
-- `discussion_board_user_id`
-  > Reference to the associated user account. {@link
+- `id`: Primary Key.
+- `user_id`
+  > Reference to authenticated discussion board user. {@link
   > discussion_board_users.id}.
-- `ip`: IP address from which the session was initiated.
-- `href`: URL from which the login or session was established.
-- `referrer`: HTTP referrer value at the start of the session.
-- `created_at`: Time the session was created.
-- `expired_at`: Time the session expired or ended, nullable until session ends.
+- `ip`: IP address recorded at session start for audit and traceability.
+- `href`
+  > Full request URL (href) at authentication. Helps with session context and
+  > abuse investigation.
+- `referrer`
+  > HTTP referrer for session initialization. Provides context for user
+  > navigation during login.
+- `created_at`: Timestamp of session creation; marks login instant.
+- `expired_at`
+  > Timestamp indicating when session was terminated, logged out, or token
+  > expired. Null if still active.
 
 ### `discussion_board_admins`
 
-Administrator accounts for platform oversight and moderation.
+Registered system administrator accounts for board governance and
+moderation.
 
-Stores credentials and status flags for admin users who govern the
-discussion board. Admins are promoted from the user base by operators and
-have enhanced privileges for moderation, content management, and account
-control. Email addresses must be unique for proper authentication. Admins
-feature the same authentication and status patterns as regular users but
-are managed in a distinct, secured table. Soft deletion and audit fields
-help maintain compliance and traceability for admin actions.
+Admins possess full privileges for content and user management, able to
+edit or remove any article, comment, or attachment, and manage user
+accounts. Authentication is via unique admin email and password_hash.
+Admins act independently of user accounts; no normalization or shared
+credentials exist between users and admins per requirements. Full
+lifecycle and soft deletion are supported for audit and compliance.
 
 Properties as follows:
 
-- `id`: Primary key. Universally unique identifier for the admin.
-- `email`: Admin's unique email address used for login and communication.
-- `password_hash`: Secure hash of the admin's password for authentication.
-- `is_email_verified`: Indicates if the admin's email address has been verified.
-- `is_active`: True if admin account is active and enabled for moderation activity.
-- `is_blocked`: True if the admin is suspended or blocked from accessing admin features.
-- `created_at`: Timestamp when the admin account was created.
-- `updated_at`: Timestamp of the last update to the admin's profile or status.
-- `deleted_at`: Timestamp of soft deletion; nullable if the account is not deleted.
+- `id`: Primary Key.
+- `email`
+  > Unique email address for administrator authentication. Distinct from user
+  > emails; must be unique among all admins.
+- `password_hash`
+  > BCrypt password hash for administrator login. Raw passwords are never
+  > stored; field holds the cryptographic hash.
+- `created_at`: Timestamp when admin account was created.
+- `updated_at`
+  > Timestamp when admin account was last modified, including password
+  > changes.
+- `deleted_at`
+  > Soft-delete marker; null if account is active, set when account is
+  > deactivated or removed.
 
 ### `discussion_board_admin_sessions`
 
-Session records for administrator authentication and moderation tracking.
+Administrator login session records for audit and privilege enforcement.
 
-Stores all admin login sessions, supporting audit trails and concurrent
-multi-device moderation. Each session references the corresponding admin
-in the discussion_board_admins table. Tracks connection context and
-session lifecycle. Sessions are removed or expired for security and
-operational management. Essential for logging admin actions and
-maintaining platform integrity.
+Each record tracks an authenticated admin session, supporting privilege
+control, JWT/refresh token context, and audit trail. Sessions are linked
+to the admin via foreign key. IP address, accessed href, and referrer are
+captured to enable investigation and compliance. Session expiration
+timestamp provides logout or force-expiry tracking. Multiple sessions per
+admin are permitted (not unique).
 
 Properties as follows:
 
-- `id`: Primary key. Universally unique identifier for the admin session.
-- `discussion_board_admin_id`
-  > Reference to the associated admin account. {@link
-  > discussion_board_admins.id}.
-- `ip`: Network IP address for this moderation session.
-- `href`: URL at start of session or moderation activity.
-- `referrer`: Referrer value for admin connection context.
-- `created_at`: Session creation time.
-- `expired_at`: Session end time, nullable until expired.
+- `id`: Primary Key.
+- `admin_id`: Reference to parent admin account. [discussion_board_admins.id](#discussion_board_admins).
+- `ip`: IP address of the admin login session for auditing and security review.
+- `href`: Full authentication request URL (href) at session establishment.
+- `referrer`: HTTP referrer at session authentication for user flow tracking.
+- `created_at`: Timestamp for when this session was created (login time).
+- `expired_at`
+  > Nullable timestamp marking session logout or forced expiry. Null
+  > indicates active session.
 
 ## Articles
 
@@ -216,29 +214,29 @@ Properties as follows:
 erDiagram
 "discussion_board_articles" {
   String id PK
-  String author_user_id FK "nullable"
-  String author_admin_id FK "nullable"
+  String user_id FK
   String title
-  String body
+  String content
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 "discussion_board_article_attachments" {
   String id PK
   String article_id FK
-  String(80000) uri
   String file_name
-  String file_type
+  String mime_type
   Int file_size
-  DateTime uploaded_at
+  String(80000) file_uri
+  DateTime created_at
+  DateTime deleted_at "nullable"
 }
 "discussion_board_article_snapshots" {
   String id PK
   String article_id FK
-  String author_user_id FK "nullable"
-  String author_admin_id FK "nullable"
-  String title
-  String body
+  String editor_user_id FK
+  String snapshot_title
+  String snapshot_content
   DateTime created_at
 }
 "discussion_board_article_attachments" }o--|| "discussion_board_articles" : article
@@ -247,79 +245,99 @@ erDiagram
 
 ### `discussion_board_articles`
 
-Discussion board articles representing user- or admin-authored posts as
-primary content for economic and political debate.
+Main table for user-generated discussion articles on economic or
+political topics.
 
-Each article contains essential business data such as title and body,
-subject to length limits and business rules described in requirements.
-Articles are attributed to the creating user or admin. File and image
-attachments are handled via a separate table. Articles are the main entry
-point for debate, searchable by title or content. Edits and deletions are
-fully audit-trailed by related snapshot and moderation tables. Removal
-will cascade to attachments and comments.
+Each record represents a single article authored by a registered user.
+Includes a required textual title and content, as well as audit fields
+for creation/update and soft deletion. Supports edit/audit history via
+the related [discussion_board_article_snapshots](#discussion_board_article_snapshots). Attachments such
+as images or files are managed by the subsidiary {@link
+discussion_board_article_attachments} table.
+
+Articles are directly managed as standalone business entities and linked
+to their author via user ID. Deletion is soft for traceability and
+moderation. No business-calculated fields are included; statistics or
+aggregates are handled externally.
 
 Properties as follows:
 
-- `id`: Primary key. Unique article identifier.
-- `author_user_id`
-  > Optional reference to the user who authored this article. Null if
-  > authored by an admin. [discussion_board_users.id](#discussion_board_users).
-- `author_admin_id`
-  > Optional reference to the admin who authored this article. Null if
-  > authored by a user. [discussion_board_admins.id](#discussion_board_admins).
-- `title`: Article headline. Required. Must be between 5 and 150 characters.
-- `body`: Main content of the article. Must be between 20 and 5000 characters.
-- `created_at`: Timestamp when article was created.
-- `updated_at`: Timestamp when article was last updated.
+- `id`: Primary Key.
+- `user_id`: Author of the article. References the [discussion_board_users.id](#discussion_board_users).
+- `title`
+  > Title of the article, required for submission. Limited to 200 characters,
+  > whitespace-trimmed, and sanitized.
+- `content`
+  > Full text body of the article, required. Limited to 10000 characters,
+  > supports only plain text.
+- `created_at`: Article creation datetime (ISO 8601 UTC). Never changes after insertion.
+- `updated_at`: Datetime of last update to the article content or attachments.
+- `deleted_at`
+  > Soft delete timestamp. Null unless the article is deleted either by owner
+  > or admin.
 
 ### `discussion_board_article_attachments`
 
-Attachments associated with articles, such as images or documents,
-supporting evidence-based discussion.
+Attachment metadata and reference table for images or files linked to
+articles.
 
-Each attachment is directly tied to a single article. Allowed file types
-and size limits are enforced at business logic layer. Attachments are
-stored as URIs referencing backend storage locations. Deletion of the
-parent article cascades to attachments.
+Each record indicates a file (image/document) attached to a specific
+article, capturing both a unique UUID and metadata about the original
+file, storage, size, and type for validation, audit, and secure
+retrieval.
+
+Attachments are always managed as secondary to the parent article; they
+cannot exist without an owning article. This structure supports
+moderator/admin removal of individual files and business constraints on
+allowed types. Records reference the owning article, store original
+filename, MIME type, size, and storage URI, and support soft deletion per
+article deletion or direct moderation.
 
 Properties as follows:
 
-- `id`: Primary key. Unique attachment identifier.
+- `id`: Primary Key.
 - `article_id`
-  > Reference to the article this attachment belongs to. {@link
-  > discussion_board_articles.id}.
-- `uri`: Storage URI for the file or image attachment.
-- `file_name`: Original filename of the uploaded attachment.
-- `file_type`: MIME type of the attachment, as checked on upload.
-- `file_size`: Size of attachment in bytes. Enforced maximum 10MB via business rules.
-- `uploaded_at`: Timestamp when the attachment was uploaded.
+  > Parent article. Indicates which [discussion_board_articles.id](#discussion_board_articles) this
+  > attachment belongs to.
+- `file_name`: Original name of the uploaded file (user-visible), including extension.
+- `mime_type`: MIME type of the upload, validated and whitelisted per business rules.
+- `file_size`: Attachment size in bytes. Maximum per requirements is 10MB.
+- `file_uri`
+  > Storage URI for the actual file (external S3 or local path as
+  > configured). Not directly accessible by users.
+- `created_at`: Datetime when the attachment record was created (upload timestamp).
+- `deleted_at`
+  > Soft deletion timestamp; indicates if attachment was removed by the
+  > article owner or admin moderation.
 
 ### `discussion_board_article_snapshots`
 
-Historical snapshots of article states for versioning, edit trails, and
-audit purposes.
+Table for storing immutable snapshots of articles, supporting edit
+history, recovery, and audit trails for moderation.
 
-Stores a copy of article content, title, and author information at each
-versioning event. New snapshot records are created whenever an article is
-edited. Snapshots ensure a complete edit history for compliance,
-moderation, and rollback analysis. Snapshots are never modified or
-deleted outside of full article or system purge events.
+Each snapshot records a historical version of its parent article,
+including title, content, the editing user, and all audit timestamps. All
+fields are captured at the moment of edit or update, providing
+traceability for changes and supports roll-back or admin review of
+edited/deleted content.
+
+Snapshots are created on every edit to [discussion_board_articles](#discussion_board_articles),
+referencing the current article. Not editable after insertion; only
+appended for new versions. Accessible by admin for moderation and
+compliance auditing.
 
 Properties as follows:
 
-- `id`: Primary key. Snapshot identifier.
+- `id`: Primary Key.
 - `article_id`
-  > Reference to the article whose state this snapshot captures. {@link
+  > Reference to the target article whose version is being saved. {@link
   > discussion_board_articles.id}.
-- `author_user_id`
-  > Reference to the user author at the time of this snapshot. Nullable if
-  > authored or modified by admin. [discussion_board_users.id](#discussion_board_users).
-- `author_admin_id`
-  > Reference to the admin author at the time of this snapshot. Nullable if
-  > authored/modified by user. [discussion_board_admins.id](#discussion_board_admins).
-- `title`: Snapshot of the article title at the time of snapshot creation.
-- `body`: Snapshot of the main article content at the snapshot time.
-- `created_at`: When the snapshot was created.
+- `editor_user_id`
+  > User who performed the edit (could be the original author or an admin).
+  > References [discussion_board_users.id](#discussion_board_users).
+- `snapshot_title`: Snapshot of the article title as captured at edit.
+- `snapshot_content`: Snapshot of the article content as captured at edit.
+- `created_at`: Datetime when this snapshot was recorded (edit or moderation time).
 
 ## Comments
 
@@ -328,204 +346,222 @@ erDiagram
 "discussion_board_comments" {
   String id PK
   String discussion_board_article_id FK
-  String discussion_board_user_id FK "nullable"
-  String discussion_board_admin_id FK "nullable"
+  String discussion_board_user_id FK
   String body
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_comment_attachments" {
+"discussion_board_comment_snapshots" {
   String id PK
   String discussion_board_comment_id FK
-  String(80000) file_url
-  String original_filename
-  String mime_type
-  Int file_size_bytes
+  String discussion_board_article_id FK
+  String discussion_board_user_id FK
+  String body
   DateTime created_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_comment_attachments" }o--|| "discussion_board_comments" : comment
+"discussion_board_comment_snapshots" }o--|| "discussion_board_comments" : comment
 ```
 
 ### `discussion_board_comments`
 
-Commentary created by registered users or administrators on discussion
-board articles.
+Main comment entity for article-based discussions.
 
-Each comment is associated with a specific article. Comments can be
-authored by either normal users or admins, linked by foreign keys. The
-content of each comment is subject to length validations and may include
-up to 2 attached files managed via subsidiary attachments table.
+Stores user comments posted beneath articles on the economic/political
+discussion board. Every comment is individually created by a registered
+user and explicitly linked to a parent article and author. The model
+supports text-only discussion—no nested replies, attachments, or
+media—ensuring flat, readable discussion per requirements. Each comment
+may be edited or soft deleted by its author or by admins; a full version
+history is preserved via companion snapshot table. Audit logging,
+moderation, and compliance flows refer to this entity for comment
+lifecycle management.
 
-Comments are visible under their parent article and support creation,
-editing, and deletion by their owner (user or admin) as well as by
-administrators for moderation. When an article is deleted, all its
-comments are deleted as well. Comment deletions are implemented as soft
-deletes for traceability and moderation audit.
-
-Comment creation and modification times are recorded for sorting and
-review. Provides the central entity for all discussion under articles.
+Foreign keys reference existing user and article tables. Indexing
+supports rapid retrieval by article and chronological ordering. All
+lifecycle fields (created/updated/deleted) included. Only authenticated
+users may comment, as enforced in business logic.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_article_id`
-  > The article to which this comment belongs. {@link
+  > Reference to the parent article this comment belongs to. {@link
   > discussion_board_articles.id}.
 - `discussion_board_user_id`
-  > User author of the comment, if authored by a regular user. Nullable for
-  > admin-authored comments. [discussion_board_users.id](#discussion_board_users).
-- `discussion_board_admin_id`
-  > Admin author of the comment, if authored by an admin. Nullable for
-  > user-authored comments. [discussion_board_admins.id](#discussion_board_admins).
+  > Comment author; the registered user who created the comment. {@link
+  > discussion_board_users.id}.
 - `body`
-  > The content text of the comment. Subject to business validation (2-1000
-  > characters).
-- `created_at`: Timestamp when the comment was created.
-- `updated_at`: Timestamp when the comment was last edited.
+  > Comment content text as provided by the author. Limited to 5,000
+  > characters per business rules. Cannot be blank or empty.
+- `created_at`
+  > Timestamp when this comment was originally posted. Immutable, set
+  > automatically on creation.
+- `updated_at`
+  > Timestamp of last update to this comment. Updates whenever author or
+  > admin edits content.
 - `deleted_at`
-  > Soft deletion time. Set when the comment is removed for user or
-  > moderation reasons.
+  > Soft-delete marker for comment lifecycle management. Nullable; populated
+  > when comment is hidden/deleted.
 
-### `discussion_board_comment_attachments`
+### `discussion_board_comment_snapshots`
 
-Files or images attached to a comment on the discussion board.
+Historical snapshot table capturing every prior version of a comment.
 
-Each record links a single file/image to one parent comment. Used to
-manage comment attachment uploads (max two per comment). Only attachments
-of allowed types and sizes may be added per business validation.
+Stores immutable records of all comment edits for compliance, auditing,
+and rollback support. Each row reflects a single state of a comment at a
+specific edit moment. Snapshots preserve all key attributes: article,
+author, and content body alongside full timestamp information. Indexing
+supports audit trail queries and moderation review workflows. This table
+is append-only; rows are never updated or deleted except via data
+retention policies. Foreign keys echo the primary comment table for
+robust relational traceability.
 
-Attachment entities are always dependent on their parent comment and
-deleted when the parent is deleted. Includes information needed to
-implement download authorization (only for authenticated users), as well
-as metadata for moderation and auditing.
+Use this table for audit, compliance, and recovery of previous comment
+revisions; exposed via read-only access in typical application flows.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_comment_id`
-  > The comment this attachment belongs to. {@link
+  > Reference to the comment whose version is captured. {@link
   > discussion_board_comments.id}.
-- `file_url`: Storage location URI for the attachment file.
-- `original_filename`: The filename as originally uploaded by the user.
-- `mime_type`: MIME type of the attachment (e.g., 'image/png', 'application/pdf').
-- `file_size_bytes`: The file size in bytes. Enforced as max 10MB by business rules.
-- `created_at`: Timestamp when the attachment was created/uploaded.
+- `discussion_board_article_id`
+  > Reference to the parent article for context at edit time. {@link
+  > discussion_board_articles.id}.
+- `discussion_board_user_id`
+  > Original author of the comment at the version's point in time. {@link
+  > discussion_board_users.id}.
+- `body`
+  > The entire comment text as it existed at the point of edit or deletion.
+  > Limited to 5,000 characters, never blank. Saved exactly as submitted at
+  > edit.
+- `created_at`
+  > Timestamp the snapshot was taken (i.e., comment edit or delete event
+  > occurred). Set automatically.
+- `deleted_at`
+  > Optional marker if the snapshotted version corresponded to a deletion
+  > event. Nullable; otherwise null.
 
 ## Moderation
 
 ```mermaid
 erDiagram
-"discussion_board_reports" {
-  String id PK
-  String reporter_user_id FK
-  String target_type
-  String target_id
-  String reason
-  String description "nullable"
-  String status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
 "discussion_board_moderation_logs" {
   String id PK
   String admin_id FK
   String target_type
   String target_id
-  String action_code
-  String note "nullable"
+  String action
+  String reason
+  String outcome
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
 ```
 
-### `discussion_board_reports`
-
-User-submitted moderation reports tracking flagged content or abusive
-behavior.
-
-This table captures all reported cases by users regarding articles,
-comments, or attachments requiring moderation or review. Each report
-includes metadata for the reporter (user), the type and ID of the entity
-reported, the nature of the report (reason/category), and the processing
-status. Only authenticated users may submit reports, and every report is
-associated with the precise timestamp of its creation.
-
-The moderation team uses this table to review, resolve, or escalate
-reported incidents, providing an audit trail for transparency and
-compliance. All content and user references point to existing normalized
-tables. Deletion is soft to maintain historical audit integrity.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reporter_user_id`
-  > Reporter user account that created the moderation report. {@link
-  > discussion_board_users.id}.
-- `target_type`
-  > Type of entity being reported (e.g., 'article', 'comment', 'attachment').
-  > Used to distinguish the context of the moderation report.
-- `target_id`
-  > ID of the reported entity (referencing articles, comments, or attachments
-  > depending on target_type). Not a foreign key due to multi-entity
-  > polymorphism, but always references business entities.
-- `reason`
-  > Reason or category provided for the report (e.g., spam, abuse, illegal
-  > content).
-- `description`
-  > Additional details or user explanation for the report. Optional extended
-  > text field for further clarification.
-- `status`
-  > Current status of the report (e.g., open, in_review, resolved, rejected,
-  > escalated).
-- `created_at`: Timestamp when the report was created.
-- `updated_at`: Timestamp of the most recent update or review of the report.
-- `deleted_at`
-  > Soft delete timestamp. Null if not deleted; set when report is removed
-  > for business or compliance reasons.
-
 ### `discussion_board_moderation_logs`
 
-Audit trail for all moderation and administrative actions performed by
-platform admins.
+Moderation log tracking all administrative actions on articles, comments,
+and attachments.
 
-This table records every explicit moderation or admin action on user
-content, including edits, deletions, warnings, user suspensions, and
-others. Each log includes references to the admin who performed the
-action, the type of entity targeted, the specific target entity ID, a
-code describing the action (e.g., 'delete', 'edit', 'suspend'), freeform
-notes, and timestamps.
-
-Log records are immutable business events and form the foundation for
-auditability, compliance, and future incident review. All admin and
-content references point to pre-existing, normalized entities. Deletion
-is soft to allow for complete audit history even when entries are hidden
-from routine views.
+Each event records the type of action performed (remove, edit, ban,
+etc.), the target entity (article, comment, or attachment) by ID, the
+acting admin, action rationale, outcome, and exact timestamp. Supports
+transparent audit trails and minimal compliance needs for this discussion
+board. Entries are never deleted to maintain historical traceability. The
+log references existing core entities via type+ID, allowing polymorphic
+tracking of acted-upon items in a normalized, non-redundant way.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary key for moderation event.
 - `admin_id`
-  > Administrator who performed this moderation action. {@link
+  > Admin account responsible for moderation action. {@link
   > discussion_board_admins.id}.
-- `target_type`
-  > Type of entity or user subjected to moderation action (e.g., 'article',
-  > 'comment', 'user', 'attachment').
-- `target_id`
-  > ID of the entity or user affected by admin action. Polymorphic reference;
-  > resolved at application level based on target_type.
-- `action_code`
-  > Code or keyword for the action performed (e.g., 'delete', 'edit',
-  > 'restore', 'suspend', 'warn').
-- `note`
-  > Optional additional explanation or notes from the admin about the action
-  > taken.
-- `created_at`: Timestamp when this moderation action was recorded.
-- `updated_at`
-  > Timestamp of the most recent update to log entry (if any corrections or
-  > updates are made).
+- `target_type`: Type of thing acted on ("article", "comment", "attachment").
+- `target_id`: UUID of the item moderated (article, comment, or attachment).
+- `action`: Moderation action performed (e.g., "remove", "edit", "ban").
+- `reason`: Reason for this moderation action as entered by the admin.
+- `outcome`
+  > Result or status after moderation (e.g., "deleted", "edited", "banned",
+  > "restored").
+- `created_at`
+  > Timestamp representing when this moderation action was performed (UTC,
+  > ISO 8601).
+
+## Attachments
+
+```mermaid
+erDiagram
+"discussion_board_attachments" {
+  String id PK
+  String original_filename
+  String storage_filename
+  Int size_bytes
+  String mime_type
+  String checksum_sha256 UK
+  String storage_location
+  DateTime deleted_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+```
+
+### `discussion_board_attachments`
+
+Technical metadata and storage abstraction for all uploaded attachments
+(images, files) in the discussion board platform.
+
+This model acts as the canonical store for attachment objects, capturing
+all necessary file and storage characteristics without direct reference
+to business entities such as articles or comments. Attachments are
+uniquely identified and managed within this table, enabling seamless
+handling of files uploaded to articles, comments, or potential future
+features.
+
+Fields capture original and storage filenames, file size, MIME type,
+checksum for duplicate/prevention/security, and storage provider details
+for local or cloud locations. The model supports lifecycle and security
+management via soft delete, complete audit of creation and update times,
+and enables orphan cleanup procedures. Foreign keys (e.g., uploader, link
+references) are not present—business-layer tables provide those indirect
+linkages. The table is designed for both immediate production deployment
+and robust future extensibility, enforcing strict data normalization and
+supporting file security best practices.
+
+Properties as follows:
+
+- `id`: Primary Key. Universally unique file identifier for attachment record.
+- `original_filename`
+  > Original filename as submitted by user; displayed in download links.
+  > Preserves the name provided on file upload.
+- `storage_filename`
+  > Internal reference or generated filename used for storage (server, cloud
+  > bucket, etc.), never exposed to the user. Ensures collision-free and
+  > unguessable storage location.
+- `size_bytes`
+  > Exact file size in bytes as stored. Used to validate application and
+  > storage constraints (max 10 MB per requirements).
+- `mime_type`
+  > IANA MIME type of the uploaded file (e.g., 'image/png',
+  > 'application/pdf'). Required for attachment accept/serve validation and
+  > display.
+- `checksum_sha256`
+  > SHA-256 hash checksum of file content, used for duplicate detection,
+  > integrity verification, and security audit logging. Uniqueness enforces
+  > single storage per identical file.
+- `storage_location`
+  > Provider identifier or physical/cloud storage reference (e.g., S3 bucket,
+  > server path, etc.). Used exclusively by backend for file I/O routing. Not
+  > visible to application frontends.
 - `deleted_at`
-  > Soft delete timestamp. Null if log entry is active; set for hidden or
-  > expunged from casual display, never hard-deleted for audit purposes.
+  > Timestamp of attachment deletion (soft delete). Null if active; set when
+  > attachment is removed, orphaned, or expunged. Supports compliance and
+  > orphan cleanup workflows.
+- `created_at`
+  > File metadata creation timestamp. Set on initial upload and immutable
+  > thereafter for audit/compliance purposes.
+- `updated_at`
+  > File metadata last modification timestamp. Updated on any admin or system
+  > change to technical information (not business linkage).

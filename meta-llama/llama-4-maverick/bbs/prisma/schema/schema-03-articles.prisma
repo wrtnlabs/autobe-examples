@@ -1,8 +1,5 @@
-/// Main entity for article management in the discussion board.
-///
-/// Users can create, edit, and delete their own articles. The system tracks
-/// creation and modification timestamps, and supports soft deletion to
-/// maintain audit trails. Each article can have multiple comments.
+/// Main table for storing article information. Contains core details about
+/// each article posted by users.
 ///
 /// @namespace Articles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -13,10 +10,10 @@ model discussion_board_articles {
   /// Primary Key.
   id String @id
   
-  /// Title of the article created by the user.
+  /// Title of the article.
   title String
   
-  /// Main content of the article.
+  /// Main content of the article in Markdown format.
   content String
   
   /// Timestamp when the article was created.
@@ -25,57 +22,87 @@ model discussion_board_articles {
   /// Timestamp when the article was last updated.
   updated_at DateTime
   
-  /// Timestamp when the article was soft deleted, if applicable.
+  /// Timestamp when the article was soft-deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_article_versions discussion_board_article_versions[]
   discussion_board_comments discussion_board_comments[]
-  discussion_board_attachments discussion_board_attachments[]
-  discussion_board_moderation_actions discussion_board_moderation_actions[]
-  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_reported_content discussion_board_reported_content[]
   
   @@index([created_at])
 }
 
-/// Entity for managing comments on articles.
-///
-/// Users can comment on articles, and these comments are tracked with
-/// creation and modification timestamps. The system supports soft deletion
-/// of comments to maintain audit trails.
+/// Stores file attachments associated with articles. Each record represents
+/// a file attached to an article.
 ///
 /// @namespace Articles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_comments {
+model discussion_board_article_attachments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key referencing the article this comment belongs to.
+  /// Foreign key referencing discussion_board_articles.id.
   article_id String
   
-  /// Content of the comment.
-  content String
+  /// Name of the attached file.
+  file_name String
   
-  /// Timestamp when the comment was created.
+  /// MIME type of the attached file.
+  file_type String
+  
+  /// Size of the attached file in bytes.
+  file_size Int
+  
+  /// Timestamp when the attachment was created.
   created_at DateTime
-  
-  /// Timestamp when the comment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the comment was soft deleted, if applicable.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
   
-  discussion_board_moderation_actions discussion_board_moderation_actions[]
-  discussion_board_content_reports discussion_board_content_reports[]
+  @@index([article_id])
+}
+
+/// Maintains version history of article changes. Each record represents a
+/// snapshot of the article at a particular point in time.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@index([article_id, created_at])
+  /// Foreign key referencing discussion_board_articles.id.
+  article_id String
+  
+  /// Title of the article at this version.
+  title String
+  
+  /// Content of the article at this version.
+  content String
+  
+  /// Version number of this snapshot.
+  version_number Int
+  
+  /// Timestamp when this version was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  @@unique([article_id, version_number])
+  @@index([article_id])
 }

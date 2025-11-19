@@ -1,148 +1,105 @@
-/// User comments on articles in the economic/political discussion board.
+/// User comments on economic discussion board posts.
 ///
-/// Stores user-generated content that engages with articles, allowing for
-/// discussion and debate. Each comment is associated with a specific article
-/// and created by an authenticated member or moderator through their active
-/// session.
-///
-/// Comments can be nested to support threaded discussions, and they can be
-/// edited or deleted by their authors. The comment content includes a body
-/// field for the text of the comment.
-///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// content moderation. Comments can be flagged for review by moderators.
-///
-/// The comment system supports:
-/// - Threaded discussions through parent_id field
-/// - User authentication tracking through member/moderator relationships
-/// - Content moderation through deleted_at and flagged fields
-/// - Historical tracking through snapshot tables
-/// - Soft delete capability for content management
+/// Stores user comments with content, timestamps, and relationships to posts
+/// and users.
+/// Each comment is associated with a specific post and created by an
+/// authenticated user.
+/// Comments support soft deletion for content moderation while maintaining
+/// audit trails.
+/// The comment content includes body text and timestamps for creation and
+/// modification.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_political_discussion_board_comments {
+model economic_discussion_board_comments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Article that this comment belongs to. {@link
-  /// economic_political_discussion_board_articles.id}
-  economic_political_discussion_board_article_id String
+  /// Target post's {@link economic_discussion_board_posts.id}.
+  economic_discussion_board_post_id String
   
-  /// Member who created this comment. {@link
-  /// economic_political_discussion_board_members.id}
-  economic_political_discussion_board_member_id String?
+  /// Comment creator's {@link economic_discussion_board_users.id}.
+  economic_discussion_board_user_id String
   
-  /// Moderator who created this comment. {@link
-  /// economic_political_discussion_board_moderators.id}
-  economic_political_discussion_board_moderator_id String?
+  /// Session used to create comment's {@link
+  /// economic_discussion_board_user_sessions.id}.
+  economic_discussion_board_user_session_id String
   
-  /// Parent comment for threaded discussions. {@link
-  /// economic_political_discussion_board_comments.id}
-  parent_id String?
-  
-  /// Type of actor who created the comment. Valid values: 'member' or
-  /// 'moderator'
-  actor_type String
-  
-  /// Text content of the comment
+  /// Comment content text.
   body String
   
-  /// Whether the comment has been flagged for moderator review
-  flagged Boolean
-  
-  /// When the comment was created
+  /// Comment creation timestamp.
   created_at DateTime
   
-  /// When the comment was last updated
+  /// Comment modification timestamp.
   updated_at DateTime
   
-  /// When the comment was soft-deleted (null if active)
+  /// Comment deletion timestamp for soft delete.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
-  member economic_political_discussion_board_members? @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
-  moderator economic_political_discussion_board_moderators? @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
-  parent economic_political_discussion_board_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  post economic_discussion_board_posts @relation(fields: [economic_discussion_board_post_id], references: [id], onDelete: Cascade)
+  user economic_discussion_board_users @relation(fields: [economic_discussion_board_user_id], references: [id], onDelete: Cascade)
+  userSession economic_discussion_board_user_sessions @relation(fields: [economic_discussion_board_user_session_id], references: [id], onDelete: Cascade)
   
-  recursive economic_political_discussion_board_comments[] @relation("recursive")
-  economic_political_discussion_board_comment_snapshots economic_political_discussion_board_comment_snapshots[]
-  economic_political_discussion_board_attachments economic_political_discussion_board_attachments[]
-  
-  // spellchecker: ignore-next-line
-  @@index([economic_political_discussion_board_member_id], map: "economic_political_discussion_board_comments_economic__8ec5f8f2")
-  // spellchecker: ignore-next-line
-  @@index([economic_political_discussion_board_moderator_id], map: "economic_political_discussion_board_comments_economic__3ea0bfc2")
+  economic_discussion_board_comment_snapshots economic_discussion_board_comment_snapshots[]
+  economic_discussion_board_attachments economic_discussion_board_attachments[]
+  economic_discussion_board_comment_attachments economic_discussion_board_comment_attachments[]
   
   // spellchecker: ignore-next-line
-  @@index([economic_political_discussion_board_article_id, created_at], map: "economic_political_discussion_board_comments_economic__c53051c8")
-  @@index([parent_id])
+  @@index([economic_discussion_board_user_id], map: "economic_discussion_board_comments_economic_discussion_3ae00edf")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_user_session_id], map: "economic_discussion_board_comments_economic_discussion_510ecccc")
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_post_id, created_at], map: "economic_discussion_board_comments_economic_discussion_f21d9cbd")
 }
 
-/// Historical snapshots of comments for audit trails and change tracking.
+/// Historical snapshots of economic discussion board comments.
 ///
-/// Stores point-in-time states of comments to maintain a complete history of
-/// all changes made to comments. Each snapshot captures the complete state
-/// of a comment at a specific moment in time, including the comment content,
-/// author information, and timestamps.
-///
-/// Snapshots are created whenever a comment is created, updated, or deleted.
-/// They provide a complete audit trail for content moderation and user
-/// accountability.
-///
-/// The snapshot system supports:
-/// - Complete historical tracking of all comment changes
-/// - Restoration of previous comment states if needed
-/// - Content moderation through historical review
-/// - User accountability through author tracking
-/// - Change tracking for content analysis
+/// Stores point-in-time states of comments for audit trails and change
+/// tracking.
+/// Each snapshot captures the complete state of a comment at a specific
+/// moment in time.
+/// Snapshots are created whenever a comment is modified and are never
+/// updated or deleted.
+/// The snapshot includes all comment fields at the time of creation for
+/// historical accuracy.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_political_discussion_board_comment_snapshots {
+model economic_discussion_board_comment_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Comment that this snapshot belongs to. {@link
-  /// economic_political_discussion_board_comments.id}
-  economic_political_discussion_board_comment_id String
+  /// Source comment's {@link economic_discussion_board_comments.id}.
+  economic_discussion_board_comment_id String
   
-  /// Type of actor who created the comment. Valid values: 'member' or
-  /// 'moderator'
-  actor_type String
-  
-  /// Text content of the comment
+  /// Comment content text at snapshot time.
   body String
   
-  /// Whether the comment was flagged for moderator review at this point in time
-  flagged Boolean
-  
-  /// When the comment was created
+  /// Snapshot creation timestamp.
   created_at DateTime
   
-  /// When the comment was last updated
+  /// Comment modification timestamp at snapshot time.
   updated_at DateTime
   
-  /// When the comment was soft-deleted (null if active)
+  /// Comment deletion timestamp at snapshot time.
   deleted_at DateTime?
-  
-  /// When this snapshot was created
-  snapshot_created_at DateTime
   
   //----
   // RELATIONS
   //----
-  comment economic_political_discussion_board_comments @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  comment economic_discussion_board_comments @relation(fields: [economic_discussion_board_comment_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([economic_political_discussion_board_comment_id, snapshot_created_at], map: "economic_political_discussion_board_comment_snapshots__df00208f")
+  @@index([economic_discussion_board_comment_id, created_at], map: "economic_discussion_board_comment_snapshots_economic_d_b5d62c79")
 }

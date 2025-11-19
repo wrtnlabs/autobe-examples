@@ -20,12 +20,11 @@ export async function postAuthModeratorRefresh(props: {
   };
 
   try {
-    const verified = jwt.verify(
+    decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    );
-    decoded = verified as {
+    ) as {
       id: string;
       session_id: string;
       type: string;
@@ -53,12 +52,16 @@ export async function postAuthModeratorRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
+  if (!session.moderator.is_active || session.moderator.deleted_at !== null) {
+    throw new HttpException("Account is inactive or deleted", 403);
+  }
+
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const accessToken = jwt.sign(
     {
-      type: "moderator",
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       created_at: new Date().toISOString(),
@@ -72,7 +75,7 @@ export async function postAuthModeratorRefresh(props: {
 
   const refreshToken = jwt.sign(
     {
-      type: "moderator",
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
@@ -96,10 +99,28 @@ export async function postAuthModeratorRefresh(props: {
 
   return {
     id: session.moderator.id,
-    username: session.moderator.username,
     email: session.moderator.email,
+    username: session.moderator.username,
+    display_name:
+      session.moderator.display_name === null
+        ? undefined
+        : session.moderator.display_name,
+    email_verified: session.moderator.email_verified,
+    email_verified_at:
+      session.moderator.email_verified_at === null
+        ? undefined
+        : toISOStringSafe(session.moderator.email_verified_at),
+    is_active: session.moderator.is_active,
+    last_login_at:
+      session.moderator.last_login_at === null
+        ? undefined
+        : toISOStringSafe(session.moderator.last_login_at),
     created_at: toISOStringSafe(session.moderator.created_at),
     updated_at: toISOStringSafe(session.moderator.updated_at),
+    deleted_at:
+      session.moderator.deleted_at === null
+        ? undefined
+        : toISOStringSafe(session.moderator.deleted_at),
     token: {
       access: accessToken,
       refresh: refreshToken,

@@ -1,22 +1,25 @@
-/// This model represents the users of the discussion board. It contains
-/// essential information such as email, password hash, and timestamps for
-/// creation and updates. The model is correctly defined with appropriate
-/// fields and constraints.
+/// Table storing information about registered users on the discussion board.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_users {
+model discussion_board_registered_users {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the registered users table.
   id String @id
   
-  /// User's email address for authentication and communication.
+  /// Username chosen by the user during registration.
+  username String
+  
+  /// Email address of the registered user.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Hashed password for the user's account.
   password_hash String
+  
+  /// Indicates whether the user's account is active.
+  is_active Boolean
   
   /// Timestamp when the user account was created.
   created_at DateTime
@@ -24,40 +27,39 @@ model discussion_board_users {
   /// Timestamp when the user account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft-deleted.
-  deleted_at DateTime?
-  
   //----
   // RELATIONS
   //----
-  discussion_board_user_sessions discussion_board_user_sessions[]
-  discussion_board_attachments discussion_board_attachments[]
-  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_registered_user_sessions discussion_board_registered_user_sessions[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_comment_replies discussion_board_comment_replies[]
+  discussion_board_reported_content discussion_board_reported_content[]
   
+  @@unique([username])
   @@unique([email])
 }
 
-/// This model manages user sessions for authentication.
+/// Table storing session information for registered users.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_user_sessions {
+model discussion_board_registered_user_sessions {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the registered user sessions table.
   id String @id
   
-  /// Foreign key referencing discussion_board_users.id.
-  user_id String
+  /// Foreign key referencing the registered users table.
+  registered_user_id String
   
   /// IP address of the user during session creation.
   ip String
   
-  /// URL of the user's current session.
+  /// URL from which the session was created.
   href String
   
-  /// Referrer URL for the user's session.
+  /// Referrer URL for the session.
   referrer String
   
   /// Timestamp when the session was created.
@@ -69,15 +71,13 @@ model discussion_board_user_sessions {
   //----
   // RELATIONS
   //----
-  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
   
-  @@index([user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([registered_user_id, created_at], map: "discussion_board_registered_user_sessions_registered_u_89a80578")
 }
 
-/// This model represents the moderators of the discussion board. It contains
-/// essential information such as email, password hash, and timestamps for
-/// creation and updates. The model is correctly defined with appropriate
-/// fields and constraints.
+/// Table storing information about moderators on the discussion board.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -85,14 +85,20 @@ model discussion_board_moderators {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the moderators table.
   id String @id
   
-  /// Moderator's email address for authentication and communication.
+  /// Username chosen by the moderator during registration.
+  username String
+  
+  /// Email address of the moderator.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Hashed password for the moderator's account.
   password_hash String
+  
+  /// Indicates whether the moderator's account is active.
+  is_active Boolean
   
   /// Timestamp when the moderator account was created.
   created_at DateTime
@@ -100,19 +106,17 @@ model discussion_board_moderators {
   /// Timestamp when the moderator account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the moderator account was soft-deleted.
-  deleted_at DateTime?
-  
   //----
   // RELATIONS
   //----
   discussion_board_moderator_sessions discussion_board_moderator_sessions[]
   discussion_board_moderation_actions discussion_board_moderation_actions[]
   
+  @@unique([username])
   @@unique([email])
 }
 
-/// This model manages moderator sessions for authentication.
+/// Table storing session information for moderators.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -120,19 +124,19 @@ model discussion_board_moderator_sessions {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the moderator sessions table.
   id String @id
   
-  /// Foreign key referencing discussion_board_moderators.id.
+  /// Foreign key referencing the moderators table.
   moderator_id String
   
   /// IP address of the moderator during session creation.
   ip String
   
-  /// URL of the moderator's current session.
+  /// URL from which the session was created.
   href String
   
-  /// Referrer URL for the moderator's session.
+  /// Referrer URL for the session.
   referrer String
   
   /// Timestamp when the session was created.
@@ -147,4 +151,22 @@ model discussion_board_moderator_sessions {
   moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
   
   @@index([moderator_id, created_at])
+}
+
+/// Table storing information about guest users on the discussion board.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guests table.
+  id String @id
+  
+  /// IP address of the guest user.
+  ip String
+  
+  /// Timestamp when the guest user was recorded.
+  created_at DateTime
 }

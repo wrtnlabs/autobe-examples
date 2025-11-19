@@ -7,102 +7,113 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardAdmin";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
   admin: AdminPayload;
-  body: IEconPolDiscussionBoardAdmin.IJoin;
-}): Promise<IEconPolDiscussionBoardAdmin.IAuthorized> {
-  const { username, email, password } = props.body;
-
-  const existingAdmin =
-    await MyGlobal.prisma.econ_pol_discussion_board_admins.findFirst({
-      where: {
-        OR: [{ username }, { email }],
-      },
-    });
-
+  body: IDiscussionBoardAdmin.IJoin;
+}): Promise<IDiscussionBoardAdmin.IAuthorized> {
+  const existingAdmin = await MyGlobal.prisma.discussion_board_admin.findFirst({
+    where: { email: props.body.email },
+  });
   if (existingAdmin !== null) {
-    throw new HttpException("Username or email already registered.", 409);
+    throw new HttpException("Email already registered", 409);
   }
 
-  const passwordHash = await PasswordUtil.hash(password);
+  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
 
-  const now = toISOStringSafe(new Date());
+  const toIsoStringDate = (): string & tags.Format<"date-time"> => {
+    return toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
+  };
 
-  const adminRecord =
-    await MyGlobal.prisma.econ_pol_discussion_board_admins.create({
-      data: {
-        id: v4(),
-        username,
-        email,
-        password_hash: passwordHash,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    });
+  const generateFutureIsoString = (
+    ms: number,
+  ): string & tags.Format<"date-time"> => {
+    return toISOStringSafe(new Date(Date.now() + ms)) as string &
+      tags.Format<"date-time">;
+  };
 
-  const accessExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 1000 * 60 * 60),
-  );
-  const refreshExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-  );
+  const now: string & tags.Format<"date-time"> = toIsoStringDate();
+  const id: string & tags.Format<"uuid"> = v4();
 
-  const sessionRecord =
-    await MyGlobal.prisma.econ_pol_discussion_board_admin_sessions.create({
-      data: {
-        id: v4(),
-        econ_pol_discussion_board_admin_id: adminRecord.id,
-        created_at: now,
-        expired_at: accessExpiredAt,
-        ip: "",
-        href: "",
-        referrer: "",
-      },
-    });
+  const admin = await MyGlobal.prisma.discussion_board_admin.create({
+    data: {
+      id,
+      email: props.body.email,
+      password_hash: hashedPassword,
+      nickname: props.body.nickname,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+  });
+
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const ip: string = "";
+  const href: string = "";
+  const referrer: string = "";
+
+  const accessExpireMs: number = 60 * 60 * 1000;
+  const refreshExpireMs: number = 7 * 24 * 60 * 60 * 1000;
+
+  const accessExpireDate: string & tags.Format<"date-time"> =
+    generateFutureIsoString(accessExpireMs);
+  const refreshExpireDate: string & tags.Format<"date-time"> =
+    generateFutureIsoString(refreshExpireMs);
+
+  const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
+    data: {
+      id: sessionId,
+      discussion_board_admin_id: admin.id,
+      ip,
+      href,
+      referrer,
+      created_at: now,
+      expired_at: accessExpireDate,
+    },
+  });
 
   const token = {
     access: jwt.sign(
       {
         type: "admin",
-        id: adminRecord.id,
-        session_id: sessionRecord.id,
+        id: admin.id,
+        session_id: session.id,
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
     ),
     refresh: jwt.sign(
       {
         type: "admin",
-        id: adminRecord.id,
-        session_id: sessionRecord.id,
+        id: admin.id,
+        session_id: session.id,
         tokenType: "refresh",
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
     ),
-    expired_at: accessExpiredAt,
-    refreshable_until: refreshExpiredAt,
+    expired_at: accessExpireDate,
+    refreshable_until: refreshExpireDate,
   };
 
   return {
-    adminUsername: adminRecord.username,
-    email: adminRecord.email,
-    created_at: toISOStringSafe(new Date(adminRecord.created_at)),
-    updated_at: toISOStringSafe(new Date(adminRecord.updated_at)),
-    deleted_at:
-      adminRecord.deleted_at !== null && adminRecord.deleted_at !== undefined
-        ? toISOStringSafe(new Date(adminRecord.deleted_at))
-        : null,
-    role: "admin",
-    is_active: true,
-    id: adminRecord.id,
+    id: admin.id,
+    email: admin.email,
+    nickname: admin.nickname,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: null,
     token,
   };
 }

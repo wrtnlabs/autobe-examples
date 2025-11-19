@@ -1,13 +1,11 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 /**
- * Authenticates and authorizes a discussion board user by JWT.
- * Validates user type and ensures the user is active, email-verified, not blocked, and not soft-deleted.
- * Looks up the user via the correct user-session foreign key in the DB.
+ * Authenticates a standard discussion board user via JWT and checks DB validity.
+ * Throws if the token is invalid, role is incorrect, soft-deleted, or missing.
  */
 export async function userAuthorize(request: {
   headers: {
@@ -15,28 +13,18 @@ export async function userAuthorize(request: {
   };
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
-
   if (payload.type !== "user") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-
-  // Confirm user session exists, ties to active/unblocked user, and user is not deleted
-  const session = await MyGlobal.prisma.discussion_board_user_sessions.findFirst({
+  // Confirm user exists, is not deleted
+  const user = await MyGlobal.prisma.discussion_board_users.findFirst({
     where: {
-      id: payload.session_id,
-      discussion_board_user_id: payload.id,
-      user: {
-        deleted_at: null,
-        is_active: true,
-        is_blocked: false,
-        is_email_verified: true
-      }
-    },
+      id: payload.id,
+      deleted_at: null
+    }
   });
-
-  if (!session) {
+  if (user === null) {
     throw new ForbiddenException("You're not enrolled");
   }
-
   return payload;
 }

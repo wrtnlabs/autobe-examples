@@ -1,149 +1,96 @@
-# Business Rules for Discussion Board Service
+# Business Rules and Validation Requirements
 
-## Revolutionizing Economic and Political Discourse Through Structured Dialogue
+## Introduction and Overview
 
-In today's digital landscape, where information flows freely but meaningful discussion often gets lost in the noise, this discussion board service stands out as a dedicated platform for economic and political discourse. Users can create comprehensive articles enriched with images and file attachments, fostering in-depth conversations that educate, inform, and connect individuals passionate about these critical societal topics.
+This document outlines the comprehensive business rules and validation requirements for the economic/political discussion board. These rules govern article creation, commenting, user management, content moderation, and attachment handling in natural language terms that developers can easily implement. All rules are designed to support a straightforward and minimal discussion board while maintaining appropriate content standards for economic and political topics.
 
-The platform operates with three distinct user roles - guests who can explore public content, members who actively contribute and participate, and administrators who ensure standards and manage the community - creating a balanced ecosystem for thoughtful exchange. Business rules govern every aspect of this interaction, from content creation and publication to community moderation and data protection.
+## Article Validation Rules
 
-## Article Submission and Publication Rules
+WHEN a member submits an article, THE system SHALL validate that the article title contains at least one non-whitespace character and is no longer than 200 characters to ensure meaningful titles.  
+WHEN a member enters article content, THE system SHALL require the content to include at least 20 meaningful characters while limiting the maximum length to 10,000 characters to prevent spam and maintain readability.  
+WHEN an article is categorized, THE system SHALL only accept categories related to economic or political topics, such as "Macroeconomics," "Political Science," or "Economic Policy."  
+WHEN an article contains inappropriate language, THE system SHALL flag it and prevent publication until the member modifies the content to remove offensive terms.  
+WHEN validation fails, THE system SHALL provide clear error messages to guide the member on corrections, such as "Article title cannot be empty" or "Content must contain meaningful text."
 
-WHEN a member intends to contribute an economic or political article, THE system SHALL allow submission with optional image and file attachments within established limits.
+Additionally, the article submission flow includes moderation queue check: WHEN an article passes initial validation, THE system SHALL place it in a moderation queue if it contains keywords associated with sensitive political topics, keeping it unpublished until approved by an administrator.
 
-WHEN a member submits an article containing economic analysis or political commentary, THE system SHALL validate the content's topical relevance and basic completeness before acceptance.
+## Comment Rules
 
-WHILE a submitted article undergoes any required review process, THE system SHALL provide clear status indicators to the submitting member.
+WHEN a guest or member attempts to comment, THE system SHALL allow commenting only on published articles, redirecting users to the article listing if they try to comment on unpublished content.  
+WHEN posting a comment, THE system SHALL validate that the comment contains between 1 and 500 characters, starting with a letter or number to prevent meaningless input.  
+WHEN a member comments excessively, THE system SHALL implement a rate limit of no more than 10 comments per article per day per member to prevent spam and maintain discussion quality.  
+WHEN a comment includes prohibited language (such as hate speech or personal attacks), THE system SHALL automatically flag it for moderation review and hide it from public view until an administrator decides.  
+WHEN comments are posted, THE system SHALL display them in chronological order with the newest comments appearing at the bottom, using timestamps in the user's timezone for clarity.
 
-WHEN an article passes all validation checks and review processes, THE system SHALL publish it immediately for community visibility.
+The comment system also supports threaded replies up to 3 levels deep, where WHEN a member replies to another comment, THE system SHALL maintain the parent-child relationship and indent replies appropriately for readability.
 
-WHEN a member chooses to modify their published article within a reasonable time frame, THE system SHALL permit content updates without requiring re-approval.
+## User Account Rules
 
-WHEN a member requests article deletion, THE system SHALL remove the content and associated discussions from public access.
+WHEN a user registers, THE system SHALL validate the email address using standard RFC 5322 format and ensure it is unique within the system to prevent duplicate accounts.  
+WHEN creating a username, THE system SHALL require it to be unique, between 3-30 characters, containing only alphanumeric characters and underscores, avoiding public display of inappropriate names.  
+WHEN issuing password reset, THE system SHALL send a verification email within 5 seconds of request, containing a secure token valid for exactly 24 hours.  
+WHEN an account violates rules multiple times, THE system SHALL suspend it automatically after 3 warnings, sending a final notification email with suspension details.  
+WHEN an account is suspended, THE system SHALL archive but preserve all content for potential future reinstatement, notifying the user via email and in-app message.
 
-THE system SHALL impose article length limits to ensure manageable content while allowing comprehensive analysis.
+User registration also includes age verification: WHEN registering, THE system SHALL require a birthdate confirmation ensuring the user is 18 years or older, blocking registration attempts from users under age.
 
-## Content Quality and Integrity Standards
+## Attachment Constraints
 
-WHEN content addresses economic or political topics, THE system SHALL maintain neutrality in platform operations while allowing all legitimate viewpoints.
+WHEN uploading an image attachment, THE system SHALL accept only JPEG, PNG, and GIF formats to ensure compatibility and security, rejecting other file types with a clear error message.  
+WHEN processing file uploads, THE system SHALL enforce a maximum file size of 5 megabytes per attachment to prevent system overload and ensure reasonable hosting costs.  
+WHEN uploading documents, THE system SHALL allow only PDF, DOC, and DOCX formats for attached files, with the same size limits, while blocking executable files to prevent security risks.  
+WHEN an invalid attachment is submitted, THE system SHALL provide specific feedback such as "File size exceeds 5MB limit" or "Unsupported file format" to help users correct their uploads.  
+WHEN storing attachments, THE system SHALL generate unique filenames, associate them with their parent article immediately upon successful upload, and store them securely in cloud storage.
 
-WHILE content remains within economic or political discussion bounds, THE system SHALL tolerate diverse perspectives as long as they contribute constructively to discourse.
+The attachment process includes upload progress indicators: WHEN a file uploads, THE system SHALL display real-time progress bars and estimated completion time for files larger than 1MB to improve user experience.
 
-WHEN content includes factual claims, THE system SHALL encourage community correction rather than immediate administrative removal.
+## Moderation Rules
 
-WHEN content contains potentially misleading information about economic policies or political events, THE system SHALL flag it for review without automatic suppression.
+WHEN content is submitted, THE system SHALL scan for inflammatory language patterns, such as words associated with political extremism or economic conspiracy theories, and automatically flag suspicious articles.  
+WHEN an article is flagged, THE system SHALL route it to the administrator moderation queue with a priority based on keyword severity, displaying the most urgent items first.  
+WHEN an administrator reviews flagged content, THE system SHALL provide options to approve, reject, or request edits, with the ability to leave detailed feedback for the member.  
+WHEN rejecting content, THE system SHALL email the member immediately with specific reasons ("Contains politically inflammatory language") and guidance on how to resubmit appropriately.  
+WHEN approving content, THE system SHALL publish it instantly with a timestamp and add a moderation approval note for transparency.
 
-WHEN users include images or files to support their economic or political arguments, THE system SHALL validate file integrity and appropriateness.
+Moderation guidelines focus on maintaining respectful discourse: Administrators SHALL prioritize content that adds value to economic and political discussions while prohibiting personal attacks, misinformation, and hate speech, with a 2-hour average response time for flagged items during business hours.
 
-THE system SHALL prohibit spam-like content patterns to maintain discussion quality.
+## Age Restrictions
 
-## User Participation and Engagement Rules
+THE system SHALL restrict all account registrations to users aged 18 years or older, requiring verifiable birthdate confirmation during signup.  
+WHEN a user indicates they are under 18, THE system SHALL block registration completely, displaying a message: "This service is intended for adults 18+ due to the mature nature of economic and political content."  
+WHEN age is questionable (e.g., claiming exactly 18), THE system SHALL require additional verification such as email confirmation from a verified domain.  
+THE system SHALL assume user maturity for sensitive topics without additional age validation beyond registration, as required governance is met at signup.  
+WHEN minors attempt access through non-standard means, THE system SHALL detect and block such attempts, maintaining the adult-only environment.
 
-WHEN guests explore the discussion board, THE system SHALL provide full read-only access to all published content and discussions.
+## Content Submission Flow
 
-WHEN members authenticate and access the platform, THE system SHALL grant permission to create articles, participate in discussions, and upload supporting materials.
+```mermaid
+graph TD
+  A["User Submits Article"] --> B{"Validation Passed?"}
+  B -->|"Yes"| C["Check Attachments"]
+  B -->|"No"| D["Display Error Message"]
+  C --> E{"Attachments Valid?"}
+  E -->|"Yes"| F["Send to Moderation"]
+  E -->|"No"| G["Show Attachment Error"]
+  F --> H["Admin Review"]
+  D --> I["User Revises & Submits Again"]
+  G --> I
+  H --> J{"Approved?"}
+  J -->|"Yes"| K["Publish Immediately"]
+  J -->|"No"| L["Notify & Remove"]
+  L --> I
+```
 
-WHEN members engage in political or economic discussions, THE system SHALL require their authentication for participation tracking.
+## Comment Moderation Flow
 
-WHEN users request to join the community as members, THE system SHALL validate email uniqueness and basic user information completeness.
+WHEN a comment is flagged for violation, THE system SHALL hide it temporarily and notify moderators, who can respond within 1 hour during active periods. Moderators review flagged comments in a dedicated dashboard showing the comment, context, and violation reason, allowing them to delete, edit, or reinstate as needed.
 
-WHEN members maintain active accounts, THE system SHALL preserve their contribution history and engagement privileges.
+## File Upload Process
 
-WHEN account holders update their profiles, THE system SHALL allow modifications to permitted personal information fields.
+Files are processed asynchronously: WHEN an upload completes, THE system SHALL generate thumbnails for images automatically, store files in secure S3-compatible storage, and update the article record with attachment URLs immediately upon completion.
 
-WHEN users encounter authentication requirements for restricted actions, THE system SHALL provide clear pathways to registration or login.
+## Error Handling in Validation
 
-THE system SHALL maintain transparency in user role assignments and permission boundaries.
+WHEN network issues occur during submission, THE system SHALL save draft content locally and retry automatically. When user input is invalid, specific error messages guide corrections, and the system prevents submission until all issues are resolved.
 
-## Authentication and Security Protocols
-
-WHEN users log into the discussion board, THE system SHALL verify credentials and establish authenticated sessions with appropriate permission levels.
-
-WHEN users request password assistance, THE system SHALL provide secure password reset mechanisms through verified email channels.
-
-WHILE users remain inactive beyond configured timeout periods, THE system SHALL terminate sessions to protect account security.
-
-WHEN users create accounts requiring verification, THE system SHALL send confirmation communications before granting full access.
-
-WHEN authentication attempts fail repeatedly, THE system SHALL implement progressive security measures to prevent unauthorized access.
-
-THE system SHALL enforce password complexity requirements commensurate with platform sensitivity.
-
-## Discussion and Community Interaction Standards
-
-WHEN members participate in article discussions, THE system SHALL support threaded conversation structures for organized dialogue.
-
-WHEN members submit comments or responses, THE system SHALL validate input length and basic content appropriateness.
-
-WHEN discussion participants flag inappropriate content, THE system SHALL route flagged items to administrators for evaluation.
-
-WHEN administrators review flagged content, THE system SHALL provide decision options including removal or warning issuance.
-
-WHEN discussion patterns indicate healthy community engagement, THE system SHALL maintain minimal intervention in user interactions.
-
-WHEN users report technical issues or content concerns, THE system SHALL acknowledge reports and assign appropriate resolution pathways.
-
-THE system SHALL promote constructive dialogue through transparent community guidelines.
-
-## Content Moderation and Governance Procedures
-
-WHEN submitted content potentially violates community standards, THE system SHALL subject it to administrative review before publication.
-
-WHEN administrators evaluate content for publication approval, THE system SHALL present complete submission details including attachments.
-
-WHEN content receives administrative approval or rejection, THE system SHALL notify the submitting member promptly with decision rationale.
-
-WHEN approved content gains community attention, THE system SHALL allow continued administrator oversight without content removal.
-
-WHEN administrators identify persistently problematic accounts, THE system SHALL provide graduated response options from warnings to suspensions.
-
-WHEN moderation actions occur, THE system SHALL maintain comprehensive audit trails for transparency and accountability.
-
-THE system SHALL balance free expression with community safety through consistent enforcement procedures.
-
-## Attachment and Media Management Rules
-
-WHEN users include images in economic articles, THE system SHALL accept common web formats within reasonable size constraints.
-
-WHEN users attach documents supporting political analysis, THE system SHALL validate file types and sizes against security and usability standards.
-
-WHEN attachment uploads process successfully, THE system SHALL display confirmation and integrate attachments into article presentations.
-
-WHEN attachment uploads encounter failures, THE system SHALL provide specific error guidance for user correction attempts.
-
-WHEN members manage their article attachments, THE system SHALL allow addition, replacement, or removal within reasonable timeframes.
-
-WHEN attachments receive community access, THE system SHALL implement appropriate safeguards against inappropriate content distribution.
-
-THE system SHALL optimize attachment delivery for various device types and connection speeds.
-
-## Data Privacy and User Information Protection
-
-WHEN users provide personal information during registration, THE system SHALL implement appropriate protection measures and usage transparency.
-
-WHEN users engage with discussion features, THE system SHALL minimize unnecessary data collection while supporting platform functionality.
-
-WHEN users request data portability or deletion, THE system SHALL provide compliant mechanisms for information management.
-
-WHEN privacy incidents occur, THE system SHALL respond promptly and transparently to affected users.
-
-WHEN external integrations require data sharing, THE system SHALL obtain explicit user consent and limit information transfer scope.
-
-THE system SHALL maintain data security through industry-standard practices appropriate to platform scale.
-
-## Platform Performance and Scalability Expectations
-
-WHEN user activity increases during major economic or political events, THE system SHALL maintain consistent performance and availability.
-
-WHEN system load approaches configured thresholds, THE system SHALL provide graceful degradation rather than complete failure.
-
-WHEN performance issues emerge, THE system SHALL prioritize maintenance of discussion functionality over advanced features.
-
-WHEN scaling adjustments become necessary, THE system SHALL accommodate growth without requiring fundamental architecture changes.
-
-THE system SHALL maintain service accessibility across standard device types and network conditions.
-
-## Business Rules Implementation Validation
-
-The business rules articulated here form the foundation of platform behavior, defining what the system should accomplish for users, administrators, and the broader community. These rules distinguish between platform capabilities and specific technical implementations, ensuring decision-making remains focused on business requirements rather than technical constraints.
-
-When ambiguity arises in rule interpretation or application, administrators and platform operators should consider the overarching goals of fostering constructive economic and political dialogue while maintaining operational practicality. Regular review of these rules against platform usage patterns ensures continued alignment with community needs and expectations.
+This comprehensive set of business rules ensures the discussion board remains focused on constructive economic and political discourse while providing clear implementation guidelines for backend developers. All rules are designed to be minimal yet effective, prioritizing user experience and content quality.

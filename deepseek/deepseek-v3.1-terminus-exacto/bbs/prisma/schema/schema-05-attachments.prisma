@@ -1,0 +1,175 @@
+/// File attachments associated with discussion board posts.
+///
+/// Stores metadata for files uploaded by members to support their posts with
+/// additional evidence, research materials, or visual content. Each
+/// attachment is specifically linked to a single post and maintains its own
+/// lifecycle separate from the post content.
+///
+/// Attachments undergo security scanning and validation before being made
+/// available for download. The system tracks upload status, file properties,
+/// and access patterns to ensure proper attachment management.
+///
+/// Supports various file types including images (JPG, PNG, GIF) and
+/// documents (PDF, DOC, DOCX) with size limitations enforced during upload.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_post_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that this attachment belongs to. {@link
+  /// discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Reference to the member who uploaded this attachment. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the session context when the attachment was uploaded. {@link
+  /// discussion_board_member_sessions.id}
+  discussion_board_member_session_id String
+  
+  /// Original name of the uploaded file as provided by the user.
+  file_name String
+  
+  /// MIME type or file extension indicating the file format (e.g., image/jpeg,
+  /// application/pdf).
+  file_type String
+  
+  /// Size of the file in bytes. Used for validation and display purposes.
+  file_size Int
+  
+  /// Path or identifier for the file in the storage system.
+  storage_path String
+  
+  /// Current status of the attachment upload process (pending, processing,
+  /// completed, failed).
+  upload_status String
+  
+  /// Result of security/virus scanning (clean, suspicious, infected, pending).
+  security_scan_result String?
+  
+  /// Optional description provided by the user for the attachment.
+  description String?
+  
+  /// Number of times this attachment has been downloaded by users.
+  download_count Int
+  
+  /// Timestamp when the attachment record was created.
+  created_at DateTime
+  
+  /// Timestamp when the attachment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was soft deleted. Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_post_attachments_discussion_board_mem_3db2bb2e")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_post_attachments_discussion_board_pos_2886a87c")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_post_attachments_discussion_board_mem_e84d5b58")
+  @@index([upload_status])
+  @@index([file_type])
+}
+
+/// File attachments associated with discussion board comments.
+///
+/// Stores metadata for files uploaded by members to support their comments
+/// with additional evidence, references, or visual content. Each attachment
+/// is specifically linked to a single comment and maintains its own
+/// lifecycle separate from the comment text.
+///
+/// Attachments undergo security scanning and validation before being made
+/// available for download. The system tracks upload status, file properties,
+/// and access patterns to ensure proper attachment management.
+///
+/// Supports various file types including images (JPG, PNG, GIF) and
+/// documents (PDF, DOC, DOCX) with size limitations enforced during upload.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment that this attachment belongs to. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Reference to the member who uploaded this attachment. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the session context when the attachment was uploaded. {@link
+  /// discussion_board_member_sessions.id}
+  discussion_board_member_session_id String
+  
+  /// Original name of the uploaded file as provided by the user.
+  file_name String
+  
+  /// MIME type or file extension indicating the file format (e.g., image/jpeg,
+  /// application/pdf).
+  file_type String
+  
+  /// Size of the file in bytes. Used for validation and display purposes.
+  file_size Int
+  
+  /// Path or identifier for the file in the storage system.
+  storage_path String
+  
+  /// Current status of the attachment upload process (pending, processing,
+  /// completed, failed).
+  upload_status String
+  
+  /// Result of security/virus scanning (clean, suspicious, infected, pending).
+  security_scan_result String?
+  
+  /// Optional description provided by the user for the attachment.
+  description String?
+  
+  /// Number of times this attachment has been downloaded by users.
+  download_count Int
+  
+  /// Timestamp when the attachment record was created.
+  created_at DateTime
+  
+  /// Timestamp when the attachment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was soft deleted. Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_comment_attachments_discussion_board__c69c28f1")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_attachments_discussion_board__afb72a94")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comment_attachments_discussion_board__1f1e2869")
+  @@index([upload_status])
+  @@index([file_type])
+}

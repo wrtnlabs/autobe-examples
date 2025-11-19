@@ -1,0 +1,81 @@
+/// Main comment entity representing user comments on articles. Contains
+/// essential information about the comment including content, creation
+/// timestamp, and user reference.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment.
+  id String @id
+  
+  /// Reference to the article this comment belongs to.
+  discussion_board_article_id String
+  
+  /// Reference to the user who made the comment.
+  discussion_board_user_id String
+  
+  /// Text content of the comment.
+  content String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  user discussion_board_registered_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comment_replies discussion_board_comment_replies[]
+  discussion_board_reported_content discussion_board_reported_content[]
+  
+  @@index([discussion_board_user_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+}
+
+/// Reply entity representing responses to comments. Contains content and
+/// reference to the parent comment.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment reply.
+  id String @id
+  
+  /// Reference to the parent comment this reply belongs to.
+  discussion_board_comment_id String
+  
+  /// Reference to the user who made the reply.
+  discussion_board_user_id String
+  
+  /// Text content of the reply.
+  content String
+  
+  /// Timestamp when the reply was created.
+  created_at DateTime
+  
+  /// Timestamp when the reply was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  user discussion_board_registered_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_user_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_replies_discussion_board_comm_eefbbb24")
+}

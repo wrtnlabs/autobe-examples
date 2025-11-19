@@ -7,28 +7,30 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPolDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardAdmin";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminRefresh(props: {
   admin: AdminPayload;
-  body: IEconPolDiscussionBoardAdmin.IRefresh;
-}): Promise<IEconPolDiscussionBoardAdmin.IAuthorized> {
-  type DecodedToken = {
+  body: IDiscussionBoardAdmin.IRefresh;
+}): Promise<IDiscussionBoardAdmin.IAuthorized> {
+  const jwtSecret = MyGlobal.env.JWT_SECRET_KEY;
+
+  let decoded: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "admin";
   };
 
-  let decoded: DecodedToken;
-
   try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as unknown as DecodedToken;
+    decoded = jwt.verify(props.body.refresh_token, jwtSecret, {
+      issuer: "autobe",
+    }) as {
+      id: string & tags.Format<"uuid">;
+      session_id: string & tags.Format<"uuid">;
+      type: "admin";
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -37,69 +39,82 @@ export async function postAuthAdminRefresh(props: {
     throw new HttpException("Invalid token type", 403);
   }
 
-  const admin =
-    await MyGlobal.prisma.econ_pol_discussion_board_admins.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+  const session =
+    await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        discussion_board_admin_id: decoded.id,
+      },
+      include: {
+        discussionBoardAdmin: true,
       },
     });
 
-  if (admin === null) {
+  if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (admin.deleted_at !== null) {
+  if (session.discussionBoardAdmin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  const issuedAt = toISOStringSafe(new Date());
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  const token = {
-    access: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
+  const accessToken = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: toISOStringSafe(new Date()),
+    },
+    jwtSecret,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
+    },
+    jwtSecret,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  await MyGlobal.prisma.discussion_board_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: {
+      expired_at: refreshExpires,
+    },
+  });
+
+  const admin = session.discussionBoardAdmin;
 
   return {
-    adminUsername: admin.username,
+    id: admin.id,
     email: admin.email,
-    role: "admin",
-    is_active: true,
+    nickname: admin.nickname,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at:
-      admin.deleted_at === null ? null : toISOStringSafe(admin.deleted_at),
-    id: admin.id,
-    token: token,
-  } satisfies IEconPolDiscussionBoardAdmin.IAuthorized;
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
+  };
 }

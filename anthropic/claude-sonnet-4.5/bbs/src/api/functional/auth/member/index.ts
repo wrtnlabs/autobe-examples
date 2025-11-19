@@ -4,34 +4,47 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IDiscussionBoardMember } from "../../../structures/IDiscussionBoardMember";
+export * as email from "./email/index";
+export * as password from "./password/index";
 
 /**
- * Register a new member account and issue authentication tokens for
+ * Register new member account with email verification workflow in
  * discussion_board_members table.
  *
- * Creates a new member account for the discussion board platform and issues
- * initial JWT authentication tokens.
+ * Registers a new member account for the discussion board platform, enabling
+ * users to create and participate in economic and political discussions. This
+ * operation creates a new record in the discussion_board_members table with the
+ * provided credentials and initiates the email verification process required
+ * before full content creation privileges are granted.
  *
- * This registration endpoint allows new users to join the community by
- * providing their email, password, and display name. The system validates the
- * uniqueness of the email address, securely hashes the password, and creates a
- * new record in the discussion_board_members table.
+ * The registration process validates that the email and username are unique
+ * across all existing members, enforcing the unique constraints defined in the
+ * Prisma schema. The password is securely hashed using bcrypt with a work
+ * factor of 10+ before storage, ensuring credentials are never stored in plain
+ * text. Initial account status sets email_verified to false and is_suspended to
+ * false.
  *
- * Upon successful registration, the endpoint immediately authenticates the user
- * by generating and returning both an access token and a refresh token. The
- * access token is used for subsequent API requests, while the refresh token
- * enables token renewal without requiring re-authentication.
+ * Upon successful registration, an email verification token is automatically
+ * generated and stored in the discussion_board_email_verifications table with a
+ * 24-hour expiration. This token is sent to the member's email address to
+ * confirm ownership. Members must complete email verification before they can
+ * create articles and access full platform features, as indicated by the
+ * email_verified field requirement.
  *
- * The registration process includes validation of email format, password
- * strength requirements, and uniqueness constraints. If the email is already
- * registered, the operation returns an appropriate error response.
+ * The operation returns JWT tokens (access token with 30-minute expiration and
+ * refresh token with 7-day expiration) immediately upon registration, allowing
+ * the member to access read-only features and their profile while awaiting
+ * email verification. The response includes the member's profile information
+ * and verification status.
  *
- * This is a public endpoint accessible without authentication, as it represents
- * the entry point for new users to join the platform.
+ * This operation is public and requires no authentication. It implements the
+ * first step in the member lifecycle, followed by email verification (POST
+ * /auth/member/email/verify) and eventual login for returning members (POST
+ * /auth/member/login).
  *
  * @param props.connection
- * @param props.body Member registration information including credentials and
- *   profile data
+ * @param props.body Member registration credentials including email, password,
+ *   and username
  * @setHeader token.access Authorization
  *
  * @path /auth/member/join
@@ -67,8 +80,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Member registration information including credentials and profile
-     * data
+     * Member registration credentials including email, password, and
+     * username
      */
     body: IDiscussionBoardMember.ICreate;
   };
@@ -117,33 +130,43 @@ export namespace join {
 }
 
 /**
- * Authenticate member credentials and issue access tokens for
- * discussion_board_members table.
+ * Authenticate member credentials and create session in
+ * discussion_board_member_sessions table.
  *
- * Authenticates an existing member account and issues JWT authentication
- * tokens.
+ * Authenticates an existing member using email and password credentials,
+ * validating against the discussion_board_members table and creating a new
+ * authenticated session. This operation verifies the member's identity, checks
+ * account status, and issues JWT tokens for subsequent API requests requiring
+ * member authentication.
  *
- * This login endpoint allows registered members to authenticate with the
- * discussion board platform by providing their email address and password. The
- * system validates the credentials against the discussion_board_members table,
- * verifying both the email existence and password correctness through secure
- * hash comparison.
+ * The authentication process validates the provided password against the
+ * bcrypt-hashed password stored in the discussion_board_members table. The
+ * operation checks that the account is not suspended (is_suspended = false),
+ * not deleted (deleted_at is null), and exists in the system. If the account is
+ * suspended, the operation returns the suspension_reason and suspended_until
+ * timestamp to inform the member.
  *
- * Upon successful authentication, the endpoint generates and returns both an
- * access token and a refresh token. The access token is used for subsequent API
- * requests to access protected resources, while the refresh token enables token
- * renewal when the access token expires.
+ * Upon successful authentication, a new session record is created in the
+ * discussion_board_member_sessions table, capturing the IP address, connection
+ * URL (href), and referrer for security monitoring and abuse detection. The
+ * session enables stateless JWT authentication with a 30-minute access token
+ * and 7-day refresh token. The last_login_at timestamp in the
+ * discussion_board_members table is updated to track member activity.
  *
- * The authentication process includes validation of credential format,
- * verification of account existence, and password hash comparison. If
- * credentials are invalid or the account does not exist, the operation returns
- * an appropriate error response.
+ * The operation returns JWT tokens along with the member's complete profile
+ * information including username, display_name, bio, avatar_url, email
+ * verification status (email_verified), and account status. Multiple concurrent
+ * sessions are supported, allowing members to access the platform from
+ * different devices simultaneously.
  *
- * This is a public endpoint accessible without prior authentication, serving as
- * the primary entry point for existing members to access the platform.
+ * This operation is public and requires no prior authentication. It follows
+ * member registration (POST /auth/member/join) and email verification (POST
+ * /auth/member/email/verify) in the authentication workflow. Sessions created
+ * here can be refreshed using the refresh token endpoint (POST
+ * /auth/member/refresh).
  *
  * @param props.connection
- * @param props.body Member login credentials including email and password
+ * @param props.body Member login credentials with email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/member/login
@@ -178,7 +201,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Member login credentials including email and password */
+    /** Member login credentials with email and password */
     body: IDiscussionBoardMember.ILogin;
   };
   export type Body = IDiscussionBoardMember.ILogin;
@@ -226,34 +249,43 @@ export namespace login {
 }
 
 /**
- * Renew member authentication tokens using valid refresh token from
- * discussion_board_member_sessions table.
+ * Refresh JWT access tokens using valid refresh token from
+ * discussion_board_member_sessions.
  *
- * Refreshes authentication tokens for a member session using a valid refresh
- * token.
+ * Refreshes expired or expiring JWT access tokens using a valid refresh token,
+ * extending the member's authenticated session without requiring credential
+ * re-entry. This operation validates the refresh token against active sessions
+ * in the discussion_board_member_sessions table and issues new JWT tokens for
+ * continued API access.
  *
- * This token refresh endpoint allows authenticated members to obtain new access
- * tokens without requiring re-authentication with credentials. When an access
- * token expires, members can use their refresh token to request a new set of
- * tokens, maintaining continuous authenticated access to the platform.
+ * The refresh process verifies that the refresh token corresponds to an active
+ * session (expired_at is null) and that the associated member account in
+ * discussion_board_members is in good standing (not suspended with is_suspended
+ * = false, not deleted with deleted_at = null). If the account has been
+ * suspended or deleted since the original login, the refresh operation fails
+ * and requires re-authentication.
  *
- * The endpoint validates the provided refresh token against the
- * discussion_board_member_sessions table, checking for token validity,
- * expiration status, and session integrity. If the refresh token is valid, the
- * system generates and returns a new access token and refresh token pair.
+ * Upon successful validation, new JWT tokens are issued with refreshed
+ * expiration times: a 30-minute access token for immediate API requests and a
+ * 7-day refresh token for future token renewal. The existing session record in
+ * discussion_board_member_sessions remains active, maintaining the original
+ * session context including IP address and creation timestamp.
  *
- * The token refresh process includes validation of the refresh token format,
- * verification of token existence and validity in the session store, and
- * expiration checking. If the refresh token is invalid, expired, or associated
- * with a terminated session, the operation returns an appropriate error
- * response requiring the user to log in again.
+ * The operation returns the renewed JWT tokens along with the member's current
+ * profile information from discussion_board_members, including any updates to
+ * username, display_name, bio, avatar_url, and verification status that may
+ * have occurred since the original login. This ensures the client application
+ * has the latest member data without additional API calls.
  *
- * This endpoint requires a valid refresh token but does not require an active
- * access token, as it specifically handles the scenario where the access token
- * has expired.
+ * This operation requires a valid refresh token but does not require an active
+ * access token, enabling seamless token renewal even after access token
+ * expiration. It is a critical component of the stateless JWT authentication
+ * flow, working in conjunction with login (POST /auth/member/login) to maintain
+ * long-lived authenticated sessions across the 30-minute access token
+ * expiration boundary.
  *
  * @param props.connection
- * @param props.body Refresh token information for token renewal
+ * @param props.body Refresh token for renewing authentication
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -288,7 +320,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token information for token renewal */
+    /** Refresh token for renewing authentication */
     body: IDiscussionBoardMember.IRefresh;
   };
   export type Body = IDiscussionBoardMember.IRefresh;

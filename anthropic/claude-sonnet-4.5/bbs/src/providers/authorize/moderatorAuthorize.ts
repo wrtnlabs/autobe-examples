@@ -15,14 +15,29 @@ export async function moderatorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const moderator = await MyGlobal.prisma.discussion_board_moderators.findFirst({
+  // Verify moderator session exists and is active
+  const session = await MyGlobal.prisma.discussion_board_moderator_sessions.findFirst({
     where: {
-      id: payload.id,
+      id: payload.session_id,
+      expired_at: null,
+      discussion_board_moderator_id: payload.id,
+    },
+    include: {
+      moderator: true,
     },
   });
 
-  if (moderator === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (session === null) {
+    throw new ForbiddenException("Session not found or expired");
+  }
+
+  // Verify moderator account is active and not deleted
+  if (
+    session.moderator.deleted_at !== null ||
+    session.moderator.is_active === false ||
+    session.moderator.email_verified === false
+  ) {
+    throw new ForbiddenException("Moderator account is not active or verified");
   }
 
   return payload;

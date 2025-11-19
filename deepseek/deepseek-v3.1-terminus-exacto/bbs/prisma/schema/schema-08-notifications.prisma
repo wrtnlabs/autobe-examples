@@ -1,0 +1,144 @@
+/// Individual user notifications for content interactions, moderation
+/// actions, and system messages.
+///
+/// Stores notification instances delivered to users for various platform
+/// activities including post interactions, comment replies, moderation
+/// decisions, and system announcements. Each notification tracks delivery
+/// status, content type, and user acknowledgment.
+///
+/// Notifications support multiple delivery methods (in-app, email) and can
+/// be marked as read, unread, or dismissed by users. The system maintains
+/// notification history for user reference while supporting efficient
+/// querying for unread notifications.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target member who receives the notification. {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Type of notification indicating the event that triggered it. Examples:
+  /// post_reply, comment_like, moderation_action, system_announcement.
+  notification_type String
+  
+  /// Notification title summarizing the event or message.
+  title String
+  
+  /// Detailed notification message content providing context and information.
+  message String
+  
+  /// Current delivery status of the notification. Values: unread, read,
+  /// dismissed.
+  status String
+  
+  /// Method used to deliver the notification. Values: in_app, email, both.
+  delivery_method String
+  
+  /// Type of entity related to this notification. Examples: post, comment,
+  /// user, system.
+  related_entity_type String?
+  
+  /// Identifier of the related entity for contextual navigation.
+  related_entity_id String?
+  
+  /// Timestamp when the notification was created and queued for delivery.
+  created_at DateTime
+  
+  /// Timestamp when the notification was last updated, such as status changes.
+  updated_at DateTime
+  
+  /// Timestamp when the notification was soft deleted by the user or system.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, status], map: "discussion_board_user_notifications_discussion_board_m_4e748073")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_user_notifications_discussion_board_m_ee3c93b8")
+  // spellchecker: ignore-next-line
+  @@index([notification_type, created_at], map: "discussion_board_user_notifications_notification_type__4224a142")
+}
+
+/// User configuration for notification delivery preferences and subscription
+/// settings.
+///
+/// Stores individual user preferences for how and when they receive
+/// notifications from the discussion platform. Users can customize delivery
+/// methods, frequency, and content types they wish to be notified about.
+///
+/// Preferences support granular control over different notification
+/// categories including post interactions, comment activities, moderation
+/// updates, and system announcements. Each preference setting enables or
+/// disables specific notification types and defines delivery channel
+/// preferences.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target member whose notification preferences are configured. {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Whether the user wants to receive notifications via email. Global setting
+  /// that applies to all notification types unless overridden.
+  email_notifications Boolean
+  
+  /// Whether the user wants to receive notifications within the application
+  /// interface.
+  in_app_notifications Boolean
+  
+  /// Receive notifications for interactions with user's posts (replies, likes,
+  /// shares).
+  post_interactions Boolean
+  
+  /// Receive notifications for replies to user's comments and comment threads.
+  comment_replies Boolean
+  
+  /// Receive notifications about moderation actions on user's content or
+  /// reported content.
+  moderation_updates Boolean
+  
+  /// Receive notifications for platform announcements, maintenance, and
+  /// important updates.
+  system_announcements Boolean
+  
+  /// Preferred notification frequency or batching. Values: immediate,
+  /// daily_digest, weekly_digest.
+  frequency String
+  
+  /// Timestamp when the notification preferences were initially created.
+  created_at DateTime
+  
+  /// Timestamp when the notification preferences were last modified by the
+  /// user.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id], map: "discussion_board_notification_preferences_discussion_b_5a544372")
+  // spellchecker: ignore-next-line
+  @@index([email_notifications], map: "discussion_board_notification_preferences_email_notifi_b06b8ac6")
+  // spellchecker: ignore-next-line
+  @@index([in_app_notifications], map: "discussion_board_notification_preferences_in_app_notif_05702a2a")
+}

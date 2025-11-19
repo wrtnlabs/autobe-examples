@@ -13,59 +13,76 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthGuestJoin(props: {
   body: IDiscussionBoardGuest.ICreate;
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
-  const guestId = v4() as string & tags.Format<"uuid">;
-  const now = new Date();
-  const createdAt = toISOStringSafe(now);
+  const existing = await MyGlobal.prisma.discussion_board_guests.findUnique({
+    where: { session_identifier: props.body.session_identifier },
+  });
 
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  if (existing) {
+    throw new HttpException("Session identifier already exists", 409);
+  }
+
+  const now = toISOStringSafe(new Date());
+  const guestId = v4();
 
   const guest = await MyGlobal.prisma.discussion_board_guests.create({
     data: {
       id: guestId,
-      ip: props.body.ip,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: createdAt,
+      session_identifier: props.body.session_identifier,
+      ip_address: props.body.ip_address ?? "",
+      user_agent: props.body.user_agent,
+      first_visit_at: now,
+      last_visit_at: now,
+      page_views: 0,
+      created_at: now,
+      updated_at: now,
     },
   });
 
-  const accessToken = jwt.sign(
-    {
-      type: "guest",
-      id: guest.id,
-      session_id: guest.id,
-      created_at: createdAt,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const refreshToken = jwt.sign(
-    {
-      type: "guest",
-      id: guest.id,
-      session_id: guest.id,
-      tokenType: "refresh",
-      created_at: createdAt,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: guest.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: guest.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
   return {
-    id: guest.id as string & tags.Format<"uuid">,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+    id: guest.id,
+    session_identifier: guest.session_identifier,
+    ip_address: guest.ip_address,
+    user_agent: guest.user_agent,
+    first_visit_at: toISOStringSafe(guest.first_visit_at),
+    last_visit_at: toISOStringSafe(guest.last_visit_at),
+    page_views: guest.page_views,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
+    token,
   };
 }

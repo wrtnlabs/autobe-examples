@@ -14,29 +14,45 @@ export async function deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAtta
   articleId: string & tags.Format<"uuid">;
   attachmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Find the attachment by attachmentId AND articleId
-  const attachment =
-    await MyGlobal.prisma.discussion_board_article_attachments.findFirst({
-      where: {
-        id: props.attachmentId,
-        article_id: props.articleId,
-      },
-    });
-  if (!attachment) {
-    throw new HttpException("Attachment not found for this article.", 404);
-  }
-  // Step 2: Confirm parent article exists (optional since foreign key enforced, but explicit for clarity)
+  // Fetch the article
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
+    where: { id: props.articleId, deleted_at: null },
+    select: { id: true, user_id: true, deleted_at: true },
   });
   if (!article) {
-    throw new HttpException("Article not found.", 404);
+    throw new HttpException("Article not found or is deleted", 404);
   }
-  // Step 3: (Business: As admin can delete any attachment)
-  // Step 4: Delete the attachment record
-  await MyGlobal.prisma.discussion_board_article_attachments.delete({
+
+  // Fetch the attachment, ensure it matches the article and is not already deleted
+  const attachment =
+    await MyGlobal.prisma.discussion_board_article_attachments.findUnique({
+      where: { id: props.attachmentId },
+      select: { id: true, article_id: true, file_uri: true, deleted_at: true },
+    });
+  if (
+    !attachment ||
+    attachment.deleted_at !== null ||
+    attachment.article_id !== props.articleId
+  ) {
+    throw new HttpException(
+      "Attachment not found, already deleted, or mismatched to the article",
+      404,
+    );
+  }
+
+  // Only the article author or an admin can delete
+  if (article.user_id !== props.admin.id && props.admin.type !== "admin") {
+    throw new HttpException(
+      "Forbidden: Only the author or an admin may delete attachments",
+      403,
+    );
+  }
+
+  // Soft delete the attachment
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  await MyGlobal.prisma.discussion_board_article_attachments.update({
     where: { id: props.attachmentId },
+    data: { deleted_at: now },
   });
-  // Step 5: Remove the storage file using the attachment URI
-  // No global storage removal implemented at this layer; operation complete.
+  // Note: File removal from storage is assumed to be handled elsewhere.
 }

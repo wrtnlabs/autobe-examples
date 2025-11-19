@@ -9,50 +9,74 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IDiscussionBoardArticleCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleCategory";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function deleteDiscussionBoardModeratorArticlesArticleId(props: {
   moderator: ModeratorPayload;
   articleId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardArticle> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+  const existing = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
-  });
-
-  if (!article) {
-    throw new HttpException("Article not found", 404);
-  }
-
-  const updated = await MyGlobal.prisma.discussion_board_articles.update({
-    where: { id: props.articleId },
-    data: {
-      deleted_at: toISOStringSafe(new Date()),
+    include: {
+      category: true,
+      author: true,
     },
   });
 
-  const member = await MyGlobal.prisma.discussion_board_members.findUnique({
-    where: { id: updated.discussion_board_member_id },
-  });
-
-  if (!member) {
-    throw new HttpException("Article author not found", 404);
+  if (!existing || existing.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
   }
 
+  const deleted = await MyGlobal.prisma.discussion_board_articles.update({
+    where: { id: props.articleId },
+    data: {
+      deleted_at: new Date(),
+      updated_at: new Date(),
+    },
+    include: {
+      category: true,
+      author: true,
+    },
+  });
+
   return {
-    id: updated.id,
-    title: updated.title,
-    body: updated.body,
-    view_count: updated.view_count,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    id: deleted.id,
+    title: deleted.title,
+    slug: deleted.slug,
+    body: deleted.body,
+    excerpt: deleted.excerpt === null ? undefined : deleted.excerpt,
+    status: typia.assert<"draft" | "published" | "archived">(deleted.status),
+    view_count: deleted.view_count,
+    is_edited: deleted.is_edited,
+    published_at:
+      deleted.published_at === null
+        ? undefined
+        : toISOStringSafe(deleted.published_at),
+    created_at: toISOStringSafe(deleted.created_at),
+    updated_at: toISOStringSafe(deleted.updated_at),
+    deleted_at: deleted.deleted_at
+      ? toISOStringSafe(deleted.deleted_at)
+      : undefined,
     author: {
-      id: member.id,
-      username: member.username,
-      email: member.email,
-      status: member.status,
-      email_verified: member.email_verified,
-      created_at: toISOStringSafe(member.created_at),
+      id: deleted.author.id,
+      username: deleted.author.username,
+      display_name:
+        deleted.author.display_name === null
+          ? undefined
+          : deleted.author.display_name,
+    },
+    category: {
+      id: deleted.category.id,
+      name: deleted.category.name,
+      slug: deleted.category.slug,
+      description:
+        deleted.category.description === null
+          ? undefined
+          : deleted.category.description,
+      sort_order: deleted.category.sort_order,
+      created_at: toISOStringSafe(deleted.category.created_at),
+      updated_at: toISOStringSafe(deleted.category.updated_at),
     },
   };
 }

@@ -4,20 +4,19 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Profiles](#profiles)
-- [Content](#content)
-- [Attachments](#attachments)
+- [Articles](#articles)
+- [Comments](#comments)
 - [Moderation](#moderation)
-- [Reporting](#reporting)
+- [default](#default)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"discussion_board_categories" {
+"article_categories" {
   String id PK
-  String name UK
-  String slug UK
+  String code UK
+  String name
   String description "nullable"
   Int display_order
   Boolean is_active
@@ -26,207 +25,248 @@ erDiagram
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_system_settings" {
+"content_guidelines" {
   String id PK
-  String setting_key UK
-  String setting_value
-  String setting_type
-  String description "nullable"
+  String code UK
+  String title
+  String description
+  Boolean applies_to_articles
+  Boolean applies_to_comments
+  String severity_level
+  String violation_consequence "nullable"
+  Int display_order
   Boolean is_active
-  String updated_by "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"system_configurations" {
+  String id PK
+  String config_key UK
+  String config_value
+  String config_type
+  String description "nullable"
+  Boolean is_modifiable
   DateTime created_at
   DateTime updated_at
 }
 ```
 
-### `discussion_board_categories`
+### `article_categories`
 
-Predefined article categories that organize and structure all discussions
-on the platform.
+Article category reference data that organizes discussion board content
+into logical topic areas.
 
-Stores the fixed set of categories available for article classification:
-Economics, Politics, Economic Policy, Political Analysis, and Other.
-Categories define the organizational structure for the entire discussion
-board, allowing users to browse and discover discussions by topic area.
+Every article published on the discussion board must belong to exactly
+one category from this predefined set. Categories provide the primary
+organizational structure enabling users to browse articles by topic area.
+The system maintains a fixed set of categories rather than allowing
+unlimited user-created categories, ensuring consistent content
+organization and preventing category fragmentation.
 
-Categories are foundational reference data maintained by system
-administrators. Articles must belong to exactly one category. Members
-cannot create custom categories—only system administrators can add or
-modify the category list to ensure consistent organization.
+Categories include metadata describing their purpose, character limits
+for article content within the category, and validity status. Soft
+deletion is supported to maintain data integrity when categories are
+deprecated while preserving the ability to reference them from historical
+articles.
 
-Each category includes metadata for display and tracking:
-- name: Display name shown to users (e.g., 'Economics')
-- slug: URL-safe identifier for filtering and programmatic reference
-- description: Purpose and scope of this category
-- display_order: Sequence for showing categories in navigation (lower
-numbers appear first)
-- is_active: Whether category is currently available for article selection
-- article_count: Denormalized count of published articles in this
-category (updated when articles are published or archived)
-
-Categories support the discovery workflow by providing a navigation path
-complementary to search functionality. While not directly transactional,
-categories are essential infrastructure supporting article organization
-and member navigation.
+Related entities: discussion_board_articles references this table via
+category_id when articles are created or updated.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `code`
+  > Unique machine-readable identifier for the category (e.g.,
+  > 'economic-policy', 'political-governance'). Used in APIs and internal
+  > references. Must be 5-50 lowercase alphanumeric characters with hyphens.
 - `name`
-  > Display name of the category shown to users. Examples: 'Economics',
-  > 'Politics', 'Economic Policy'. Maximum 50 characters for consistent
-  > display in UI.
-- `slug`
-  > URL-safe identifier for the category used in filtering, search, and API
-  > endpoints. Examples: 'economics', 'political-analysis'. Lowercase
-  > alphanumeric with hyphens only. Must be unique across all categories.
+  > Human-readable display name for the category (e.g., 'Economic Policy',
+  > 'Political Governance'). Shown in user interfaces, category listings, and
+  > article filters. 10-100 characters.
 - `description`
-  > Detailed description of the category's purpose and scope. Explains what
-  > types of discussions belong here. Displayed to users when browsing or
-  > creating articles. Maximum 500 characters.
+  > Detailed explanation of the category scope and purpose. Helps users
+  > understand which category their article should belong to. Maximum 500
+  > characters. Examples: 'Articles about taxation, trade, regulation, and
+  > economic policy decisions' for Economic Policy category.
 - `display_order`
-  > Integer sequence number determining category display order in navigation
-  > menus. Lower numbers appear first. Categories are sorted by this field
-  > for consistent UI presentation. Typical values: 1 (Economics), 2
-  > (Politics), 3 (Economic Policy), 4 (Political Analysis), 5 (Other).
+  > Numeric order for displaying categories in user interfaces. Lower numbers
+  > appear first in category menus and navigation. Defaults to 0. Used by
+  > sort order when displaying category lists.
 - `is_active`
-  > Whether this category is currently available for article selection.
-  > Active categories appear in the category filter dropdown and navigation.
-  > Inactive categories hide from member selections but retain existing
-  > articles. Allows administrators to retire unused categories without data
-  > loss.
+  > Whether this category is currently available for article submission.
+  > Active categories appear in category selection dropdowns when users
+  > create articles. Inactive categories persist for historical reference but
+  > prevent new articles from being assigned. Defaults to true.
 - `article_count`
-  > Denormalized count of published articles currently in this category.
-  > Provides quick access for display purposes (e.g., 'Economics (42
-  > articles'). Automatically updated when articles are published or
-  > archived. Initialized to 0 when category is created.
+  > Denormalized count of published articles in this category. Used for
+  > display purposes (e.g., 'Economic Policy (47 articles'). Updated when
+  > articles are published or unpublished. Defaults to 0. Should be
+  > recalculated periodically for accuracy.
 - `created_at`
-  > Timestamp when category was created. Records the initial creation time of
-  > the category in UTC timezone. Immutable after creation.
+  > Timestamp when the category was created. ISO 8601 format. Set
+  > automatically on record creation.
 - `updated_at`
-  > Timestamp of the most recent modification to category properties. Updated
-  > whenever category name, description, display order, or active status
-  > changes. Supports audit trail and change tracking.
+  > Timestamp when the category was last modified. ISO 8601 format. Updated
+  > whenever any field changes.
 - `deleted_at`
-  > Timestamp when category was soft-deleted. NULL indicates active category.
-  > When set, category is hidden from UI but preserved in database for audit
-  > trail and historical integrity. Allows category retirement without
-  > breaking historical article references.
+  > Timestamp when the category was soft-deleted (made inactive). ISO 8601
+  > format. Null for active categories. Soft deletion preserves historical
+  > category data while removing the category from active use.
 
-### `discussion_board_system_settings`
+### `content_guidelines`
 
-System-wide configuration and settings that control platform behavior and
-features.
+Content policy rules and moderation guidelines that define community
+standards for articles and comments.
 
-Stores key-value pairs for application configuration, feature flags, and
-operational settings. Provides centralized management of system behavior
-without requiring code changes or redeployment. Administrators modify
-settings through admin panels to control platform features and behavior.
+The content guidelines table stores the authoritative rules that
+moderators enforce when reviewing articles and monitoring comments. Each
+guideline entry specifies a policy rule, whether it applies to articles
+or comments, the severity level if violated, and examples to help
+moderators make consistent decisions.
 
-Common settings include:
-- Site metadata: site_name, site_description, support_email
-- Feature flags: enable_new_user_registrations, enable_comments,
-enable_file_uploads, enable_search
-- Moderation settings: require_article_approval, auto_moderate_comments,
-spam_detection_enabled
-- Rate limiting: max_articles_per_day, max_comments_per_day,
-max_comment_burst
-- System behavior: maintenance_mode, maintenance_message,
-session_timeout_minutes
+Guidelines are organized by policy area (hate speech, misinformation,
+spam, off-topic, etc.) and include detailed descriptions of prohibited
+behavior. The system maintains the complete set of active guidelines for
+reference by moderators and contributors. Soft deletion is supported to
+preserve historical policy changes while maintaining audit trails of
+previous guidelines.
 
-Each setting consists of:
-- setting_key: Unique identifier for the configuration parameter (e.g.,
-'maintenance_mode')
-- setting_value: The actual configuration value (string format, parsed by
-application as needed)
-- setting_type: Data type hint ('string', 'integer', 'boolean', 'json')
-helping application parse the value
-- description: Purpose and usage of this setting for administrator reference
-- is_active: Whether this setting is currently applied; inactive settings
-are ignored
-- updated_by: Moderator or admin who last modified this setting (for
-audit trail)
-- updated_at: When setting was last changed
-
-The system_settings table is the single source of truth for
-configuration, eliminating the need to modify environment variables or
-restart the application. Changes are applied immediately or on next
-request depending on setting type and system design.
-
-All settings are immutable once set—modifications create new entries with
-updated timestamps rather than overwriting previous values. This
-preserves configuration history and supports audit trail requirements.
-
-Settings support the operational requirements of the platform by allowing
-administrators to control feature availability, user behavior
-constraints, and system maintenance without technical intervention.
+Moderation decisions reference specific guidelines when removing content
+or issuing warnings, creating accountability and transparency about why
+content was removed.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `setting_key`
-  > Unique identifier for the configuration setting. Examples:
-  > 'maintenance_mode', 'max_articles_per_day', 'site_name',
-  > 'enable_user_registrations'. Used by application code to retrieve
-  > specific configuration values. Maximum 100 characters. Must be unique
-  > combined with category.
-- `setting_value`
-  > The actual configuration value as string. Format depends on setting_type:
-  > boolean settings stored as 'true'/'false', integer settings as numeric
-  > strings (e.g., '30'), JSON settings as serialized JSON. Application code
-  > is responsible for parsing based on setting_type. Maximum 10,000
-  > characters for complex values.
-- `setting_type`
-  > Data type hint for parsing the setting_value. Allowed values: 'string',
-  > 'integer', 'boolean', 'json'. Helps application correctly interpret the
-  > stored value. For example, 'true' string interpreted as boolean true when
-  > type is 'boolean'.
+- `code`
+  > Machine-readable identifier for the guideline (e.g., 'hate-speech',
+  > 'misinformation', 'spam'). 5-50 lowercase alphanumeric characters with
+  > hyphens. Used in moderation logs and audit trails.
+- `title`
+  > Short, descriptive title of the guideline (e.g., 'Hate Speech',
+  > 'Misinformation', 'Commercial Spam'). 10-100 characters. Displayed in
+  > moderation dashboards and violation notices.
 - `description`
-  > Human-readable description of the setting's purpose, usage, and impact.
-  > Displayed to administrators in settings management UI to explain what
-  > each configuration controls. Helps administrators understand
-  > configuration consequences. Maximum 500 characters.
+  > Detailed explanation of the policy and what content violates it. Should
+  > include clear examples of prohibited behavior and the rationale for the
+  > policy. Maximum 2000 characters. Moderators use this when making judgment
+  > calls about borderline content.
+- `applies_to_articles`
+  > Whether this guideline applies to article content. If true, moderators
+  > review articles against this guideline during approval. Defaults to true
+  > for most guidelines.
+- `applies_to_comments`
+  > Whether this guideline applies to comment content. If true, moderators
+  > monitor comments for violations of this guideline. Defaults to true for
+  > most guidelines.
+- `severity_level`
+  > Classification of violation severity: 'minor' (edit/warning), 'moderate'
+  > (removal/warning), 'severe' (removal/suspension). Guides moderator
+  > response proportionality. Severity level informs escalation decisions.
+- `violation_consequence`
+  > Description of typical consequences for violating this guideline (e.g.,
+  > 'comment removal', 'article rejection with feedback', 'account suspension
+  > after 3 violations'). Maximum 500 characters. Helps set contributor
+  > expectations.
+- `display_order`
+  > Numeric order for displaying guidelines in user-facing policy
+  > documentation. Lower numbers appear first. Defaults to 0. Used to
+  > organize guidelines by importance or category.
 - `is_active`
-  > Whether this setting is currently active and applied by the system.
-  > Active settings (true) are retrieved and used by application code.
-  > Inactive settings (false) are stored but ignored by the application.
-  > Allows administrators to disable specific settings without deleting
-  > configuration history.
-- `updated_by`
-  > Identifier of the moderator or administrator who last modified this
-  > setting. Used for audit trail to track who made configuration changes and
-  > when. Supports accountability and troubleshooting of configuration
-  > issues.
+  > Whether this guideline is currently enforced. Active guidelines are
+  > displayed in policy documentation and used by moderators. Inactive
+  > guidelines are retained for historical reference but not actively
+  > enforced. Defaults to true.
 - `created_at`
-  > Timestamp when this setting was initially created or first recorded.
-  > Marks the beginning of this configuration entry for audit purposes.
-  > Immutable after creation.
+  > Timestamp when the guideline was created. ISO 8601 format. Marks when the
+  > policy rule was first established.
 - `updated_at`
-  > Timestamp of the most recent modification to this setting's value or
-  > active status. Updated whenever the setting_value, is_active, or other
-  > properties change. Helps identify recently modified settings and track
-  > configuration changes over time.
+  > Timestamp when the guideline was last modified. ISO 8601 format. Updated
+  > when policy descriptions or enforcement rules change.
+- `deleted_at`
+  > Timestamp when the guideline was soft-deleted or made inactive. ISO 8601
+  > format. Null for active guidelines. Soft deletion preserves historical
+  > audit trail of policy changes.
+
+### `system_configurations`
+
+Application-wide configuration settings and system parameters that
+control platform behavior.
+
+The system configurations table stores site-wide settings and operational
+parameters that control how the discussion board functions. Settings
+include password requirements, session timeouts, rate limits, file upload
+constraints, and feature flags that determine which features are enabled.
+
+Configuration entries use a key-value structure with a configuration key
+(e.g., 'password_min_length', 'session_timeout_minutes',
+'file_upload_max_size_mb') and corresponding value. Each setting includes
+a description explaining its purpose and impact on the system.
+
+Administrators manage system configurations to tune platform behavior
+without requiring code changes. Changes to configurations take effect
+immediately or after specified cache expiration periods. All
+configuration changes are audited with timestamps for accountability.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `config_key`
+  > Unique machine-readable identifier for the configuration setting (e.g.,
+  > 'password_min_length', 'session_timeout_minutes',
+  > 'file_upload_max_size_mb'). 10-100 lowercase alphanumeric characters with
+  > underscores. Used as primary lookup key for retrieving configuration
+  > values.
+- `config_value`
+  > The actual configuration value as a string (e.g., '8' for
+  > password_min_length, '30' for session_timeout_minutes). Values are stored
+  > as strings and should be parsed to appropriate types (int, boolean, etc.)
+  > by application code. Maximum 5000 characters for complex values like
+  > policy text.
+- `config_type`
+  > Data type classification for the configuration value: 'string',
+  > 'integer', 'boolean', 'decimal', 'json'. Indicates how the config_value
+  > should be parsed by the application. Helps validate configuration values.
+- `description`
+  > Explanation of what this configuration controls and why it matters.
+  > Examples: 'Minimum number of characters required for user passwords',
+  > 'Session timeout in minutes after which users must re-authenticate',
+  > 'Maximum file size in MB for article attachments'. Maximum 1000
+  > characters.
+- `is_modifiable`
+  > Whether administrators can modify this configuration through the admin
+  > interface. Some core settings (like schema version) are read-only and
+  > marked as false to prevent accidental changes. Defaults to true for most
+  > settings.
+- `created_at`
+  > Timestamp when the configuration setting was created. ISO 8601 format.
+  > Marks when this setting was first established.
+- `updated_at`
+  > Timestamp when the configuration value was last modified. ISO 8601
+  > format. Updated whenever an administrator changes the configuration
+  > value.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"discussion_board_members" {
+"discussion_board_contributors" {
   String id PK
   String email UK
-  String username UK
   String password_hash
-  String display_name
+  String username UK
   Boolean email_verified
   String account_status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
   DateTime last_login_at "nullable"
+  DateTime password_changed_at "nullable"
 }
-"discussion_board_member_sessions" {
+"discussion_board_contributor_sessions" {
   String id PK
-  String discussion_board_member_id FK
+  String discussion_board_contributor_id FK
   String ip
   String href
   String referrer
@@ -236,14 +276,16 @@ erDiagram
 "discussion_board_moderators" {
   String id PK
   String email UK
-  String username UK
   String password_hash
-  String display_name
+  String username UK
+  Boolean email_verified
   String account_status
+  String moderation_tier
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
   DateTime last_login_at "nullable"
+  DateTime password_changed_at "nullable"
 }
 "discussion_board_moderator_sessions" {
   String id PK
@@ -254,805 +296,1217 @@ erDiagram
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"discussion_board_member_sessions" }o--|| "discussion_board_members" : member
+"discussion_board_contributor_violations" {
+  String id PK
+  String discussion_board_contributor_id FK
+  String recorded_by_moderator_id FK "nullable"
+  String violation_type
+  String severity_level
+  String description "nullable"
+  DateTime recorded_at
+}
+"discussion_board_account_restrictions" {
+  String id PK
+  String discussion_board_contributor_id FK
+  String imposed_by_moderator_id FK
+  String restriction_type
+  String reason
+  DateTime imposed_at
+  DateTime expires_at "nullable"
+  DateTime lifted_at "nullable"
+  String lifted_by_moderator_id "nullable"
+}
+"discussion_board_contributor_sessions" }o--|| "discussion_board_contributors" : contributor
 "discussion_board_moderator_sessions" }o--|| "discussion_board_moderators" : moderator
+"discussion_board_contributor_violations" }o--|| "discussion_board_contributors" : contributor
+"discussion_board_contributor_violations" }o--o| "discussion_board_moderators" : recordedByModerator
+"discussion_board_account_restrictions" }o--|| "discussion_board_contributors" : contributor
+"discussion_board_account_restrictions" }o--|| "discussion_board_moderators" : imposedByModerator
 ```
 
-### `discussion_board_members`
+### `discussion_board_contributors`
 
-Registered members who can create articles, post comments, and
-participate in discussions. Members authenticate via email/username and
-password, undergo email verification before posting access, and can be
-suspended or deleted. This table represents the core participant base of
-the discussion board.
+Registered contributor user accounts for the discussion board.
+
+Stores authentication credentials, profile information, and account
+status for contributors who can create articles and post comments. Each
+contributor account is unique by email and username. Soft deletion
+preserves contributor information while enabling account recovery within
+6 months.
+
+Password security is enforced through bcrypt hashing with minimum 12 salt
+rounds. Email addresses are stored plaintext for authentication flows
+(login, password reset, notifications) but should be treated as sensitive
+data. Account creation requires email verification before enabling login.
+
+Contributors maintain separate session management from moderators,
+requiring dedicated session tables for security isolation. Violation
+history and account restrictions track contributor standing and
+enforcement actions.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Member's email address used for authentication, verification, and
-  > communication. Must be unique across all members, valid email format (max
-  > 254 characters). Used for account recovery and password reset.
-- `username`
-  > Member's chosen username for login and public identification.
-  > Case-insensitive unique constraint enforced. 3-30 characters,
-  > alphanumeric plus underscore/hyphen. Used as alternative login identifier
-  > to email.
+  > Email address used for authentication and account recovery. Must be
+  > unique across all contributor accounts. Valid email format required
+  > (user@domain.com).
 - `password_hash`
-  > Bcrypt-hashed password with salt (minimum 12 rounds). Never stored in
-  > plain text. Used for authentication during login. Updated when member
-  > changes password.
-- `display_name`
-  > Public-facing display name shown as author attribution on articles and
-  > comments. 1-50 characters. May differ from username for privacy or
-  > professional presentation.
+  > Bcrypt-hashed password with minimum 12 salt rounds. Password must be at
+  > least 8 characters with uppercase, lowercase, number, and special
+  > character. Never stores plaintext password.
+- `username`
+  > Public display name for articles and comments. Must be unique across all
+  > contributors. 3-50 characters, alphanumeric and underscore only.
+  > Immutable after creation.
 - `email_verified`
-  > Flag indicating whether member's email address has been verified. False
-  > for new registrations. Must be true before member can create articles or
-  > post comments. Set to true when verification link is clicked.
+  > Whether the contributor's email address has been verified through
+  > confirmation link. False until verification email is clicked. Account
+  > cannot post articles or comments until verified.
 - `account_status`
-  > Current account status controlling access and permissions. Values:
-  > 'active' (normal operation), 'suspended' (temporary restriction due to
-  > violations), 'terminated' (permanent ban), 'deleted' (user-initiated
-  > deletion). Default: 'active' after email verification.
+  > Current account status. Valid values: 'active' (normal operation),
+  > 'suspended' (temporary ban), 'restricted' (limited posting), 'deleted'
+  > (marked for deletion but retained for audit). Defaults to 'active' on
+  > creation.
 - `created_at`
-  > Account creation timestamp in UTC. Immutable. Recorded when registration
-  > is completed.
+  > Timestamp when the contributor account was created in ISO 8601 format
+  > (YYYY-MM-DDTHH:mm:ssZ).
 - `updated_at`
-  > Timestamp of last profile or account update. Updated when member modifies
-  > display name, bio, profile picture, or other profile fields.
+  > Timestamp of the most recent account modification. Updated when email,
+  > username, password, or status changes. Not updated on session creation or
+  > article/comment posting.
 - `deleted_at`
-  > Soft deletion timestamp. Non-null only when account_status is 'deleted'.
-  > Used for audit trail and data retention policy enforcement. Allows
-  > recovery within 30-day window.
+  > Timestamp when contributor account was deleted (soft delete). Null for
+  > active accounts. Retained for 6 months to enable recovery; after 6
+  > months, account and associated data can be permanently purged.
 - `last_login_at`
-  > Timestamp of last successful login. Updated on each successful
-  > authentication. Null for never-logged-in accounts. Used for activity
-  > tracking and security monitoring.
+  > Timestamp of the most recent successful login. Null if account has never
+  > been logged in. Updated only on successful authentication, not on failed
+  > attempts.
+- `password_changed_at`
+  > Timestamp of the most recent password change. Null if password has never
+  > been changed from initial setup. All active sessions are invalidated when
+  > password changes.
 
-### `discussion_board_member_sessions`
+### `discussion_board_contributor_sessions`
 
-Authentication sessions for verified members. Each session represents a
-login instance from a specific IP address and device. Sessions track
-connection context (IP, URL, referrer) for security auditing. Members can
-have multiple concurrent sessions across different devices. Sessions
-expire after 7 days or when member logs out.
+Session management for authenticated contributors.
+
+Tracks active sessions for contributor authentication. Each session
+represents a login instance with connection context (IP address, referrer
+URL, accessed URL). Sessions enforce 30-minute access token expiration
+and 7-day refresh token expiration.
+
+One contributor can have multiple concurrent sessions from different
+devices or browsers. Sessions are created on successful login and
+invalidated on logout or password change. Connection metadata (IP,
+referrer) enables security monitoring and abuse detection.
+
+Sessions follow the mandatory specification with required fields: ip,
+href, referrer, created_at, expired_at. No additional fields beyond this
+specification are allowed.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_member_id`
-  > Reference to the member who owns this session. Member's {@link
-  > discussion_board_members.id}. Non-nullable (session must belong to
-  > authenticated member).
+- `discussion_board_contributor_id`
+  > Foreign key to the contributor account. Multiple concurrent sessions
+  > allowed per contributor.
 - `ip`
-  > IP address (IPv4 or IPv6) from which the login originated. Used for
-  > security tracking, fraud detection, and geographic login monitoring.
+  > IP address of the session connection. Used for security monitoring and
+  > abuse detection. IPv4 or IPv6 format.
 - `href`
-  > Full URL/URI where login occurred. Captures the page context of
-  > authentication. Used for understanding member access patterns and
-  > security context.
+  > Full URL of the page where session was initiated (connection URL).
+  > Enables tracking of session origination context.
 - `referrer`
-  > HTTP Referrer header value when login occurred. Indicates which page
-  > referred member to authentication. May be empty string if referrer
-  > unavailable.
+  > HTTP Referrer header value from session creation request. Indicates where
+  > user came from before logging in.
 - `created_at`
-  > Session creation timestamp (login time) in UTC. Records when this
-  > authentication session was established. Immutable.
+  > Timestamp when session was created in ISO 8601 format. Marks the login
+  > time.
 - `expired_at`
-  > Session termination timestamp. Non-null when session ends (member logout
-  > or expiration). Null for active sessions. Sessions expire automatically
-  > after 7 days or when member explicitly logs out.
+  > Timestamp when session was explicitly terminated (logout). Null for
+  > active sessions. Session is also implicitly expired after 7 days of
+  > creation.
 
 ### `discussion_board_moderators`
 
-Administrative users with elevated permissions for content moderation and
-user management. Moderators authenticate separately from members with
-their own credentials. Moderators can review pending articles, delete
-inappropriate content, suspend/ban users, and access moderation
-dashboards and audit logs.
+Moderator accounts with elevated administrative permissions.
+
+Stores authentication and profile information for moderators who review
+articles, manage comments, and enforce community standards. Moderators
+are a distinct user type from contributors, with separate account
+management and session handling.
+
+Each moderator account is unique by email and username. Moderators
+require email verification and maintain separate session table for
+security isolation from regular contributors. All moderators have
+identical permissions; role differentiation is not supported (all
+moderators have equal authority).
+
+Moderation authority is recorded through audit logs that track which
+moderator performed each action. Account status tracks moderator
+availability (active, suspended, deleted). Moderators retain full
+contributor capabilities (can create articles, post comments) while also
+accessing moderation tools.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Moderator's email address used for authentication and administrative
-  > communication. Must be unique across all moderators, valid email format
-  > (max 254 characters). Typically organizational email for accountability.
-- `username`
-  > Moderator's username for login and administrative identification.
-  > Case-insensitive unique constraint. 3-30 characters, alphanumeric plus
-  > underscore/hyphen. Used as alternative login identifier.
+  > Email address used for moderator authentication and account recovery.
+  > Must be unique across all moderator accounts. Valid email format required
+  > (user@domain.com).
 - `password_hash`
-  > Bcrypt-hashed password with salt (minimum 12 rounds). Never stored in
-  > plain text. Used for moderator authentication. Moderators may be required
-  > to use stronger passwords than members.
-- `display_name`
-  > Moderator's display name for identification in audit logs and moderation
-  > history. 1-50 characters. Shows publicly in moderation actions (e.g.,
-  > 'Comment removed by [display_name]').
+  > Bcrypt-hashed password with minimum 12 salt rounds. Password must be at
+  > least 8 characters with uppercase, lowercase, number, and special
+  > character. Never stores plaintext password.
+- `username`
+  > Public display name for moderation actions and audit trail. Must be
+  > unique across all moderators. 3-50 characters, alphanumeric and
+  > underscore only. Immutable after creation.
+- `email_verified`
+  > Whether the moderator's email address has been verified through
+  > confirmation link. False until verification email is clicked. Account
+  > cannot access moderation tools until verified.
 - `account_status`
-  > Current moderator account status controlling access. Values: 'active'
-  > (full moderator privileges), 'inactive' (temporarily no moderation
-  > access), 'terminated' (permanently revoked moderator status). Default:
-  > 'active'.
+  > Current account status. Valid values: 'active' (normal operation),
+  > 'suspended' (temporary ban from moderation), 'deleted' (marked for
+  > deletion). Defaults to 'active' on creation.
+- `moderation_tier`
+  > Moderator permission level. Current value: 'full' (all moderation
+  > permissions). Reserved for future role differentiation. All moderators
+  > currently have identical permissions.
 - `created_at`
-  > Timestamp when moderator account was created and role assigned in UTC.
-  > Immutable. Records when moderator was granted administrative access.
+  > Timestamp when the moderator account was created in ISO 8601 format
+  > (YYYY-MM-DDTHH:mm:ssZ).
 - `updated_at`
-  > Timestamp of last moderator account update. Updated when moderator status
-  > changes (activation/deactivation) or password changes.
+  > Timestamp of the most recent account modification. Updated when email,
+  > username, password, status, or tier changes.
 - `deleted_at`
-  > Soft deletion timestamp. Non-null only when account_status is
-  > 'terminated'. Used for audit trail when moderator role is revoked. Allows
-  > tracking of when access was removed.
+  > Timestamp when moderator account was deleted (soft delete). Null for
+  > active accounts. Retained for compliance purposes; moderator actions
+  > remain attributed to their ID in audit logs.
 - `last_login_at`
-  > Timestamp of last successful moderator login. Updated on each successful
-  > authentication. Null for never-logged-in moderators. Used for activity
-  > tracking and to identify inactive moderators.
+  > Timestamp of the most recent successful login to moderation dashboard.
+  > Null if account has never been logged in.
+- `password_changed_at`
+  > Timestamp of the most recent password change. Null if password has never
+  > been changed. All active sessions are invalidated when password changes.
 
 ### `discussion_board_moderator_sessions`
 
-Authentication sessions for moderators performing administrative tasks.
-Each session represents a moderator login from a specific IP address.
-Tracks connection context (IP, URL, referrer) for security and audit
-purposes. Moderators can have multiple concurrent sessions. Sessions
-expire after 7 days or explicit logout.
+Session management for authenticated moderators.
+
+Tracks active sessions for moderator authentication and access to
+moderation dashboards. Each session represents a login instance with
+connection context (IP address, referrer URL, accessed URL). Sessions
+enforce 30-minute access token expiration and 7-day refresh token
+expiration.
+
+One moderator can have multiple concurrent sessions from different
+devices or browsers. Sessions are created on successful moderator login
+and invalidated on logout or password change. Connection metadata (IP,
+referrer) enables security monitoring of moderator actions.
+
+Sessions follow the mandatory specification with required fields: ip,
+href, referrer, created_at, expired_at. Moderator sessions are separate
+from contributor sessions for security isolation and access control
+differentiation.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_moderator_id`
-  > Reference to the moderator who owns this session. Moderator's {@link
-  > discussion_board_moderators.id}. Non-nullable (session must belong to
-  > authenticated moderator).
+  > Foreign key to the moderator account. Multiple concurrent sessions
+  > allowed per moderator.
 - `ip`
-  > IP address (IPv4 or IPv6) from which the moderator login originated.
-  > Critical for security monitoring of administrative access and detecting
-  > unauthorized login attempts.
+  > IP address of the session connection. Used for security monitoring and
+  > audit trail of moderator actions. IPv4 or IPv6 format.
 - `href`
-  > Full URL/URI where moderator login occurred. Captures the entry point for
-  > moderation dashboard access. Used for understanding moderation access
-  > patterns.
+  > Full URL of the page where session was initiated (connection URL).
+  > Enables tracking of where moderator accessed moderation tools.
 - `referrer`
-  > HTTP Referrer header value when moderator login occurred. Indicates
-  > source of authentication request. May be empty string if referrer not
-  > available.
+  > HTTP Referrer header value from session creation request. Indicates
+  > origin of moderator login request.
 - `created_at`
-  > Session creation timestamp (login time) in UTC. Records when moderator
-  > authentication session was established. Immutable. Used for login history
-  > tracking.
+  > Timestamp when session was created in ISO 8601 format. Marks the login
+  > time for moderation access.
 - `expired_at`
-  > Session termination timestamp. Non-null when session ends (moderator
-  > logout or automatic expiration). Null for active sessions. Sessions
-  > expire after 7 days or explicit logout.
+  > Timestamp when session was explicitly terminated (logout). Null for
+  > active sessions. Session is also implicitly expired after 7 days of
+  > creation.
 
-## Profiles
+### `discussion_board_contributor_violations`
 
-```mermaid
-erDiagram
-"discussion_board_member_profiles" {
-  String id PK
-  String member_id FK,UK
-  String display_name
-  String bio "nullable"
-  String(80000) profile_picture_url "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_member_preferences" {
-  String id PK
-  String member_id FK,UK
-  Boolean email_notifications_enabled
-  Boolean comment_reply_notifications
-  Boolean article_reply_notifications
-  Boolean article_approval_notifications
-  Boolean moderator_action_notifications
-  Boolean daily_digest_enabled
-  String display_theme
-  DateTime created_at
-  DateTime updated_at
-}
-```
+Violation history tracking for contributors who breach community guidelines.
 
-### `discussion_board_member_profiles`
+Records each policy violation (content removal, comment deletion,
+guideline breach) committed by a contributor. Enables moderation
+escalation: first violation triggers warning, subsequent violations
+within 30 days result in restrictions or suspensions.
 
-Member profile information including display name, bio, and profile picture.
+Each violation entry includes violation type (article removal, comment
+violation, misinformation, harassment, etc.), severity level (minor,
+moderate, severe), contributing moderator ID, and recorded timestamp.
+Violations are never deleted; the complete history is retained for
+compliance and pattern analysis.
 
-Stores publicly visible profile data for each registered member. Each
-member has exactly one profile record that is created when the member
-account is created. Profile information is independent of authentication
-credentials and can be updated by members at any time.
-
-The profile includes the member's public display name (shown as author
-attribution on articles and comments), optional biographical information
-for community introduction, and a URL reference to the member's profile
-picture. All profile modifications are tracked through timestamps for
-audit purposes.
-
-When a member account is deleted, the associated profile is also deleted.
-This separation of profile data from authentication data allows flexible
-profile management while maintaining data integrity.
+Violation history informs moderator decisions about account restrictions.
+Multiple violations in short timeframes trigger automatic review
+recommendations or account suspension escalation. Violations older than
+30 days do not count toward escalation, allowing contributors to
+rehabilitate their standing.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `member_id`
-  > Reference to the member account this profile belongs to. {@link
-  > discussion_board_members.id}. Each profile is associated with exactly one
-  > member account (1:1 relationship).
-- `display_name`
-  > Public display name shown as author attribution on articles and comments.
-  > Required field, 1-50 characters. Used instead of username for public
-  > visibility to protect user privacy.
-- `bio`
-  > Optional biographical information or 'about me' text. Maximum 500
-  > characters. Members can use this to introduce themselves and share
-  > relevant expertise or interests related to economic and political
-  > discussion.
-- `profile_picture_url`
-  > URL reference to the member's profile picture. Points to the actual image
-  > file stored in the attachment system. Null if no profile picture has been
-  > uploaded. Images are automatically resized to 200x200 pixels and EXIF
-  > metadata is stripped for privacy.
-- `created_at`
-  > Timestamp when the profile was created (typically when member account was
-  > created). Used for audit trail and member join date tracking. Stored in
-  > UTC.
-- `updated_at`
-  > Timestamp of the last profile modification. Updated whenever
-  > display_name, bio, or profile_picture_url is changed. Used to track
-  > profile update history and for audit purposes. Stored in UTC.
+- `discussion_board_contributor_id`
+  > Foreign key to the contributor account that committed the violation.
+  > Contributor's [discussion_board_contributors.id](#discussion_board_contributors).
+- `recorded_by_moderator_id`
+  > Foreign key to the moderator who recorded the violation. {@link
+  > discussion_board_moderators.id}. Null if violation was auto-recorded by
+  > system. Optional for system-generated violations.
+- `violation_type`
+  > Category of the violation. Valid values: 'hate_speech',
+  > 'personal_attack', 'misinformation', 'harassment', 'spam',
+  > 'explicit_content', 'off_topic', 'platform_abuse', 'other'. Classifies
+  > the guideline breached.
+- `severity_level`
+  > Severity classification of the violation. Valid values: 'minor' (small
+  > issue, warning), 'moderate' (clear violation, removal), 'severe'
+  > (serious/repeated, restriction/suspension). Guides moderation response.
+- `description`
+  > Detailed description of the violation and context. May reference article
+  > ID, comment ID, or other content identifiers. Helps moderators understand
+  > violation history. Maximum 1000 characters.
+- `recorded_at`
+  > Timestamp when the violation was recorded in ISO 8601 format. Marks when
+  > moderator identified and recorded the violation.
 
-### `discussion_board_member_preferences`
+### `discussion_board_account_restrictions`
 
-Member account preferences and settings for notifications, display, and
-communication.
+Account restrictions and suspensions imposed on contributors by moderators.
 
-Stores personal preference settings that control how members receive
-notifications, display content, and interact with the platform. Each
-member has exactly one preference record that stores their individual
-settings for email notifications, notification frequency, display theme,
-and other personal preferences.
+Tracks all restrictions applied to contributor accounts as enforcement
+actions. Restrictions prevent contributors from creating articles or
+posting comments during the restriction period. Multiple restriction
+types supported: posting restrictions (3-day, 7-day, custom), temporary
+suspensions (7-day, 30-day), and permanent bans.
 
-Notification preferences include options to control email notifications
-for article replies, comment replies, moderator actions, and optional
-daily digest emails. Display preferences include theme selection (light,
-dark, system default). All preferences have sensible defaults to provide
-a good out-of-the-box experience while allowing members to customize
-based on their needs.
+Each restriction records the restriction type, reason, start timestamp,
+end timestamp (null for active indefinite bans), and moderator who
+imposed it. Restrictions can be manually lifted by moderators before the
+scheduled end date. Complete restriction history is retained for
+compliance and pattern analysis.
 
-Preference modifications are tracked through timestamps for audit
-purposes. These preferences are separate from profile data to maintain
-clear separation between public identity (profile) and private settings
-(preferences).
+Active restrictions (where current time is before end_date or end_date is
+null) prevent new article submissions and comment posts. Multiple
+overlapping restrictions are not allowed; applying a new restriction
+cancels any previous restriction. Contributor notifications include
+reason for restriction and end date (if applicable).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `member_id`
-  > Reference to the member account these preferences belong to. {@link
-  > discussion_board_members.id}. Each preference record is associated with
-  > exactly one member account (1:1 relationship).
-- `email_notifications_enabled`
-  > Master toggle for all email notifications. When false, no email
-  > notifications are sent regardless of other preference settings. Default:
-  > true to enable notifications. Members can disable to reduce inbox volume.
-- `comment_reply_notifications`
-  > Whether member receives email notifications when someone replies to their
-  > comments. Default: true. Only active if email_notifications_enabled is
-  > true.
-- `article_reply_notifications`
-  > Whether member receives email notifications when someone comments on
-  > their articles. Default: true. Only active if email_notifications_enabled
-  > is true.
-- `article_approval_notifications`
-  > Whether member receives email notifications when their submitted articles
-  > are approved or rejected by moderators. Default: true. Helps members
-  > track publication status of their submissions.
-- `moderator_action_notifications`
-  > Whether member receives email notifications about moderator actions
-  > affecting their content (deletions, edits, etc.). Default: true. Only
-  > applies if member's content is actioned by moderators.
-- `daily_digest_enabled`
-  > Whether member receives optional daily digest emails summarizing new
-  > articles and discussions. Default: false (disabled). When enabled, digest
-  > is sent daily at a consistent time.
-- `display_theme`
-  > Preferred display theme for the user interface. Valid values: 'light',
-  > 'dark', 'system'. Default: 'system' (follows system preference). Stored
-  > as lowercase string for consistent comparison.
-- `created_at`
-  > Timestamp when preference record was created (typically when member
-  > account was created). All preferences are initialized with defaults at
-  > account creation time. Stored in UTC.
-- `updated_at`
-  > Timestamp of the last preference modification. Updated whenever any
-  > preference setting is changed by the member. Used for audit trail of
-  > preference changes. Stored in UTC.
+- `discussion_board_contributor_id`
+  > Foreign key to the contributor account being restricted. {@link
+  > discussion_board_contributors.id}.
+- `imposed_by_moderator_id`
+  > Foreign key to the moderator who imposed the restriction. {@link
+  > discussion_board_moderators.id}.
+- `restriction_type`
+  > Type of restriction applied. Valid values: 'posting_restriction' (cannot
+  > post articles/comments), 'temporary_suspension' (account login denied),
+  > 'permanent_ban' (account permanently disabled). Determines enforcement
+  > mechanism.
+- `reason`
+  > Explanation of why the restriction was imposed. Communicates to
+  > contributor why their account was restricted and what conduct led to it.
+  > Maximum 500 characters.
+- `imposed_at`
+  > Timestamp when the restriction was applied in ISO 8601 format. Marks the
+  > enforcement action time.
+- `expires_at`
+  > Timestamp when the restriction automatically expires. Null for permanent
+  > bans or indefinite restrictions. After this timestamp, restriction is no
+  > longer enforced and account returns to normal operation.
+- `lifted_at`
+  > Timestamp when the restriction was manually lifted by a moderator. Null
+  > if restriction expired naturally or is still active. Enables early
+  > restriction removal for rehabilitated contributors.
+- `lifted_by_moderator_id`
+  > Foreign key to the moderator who manually lifted the restriction. {@link
+  > discussion_board_moderators.id}. Null if restriction was not manually
+  > lifted.
 
-## Content
+## Articles
 
 ```mermaid
 erDiagram
 "discussion_board_articles" {
   String id PK
-  String discussion_board_member_id FK
-  String discussion_board_category_id FK
+  String discussion_board_contributor_id FK
+  String article_category_id FK
+  String approved_by_moderator_id FK "nullable"
+  String last_edited_by_contributor_id FK "nullable"
   String title
-  String body
+  String content
   String status
-  Int view_count
-  String rejection_reason "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime published_at "nullable"
   DateTime deleted_at "nullable"
+  String approval_notes "nullable"
+  String rejection_reason "nullable"
+  Int view_count
+  Int comment_count
+  Boolean is_pinned
+  Boolean is_locked
 }
-"discussion_board_comments" {
+"discussion_board_article_attachments" {
   String id PK
   String discussion_board_article_id FK
-  String discussion_board_member_id FK
-  String body
-  Boolean is_deleted
-  DateTime created_at
-  DateTime updated_at "nullable"
+  String uploaded_by_contributor_id FK
+  String original_filename
+  String file_type
+  Int file_size
+  String mime_type
+  DateTime uploaded_at
+  String(80000) display_url
 }
-"discussion_board_comments" }o--|| "discussion_board_articles" : article
+"discussion_board_article_moderation_history" {
+  String id PK
+  String discussion_board_article_id FK
+  String moderator_id FK
+  String action_type
+  DateTime action_timestamp
+  String approval_notes "nullable"
+  String rejection_reason "nullable"
+  String removal_reason "nullable"
+}
+"discussion_board_article_attachments" }o--|| "discussion_board_articles" : article
+"discussion_board_article_moderation_history" }o--|| "discussion_board_articles" : article
 ```
 
 ### `discussion_board_articles`
 
-Discussion articles representing the primary content type on the
-platform. Articles are forum discussion threads initiated by members
-about economic and political topics. Each article flows through a
-moderation workflow before publication, requires moderator approval
-before becoming visible to other users, and supports rich content
-including text, images, and file attachments.
+Core article entity representing economic and political discussion
+content created by contributors and published after moderator approval.
 
-Articles form the foundation of community discussion. They are the
-primary business entities that users create to initiate conversations and
-share perspectives. The article lifecycle includes submission, moderator
-review, approval/rejection/request for changes, and optional publication.
-Published articles accumulate comments from community members, creating
-threaded discussions.
+Stores complete article metadata including title, content body, author
+information, publication status, and workflow tracking. Articles progress
+through a defined lifecycle: draft (author composition) →
+pending_approval (moderator review) → published (publicly visible) or
+rejected (awaiting revision).
 
-Each article maintains a persistent record even after rejection or
-archival, supporting audit trails and allowing authors to resubmit
-rejected content after revisions. Articles reference their creator
-member, assigned category, and moderation status for proper content
-discovery and management.
+Supports moderator actions including approval with notes, rejection with
+feedback, pinning for featured display, and archival. Tracks creation and
+modification timestamps for audit purposes. Soft deletion preserves
+article records for compliance while removing public visibility.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_member_id`
-  > Reference to the member who created this article. {@link
-  > discussion_board_members.id}
-- `discussion_board_category_id`
-  > Reference to the category this article belongs to (Economics, Politics,
-  > Economic Policy, Political Analysis, Other). {@link
-  > discussion_board_categories.id}
+- `discussion_board_contributor_id`
+  > Author contributor's [discussion_board_contributors.id](#discussion_board_contributors). Records
+  > the user who originally created the article.
+- `article_category_id`
+  > Category for article organization. References the {@link
+  > article_categories.id} for Economics, Politics, or General Discussion
+  > topics.
+- `approved_by_moderator_id`
+  > Moderator who approved article for publication. References {@link
+  > discussion_board_moderators.id}. Null if article not yet approved.
+- `last_edited_by_contributor_id`
+  > Contributor or moderator who last edited the article. References {@link
+  > discussion_board_contributors.id}. Null if article never edited after
+  > creation.
 - `title`
-  > Article title or headline. Must be between 5 and 200 characters. Serves
-  > as the primary identifier for discussion topic and appears in article
-  > lists and search results.
-- `body`
-  > Article content body containing the main discussion text. Must be between
-  > 10 and 50,000 characters. Supports plain text and basic formatting. This
-  > is the core content of the discussion article.
+  > Article title displayed in listings and search results. Required field
+  > between 5 and 200 characters describing the article topic.
+- `content`
+  > Article body content in plain text or markdown format. Required field
+  > between 50 and 50,000 characters containing the main discussion or
+  > analysis.
 - `status`
-  > Current publication status of the article. Valid values: pending_approval
-  > (submitted but not yet reviewed), published (approved and visible to all
-  > users), rejected (did not meet guidelines, visible only to creator and
-  > moderators), archived (hidden from public view but retained in system).
-  > Determines visibility and editing permissions.
-- `view_count`
-  > Number of times this article has been viewed by any user. Incremented by
-  > 1 each time the article detail page is accessed. Initialized to 0 upon
-  > creation. Provides engagement metrics.
-- `rejection_reason`
-  > Text explanation provided by moderator when article is rejected. Helps
-  > article creator understand why content did not meet guidelines and what
-  > improvements are needed for resubmission. Maximum 500 characters. Null if
-  > article has not been rejected.
+  > Current publication status of the article. Valid values: draft (in
+  > progress), pending_approval (awaiting moderator review), published
+  > (approved and public), rejected (moderator declined, awaiting revision),
+  > archived (removed from listings but searchable), deleted (removed by
+  > author or moderator). Determines visibility and editing permissions.
 - `created_at`
-  > Timestamp when article was initially created. Immutable - never changes
-  > even if article is edited. Used for chronological sorting and audit
-  > trails.
+  > ISO 8601 timestamp when article was originally created by the
+  > contributor. Immutable after creation.
 - `updated_at`
-  > Timestamp of last modification to article. Updated whenever article
-  > content, title, category, or status changes. Used to track edit history
-  > and sort by modification recency.
+  > ISO 8601 timestamp of most recent modification to the article. Updates
+  > when content, title, category, or status changes.
 - `published_at`
-  > Timestamp when article status changed to published (moderator approval).
-  > Null if article is not yet published or was rejected. Records the
-  > official publication moment for audit purposes.
+  > ISO 8601 timestamp when article was approved and published by moderator.
+  > Null if article not yet published. Immutable once set.
 - `deleted_at`
-  > Timestamp when article was deleted (soft deletion). Null if article has
-  > not been deleted. Enables recovery within retention window and preserves
-  > audit trail of deleted content.
+  > ISO 8601 timestamp when article was deleted by author or moderator. Null
+  > if article not deleted. Used for soft deletion to preserve audit trail.
+- `approval_notes`
+  > Optional moderator feedback provided during article approval. Maximum
+  > 1,000 characters. Visible to contributor and other moderators.
+- `rejection_reason`
+  > Moderator explanation for article rejection. Maximum 500 characters.
+  > Provided to contributor to help them understand how to revise the article
+  > for resubmission.
+- `view_count`
+  > Number of times article has been viewed by users. Starts at zero and
+  > increments with each article access. Used to identify popular
+  > discussions.
+- `comment_count`
+  > Cached count of published comments on this article. Maintained in sync
+  > with actual comment records for display efficiency. Starts at zero.
+- `is_pinned`
+  > Whether moderator has pinned article to top of listings for featured
+  > display. Pinned articles appear before unpinned articles in all browsing
+  > and search views. Defaults to false.
+- `is_locked`
+  > Whether article is locked from further comments and modifications. Locked
+  > articles remain visible with existing comments but new comments cannot be
+  > posted. Defaults to false.
 
-### `discussion_board_comments`
+### `discussion_board_article_attachments`
 
-Comments represent member responses and engagement on published articles.
-Comments enable discussion and debate by allowing members to share
-perspectives, ask questions, and respond to article content. Unlike
-articles, comments are published immediately without moderation approval,
-creating immediate visibility and real-time engagement.
+File attachment metadata for images and documents attached to articles.
 
-Each comment belongs exclusively to one article and extends that
-article's discussion thread. Comments maintain author information,
-creation timestamp, and optional attachments (images and files). Comments
-support editing for content correction and deletion for content removal,
-with soft deletion preserving comment records for audit purposes.
+Stores information about each file uploaded by contributors to accompany
+their articles, including original filename, file type, size, upload
+timestamp, and access URL. Supports up to 10 attachments per article with
+file size limits (5MB for images, 25MB for documents).
 
-Comments form the interactive component of the discussion platform,
-transforming the system from one-way content distribution into
-collaborative conversation. They are primary business entities requiring
-independent management through search, filtering, and moderation
-capabilities.
+Attachments are managed through their parent article operations. When an
+article is published, existing attachments remain accessible. When an
+article is deleted, all associated attachments are removed from storage.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_article_id`
-  > Reference to the parent article this comment belongs to. {@link
-  > discussion_board_articles.id}
-- `discussion_board_member_id`
-  > Reference to the member who created this comment. {@link
-  > discussion_board_members.id}
-- `body`
-  > Comment text content. Must be between 1 and 5,000 characters. Contains
-  > the member's response, perspective, or question about the article.
-  > Supports plain text with basic formatting.
-- `is_deleted`
-  > Soft deletion flag indicating whether comment has been deleted. True if
-  > deleted by author or moderator; false if active. Allows recovery of
-  > deleted comments for audit purposes while hiding them from user views.
-  > Defaults to false.
-- `created_at`
-  > Timestamp when comment was originally created. Immutable - never changes.
-  > Records the exact moment comment was posted for chronological sorting and
-  > rate limiting checks.
-- `updated_at`
-  > Timestamp of last edit to comment. Null if comment has never been edited.
-  > Updated whenever member modifies comment text or attachments. Allows
-  > tracking of comment modifications with edit timestamps displayed to
-  > users.
+  > Parent article containing this attachment. References {@link
+  > discussion_board_articles.id}. Defines the article context for the file.
+- `uploaded_by_contributor_id`
+  > Contributor who uploaded this attachment. References {@link
+  > discussion_board_contributors.id}. Records the uploader for audit
+  > purposes.
+- `original_filename`
+  > Original filename as provided by the uploader. Maximum 255 characters.
+  > Displayed to users when downloading or viewing the attachment.
+- `file_type`
+  > File extension indicating format. Examples: jpg, png, gif, webp, pdf,
+  > docx, xlsx, txt. Used for validation and display type determination.
+- `file_size`
+  > Size of the file in bytes. Used to enforce size limits (5MB for images,
+  > 25MB for documents) and display file size to users.
+- `mime_type`
+  > MIME type for proper browser display and rendering. Examples: image/jpeg,
+  > image/png, application/pdf,
+  > application/vnd.openxmlformats-officedocument.wordprocessingml.document.
+- `uploaded_at`
+  > ISO 8601 timestamp when file was uploaded. Immutable after upload. Used
+  > for audit trail and sorting attachments in display order.
+- `display_url`
+  > Relative or absolute URL path for accessing or displaying the attachment
+  > in the web interface. Used by frontend to create download links or embed
+  > images.
 
-## Attachments
+### `discussion_board_article_moderation_history`
 
-```mermaid
-erDiagram
-"discussion_board_attachments" {
-  String id PK
-  String parent_type
-  String parent_id
-  String original_filename
-  String storage_path UK
-  Int file_size
-  String mime_type
-  String file_hash
-  Boolean is_image
-  Int width "nullable"
-  Int height "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-```
+Immutable audit trail recording all moderation decisions and actions on
+articles.
 
-### `discussion_board_attachments`
+Captures point-in-time snapshots of moderator decisions including
+approvals (with optional notes), rejections (with reasoning), edits,
+deletions, pinning, locking, and archival. Each record documents the
+moderator responsible, decision timestamp, action type, and associated
+context. Supports compliance requirements and enables moderator
+accountability tracking.
 
-File and image attachments associated with articles and comments.
-
-Stores metadata for all file and image attachments uploaded to articles
-and comments on the discussion board. Each attachment maintains a
-reference to its parent content (article or comment) through a
-polymorphic relationship pattern.
-
-Attachments support multiple file types including images (JPG, PNG, GIF,
-WebP) and documents (PDF, DOCX, TXT, XLS, XLSX, CSV, ODT, ODS, ODP, ZIP).
-File validation, malware scanning, and size limiting occur at upload time
-to ensure security and prevent abuse.
-
-When parent content (article or comment) is deleted, associated
-attachments are automatically removed from storage. Attachments can be
-deleted independently by content creators or moderators when removing
-specific files from posts.
+Records are append-only and never modified after creation. Retention is
+indefinite for complete historical tracking. Multiple records per article
+document the complete moderation lifecycle.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `parent_type`
-  > Type of parent content this attachment belongs to. Either 'article'
-  > (references discussion_board_articles) or 'comment' (references
-  > discussion_board_comments). Enables polymorphic relationship without
-  > multiple nullable foreign keys.
-- `parent_id`
-  > UUID of the parent content (article or comment) this attachment is
-  > associated with. Combined with parent_type to identify the parent entity.
-- `original_filename`
-  > Original filename as uploaded by the user (max 255 characters). Used for
-  > display in UI and download dialog. May contain spaces and special
-  > characters.
-- `storage_path`
-  > System-generated file path where attachment is stored. Uses secure naming
-  > pattern (timestamp_hash_originalname) to prevent directory traversal
-  > attacks. Unique across entire system.
-- `file_size`
-  > File size in bytes. Validated at upload time to ensure limits are
-  > enforced (10 MB for images, 25 MB for documents). Used for quota tracking
-  > and display to users.
-- `mime_type`
-  > MIME type of the file (e.g., image/jpeg, application/pdf, text/plain).
-  > Determined by magic number verification (file header inspection) not file
-  > extension, for security.
-- `file_hash`
-  > SHA-256 hash of file content for integrity verification and malware
-  > scanning. Computed at upload time and used to detect file corruption or
-  > tampering.
-- `is_image`
-  > Whether this attachment is an image file. Used to determine display
-  > method (embedded inline for images, downloadable link for documents) and
-  > whether image dimensions are captured.
-- `width`
-  > Image width in pixels (for image attachments only). Null for non-image
-  > files. Used for display sizing and validation (must be 100-8000 pixels).
-- `height`
-  > Image height in pixels (for image attachments only). Null for non-image
-  > files. Used for display sizing and aspect ratio preservation.
+- `discussion_board_article_id`
+  > Article being moderated. References [discussion_board_articles.id](#discussion_board_articles).
+  > Links moderation action to specific article.
+- `moderator_id`
+  > Moderator performing the action. References {@link
+  > discussion_board_moderators.id}. Records who made the moderation
+  > decision.
+- `action_type`
+  > Type of moderation action performed. Valid values: approved (published
+  > for public viewing), rejected (declined for publication), edited (content
+  > modified for compliance), deleted (removed from system), pinned (featured
+  > at top), locked (disabled comments), archived (hidden from listings).
+  > Determines what contextual data is stored.
+- `action_timestamp`
+  > ISO 8601 timestamp when moderation action was performed. Immutable after
+  > creation. Used to establish chronological order of all moderation events.
+- `approval_notes`
+  > Optional feedback provided by moderator during approval decision. Maximum
+  > 1,000 characters. Visible to contributor and other moderators. Null for
+  > non-approval actions.
+- `rejection_reason`
+  > Explanation for article rejection decision provided by moderator. Maximum
+  > 500 characters. Helps contributor understand how to revise for
+  > resubmission. Null for non-rejection actions.
+- `removal_reason`
+  > Explanation for deletion or archival action. Maximum 500 characters.
+  > Provides context for why published article was removed from public
+  > access. Null for other action types.
+
+## Comments
+
+```mermaid
+erDiagram
+"discussion_board_comments" {
+  String id PK
+  String discussion_board_article_id FK
+  String discussion_board_contributor_id FK
+  String parent_comment_id FK "nullable"
+  String content
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  Boolean is_deleted
+  Int edit_count
+  Int reply_count
+  String article_publication_status
+}
+"discussion_board_comment_attachments" {
+  String id PK
+  String discussion_board_comment_id FK
+  String discussion_board_contributor_id FK
+  String original_file_name
+  String file_type
+  Int file_size
+  DateTime uploaded_at
+  String mime_type
+  String display_url
+}
+"discussion_board_comment_moderation_history" {
+  String id PK
+  String discussion_board_comment_id FK
+  String discussion_board_moderator_id FK
+  String action_type
+  DateTime action_timestamp
+  String reason "nullable"
+  String comment_content_before
+  String comment_content_after "nullable"
+}
+"discussion_board_comments" }o--o| "discussion_board_comments" : parentComment
+"discussion_board_comment_attachments" }o--|| "discussion_board_comments" : comment
+"discussion_board_comment_moderation_history" }o--|| "discussion_board_comments" : comment
+```
+
+### `discussion_board_comments`
+
+User comments posted on published articles enabling discussion and
+community interaction.
+
+Each comment represents a user contribution to a discussion thread on a
+specific article. Comments support hierarchical threading where users can
+reply to the article (top-level comment) or reply to other comments
+(nested reply), creating organized conversation threads. Comments are
+published immediately upon submission without requiring moderator
+approval, though moderators retain the ability to edit or remove
+inappropriate comments.
+
+Comments maintain a complete audit trail including creation timestamp,
+modification tracking, author information, and deletion status. The
+system supports soft deletion, allowing threads to maintain context even
+after comments are removed by authors or moderators. This design
+preserves the coherence of discussion threads while respecting user
+privacy and moderation needs.
+
+Comments include optional file attachments (images only) to enable
+contributors to share supporting visual content. Attachments are tracked
+separately for efficient management and access control.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`: The article this comment belongs to. [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_contributor_id`
+  > The contributor who posted this comment. {@link
+  > discussion_board_contributors.id}.
+- `parent_comment_id`
+  > Parent comment ID if this is a reply to another comment. Null for
+  > top-level comments on the article. [discussion_board_comments.id](#discussion_board_comments).
+- `content`
+  > The comment text content. Required field containing the discussion
+  > contribution. Minimum 1 character, maximum 5,000 characters per
+  > specification.
 - `created_at`
-  > Timestamp when attachment was uploaded. Immutable after creation. Used
-  > for audit trails and display of upload time to users.
+  > ISO 8601 timestamp when the comment was created. Recorded at the moment
+  > the comment is posted by the contributor.
 - `updated_at`
-  > Timestamp of last modification. Updated when attachment metadata is
-  > modified. Usually equals created_at except when file is replaced or
-  > metadata edited.
+  > ISO 8601 timestamp of the most recent modification. Updated when the
+  > comment is edited by the author or moderator. Starts equal to created_at.
 - `deleted_at`
-  > Timestamp when attachment was soft-deleted. Null if attachment is active.
-  > Soft deletion preserves attachment record for audit purposes while hiding
-  > from user views.
+  > ISO 8601 timestamp if comment was deleted by author or moderator. Null
+  > for active comments. Used for soft deletion to preserve thread structure.
+- `is_deleted`
+  > Whether this comment has been deleted and is no longer visible. True
+  > indicates soft delete; false indicates active comment. Used for quick
+  > filtering of active comments.
+- `edit_count`
+  > Number of times this comment has been edited by the author or moderator.
+  > Starts at 0 when comment is created. Incremented with each modification.
+  > Helps track comment history.
+- `reply_count`
+  > Number of direct replies to this comment. Used for efficiently displaying
+  > reply count without querying child comments. Updated whenever a reply is
+  > added or removed.
+- `article_publication_status`
+  > Cached publication status of the parent article at the time the comment
+  > was posted (e.g., 'published', 'archived'). Immutable record providing
+  > audit context for when comment was created.
+
+### `discussion_board_comment_attachments`
+
+Image file attachments associated with comments to support visual
+evidence and discussion context.
+
+Comments support optional file attachments limited to images (JPG, PNG,
+GIF formats) to enable contributors to share visual supporting materials
+within their discussion contributions. Each comment can have up to 2
+image attachments with individual file size limits of 5MB. Attachments
+are stored with unique identifiers to prevent filename collisions and
+provide secure file management.
+
+Each attachment record maintains metadata including the original filename
+for user display, file type for validation, file size for storage
+management, upload timestamp for audit purposes, and the contributor ID
+of the uploader for accountability. The system tracks attachment storage
+location and MIME type for proper browser handling and content delivery.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_id`
+  > The comment this attachment belongs to. {@link
+  > discussion_board_comments.id}.
+- `discussion_board_contributor_id`
+  > The contributor who uploaded this attachment. {@link
+  > discussion_board_contributors.id}.
+- `original_file_name`
+  > Original filename as uploaded by the contributor. User-visible name
+  > displayed in the attachment list. Between 1-255 characters to accommodate
+  > typical filename lengths.
+- `file_type`
+  > File extension in lowercase indicating the file format (e.g., 'jpg',
+  > 'png', 'gif'). Used for validation against allowed types. Images only per
+  > specification.
+- `file_size`
+  > Size of the file in bytes. Used for validating upload limits (max 5MB for
+  > comment images) and tracking storage usage.
+- `uploaded_at`
+  > ISO 8601 timestamp when the attachment was uploaded. Recorded at the
+  > moment the file is accepted and stored.
+- `mime_type`
+  > MIME type of the file for proper browser display and content delivery
+  > (e.g., 'image/jpeg', 'image/png', 'image/gif'). Used to set correct HTTP
+  > Content-Type headers.
+- `display_url`
+  > URL path or absolute URL for accessing or displaying the attachment in
+  > the web interface. Relative or absolute path depending on file storage
+  > implementation.
+
+### `discussion_board_comment_moderation_history`
+
+Immutable audit trail recording all moderator actions on comments for
+accountability and compliance.
+
+This table maintains a complete and permanent record of every moderation
+action taken on comments, including edits and removals. The moderation
+history serves as an immutable audit log that documents when comments
+were modified by moderators, who performed the actions, and what actions
+were taken. This supports platform accountability, moderator oversight,
+and compliance with content governance policies.
+
+Each history entry captures the moderator who performed the action, the
+exact timestamp, the type of action taken (edit or removal), and optional
+reason text explaining the moderation decision. The table is append-only;
+records are never deleted or modified, preserving the integrity of the
+historical record. This design enables complete traceability of all
+moderation decisions and supports dispute resolution if contributors
+appeal moderation actions.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_id`: The comment that was moderated. [discussion_board_comments.id](#discussion_board_comments).
+- `discussion_board_moderator_id`
+  > The moderator who performed the moderation action. {@link
+  > discussion_board_moderators.id}.
+- `action_type`
+  > Type of moderation action performed on the comment. Valid values:
+  > 'edited' (moderator edited comment content), 'removed' (moderator deleted
+  > the comment). Indicates what moderation measure was taken.
+- `action_timestamp`
+  > ISO 8601 timestamp when the moderation action was performed. Recorded at
+  > the moment the moderator submits their action. Critical for audit trail
+  > chronology.
+- `reason`
+  > Optional text explanation provided by the moderator documenting why the
+  > action was taken. Maximum 500 characters. May include guideline reference
+  > or specific violation explanation. Null if no reason was provided.
+- `comment_content_before`
+  > The original comment content before the moderation action was taken.
+  > Preserved for audit purposes to show what was edited or removed. Full
+  > text stored to maintain complete record.
+- `comment_content_after`
+  > The comment content after the moderation action. For 'edited' actions,
+  > shows the new moderated content. For 'removed' actions, empty string or
+  > null indicating deletion. Used to track what changes were made.
 
 ## Moderation
 
 ```mermaid
 erDiagram
-"discussion_board_moderation_actions" {
+"discussion_board_moderation_queue" {
   String id PK
-  String discussion_board_moderator_id FK
-  String discussion_board_member_id FK
-  String action_type
-  String content_type
-  String content_id
-  String reason
-  String notes "nullable"
+  String discussion_board_article_id FK,UK
+  String discussion_board_contributor_id FK
+  String assigned_moderator_id FK "nullable"
+  DateTime submitted_at
+  DateTime review_started_at "nullable"
+  String priority
+  String submission_notes "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"discussion_board_user_warnings" {
+"discussion_board_user_suspensions" {
   String id PK
-  String discussion_board_member_id FK
+  String discussion_board_contributor_id FK
   String discussion_board_moderator_id FK
-  String action_type
+  String suspension_type
   String reason
-  String notes "nullable"
-  DateTime suspension_end_date "nullable"
-  Boolean is_active
+  String severity_level
+  Int duration_days "nullable"
+  DateTime suspended_at
+  DateTime expiration_at "nullable"
+  String status
+  DateTime lifted_at "nullable"
+  String lift_reason "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_content_violation_records" {
+  String id PK
+  String discussion_board_contributor_id FK
+  String discussion_board_article_id FK "nullable"
+  String discussion_board_comment_id FK "nullable"
+  String discussion_board_moderator_id FK
+  String violation_type
+  String severity
+  String violation_description
+  String action_taken
+  String action_details "nullable"
+  DateTime detected_at
+  String content_snapshot "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_moderator_audit_log" {
+  String id PK
+  String discussion_board_moderator_id FK
+  String discussion_board_article_id FK "nullable"
+  String discussion_board_comment_id FK "nullable"
+  String affected_contributor_id FK "nullable"
+  String action_type
+  String reason "nullable"
+  String old_status "nullable"
+  String new_status "nullable"
+  String additional_metadata "nullable"
   DateTime created_at
 }
 ```
 
-### `discussion_board_moderation_actions`
+### `discussion_board_moderation_queue`
 
-Comprehensive audit trail of all moderation actions taken on discussion
-board content. Records every decision to approve, reject, delete, or edit
-articles and comments by moderators, with full context including reason
-and detailed notes for accountability and audit purposes.
+Tracks articles awaiting moderator review in the approval workflow.
 
-Captures content review workflow where moderators evaluate submitted
-articles, approve for publication, request changes, or reject. Also
-tracks reactive moderation where moderators delete inappropriate comments
-or articles in response to community guidelines violations.
+This table represents the moderation queue that stores all articles
+submitted by contributors awaiting moderator approval. Each queue entry
+corresponds to an article in pending_approval status and captures the
+submission context, moderator assignment, and review metadata.
 
-Each action includes the moderator who performed it, the specific content
-affected, the type of action taken, and the business reason (rejection
-reason, deletion reason, edit notes). This immutable record enables
-tracking of moderation patterns, decision consistency, and provides users
-with explanation of moderation decisions affecting their content.
-
-Designed as append-only with no updates or deletes - all records
-preserved for legal compliance, dispute resolution, and system integrity.
+When a contributor submits an article, a queue entry is created
+automatically. Moderators review articles in queue order (oldest
+submissions first) and remove entries upon approval or rejection. The
+queue table enables efficient workflow management and ensures no articles
+slip through without review.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_moderator_id`
-  > Reference to the moderator who performed this action. Identifies which
-  > moderator approved, rejected, or deleted the content. {@link
+- `discussion_board_article_id`
+  > Reference to the article awaiting review. {@link
+  > discussion_board_articles.id}
+- `discussion_board_contributor_id`
+  > Reference to the contributor who submitted the article. {@link
+  > discussion_board_contributors.id}
+- `assigned_moderator_id`
+  > Reference to moderator assigned to review this article, if any. {@link
   > discussion_board_moderators.id}
-- `discussion_board_member_id`
-  > Reference to the member who created the content being moderated (article
-  > or comment author). Used to track and notify which member's content was
-  > moderated. [discussion_board_members.id](#discussion_board_members)
-- `action_type`
-  > Type of moderation action performed. Valid values: 'approved' (article
-  > published), 'rejected' (article not approved), 'requested_changes'
-  > (feedback for revision), 'deleted_article' (article removed),
-  > 'deleted_comment' (comment removed), 'edited_article' (moderator
-  > corrected article content), 'edited_comment' (moderator corrected
-  > comment), 'flagged' (marked for further review). Determines business
-  > outcome and what notifications are sent.
-- `content_type`
-  > Type of content being moderated. Valid values: 'article' or 'comment'.
-  > Indicates whether action applies to an article or comment to enable
-  > polymorphic tracking of moderation across content types.
-- `content_id`
-  > UUID identifier of the content being moderated. References either
-  > discussion_board_articles.id or discussion_board_comments.id depending on
-  > content_type value. Combined with content_type, enables tracking
-  > moderation across both article and comment entities.
-- `reason`
-  > Business reason for the moderation action in 10-500 characters. For
-  > rejections: explains policy violation (e.g., 'Personal attacks on
-  > individuals'). For deletions: explains violation category (e.g., 'Spam
-  > content'). For requested changes: specific feedback (e.g., 'Add citation
-  > for economic data in paragraph 3'). Used to notify affected member and
-  > maintain moderation consistency.
-- `notes`
-  > Optional detailed moderator notes up to 1000 characters for internal
-  > record-keeping. May contain context about decision (policy
-  > interpretation, precedent, escalation factors). Not necessarily shown to
-  > user but available to other moderators and administrators for
-  > understanding decision rationale.
-- `created_at`
-  > Timestamp when moderation action was performed in UTC. System-generated,
-  > immutable. Used to order moderation history chronologically and determine
-  > time from content creation to moderation.
+- `submitted_at`
+  > Timestamp when the article was submitted for review. Used for queue
+  > ordering.
+- `review_started_at`
+  > Timestamp when a moderator began reviewing the article, null if not yet
+  > reviewed.
+- `priority`
+  > Priority level for review: 'normal' (default), 'high' (flagged for
+  > expedited review), 'low' (secondary priority). Guides moderator workflow
+  > prioritization.
+- `submission_notes`
+  > Optional notes from contributor explaining the article or addressing
+  > previous feedback. Maximum 1000 characters.
+- `created_at`: Timestamp when the queue entry was created (same as submitted_at).
+- `updated_at`: Timestamp of most recent update to this queue entry.
 
-### `discussion_board_user_warnings`
+### `discussion_board_user_suspensions`
 
-Audit trail tracking user account management actions taken by moderators
-including warnings, suspensions, and bans. Maintains immutable record of
-every disciplinary action, its reason, duration, and auto-reactivation
-schedule for account lifecycle management.
+Tracks suspension and restriction actions against contributor accounts.
 
-Records when moderators warn a member about guideline violations
-(creating accountability for repeated issues), suspend accounts
-temporarily (blocking posting but allowing viewing), or permanently ban
-accounts (preventing all access). Each action is timestamped and
-documented with the moderator name and specific reason.
+This table maintains a complete history of account suspensions and
+restrictions imposed on contributors by moderators for policy violations.
+Each suspension record captures enforcement context, duration, and
+resolution, enabling tracking of account status across the suspension
+lifecycle.
 
-For temporary suspensions, tracks suspension end date and enables
-automatic account reactivation when suspension period expires. For
-permanent bans, records the ban decision with no auto-reactivation.
-Notifications are sent to affected member explaining restriction reason
-and duration.
-
-Designed as append-only record for full history of user management
-actions, enabling moderators to review account history, understand
-escalation patterns, and make consistent decisions about future
-violations.
+When a moderator determines a contributor has repeatedly violated
+policies or committed severe violations, a suspension record is created.
+Suspensions have defined durations (7 days, 30 days, permanent) and are
+tracked with status transitions. This table enables the moderation system
+to enforce account restrictions and moderators to review enforcement
+history.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_member_id`
-  > Reference to the member account being warned, suspended, or banned.
-  > Identifies which user is subject to the moderation action. {@link
-  > discussion_board_members.id}
+- `discussion_board_contributor_id`
+  > Reference to the contributor whose account is suspended. {@link
+  > discussion_board_contributors.id}
 - `discussion_board_moderator_id`
-  > Reference to the moderator who issued the warning or initiated the
-  > suspension/ban. Tracks accountability for each account management action.
-  > [discussion_board_moderators.id](#discussion_board_moderators)
-- `action_type`
-  > Type of user account action taken. Valid values: 'warning' (notification
-  > about violations), 'suspension' (temporary block from posting, duration
-  > specified), 'ban' (permanent block from accessing system). Determines
-  > account restrictions and notification message sent to user.
+  > Reference to the moderator who issued the suspension. {@link
+  > discussion_board_moderators.id}
+- `suspension_type`
+  > Type of suspension: 'posting_restriction' (cannot post articles/comments
+  > for duration), 'account_suspension' (cannot login), 'permanent_ban'
+  > (account permanently disabled). Determines enforcement mechanism.
 - `reason`
-  > Required business reason for the action in 10-500 characters. Examples:
-  > 'Repeated policy violations', 'Harassment of other members', 'Spam
-  > content creation', 'Offensive language'. Explains to member why action
-  > was taken and appears in notification email.
-- `notes`
-  > Optional detailed moderator notes up to 1000 characters for internal
-  > record-keeping. May reference specific violations, previous warnings, or
-  > escalation factors informing the decision. Available to other moderators
-  > for context on account history.
-- `suspension_end_date`
-  > For suspension action_type only: timestamp when suspension expires and
-  > account should automatically reactivate. NULL for warnings and bans
-  > (which have no auto-reactivation). Used by system job to auto-reactivate
-  > accounts on expiration.
-- `is_active`
-  > Whether this warning/suspension is currently in effect. TRUE when first
-  > issued. For suspensions: changes to FALSE when suspension expires and
-  > auto-reactivation occurs. For bans: remains TRUE indefinitely (never
-  > auto-reactivates). For warnings: remains TRUE (warnings don't expire,
-  > they accumulate in history).
-- `created_at`
-  > Timestamp when warning/suspension/ban action was issued by moderator in
-  > UTC. System-generated, immutable. Used to order account history
-  > chronologically and determine suspension start time.
+  > Detailed explanation for the suspension action. Maximum 1000 characters.
+  > Includes specific violations that led to suspension.
+- `severity_level`
+  > Severity classification: 'minor' (first offense, light restriction),
+  > 'moderate' (second offense, extended restriction), 'severe' (repeated
+  > violations or serious single violation), 'permanent' (irreversible
+  > account ban).
+- `duration_days`
+  > Duration of suspension in days. Null for permanent suspensions. Used to
+  > calculate expiration_at.
+- `suspended_at`: Timestamp when the suspension became effective.
+- `expiration_at`
+  > Timestamp when the suspension expires and account restrictions are
+  > automatically lifted. Null for permanent suspensions.
+- `status`
+  > Current suspension status: 'active' (suspension in effect), 'lifted'
+  > (moderator manually lifted the suspension), 'expired' (suspension
+  > duration completed). Determines whether restrictions apply.
+- `lifted_at`
+  > Timestamp when the suspension was manually lifted by a moderator. Null if
+  > not yet lifted or suspension expired naturally.
+- `lift_reason`
+  > Explanation for why the suspension was lifted. Maximum 500 characters.
+  > Null if suspension not yet lifted.
+- `created_at`: Timestamp when the suspension record was created.
+- `updated_at`: Timestamp of most recent update to the suspension record.
 
-## Reporting
+### `discussion_board_content_violation_records`
+
+Documents specific content violations detected in articles and comments.
+
+This table maintains detailed records of individual content policy
+violations found in articles and comments. Each violation record captures
+what was violated, why it violated the policy, the severity, and the
+moderator action taken to resolve it.
+
+When moderators identify content that violates community guidelines
+(during article review or comment monitoring), a violation record is
+created. These records enable violation tracking per contributor, inform
+decisions about escalating restrictions, and provide audit trail of
+enforcement actions. Violation history directly informs suspension
+decisions through accumulation of violations within time windows.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_contributor_id`
+  > Reference to the contributor who created the violating content. {@link
+  > discussion_board_contributors.id}
+- `discussion_board_article_id`
+  > Reference to the article containing the violation, if violation is in an
+  > article. [discussion_board_articles.id](#discussion_board_articles). Exactly one of article_id
+  > or comment_id must be non-null; constraint enforced by application
+  > validation.
+- `discussion_board_comment_id`
+  > Reference to the comment containing the violation, if violation is in a
+  > comment. [discussion_board_comments.id](#discussion_board_comments). Exactly one of article_id
+  > or comment_id must be non-null; constraint enforced by application
+  > validation.
+- `discussion_board_moderator_id`
+  > Reference to the moderator who documented this violation. {@link
+  > discussion_board_moderators.id}
+- `violation_type`
+  > Specific type of violation: 'hate_speech' (targeting protected groups),
+  > 'personal_attack' (attacking individuals), 'misinformation' (false
+  > claims), 'harassment' (coordinated or repeated targeting), 'spam'
+  > (promotional content), 'off_topic' (unrelated to discussion),
+  > 'graphic_content' (explicit imagery/violence), 'threats' (violence or
+  > harm threats), 'copyright' (copyright violations), 'other' (other policy
+  > violations).
+- `severity`
+  > Severity classification: 'minor' (small issues, correctable by editing),
+  > 'moderate' (clear violation, requires action), 'severe' (serious
+  > violation like hate speech or threats). Determines enforcement response.
+- `violation_description`
+  > Detailed description of what was violated and why. Includes specific
+  > examples from content that violated the policy. Maximum 2000 characters.
+- `action_taken`
+  > Enforcement action: 'edited' (moderator edited content to comply),
+  > 'removed' (content deleted), 'warned' (warning issued to user),
+  > 'restricted' (user posting restricted), 'suspended' (account suspended),
+  > 'reported_to_admin' (escalated to administrator). Describes what
+  > moderator did in response.
+- `action_details`
+  > Additional details about the action taken. If content was edited, what
+  > was changed. If user warned/restricted, what was the specific message.
+  > Maximum 1000 characters.
+- `detected_at`
+  > Timestamp when the violation was detected by moderator or automated
+  > system.
+- `content_snapshot`
+  > Snapshot of the violating content at time of detection. First 500
+  > characters of content for reference. Used to verify violation even if
+  > content later changed.
+- `created_at`: Timestamp when the violation record was created.
+- `updated_at`: Timestamp of most recent update to the violation record.
+
+### `discussion_board_moderator_audit_log`
+
+Complete audit trail of all moderator actions for accountability and
+compliance.
+
+This table maintains an immutable, append-only audit log of every action
+performed by moderators on the platform. Each log entry captures what
+action was taken, on what content, by which moderator, and when, creating
+a comprehensive accountability record.
+
+The audit log enables moderation review, compliance audits, performance
+analysis of moderator decisions, and dispute resolution when users appeal
+moderation actions. Every moderator action (article approval/rejection,
+comment removal, user warning/suspension, edit, etc.) must be recorded
+here. The audit log is never modified after creation, only appended to,
+ensuring integrity and immutability of the record.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_moderator_id`
+  > Reference to the moderator who performed the action. {@link
+  > discussion_board_moderators.id}
+- `discussion_board_article_id`
+  > Reference to the article involved in the action, if applicable. {@link
+  > discussion_board_articles.id}
+- `discussion_board_comment_id`
+  > Reference to the comment involved in the action, if applicable. {@link
+  > discussion_board_comments.id}
+- `affected_contributor_id`
+  > Reference to the contributor affected by the action (author of
+  > article/comment or user being restricted). {@link
+  > discussion_board_contributors.id}
+- `action_type`
+  > Type of action performed: 'article_approved' (article approved for
+  > publication), 'article_rejected' (article rejected from publication),
+  > 'article_edited' (moderator edited article content), 'article_deleted'
+  > (article removed), 'article_archived' (article archived),
+  > 'article_pinned' (article pinned to top), 'article_unpinned' (article
+  > unpinned), 'article_locked' (article locked from comments),
+  > 'article_unlocked' (article unlocked), 'comment_edited' (moderator edited
+  > comment), 'comment_removed' (comment deleted), 'user_warned' (warning
+  > issued), 'user_restricted' (posting restricted), 'user_suspended'
+  > (account suspended), 'user_unsuspended' (suspension lifted),
+  > 'violation_recorded' (violation documented).
+- `reason`
+  > Explanation of why the action was taken. For rejections, the reason for
+  > rejection. For removals, the guideline violated. For restrictions, the
+  > reason for restriction. Maximum 1000 characters.
+- `old_status`
+  > Previous state before action. For articles: old publication status. For
+  > users: old account status. Null if not applicable. Used to track state
+  > transitions.
+- `new_status`
+  > New state after action. For articles: new publication status. For users:
+  > new account status. Null if not applicable. Shows result of action.
+- `additional_metadata`
+  > Additional contextual information about the action. For edits, what was
+  > changed. For suspensions, duration. For warnings, specific message. JSON
+  > formatted data. Maximum 2000 characters.
+- `created_at`
+  > Timestamp when the action was performed. This is the authoritative
+  > timestamp for the action occurrence.
+
+## default
 
 ```mermaid
 erDiagram
-"discussion_board_reports" {
+"mv_discussion_board_article_search_index" {
   String id PK
-  String discussion_board_member_id FK
-  String discussion_board_article_id FK "nullable"
-  String discussion_board_comment_id FK "nullable"
-  String assigned_moderator_id FK "nullable"
-  String reason
-  String description "nullable"
-  String status
-  String moderator_notes "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime resolved_at "nullable"
+  String article_id FK
+  String title
+  String content_preview
+  String search_tokens
+  String author_name
+  String category
+  DateTime published_at
+  Int comment_count
+  Boolean is_pinned
+  DateTime last_updated
+}
+"mv_discussion_board_category_article_statistics" {
+  String id PK
+  String category UK
+  Int article_count
+  Int comment_count
+  DateTime last_article_published_at "nullable"
+  Float average_comments_per_article
+  Int pinned_article_count
+  DateTime last_updated
 }
 ```
 
-### `discussion_board_reports`
+### `mv_discussion_board_article_search_index`
 
-Member reports of inappropriate content for moderator review.
+Materialized view providing optimized full-text search index for rapid
+article discovery.
 
-Members can report articles or comments they believe violate community
-guidelines. Each report creates a queue item for moderators to
-investigate and take action. Reports track the reported content, reason
-for the report, reporter identity, and resolution status.
+This computed table denormalizes article data to support efficient
+keyword searching across titles and content. Rather than performing
+expensive full-text searches directly on the main articles table, queries
+target this indexed view for sub-second response times even with
+thousands of articles.
 
-Reports are distinct from moderation actions. A report is user-generated
-feedback flagging content; moderation actions are moderator decisions on
-what to do about reported content. This separation enables tracking both
-member concerns and moderator decisions independently.
+The index includes article title, content preview, and searchable
+metadata organized for relevance ranking. Search queries matching article
+titles are ranked higher than content-only matches. The view is refreshed
+periodically (typically hourly) to keep search results current while
+maintaining query performance.
 
-Report status progresses through: pending_review (awaiting moderator
-investigation) → resolved (moderator took action) or dismissed (moderator
-determined no action needed).
-
-All reports are permanent records for audit and moderation history purposes.
+This materialized view supports the core search discovery requirement:
+users can find articles by keyword within 1 second, enabling the
+platform's content discovery mechanisms.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_member_id`: The member who filed this report. [discussion_board_members.id](#discussion_board_members)
-- `discussion_board_article_id`
-  > Reference to reported article (null if report is for a comment). {@link
-  > discussion_board_articles.id}
-- `discussion_board_comment_id`
-  > Reference to reported comment (null if report is for an article). {@link
-  > discussion_board_comments.id}
-- `assigned_moderator_id`
-  > Moderator assigned to review this report (null until assignment). {@link
-  > discussion_board_moderators.id}
-- `reason`
-  > Reason for the report. Predefined values: offensive_language,
-  > personal_attack, spam, off_topic, copyright_violation, harassment, other.
-  > Helps categorize reports for triage and analysis.
-- `description`
-  > Optional detailed description provided by reporter explaining why they
-  > believe content violates guidelines. Maximum 500 characters. Provides
-  > context for moderators during review.
-- `status`
-  > Current status of the report. Values: pending_review (awaiting moderator
-  > investigation), resolved (moderator took action), dismissed (moderator
-  > reviewed and determined no action needed). Used to track report workflow
-  > progression.
-- `moderator_notes`
-  > Notes added by assigned moderator during review. Maximum 500 characters.
-  > Records moderator's investigation findings and reasoning for resolution
-  > decision.
-- `created_at`
-  > Timestamp when report was submitted by member. Used for audit trail and
-  > report age tracking.
-- `updated_at`
-  > Timestamp when report was last updated (status change, moderator notes
-  > added, etc.). Tracks modification history.
-- `resolved_at`
-  > Timestamp when report was resolved or dismissed by moderator. Null while
-  > report is still pending review. Used to calculate resolution time
-  > metrics.
+- `article_id`
+  > Reference to the article being indexed for search. Links this search
+  > index entry to the source article in the main discussion_board_articles
+  > table. [discussion_board_articles.id](#discussion_board_articles)
+- `title`
+  > Article title text optimized for search ranking. Title matches are
+  > weighted more heavily than content matches in search results.
+- `content_preview`
+  > First 500 characters of article content, preprocessed and cleaned for
+  > full-text search. Enables snippet generation in search results.
+  > Application layer may truncate to 200 characters for article list
+  > display.
+- `search_tokens`
+  > Preprocessed and normalized search tokens extracted from title and
+  > content. Includes lowercased, stemmed versions of keywords for fuzzy
+  > matching. Stored as space-separated tokens to support trigram-based
+  > search with PostgreSQL GIN indexes.
+- `author_name`
+  > Article author's username, included for author-based search filtering
+  > (e.g., 'articles by username'). References the contributor or moderator
+  > who created the article.
+- `category`
+  > Article category for search filtering. Valid categories: Economics,
+  > Politics, Policy, Trade, Markets, Regulation, International, Analysis,
+  > Opinion, Other Discussion.
+- `published_at`
+  > Publication timestamp used for sorting search results by date. Enables
+  > 'sort by newest first' search feature and date range filtering. Null
+  > values excluded from search index (only published articles).
+- `comment_count`
+  > Denormalized comment count for the article. Enables search result sorting
+  > by discussion activity (most-commented articles ranked higher). Updated
+  > when articles receive comments.
+- `is_pinned`
+  > Whether article is pinned/featured by moderators. Pinned articles are
+  > displayed at top of search results and category listings to increase
+  > visibility of important discussions.
+- `last_updated`
+  > Timestamp when this search index entry was last refreshed from the source
+  > article. Used to track view freshness and manage materialized view
+  > refresh scheduling. Typically refreshed hourly or on article publication.
+
+### `mv_discussion_board_category_article_statistics`
+
+Materialized view providing article count and activity statistics for
+each category.
+
+This computed table aggregates statistics about articles in each
+category, enabling efficient category browsing without querying the main
+articles table. The view tracks total article count per category,
+provides category-level metadata, and supports rapid display of category
+options with article counts in the user interface.
+
+When users browse the platform, they see category selections with article
+counts (e.g., 'Economics (247 articles)', 'Politics (189 articles)')
+without expensive aggregation queries. This view is refreshed
+periodically to reflect newly published articles while maintaining
+consistently fast category browsing performance.
+
+The statistics support the discovery workflow: users quickly identify
+relevant categories and can confidently browse knowing activity levels in
+each topic area.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `category`
+  > Article category name. One entry per category: Economics, Politics,
+  > Policy, Trade, Markets, Regulation, International, Analysis, Opinion,
+  > Other Discussion.
+- `article_count`
+  > Total number of published articles in this category. Used to display
+  > counts next to category names in the browsing interface (e.g., 'Economics
+  > (247)').
+- `comment_count`
+  > Total number of comments across all articles in this category. Indicates
+  > overall discussion activity level by category.
+- `last_article_published_at`
+  > Timestamp of the most recently published article in this category. Helps
+  > users identify which categories have recent activity.
+- `average_comments_per_article`
+  > Average number of comments per article in this category. Indicates how
+  > engaged the community is in discussing category topics (e.g., 3.5
+  > comments per article indicates active discussion).
+- `pinned_article_count`
+  > Number of pinned/featured articles in this category. Helps users see
+  > which categories have moderator-highlighted content.
+- `last_updated`
+  > Timestamp when this statistics entry was last refreshed from source
+  > article data. Indicates freshness of the displayed statistics.

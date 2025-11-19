@@ -1,0 +1,53 @@
+/// User comments on articles in the discussion board.
+///
+/// Each comment is authored by a registered member and linked to a specific
+/// article. Comments contain text-only content, supporting the core
+/// discussion functionality without attachments. The model supports
+/// creation, update, and soft deletion timestamps to enable auditability and
+/// moderation.
+///
+/// This model has a primary stance reflecting its role as an independently
+/// managed business entity requiring full CRUD operations and search
+/// capabilities across all comments.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Reference to the article being commented on. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Reference to the member who authored the comment. {@link
+  /// discussion_board_member.id}.
+  discussion_board_member_id String
+  
+  /// Text content of the comment, supporting the discussion without
+  /// attachments.
+  content String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  author discussion_board_member @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+}

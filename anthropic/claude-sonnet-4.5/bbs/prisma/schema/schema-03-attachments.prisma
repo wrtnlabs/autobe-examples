@@ -1,148 +1,85 @@
-/// Image attachments enriching articles with visual supporting content.
+/// Image and file attachments supporting discussion articles with visual
+/// evidence, charts, documents, and reference materials.
 ///
-/// Stores uploaded images (JPEG, PNG, GIF, WebP formats) that members attach
-/// to articles to provide visual evidence, charts, graphs, infographics, or
-/// illustrative content. Each image is associated with exactly one parent
-/// article and is managed through article creation and editing workflows.
+/// Each attachment belongs to exactly one article and is uploaded by a
+/// specific member during article creation or editing. The unified table
+/// handles both image attachments (JPEG, PNG, GIF, WebP up to 5MB, maximum
+/// 10 per article) and document attachments (PDF, DOC, DOCX, XLS, XLSX, TXT,
+/// CSV up to 10MB, maximum 5 per article).
 ///
-/// The system enforces a maximum of 10 images per article with individual
-/// file size limit of 10 MB. Images are validated for format and integrity
-/// before storage. When articles are deleted, all associated images are
-/// removed from storage.
+/// Attachments are managed exclusively through their parent articles. When
+/// articles are deleted, all associated attachments are removed. The type
+/// field discriminates between image and file attachments, while format
+/// specifies the exact file format. Size and original filename are preserved
+/// for display and download purposes.
 ///
-/// Image metadata includes original filename for user reference, file size
-/// for storage tracking, content type for proper browser rendering, and
-/// storage URL for retrieval. Creation timestamp tracks when images were
-/// uploaded.
+/// Storage paths reference the physical file location in the storage system.
+/// Attachments undergo security validation including file type verification,
+/// size limit enforcement, and malware scanning during upload. Soft deletion
+/// is supported to maintain attachment lifecycle management and enable
+/// recovery if needed.
 ///
 /// @namespace Attachments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_article_images {
+model discussion_board_article_attachments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent article that this image attachment belongs to. {@link
+  /// Parent article that this attachment belongs to. {@link
   /// discussion_board_articles.id}
   discussion_board_article_id String
   
-  /// Original filename of the uploaded image as provided by the user.
-  /// Preserved for user reference and download purposes. May contain file
-  /// extension indicating image format.
+  /// Member who uploaded this attachment. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Attachment type discriminator. Valid values: 'image' for visual content
+  /// (JPEG, PNG, GIF, WebP), 'file' for documents (PDF, DOC, DOCX, XLS, XLSX,
+  /// TXT, CSV). Determines size limits and display handling.
+  type String
+  
+  /// File format extension indicating the specific attachment format.
+  /// Examples: 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls',
+  /// 'xlsx', 'txt', 'csv'. Used for validation and download MIME type
+  /// determination.
+  format String
+  
+  /// File size in bytes. Used to enforce size limits (images: 5MB max,
+  /// documents: 10MB max) and display file size to users in human-readable
+  /// format.
+  size Int
+  
+  /// Original filename provided by user during upload. Preserved for display
+  /// purposes and download filename. Maximum 255 characters.
   original_filename String
   
-  /// Size of the image file in bytes. Used for storage tracking and enforcing
-  /// the 10 MB maximum file size limit. Must be positive integer value.
-  file_size Int
+  /// Internal storage path or reference to the physical file location in the
+  /// storage system. Used by application to retrieve and serve the file. Not
+  /// exposed to end users.
+  storage_path String
   
-  /// MIME type of the image file for proper browser rendering. Valid values
-  /// include image/jpeg, image/png, image/gif, image/webp corresponding to
-  /// supported formats.
-  content_type String
-  
-  /// URL or storage path where the image file is stored. Used by the system to
-  /// retrieve and serve the image to users viewing the article. May be CDN URL
-  /// or internal storage path.
-  storage_url String
-  
-  /// Width of the image in pixels. Captured during upload for display
-  /// optimization and layout calculations. Null if dimensions could not be
-  /// determined.
-  width Int?
-  
-  /// Height of the image in pixels. Captured during upload for display
-  /// optimization and layout calculations. Null if dimensions could not be
-  /// determined.
-  height Int?
-  
-  /// Timestamp when the image was uploaded to the system. Tracks upload time
-  /// for audit trail and chronological ordering of attachments.
+  /// Timestamp when the attachment was uploaded and created in the system.
   created_at DateTime
   
-  /// Timestamp when the image was soft deleted. Null if the image is currently
-  /// active. Enables recovery and audit trail before permanent removal from
-  /// storage.
+  /// Timestamp of the last modification to the attachment record. Updated when
+  /// attachment metadata changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates the attachment has been
+  /// removed and should not be displayed. Null for active attachments. Enables
+  /// recovery and maintains referential integrity during deletion workflows.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  uploader discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_images_discussion_board_artic_cbcc380c")
-}
-
-/// Document file attachments providing supporting evidence and reference
-/// materials for articles.
-///
-/// Stores uploaded document files (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, ZIP
-/// formats) that members attach to articles to provide supporting data,
-/// research papers, spreadsheets, policy documents, or other reference
-/// materials. Each file is associated with exactly one parent article and is
-/// managed through article creation and editing workflows.
-///
-/// The system enforces a maximum of 5 files per article with individual file
-/// size limit of 25 MB. Files are validated for format and scanned for
-/// integrity before storage. When articles are deleted, all associated files
-/// are removed from storage.
-///
-/// File metadata includes original filename for user reference and download,
-/// file size for storage tracking and limit enforcement, content type for
-/// proper browser handling and download behavior, and storage URL for
-/// retrieval. Creation timestamp tracks when files were uploaded for audit
-/// purposes.
-///
-/// @namespace Attachments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_article_files {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent article that this file attachment belongs to. {@link
-  /// discussion_board_articles.id}
-  discussion_board_article_id String
-  
-  /// Original filename of the uploaded document as provided by the user.
-  /// Preserved for user reference and used as download filename. Includes file
-  /// extension indicating document type.
-  original_filename String
-  
-  /// Size of the document file in bytes. Used for storage tracking and
-  /// enforcing the 25 MB maximum file size limit. Must be positive integer
-  /// value.
-  file_size Int
-  
-  /// MIME type of the document file for proper browser handling and download
-  /// behavior. Examples include application/pdf, application/msword,
-  /// application/vnd.openxmlformats-officedocument.wordprocessingml.document,
-  /// text/plain, text/csv, application/zip corresponding to supported formats.
-  content_type String
-  
-  /// URL or storage path where the document file is stored. Used by the system
-  /// to retrieve and serve the file for download to users. May be CDN URL or
-  /// internal storage path.
-  storage_url String
-  
-  /// Timestamp when the file was uploaded to the system. Tracks upload time
-  /// for audit trail and chronological ordering of attachments.
-  created_at DateTime
-  
-  /// Timestamp when the file was soft deleted. Null if the file is currently
-  /// active. Enables recovery and audit trail before permanent removal from
-  /// storage.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
-  
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_attachments_discussion_board__dcaeb017")
   // spellchecker: ignore-next-line
-  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_article_attachments_discussion_board__e737fb0c")
 }

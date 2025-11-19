@@ -15,71 +15,101 @@ export async function postDiscussionBoardUserArticlesArticleIdAttachments(props:
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleAttachment.ICreate;
 }): Promise<IDiscussionBoardArticleAttachment> {
-  // 1. Fetch the article
+  // Step 1: Ensure article exists and is not soft-deleted
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
   });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
+  if (!article || article.deleted_at !== null) {
+    throw new HttpException("Article not found or deleted", 404);
   }
 
-  // 2. Check permission (must be author)
-  if (article.author_user_id !== props.user.id) {
+  // Step 2: Ownership check (user must be author, system currently supports user only)
+  if (article.user_id !== props.user.id) {
     throw new HttpException(
-      "You are not authorized to upload attachments to this article",
+      "You do not have permission to attach files to this article.",
       403,
     );
   }
 
-  // 3. Count current attachments for the article
-  const attachmentCount =
+  // Step 3: Count current active attachments for the article
+  const numActiveAttachments =
     await MyGlobal.prisma.discussion_board_article_attachments.count({
-      where: { article_id: props.articleId },
+      where: {
+        article_id: props.articleId,
+        deleted_at: null,
+      },
     });
-  if (attachmentCount >= 10) {
-    throw new HttpException("Attachment limit reached (10 per article)", 400);
+  if (numActiveAttachments >= 5) {
+    throw new HttpException(
+      "Maximum of 5 attachments per article exceeded.",
+      400,
+    );
   }
 
-  // 4. Enforce file type
-  const allowedTypes = [
-    "image/png",
+  // Step 4: Validate file extension and mime (business-only validation, type system checks enforced upstream)
+  const allowedExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+  ];
+  const allowedMimes = [
     "image/jpeg",
+    "image/png",
+    "image/gif",
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ];
-  if (!allowedTypes.includes(props.body.file_type)) {
-    throw new HttpException("Invalid file type", 400);
+
+  // File extension, case-insensitive
+  const fileName = props.body.file_name;
+  const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : "";
+  if (!allowedExtensions.includes(ext)) {
+    throw new HttpException("Unsupported file extension", 400);
+  }
+  if (!allowedMimes.includes(props.body.mime_type)) {
+    throw new HttpException("Unsupported MIME type", 400);
   }
 
-  // 5. Enforce file size ≤ 10MB
-  if (props.body.file_size > 10485760) {
-    throw new HttpException("Attachment exceeds 10MB limit", 400);
-  }
-
-  // 6. Insert new attachment
-  const now = toISOStringSafe(new Date());
-  const newId = v4();
+  // Step 5: Attach!
+  const nowStr = toISOStringSafe(new Date());
   const created =
     await MyGlobal.prisma.discussion_board_article_attachments.create({
       data: {
-        id: newId,
+        id: v4(),
         article_id: props.articleId,
-        uri: props.body.uri,
         file_name: props.body.file_name,
-        file_type: props.body.file_type,
+        mime_type: props.body.mime_type,
         file_size: props.body.file_size,
-        uploaded_at: now,
+        file_uri: props.body.file_uri,
+        created_at: nowStr,
+        deleted_at: null,
       },
     });
-
   return {
     id: created.id,
     article_id: created.article_id,
-    uri: created.uri,
     file_name: created.file_name,
-    file_type: created.file_type,
+    mime_type: created.mime_type,
     file_size: created.file_size,
-    uploaded_at: toISOStringSafe(created.uploaded_at),
+    file_uri: created.file_uri,
+    created_at: toISOStringSafe(created.created_at),
+    deleted_at:
+      created.deleted_at === null
+        ? undefined
+        : toISOStringSafe(created.deleted_at),
   };
 }

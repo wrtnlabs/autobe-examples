@@ -15,45 +15,50 @@ export async function putDiscussionBoardAdminUsersUserId(props: {
   userId: string & tags.Format<"uuid">;
   body: IDiscussionBoardUser.IUpdate;
 }): Promise<IDiscussionBoardUser> {
-  const user = await MyGlobal.prisma.discussion_board_users.findUnique({
+  const existing = await MyGlobal.prisma.discussion_board_users.findUnique({
     where: { id: props.userId },
   });
-  if (!user) {
-    throw new HttpException("User not found", 404);
+  if (!existing || existing.deleted_at !== null) {
+    throw new HttpException("User not found or already deleted", 404);
   }
 
-  if (props.body.email !== undefined && props.body.email !== user.email) {
-    const conflict = await MyGlobal.prisma.discussion_board_users.findFirst({
-      where: { email: props.body.email },
+  if (props.body.email !== existing.email) {
+    const duplicate = await MyGlobal.prisma.discussion_board_users.findFirst({
+      where: {
+        email: props.body.email,
+        deleted_at: null,
+        id: { not: props.userId },
+      },
     });
-    if (conflict) {
-      throw new HttpException("Email address is already in use.", 409);
+    if (duplicate) {
+      throw new HttpException("Email already in use", 409);
     }
+  }
+
+  const now = toISOStringSafe(new Date());
+
+  // Only allow update of: email, updated_at, deleted_at
+  const updateData: {
+    email: string;
+    updated_at: string;
+    deleted_at?: string | null;
+  } = {
+    email: props.body.email,
+    updated_at:
+      props.body.updated_at !== undefined ? props.body.updated_at : now,
+  };
+  if ("deleted_at" in props.body) {
+    updateData.deleted_at = props.body.deleted_at ?? null;
   }
 
   const updated = await MyGlobal.prisma.discussion_board_users.update({
     where: { id: props.userId },
-    data: {
-      ...(props.body.email !== undefined ? { email: props.body.email } : {}),
-      ...(props.body.is_email_verified !== undefined
-        ? { is_email_verified: props.body.is_email_verified }
-        : {}),
-      ...(props.body.is_active !== undefined
-        ? { is_active: props.body.is_active }
-        : {}),
-      ...(props.body.is_blocked !== undefined
-        ? { is_blocked: props.body.is_blocked }
-        : {}),
-      updated_at: toISOStringSafe(new Date()),
-    },
+    data: updateData,
   });
 
   return {
     id: updated.id,
     email: updated.email,
-    is_email_verified: updated.is_email_verified,
-    is_active: updated.is_active,
-    is_blocked: updated.is_blocked,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at:

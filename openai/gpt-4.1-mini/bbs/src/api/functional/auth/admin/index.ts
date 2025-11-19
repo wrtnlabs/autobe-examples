@@ -3,25 +3,21 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IEconPolDiscussionBoardAdmin } from "../../../structures/IEconPolDiscussionBoardAdmin";
+import { IDiscussionBoardAdmin } from "../../../structures/IDiscussionBoardAdmin";
 
 /**
- * Administrator registration endpoint for econPolDiscussionBoard admins.
+ * Register a new administrator account in the discussion_board_admin table.
  *
- * This endpoint provides the functionality to register a new administrator
- * account within the econPolDiscussionBoard system. It securely accepts admin
- * credentials such as username and password and stores them in the
- * corresponding database table with password hashing. The operation issues JWT
- * access and refresh tokens upon successful registration. The admin actor is
- * authorized for system-level management tasks including content moderation and
- * user account control. Security measures include password hashing and
- * validation policies enforced at the provider level. Related operations
- * include /auth/admin/login for authentication and /auth/admin/refresh for
- * token renewal.
+ * Register a new admin by providing necessary information such as username,
+ * email, and password, stored securely within the discussion_board_admin table.
+ * Upon successful registration, initial JWT tokens are issued for
+ * authentication. This operation enables the creation of admin users with full
+ * permissions needed to manage the discussion board system and its content
+ * responsibly. Security practices ensure passwords are hashed and only
+ * authorized admins can manage sensitive data.
  *
  * @param props.connection
- * @param props.body Admin registration request body including necessary
- *   credentials
+ * @param props.body Admin registration request payload
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -56,11 +52,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Admin registration request body including necessary credentials */
-    body: IEconPolDiscussionBoardAdmin.IJoin;
+    /** Admin registration request payload */
+    body: IDiscussionBoardAdmin.IJoin;
   };
-  export type Body = IEconPolDiscussionBoardAdmin.IJoin;
-  export type Response = IEconPolDiscussionBoardAdmin.IAuthorized;
+  export type Body = IDiscussionBoardAdmin.IJoin;
+  export type Response = IDiscussionBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -76,8 +72,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/admin/join";
-  export const random = (): IEconPolDiscussionBoardAdmin.IAuthorized =>
-    typia.random<IEconPolDiscussionBoardAdmin.IAuthorized>();
+  export const random = (): IDiscussionBoardAdmin.IAuthorized =>
+    typia.random<IDiscussionBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -104,18 +100,17 @@ export namespace join {
 }
 
 /**
- * Administrator login endpoint for econPolDiscussionBoard admins.
+ * Log in as an administrator to obtain authorization tokens.
  *
- * This endpoint handles administrator login and authentication for the
- * econPolDiscussionBoard system. It verifies provided credentials against
- * database stored hashes in the admin table and issues JWT tokens for access.
- * The operation supports secure authentication workflows and session
- * management. Security policies and token expiration conform to system
- * standards. This complements related operations such as join (registration)
- * and refresh (token renewal).
+ * Authenticate administrator credentials provided during login to generate JWT
+ * access tokens for managing the discussion board system. Ensures only
+ * authorized users with valid credentials gain administrative access,
+ * referencing stored password hashes and account statuses in the
+ * discussion_board_admin table. This endpoint forms an essential part of the
+ * admin authentication workflow.
  *
  * @param props.connection
- * @param props.body Admin login request body with username and password
+ * @param props.body Admin login request payload
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -150,11 +145,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Admin login request body with username and password */
-    body: IEconPolDiscussionBoardAdmin.ILogin;
+    /** Admin login request payload */
+    body: IDiscussionBoardAdmin.ILogin;
   };
-  export type Body = IEconPolDiscussionBoardAdmin.ILogin;
-  export type Response = IEconPolDiscussionBoardAdmin.IAuthorized;
+  export type Body = IDiscussionBoardAdmin.ILogin;
+  export type Response = IDiscussionBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -170,8 +165,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/admin/login";
-  export const random = (): IEconPolDiscussionBoardAdmin.IAuthorized =>
-    typia.random<IEconPolDiscussionBoardAdmin.IAuthorized>();
+  export const random = (): IDiscussionBoardAdmin.IAuthorized =>
+    typia.random<IDiscussionBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -198,18 +193,16 @@ export namespace login {
 }
 
 /**
- * Administrator token refresh endpoint for econPolDiscussionBoard admins.
+ * Refresh authorization tokens for administrator sessions.
  *
- * This endpoint allows administrators to refresh their JWT access tokens in the
- * econPolDiscussionBoard system securely. It requires the submission of a valid
- * refresh token which is validated against the admin records in the database.
- * Successful validation results in issuance of new access and refresh tokens to
- * maintain an authenticated session without re-login. This supports seamless
- * security and user experience. Related operations include /auth/admin/login
- * and /auth/admin/join.
+ * Refresh admin JWT access tokens using a valid refresh token to maintain an
+ * active authenticated session without re-login. Ensures continued access to
+ * administrative features by validating refresh token status and expiration
+ * within session records or tokens stored for the discussion_board_admin actor.
+ * This endpoint is critical for secure session management.
  *
  * @param props.connection
- * @param props.body Token refresh request body containing a valid refresh token
+ * @param props.body Admin token refresh request payload
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -244,11 +237,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Token refresh request body containing a valid refresh token */
-    body: IEconPolDiscussionBoardAdmin.IRefresh;
+    /** Admin token refresh request payload */
+    body: IDiscussionBoardAdmin.IRefresh;
   };
-  export type Body = IEconPolDiscussionBoardAdmin.IRefresh;
-  export type Response = IEconPolDiscussionBoardAdmin.IAuthorized;
+  export type Body = IDiscussionBoardAdmin.IRefresh;
+  export type Response = IDiscussionBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -264,8 +257,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/admin/refresh";
-  export const random = (): IEconPolDiscussionBoardAdmin.IAuthorized =>
-    typia.random<IEconPolDiscussionBoardAdmin.IAuthorized>();
+  export const random = (): IDiscussionBoardAdmin.IAuthorized =>
+    typia.random<IDiscussionBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

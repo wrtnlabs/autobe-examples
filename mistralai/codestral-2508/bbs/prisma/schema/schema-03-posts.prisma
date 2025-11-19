@@ -1,0 +1,128 @@
+/// Primary entity for user-generated content in the economic discussion board.
+///
+/// Represents the core content creation feature where users can share their
+/// thoughts, insights, and questions about economic and political topics.
+/// Each post belongs to a specific channel and section, and is created by an
+/// authenticated user through their active session.
+///
+/// Posts can be edited or deleted by their authors, and can accumulate
+/// comments and attachments. The content includes title and body fields for
+/// structured information presentation.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// content moderation.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where the post is published. {@link
+  /// economic_discussion_board_channels.id}.
+  economic_discussion_board_channel_id String
+  
+  /// Section within the channel where the post is categorized. {@link
+  /// economic_discussion_board_sections.id}.
+  economic_discussion_board_section_id String
+  
+  /// User who created the post. {@link economic_discussion_board_users.id}.
+  economic_discussion_board_user_id String
+  
+  /// Session during which the post was created. {@link
+  /// economic_discussion_board_user_sessions.id}.
+  economic_discussion_board_user_session_id String
+  
+  /// Title of the post summarizing its content.
+  title String
+  
+  /// Main content of the post containing detailed information.
+  body String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel economic_discussion_board_channels @relation(fields: [economic_discussion_board_channel_id], references: [id], onDelete: Cascade)
+  section economic_discussion_board_sections @relation(fields: [economic_discussion_board_section_id], references: [id], onDelete: Cascade)
+  user economic_discussion_board_users @relation(fields: [economic_discussion_board_user_id], references: [id], onDelete: Cascade)
+  userSession economic_discussion_board_user_sessions @relation(fields: [economic_discussion_board_user_session_id], references: [id], onDelete: Cascade)
+  
+  economic_discussion_board_post_snapshots economic_discussion_board_post_snapshots[]
+  economic_discussion_board_comments economic_discussion_board_comments[]
+  economic_discussion_board_attachments economic_discussion_board_attachments[]
+  economic_discussion_board_post_attachments economic_discussion_board_post_attachments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_user_session_id], map: "economic_discussion_board_posts_economic_discussion_bo_b059ead0")
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_channel_id, created_at], map: "economic_discussion_board_posts_economic_discussion_bo_a27613ed")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_section_id, created_at], map: "economic_discussion_board_posts_economic_discussion_bo_4f821b48")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_user_id, created_at], map: "economic_discussion_board_posts_economic_discussion_bo_eed4d50c")
+}
+
+/// Historical record of post states for audit trail and content change
+/// tracking.
+///
+/// Captures point-in-time states of economic_discussion_board_posts to
+/// maintain a complete history of all modifications. Each snapshot records
+/// the complete state of a post at a specific moment, including all content
+/// fields and metadata.
+///
+/// Snapshots are created whenever a post is created, updated, or deleted,
+/// providing a complete audit trail of all changes. The snapshot data
+/// includes all fields from the original post to ensure historical accuracy.
+///
+/// This table supports content moderation by allowing administrators to
+/// review the complete history of a post's evolution.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_board_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this snapshot records. {@link
+  /// economic_discussion_board_posts.id}.
+  economic_discussion_board_post_id String
+  
+  /// Title of the post at the time of snapshot.
+  title String
+  
+  /// Main content of the post at the time of snapshot.
+  body String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated (from original post).
+  updated_at DateTime
+  
+  /// Timestamp when the post was deleted (from original post).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post economic_discussion_board_posts @relation(fields: [economic_discussion_board_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_board_post_id, created_at], map: "economic_discussion_board_post_snapshots_economic_disc_d6b10edc")
+}

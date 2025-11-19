@@ -1,0 +1,53 @@
+/// Articles posted by registered members on economic and political topics.
+///
+/// Each article includes a title and textual content, an author reference to
+/// the registered member who created it, and temporal fields for creation,
+/// updates, and soft deletion. Articles serve as the primary content entity
+/// for the discussion board.
+///
+/// Attachments and comments related to articles are managed separately in
+/// other components to maintain modularity and normalize content storage.
+///
+/// This design supports efficient browsing, editing, and moderation with
+/// clear ownership and audit trail capabilities.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who authored the article. {@link
+  /// discussion_board_member.id}.
+  discussion_board_member_id String
+  
+  /// Title of the article representing its main subject or headline.
+  title String
+  
+  /// Body content of the article containing detailed economic or political
+  /// discussion.
+  content String
+  
+  /// Timestamp marking when the article was created.
+  created_at DateTime
+  
+  /// Timestamp marking the last update to the article.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion; null if the article is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author discussion_board_member @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_comments discussion_board_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_articles_discussion_board_member_id_c_f434e708")
+}

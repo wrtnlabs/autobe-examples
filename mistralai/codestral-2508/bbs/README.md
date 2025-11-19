@@ -113,8 +113,8 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 3, documents: 4 | 100.00 % | 152,743 | 60 sec
-✅ prisma | namespaces: 5, models: 16 | 100.00 % | 347,217 | 80 sec
+✅ analyze | actors: 2, documents: 4 | 100.00 % | 162,701 | 73 sec
+✅ prisma | namespaces: 5, models: 17 | 100.00 % | 360,062 | 96 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 

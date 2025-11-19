@@ -1,19 +1,19 @@
-/// Commentary created by registered users or administrators on discussion
-/// board articles.
+/// Main comment entity for article-based discussions.
 ///
-/// Each comment is associated with a specific article. Comments can be
-/// authored by either normal users or admins, linked by foreign keys. The
-/// content of each comment is subject to length validations and may include
-/// up to 2 attached files managed via subsidiary attachments table.
+/// Stores user comments posted beneath articles on the economic/political
+/// discussion board. Every comment is individually created by a registered
+/// user and explicitly linked to a parent article and author. The model
+/// supports text-only discussion—no nested replies, attachments, or
+/// media—ensuring flat, readable discussion per requirements. Each comment
+/// may be edited or soft deleted by its author or by admins; a full version
+/// history is preserved via companion snapshot table. Audit logging,
+/// moderation, and compliance flows refer to this entity for comment
+/// lifecycle management.
 ///
-/// Comments are visible under their parent article and support creation,
-/// editing, and deletion by their owner (user or admin) as well as by
-/// administrators for moderation. When an article is deleted, all its
-/// comments are deleted as well. Comment deletions are implemented as soft
-/// deletes for traceability and moderation audit.
-///
-/// Comment creation and modification times are recorded for sorting and
-/// review. Provides the central entity for all discussion under articles.
+/// Foreign keys reference existing user and article tables. Indexing
+/// supports rapid retrieval by article and chronological ordering. All
+/// lifecycle fields (created/updated/deleted) included. Only authenticated
+/// users may comment, as enforced in business logic.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -24,92 +24,104 @@ model discussion_board_comments {
   /// Primary Key.
   id String @id
   
-  /// The article to which this comment belongs. {@link
+  /// Reference to the parent article this comment belongs to. {@link
   /// discussion_board_articles.id}.
   discussion_board_article_id String
   
-  /// User author of the comment, if authored by a regular user. Nullable for
-  /// admin-authored comments. {@link discussion_board_users.id}.
-  discussion_board_user_id String?
+  /// Comment author; the registered user who created the comment. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
   
-  /// Admin author of the comment, if authored by an admin. Nullable for
-  /// user-authored comments. {@link discussion_board_admins.id}.
-  discussion_board_admin_id String?
-  
-  /// The content text of the comment. Subject to business validation (2-1000
-  /// characters).
+  /// Comment content text as provided by the author. Limited to 5,000
+  /// characters per business rules. Cannot be blank or empty.
   body String
   
-  /// Timestamp when the comment was created.
+  /// Timestamp when this comment was originally posted. Immutable, set
+  /// automatically on creation.
   created_at DateTime
   
-  /// Timestamp when the comment was last edited.
+  /// Timestamp of last update to this comment. Updates whenever author or
+  /// admin edits content.
   updated_at DateTime
   
-  /// Soft deletion time. Set when the comment is removed for user or
-  /// moderation reasons.
+  /// Soft-delete marker for comment lifecycle management. Nullable; populated
+  /// when comment is hidden/deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
-  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
-  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
-  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  discussion_board_comment_snapshots discussion_board_comment_snapshots[]
   
-  @@index([discussion_board_user_id])
-  @@index([discussion_board_admin_id])
-  
+  @@unique([discussion_board_article_id, id])
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comments_discussion_board_user_id_cre_20211f29")
 }
 
-/// Files or images attached to a comment on the discussion board.
+/// Historical snapshot table capturing every prior version of a comment.
 ///
-/// Each record links a single file/image to one parent comment. Used to
-/// manage comment attachment uploads (max two per comment). Only attachments
-/// of allowed types and sizes may be added per business validation.
+/// Stores immutable records of all comment edits for compliance, auditing,
+/// and rollback support. Each row reflects a single state of a comment at a
+/// specific edit moment. Snapshots preserve all key attributes: article,
+/// author, and content body alongside full timestamp information. Indexing
+/// supports audit trail queries and moderation review workflows. This table
+/// is append-only; rows are never updated or deleted except via data
+/// retention policies. Foreign keys echo the primary comment table for
+/// robust relational traceability.
 ///
-/// Attachment entities are always dependent on their parent comment and
-/// deleted when the parent is deleted. Includes information needed to
-/// implement download authorization (only for authenticated users), as well
-/// as metadata for moderation and auditing.
+/// Use this table for audit, compliance, and recovery of previous comment
+/// revisions; exposed via read-only access in typical application flows.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_comment_attachments {
+model discussion_board_comment_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The comment this attachment belongs to. {@link
+  /// Reference to the comment whose version is captured. {@link
   /// discussion_board_comments.id}.
   discussion_board_comment_id String
   
-  /// Storage location URI for the attachment file.
-  file_url String
+  /// Reference to the parent article for context at edit time. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
   
-  /// The filename as originally uploaded by the user.
-  original_filename String
+  /// Original author of the comment at the version's point in time. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
   
-  /// MIME type of the attachment (e.g., 'image/png', 'application/pdf').
-  mime_type String
+  /// The entire comment text as it existed at the point of edit or deletion.
+  /// Limited to 5,000 characters, never blank. Saved exactly as submitted at
+  /// edit.
+  body String
   
-  /// The file size in bytes. Enforced as max 10MB by business rules.
-  file_size_bytes Int
-  
-  /// Timestamp when the attachment was created/uploaded.
+  /// Timestamp the snapshot was taken (i.e., comment edit or delete event
+  /// occurred). Set automatically.
   created_at DateTime
+  
+  /// Optional marker if the snapshotted version corresponded to a deletion
+  /// event. Nullable; otherwise null.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([discussion_board_comment_id, original_filename], map: "discussion_board_comment_attachments_discussion_board__6dec0111")
+  @@unique([discussion_board_comment_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_co_293cca12")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_us_de905acf")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_ar_58d04bb9")
 }

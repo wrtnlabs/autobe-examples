@@ -1,99 +1,102 @@
-# Economic/Political Discussion Board: Requirements Analysis
+# Simple Economic/Political Discussion Board – Requirements Analysis
 
-## Introduction & Service Purpose
-The economic/political discussion board is a web-based platform dedicated to thoughtful and civil discourse around economic, political, and related subjects. The aim is to provide a simple, minimal, but effective environment where users can exchange ideas, post articles with attached evidence, and discuss important issues without the noise or complexity of major social platforms. The platform strictly limits features to those essential for productive debate and healthy community engagement.
+## 1. Service Overview and Vision
+The discussion board enables open conversation on economic and political topics for registered users. It delivers a straightforward platform for article sharing, comment-based discussion, and freely uploading images/files. Its vision is to encourage civic discourse, open knowledge sharing, and easy participation in topical debates, with minimal barriers to entry while ensuring basic moderation, privacy, and content security.
 
-## Problem Statement & User Needs
-- Online discussion of economics and politics is often diluted by trolling, spam, or unfocused threads on general-purpose platforms.
-- Users interested in substantive, evidence-supported conversation lack a suitable forum that is both open and curated for civility.
-- Users require the ability to share complex information via images or supporting files when making arguments or explaining data.
-- A predictable, transparent moderation model is needed to maintain safety and fairness, contrary to arbitrary practices seen elsewhere.
-- There is a need for intuitive self-management (users controlling their own content/attachments) without technical knowledge or complex onboarding.
+## 2. Business Needs and Requirements
+The system SHALL provide registered users the ability to post, read, and comment on articles related to economic and political affairs. WHEN a user creates an article, THE system SHALL allow attachments in the form of images or files. WHEN content is posted, THE system SHALL permit comment threads for ongoing discussion. All features SHALL prioritize simplicity and speed of use. The board SHALL operate under a minimal moderation model focused on basic decorum and legality. Attachments SHALL be stored securely. Anonymous usage is NOT supported; authentication is required for all posting and commenting activities.
 
-## Business Model & Community Value
-- THE system SHALL be free and open to anyone interested in economic/political debate, with no paywall or advanced registration process.
-- THE platform MAY accept voluntary donations to support hosting and moderation cost, and may display unobtrusive banners (only for relevant community or education initiatives).
-- THE platform SHALL avoid commercializing user data, advertisements, or features that detract from the core value of open, respectful exchange.
-- THE system SHALL encourage engagement by recognizing constructive contributions (such as visible activity level or participation badges, subject to simplicity and privacy).
+### Functional Requirements (EARS Format)
+- WHEN a user wants to register, THE system SHALL provide a simple sign-up process with email/password authentication.
+- WHEN a user is authenticated, THE system SHALL allow creating a new article with a title, body content, and one or more image/file attachments (common formats only, e.g., .jpg/.png/.pdf with appropriate size limits).
+- WHEN a user submits an article, THE system SHALL enforce validation for required fields, reject unsupported attachment types, and return clear error feedback for problems.
+- WHEN an article is published, THE system SHALL make it viewable to all authenticated users in chronological or relevant order.
+- WHEN viewing an article, THE system SHALL permit any authenticated user to post, edit, or delete their own comments below the article.
+- WHEN a user views any article, THE system SHALL display attached images inline and provide download links for other supported file types.
+- WHEN inappropriate content, spam, or prohibited files are detected, THE system SHALL allow moderators to remove posts or files in accordance with defined moderation rules.
+- WHEN incidents of abuse or content violations occur, THE system SHALL enable users to report problematic content for moderation review.
+- WHEN a file or image is uploaded, THE system SHALL scan for viruses and block malicious uploads.
+- THE system SHALL permit users to download attached files if access is valid.
+- WHEN a user attempts to perform any restricted action without sufficient permission, THE system SHALL display a clear, actionable error message.
+- THE system SHALL log all posting and deletion actions for audit purposes.
 
-## User/Actor Definitions & Permissions
-- **User**: Authenticated individual able to create, view, edit, and delete their own discussion articles and comments. Users MAY attach supported files/images to their articles. They are responsible for following community rules and can report abuse.
-- **Admin**: A user with full moderation rights. Admins can view, edit, or delete any user's articles, comments, or attachments, as well as manage user accounts (ban, suspend, or restore).
+### Non-Functional Requirements
+- System responsiveness to all user actions SHALL be under 2 seconds in 95% of cases.
+- Attachments SHALL be limited in size (e.g., 10MB per file, 30MB total per post) and number (e.g., max 5 attachments per article).
+- All user data, posts, and file attachments SHALL be encrypted at rest and in-transit.
 
-### Permissions Matrix
-| Feature                      | User | Admin |
-|------------------------------|------|-------|
-| Register/Login               | ✅   | ✅    |
-| Create/Edit/Delete own posts | ✅   | ✅    |
-| Attach files/images          | ✅   | ✅    |
-| Comment on articles          | ✅   | ✅    |
-| Moderate/Remove all content  | ❌   | ✅    |
-| Manage user accounts         | ❌   | ✅    |
+## 3. User Actors and Permissions
+- **Registered User**: Can create articles, comment, edit/delete their own posts, upload attachments, and report inappropriate content.
+- **Moderator**: Can remove posts/files that violate rules, manage abuse reports, and oversee community decorum.
+- **Guest/Anonymous**: Cannot post, comment, or upload; can view articles if explicitly permitted by configuration.
 
-## Core Business Requirements
+### Permission Matrix
+| Action                       | Registered User | Moderator |
+|------------------------------|:--------------:|:---------:|
+| Create Article               | Yes            | Yes       |
+| Edit/Delete Own Article      | Yes            | Yes       |
+| Comment on Article           | Yes            | Yes       |
+| Edit/Delete Own Comment      | Yes            | Yes       |
+| Upload Attachments           | Yes            | Yes       |
+| Remove Others' Posts/Files   | No             | Yes       |
+| Moderate Reports             | No             | Yes       |
 
-### Article and Comment Management
-- THE system SHALL allow registered users to create, edit, and delete their own articles and comments.
-- WHEN creating an article, THE system SHALL require a title (5-150 characters) and body (20-5000 characters).
-- WHEN an article is deleted, THE system SHALL cascade removal to all attached comments and files.
-- THE system SHALL enable users and authenticated guests to browse and read all non-restricted articles and comments.
+## 4. User Journeys and Flows
+- User registration, authentication, and session persistence during interaction.
+- Creating a post (including file/image upload steps).
+- Browsing articles, reading discussions, and downloading/viewing attached files.
+- Adding, editing, and deleting comments.
+- Reporting abuse or problematic content, followed by moderator review.
+- Moderator workflow for post/file removal.
 
-### Attachment Handling
-- WHEN creating or editing an article, THE user SHALL be able to upload up to 5 attachments (file types: JPEG, PNG, PDF, DOCX, XLSX, TXT, max 10 MB each).
-- THE system SHALL prevent submission if any attachment fails file type or size validation.
-- WHEN attachments are deleted or article is removed, THE system SHALL promptly erase linked files.
-- ONLY authenticated users SHALL be permitted to download attachments; guest/unauthenticated access is denied.
-
-### Moderation and Reporting
-- WHEN content (article, comment, or attachment) is reported as inappropriate, THE system SHALL notify admins for review.
-- THE admin SHALL have rights to delete, edit, or restore any article, comment, or attachment, and all such actions SHALL be logged.
-- IF abuse or repeated violations are detected, THEN THE admin SHALL be able to suspend or ban user accounts. Suspended or banned users SHALL lose posting, commenting, and download privileges.
-- THE admin SHALL communicate moderation actions and reasons to the affected user, and users SHALL be provided an appeal mechanism.
-
-## Business Validation Rules & Scenarios
-- Article titles and content SHALL meet strict length requirements; empty or invalid submissions are rejected with clear user feedback.
-- Attachments MUST be among the allowed types and sizes; invalid uploads are blocked and explained.
-- Users SHALL not create more than 3 articles an hour or 5 comments a minute (anti-spam).
-- Abusive, illegal, or off-topic discussions are promptly removed, and admins SHALL maintain a moderation log for transparency.
-
-## User Journey & Key Workflows
-
-### Article Submission (EARS)
-- WHEN a user accesses article submission, THE system SHALL require authentication.
-- WHEN all fields and validations pass, THE system SHALL save the article, attachments, and author association.
-- IF any error is found, THEN THE system SHALL instantly display all issues for user correction.
-
-### Attachment Flow
-- WHEN uploading, THE system SHALL immediately scan file type/size and reject if invalid, with feedback.
-- IF parent article is deleted, THEN all attachments SHALL be erased with no trace.
-
-### Moderation Flow
-- WHEN a user flags content, THE system SHALL queue it for admin review.
-- WHEN admin acts, THE system SHALL log the outcome and notify involved users.
-
-### Mermaid: Article Submission Workflow
 ```mermaid
-graph LR
-  A["User Authenticated?"] -->|"Yes"| B["Enter Title/Content"]
-  B --> C["Add Attachments (Optional)"]
-  C --> D["Submit"]
-  D --> E["Validate Fields/Files"]
-  E -->|"OK"| F["Save & Publish"]
-  E -->|"Error"| G["Show Error(s)"]
-  A -->|"No"| X["Prompt Login"]
+flowchart TD
+    A["User Login"] --> B["Article Posting Page"]
+    B --> C["Write Article"]
+    C --> D["Upload Images/Files"]
+    D --> E["Publish Article"]
+    E --> F["Article List View"]
+    F --> G["Read Article"]
+    G --> H["Comment on Article"]
+    H --> I["Edit/Delete Own Comment"]
+    G --> J["View/Download Attachment"]
+    J --> K["Report Content"]
+    K --> L["Moderator Review"]
+    L --> M["Moderate: Remove/Keep"]
 ```
 
-## Business Logic for Error Handling
-- IF a user submits invalid data, THEN THE system SHALL group and display all relevant errors at once.
-- WHEN authentication/session expires, THE system SHALL prompt login and preserve draft data where possible.
-- IF uploads fail, THEN THE system SHALL request new, valid files and explain the reasons immediately.
+## 5. Business Rules and Validation
+- Article title and body are required for every post.
+- File uploads are limited to designated formats (e.g., .jpg, .png, .pdf, .docx); system SHALL validate extension and MIME type.
+- Attachments exceeding allowed size or unapproved format SHALL trigger error and rejection.
+- When inappropriate content, spam, malicious code, or violations are identified, the system SHALL enable instant removal and user notification.
+- Comments SHALL not be empty and are limited to a reasonable length per message.
+- System SHALL enforce unique registration (email address).
+- Duplicate file uploads in a single article are not allowed.
 
-## Authentication and Access (Business Perspective)
-- Users MUST register with a valid email and password, agree to policies, and confirm their email to activate posting privileges.
-- WHEN a user logs in, THE system SHALL issue a time-bound authentication token. IF that token expires, login is again required.
-- ONLY authenticated users SHALL post articles/comments or download attachments; reading is public unless content is flagged or restricted by moderation rules.
-- Admin status is assigned by platform operators, and all sensitive operations (account suspension, mass deletions) require admin authentication.
+## 6. Performance and Error Handling
+- The system SHALL respond to all user actions within 2 seconds or provide a progress indicator.
+- System SHALL handle file upload errors, unsupported types, and large files with clear error messages.
+- WHEN system resources are constrained (e.g., storage full), THE system SHALL notify users appropriately and avoid loss of existing content.
+- Failed operations SHALL not result in data corruption or partial object creation.
 
-## Summary of Core Principles & Minimalism Commitment
-- THE platform SHALL maintain simplicity and minimalism in interface and features, avoiding complexity in both user experience and requirements.
-- All features, validations, and flows are designed for clarity, safety, and ease of use, with requirements written only in plain business terms to facilitate rapid, reliable backend implementation.
+## 7. Privacy and Compliance Requirements
+- All user information, content, and file uploads SHALL be protected per industry-standard privacy practices.
+- Only authenticated users may post or comment; user data is never shared with third parties.
+- Uploaded attachments are scanned for malware.
+- Content moderation complies with applicable legal standards.
+
+## 8. Data Flow and Lifecycle
+- Article and comment records are created, updated, or deleted in-system by the user or by moderators per permission rules.
+- Attachments are stored and associated with their parent post throughout their lifecycle. Removed files SHALL be permanently deleted.
+- Abuse and moderation reports are logged and tracked until resolved.
+
+## 9. External Integration Points
+- File storage (local or external, e.g., S3) for attachment persistence.
+- Email service for registration verification, password recovery, and optional activity notifications.
+
+## 10. Business Constraints and Summary
+- Minimal feature set; avoid complexity: focus on straightforward posting, discussion, and file sharing.
+- No advertising, analytics tracking, or commercial upsell features.
+- All actions follow strict role-based access.
+- Project is scoped for maintainability and straightforward implementation within minimal time/resources.

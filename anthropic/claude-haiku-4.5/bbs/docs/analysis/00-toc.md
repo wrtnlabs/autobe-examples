@@ -1,367 +1,269 @@
 # Discussion Board Requirements Documentation
 
-## Table of Contents
+## Introduction and Purpose
 
-Welcome to the comprehensive requirements documentation for the **Discussion Board** platform—a simple, straightforward economic and political discussion board where users can create articles, engage in comments, and share knowledge through image and file attachments.
+Welcome to the Discussion Board project documentation suite. This set of requirements documents defines a **straightforward, minimal economic and political discussion platform** where registered contributors can create articles with image and file attachments, engage in discussions through comments, and moderators ensure community standards.
 
-This documentation serves as the complete specification for building the discussion board system. It is organized by functional area and audience to help you quickly navigate to the information you need.
+This Table of Contents serves as your **central navigation hub** for understanding the complete system requirements. All detailed specifications are organized into focused documents, each addressing a specific aspect of the discussion board platform.
 
----
-
-## 📋 Complete Documentation Map
-
-### Strategic & Overview Documents
-
-#### [01-service-overview.md](./01-service-overview.md) — Service Vision & Business Foundation
-**Purpose**: Establishes the fundamental context and purpose of the discussion board platform.
-
-This document defines what the service is, why it exists, who it serves, and what value it provides to users interested in economic and political discourse. It covers the service vision, target market, core value proposition, business model, and success metrics. Read this first to understand the strategic purpose of the platform.
-
-**For**: Business stakeholders, product managers, and project planning teams
+**Project Philosophy**: Keep it simple, practical, and focused. No unnecessary complexity. Just a working discussion board for economic and political discourse.
 
 ---
 
-### User & Authentication Foundation
+## Documentation Overview
 
-#### [02-user-actors-and-authentication.md](./02-user-actors-and-authentication.md) — User Types & Security Framework
-**Purpose**: Defines all user types and authentication architecture for the system.
+The Discussion Board project is fully specified across seven detailed requirement documents. Each document addresses a distinct area of the system and builds upon foundational concepts established in earlier documents.
 
-This document specifies three user actor types (Guest, Member, Moderator) with their complete permission sets. It establishes the authentication framework using JWT tokens, session management, and detailed permission matrices. This is essential reading for understanding access control throughout the system.
+### Reading Recommendation
+While you can reference documents in any order, we recommend reading them sequentially to build a complete mental model of the system:
 
-**For**: Development team, security architects, and access control designers
-
----
-
-### Core Feature Documents
-
-#### [03-article-management-requirements.md](./03-article-management-requirements.md) — Discussion Article Specification
-**Purpose**: Complete specification for creating, managing, and displaying discussion articles.
-
-This document details the article lifecycle including creation, editing, deletion, and publication workflow. It specifies article attributes, image and file attachment requirements, validation rules, and how articles are retrieved and displayed to users.
-
-**For**: Backend developers, database designers, and feature implementers
+1. **Service Overview** (Start here) - Understand why the platform exists
+2. **User Actors and Permissions** (Foundational) - Learn who uses the system
+3. **Article and Content Management** (Core Feature) - Master the article system
+4. **Comments and Discussions** (Core Feature) - Understand community interaction
+5. **Search, Browsing, and Discovery** - Learn how users find content
+6. **Moderation and Content Policies** - Understand governance
+7. **System Requirements and Constraints** - Technical and operational considerations
 
 ---
 
-#### [04-comments-and-discussion-requirements.md](./04-comments-and-discussion-requirements.md) — Comment System Specification
-**Purpose**: Defines how members engage through comments on articles.
+## Complete Document Navigation
 
-This document specifies the complete comment workflow, including creation, editing, deletion, and attachment support. It defines comment threading structure, display order, character limits, and validation rules that enable threaded discussions beneath articles.
+### [Service Overview and Vision](./01-service-overview.md)
+**Purpose**: Establish the business context, vision, and value proposition of the discussion board service
 
-**For**: Backend developers implementing discussion features
+**Key Topics**:
+- Why the discussion board service exists
+- Target users and market focus
+- Core value proposition for economic and political discussion
+- Business model and sustainability
+- Success metrics to measure platform value
 
----
-
-#### [05-content-moderation-requirements.md](./05-content-moderation-requirements.md) — Moderation & Content Management
-**Purpose**: Specifies content review, approval workflows, and moderator capabilities.
-
-This document defines how moderators review articles before publication, manage inappropriate content, handle user violations, and maintain board quality. It specifies the moderation dashboard, approval workflows, and audit logging of moderation actions.
-
-**For**: Backend developers, moderator workflow designers, and system administrators
+**Read this document to**: Understand the "why" behind the project and the business context driving all technical decisions.
 
 ---
 
-#### [06-attachment-file-handling.md](./06-attachment-file-handling.md) — File & Image Management
-**Purpose**: Detailed specifications for image and file attachment handling.
+### [User Actors and Permissions](./02-user-actors-and-permissions.md)
+**Purpose**: Define the three user types, their authentication requirements, and complete permission matrix
 
-This document specifies supported file types, file size limits, image handling requirements, storage considerations, and security measures for attachments. It covers validation of file uploads and secure retrieval of attachments throughout the system.
+**Key Topics**:
+- Authentication system using JWT tokens
+- Three distinct user actors: Guest, Contributor, Moderator
+- Complete permission matrix showing what each actor can do
+- Session management and token lifecycle
+- Account creation and management workflows
 
-**For**: Backend developers, infrastructure architects, and storage specialists
+**Read this document to**: Understand how users authenticate, what permissions each user type has, and how access control works throughout the system.
 
----
-
-#### [07-search-and-discovery-requirements.md](./07-search-and-discovery-requirements.md) — Content Discovery & Navigation
-**Purpose**: Defines how users find and discover discussion content.
-
-This document specifies browsing capabilities, categorization by topic (Economics/Politics), search functionality, sorting and filtering options, and chronological feed display. It ensures users can easily find relevant discussions.
-
-**For**: Backend developers implementing search and discovery features
+**Critical for**: Designing login systems, permission checks in code, API authorization, user account features.
 
 ---
 
-### User Account & Data Management
+### [Article and Content Management](./03-article-and-content-management.md)
+**Purpose**: Specify how articles are created, managed, moderated, and what attachment capabilities are supported
 
-#### [08-user-account-management.md](./08-user-account-management.md) — Account & Profile Management
-**Purpose**: User registration, profile management, and account security specifications.
+**Key Topics**:
+- Article structure and required properties
+- Article creation workflow by contributors
+- Moderator approval process before publication
+- Image and file attachment system
+- Draft vs. published article states
+- Article editing and deletion permissions
 
-This document specifies user registration requirements, profile fields, email verification, password management, and account preferences. It covers account deletion, data handling, and password reset functionality.
+**Read this document to**: Understand the complete article lifecycle, how moderation works, and what attachment capabilities must be built.
 
-**For**: Backend developers, security architects, and account management specialists
-
----
-
-### System Constraints & Rules
-
-#### [09-business-rules-and-constraints.md](./09-business-rules-and-constraints.md) — Validation & Operational Rules
-**Purpose**: Complete specification of business rules and system constraints.
-
-This document defines content creation rules, user behavior rules, rate limiting, spam prevention, text length constraints, attachment limits, and system performance constraints. These rules govern how the system behaves and prevents abuse.
-
-**For**: Backend developers implementing validation and business logic
+**Critical for**: Building article creation forms, file upload handling, moderator approval workflows, article storage and retrieval.
 
 ---
 
-#### [10-performance-and-non-functional-requirements.md](./10-performance-and-non-functional-requirements.md) — Quality & Reliability Standards
-**Purpose**: Non-functional requirements including performance, security, and reliability.
+### [Comments and Discussions](./04-comments-and-discussions.md)
+**Purpose**: Define how users interact through comments and threaded discussions
 
-This document specifies response time expectations, concurrent user support, data security and privacy measures, compliance requirements, system reliability, error handling, and scalability considerations.
+**Key Topics**:
+- Comment creation and management workflows
+- Comment moderation by moderators
+- Comment editing and deletion permissions
+- Simple threading for discussion organization
+- User engagement and notification considerations
 
-**For**: Infrastructure architects, security specialists, and system designers
+**Read this document to**: Understand how community discussion works, comment moderation, and user interaction patterns.
 
----
-
-### Implementation & Workflows
-
-#### [11-user-workflows-and-scenarios.md](./11-user-workflows-and-scenarios.md) — User Journeys & Use Cases
-**Purpose**: Concrete examples of user workflows and system interactions.
-
-This document provides realistic scenarios illustrating how different user types (guests, members, moderators) accomplish primary tasks. It includes registration, article creation, commenting, moderation, and error scenarios.
-
-**For**: Development team, QA testers, and anyone implementing the system
+**Critical for**: Building comment systems, moderation interfaces, discussion threading logic.
 
 ---
 
-## 🎯 Quick Navigation by Role
+### [Search, Browsing, and Discovery](./05-search-browsing-and-discovery.md)
+**Purpose**: Specify how users find, browse, and discover articles and discussions
 
-### For Business Stakeholders & Project Managers
-Start here to understand the platform vision and success criteria:
-1. [Service Overview](./01-service-overview.md) — Why the platform exists and its business model
-2. [User Workflows](./11-user-workflows-and-scenarios.md) — See real user interactions
+**Key Topics**:
+- Article listing and pagination
+- Search functionality for articles
+- Categorization and topic organization
+- Sorting options (newest, most commented, etc.)
+- User experience for browsing
 
-### For Backend Development Teams
-Complete these documents in order to build the system:
-1. [User Actors & Authentication](./02-user-actors-and-authentication.md) — Security and access control foundation
-2. [Article Management](./03-article-management-requirements.md) — Core content creation
-3. [Comments & Discussion](./04-comments-and-discussion-requirements.md) — Engagement features
-4. [Attachment Handling](./06-attachment-file-handling.md) — File storage and management
-5. [Content Moderation](./05-content-moderation-requirements.md) — Review and approval workflows
-6. [Search & Discovery](./07-search-and-discovery-requirements.md) — Content discovery features
-7. [Account Management](./08-user-account-management.md) — User registration and profiles
-8. [Business Rules](./09-business-rules-and-constraints.md) — Validation and constraints
-9. [Performance & Non-Functional](./10-performance-and-non-functional-requirements.md) — Quality standards
-10. [User Workflows](./11-user-workflows-and-scenarios.md) — Reference for implementation
+**Read this document to**: Understand how users navigate the platform and what search/discovery features are essential.
 
-### For QA & Testing Teams
-Review these documents to create test plans:
-1. [User Workflows](./11-user-workflows-and-scenarios.md) — Test scenarios and flows
-2. [Business Rules](./09-business-rules-and-constraints.md) — Validation rules to test
-3. [Performance Requirements](./10-performance-and-non-functional-requirements.md) — Performance testing criteria
-
-### For Moderators & Administrators
-Read these to understand your capabilities and responsibilities:
-1. [Content Moderation](./05-content-moderation-requirements.md) — Your review and management tools
-2. [User Workflows](./11-user-workflows-and-scenarios.md) — Moderation workflow examples
+**Critical for**: Building search indexes, article listing pages, filtering and sorting logic.
 
 ---
 
-## 📖 How to Use This Documentation
+### [Moderation and Content Policies](./06-moderation-and-content-policies.md)
+**Purpose**: Define moderation responsibilities, workflows, content standards, and violation handling
 
-### Reading Paths
+**Key Topics**:
+- Moderator responsibilities and workflows
+- Article review and approval process
+- Content guidelines and prohibited content
+- Handling violations and content removal
+- User account management by moderators
 
-**Path 1: Strategic Understanding** (for decision makers)
-- Start with Service Overview to understand the vision
-- Review User Workflows to see real interactions
-- Check Performance Requirements for quality standards
+**Read this document to**: Understand moderation workflows, community guidelines, and how the platform enforces standards.
 
-**Path 2: Complete Implementation** (for development teams)
-- Read this table of contents as your roadmap
-- Follow the "For Backend Development Teams" order above
-- Each document builds on the previous ones
-- Use User Workflows as your implementation reference
-
-**Path 3: Feature-Specific Deep Dive** (for focused work)
-- Jump directly to the specific feature documents you need
-- Each document is self-contained with complete specifications
-- Reference the Quick Navigation map above
-
-### Document Format & Content
-
-Each requirements document follows a consistent structure:
-
-- **Overview**: High-level introduction to the topic
-- **Requirements**: Detailed specifications in EARS format (When/The/Shall)
-- **Rules & Constraints**: Business rules and system limitations
-- **Examples**: Concrete examples of functionality
-- **Validation**: Rules for data validation and error handling
-
-### Key Terminology
-
-**Article**: A discussion thread initiated by a member about an economic or political topic. Articles must be approved by moderators before becoming public.
-
-**Comment**: A member's response to an article or reply to another comment. Comments enable discussion and debate.
-
-**Attachment**: An image or file uploaded with an article or comment. Supports images (.jpg, .png, .gif) and documents (.pdf, .docx, .txt).
-
-**Member**: A registered and authenticated user who can create articles, post comments, and upload attachments.
-
-**Guest**: An unauthenticated visitor with read-only access to view articles and comments.
-
-**Moderator**: An administrative user who reviews articles before publication and manages inappropriate content.
-
-**Approval Workflow**: The process where moderators review new articles and choose to approve or reject them before they become visible to the public.
+**Critical for**: Building moderation dashboards, approval workflows, content removal systems, user management interfaces.
 
 ---
 
-## 📊 Documentation Status & Versioning
+### [System Requirements and Constraints](./07-system-requirements-and-constraints.md)
+**Purpose**: Document non-functional requirements, performance expectations, security considerations, and technical constraints
 
-**Version**: 1.0  
-**Status**: Complete Initial Specification  
-**Last Updated**: 2024  
-**Document Count**: 11 requirements documents + this TOC  
+**Key Topics**:
+- Performance expectations for user experience
+- File upload and storage management
+- Security and data protection requirements
+- System availability and reliability
+- Scalability considerations
+- Technical constraints and architecture guidance
 
-This is the complete first-pass specification for the discussion board platform. All core functionality, user types, and system constraints are defined and ready for implementation.
+**Read this document to**: Understand performance targets, security requirements, file handling strategy, and technical constraints.
 
----
-
-## 📌 Key System Characteristics
-
-### Simplicity & Minimalism
-This discussion board intentionally keeps a straightforward feature set:
-- Simple article and comment structure (no complex threading)
-- Basic search and categorization
-- Minimal user profile fields
-- Focused on discussion quality, not social features
-
-### User Types & Permissions
-Three clear user types with distinct capabilities:
-- **Guest**: Read-only access
-- **Member**: Full participation (create, comment, upload)
-- **Moderator**: Content review and management
-
-### Content Moderation
-All articles require moderator approval before becoming public. This ensures discussion quality and prevents abuse while maintaining simplicity.
-
-### Attachment Support
-Members can attach images and files to articles and comments, with clear size and type limits to prevent storage and security issues.
+**Critical for**: Infrastructure planning, API design, database schema, file storage strategy, security implementation.
 
 ---
 
-## 🔗 Document Relationships & Dependencies
+## Key Concepts and Definitions
 
-```
-┌─────────────────────────────────────────────────────────┐
-│          Service Overview & Strategy                    │
-│        (01: Service Overview)                           │
-└────────────────────┬────────────────────────────────────┘
-                     │
-        ┌────────────┴────────────┐
-        ▼                         ▼
-    Foundation Layer         Foundation Layer
-    (02: Users &           (08: Account Mgmt)
-     Authentication)             │
-        │                        │
-        └────────────┬───────────┘
-                     │
-        ┌────────────┴────────────┬──────────────┐
-        ▼                         ▼              ▼
-    Core Features            Core Features   Core Features
-    (03: Articles)           (04: Comments)  (05: Moderation)
-        │                         │              │
-        └────────────┬────────────┴──────────────┘
-                     │
-                     ▼
-            (06: Attachments)
-                     │
-        ┌────────────┴────────────┐
-        ▼                         ▼
-    Feature Layer            Feature Layer
-    (07: Search)         (09: Rules & Constraints)
-        │                        │
-        └────────────┬───────────┘
-                     │
-                     ▼
-        (10: Performance & Non-Functional)
-                     │
-                     ▼
-        (11: User Workflows & Scenarios)
-```
+### **Article**
+A primary content piece created by contributors about economic or political topics. Articles include a title, body content, and may have image and file attachments. Articles require moderator approval before becoming visible to other users.
+
+### **Comment**
+User feedback and discussion on published articles. Comments are posted by contributors and can be removed by moderators. Comments allow community discourse around article topics.
+
+### **Attachment**
+Supporting files (images or documents) uploaded with articles or comments. The system supports straightforward file attachment to articles.
+
+### **Moderation**
+The process of reviewing articles and comments to ensure they meet community standards. Moderators approve articles before publication and can remove inappropriate content.
+
+### **User Actor**
+A classification of user type with specific permissions:
+- **Guest**: Can browse published articles and comments (no account needed)
+- **Contributor**: Registered user who can create articles, post comments, and upload attachments
+- **Moderator**: Administrator who reviews content, approves articles, and enforces standards
+
+### **Discussion Thread**
+The collection of comments under a published article, enabling community discourse.
 
 ---
 
-## ✅ What's Included in This Specification
+## Project Context and Scope
 
-This documentation provides complete coverage of:
+### What This Platform Is
+A straightforward **economic and political discussion platform** where:
+- Registered contributors can share articles and ideas
+- Community members discuss topics through comments
+- Moderators maintain quality and enforce guidelines
+- Content is organized for easy discovery
 
-- ✅ Three user actor types with permission matrices
-- ✅ JWT-based authentication and session management
-- ✅ Article creation, editing, and approval workflows
-- ✅ Comment and discussion system with attachments
-- ✅ Content moderation and review processes
-- ✅ Image and file attachment handling with size/type limits
-- ✅ Search and content discovery by category
-- ✅ User registration and account management
-- ✅ Business rules for content creation and user behavior
-- ✅ Performance requirements and non-functional specifications
-- ✅ Real-world user workflows and scenarios
-- ✅ Comprehensive validation and error handling
+### What This Platform Is NOT
+- A social media platform with follower systems
+- A marketplace or e-commerce system
+- A real-time chat application
+- A complex content management system
+- An academic publishing platform
 
----
+### Design Philosophy
+**Keep it simple. Keep it minimal. Make it work.**
 
-## 🚀 Getting Started
-
-1. **First Time?** Start with [Service Overview](./01-service-overview.md)
-2. **Ready to Build?** Follow the "For Backend Development Teams" path in Quick Navigation above
-3. **Need a Specific Feature?** Use the Quick Navigation by Role section
-4. **Testing?** Jump to [Business Rules](./09-business-rules-and-constraints.md) and [User Workflows](./11-user-workflows-and-scenarios.md)
+This is a focused discussion board, not an all-encompassing social platform. Every feature should serve the core purpose of enabling economic and political discussion with community oversight.
 
 ---
 
-## 📝 Document Completeness Checklist
+## How to Use This Documentation
 
-This documentation provides complete specifications for:
+### For Development Teams
+1. **Read all documents in sequence** to build complete understanding
+2. **Focus on your domain**:
+   - Backend developers: Articles, Comments, Moderation, System Requirements
+   - Frontend developers: User Actors, Search/Browsing, all user-facing features
+   - Database designers: Article/Comment structure from Content Management docs
+   - DevOps/Infrastructure: System Requirements document
 
-| Component | Document | Complete |
-|-----------|----------|----------|
-| Service Vision & Business Model | 01-service-overview.md | ✅ |
-| User Actors & Permissions | 02-user-actors-and-authentication.md | ✅ |
-| Article Management | 03-article-management-requirements.md | ✅ |
-| Comment System | 04-comments-and-discussion-requirements.md | ✅ |
-| Content Moderation | 05-content-moderation-requirements.md | ✅ |
-| Attachment Handling | 06-attachment-file-handling.md | ✅ |
-| Search & Discovery | 07-search-and-discovery-requirements.md | ✅ |
-| Account Management | 08-user-account-management.md | ✅ |
-| Business Rules & Constraints | 09-business-rules-and-constraints.md | ✅ |
-| Performance & Non-Functional | 10-performance-and-non-functional-requirements.md | ✅ |
-| User Workflows & Scenarios | 11-user-workflows-and-scenarios.md | ✅ |
+3. **Reference specific documents** as you build features
+4. **Use requirements as specifications** for what to build
 
----
+### For Product Managers
+1. **Start with Service Overview** to understand the vision
+2. **Review User Actors and Permissions** to understand user types
+3. **Check Article and Content Management** to understand core features
+4. **Reference Moderation document** for policy decisions
 
-## 🎓 For New Team Members
+### For Moderators and Admins
+1. **Read Moderation and Content Policies** for workflows and guidelines
+2. **Reference User Actors** to understand your permissions
+3. **Check Article/Comment Management** for operational procedures
 
-Welcome to the project! This documentation is organized to help you get up to speed quickly:
-
-1. **Week 1**: Read Service Overview and User Workflows to understand what you're building
-2. **Week 2**: Study User Actors and Business Rules to understand the constraints
-3. **Week 3**: Deep dive into your specific feature area (Articles, Comments, Moderation, etc.)
-4. **Week 4**: Review Performance Requirements and edge cases for robustness
-5. **Ongoing**: Reference specific documents as you implement features
-
-Each document is self-contained and cross-referenced, so you can jump to specific topics as needed.
+### For New Team Members
+1. **Start with this document** (you are here)
+2. **Read Service Overview** for business context
+3. **Read User Actors** to understand the system's user types
+4. **Deep dive into relevant documents** based on your role
 
 ---
 
-## 📞 Document Navigation Tips
+## Project Scope Summary
 
-- **Looking for a specific requirement?** Use Quick Navigation by Role or search within individual documents
-- **Need to understand dependencies?** Check the Document Relationships diagram
-- **Implementing a feature?** Start with its main document, then reference Business Rules and Performance Requirements
-- **Testing features?** Reference User Workflows & Scenarios for realistic test cases
-- **Uncertain about a term?** Check the Key Terminology section above
-
----
-
-## 🔄 Documentation Updates
-
-This documentation represents the complete specification for version 1.0 of the discussion board. Future updates may occur for:
-
-- Feature additions beyond initial scope
-- Clarifications based on implementation experience
-- Performance optimizations
-- Security enhancements
-- User feedback integration
-
-All updates will maintain backward compatibility with this initial specification.
+| Aspect | Scope |
+|--------|-------|
+| **Core Feature** | Articles with comments and discussion |
+| **User Types** | Guests (browse only), Contributors (create), Moderators (manage) |
+| **Content Types** | Text articles with image and file attachments |
+| **Moderation** | Pre-publication approval for articles |
+| **Discovery** | Search, browse, categorize by topic |
+| **Community** | Comments and threaded discussion |
+| **Complexity** | **Minimal and straightforward** |
 
 ---
 
-> *Developer Note: This documentation defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+## Navigation Quick Links
+
+| Document | Primary Audience | Read When... |
+|----------|-----------------|-------------|
+| [Service Overview](./01-service-overview.md) | Everyone | You need business context |
+| [User Actors & Permissions](./02-user-actors-and-permissions.md) | Developers, Product Managers | Building auth or understanding roles |
+| [Article & Content Management](./03-article-and-content-management.md) | Backend Developers | Building article features |
+| [Comments & Discussions](./04-comments-and-discussions.md) | Backend Developers | Building comment systems |
+| [Search & Discovery](./05-search-browsing-and-discovery.md) | Frontend & Backend Developers | Building search/browse features |
+| [Moderation & Policies](./06-moderation-and-content-policies.md) | Developers, Moderators | Building moderation tools |
+| [System Requirements](./07-system-requirements-and-constraints.md) | All Developers | Planning architecture |
+
+---
+
+## Project Success Criteria
+
+This documentation is considered complete and successful when:
+
+✅ Development team can begin coding with zero ambiguity  
+✅ All requirements are specific and testable  
+✅ Permission model is crystal clear  
+✅ Moderation workflow is well-defined  
+✅ File attachment strategy is straightforward  
+✅ User experience expectations are explicit  
+
+---
+
+## Questions? Need Clarification?
+
+Each detailed document contains specific, actionable requirements written for backend developers. If you need more detail on any topic, refer to the specific document linked above.
+
+> *Developer Note: This documentation defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team. These documents describe WHAT the system should do, not HOW to build it. Developers have full autonomy over architectural decisions, API design, and database schema while fulfilling these business requirements.*

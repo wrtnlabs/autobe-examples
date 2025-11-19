@@ -1,88 +1,13 @@
-/// User-submitted moderation reports tracking flagged content or abusive
-/// behavior.
+/// Moderation log tracking all administrative actions on articles, comments,
+/// and attachments.
 ///
-/// This table captures all reported cases by users regarding articles,
-/// comments, or attachments requiring moderation or review. Each report
-/// includes metadata for the reporter (user), the type and ID of the entity
-/// reported, the nature of the report (reason/category), and the processing
-/// status. Only authenticated users may submit reports, and every report is
-/// associated with the precise timestamp of its creation.
-///
-/// The moderation team uses this table to review, resolve, or escalate
-/// reported incidents, providing an audit trail for transparency and
-/// compliance. All content and user references point to existing normalized
-/// tables. Deletion is soft to maintain historical audit integrity.
-///
-/// @namespace Moderation
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_reports {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reporter user account that created the moderation report. {@link
-  /// discussion_board_users.id}.
-  reporter_user_id String
-  
-  /// Type of entity being reported (e.g., 'article', 'comment', 'attachment').
-  /// Used to distinguish the context of the moderation report.
-  target_type String
-  
-  /// ID of the reported entity (referencing articles, comments, or attachments
-  /// depending on target_type). Not a foreign key due to multi-entity
-  /// polymorphism, but always references business entities.
-  target_id String
-  
-  /// Reason or category provided for the report (e.g., spam, abuse, illegal
-  /// content).
-  reason String
-  
-  /// Additional details or user explanation for the report. Optional extended
-  /// text field for further clarification.
-  description String?
-  
-  /// Current status of the report (e.g., open, in_review, resolved, rejected,
-  /// escalated).
-  status String
-  
-  /// Timestamp when the report was created.
-  created_at DateTime
-  
-  /// Timestamp of the most recent update or review of the report.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Null if not deleted; set when report is removed
-  /// for business or compliance reasons.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  reporterUser discussion_board_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([reporter_user_id, target_type, target_id], map: "discussion_board_reports_reporter_user_id_target_type__88f9325f")
-  @@index([status])
-  @@index([target_type, target_id])
-}
-
-/// Audit trail for all moderation and administrative actions performed by
-/// platform admins.
-///
-/// This table records every explicit moderation or admin action on user
-/// content, including edits, deletions, warnings, user suspensions, and
-/// others. Each log includes references to the admin who performed the
-/// action, the type of entity targeted, the specific target entity ID, a
-/// code describing the action (e.g., 'delete', 'edit', 'suspend'), freeform
-/// notes, and timestamps.
-///
-/// Log records are immutable business events and form the foundation for
-/// auditability, compliance, and future incident review. All admin and
-/// content references point to pre-existing, normalized entities. Deletion
-/// is soft to allow for complete audit history even when entries are hidden
-/// from routine views.
+/// Each event records the type of action performed (remove, edit, ban,
+/// etc.), the target entity (article, comment, or attachment) by ID, the
+/// acting admin, action rationale, outcome, and exact timestamp. Supports
+/// transparent audit trails and minimal compliance needs for this discussion
+/// board. Entries are never deleted to maintain historical traceability. The
+/// log references existing core entities via type+ID, allowing polymorphic
+/// tracking of acted-upon items in a normalized, non-redundant way.
 ///
 /// @namespace Moderation
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -90,39 +15,32 @@ model discussion_board_moderation_logs {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for moderation event.
   id String @id
   
-  /// Administrator who performed this moderation action. {@link
+  /// Admin account responsible for moderation action. {@link
   /// discussion_board_admins.id}.
   admin_id String
   
-  /// Type of entity or user subjected to moderation action (e.g., 'article',
-  /// 'comment', 'user', 'attachment').
+  /// Type of thing acted on ("article", "comment", "attachment").
   target_type String
   
-  /// ID of the entity or user affected by admin action. Polymorphic reference;
-  /// resolved at application level based on target_type.
+  /// UUID of the item moderated (article, comment, or attachment).
   target_id String
   
-  /// Code or keyword for the action performed (e.g., 'delete', 'edit',
-  /// 'restore', 'suspend', 'warn').
-  action_code String
+  /// Moderation action performed (e.g., "remove", "edit", "ban").
+  action String
   
-  /// Optional additional explanation or notes from the admin about the action
-  /// taken.
-  note String?
+  /// Reason for this moderation action as entered by the admin.
+  reason String
   
-  /// Timestamp when this moderation action was recorded.
+  /// Result or status after moderation (e.g., "deleted", "edited", "banned",
+  /// "restored").
+  outcome String
+  
+  /// Timestamp representing when this moderation action was performed (UTC,
+  /// ISO 8601).
   created_at DateTime
-  
-  /// Timestamp of the most recent update to log entry (if any corrections or
-  /// updates are made).
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Null if log entry is active; set for hidden or
-  /// expunged from casual display, never hard-deleted for audit purposes.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
@@ -130,7 +48,7 @@ model discussion_board_moderation_logs {
   admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([admin_id, target_type, target_id, created_at], map: "discussion_board_moderation_logs_admin_id_target_type__69604d1f")
-  @@index([action_code])
+  @@unique([target_type, target_id, action, created_at], map: "discussion_board_moderation_logs_target_type_target_id_12d15348")
+  @@index([admin_id, created_at])
   @@index([target_type, target_id])
 }

@@ -1,61 +1,58 @@
 # User Actors and Authentication Requirements
 
-## Introduction
-This document defines the user actors that will interact with the discussion board system and outlines the authentication requirements for the application. Understanding these actors and their roles is crucial for implementing proper authentication and authorization mechanisms.
+## Overview
+This document outlines the user actors, their capabilities, and the authentication mechanisms for the simple economic/political discussion board.
 
-## User Actor Definitions
-The discussion board system will have three primary user actors:
+## User Actors
 
-1. **Guest**: Unauthenticated users who can view public content but cannot interact with the system.
-2. **RegisteredUser**: Authenticated users who can create articles, comment, and upload attachments.
-3. **Moderator**: Users with elevated permissions to moderate content, manage user accounts, and perform administrative tasks.
+### 1. Registered User
+- Can create, edit, and delete their own articles
+- Can comment on articles
+- Has a unique username and email
 
-### Actor Hierarchy
-```mermaid
-graph TD
-    A["Guest"] -->|"Registers/Login"| B["RegisteredUser"]
-    B -->|"Promoted"| C["Moderator"]
-```
+### 2. Moderator
+- Can manage all content (articles and comments)
+- Can moderate discussions
+- Can handle user reports
+- Has elevated permissions to maintain community standards
+
+### 3. Guest User
+- Can view public content
+- Can read articles and comments
+- Cannot create or edit content
 
 ## Authentication Requirements
-The system will implement the following authentication mechanisms:
 
-1. **Registration**: Users can create an account by providing a valid email address and password.
-2. **Login**: Registered users can log in using their email address and password.
-3. **Logout**: Users can log out to end their session.
-4. **Session Management**: The system will maintain user sessions securely.
+1. **Registration Process**:
+   - Users can register with email and password
+   - Email verification required
+   - Username must be unique
 
-### Authentication Flow
-```mermaid
-graph LR
-    A["Start"] --> B["User Enters Credentials"]
-    B --> C["Validate Input"]
-    C --> D{Credentials Valid?}
-    D -->|"Yes"| E["Generate JWT Token"]
-    D -->|"No"| F["Show Error Message"]
-    E --> G["Return Token to User"]
-    F --> H["End"]
-    G --> H
-```
+2. **Login Process**:
+   - Users can log in with email/username and password
+   - Password recovery mechanism available
+
+3. **Session Management**:
+   - Sessions should be maintained securely
+   - Timeout for inactive sessions
 
 ## Authorization Rules
-The system will enforce the following authorization rules:
 
-1. Guests can view public articles and comments.
-2. RegisteredUsers can create articles, comment on articles, and upload attachments.
-3. Moderators can moderate content, manage user accounts, and perform administrative tasks.
-4. Users can only edit or delete their own content.
-5. Moderators can delete any content.
+1. **Content Ownership**:
+   - Registered users can manage their own content
+   - Moderators can manage all content
 
-### Permission Matrix
+2. **Permission Matrix**:
 
-| Action | Guest | RegisteredUser | Moderator |
-|--------|-------|----------------|-----------|
-| View Public Content | ✅ | ✅ | ✅ |
-| Create Article | ❌ | ✅ | ✅ |
-| Comment on Article | ❌ | ✅ | ✅ |
-| Upload Attachments | ❌ | ✅ | ✅ |
-| Moderate Content | ❌ | ❌ | ✅ |
-| Manage User Accounts | ❌ | ❌ | ✅ |
+| Action | Registered User | Moderator | Guest |
+|--------|-----------------|-----------|-------|
+| Create Article | ✅ | ✅ | ❌ |
+| Edit Article | ✅ (own) | ✅ (all) | ❌ |
+| Delete Article | ✅ (own) | ✅ (all) | ❌ |
+| Comment on Article | ✅ | ✅ | ❌ |
+| View Article | ✅ | ✅ | ✅ |
 
-This document provides a comprehensive overview of the user actors and authentication requirements for the discussion board system. It serves as a foundation for implementing secure authentication and authorization mechanisms.
+## Security Considerations
+- Passwords must be stored securely (hashed)
+- Email verification required for registration
+- Secure session management practices

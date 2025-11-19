@@ -10,32 +10,36 @@ import { IDiscussionBoardModerator } from "../../../api/structures/IDiscussionBo
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register a new moderator account with admin privileges.
+   * Register a new moderator account with authentication tokens.
    *
-   * Creates a new moderator account with admin-level privileges for the
-   * discussion board platform.
+   * Creates a new moderator account for trusted administrators with elevated
+   * privileges for content moderation and community management.
    *
-   * This endpoint handles the complete registration workflow for new
-   * moderators, including account creation, password hashing, and initial JWT
-   * token issuance. The operation validates the provided credentials against
-   * business rules (email uniqueness, password strength) and establishes the
-   * moderator's authentication session.
+   * This operation registers moderators who will manage community guidelines
+   * enforcement, handle reported content, and can suspend or ban member
+   * accounts. Moderator privileges are granted by system administrators and
+   * cannot be self-assigned. The registration process requires a unique email
+   * address and username, and stores the password using bcrypt hashing with
+   * work factor 10+.
    *
    * The moderator account is created in the discussion_board_moderators table
-   * with fields including email, password (hashed), nickname, and timestamps.
-   * Upon successful creation, the system generates both access and refresh JWT
-   * tokens, enabling immediate platform access without requiring a separate
-   * login step.
+   * with fields including email, password (hashed), username, and optional
+   * display_name. The email_verified field is initially set to false, requiring
+   * email verification before granting full moderation privileges. The
+   * is_active field is set to true by default, allowing the moderator to login
+   * immediately after registration.
    *
-   * Security considerations include password hashing using industry-standard
-   * algorithms, email validation to ensure proper format, and prevention of
-   * duplicate registrations through unique email constraints. The operation
-   * follows secure registration patterns suitable for administrative accounts.
+   * Upon successful registration, the operation generates and returns JWT
+   * tokens (access token with 30-minute expiration and refresh token with 7-day
+   * expiration) in the IDiscussionBoardModerator.IAuthorized response, enabling
+   * immediate authenticated access to the platform. A moderator session is
+   * created in discussion_board_moderator_sessions table to track the
+   * authentication context.
    *
-   * This operation is a prerequisite for all moderator-specific activities on
-   * the platform, establishing the foundation for content moderation, user
-   * management, and community oversight capabilities. New moderators gain
-   * immediate access to elevated permissions upon successful registration.
+   * Validation rules enforce unique constraints on email and username fields,
+   * ensure password meets security requirements, and verify all required fields
+   * are provided. The operation returns the complete moderator profile
+   * information along with authentication tokens.
    *
    * @param connection
    * @param body Moderator registration information including credentials and
@@ -62,35 +66,38 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator credentials and issue access tokens.
+   * Authenticate moderator and issue JWT tokens.
    *
-   * Authenticates a moderator using email and password credentials to grant
-   * access to the platform.
+   * Authenticates a moderator using email and password credentials and issues
+   * JWT tokens for secure access to moderation tools.
    *
-   * This endpoint handles the complete login workflow for moderators, including
-   * credential validation, password verification, and JWT token generation. The
-   * operation queries the discussion_board_moderators table to locate the
-   * account by email, verifies the provided password against the stored hash,
-   * and upon success, issues fresh access and refresh tokens.
+   * This operation validates moderator credentials against the
+   * discussion_board_moderators table by comparing the provided password
+   * (hashed using bcrypt) with the stored password hash. Only active moderators
+   * (is_active=true) with non-null deleted_at can successfully authenticate.
+   * The operation verifies both the email uniqueness and password match before
+   * proceeding.
    *
-   * The authentication process validates that the moderator account exists, the
-   * password matches the hashed value in the database, and the account is in
-   * good standing. Security measures include rate limiting to prevent brute
-   * force attacks, secure password comparison using constant-time algorithms,
-   * and proper session management.
+   * Upon successful authentication, the operation creates a new session record
+   * in discussion_board_moderator_sessions table, capturing the moderator's IP
+   * address, connection URL (href), and referrer for security auditing and
+   * accountability. All moderation actions performed during this session can be
+   * traced back to the specific moderator and session for comprehensive audit
+   * trails.
    *
-   * Upon successful authentication, the moderator receives JWT tokens that
-   * grant access to elevated platform features including content moderation
-   * capabilities, user account management, article and comment oversight, and
-   * community standards enforcement. The tokens establish the moderator's
-   * identity and permissions for subsequent API requests.
+   * The operation generates and returns JWT tokens with the moderator's profile
+   * information in the IDiscussionBoardModerator.IAuthorized response. The
+   * access token expires after 30 minutes, while the refresh token expires
+   * after 7 days. The last_login_at timestamp in the moderator record is
+   * updated to track activity and enable security monitoring.
    *
-   * This operation is essential for moderators to access their administrative
-   * dashboard and perform their community oversight duties. Failed login
-   * attempts should be logged for security monitoring purposes.
+   * Authentication failures due to invalid credentials, inactive accounts, or
+   * deleted moderator accounts return appropriate error responses without
+   * revealing which specific validation failed, preventing account enumeration
+   * attacks.
    *
    * @param connection
-   * @param body Moderator login credentials containing email and password
+   * @param body Moderator login credentials
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -113,42 +120,35 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh moderator access tokens using a valid refresh token.
+   * Refresh moderator access tokens using refresh token.
    *
-   * Refreshes moderator authentication tokens to maintain continuous platform
-   * access without re-authentication.
+   * Refreshes moderator access tokens using a valid refresh token to extend the
+   * authenticated session.
    *
-   * This endpoint implements the token refresh mechanism for moderators,
-   * accepting a valid refresh token and returning a new access token (and
-   * optionally a new refresh token). The operation validates the refresh
-   * token's authenticity, expiration status, and association with an active
-   * moderator account before issuing new credentials.
+   * This operation enables moderators to maintain continuous authenticated
+   * access without repeatedly entering credentials. When the 30-minute access
+   * token expires, moderators can use their 7-day refresh token to obtain a new
+   * access token, extending their session seamlessly.
    *
-   * The refresh process queries the discussion_board_moderator_sessions table
-   * to verify the refresh token belongs to a valid, non-expired session
-   * associated with the moderator. It checks that the session has not been
-   * revoked and that the moderator account remains in good standing. Upon
-   * successful validation, new JWT tokens are generated and the session record
-   * is updated.
+   * The operation validates the provided refresh token against the active
+   * moderator session in discussion_board_moderator_sessions table. Only
+   * sessions with null expired_at (active sessions) and belonging to active
+   * moderators (is_active=true, deleted_at=null) can successfully refresh
+   * tokens. The refresh token must not be expired based on its 7-day validity
+   * period.
    *
-   * Security considerations include validating token signatures, checking
-   * expiration timestamps, preventing token reuse attacks through session
-   * tracking, and ensuring tokens are only refreshed for active accounts. The
-   * operation may implement refresh token rotation, where each refresh
-   * invalidates the old token and issues a completely new one.
+   * Upon successful validation, the operation generates and returns new JWT
+   * tokens (both access and refresh tokens) in the
+   * IDiscussionBoardModerator.IAuthorized response, maintaining session
+   * continuity. The moderator's profile information is included in the response
+   * for client-side state management.
    *
-   * This operation enables moderators to maintain long-lived sessions without
-   * requiring frequent re-authentication, improving user experience while
-   * maintaining security through short-lived access tokens. It's essential for
-   * uninterrupted moderation workflows and continuous platform oversight.
-   *
-   * The refresh mechanism balances security (short access token lifetimes) with
-   * usability (long refresh token lifetimes), allowing moderators to stay
-   * authenticated during extended moderation sessions while minimizing the risk
-   * of token compromise.
+   * If the refresh token is invalid, expired, or belongs to an inactive/deleted
+   * moderator session, the operation returns an authentication error, requiring
+   * the moderator to login again with email and password credentials.
    *
    * @param connection
-   * @param body Refresh token for generating new access credentials
+   * @param body Refresh token for generating new access token
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia

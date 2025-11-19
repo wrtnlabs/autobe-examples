@@ -1,56 +1,56 @@
-# Discussion Board Requirements Analysis Report
+# Discussion Board Requirements Document
 
-## 1. Service Overview
-The discussion board service is designed to provide a platform for users to engage in economic and political discussions. The primary goal is to create a user-friendly and feature-rich environment that fosters meaningful interactions among its users.
+## Introduction
 
-## 2. User Actors and Authentication Requirements
-The system will have three primary user actors: Guest, RegisteredUser, and Moderator. Guests can view public content, RegisteredUsers can create articles, comment, and upload attachments, while Moderators have elevated permissions to moderate content and manage user accounts.
+## Purpose and Scope
 
-## 3. Functional Requirements
-### 3.1. Article Creation and Management
-THE system SHALL allow registered users to create new articles.
-WHEN a registered user submits a new article, THE system SHALL validate the input (title, content, attachments).
-IF the input is valid, THEN THE system SHALL create the article and notify the user of success.
+This document outlines the comprehensive requirements for the discussion board application, focusing on user registration, article posting with attachments, commenting system, and moderation features.
 
-### 3.2. Comment System
-THE system SHALL allow registered users to comment on articles.
-WHEN a registered user submits a comment, THE system SHALL validate the input.
-IF the input is valid, THEN THE system SHALL create the comment and display it with the article.
+## Functional Requirements
 
-## 4. Attachment Management
-THE system SHALL allow registered users to upload attachments when creating or editing articles.
-THE system SHALL validate file types and sizes before upload.
-Supported file types SHALL include common image formats (jpg, png, gif) and document formats (pdf, docx, txt).
+### User Registration and Authentication
 
-## 5. Authentication and Authorization
-THE system SHALL support email and password-based authentication.
-WHEN a user logs in, THE system SHALL validate their credentials against the stored information.
-IF valid, THEN THE system SHALL generate a JWT token.
+WHEN a user attempts to register, THE system SHALL validate the provided email address.
+THE system SHALL send a verification email to the registered email address.
+WHEN the user verifies their email, THE system SHALL activate the user account.
 
-## 6. Moderation
-THE system SHALL allow moderators to review and manage all content (articles and comments).
-WHEN a moderator reviews content, THE system SHALL provide options to approve, edit, or delete the content.
+### Article Posting
 
-## 7. Performance and Scaling
-THE system SHALL be designed to scale horizontally by adding more instances as needed.
-THE system SHALL implement auto-scaling to add instances when CPU utilization exceeds 60% for 5 minutes.
+THE system SHALL allow registered users to create articles with text content.
+THE system SHALL support image and file attachments for articles.
+THE system SHALL validate file types and sizes for attachments.
 
-## 8. Security Considerations
-THE system SHALL protect against common web application vulnerabilities (e.g., SQL injection, XSS, CSRF).
-THE system SHALL use HTTPS for all communications.
+### Commenting System
 
-## 9. Testing Strategy
-THE system SHALL implement comprehensive testing including unit tests, integration tests, and end-to-end tests.
+THE system SHALL provide a commenting system for registered users.
+THE system SHALL allow users to reply to comments.
+THE system SHALL support comment moderation.
 
-## 10. Deployment and Maintenance
-THE system SHALL be deployed on a cloud-based infrastructure with automated deployment pipelines.
-THE system SHALL implement regular security patch application and system log monitoring.
+### Moderation Features
 
-```mermaid
-graph LR
-    A["Guest"] -->|"View Public Content"| B["Public Articles"]
-    C["Registered User"] -->|"Create/Comment"| D["Articles with Comments"]
-    E["Moderator"] -->|"Moderate Content"| F["Content Management"]
-```
+THE system SHALL have moderation tools for managing articles and comments.
+THE system SHALL support different user roles: guest, registered user, and moderator.
+THE system SHALL allow moderators to approve or reject articles and comments.
 
-This report provides a comprehensive overview of the discussion board requirements, covering user actors, functional requirements, attachment management, authentication and authorization, moderation, performance and scaling, security considerations, testing strategy, and deployment and maintenance.
+## Non-Functional Requirements
+
+THE system SHALL ensure data security and integrity.
+THE system SHALL be scalable to handle increasing user traffic.
+THE system SHALL provide a responsive user interface.
+
+## Success Criteria
+
+The system is considered successful when it meets the following criteria:
+1. Users can register and start participating in discussions seamlessly.
+2. Articles can be created with various media attachments.
+3. The moderation system effectively maintains community standards.
+4. The overall user experience is intuitive and responsive.
+
+## Future Considerations
+
+1. Enhanced user profiling and personalization.
+2. Advanced moderation tools and analytics.
+3. Integration with other social platforms.
+4. Improved search and filtering capabilities.
+
+This document serves as a comprehensive guide for developing the discussion board application, outlining both functional and non-functional requirements.

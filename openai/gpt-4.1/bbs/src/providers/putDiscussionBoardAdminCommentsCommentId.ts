@@ -7,132 +7,96 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
-import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleComment";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardCommentAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCommentAttachment";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function putDiscussionBoardAdminCommentsCommentId(props: {
   admin: AdminPayload;
   commentId: string & tags.Format<"uuid">;
-  body: IDiscussionBoardComment.IUpdate;
-}): Promise<IDiscussionBoardComment> {
+  body: IDiscussionBoardArticleComment.IUpdate;
+}): Promise<IDiscussionBoardArticleComment> {
+  // 1. Fetch the comment & associated user and article
   const comment = await MyGlobal.prisma.discussion_board_comments.findUnique({
     where: { id: props.commentId },
     include: {
-      article: {
-        include: { authorUser: true, authorAdmin: true },
-      },
       user: true,
-      admin: true,
-      discussion_board_comment_attachments: true,
+      article: {
+        include: { user: true },
+      },
     },
   });
-  if (!comment || comment.deleted_at !== null) {
-    throw new HttpException("Comment not found or has been deleted.", 404);
-  }
-  const nextBody = props.body.body ?? comment.body;
+  if (!comment) throw new HttpException("Comment not found", 404);
+  if (comment.deleted_at !== null)
+    throw new HttpException("Cannot update a deleted comment", 400);
+
+  // 2. Record a snapshot before editing (all schema-required fields)
+  await MyGlobal.prisma.discussion_board_comment_snapshots.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      discussion_board_comment_id: comment.id,
+      discussion_board_article_id: comment.article.id,
+      discussion_board_user_id: comment.user.id,
+      body: comment.body,
+      created_at: toISOStringSafe(new Date()),
+    },
+  });
+
+  // 3. Perform the update
   const now = toISOStringSafe(new Date());
   const updated = await MyGlobal.prisma.discussion_board_comments.update({
     where: { id: props.commentId },
-    data: { body: nextBody, updated_at: now },
+    data: {
+      body: props.body.body,
+      updated_at: now,
+    },
     include: {
-      article: {
-        include: { authorUser: true, authorAdmin: true },
-      },
       user: true,
-      admin: true,
-      discussion_board_comment_attachments: true,
+      article: { include: { user: true } },
     },
   });
-  let author: IDiscussionBoardUser.ISummary | IDiscussionBoardAdmin.ISummary;
-  if (
-    updated.admin &&
-    typeof (updated.admin as any).display_name === "string" &&
-    (updated.admin as any).display_name
-  ) {
-    author = {
-      id: updated.admin.id,
-      display_name: (updated.admin as any).display_name as string,
-    };
-  } else if (updated.user) {
-    author = {
-      id: updated.user.id,
-      email: updated.user.email,
-      is_email_verified: updated.user.is_email_verified,
-      is_active: updated.user.is_active,
-      is_blocked: updated.user.is_blocked,
-      created_at: toISOStringSafe(updated.user.created_at),
-      updated_at: toISOStringSafe(updated.user.updated_at),
-      deleted_at:
-        updated.user.deleted_at !== null
-          ? toISOStringSafe(updated.user.deleted_at)
-          : undefined,
-    };
-  } else {
-    throw new HttpException("Comment author does not exist.", 500);
-  }
-  const article = updated.article;
-  let articleAuthor:
-    | IDiscussionBoardUser.ISummary
-    | IDiscussionBoardAdmin.ISummary
-    | null = null;
-  if (
-    article.authorAdmin &&
-    typeof (article.authorAdmin as any).display_name === "string" &&
-    (article.authorAdmin as any).display_name
-  ) {
-    articleAuthor = {
-      id: article.authorAdmin.id,
-      display_name: (article.authorAdmin as any).display_name as string,
-    };
-  } else if (article.authorUser) {
-    articleAuthor = {
-      id: article.authorUser.id,
-      email: article.authorUser.email,
-      is_email_verified: article.authorUser.is_email_verified,
-      is_active: article.authorUser.is_active,
-      is_blocked: article.authorUser.is_blocked,
-      created_at: toISOStringSafe(article.authorUser.created_at),
-      updated_at: toISOStringSafe(article.authorUser.updated_at),
-      deleted_at:
-        article.authorUser.deleted_at !== null
-          ? toISOStringSafe(article.authorUser.deleted_at)
-          : undefined,
-    };
-  }
-  if (!articleAuthor) {
-    throw new HttpException("Article author does not exist.", 500);
-  }
-  const articleSummary: IDiscussionBoardArticle.ISummary = {
-    id: article.id,
-    title: article.title,
-    created_at: toISOStringSafe(article.created_at),
-    updated_at: toISOStringSafe(article.updated_at),
-    author: articleAuthor,
+
+  // 4. Build DTOs for nested user and article summaries
+  const authorSummary: IDiscussionBoardUser.ISummary = {
+    id: updated.user.id,
+    email: updated.user.email,
+    created_at: toISOStringSafe(updated.user.created_at),
+    updated_at: toISOStringSafe(updated.user.updated_at),
+    deleted_at:
+      updated.user.deleted_at === null
+        ? undefined
+        : toISOStringSafe(updated.user.deleted_at),
   };
-  const attachments = updated.discussion_board_comment_attachments.map((a) => ({
-    id: a.id,
-    discussion_board_comment_id: a.discussion_board_comment_id,
-    file_url: a.file_url,
-    original_filename: a.original_filename,
-    mime_type: a.mime_type,
-    file_size_bytes: a.file_size_bytes,
-    created_at: toISOStringSafe(a.created_at),
-  }));
+  const articleSummary: IDiscussionBoardArticle.ISummary = {
+    id: updated.article.id,
+    title: updated.article.title,
+    user: {
+      id: updated.article.user.id,
+      email: updated.article.user.email,
+      created_at: toISOStringSafe(updated.article.user.created_at),
+      updated_at: toISOStringSafe(updated.article.user.updated_at),
+      deleted_at:
+        updated.article.user.deleted_at === null
+          ? undefined
+          : toISOStringSafe(updated.article.user.deleted_at),
+    },
+    created_at: toISOStringSafe(updated.article.created_at),
+    updated_at: updated.article.updated_at
+      ? toISOStringSafe(updated.article.updated_at)
+      : undefined,
+  };
+
   return {
     id: updated.id,
+    author: authorSummary,
     article: articleSummary,
-    author,
     body: updated.body,
-    attachments,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at:
-      updated.deleted_at !== null
-        ? toISOStringSafe(updated.deleted_at)
-        : undefined,
+      updated.deleted_at === null
+        ? undefined
+        : toISOStringSafe(updated.deleted_at),
   };
 }
