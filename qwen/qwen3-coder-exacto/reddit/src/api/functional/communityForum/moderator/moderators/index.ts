@@ -7,8 +7,6 @@ import { ICommunityForumCommunityModerator } from "../../../../structures/ICommu
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve detailed information for a specific community forum moderator.
- *
  * Retrieve detailed information about a specific community forum moderator by
  * their unique identifier.
  *

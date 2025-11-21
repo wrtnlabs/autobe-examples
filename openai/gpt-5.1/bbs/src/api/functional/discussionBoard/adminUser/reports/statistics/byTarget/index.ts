@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportStatisticsByTarget } from "../../../../../../structures/IDiscussionBoardReportStatisticsByTarget";
 
 /**
- * Get aggregated report statistics by target_type from
- * discussion_board_reports.
- *
  * Get report statistics grouped by target type using aggregated data from the
  * discussion_board_reports table.
  *

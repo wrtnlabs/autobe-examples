@@ -7,9 +7,6 @@ import { IShoppingMallCampaignPerformanceDailyStatistics } from "../../../../../
 @Controller("/shoppingMall/admin/statistics/campaignPerformanceByDay")
 export class ShoppingmallAdminStatisticsCampaignperformancebydayController {
   /**
-   * Retrieve daily campaign performance statistics based on
-   * shopping_mall_campaign_metrics and related snapshot tables.
-   *
    * Fetch day-by-day campaign performance statistics for marketing and
    * pricing campaigns on the shoppingMall platform.
    *

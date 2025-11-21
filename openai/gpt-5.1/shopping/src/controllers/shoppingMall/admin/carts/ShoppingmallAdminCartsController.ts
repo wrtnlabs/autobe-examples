@@ -8,9 +8,6 @@ import { IShoppingMallCart } from "../../../../api/structures/IShoppingMallCart"
 @Controller("/shoppingMall/admin/carts")
 export class ShoppingmallAdminCartsController {
   /**
-   * Search shopping_mall_carts with advanced filters and return a paginated
-   * list of cart summaries.
-   *
    * Search and retrieve a paginated list of shopping cart headers from the
    * shopping_mall_carts table using complex filter criteria.
    *
@@ -62,9 +59,6 @@ export class ShoppingmallAdminCartsController {
   }
 
   /**
-   * Get detailed information for a specific shopping_mall_carts record
-   * identified by cartId.
-   *
    * Retrieve a single shopping cart detail record from the
    * shopping_mall_carts table using its unique cart identifier.
    *
@@ -113,9 +107,6 @@ export class ShoppingmallAdminCartsController {
   }
 
   /**
-   * Erase a shopping cart header from the `shopping_mall_carts` table by its
-   * cartId primary key.
-   *
    * Delete a specific shopping cart header from the `shopping_mall_carts`
    * table identified by its primary key `id`.
    *

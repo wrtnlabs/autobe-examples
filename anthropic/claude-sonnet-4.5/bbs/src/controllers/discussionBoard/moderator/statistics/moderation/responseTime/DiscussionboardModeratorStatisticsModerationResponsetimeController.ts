@@ -10,8 +10,6 @@ import { IDiscussionBoardModerationResponseTimeStatistics } from "../../../../..
 @Controller("/discussionBoard/moderator/statistics/moderation/responseTime")
 export class DiscussionboardModeratorStatisticsModerationResponsetimeController {
   /**
-   * Retrieve moderation response time statistics and performance metrics.
-   *
    * Calculate and return comprehensive moderation response time statistics that
    * measure how quickly moderators review and resolve community-submitted
    * content reports. This operation supports the platform's success metrics

@@ -9,8 +9,6 @@ export * as attachments from "./attachments/index";
 export * as versions from "./versions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of articles.
- *
  * This operation provides comprehensive search capabilities for articles
  * including filtering, sorting, and pagination. It supports complex queries
  * across multiple article attributes and metadata. The operation is designed
@@ -95,8 +93,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single article by its unique identifier.
- *
  * This operation provides detailed information about a specific article,
  * including its content, metadata, and associated data. It is designed for
  * users who need to view the full details of an article. The operation includes

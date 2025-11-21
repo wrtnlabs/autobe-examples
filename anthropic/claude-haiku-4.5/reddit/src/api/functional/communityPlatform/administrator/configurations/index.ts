@@ -7,8 +7,6 @@ import { ICommunityPlatformConfiguration } from "../../../../structures/ICommuni
 import { IPageICommunityPlatformConfiguration } from "../../../../structures/IPageICommunityPlatformConfiguration";
 
 /**
- * Create a new platform configuration setting.
- *
  * Create a new platform-wide configuration setting that controls system
  * behavior and feature availability. This operation allows administrators to
  * add new configuration entries to the community_platform_configurations table,
@@ -120,9 +118,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve platform configurations with advanced filtering and
- * pagination.
- *
  * Retrieve a filtered and paginated list of platform-wide configuration
  * settings that control system behavior. This operation supports advanced
  * search capabilities for finding configurations by key, description, data
@@ -232,8 +227,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific platform configuration setting by its unique key.
- *
  * Retrieve a single platform configuration setting identified by its
  * configuration key. This operation allows administrators and authorized users
  * to view specific system configuration values that control platform behavior,
@@ -341,8 +334,6 @@ export namespace at {
 }
 
 /**
- * Update platform configuration by key.
- *
  * Update an existing platform-wide configuration setting identified by its
  * unique key. This operation allows administrators to modify configuration
  * values that control platform behavior including feature flags, thresholds,
@@ -477,8 +468,6 @@ export namespace update {
 }
 
 /**
- * Soft-delete platform configuration by key.
- *
  * Remove a platform-wide configuration setting from active use by marking it as
  * deleted (soft-delete). This operation sets the deleted_at timestamp on the
  * configuration record without permanently destroying the data, allowing for

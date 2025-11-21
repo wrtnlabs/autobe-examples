@@ -7,8 +7,6 @@ import { IShoppingMallProductsCategory } from "../../../../../structures/IShoppi
 import { IPageIShoppingMallProductsCategory } from "../../../../../structures/IPageIShoppingMallProductsCategory";
 
 /**
- * Add a new category mapping to a product (shopping_mall_products_categories).
- *
  * Assign a new category to a specific product in the shopping mall catalog by
  * adding a category mapping. This operation is used to enhance a product's
  * discoverability by associating it with an additional browsing category,
@@ -117,9 +115,6 @@ export namespace create {
 }
 
 /**
- * Retrieve and search product category assignments for a specific product
- * (shopping_mall_products_categories).
- *
  * Retrieve a paginated and filterable list of all category assignments that
  * currently apply to a specified product in the shopping mall's product
  * catalog.
@@ -227,9 +222,6 @@ export namespace index {
 }
 
 /**
- * Delete a product-category mapping from shopping_mall_products_categories
- * table by ID.
- *
  * Remove a specific mapping between a product and a category in the shopping
  * mall catalog.
  *

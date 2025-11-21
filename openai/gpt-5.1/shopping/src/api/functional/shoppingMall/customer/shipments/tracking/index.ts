@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallShipmentTracking } from "../../../../../structures/IShoppingMallShipmentTracking";
 
 /**
- * Retrieve tracking details and event timeline for a shipment from the
- * shopping_mall_shipments table using its shipmentCode.
- *
  * Retrieve the full tracking view for a single shipment identified by its
  * business-level shipment code.
  *

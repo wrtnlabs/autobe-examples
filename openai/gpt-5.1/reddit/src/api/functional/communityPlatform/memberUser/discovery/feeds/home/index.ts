@@ -7,9 +7,6 @@ import { ICommunityPlatformDiscoveryHomeFeed } from "../../../../../../structure
 import { IPageICommunityPlatformDiscoveryHomeFeed } from "../../../../../../structures/IPageICommunityPlatformDiscoveryHomeFeed";
 
 /**
- * Retrieve a personalized home discovery feed composed from
- * community_platform_posts and related tables.
- *
  * Retrieve a ranked, paginated home discovery feed for the current member user,
  * aggregating posts (and optionally other discovery items) from communities
  * they are subscribed to.

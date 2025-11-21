@@ -9,8 +9,6 @@ export * as values from "./values/index";
 export * as snapshots from "./snapshots/index";
 
 /**
- * Create a new todo application configuration definition.
- *
  * This operation allows administrators to create new configuration definitions
  * for the todo application. Each configuration definition includes
  * comprehensive metadata such as unique key identifier, human-readable name,
@@ -112,9 +110,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of todo application
- * configuration definitions.
- *
  * This operation provides advanced search and filtering capabilities for todo
  * application configuration definitions stored in the todo_app_configurations
  * table. Users can search configurations by key patterns, category, data type,
@@ -212,8 +207,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific configuration setting by its unique key.
- *
  * This operation allows authorized users to retrieve detailed information about
  * a specific configuration setting defined in the application. The
  * configuration is identified by its unique config_key value, which follows the
@@ -312,8 +305,6 @@ export namespace at {
 }
 
 /**
- * Update an existing configuration setting.
- *
  * This operation enables authorized administrators to modify configuration
  * settings in the application. It updates the configuration definition
  * identified by its unique config_key while preserving the core structure and
@@ -423,8 +414,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a configuration definition by its unique key.
- *
  * This operation permanently removes a configuration definition from the system
  * using its unique configuration key identifier. The deletion process includes
  * removing the configuration definition from the todo_app_configurations table,

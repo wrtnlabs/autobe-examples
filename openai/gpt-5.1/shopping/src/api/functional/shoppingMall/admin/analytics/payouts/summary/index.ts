@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallPayoutAnalytics } from "../../../../../../structures/IShoppingMallPayoutAnalytics";
 
 /**
- * Provide an aggregated analytics summary of seller payouts based on
- * shopping_mall_seller_earnings and related payout tables.
- *
  * Retrieve an aggregated analytics summary of seller payouts across the
  * shopping mall platform.
  *

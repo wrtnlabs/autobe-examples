@@ -12,8 +12,6 @@ import { ICommunityForumCommunityUserSession } from "../../../../../api/structur
 @Controller("/communityForum/user/users/:username/sessions")
 export class CommunityforumUserUsersSessionsController {
   /**
-   * Search and retrieve user sessions.
-   *
    * Retrieve a filtered and paginated list of authentication sessions for a
    * specific user. This operation provides advanced search capabilities for
    * finding sessions based on multiple criteria including IP address,
@@ -67,8 +65,6 @@ export class CommunityforumUserUsersSessionsController {
   }
 
   /**
-   * Delete a specific user session by username and session ID.
-   *
    * Delete a specific authentication session for a user. This operation allows
    * users to terminate individual sessions for security purposes, such as when
    * logging out from a specific device or when suspicious activity is

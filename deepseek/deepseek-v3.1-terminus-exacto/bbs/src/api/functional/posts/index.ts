@@ -7,8 +7,6 @@ import { IDiscussionBoardPost } from "../../structures/IDiscussionBoardPost";
 import { IPageIDiscussionBoardPost } from "../../structures/IPageIDiscussionBoardPost";
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board posts.
- *
  * This operation provides advanced search capabilities for finding discussion
  * board posts across the entire platform. Users can filter posts by various
  * criteria including title keywords, content search, post status (draft,

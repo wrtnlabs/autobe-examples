@@ -7,9 +7,6 @@ import { ITodoUserSession } from "../../../../../structures/ITodoUserSession";
 import { IPageITodoUserSession } from "../../../../../structures/IPageITodoUserSession";
 
 /**
- * Search and retrieve a paginated list of authentication sessions for a user
- * (todo_user_sessions table).
- *
  * Retrieve a paginated and filterable list of authentication sessions for a
  * given user within the Todo List application.
  *
@@ -116,9 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed data of a specific authentication session for a user
- * (todo_user_sessions table).
- *
  * Retrieve the full technical and business details for a single authentication
  * session belonging to a given user in the Todo List application.
  *
@@ -219,9 +213,6 @@ export namespace at {
 }
 
 /**
- * Remove an authenticated user's session (logout) in the 'todo_user_sessions'
- * table by sessionId and userId.
- *
  * Delete a single user session, terminating the current authenticated context
  * for the requesting user.
  *

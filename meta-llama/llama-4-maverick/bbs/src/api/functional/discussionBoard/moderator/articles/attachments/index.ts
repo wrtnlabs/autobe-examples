@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a specific attachment from an article.
- *
  * This operation removes a specific attachment identified by attachmentId from
  * the article identified by articleId. It ensures that the attachment exists
  * for the given article before deletion. The operation requires appropriate

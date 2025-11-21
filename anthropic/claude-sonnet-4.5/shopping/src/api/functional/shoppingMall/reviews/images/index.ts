@@ -7,9 +7,6 @@ import { IShoppingMallReviewImage } from "../../../../structures/IShoppingMallRe
 import { IPageIShoppingMallReviewImage } from "../../../../structures/IPageIShoppingMallReviewImage";
 
 /**
- * Search and retrieve a filtered, paginated list of review images for a
- * specific product review.
- *
  * Retrieve a filtered and paginated list of product review images from a
  * specific review in the shopping mall platform. This operation provides
  * advanced search capabilities for finding review images based on multiple
@@ -118,8 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific product review image.
- *
  * Retrieve complete details of a specific product review image from the
  * shopping mall platform. This operation returns comprehensive information
  * about a single review image including its URL, upload timestamp, display

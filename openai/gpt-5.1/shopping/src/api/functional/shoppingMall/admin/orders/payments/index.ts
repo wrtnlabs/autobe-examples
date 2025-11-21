@@ -7,9 +7,6 @@ import { IShoppingMallOrderPayment } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallOrderPayment } from "../../../../../structures/IPageIShoppingMallOrderPayment";
 
 /**
- * List and search payments for a specific order from the
- * shopping_mall_order_payments table.
- *
  * Retrieve a filtered and paginated list of logical payments for a specific
  * order from the `shopping_mall_order_payments` table.
  *
@@ -148,9 +145,6 @@ export namespace index {
 }
 
 /**
- * Update a logical order payment in shopping_mall_order_payments for a given
- * order and payment_sequence.
- *
  * Update an existing order payment record associated with a customer order in
  * the shopping mall payment subsystem.
  *
@@ -303,9 +297,6 @@ export namespace update {
 }
 
 /**
- * Erase a logical order payment in shopping_mall_order_payments identified by
- * order and payment_sequence.
- *
  * Erase a logical order payment associated with a specific order and sequence
  * in the shopping mall payment subsystem.
  *

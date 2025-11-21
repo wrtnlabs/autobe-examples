@@ -7,8 +7,6 @@ import { ITodoListAdminSession } from "../../../../../../structures/ITodoListAdm
 import { ITodoListAdminSessionRevocationSummary } from "../../../../../../structures/ITodoListAdminSessionRevocationSummary";
 
 /**
- * Retrieve details of a specific administrator session.
- *
  * Retrieve complete information about a specific administrator session
  * identified by the session ID parameter. This operation provides detailed
  * session context for security monitoring and session management.
@@ -105,9 +103,6 @@ export namespace at {
 }
 
 /**
- * Revoke a specific admin session by ID to terminate access from a particular
- * device.
- *
  * Revoke a specific active administrator session identified by the session ID
  * parameter. This operation marks the session as expired by setting the
  * expired_at timestamp to the current time, which invalidates the associated
@@ -208,9 +203,6 @@ export namespace erase {
 }
 
 /**
- * Revoke all active admin sessions to force re-authentication across all
- * devices.
- *
  * Revoke all active administrator sessions for the currently authenticated
  * admin, implementing the "logout from all devices" functionality. This
  * operation marks all sessions belonging to the admin as expired by setting the
@@ -293,9 +285,6 @@ export namespace eraseAll {
 }
 
 /**
- * Revoke all active admin sessions to force re-authentication across all
- * devices.
- *
  * Revoke all active administrator sessions for the currently authenticated
  * admin, implementing the "logout from all devices" functionality. This
  * operation marks all sessions belonging to the admin as expired by setting the

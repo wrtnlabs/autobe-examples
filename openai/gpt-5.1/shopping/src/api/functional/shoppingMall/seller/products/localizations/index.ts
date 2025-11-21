@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductLocalization } from "../../../../../structures/IShoppingMallProductLocalization";
 
 /**
- * Create a new localization in `shopping_mall_product_localizations` for a
- * given product.
- *
  * Create a new localization entry for a specific product in the catalog.
  *
  * This operation targets the `shopping_mall_product_localizations` table, which
@@ -140,9 +137,6 @@ export namespace create {
 }
 
 /**
- * Update an existing `shopping_mall_product_localizations` record for a given
- * product.
- *
  * Update an existing localization entry for a specific product in the catalog.
  *
  * This operation works on the `shopping_mall_product_localizations` table and
@@ -282,9 +276,6 @@ export namespace update {
 }
 
 /**
- * Delete a product localization record from the
- * shopping_mall_product_localizations table for a specific product.
- *
  * Delete a specific product localization record for a given product from the
  * shoppingMall catalog.
  *

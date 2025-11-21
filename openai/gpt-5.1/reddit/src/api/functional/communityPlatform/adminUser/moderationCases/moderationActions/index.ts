@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationCase } from "../../../../../structures/ICom
 import { IPageICommunityPlatformModerationCase } from "../../../../../structures/IPageICommunityPlatformModerationCase";
 
 /**
- * Search and paginate moderation actions linked to a moderation case
- * (`community_platform_moderation_cases`).
- *
  * Retrieve a filtered, paginated list of moderation actions associated with a
  * specific moderation case identified by its `caseKey`.
  *

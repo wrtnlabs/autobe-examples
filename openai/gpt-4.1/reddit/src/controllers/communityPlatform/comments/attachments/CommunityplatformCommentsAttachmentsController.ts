@@ -9,10 +9,6 @@ import { ICommunityPlatformCommentAttachment } from "../../../../api/structures/
 @Controller("/communityPlatform/comments/:commentId/attachments")
 export class CommunityplatformCommentsAttachmentsController {
   /**
-   * Retrieve attachment metadata and URI from
-   * community_platform_comment_attachments by composite (comment, attachment)
-   * IDs.
-   *
    * Retrieve a single attachment linked to a specific comment. This endpoint
    * enables clients to fetch the full metadata and URI for a comment-embedded
    * file, image, or resource using both the comment's and attachment's unique
@@ -58,9 +54,6 @@ export class CommunityplatformCommentsAttachmentsController {
   }
 
   /**
-   * Create and attach a new resource to a comment in
-   * community_platform_comment_attachments by commentId.
-   *
    * Create and link an attachment resource (such as an image, file, or external
    * URI) to a specific comment identified by commentId. This operation performs
    * validation to ensure that the parent comment exists and that the new

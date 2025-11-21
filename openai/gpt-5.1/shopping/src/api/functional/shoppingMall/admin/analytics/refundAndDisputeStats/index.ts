@@ -7,9 +7,6 @@ import { IShoppingMallRefundAndDisputeStat } from "../../../../../structures/ISh
 import { IPageIShoppingMallRefundAndDisputeStat } from "../../../../../structures/IPageIShoppingMallRefundAndDisputeStat";
 
 /**
- * Search paginated refund and dispute analytics snapshots from
- * shopping_mall_refund_and_dispute_stats.
- *
  * Search and retrieve a paginated list of refund and dispute statistics
  * snapshots from the `shopping_mall_refund_and_dispute_stats` table based on
  * flexible filter and sorting criteria.
@@ -127,9 +124,6 @@ export namespace index {
 }
 
 /**
- * Get a single refund and dispute statistics snapshot from
- * `shopping_mall_refund_and_dispute_stats`.
- *
  * Retrieve a single refund and dispute statistics snapshot from the
  * `shopping_mall_refund_and_dispute_stats` table by its unique identifier.
  *

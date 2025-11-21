@@ -12,8 +12,6 @@ import { IShoppingMallSaleVariantAttribute } from "../../../../../api/structures
 @Controller("/shoppingMall/seller/sales/:saleCode/variantAttributes")
 export class ShoppingmallSellerSalesVariantattributesController {
   /**
-   * Create a new variant attribute definition for a product sale.
-   *
    * Create a new variant attribute definition for a specific product sale,
    * establishing the foundational structure for product variations.
    *
@@ -71,8 +69,6 @@ export class ShoppingmallSellerSalesVariantattributesController {
   }
 
   /**
-   * Update a variant attribute for a specific product sale.
-   *
    * Update the properties of an existing variant attribute for a specific
    * product sale in the shopping mall marketplace.
    *
@@ -135,8 +131,6 @@ export class ShoppingmallSellerSalesVariantattributesController {
   }
 
   /**
-   * Delete a variant attribute from a specific product sale.
-   *
    * Permanently remove a variant attribute from a specific product sale in the
    * shopping mall marketplace.
    *

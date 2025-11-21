@@ -12,8 +12,6 @@ import { IPageIRedditCommunityCommunityBan } from "../../../../../api/structures
 @Controller("/redditCommunity/moderator/communities/:communityName/bans")
 export class RedditcommunityModeratorCommunitiesBansController {
   /**
-   * Ban a member from the community.
-   *
    * Create a new community ban to prevent a specific member from participating
    * in the community. This operation is restricted to community moderators who
    * have moderation authority in the target community.
@@ -65,8 +63,6 @@ export class RedditcommunityModeratorCommunitiesBansController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of community bans.
-   *
    * Retrieve a filtered and paginated list of community bans for the specified
    * community. This operation provides advanced search capabilities for finding
    * bans based on multiple criteria including the banned member's username, the

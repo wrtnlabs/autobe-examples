@@ -1,9 +1,39 @@
-/// Main entity for user favorites. Represents a collection of favorite items
-/// for a specific customer. Each favorite collection is associated with a
-/// specific customer and can contain multiple favorite items. The favorite
-/// collection itself doesn't contain any business data, but serves as a
-/// container for the favorite items. It's primarily used to organize and
-/// manage the customer's favorite items.
+/// User's favorite items collection.
+///
+/// Stores user-specific collections of favorite items. Each favorite collection
+/// belongs to a specific customer and can contain multiple favorite items.
+///
+/// The favorite collection serves as a container for organizing and managing a
+/// user's preferred items. It provides a way for users to save and access their
+/// favorite products across different shopping sessions.
+///
+/// The favorite collection is associated with a specific customer through the
+/// shopping_customer_id foreign key. This establishes a relationship between
+/// the
+/// favorite collection and the customer who owns it.
+///
+/// The favorite collection can contain multiple favorite items, which are
+/// stored
+/// in the shopping_mall_favorite_items table. Each favorite item represents a
+/// specific product that the user has marked as a favorite.
+///
+/// The favorite collection also includes a title field, which allows users to
+/// provide a descriptive name for their favorite collection. This helps
+/// users to
+/// better organize and identify their favorite items.
+///
+/// The favorite collection includes timestamp fields for tracking when it was
+/// created, last updated, and deleted. These fields are used for auditing
+/// purposes and to manage the lifecycle of the favorite collection.
+///
+/// The favorite collection is designed to be flexible and customizable,
+/// allowing
+/// users to create multiple collections for different purposes, such as gift
+/// lists, wishlists, or simply for personal reference.
+///
+/// The favorite collection is an essential feature for enhancing the user
+/// experience and providing a convenient way for users to save and access their
+/// favorite products.
 ///
 /// @namespace Favorites
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -15,30 +45,63 @@ model shopping_mall_favorites {
   id String @id
   
   /// Belonged customer's {@link shopping_mall_customers.id}.
-  shopping_mall_customer_id String
+  shopping_customer_id String
   
-  /// When the favorite collection was created.
+  /// Title of the favorite collection.
+  title String
+  
+  /// Creation timestamp of the favorite collection.
   created_at DateTime
   
-  /// When the favorite collection was last updated.
+  /// Last update timestamp of the favorite collection.
   updated_at DateTime
+  
+  /// Deletion timestamp of the favorite collection.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
   
   shopping_mall_favorite_items shopping_mall_favorite_items[]
   
-  @@index([shopping_mall_customer_id])
+  @@index([shopping_customer_id, created_at])
 }
 
-/// Items within a user's favorite collection. Represents individual items
-/// that a customer has marked as favorites. Each favorite item is associated
-/// with a specific favorite collection and a specific sale unit. The
-/// favorite item entity captures the specific variant of a product that the
-/// customer has favorited, including any selected options. It also tracks
-/// when the item was added to the favorites collection.
+/// Individual favorite items within a user's favorite collection.
+///
+/// Stores specific products that a user has marked as favorites within their
+/// favorite collections. Each favorite item is associated with a specific
+/// favorite collection and a specific product.
+///
+/// The favorite item represents a specific product that the user has marked
+/// as a
+/// favorite. It serves as a reference to the product within the user's favorite
+/// collection.
+///
+/// The favorite item is associated with a specific favorite collection
+/// through the shopping_mall_favorite_id foreign key. This establishes a
+/// relationship between the favorite item and the favorite collection it
+/// belongs to.
+///
+/// The favorite item is also associated with a specific product through the
+/// shopping_sale_id foreign key. This establishes a relationship between the
+/// favorite item and the product it represents.
+///
+/// The favorite item includes timestamp fields for tracking when it was
+/// created,
+/// last updated, and deleted. These fields are used for auditing purposes
+/// and to
+/// manage the lifecycle of the favorite item.
+///
+/// The favorite item is designed to be flexible and customizable, allowing
+/// users
+/// to add and remove favorite items from their collections as needed.
+///
+/// The favorite item is an essential feature for enhancing the user experience
+/// and providing a convenient way for users to save and access their favorite
+/// products.
 ///
 /// @namespace Favorites
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -52,23 +115,28 @@ model shopping_mall_favorite_items {
   /// Belonged favorite collection's {@link shopping_mall_favorites.id}.
   shopping_mall_favorite_id String
   
-  /// Belonged sale unit's {@link shopping_mall_sale_units.id}.
-  shopping_mall_sale_unit_id String
+  /// Belonged product's {@link shopping_mall_sales.id}.
+  shopping_sale_id String
   
-  /// When the item was added to the favorite collection.
+  /// Creation timestamp of the favorite item.
   created_at DateTime
   
-  /// When the favorite item was last updated.
+  /// Last update timestamp of the favorite item.
   updated_at DateTime
+  
+  /// Deletion timestamp of the favorite item.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   favorite shopping_mall_favorites @relation(fields: [shopping_mall_favorite_id], references: [id], onDelete: Cascade)
-  saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_sale_id])
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_favorite_id, shopping_mall_sale_unit_id], map: "shopping_mall_favorite_items_shopping_mall_favorite_id_b52fb508")
-  @@index([shopping_mall_favorite_id])
-  @@index([shopping_mall_sale_unit_id])
+  @@unique([shopping_mall_favorite_id, shopping_sale_id], map: "shopping_mall_favorite_items_shopping_mall_favorite_id_e24f6d9a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_favorite_id, created_at], map: "shopping_mall_favorite_items_shopping_mall_favorite_id_74b0b84c")
 }

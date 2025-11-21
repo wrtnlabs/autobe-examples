@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityGuest } from "../../../structures/IRedditCommunityGuest";
 
 /**
- * Register a new temporary guest account for platform exploration.
- *
  * Register a new guest account and receive JWT authentication tokens.
  *
  * This endpoint creates a temporary guest account for unauthenticated visitors
@@ -115,8 +113,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest account access token using valid refresh token.
- *
  * Refresh expired access token for guest accounts using a valid refresh token.
  *
  * This endpoint is part of the JWT token lifecycle management for guest users.

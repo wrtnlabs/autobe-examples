@@ -12,8 +12,6 @@ import { IShoppingMallCoupon } from "../../../../api/structures/IShoppingMallCou
 @Controller("/shoppingMall/admin/coupons")
 export class ShoppingmallAdminCouponsController {
   /**
-   * Create a new coupon in the shopping mall.
-   *
    * Create a new promotional coupon that customers can use to receive discounts
    * when shopping. The coupon must include a unique code that cannot be
    * duplicated in the system to ensure each promotion is distinct. The type of
@@ -59,8 +57,6 @@ export class ShoppingmallAdminCouponsController {
   }
 
   /**
-   * Update an existing coupon by couponCode.
-   *
    * Update properties of an existing coupon identified by its unique
    * couponCode. This allows administrators to adjust the discount type, amount,
    * or validity dates of promotional campaigns.
@@ -110,8 +106,6 @@ export class ShoppingmallAdminCouponsController {
   }
 
   /**
-   * Delete a shopping mall coupon by its unique coupon code.
-   *
    * Permanently delete the coupon identified by the given couponCode from the
    * shopping mall platform.
    *

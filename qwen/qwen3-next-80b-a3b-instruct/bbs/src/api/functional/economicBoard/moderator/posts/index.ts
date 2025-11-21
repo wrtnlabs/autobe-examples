@@ -6,8 +6,6 @@ export * as attachments from "./attachments/index";
 export * as comments from "./comments/index";
 
 /**
- * Permanently delete a discussion post (hard delete).
- *
  * Permanently removes a discussion post from the economic board system. This
  * operation is exclusively available to moderators and results in the complete
  * and irreversible deletion of the post record from the database.

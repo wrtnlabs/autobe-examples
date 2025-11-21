@@ -7,8 +7,6 @@ import { IDiscussionBoardUserNotification } from "../../../../structures/IDiscus
 import { IPageIDiscussionBoardUserNotification } from "../../../../structures/IPageIDiscussionBoardUserNotification";
 
 /**
- * Search and retrieve a filtered, paginated list of user notifications.
- *
  * This operation provides comprehensive search functionality for user
  * notifications with support for filtering by type, status, delivery method,
  * and text content. Users can search through their notification history using
@@ -110,8 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific user notification.
- *
  * This operation allows authenticated users to retrieve complete details for a
  * specific notification identified by its unique ID. The operation returns the
  * full notification record including title, message, type, status, delivery
@@ -206,8 +202,6 @@ export namespace at {
 }
 
 /**
- * Update an existing user notification with new status or preferences.
- *
  * This PUT operation allows authenticated users to update their notification
  * settings and status. Users can mark notifications as read, dismiss them, or
  * update delivery preferences.
@@ -312,8 +306,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a user notification from the system.
- *
  * This DELETE operation performs a hard deletion of user notifications from the
  * discussion_board_user_notifications table. Unlike soft-delete operations that
  * mark records as deleted, this operation permanently removes the notification

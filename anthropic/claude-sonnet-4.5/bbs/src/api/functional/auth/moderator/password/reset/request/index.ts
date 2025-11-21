@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerator } from "../../../../../../structures/IDiscussionBoardModerator";
 
 /**
- * Request password reset token for moderator account.
- *
  * Initiates a password reset process for moderators by generating and sending a
  * secure reset token to their registered email address.
  *

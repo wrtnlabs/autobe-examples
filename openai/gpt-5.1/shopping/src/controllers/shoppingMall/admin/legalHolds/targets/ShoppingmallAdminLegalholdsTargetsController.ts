@@ -8,9 +8,6 @@ import { IPageIShoppingMallLegalHoldTarget } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/legalHolds/:legalHoldCode/targets")
 export class ShoppingmallAdminLegalholdsTargetsController {
   /**
-   * Create a new legal hold target row in the
-   * `shopping_mall_legal_hold_targets` table for the specified legal hold.
-   *
    * Create a new legal hold target for a given legal hold in the shopping
    * mall platform.
    *
@@ -73,9 +70,6 @@ export class ShoppingmallAdminLegalholdsTargetsController {
   }
 
   /**
-   * List and search legal hold targets under a specific legalHoldCode using
-   * shopping_mall_legal_hold_targets.
-   *
    * Retrieve a filtered, paginated list of entities that are currently
    * attached as targets to a specific legal hold in the
    * `shopping_mall_legal_hold_targets` table.
@@ -139,9 +133,6 @@ export class ShoppingmallAdminLegalholdsTargetsController {
   }
 
   /**
-   * Get a single legal hold target from `shopping_mall_legal_hold_targets`
-   * for a given legal hold.
-   *
    * Retrieve detailed information about a specific legal hold target
    * belonging to a given legal hold.
    *
@@ -196,9 +187,6 @@ export class ShoppingmallAdminLegalholdsTargetsController {
   }
 
   /**
-   * Update a specific legal hold target in the
-   * shopping_mall_legal_hold_targets table for a given legal hold.
-   *
    * Update an existing legal hold target record linked to a particular legal
    * hold using its legal hold code and the unique identifier of the target.
    *
@@ -278,9 +266,6 @@ export class ShoppingmallAdminLegalholdsTargetsController {
   }
 
   /**
-   * Delete a specific legal hold target from the
-   * shopping_mall_legal_hold_targets table for a given legal hold.
-   *
    * Permanently remove a legal hold target record from the system for a given
    * legal hold using its legal hold code and the target's unique identifier.
    *

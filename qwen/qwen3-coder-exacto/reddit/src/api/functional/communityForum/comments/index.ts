@@ -7,8 +7,6 @@ import { ICommunityForumPostComment } from "../../../structures/ICommunityForumP
 export * as replies from "./replies/index";
 
 /**
- * Get detailed information for a specific comment.
- *
  * Retrieve detailed information about a specific forum comment.
  *
  * This operation fetches a single comment from the community forum by its

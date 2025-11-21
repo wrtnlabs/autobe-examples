@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityReportStatistics } from "../../../../../../structures/IRedditCommunityReportStatistics";
 
 /**
- * Retrieve aggregated report statistics for a specific community.
- *
  * Retrieve comprehensive statistical data about content reports within a
  * specific community. This operation provides moderators with analytical
  * insights into reporting patterns, violation categories, resolution rates, and

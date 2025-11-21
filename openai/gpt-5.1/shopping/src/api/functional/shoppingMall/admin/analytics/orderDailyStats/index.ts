@@ -7,9 +7,6 @@ import { IShoppingMallOrderDailyStat } from "../../../../../structures/IShopping
 import { IPageIShoppingMallOrderDailyStat } from "../../../../../structures/IPageIShoppingMallOrderDailyStat";
 
 /**
- * Search paginated shopping_mall_order_daily_stats snapshots over a date range
- * for analytics and reporting.
- *
  * Search and retrieve a paginated list of daily order statistics from the
  * shopping_mall_order_daily_stats snapshot table based on flexible analytics
  * criteria.
@@ -132,9 +129,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific `shopping_mall_order_daily_stats` snapshot record by ID
- * for detailed order analytics inspection.
- *
  * Retrieve a specific order daily statistics snapshot from the
  * `shopping_mall_order_daily_stats` table using its unique identifier.
  *

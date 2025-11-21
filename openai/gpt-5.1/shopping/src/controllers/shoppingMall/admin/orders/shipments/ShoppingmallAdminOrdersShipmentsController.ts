@@ -8,9 +8,6 @@ import { IPageIShoppingMallShipment } from "../../../../../api/structures/IPageI
 @Controller("/shoppingMall/admin/orders/:orderCode/shipments")
 export class ShoppingmallAdminOrdersShipmentsController {
   /**
-   * Create a new `shopping_mall_shipments` record for an order identified by
-   * `orderCode`.
-   *
    * Create a new shipment entity associated with an existing order identified
    * by its business `orderCode`.
    *
@@ -75,9 +72,6 @@ export class ShoppingmallAdminOrdersShipmentsController {
   }
 
   /**
-   * List and search shipments in the `shopping_mall_shipments` table for a
-   * given orderCode with pagination for admins.
-   *
    * Retrieve a filtered, paginated list of shipments belonging to a specific
    * order from the `shopping_mall_shipments` table for administrative
    * oversight.
@@ -139,9 +133,6 @@ export class ShoppingmallAdminOrdersShipmentsController {
   }
 
   /**
-   * Get a single `shopping_mall_shipments` record for an order by `orderCode`
-   * and `shipmentCode`.
-   *
    * Retrieve detailed information for a single shipment associated with a
    * specific order, identified by the combination of `orderCode` and
    * `shipmentCode`.

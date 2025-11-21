@@ -8,8 +8,6 @@ import { IPageIShoppingMallSaleVariantAttribute } from "../../../../structures/I
 export * as values from "./values/index";
 
 /**
- * Search and retrieve variant attributes for a specific product sale.
- *
  * Retrieve a filtered and paginated list of variant attributes associated with
  * a specific product sale in the shopping marketplace. This operation provides
  * advanced search capabilities for finding variant attributes based on various
@@ -130,8 +128,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific sale variant attribute.
- *
  * Retrieve comprehensive details about a specific variant attribute definition
  * for a product sale.
  *

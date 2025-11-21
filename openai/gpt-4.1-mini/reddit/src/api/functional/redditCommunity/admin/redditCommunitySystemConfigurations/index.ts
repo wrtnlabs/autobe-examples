@@ -7,8 +7,6 @@ import { IRedditCommunitySystemConfiguration } from "../../../../structures/IRed
 import { IPageIRedditCommunitySystemConfiguration } from "../../../../structures/IPageIRedditCommunitySystemConfiguration";
 
 /**
- * Create a new system configuration setting.
- *
  * Create a new system configuration entry in the Reddit community platform.
  *
  * This operation allows administrative users to define new configuration keys
@@ -105,9 +103,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of Reddit community system
- * configurations.
- *
  * Retrieve a filtered and paginated list of system configuration settings for
  * the Reddit-like community platform.
  *
@@ -210,8 +205,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a reddit community system configuration by name.
- *
  * Retrieve detailed information of a single system configuration setting
  * identified by its unique key name.
  *
@@ -304,8 +297,6 @@ export namespace at {
 }
 
 /**
- * Update an existing system configuration setting by name.
- *
  * Update the values of an existing system configuration identified uniquely by
  * its 'name'.
  *
@@ -404,8 +395,6 @@ export namespace update {
 }
 
 /**
- * Delete Reddit community system configuration by name.
- *
  * Permanently remove the specified Reddit community system configuration
  * identified by its unique name key.
  *

@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/shoppingMall/admin/orders/:orderId")
 export class ShoppingmallAdminOrdersController {
   /**
-   * Delete a shopping mall order by its identifier.
-   *
    * Permanently removes a shopping mall customer order from the system.
    *
    * This operation allows authorized users to erase an order record identified

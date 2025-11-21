@@ -9,8 +9,6 @@ import { IRedditCommunityComment } from "../../../../../api/structures/IRedditCo
 @Controller("/redditCommunity/redditCommunity/posts/:postId/comments")
 export class RedditcommunityRedditcommunityPostsCommentsController {
   /**
-   * Retrieve paginated list of comments for a specific post.
-   *
    * Retrieve a paginated list of comments for the given post ID in the
    * redditCommunity platform.
    *

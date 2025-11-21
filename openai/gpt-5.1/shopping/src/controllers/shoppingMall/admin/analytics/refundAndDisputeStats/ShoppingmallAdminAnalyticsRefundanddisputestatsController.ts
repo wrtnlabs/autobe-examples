@@ -8,9 +8,6 @@ import { IShoppingMallRefundAndDisputeStat } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/analytics/refundAndDisputeStats")
 export class ShoppingmallAdminAnalyticsRefundanddisputestatsController {
   /**
-   * Search paginated refund and dispute analytics snapshots from
-   * shopping_mall_refund_and_dispute_stats.
-   *
    * Search and retrieve a paginated list of refund and dispute statistics
    * snapshots from the `shopping_mall_refund_and_dispute_stats` table based
    * on flexible filter and sorting criteria.
@@ -61,9 +58,6 @@ export class ShoppingmallAdminAnalyticsRefundanddisputestatsController {
   }
 
   /**
-   * Get a single refund and dispute statistics snapshot from
-   * `shopping_mall_refund_and_dispute_stats`.
-   *
    * Retrieve a single refund and dispute statistics snapshot from the
    * `shopping_mall_refund_and_dispute_stats` table by its unique identifier.
    *

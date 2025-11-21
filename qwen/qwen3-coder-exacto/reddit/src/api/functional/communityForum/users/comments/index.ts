@@ -7,8 +7,6 @@ import { ICommunityForumPostComment } from "../../../../structures/ICommunityFor
 import { IPageICommunityForumPostComment } from "../../../../structures/IPageICommunityForumPostComment";
 
 /**
- * Retrieve paginated list of comments created by a specific user.
- *
  * Retrieve a paginated list of comments created by a specific user, identified
  * by their username.
  *

@@ -7,8 +7,6 @@ import { ITodoListTodo } from "../../../../structures/ITodoListTodo";
 import { IPageITodoListTodo } from "../../../../structures/IPageITodoListTodo";
 
 /**
- * Create a new todo item for the authenticated user.
- *
  * Create a new todo item in the user's personal task list. This operation
  * allows authenticated users to add tasks they need to complete, with a title
  * describing the task.
@@ -106,8 +104,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of user's todo items.
- *
  * Retrieve a filtered and paginated list of todo items belonging to the
  * authenticated user. This operation provides comprehensive search and
  * filtering capabilities for managing personal task lists with support for
@@ -214,8 +210,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific todo item by ID.
- *
  * Retrieve detailed information for a specific todo item identified by its
  * unique ID. This operation provides access to complete todo data including the
  * task title, completion status, creation timestamp, last update timestamp,
@@ -311,8 +305,6 @@ export namespace at {
 }
 
 /**
- * Update an existing todo item by ID.
- *
  * Update an existing todo item in the user's personal task list. This operation
  * allows authenticated users to modify the title or completion status of a
  * specific todo item identified by its unique ID.
@@ -427,8 +419,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a specific todo item by ID.
- *
  * Delete a specific todo item from the user's todo list by its unique
  * identifier. This operation performs a soft delete by setting the deleted_at
  * timestamp, marking the todo as deleted while preserving the record for audit

@@ -5,8 +5,6 @@ import typia from "typia";
 import { IShoppingMallRiskRuleStatistics } from "../../../../../structures/IShoppingMallRiskRuleStatistics";
 
 /**
- * Get aggregated statistics for risk rules from shopping_mall_risk_rules.
- *
  * Retrieve aggregated statistical information and configuration coverage
  * metrics for risk evaluation rules in the shopping mall platform.
  *

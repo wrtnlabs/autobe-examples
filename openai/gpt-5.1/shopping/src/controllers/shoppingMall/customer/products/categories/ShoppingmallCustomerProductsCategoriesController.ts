@@ -8,9 +8,6 @@ import { IShoppingMallProductCategory } from "../../../../../api/structures/ISho
 @Controller("/shoppingMall/customer/products/:productId/categories")
 export class ShoppingmallCustomerProductsCategoriesController {
   /**
-   * List and search categories associated with a given product via the
-   * shopping_mall_product_categories table.
-   *
    * Retrieve a paginated, searchable list of categories linked to a specific
    * product in the shoppingMall catalog.
    *

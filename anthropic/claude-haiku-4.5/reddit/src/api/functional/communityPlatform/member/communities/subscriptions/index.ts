@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunitySubscription } from "../../../../../structur
 import { IPageICommunityPlatformCommunitySubscription } from "../../../../../structures/IPageICommunityPlatformCommunitySubscription";
 
 /**
- * Subscribe a member to a community.
- *
  * Create a new subscription record that adds the authenticated member to a
  * community's membership. This operation establishes a subscription
  * relationship in the community_platform_community_subscriptions table,
@@ -128,9 +126,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated list of community subscriptions with filtering and
- * sorting.
- *
  * Search and retrieve a filtered, paginated list of community subscriptions
  * (members) for the specified community. This operation provides comprehensive
  * member management capabilities for community creators and moderators through
@@ -267,8 +262,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a community subscription record by ID.
- *
  * Retrieve detailed information for a specific community subscription using the
  * subscription identifier. This operation returns the complete subscription
  * record from the community_platform_community_subscriptions table, including
@@ -380,8 +373,6 @@ export namespace at {
 }
 
 /**
- * Delete a member's subscription to a community.
- *
  * Remove a member's subscription record from a community, terminating their
  * membership and access rights. This operation deletes the subscription record
  * from the community_platform_community_subscriptions table, which represents

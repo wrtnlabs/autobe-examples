@@ -8,8 +8,6 @@ import { ICommunityForumCommunityUserKarma } from "../../../../api/structures/IC
 @Controller("/communityForum/users/:username/karma")
 export class CommunityforumUsersKarmaController {
   /**
-   * Get user karma information.
-   *
    * Retrieve detailed karma information for a specific user by their username.
    * This endpoint provides the user's post karma score, comment karma score,
    * and total karma which is the sum of both. The karma system serves as the

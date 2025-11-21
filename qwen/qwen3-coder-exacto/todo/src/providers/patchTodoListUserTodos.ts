@@ -7,101 +7,61 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
-import { IPageITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoListTodo";
+import { ITodoListUserTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUserTodo";
+import { IPageITodoListUserTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoListUserTodo";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoListUserTodos(props: {
   user: UserPayload;
-  body: ITodoListTodo.IRequest;
-}): Promise<IPageITodoListTodo.ISummary> {
-  const userId = props.user.id;
-  const {
-    search,
-    completed,
-    created_from,
-    created_to,
-    updated_from,
-    updated_to,
-    page,
-    limit,
-    sort_by,
-    sort_order,
-  } = props.body;
+  body: ITodoListUserTodo.IRequest;
+}): Promise<IPageITodoListUserTodo.ISummary> {
+  // Set default values for pagination parameters
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
 
-  const pageNumber = page ?? 1;
-  const pageLimit = limit ?? 100;
-  const skip = (pageNumber - 1) * pageLimit;
-
-  // Build where clause with all filters
-  const where: Record<string, unknown> = {
-    user_id: userId,
-    ...(typeof completed === "boolean" ? { completed } : {}),
-    ...(search
-      ? {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-    ...(created_from || created_to
-      ? {
-          created_at: {
-            ...(created_from ? { gte: created_from } : {}),
-            ...(created_to ? { lte: created_to } : {}),
-          },
-        }
-      : {}),
-    ...(updated_from || updated_to
-      ? {
-          updated_at: {
-            ...(updated_from ? { gte: updated_from } : {}),
-            ...(updated_to ? { lte: updated_to } : {}),
-          },
-        }
-      : {}),
+  // Build where condition for user's todos excluding deleted ones
+  const whereCondition = {
+    todo_list_user_id: props.user.id,
+    deleted_at: null,
   };
 
-  // Determine sort column; only allow certain columns for security
-  const sortKey =
-    sort_by === "created_at" || sort_by === "updated_at" || sort_by === "title"
-      ? sort_by
-      : "created_at";
-  const sortOrder =
-    sort_order === "asc" || sort_order === "desc" ? sort_order : "desc";
-
-  // Query total and data
-  const [total, rows] = await Promise.all([
-    MyGlobal.prisma.todo_list_todos.count({ where }),
+  // Execute findMany and count operations concurrently
+  const [todos, total] = await Promise.all([
     MyGlobal.prisma.todo_list_todos.findMany({
-      where,
+      where: whereCondition,
       skip,
-      take: pageLimit,
-      orderBy: { [sortKey]: sortOrder },
-      include: {
-        user: true,
+      take: limit,
+      orderBy: {
+        created_at: "desc",
       },
+    }),
+    MyGlobal.prisma.todo_list_todos.count({
+      where: whereCondition,
     }),
   ]);
 
+  // Transform todos to match the ISummary interface
+  const data = todos.map((todo) => ({
+    id: todo.id,
+    title: todo.title,
+    completed: todo.completed,
+    created_at: toISOStringSafe(todo.created_at),
+    updated_at: toISOStringSafe(todo.updated_at),
+  }));
+
+  // Calculate pagination information
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit: limit,
+    records: total,
+    pages: Math.ceil(total / limit),
+  };
+
+  // Return the paginated response
   return {
-    pagination: {
-      current: pageNumber,
-      limit: pageLimit,
-      records: total,
-      pages: Math.ceil(total / pageLimit),
-    },
-    data: rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      completed: row.completed,
-      created_at: toISOStringSafe(row.created_at),
-      user: {
-        id: row.user.id,
-      },
-    })),
+    data,
+    pagination,
   };
 }

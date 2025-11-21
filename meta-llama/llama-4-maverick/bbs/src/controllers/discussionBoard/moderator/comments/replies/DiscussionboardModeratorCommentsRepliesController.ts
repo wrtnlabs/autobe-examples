@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../../decorators/payload/ModeratorPay
 @Controller("/discussionBoard/moderator/comments/:commentId/replies/:replyId")
 export class DiscussionboardModeratorCommentsRepliesController {
   /**
-   * Delete a specific reply to a comment.
-   *
    * Permanently removes a reply to a comment from the discussion board.
    * Requires moderator privileges. The operation validates both commentId and
    * replyId before performing the deletion.

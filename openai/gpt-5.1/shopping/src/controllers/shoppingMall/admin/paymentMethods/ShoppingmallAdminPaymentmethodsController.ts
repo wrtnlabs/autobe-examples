@@ -8,8 +8,6 @@ import { IPageIShoppingMallPaymentMethod } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/admin/paymentMethods")
 export class ShoppingmallAdminPaymentmethodsController {
   /**
-   * Create a new payment method in shopping_mall_payment_methods.
-   *
    * Create a new payment method configuration record in the
    * shopping_mall_payment_methods table.
    *
@@ -65,9 +63,6 @@ export class ShoppingmallAdminPaymentmethodsController {
   }
 
   /**
-   * Search and list configured payment methods from the
-   * shopping_mall_payment_methods table with filtering and pagination.
-   *
    * Retrieve a paginated list of payment methods defined in the
    * `shopping_mall_payment_methods` Prisma model with support for search,
    * filtering, and sorting.
@@ -126,9 +121,6 @@ export class ShoppingmallAdminPaymentmethodsController {
   }
 
   /**
-   * Get one payment method from shopping_mall_payment_methods by its business
-   * code.
-   *
    * Retrieve detailed configuration of a single payment method from the
    * shopping_mall_payment_methods table by its unique business code.
    *
@@ -181,9 +173,6 @@ export class ShoppingmallAdminPaymentmethodsController {
   }
 
   /**
-   * Update an existing payment method in the shopping_mall_payment_methods
-   * table by its business code.
-   *
    * Update an existing payment method configuration identified by its
    * business code in the `shopping_mall_payment_methods` table.
    *
@@ -258,9 +247,6 @@ export class ShoppingmallAdminPaymentmethodsController {
   }
 
   /**
-   * Permanently delete a payment method in the shopping_mall_payment_methods
-   * table by its business code.
-   *
    * Permanently remove a payment method configuration identified by its
    * business code from the `shopping_mall_payment_methods` table.
    *

@@ -7,8 +7,6 @@ import { IDiscussionBoardCommentReply } from "../../../../structures/IDiscussion
 import { IPageIDiscussionBoardCommentReply } from "../../../../structures/IPageIDiscussionBoardCommentReply";
 
 /**
- * Retrieve paginated list of replies to a comment.
- *
  * This operation provides a comprehensive way to fetch replies to a specific
  * comment, allowing for pagination, filtering, and sorting. It is designed to
  * support complex query requirements while maintaining performance.
@@ -115,8 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific reply to a comment.
- *
  * This operation fetches a single reply to a comment using its unique
  * identifier. It provides comprehensive details about the reply, including its
  * content, author, and creation timestamp.

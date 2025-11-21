@@ -7,8 +7,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardMemberSession } from "../../../../../structures/IPageIDiscussionBoardMemberSession";
 
 /**
- * Retrieve paginated list of authentication sessions for a specific member.
- *
  * Retrieve a filtered and paginated list of authentication sessions associated
  * with a specific member account from the discussion board platform.
  *
@@ -132,8 +130,6 @@ export namespace index {
 }
 
 /**
- * Terminate a specific member authentication session.
- *
  * Remove a specific active authentication session for a member, logging them
  * out from the associated device or browser.
  *

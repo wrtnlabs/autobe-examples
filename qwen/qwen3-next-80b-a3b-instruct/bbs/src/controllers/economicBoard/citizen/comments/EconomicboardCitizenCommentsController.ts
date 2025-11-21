@@ -11,8 +11,6 @@ import { IEconomicBoardComment } from "../../../../api/structures/IEconomicBoard
 @Controller("/economicBoard/citizen/comments/:commentId")
 export class EconomicboardCitizenCommentsController {
   /**
-   * Update the content of a comment within its 24-hour editing window.
-   *
    * Update the content of an economic board comment within the 24-hour editing
    * window. This operation allows the original author to correct typographical
    * errors, enhance clarity, or correct factual inaccuracies in their comment.

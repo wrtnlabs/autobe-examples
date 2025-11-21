@@ -7,10 +7,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../../structures/IComm
 import { IPageICommunityPlatformCommunityRule } from "../../../../../structures/IPageICommunityPlatformCommunityRule";
 
 /**
- * Create a community-specific rules document in
- * community_platform_community_rules for a given community_platform_communities
- * slug.
- *
  * Create a new rules document for a community identified by its slug.
  *
  * This operation works with two related Prisma models. First, it uses the
@@ -142,9 +138,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of rules for a specific community from
- * `community_platform_community_rules`.
- *
  * Retrieve a filtered and paginated list of rules configured for a specific
  * community identified by its slug.
  *
@@ -269,9 +262,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the detailed definition of a specific community rule from
- * `community_platform_community_rules`.
- *
  * Retrieve detailed information about a single rule belonging to a specific
  * community identified by its slug.
  *
@@ -386,9 +376,6 @@ export namespace at {
 }
 
 /**
- * Update a community_platform_community_rules record for a given
- * community_platform_communities slug and rule UUID.
- *
  * Update an existing rules document for a specific community and rule
  * identifier.
  *

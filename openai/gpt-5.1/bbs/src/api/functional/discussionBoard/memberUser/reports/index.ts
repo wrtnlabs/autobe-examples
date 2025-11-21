@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReport } from "../../../../structures/IDiscussionBoardReport";
 
 /**
- * Create a new report record in discussion_board_reports.
- *
  * Create a new discussion board report describing problematic content on the
  * board.
  *

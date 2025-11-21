@@ -11,8 +11,6 @@ import { IShoppingMallProductReview } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/customer/shoppingMallProductReviews")
 export class ShoppingmallCustomerShoppingmallproductreviewsController {
   /**
-   * Create a new shopping mall product review.
-   *
    * Creates a new product review submitted by an authenticated customer in the
    * shopping mall platform.
    *
@@ -55,8 +53,6 @@ export class ShoppingmallCustomerShoppingmallproductreviewsController {
   }
 
   /**
-   * Update an existing shopping mall product review.
-   *
    * Updates a product review entry based on the unique review identifier
    * provided in the path.
    *

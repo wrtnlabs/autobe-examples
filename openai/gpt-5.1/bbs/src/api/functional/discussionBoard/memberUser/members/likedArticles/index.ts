@@ -7,9 +7,6 @@ import { IDiscussionBoardArticle } from "../../../../../structures/IDiscussionBo
 import { IPageIDiscussionBoardArticle } from "../../../../../structures/IPageIDiscussionBoardArticle";
 
 /**
- * Search liked articles for a member using discussion_board_article_likes and
- * discussion_board_articles.
- *
  * Retrieve a paginated, filterable list of articles that a given member user
  * has liked by querying the discussion_board_article_likes and
  * discussion_board_articles tables.

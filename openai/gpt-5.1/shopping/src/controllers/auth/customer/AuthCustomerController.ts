@@ -10,9 +10,6 @@ import { IShoppingMallCustomerRefresh } from "../../../api/structures/IShoppingM
 @Controller("/auth/customer")
 export class AuthCustomerController {
   /**
-   * Register a new customer in shopping_mall_customers and return an
-   * authorized customer token payload.
-   *
    * This operation registers a new customer account in the shoppingMall
    * platform by creating a row in the shopping_mall_customers table, which
    * represents registered customer accounts for the marketplace. It sets the
@@ -85,9 +82,6 @@ export class AuthCustomerController {
   }
 
   /**
-   * Authenticate an existing customer in shopping_mall_customers and issue an
-   * authorized customer token payload.
-   *
    * This operation logs in an existing customer by validating credentials
    * against the shopping_mall_customers table, where each row represents a
    * registered marketplace buyer. It locates the account using the unique
@@ -160,9 +154,6 @@ export class AuthCustomerController {
   }
 
   /**
-   * Refresh JWT tokens for an existing customer in shopping_mall_customers
-   * based on a valid refresh token.
-   *
    * This operation refreshes the authentication context for an existing
    * customer without requiring the user to re-enter credentials. It operates
    * on an already registered account in shopping_mall_customers, using the

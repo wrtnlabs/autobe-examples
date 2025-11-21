@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationCaseStatistics } from "../../../../../structures/ICommunityPlatformModerationCaseStatistics";
 
 /**
- * Retrieve aggregated appeal statistics for a specific moderation case based on
- * the community_platform_appeals table.
- *
  * Retrieve computed statistics for appeals associated with a single moderation
  * case identified by its business key.
  *

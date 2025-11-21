@@ -7,8 +7,6 @@ import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipm
 import { IPageIShoppingMallShipment } from "../../../../structures/IPageIShoppingMallShipment";
 
 /**
- * Create a new shipment record in shopping_mall_shipments.
- *
  * Create a new shipment record representing the shipping details of an order.
  *
  * Authorized shipment managers or system processes can use this endpoint to
@@ -112,8 +110,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve shipments with filtering and pagination.
- *
  * Retrieve a list of shipment records with complex filtering and pagination
  * support. This operation enables clients to query shipments by carrier,
  * status, tracking number, and date ranges, facilitating logistics management.
@@ -210,9 +206,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed shipment information by shipmentId from
- * shopping_mall_shipments.
- *
  * Retrieve a specific shipment record by its unique identifier.
  *
  * This endpoint allows clients to access the full details of a shipment

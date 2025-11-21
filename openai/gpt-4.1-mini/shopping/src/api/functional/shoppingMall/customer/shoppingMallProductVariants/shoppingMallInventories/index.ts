@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallInventory } from "../../../../../structures/IShoppingMallInventory";
 
 /**
- * Create inventory record for a product variant by skuCode.
- *
  * Create a new inventory record under the specified product variant SKU.
  *
  * The request body must include stock quantity details, reserved amounts, and
@@ -109,8 +107,6 @@ export namespace create {
 }
 
 /**
- * Update a specific inventory record for a given product variant.
- *
  * This operation updates detailed information of a shopping mall inventory
  * entry associated with a specific product variant identified by SKU code.
  *
@@ -221,8 +217,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific inventory record for a given product variant.
- *
  * This operation permanently deletes an inventory record identified by its UUID
  * that is associated with a product variant uniquely identified by SKU code.
  *

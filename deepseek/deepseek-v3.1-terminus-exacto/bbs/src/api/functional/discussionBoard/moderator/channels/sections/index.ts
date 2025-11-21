@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardSection } from "../../../../../structures/IDiscussionBoardSection";
 
 /**
- * Create a new discussion board section within a channel.
- *
  * This POST operation allows administrators to create new discussion board
  * sections within existing channels. The operation requires the parent channel
  * name as a path parameter and section creation data in the request body.
@@ -112,8 +110,6 @@ export namespace create {
 }
 
 /**
- * Update an existing discussion board section within a specific channel.
- *
  * This PUT operation allows administrators to modify the properties of an
  * existing discussion board section within a specific channel. The operation
  * requires both the channel name and section name to uniquely identify the
@@ -226,8 +222,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a discussion board section from a specific channel.
- *
  * This DELETE operation allows administrators to permanently remove a
  * discussion board section from a specific channel. The operation requires both
  * the channel name and section name to uniquely identify the target section,

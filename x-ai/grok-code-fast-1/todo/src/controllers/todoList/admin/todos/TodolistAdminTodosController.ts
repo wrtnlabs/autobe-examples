@@ -11,8 +11,6 @@ import { ITodoListTodo } from "../../../../api/structures/ITodoListTodo";
 @Controller("/todoList/admin/todos/:todoId")
 export class TodolistAdminTodosController {
   /**
-   * Update attributes of an existing todo item in the todo_list_todos table.
-   *
    * Update an existing todo item, enforcing all business and field-level
    * validation rules.
    *
@@ -61,9 +59,6 @@ export class TodolistAdminTodosController {
   }
 
   /**
-   * Delete a specific todo item by ID, using soft deletion logic in the
-   * todo_list_todos table.
-   *
    * Deletes a single todo item belonging to the authenticated user, or any user
    * if performed by an admin.
    *

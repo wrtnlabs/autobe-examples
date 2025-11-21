@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommentVote } from "../../../../structures/ICommunityPlatformCommentVote";
 
 /**
- * Retrieve current aggregated voting state for a comment from
- * community_platform_comment_votes.
- *
  * Retrieve the current voting state and aggregated score for a single comment
  * using the comment votes table.
  *
@@ -121,9 +118,6 @@ export namespace at {
 }
 
 /**
- * Retrieve current aggregated voting state for a comment from
- * community_platform_comment_votes.
- *
  * Retrieve the current voting state and aggregated score for a single comment
  * using the comment votes table.
  *

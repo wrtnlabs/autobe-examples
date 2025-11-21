@@ -5,8 +5,6 @@ import typia from "typia";
 import { IPageICommunityPlatformTrendingTopic } from "../../../../structures/IPageICommunityPlatformTrendingTopic";
 
 /**
- * Retrieve trending topics ranked by frequency and velocity metrics.
- *
  * Retrieve trending topics (keywords and hashtags) ranked by frequency and
  * velocity metrics. This operation surfaces the most discussed topics across
  * the platform in the last 24 hours, enabling users to discover trending

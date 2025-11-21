@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAction } from "../../../../../../structures
 import { IPageICommunityPlatformModerationAction } from "../../../../../../structures/IPageICommunityPlatformModerationAction";
 
 /**
- * Search moderation actions stored in the community_platform_moderation_actions
- * table with pagination and filters.
- *
  * Search and retrieve a filtered, paginated list of moderation actions from the
  * `community_platform_moderation_actions` table.
  *

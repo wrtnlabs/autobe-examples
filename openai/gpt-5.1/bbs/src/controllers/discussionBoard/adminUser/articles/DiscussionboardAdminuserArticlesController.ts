@@ -8,9 +8,6 @@ import { AdminuserPayload } from "../../../../decorators/payload/AdminuserPayloa
 @Controller("/discussionBoard/adminUser/articles/:articleId")
 export class DiscussionboardAdminuserArticlesController {
   /**
-   * Permanently delete a single article record from the
-   * discussion_board_articles table by articleId.
-   *
    * Erase an existing discussion board article identified by articleId from the
    * system.
    *

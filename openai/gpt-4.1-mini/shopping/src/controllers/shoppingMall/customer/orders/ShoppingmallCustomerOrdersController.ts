@@ -14,8 +14,6 @@ import { IPageIShoppingMallOrder } from "../../../../api/structures/IPageIShoppi
 @Controller("/shoppingMall/customer/orders")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Create a new shopping mall order.
-   *
    * Create a new order representing a customer purchase in the shopping mall.
    *
    * This operation accepts detailed information about the order, including the
@@ -54,9 +52,6 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Retrieve a paginated list of shopping mall orders with filtering and
-   * sorting.
-   *
    * Retrieve a filtered and paginated list of shopping mall orders. This
    * operation allows clients to search orders by order number, status, payment
    * status, customer, seller, or date ranges.
@@ -97,8 +92,6 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Retrieve detailed information of a shopping mall order by ID.
-   *
    * Retrieve detailed information about a specific shopping mall order.
    *
    * This operation requires the order's unique identifier (UUID). It returns
@@ -139,8 +132,6 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Update an existing shopping mall order by its orderId.
-   *
    * Update the details of an existing order in the shopping mall.
    *
    * This operation allows modification of order properties including order

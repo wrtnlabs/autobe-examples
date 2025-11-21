@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallDisputesByStatusStatistics } from "../../../../../../structures/IShoppingMallDisputesByStatusStatistics";
 
 /**
- * Get aggregated dispute statistics grouped by status derived from
- * dispute-related Prisma tables.
- *
  * Retrieve aggregated dispute statistics grouped by dispute status across the
  * shoppingMall platform.
  *

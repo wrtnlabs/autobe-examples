@@ -7,8 +7,6 @@ import { IRedditCommunityCommentReport } from "../../../../structures/IRedditCom
 import { IPageIRedditCommunityCommentReport } from "../../../../structures/IPageIRedditCommunityCommentReport";
 
 /**
- * Submit a new comment report.
- *
  * Create a new comment report entry within the RedditCommunity platform. This
  * operation allows users, moderators, or admins to flag problematic comments
  * with reasons and supporting information.
@@ -104,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve reddit community comment reports.
- *
  * Retrieve a filtered and paginated list of reddit community comment reports.
  *
  * Reports are submitted by registered users flagging comments as inappropriate
@@ -207,8 +203,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific comment report by its unique identifier.
- *
  * Retrieve detailed information about a specific comment report submitted by a
  * user within the RedditCommunity platform. This operation provides all
  * necessary information for moderators or administrators to review the report's

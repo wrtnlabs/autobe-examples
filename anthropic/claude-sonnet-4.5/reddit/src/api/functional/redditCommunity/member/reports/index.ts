@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityReport } from "../../../../structures/IRedditCommunityReport";
 
 /**
- * Submit a new content violation report.
- *
  * Create a new report to flag inappropriate or rule-violating content within
  * the Reddit-style community platform. Members can report either posts or
  * comments that they believe violate community guidelines, platform rules, or

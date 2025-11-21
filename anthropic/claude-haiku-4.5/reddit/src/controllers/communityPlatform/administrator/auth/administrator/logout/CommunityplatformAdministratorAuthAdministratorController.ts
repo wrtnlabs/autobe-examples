@@ -7,8 +7,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../../api/structure
 @Controller("/communityPlatform/administrator/auth/administrator/logout")
 export class CommunityplatformAdministratorAuthAdministratorController {
   /**
-   * Terminate the current administrator session and logout.
-   *
    * Invalidate the administrator's current authentication session and prevent
    * further API requests using the associated tokens. This operation marks
    * the administrator's session record with an expiration timestamp,

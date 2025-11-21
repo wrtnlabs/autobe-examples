@@ -7,8 +7,6 @@ import { ICommunityPlatformPostImage } from "../../../../../structures/ICommunit
 import { IPageICommunityPlatformPostImage } from "../../../../../structures/IPageICommunityPlatformPostImage";
 
 /**
- * Upload and attach images to a post.
- *
  * Add one or more images to an existing post in a community. This operation
  * creates new image records in the community_platform_post_images table and
  * associates them with the target post from the community_platform_posts table.
@@ -116,8 +114,6 @@ export namespace create {
 }
 
 /**
- * Delete a specific image from a community platform post.
- *
  * Remove an image from a post by its unique identifier. This operation performs
  * a hard delete of the image record from the community_platform_post_images
  * table, including all associated metadata (URLs, dimensions, alt text, and

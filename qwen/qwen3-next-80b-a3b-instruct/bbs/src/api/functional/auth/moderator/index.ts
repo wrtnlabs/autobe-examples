@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicBoardModerator } from "../../../structures/IEconomicBoardModerator";
 
 /**
- * Create a new moderator account with email and password_hash.
- *
  * Creates a new moderator account in the system. This operation is initiated by
  * administrators during moderator onboarding and sets up the core identity for
  * a new moderator. The email field is required and must be unique in the
@@ -119,8 +117,6 @@ export namespace join {
 }
 
 /**
- * Authenticate a moderator using email and password to obtain JWT tokens.
- *
  * Authenticates a moderator by validating email and password credentials
  * against the economic_board_moderators table. The operation checks for an
  * active account with deleted_at = null. If the account exists, the
@@ -229,8 +225,6 @@ export namespace login {
 }
 
 /**
- * Refresh the moderator's JWT access token using a valid refresh token.
- *
  * Extends the moderator's session by exchanging a valid refresh token for a new
  * access token. This operation validates the refresh token against the
  * economic_board_moderator_sessions table using the associated

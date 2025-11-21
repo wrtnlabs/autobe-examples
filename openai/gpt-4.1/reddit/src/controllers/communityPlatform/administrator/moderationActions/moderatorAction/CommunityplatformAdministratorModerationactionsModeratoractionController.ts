@@ -13,9 +13,6 @@ import { ICommunityPlatformModerationActionOfModerator } from "../../../../../ap
 )
 export class CommunityplatformAdministratorModerationactionsModeratoractionController {
   /**
-   * Retrieve moderator-specific information for a moderation action from the
-   * community_platform_moderation_action_of_moderators table.
-   *
    * Retrieve the moderator-specific details for a particular moderation action,
    * using its unique moderationActionId.
    *
@@ -59,9 +56,6 @@ export class CommunityplatformAdministratorModerationactionsModeratoractionContr
   }
 
   /**
-   * Delete a moderation action of a moderator
-   * (community_platform_moderation_action_of_moderators).
-   *
    * Delete the moderator-specific action record linked to a higher-level
    * moderation action. This removal is intended for cases where a moderation
    * decision must be rescinded, corrected, or purged due to changes in

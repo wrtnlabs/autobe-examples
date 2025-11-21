@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderItemSeller } from "../../../../../../structures/IShoppingMallOrderItemSeller";
 
 /**
- * Get seller mapping for an order item from shopping_mall_order_item_sellers
- * via orderCode and orderItemId.
- *
  * Fetch the seller mapping for a specific order item within a customer order
  * using the business order code and order item identifier.
  *
@@ -141,9 +138,6 @@ export namespace at {
 }
 
 /**
- * Update the seller mapping for an order item in
- * shopping_mall_order_item_sellers using orderCode and orderItemId.
- *
  * Update the seller mapping entry for a specific order line item identified by
  * a business order code and an order item UUID.
  *
@@ -286,9 +280,6 @@ export namespace update {
 }
 
 /**
- * Remove a seller mapping for a specific order item in
- * shopping_mall_order_item_sellers.
- *
  * Erase the seller association mapping for a specific order item under a given
  * order.
  *

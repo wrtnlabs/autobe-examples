@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicBoardComment } from "../../../../../structures/IEconomicBoardComment";
 
 /**
- * Create a new comment on a published post.
- *
  * This operation allows authenticated citizens to create comments on published
  * discussion posts. When a comment is submitted, it is immediately published
  * and visible to all users on the platform. The system automatically links the
@@ -124,8 +122,6 @@ export namespace create {
 }
 
 /**
- * Update an existing comment (within 24-hour window).
- *
  * This operation allows authenticated citizens to edit their own comments
  * within a 24-hour window after creation. This is enforced by the system using
  * the created_at and updated_at fields from the economic_board_comments schema.
@@ -255,8 +251,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific comment from a discussion post.
- *
  * Permanently deletes a specific comment from a discussion post. This operation
  * is irreversible and immediately hides the comment from public view by setting
  * the deleted_at timestamp in the economic_board_comments table.

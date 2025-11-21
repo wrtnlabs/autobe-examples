@@ -14,8 +14,6 @@ import { IPageICommunityForumCommunityPost } from "../../../../api/structures/IP
 @Controller("/communityForum/user/posts")
 export class CommunityforumUserPostsController {
   /**
-   * Create a new post in community forum.
-   *
    * Create a new post in a community forum. This operation allows authenticated
    * users to create new posts of various types (text, link, or image) within
    * communities they have access to.
@@ -69,8 +67,6 @@ export class CommunityforumUserPostsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of community forum posts.
-   *
    * Retrieve a filtered and paginated list of community forum posts from the
    * system. This operation provides advanced search capabilities for finding
    * posts based on multiple criteria including community membership, author,
@@ -121,8 +117,6 @@ export class CommunityforumUserPostsController {
   }
 
   /**
-   * Update an existing community forum post with new content or metadata.
-   *
    * Modify an existing post in the community forum platform with updated
    * content or metadata. This operation allows post authors to edit their
    * content within a limited time window (6 hours after initial posting) as
@@ -177,8 +171,6 @@ export class CommunityforumUserPostsController {
   }
 
   /**
-   * Permanently delete a forum post by its unique identifier.
-   *
    * Permanently removes a forum post from the community platform. This
    * operation performs a hard delete on the community_forum_posts table,
    * completely removing the post record from the database.

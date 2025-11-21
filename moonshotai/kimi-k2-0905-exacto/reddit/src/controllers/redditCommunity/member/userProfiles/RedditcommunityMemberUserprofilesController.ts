@@ -7,8 +7,6 @@ import { IRedditCommunityUserProfiles } from "../../../../api/structures/IReddit
 @Controller("/redditCommunity/member/userProfiles")
 export class RedditcommunityMemberUserprofilesController {
   /**
-   * Retrieve detailed user profile information by profile ID.
-   *
    * Retrieve detailed user profile information for a specific community
    * member identified by their profile ID. This operation provides
    * comprehensive access to user profile data including public display
@@ -45,8 +43,6 @@ export class RedditcommunityMemberUserprofilesController {
   }
 
   /**
-   * Update an existing user profile with new information.
-   *
    * Update an existing user profile with authenticated user's profile
    * information. This operation allows community members to modify their
    * profile details including display name, personal bio, avatar image URL,
@@ -116,8 +112,6 @@ export class RedditcommunityMemberUserprofilesController {
   }
 
   /**
-   * Create a new user profile with personal information and customization.
-   *
    * Create a new user profile for an authenticated community member. This
    * operation establishes the user's public identity within the Reddit-style
    * community platform by creating a comprehensive profile record with

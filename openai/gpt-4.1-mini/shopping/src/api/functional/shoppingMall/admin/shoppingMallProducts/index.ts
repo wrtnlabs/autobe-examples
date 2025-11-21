@@ -8,8 +8,6 @@ export * as shoppingMallProductVariants from "./shoppingMallProductVariants/inde
 export * as snapshots from "./snapshots/index";
 
 /**
- * Update existing shopping mall product by productCode.
- *
  * Update a shopping mall product's details including title, description, brand,
  * and category association.
  *
@@ -116,8 +114,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall product by productCode.
- *
  * Permanently delete a shopping mall product using the unique productCode path
  * parameter.
  *

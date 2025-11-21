@@ -8,9 +8,6 @@ import { IShoppingMallActorSecurityEvent } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/sellers/:sellerId/actorSecurityEvents")
 export class ShoppingmallAdminSellersActorsecurityeventsController {
   /**
-   * Search seller-scoped actor security events from
-   * shopping_mall_actor_security_events for a given seller.
-   *
    * Retrieve a paginated list of security-related events associated with a
    * specific seller account for audit and troubleshooting purposes.
    *

@@ -7,9 +7,6 @@ import { IDiscussionBoardComment } from "../../../../structures/IDiscussionBoard
 import { IPageIDiscussionBoardComment } from "../../../../structures/IPageIDiscussionBoardComment";
 
 /**
- * Search and paginate comments in discussion_board_comments for a specific
- * article.
- *
  * Retrieve a filtered, paginated list of comments belonging to a single
  * discussion article.
  *
@@ -145,9 +142,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information of a single comment from discussion_board_comments
- * for a specific article.
- *
  * Retrieve detailed information for a single comment belonging to a specific
  * article.
  *

@@ -7,9 +7,6 @@ import { IShoppingMallAdminNotificationSummary } from "../../../../../../api/str
 @Controller("/shoppingMall/admin/adminDashboard/notifications/summary")
 export class ShoppingmallAdminAdmindashboardNotificationsSummaryController {
   /**
-   * Get an admin dashboard notifications summary based on
-   * `shopping_mall_admin_notifications`.
-   *
    * Retrieve a summarized notifications overview for the administrative
    * dashboard, using the `shopping_mall_admin_notifications` primary table as
    * the main source of notification records and supplementing with related

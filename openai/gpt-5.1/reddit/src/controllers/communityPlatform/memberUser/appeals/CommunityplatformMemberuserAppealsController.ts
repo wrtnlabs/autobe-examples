@@ -7,8 +7,6 @@ import { ICommunityPlatformAppeal } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/memberUser/appeals")
 export class CommunityplatformMemberuserAppealsController {
   /**
-   * Create a new appeal record in the community_platform_appeals table.
-   *
    * Create a new appeal in the community platform for an existing moderation
    * action.
    *

@@ -14,9 +14,6 @@ import { IPageIShoppingMallExternalPaymentProvider } from "../../../../api/struc
 @Controller("/shoppingMall/admin/externalPaymentProviders")
 export class ShoppingmallAdminExternalpaymentprovidersController {
   /**
-   * Register a new external payment provider
-   * (shopping_mall_external_payment_providers).
-   *
    * Admin-only operation to register a new external payment provider into the
    * registry table 'shopping_mall_external_payment_providers'. All core
    * metadata must be supplied, including provider_name, provider_code, status,
@@ -60,9 +57,6 @@ export class ShoppingmallAdminExternalpaymentprovidersController {
   }
 
   /**
-   * Paginated, filterable list of external payment providers
-   * (shopping_mall_external_payment_providers).
-   *
    * Retrieve a paginated list of registered external payment providers,
    * supporting filtering by provider name, integration code, status
    * (active/inactive/deprecated), and business context.
@@ -103,9 +97,6 @@ export class ShoppingmallAdminExternalpaymentprovidersController {
   }
 
   /**
-   * Update configuration and metadata of a specific external payment provider
-   * (shopping_mall_external_payment_providers table).
-   *
    * Update an existing external payment provider's configuration and metadata
    * for the shopping mall platform.
    *
@@ -160,9 +151,6 @@ export class ShoppingmallAdminExternalpaymentprovidersController {
   }
 
   /**
-   * Soft delete (deactivate) a specific external payment provider
-   * (shopping_mall_external_payment_providers table).
-   *
    * Permanently deactivate (soft delete) a registered external payment provider
    * in the shopping mall system.
    *

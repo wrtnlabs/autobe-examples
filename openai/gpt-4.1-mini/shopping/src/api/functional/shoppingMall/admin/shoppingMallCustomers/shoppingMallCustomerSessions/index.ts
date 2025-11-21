@@ -7,8 +7,6 @@ import { IShoppingMallCustomerSession } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallCustomerSession } from "../../../../../structures/IPageIShoppingMallCustomerSession";
 
 /**
- * Retrieve paginated list of sessions for a shopping mall customer.
- *
  * Retrieve a paginated list of active or expired shopping mall customer
  * sessions for a given customer.
  *
@@ -116,8 +114,6 @@ export namespace index {
 }
 
 /**
- * Get details of a specific shopping mall customer session.
- *
  * Retrieve detailed information about a specified customer session owned by the
  * shopping mall customer.
  *

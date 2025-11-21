@@ -11,8 +11,6 @@ import { IRedditCommunityGuest } from "../../../../api/structures/IRedditCommuni
 @Controller("/redditCommunity/member/members/:username")
 export class RedditcommunityMemberMembersController {
   /**
-   * Update a member's own profile information.
-   *
    * Update profile information and privacy settings for the authenticated
    * member.
    *
@@ -74,8 +72,6 @@ export class RedditcommunityMemberMembersController {
   }
 
   /**
-   * Permanently delete a member account and all associated data.
-   *
    * Permanently remove a member account from the Reddit community platform
    * using their unique username identifier. This operation performs a hard
    * delete that completely removes the member record from the database.

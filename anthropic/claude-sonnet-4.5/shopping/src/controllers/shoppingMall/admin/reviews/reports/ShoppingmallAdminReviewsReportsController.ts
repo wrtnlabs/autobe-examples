@@ -12,9 +12,6 @@ import { IShoppingMallReviewReport } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/reviews/:reviewId/reports")
 export class ShoppingmallAdminReviewsReportsController {
   /**
-   * Search and retrieve filtered, paginated review reports for a specific
-   * product review.
-   *
    * Retrieve a filtered and paginated list of review reports submitted for a
    * specific product review in the shopping mall marketplace. This operation
    * provides advanced search capabilities for finding reports based on multiple
@@ -71,8 +68,6 @@ export class ShoppingmallAdminReviewsReportsController {
   }
 
   /**
-   * Retrieve detailed information about a specific review report.
-   *
    * Fetch complete details of a review report submission including the report
    * reason, description, reporter information, submission timestamp, and
    * current moderation status. This operation provides transparency into the

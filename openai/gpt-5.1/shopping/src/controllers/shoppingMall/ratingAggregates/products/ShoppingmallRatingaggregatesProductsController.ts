@@ -8,9 +8,6 @@ import { IShoppingMallProductRatingAggregate } from "../../../../api/structures/
 @Controller("/shoppingMall/ratingAggregates/products")
 export class ShoppingmallRatingaggregatesProductsController {
   /**
-   * Search product rating aggregates from
-   * shopping_mall_product_rating_aggregates with pagination.
-   *
    * Search and retrieve a paginated list of product rating aggregates using
    * flexible filters and sorting options.
    *

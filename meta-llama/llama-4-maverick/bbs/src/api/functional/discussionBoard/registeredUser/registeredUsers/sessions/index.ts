@@ -7,8 +7,6 @@ import { IDiscussionBoardRegisteredUserSession } from "../../../../../structures
 import { IPageIDiscussionBoardRegisteredUserSession } from "../../../../../structures/IPageIDiscussionBoardRegisteredUserSession";
 
 /**
- * Create a new session for a registered user.
- *
  * This operation allows creating a new session for a registered user identified
  * by their user ID. The request body should contain the necessary information
  * to create the session.
@@ -97,8 +95,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of user sessions with filtering and searching.
- *
  * This operation provides a comprehensive way to manage user sessions by
  * allowing users to search, filter, and paginate through their own sessions.
  * The endpoint supports complex query parameters for advanced filtering and
@@ -189,8 +185,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific user session.
- *
  * This operation allows users to retrieve detailed information about a specific
  * session. The endpoint provides comprehensive details about the session,
  * including its creation date, last activity, and other relevant session
@@ -275,8 +269,6 @@ export namespace at {
 }
 
 /**
- * Update an existing session for a registered user.
- *
  * This operation allows updating an existing session identified by the session
  * ID for a registered user identified by their user ID. The request body should
  * contain the updated information for the session.
@@ -370,8 +362,6 @@ export namespace update {
 }
 
 /**
- * Delete a user's session.
- *
  * Terminate a specific session for a registered user by providing both the user
  * ID and session ID. This operation is typically used for security purposes,
  * such as when a user reports a lost or stolen device, or to force logout a

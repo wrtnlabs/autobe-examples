@@ -7,9 +7,6 @@ import { IShoppingMallAnalyticsPaymentSummary } from "../../../../../../api/stru
 @Controller("/shoppingMall/admin/analytics/payments/summary")
 export class ShoppingmallAdminAnalyticsPaymentsSummaryController {
   /**
-   * Retrieve an aggregated payment performance summary derived from
-   * ShoppingMall payment-related tables.
-   *
    * Retrieve an aggregated analytical summary of payments processed on the
    * ShoppingMall platform over a specified time window with optional filters
    * for methods, actors, and high-level attributes.

@@ -11,8 +11,6 @@ import { IDiscussionBoardContentReport } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/members/:memberId/reports")
 export class DiscussionboardModeratorMembersReportsController {
   /**
-   * Retrieve paginated list of content reports submitted by a specific member.
-   *
    * Retrieve a filtered and paginated list of content reports submitted by a
    * specific discussion board member. This operation provides comprehensive
    * search capabilities for analyzing member reporting behavior, tracking

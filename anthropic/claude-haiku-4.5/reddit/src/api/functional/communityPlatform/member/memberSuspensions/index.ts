@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberSuspension } from "../../../../structures/ICommunityPlatformMemberSuspension";
 
 /**
- * Retrieve detailed member suspension information by suspension ID.
- *
  * Retrieve comprehensive details about a specific member suspension record from
  * the database. This operation returns the complete suspension record including
  * the suspension reason, suspension start time, expiration time, creation

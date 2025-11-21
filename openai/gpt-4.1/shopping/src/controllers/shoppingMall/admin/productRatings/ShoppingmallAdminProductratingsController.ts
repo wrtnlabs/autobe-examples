@@ -11,9 +11,6 @@ import { IShoppingMallProductRating } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/productRatings")
 export class ShoppingmallAdminProductratingsController {
   /**
-   * Search and retrieve paginated summaries of product ratings
-   * (shopping_mall_product_ratings table).
-   *
    * Retrieve a filtered, paginated list of product ratings on the shopping mall
    * platform.
    *

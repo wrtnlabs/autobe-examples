@@ -12,9 +12,6 @@ import { IShoppingMallCart } from "../../../../api/structures/IShoppingMallCart"
 @Controller("/shoppingMall/customer/carts")
 export class ShoppingmallCustomerCartsController {
   /**
-   * Create a new shopping cart for an authenticated customer
-   * (shopping_mall_carts).
-   *
    * This operation allows an authenticated customer to initialize a new
    * shopping cart, which serves as the primary container for their intended
    * purchases within the platform.
@@ -61,9 +58,6 @@ export class ShoppingmallCustomerCartsController {
   }
 
   /**
-   * Update an existing shopping cart’s state fields by its ID
-   * (shopping_mall_carts).
-   *
    * This operation allows for modification of a customer's existing shopping
    * cart, given the cart's unique identifier. Typical update use cases include
    * refreshing the cart after certain business events (such as inventory or
@@ -115,8 +109,6 @@ export class ShoppingmallCustomerCartsController {
   }
 
   /**
-   * Permanently delete a shopping cart and its items (shopping_mall_carts).
-   *
    * Permanently delete a cart entity for a customer using the cart's unique
    * identifier.
    *

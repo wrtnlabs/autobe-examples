@@ -11,8 +11,6 @@ import { IPageIDiscussionBoardArticleAttachment } from "../../../../api/structur
 @Controller("/discussionBoard/articles/:articleId/attachments")
 export class DiscussionboardArticlesAttachmentsController {
   /**
-   * Create a new attachment for an article.
-   *
    * This operation enables users to upload and create a new attachment
    * associated with a specific article. It requires the article ID as a path
    * parameter and the attachment file in the request body. The operation
@@ -44,8 +42,6 @@ export class DiscussionboardArticlesAttachmentsController {
   }
 
   /**
-   * Retrieve paginated list of article attachments.
-   *
    * This operation returns a paginated list of attachments associated with a
    * specific article identified by the articleId path parameter. It operates on
    * the discussion_board_article_attachments table and related article
@@ -89,8 +85,6 @@ export class DiscussionboardArticlesAttachmentsController {
   }
 
   /**
-   * Retrieve a specific attachment by ID for an article.
-   *
    * This operation allows users to retrieve a specific attachment associated
    * with an article. It requires both the article ID and attachment ID as path
    * parameters. The operation validates that the attachment exists and is

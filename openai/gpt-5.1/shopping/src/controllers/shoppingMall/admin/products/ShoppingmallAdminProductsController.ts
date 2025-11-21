@@ -7,9 +7,6 @@ import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallPr
 @Controller("/shoppingMall/admin/products/:productId")
 export class ShoppingmallAdminProductsController {
   /**
-   * Update an existing ShoppingMall product row in the shopping_mall_products
-   * table by productId via the admin path.
-   *
    * Update an existing ShoppingMall product record in the
    * shopping_mall_products table identified by productId via the
    * admin-oriented API path.
@@ -62,8 +59,6 @@ export class ShoppingmallAdminProductsController {
   }
 
   /**
-   * Delete a product from the shopping_mall_products table by productId.
-   *
    * Permanently remove a specific product record from the
    * shopping_mall_products table by its unique identifier.
    *

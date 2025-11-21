@@ -7,8 +7,6 @@ import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduc
 export * as shoppingMallProductVariants from "./shoppingMallProductVariants/index";
 
 /**
- * Create a new product in the shopping mall catalog.
- *
  * Allows authenticated sellers or administrators to create a new product
  * record.
  *
@@ -105,8 +103,6 @@ export namespace create {
 }
 
 /**
- * Update existing shopping mall product by productCode.
- *
  * Update a shopping mall product's details including title, description, brand,
  * and category association.
  *
@@ -213,8 +209,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall product by productCode.
- *
  * Permanently delete a shopping mall product using the unique productCode path
  * parameter.
  *

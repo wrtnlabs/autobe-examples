@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityMembership } from "../../../../../structures
 import { IPageICommunityPlatformCommunityMembership } from "../../../../../structures/IPageICommunityPlatformCommunityMembership";
 
 /**
- * Create a new community membership for a user
- * (community_platform_community_memberships).
- *
  * Create a membership record that tracks a user's enrollment in a specific
  * community. The endpoint requires a valid authenticated user and a unique,
  * valid community name (slug); it may also accept a join request reference for
@@ -124,9 +121,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of community memberships
- * (community_platform_community_memberships).
- *
  * Retrieve a filtered and paginated list of all memberships for a specific
  * community (by name slug).
  *
@@ -240,9 +234,6 @@ export namespace index {
 }
 
 /**
- * Fetch details for a given community membership
- * (community_platform_community_memberships).
- *
  * Retrieve the full details of a specific user's membership in a community
  * using the membership's unique identifier. This endpoint is designed based on
  * the community_platform_community_memberships table and presents all relevant

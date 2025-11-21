@@ -7,8 +7,6 @@ import { IRedditCommunityUserProfiles } from "../../../structures/IRedditCommuni
 import { IPageIRedditCommunityUserProfiles } from "../../../structures/IPageIRedditCommunityUserProfiles";
 
 /**
- * Search and retrieve filtered user community profiles with pagination support.
- *
  * Search and filter user community profiles with advanced query capabilities.
  *
  * This operation retrieves user profile information from the community

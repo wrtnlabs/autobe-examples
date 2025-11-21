@@ -7,9 +7,6 @@ import { IShoppingMallPaymentMethodStat } from "../../../../../structures/IShopp
 import { IPageIShoppingMallPaymentMethodStat } from "../../../../../structures/IPageIShoppingMallPaymentMethodStat";
 
 /**
- * Search paginated payment method statistics from
- * `shopping_mall_payment_method_stats`.
- *
  * Search and retrieve a paginated list of payment method statistics from the
  * `shopping_mall_payment_method_stats` table based on flexible query criteria.
  *
@@ -122,9 +119,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single payment method statistics snapshot from
- * shopping_mall_payment_method_stats by ID.
- *
  * Retrieve a single payment method statistics snapshot record from the
  * shopping_mall_payment_method_stats table by its unique identifier.
  *

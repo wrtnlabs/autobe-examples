@@ -1,17 +1,24 @@
-/// Represents a single todo item owned and managed by an authenticated user.
+/// Todo items created by authenticated users.
 ///
-/// Each row stores a unique, user-owned task with a required, non-empty
-/// title (up to 255 characters), an optional description (up to 1000
-/// characters), and a boolean indicating completion. Timestamps for creation
-/// and last update track lifecycle changes; no soft deletion or history is
-/// recorded, as per business requirements.
+/// This table stores individual task items that users create to track their
+/// personal activities and responsibilities. Each todo item is associated
+/// with exactly one user who owns and manages it. The table maintains both
+/// the current state of the task and timestamps for audit purposes.
 ///
-/// Every todo must belong to an existing user in the system, enforced via a
-/// mandatory foreign key (user_id) reference to the identity component. Only
-/// the owning user can access, update, or delete this row. All fields follow
-/// strict normalization and privacy guarantees—no other business entities,
-/// roles, or polymorphic ownership structures exist. This model represents
-/// the entirety of domain-scope CRUD operations for the MVP.
+/// Todos can be in either a pending or completed state, which is tracked in
+/// the completed field. Users can update task details including the title
+/// and completion status at any time. The system automatically maintains
+/// creation and modification timestamps.
+///
+/// The relationship to users is strictly enforced with a foreign key
+/// constraint ensuring data integrity. Each todo item can only belong to one
+/// user, and users can have multiple todo items.
+///
+/// For performance optimization, the table includes appropriate indexes to
+/// support common query patterns such as retrieving a user's todo items and
+/// filtering by completion status. Soft deletion is supported through the
+/// deleted_at field to maintain audit trails while allowing content
+/// management.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -22,32 +29,46 @@ model todo_list_todos {
   /// Primary Key.
   id String @id
   
-  /// The owner of this todo. References the primary key of the authenticated
-  /// user. {@link todo_list_users.id}.
-  user_id String
+  /// The user who owns this todo item. {@link todo_list_users.id}.
+  todo_list_user_id String
   
-  /// The title of the todo item. Required and limited to 255 characters. Must
-  /// not be blank.
+  /// The descriptive text of the task to be completed. This field contains the
+  /// main content of the todo item that describes what needs to be done.
+  /// Maximum length is 255 characters to ensure concise task descriptions.
   title String
   
-  /// Optional description for the todo item. Limited to 1000 characters if
-  /// provided.
+  /// Optional detailed description providing additional context or information
+  /// about the task. This field allows users to add more comprehensive
+  /// information beyond the title. Maximum length is 1000 characters.
   description String?
   
-  /// Completion status of the todo. True when marked complete, false otherwise.
+  /// Status indicator showing whether the task has been completed. True
+  /// indicates the task is completed, false indicates it is still pending.
+  /// This field supports the core functionality of the todo application.
   completed Boolean
   
-  /// Timestamp of todo creation (set automatically when the todo is first
-  /// created).
+  /// Timestamp when the todo item was initially created. This field provides
+  /// an audit trail of when tasks were added to the system and supports
+  /// ordering of tasks by creation time.
   created_at DateTime
   
-  /// Timestamp of last modification of the todo (updated on each change).
+  /// Timestamp when the todo item was last modified. This field automatically
+  /// updates whenever any changes are made to the task, providing an audit
+  /// trail of modifications.
   updated_at DateTime
+  
+  /// Timestamp when the todo item was soft deleted. NULL indicates an active
+  /// item. This field is essential for content recovery and maintaining audit
+  /// trails without permanently removing data.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([user_id, created_at])
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+  @@index([todo_list_user_id, deleted_at])
+  @@index([completed, created_at])
 }

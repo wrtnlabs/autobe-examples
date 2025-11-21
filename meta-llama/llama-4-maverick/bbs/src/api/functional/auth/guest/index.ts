@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Create a new guest account.
- *
  * This operation creates a new guest account. It generates a unique identifier
  * for the guest user and issues a token for authentication. The guest account
  * is created based on the IP address of the user.
@@ -96,8 +94,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest token.
- *
  * This operation refreshes the guest token. It validates the existing token and
  * issues a new token with an updated expiration time.
  *

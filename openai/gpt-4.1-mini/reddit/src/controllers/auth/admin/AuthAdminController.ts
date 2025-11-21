@@ -13,9 +13,6 @@ import { IRefreshTokenRequest } from "../../../api/structures/IRefreshTokenReque
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new admin account and issue JWT tokens
-   * (reddit_community_admins).
-   *
    * This operation allows system administrators to register new admin accounts
    * within the redditCommunity platform. It creates an admin user record in the
    * 'reddit_community_admins' table, initializing authentication credentials
@@ -64,8 +61,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate admin user and issue JWT tokens (reddit_community_admins).
-   *
    * This operation allows system administrators to authenticate by providing
    * valid credentials. It verifies the username/email and password against
    * records in the 'reddit_community_admins' table. Upon successful validation,
@@ -110,8 +105,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh JWT tokens for admin user (reddit_community_admins).
-   *
    * This endpoint facilitates JWT token renewal for system administrators. It
    * accepts a valid refresh token and, upon validation, issues new access and
    * refresh tokens to extend session duration.

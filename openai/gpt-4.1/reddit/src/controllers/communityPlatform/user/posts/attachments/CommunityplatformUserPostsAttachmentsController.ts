@@ -14,9 +14,6 @@ import { IPageICommunityPlatformPostAttachment } from "../../../../../api/struct
 @Controller("/communityPlatform/user/posts/:postId/attachments")
 export class CommunityplatformUserPostsAttachmentsController {
   /**
-   * Create and attach a new file to a specific community platform post
-   * (community_platform_post_attachments).
-   *
    * Allows a user (usually the post's creator or privileged editor) to upload a
    * new attachment, such as an image or file, to an existing post. The request
    * must specify the post to which the attachment belongs, and provide metadata
@@ -60,9 +57,6 @@ export class CommunityplatformUserPostsAttachmentsController {
   }
 
   /**
-   * Retrieve a paginated list of attachments for a specific post from the
-   * 'community_platform_post_attachments' table.
-   *
    * This API operation allows retrieval of all attachments related to a given
    * community platform post, identified by its unique postId. The
    * attachments—stored in the 'community_platform_post_attachments'
@@ -111,9 +105,6 @@ export class CommunityplatformUserPostsAttachmentsController {
   }
 
   /**
-   * Update an existing attachment for a post in the
-   * community_platform_post_attachments table.
-   *
    * Update metadata or content reference for a specific attachment belonging to
    * a given post. Common use cases include correcting image links or changing
    * MIME type on administrative intervention.
@@ -165,9 +156,6 @@ export class CommunityplatformUserPostsAttachmentsController {
   }
 
   /**
-   * Delete an attachment from a post in the community_platform_post_attachments
-   * table.
-   *
    * Permanently deletes a specific attachment associated with a given post.
    * This operation ensures both the parent post and target attachment are
    * referenced by unique identifiers.

@@ -15,8 +15,6 @@ import { IPageIRedditCommunityCommentReport } from "../../../../api/structures/I
 @Controller("/redditCommunity/moderator/redditCommunityCommentReports")
 export class RedditcommunityModeratorRedditcommunitycommentreportsController {
   /**
-   * Submit a new comment report.
-   *
    * Create a new comment report entry within the RedditCommunity platform. This
    * operation allows users, moderators, or admins to flag problematic comments
    * with reasons and supporting information.
@@ -56,8 +54,6 @@ export class RedditcommunityModeratorRedditcommunitycommentreportsController {
   }
 
   /**
-   * Search and retrieve reddit community comment reports.
-   *
    * Retrieve a filtered and paginated list of reddit community comment reports.
    *
    * Reports are submitted by registered users flagging comments as
@@ -100,8 +96,6 @@ export class RedditcommunityModeratorRedditcommunitycommentreportsController {
   }
 
   /**
-   * Retrieve a specific comment report by its unique identifier.
-   *
    * Retrieve detailed information about a specific comment report submitted by
    * a user within the RedditCommunity platform. This operation provides all
    * necessary information for moderators or administrators to review the
@@ -141,8 +135,6 @@ export class RedditcommunityModeratorRedditcommunitycommentreportsController {
   }
 
   /**
-   * Update a reddit community comment report.
-   *
    * Update an existing comment report in the redditCommunity platform.
    *
    * This endpoint allows authenticated moderators to update the reason or
@@ -190,8 +182,6 @@ export class RedditcommunityModeratorRedditcommunitycommentreportsController {
   }
 
   /**
-   * Erase a reddit community comment report.
-   *
    * Delete a reddit community comment report permanently from the database.
    *
    * This endpoint allows moderators to remove a comment report from the system.

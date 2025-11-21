@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityGuest } from "../../../structures/IRedditCommunityGuest";
 
 /**
- * Register new member account and issue authentication tokens.
- *
  * Creates a new member account and issues initial JWT authentication tokens.
  *
  * This endpoint handles the registration process for new users joining the
@@ -120,8 +118,6 @@ export namespace join {
 }
 
 /**
- * Authenticate member credentials and issue access tokens.
- *
  * Authenticates existing member credentials and issues JWT access tokens.
  *
  * This endpoint handles the authentication process for registered members. It
@@ -228,8 +224,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT access tokens using valid refresh token.
- *
  * Refreshes JWT access tokens using a valid refresh token.
  *
  * This endpoint enables continuous authenticated sessions by allowing members

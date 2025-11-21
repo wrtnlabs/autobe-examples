@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationDashboard } from "../../../../../../api/str
 @Controller("/communityPlatform/adminUser/moderation/dashboard/overview")
 export class CommunityplatformAdminuserModerationDashboardOverviewController {
   /**
-   * Get an aggregated moderation dashboard overview derived from multiple
-   * community_platform_* moderation tables.
-   *
    * Retrieve a consolidated moderation dashboard overview containing
    * aggregated counts, status distributions, and recent activity metrics
    * across the platform's moderation and reporting subsystems.

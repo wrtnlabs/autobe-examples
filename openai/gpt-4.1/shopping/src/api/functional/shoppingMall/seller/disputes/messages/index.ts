@@ -7,9 +7,6 @@ import { IShoppingMallDisputeMessage } from "../../../../../structures/IShopping
 import { IPageIShoppingMallDisputeMessage } from "../../../../../structures/IPageIShoppingMallDisputeMessage";
 
 /**
- * Search and paginate messages relating to a specific dispute from
- * shopping_mall_dispute_messages.
- *
  * Retrieve a paginated, filtered set of messages exchanged about a particular
  * dispute.
  *
@@ -118,9 +115,6 @@ export namespace index {
 }
 
 /**
- * Update a specific shopping mall dispute message by its ID using the dispute
- * and message IDs.
- *
  * Update a specific dispute message within the context of a shopping mall
  * dispute.
  *
@@ -241,9 +235,6 @@ export namespace update {
 }
 
 /**
- * Erase (soft-delete) a specific shopping mall dispute message using the
- * dispute and message IDs.
- *
  * Erase (soft-delete) a specific dispute message by marking it as deleted in
  * the database, making it invisible to standard dispute communication flows.
  *

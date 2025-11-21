@@ -114,9 +114,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of authenticated user's todo
- * items.
- *
  * Retrieve a comprehensive, paginated list of todo items belonging to the
  * authenticated user with advanced filtering and search capabilities. This
  * operation supports multiple filtering options including completion status
@@ -226,8 +223,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific todo item by ID.
- *
  * Fetch a single todo item from the authenticated user's todo list using the
  * todo's unique identifier. This operation retrieves all todo details including
  * the title, description, completion status, priority level, due date,
@@ -320,8 +315,6 @@ export namespace at {
 }
 
 /**
- * Update an existing todo item.
- *
  * Modify an existing todo item belonging to the authenticated user. This
  * operation allows updating any modifiable field: title, description,
  * completion status, priority level, and due date. The todo ID and user
@@ -428,8 +421,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a todo item from the authenticated user's list.
- *
  * Delete a specific todo item that belongs to the authenticated user. This
  * operation finds the todo by its unique identifier (todoId), verifies that the
  * requesting user owns this todo, and then permanently removes it from the

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../../../../structures/ICommunityPlatformModerator";
 
 /**
- * Request password reset for moderator account via email verification.
- *
  * Initiate the password reset process for a moderator account by requesting a
  * password reset email. This operation accepts the moderator's email address
  * and verifies that an active moderator account exists with that email. Upon

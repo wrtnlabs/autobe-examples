@@ -7,8 +7,6 @@ import { IDiscussionBoardGuest } from "../../../../structures/IDiscussionBoardGu
 import { IPageIDiscussionBoardGuest } from "../../../../structures/IPageIDiscussionBoardGuest";
 
 /**
- * Search and list discussion board guests with filters and pagination.
- *
  * Retrieve a paginated, filtered, and optionally sorted list of discussion
  * board guests.
  *
@@ -108,8 +106,6 @@ export namespace index {
 }
 
 /**
- * Retrieve discussion board guest details by ID.
- *
  * Retrieve detailed information of a discussion board guest by their unique
  * identifier.
  *
@@ -203,8 +199,6 @@ export namespace at {
 }
 
 /**
- * Delete a discussion board guest by ID.
- *
  * Delete a specific discussion board guest by their unique identifier.
  *
  * This operation is intended for administrative use to remove guest accounts

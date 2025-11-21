@@ -7,8 +7,6 @@ import { IDiscussionBoardDiscussionBoardMember } from "../../../../structures/ID
 export * as sessions from "./sessions/index";
 
 /**
- * Update a discussion board member's information.
- *
  * Update an existing discussion board member's details including email,
  * nickname, and password.
  *
@@ -110,8 +108,6 @@ export namespace update {
 }
 
 /**
- * Delete a discussion board member.
- *
  * Permanently remove a discussion board member from the system.
  *
  * This hard delete operation cannot be undone and will completely erase member

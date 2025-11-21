@@ -7,9 +7,6 @@ import { IShoppingMallCart } from "../../../../structures/IShoppingMallCart";
 import { IPageIShoppingMallCart } from "../../../../structures/IPageIShoppingMallCart";
 
 /**
- * Administrative search and retrieval of all customer shopping cart records
- * (shopping_mall_carts table).
- *
  * Retrieve a filtered and paginated list of shopping cart records for all
  * customers across the platform.
  *
@@ -107,9 +104,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific shopping cart record
- * (shopping_mall_carts table).
- *
  * Retrieve detailed information about a specific customer shopping cart by its
  * unique identifier.
  *

@@ -7,8 +7,6 @@ import { IShoppingMallAdminNotification } from "../../../../structures/IShopping
 import { IPageIShoppingMallAdminNotification } from "../../../../structures/IPageIShoppingMallAdminNotification";
 
 /**
- * Create a new admin notification record in shopping_mall_admin_notifications.
- *
  * Create a new administrator notification record in the
  * shopping_mall_admin_notifications table for governance and operational
  * workflows.
@@ -129,9 +127,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate administrative notifications from
- * shopping_mall_admin_notifications.
- *
  * Search and retrieve a paginated list of administrative notifications stored
  * in the shopping_mall_admin_notifications table.
  *
@@ -256,9 +251,6 @@ export namespace index {
 }
 
 /**
- * Get a single admin notification from shopping_mall_admin_notifications by its
- * identifier.
- *
  * Retrieve detailed information for a single administrator notification stored
  * in the shopping_mall_admin_notifications table.
  *
@@ -379,9 +371,6 @@ export namespace at {
 }
 
 /**
- * Update an existing admin notification record in the
- * shopping_mall_admin_notifications table.
- *
  * Update an existing admin notification belonging to the
  * `shopping_mall_admin_notifications` table.
  *
@@ -527,9 +516,6 @@ export namespace update {
 }
 
 /**
- * Erase an admin notification record from the shopping_mall_admin_notifications
- * table.
- *
  * Erase an existing admin notification row from the
  * `shopping_mall_admin_notifications` table.
  *

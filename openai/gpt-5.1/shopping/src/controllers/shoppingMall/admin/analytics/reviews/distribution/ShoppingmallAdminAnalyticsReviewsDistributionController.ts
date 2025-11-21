@@ -7,9 +7,6 @@ import { IShoppingMallReviewRatingDistribution } from "../../../../../../api/str
 @Controller("/shoppingMall/admin/analytics/reviews/distribution")
 export class ShoppingmallAdminAnalyticsReviewsDistributionController {
   /**
-   * Compute and return rating distribution analytics based on
-   * shopping_mall_reviews and related aggregate tables.
-   *
    * Retrieve analytical distribution statistics of product review ratings for
    * a specified slice of the shoppingMall catalog.
    *

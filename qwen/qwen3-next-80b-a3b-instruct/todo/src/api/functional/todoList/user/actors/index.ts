@@ -8,8 +8,6 @@ import { IPageITodoListUser } from "../../../../structures/IPageITodoListUser";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve a specific user account by userId.
- *
  * Retrieve detailed information for a specific user account identified by
  * userId.
  *
@@ -110,8 +108,6 @@ export namespace at {
 }
 
 /**
- * Search and retrieve paginated list of user accounts.
- *
  * Perform comprehensive search, filtering, sorting, and pagination of user
  * accounts.
  *

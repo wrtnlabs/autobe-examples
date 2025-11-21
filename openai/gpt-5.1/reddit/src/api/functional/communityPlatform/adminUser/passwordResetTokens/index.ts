@@ -7,10 +7,6 @@ import { ICommunityPlatformPasswordResetToken } from "../../../../structures/ICo
 import { IPageICommunityPlatformPasswordResetToken } from "../../../../structures/IPageICommunityPlatformPasswordResetToken";
 
 /**
- * Create a new password reset token record in the
- * community_platform_password_reset_tokens table for a specific account and
- * purpose.
- *
  * Create a new password reset or account recovery token entry in the
  * `community_platform_password_reset_tokens` table, representing a single
  * short-lived token associated with a specific account and business purpose.
@@ -136,9 +132,6 @@ export namespace create {
 }
 
 /**
- * Search `community_platform_password_reset_tokens` records and return a
- * paginated summary list for administrative use.
- *
  * Retrieve a paginated, filterable list of password reset and account recovery
  * token records from the `community_platform_password_reset_tokens` table for
  * administrative inspection and security analysis.
@@ -255,10 +248,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single password reset token record from the
- * community_platform_password_reset_tokens table by ID for administrative
- * inspection.
- *
  * Get detailed information about a single password reset or account recovery
  * token stored in the `community_platform_password_reset_tokens` table using
  * its unique primary key identifier.
@@ -384,9 +373,6 @@ export namespace at {
 }
 
 /**
- * Permanently erase a password reset token record from
- * community_platform_password_reset_tokens by UUID ID.
- *
  * Erase a specific password reset or account recovery token record from the
  * community_platform_password_reset_tokens Prisma table using its UUID
  * identifier.

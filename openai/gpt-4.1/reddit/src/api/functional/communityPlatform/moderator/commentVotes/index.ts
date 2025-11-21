@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentVote } from "../../../../structures/ICommunity
 import { IPageICommunityPlatformCommentVote } from "../../../../structures/IPageICommunityPlatformCommentVote";
 
 /**
- * Search and retrieve paginated comment votes from
- * community_platform_comment_votes.
- *
  * Retrieve a paginated and filtered list of comment vote records from the
  * community platform system.
  *

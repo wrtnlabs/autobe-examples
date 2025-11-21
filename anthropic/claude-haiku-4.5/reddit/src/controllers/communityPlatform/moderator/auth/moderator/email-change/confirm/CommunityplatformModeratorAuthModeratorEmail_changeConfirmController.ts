@@ -7,8 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../../../api/structures
 @Controller("/communityPlatform/moderator/auth/moderator/email-change/confirm")
 export class CommunityplatformModeratorAuthModeratorEmail_changeConfirmController {
   /**
-   * Confirm moderator email address change with verification token.
-   *
    * Complete the email change process for a moderator by confirming the new
    * email address with a verification token. This operation is the second
    * step in the email change workflow, following the initial email change

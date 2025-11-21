@@ -8,9 +8,6 @@ export * as email from "./email/index";
 export * as password from "./password/index";
 
 /**
- * Register new member account with email verification workflow in
- * discussion_board_members table.
- *
  * Registers a new member account for the discussion board platform, enabling
  * users to create and participate in economic and political discussions. This
  * operation creates a new record in the discussion_board_members table with the
@@ -130,9 +127,6 @@ export namespace join {
 }
 
 /**
- * Authenticate member credentials and create session in
- * discussion_board_member_sessions table.
- *
  * Authenticates an existing member using email and password credentials,
  * validating against the discussion_board_members table and creating a new
  * authenticated session. This operation verifies the member's identity, checks
@@ -249,9 +243,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT access tokens using valid refresh token from
- * discussion_board_member_sessions.
- *
  * Refreshes expired or expiring JWT access tokens using a valid refresh token,
  * extending the member's authenticated session without requiring credential
  * re-entry. This operation validates the refresh token against active sessions

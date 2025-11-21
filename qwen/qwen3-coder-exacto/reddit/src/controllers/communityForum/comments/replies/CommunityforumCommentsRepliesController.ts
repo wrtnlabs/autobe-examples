@@ -9,8 +9,6 @@ import { ICommunityForumPostComment } from "../../../../api/structures/ICommunit
 @Controller("/communityForum/comments/:commentId/replies")
 export class CommunityforumCommentsRepliesController {
   /**
-   * Retrieve paginated replies to a community forum comment.
-   *
    * Retrieve paginated replies to a specific forum comment with advanced
    * filtering and sorting capabilities.
    *

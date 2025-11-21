@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallWishlistEngagementAnalytics } from "../../../../../../structures/IShoppingMallWishlistEngagementAnalytics";
 
 /**
- * Retrieve aggregated engagement analytics derived from shopping_mall_wishlists
- * and related wishlist tables.
- *
  * Retrieve engagement analytics for customer wishlists in the ShoppingMall
  * platform.
  *

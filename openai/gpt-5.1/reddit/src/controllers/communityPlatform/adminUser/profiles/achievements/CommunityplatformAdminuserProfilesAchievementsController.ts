@@ -7,9 +7,6 @@ import { ICommunityPlatformUserAchievement } from "../../../../../api/structures
 @Controller("/communityPlatform/adminUser/profiles/:handle/achievements")
 export class CommunityplatformAdminuserProfilesAchievementsController {
   /**
-   * Create a new achievement record in community_platform_user_achievements
-   * for the profile identified by handle.
-   *
    * Create a new achievement instance for the user profile identified by the
    * given handle.
    *
@@ -79,9 +76,6 @@ export class CommunityplatformAdminuserProfilesAchievementsController {
   }
 
   /**
-   * Update an existing community_platform_user_achievements record for the
-   * profile and achievement code specified in the path.
-   *
    * Update an existing achievement instance for the user profile identified
    * by the given handle and achievement code.
    *
@@ -148,9 +142,6 @@ export class CommunityplatformAdminuserProfilesAchievementsController {
   }
 
   /**
-   * Delete a user achievement row from `community_platform_user_achievements`
-   * using profile handle and achievement code.
-   *
    * Erase a specific achievement record from the
    * `community_platform_user_achievements` table by addressing it through a
    * profile handle and achievement code.

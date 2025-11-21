@@ -9,9 +9,6 @@ import { IRedditCommunityGuest } from "../../../../api/structures/IRedditCommuni
 @Controller("/redditCommunity/members/:username/activity")
 export class RedditcommunityMembersActivityController {
   /**
-   * Retrieve paginated activity history (posts and comments) for a specific
-   * member.
-   *
    * Retrieve a comprehensive, paginated list of all content activity created by
    * a specific community member. This operation provides a unified
    * chronological view of both posts and comments authored by the member,

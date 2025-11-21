@@ -7,8 +7,6 @@ import { IDiscussionBoardAccountRestriction } from "../../../../../api/structure
 @Controller("/discussionBoard/moderator/contributors/:contributorId/restrict")
 export class DiscussionboardModeratorContributorsController {
   /**
-   * Apply a posting or account restriction to a contributor account.
-   *
    * Create a new account restriction on a discussion board contributor
    * account as a moderation enforcement action.
    *

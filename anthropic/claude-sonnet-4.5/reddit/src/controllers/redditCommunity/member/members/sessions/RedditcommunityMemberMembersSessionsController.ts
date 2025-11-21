@@ -12,8 +12,6 @@ import { IRedditCommunityMemberSession } from "../../../../../api/structures/IRe
 @Controller("/redditCommunity/member/members/:username/sessions")
 export class RedditcommunityMemberMembersSessionsController {
   /**
-   * Retrieve paginated list of active sessions for a specific member.
-   *
    * Retrieve a filtered and paginated list of authentication sessions belonging
    * to a specific community member identified by their unique username. This
    * operation provides comprehensive session management visibility, allowing
@@ -68,8 +66,6 @@ export class RedditcommunityMemberMembersSessionsController {
   }
 
   /**
-   * Revoke and delete a specific member authentication session.
-   *
    * Permanently remove a specific authentication session for a community
    * member, effectively logging them out from that particular session. This
    * operation allows members to revoke sessions from specific devices or

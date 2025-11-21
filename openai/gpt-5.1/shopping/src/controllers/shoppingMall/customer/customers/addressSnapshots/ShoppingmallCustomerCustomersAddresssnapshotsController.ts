@@ -8,9 +8,6 @@ import { IShoppingMallCustomerAddressSnapshot } from "../../../../../api/structu
 @Controller("/shoppingMall/customer/customers/:customerId/addressSnapshots")
 export class ShoppingmallCustomerCustomersAddresssnapshotsController {
   /**
-   * List historical address snapshot records for a specific customer from the
-   * shopping_mall_customer_address_snapshots table.
-   *
    * Retrieve a filtered and paginated list of address snapshot records
    * belonging to a specific customer, enabling inspection of historical
    * shipping address usage for that customer.
@@ -72,9 +69,6 @@ export class ShoppingmallCustomerCustomersAddresssnapshotsController {
   }
 
   /**
-   * Get details of a specific customer address snapshot from the
-   * shopping_mall_customer_address_snapshots table.
-   *
    * Retrieve the full details of a single historical address snapshot record
    * for a given customer using its unique identifier.
    *

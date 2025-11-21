@@ -7,8 +7,6 @@ import { IRedditCommunityCommunitySubscriptions } from "../../../../../api/struc
 @Controller("/redditCommunity/member/communities/:communityName/subscriptions")
 export class RedditcommunityMemberCommunitiesSubscriptionsController {
   /**
-   * Create a new community subscription for authenticated member.
-   *
    * Create a new community subscription for an authenticated member to join a
    * specific Reddit community. This operation establishes the relationship
    * between a member and a community, enabling the member to receive
@@ -56,8 +54,6 @@ export class RedditcommunityMemberCommunitiesSubscriptionsController {
   }
 
   /**
-   * Update community subscription settings and notification preferences.
-   *
    * Manage subscription settings and notification preferences for a specific
    * community. This operation allows authenticated members to subscribe to
    * communities, update their notification preferences, or unsubscribe
@@ -101,8 +97,6 @@ export class RedditcommunityMemberCommunitiesSubscriptionsController {
   }
 
   /**
-   * Get detailed information about a community subscription.
-   *
    * Retrieve detailed information about a specific community subscription.
    * This operation provides complete subscription details including the
    * community that was subscribed to, notification preferences, subscription
@@ -147,8 +141,6 @@ export class RedditcommunityMemberCommunitiesSubscriptionsController {
   }
 
   /**
-   * Update existing community subscription settings and preferences.
-   *
    * Update an existing community subscription for an authenticated member,
    * allowing modification of notification preferences, subscription status,
    * and notification scheduling settings. This operation provides members
@@ -203,8 +195,6 @@ export class RedditcommunityMemberCommunitiesSubscriptionsController {
   }
 
   /**
-   * Unsubscribe from a community by deleting the subscription record.
-   *
    * This operation permanently removes a community subscription,
    * unsubscribing the requesting user from community content and
    * notifications. The subscription is identified by the subscriptionId path

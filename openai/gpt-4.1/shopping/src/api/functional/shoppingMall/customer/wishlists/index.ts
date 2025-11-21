@@ -7,8 +7,6 @@ import { IShoppingMallWishlist } from "../../../../structures/IShoppingMallWishl
 export * as items from "./items/index";
 
 /**
- * Create a new customer wishlist (shopping_mall_wishlists).
- *
  * Create a new wishlist for a customer in the shopping mall platform.
  *
  * This API operation is essential for persistent customer product interest
@@ -115,8 +113,6 @@ export namespace create {
 }
 
 /**
- * Update an existing wishlist (shopping_mall_wishlists) by wishlistId.
- *
  * Update a customer's wishlist in the shopping mall system.
  *
  * This API operation allows modification of a customer's existing wishlist
@@ -223,9 +219,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a customer's wishlist and all its items in
- * shopping_mall_wishlists.
- *
  * Execute the removal of a customer's wishlist from the database, along with
  * every item it contains.
  *

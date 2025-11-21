@@ -7,8 +7,6 @@ import { IDiscussionBoardArticleVersion } from "../../../../../structures/IDiscu
 import { IPageIDiscussionBoardArticleVersion } from "../../../../../structures/IPageIDiscussionBoardArticleVersion";
 
 /**
- * Retrieve a paginated list of article versions with search and filtering.
- *
  * This operation returns a paginated list of article versions for the specified
  * articleId. It supports complex search queries, filtering, and sorting. The
  * results are paginated to allow for efficient retrieval of large datasets.

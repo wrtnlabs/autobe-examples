@@ -8,9 +8,6 @@ import { IShoppingMallSku } from "../../../../../api/structures/IShoppingMallSku
 @Controller("/shoppingMall/admin/products/:productId/skus")
 export class ShoppingmallAdminProductsSkusController {
   /**
-   * Search and paginate SKUs for a specific product using the
-   * shopping_mall_skus table.
-   *
    * Retrieve a filtered, paginated list of SKUs for a specific product from
    * the shopping_mall_skus table.
    *

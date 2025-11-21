@@ -1,185 +1,148 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
+import { postAuthModeratorJoin } from "../../../providers/postAuthModeratorJoin";
+import { postAuthModeratorLogin } from "../../../providers/postAuthModeratorLogin";
+import { postAuthModeratorRefresh } from "../../../providers/postAuthModeratorRefresh";
 
-import { ICommunityPlatformModerator } from "../../../api/structures/ICommunityPlatformModerator";
-import { IModerator } from "../../../api/structures/IModerator";
+import { ICommunityBBSModerator } from "../../../api/structures/ICommunityBBSModerator";
 
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register a new moderator account with email and password.
+   * Registers a new moderator account in the communityBBS system. This
+   * operation creates a new entry in the community_bbs_moderator table with
+   * initial authentication credentials.
    *
-   * This endpoint enables the creation of a moderator account by accepting an
-   * email and password. The 'moderator' Prisma model must contain 'email' and
-   * 'passwordHash' fields to store credential information securely. The
-   * 'email' field ensures uniqueness and verification, while 'passwordHash'
-   * stores the bcrypt-encrypted credential, ensuring no plaintext passwords
-   * exist in the database. The 'createdAt' field automatically timestamps the
-   * account creation. This operation is foundational for user onboarding to
-   * moderator roles, allowing community managers to be registered via
-   * user-driven registration rather than system admin creation. This supports
-   * the community governance model where moderators are appointed by
-   * community members or automated systems based on activity, and ensures
-   * only authenticated actors can later perform moderation actions.
+   * The operation uses the email field for unique account identification and
+   * requires a password_hash to be securely stored using BCrypt. The username
+   * field is mandatory and must be unique to ensure clear identification in
+   * moderation logs. A timestamp is automatically recorded in the created_at
+   * field when the account is activated.
    *
-   * In this implementation, the moderator account is created nullifying prior
-   * authentication state, and the system issues an initial access token valid
-   * for 15 minutes and a refresh token valid for 7 days. This conforms to the
-   * token lifecycle policies defined in the service configuration. The schema
-   * also confirms the presence of a 'lastLoginAt' field, although this field
-   * is updated only during the login operation—not during registration. The
-   * registration endpoint does not require additional fields such as
-   * 'isVerified' because verification is handled by the platform's email
-   * service using a separate workflow.
+   * This operation is publicly accessible and does not require authentication,
+   * as it is the initial entry point for users seeking moderator privileges.
    *
-   * Security considerations indicate that the 'moderator' schema does not
-   * include a 'phoneNumber' field, so SMS verification is not supported. No
-   * MFA fields such as 'twoFactorSecret' or 'twoFactorEnabled' are present,
-   * so multilevel authentication is not implemented at this stage. The system
-   * enforces rate-limiting on registration via the
-   * 'community_platform_system_config' model, which dictates a maximum of 5
-   * registrations per IP address per hour, but this constraint is enforced at
-   * the transport layer—not via schema fields.
+   * Security is maintained through password hashing, email validation, and the
+   * requirement for unique identifiers. The deleted_at field is initialized as
+   * null to indicate an active account.
    *
-   * Since moderator accounts are granted role-specific permissions within
-   * communities, this registration flow is designed to produce an account
-   * that is initially active (not pending approval). This aligns with the
-   * business model statement that 'moderators can be appointed quickly to
-   * maintain community hygiene', reducing administrative overhead. Related
-   * operations include 'login', 'refresh', and 'logout' (where logout is
-   * handled client-side by discarding the refresh token), all of which depend
-   * on the integrity of credentials stored in this 'moderator' table.
-   *
-   * No soft-delete mechanisms exist in this model, as confirmed by absence of
-   * 'deletedAt' field. Therefore, moderator account deletion is a hard
-   * delete, managed via admin user interface with manual confirmation. This
-   * operational approach is appropriate for environments where moderator
-   * revocation is rare and requires manual intervention.
+   * This process is the foundation for all subsequent moderator authentication
+   * flows and directly corresponds to the creation of a persistent actor
+   * identity within the system.
    *
    * @param connection
-   * @param body Request body for moderator account registration containing
-   *   the email and plaintext password provided by the user during signup.
+   * @param body Input data required to register a new moderator account.
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IModerator.ICreate,
-  ): Promise<ICommunityPlatformModerator.IAuthorized> {
-    body;
-    return typia.random<ICommunityPlatformModerator.IAuthorized>();
+    body: ICommunityBBSModerator.ICreate,
+  ): Promise<ICommunityBBSModerator.IAuthorized> {
+    try {
+      return await postAuthModeratorJoin({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Authenticate a moderator user and issue access and refresh tokens.
+   * Authenticates an existing moderator by verifying their email and
+   * password_hash against the stored credentials in the community_bbs_moderator
+   * table.
    *
-   * This endpoint authenticates a moderator by comparing the provided email
-   * and password against the stored credentials in the 'moderator' table. The
-   * 'email' field must be of type String with unique constraint, the
-   * 'passwordHash' field must be of type String to securely store
-   * bcrypt-encrypted passwords, and the 'lastLoginAt' field (optional) is
-   * used to update the timestamp of successful login events. The absence of
-   * 'emailVerified' or 'twoFactorEnabled' fields means no additional
-   * verification steps are performed before login.
+   * The system validates the provided email against the unique constraint and
+   * compares the submitted password with the BCrypt-hashed password_hash field.
+   * If authentication succeeds, a new session is created in the
+   * community_bbs_moderator_sessions table with a timestamped created_at value,
+   * tracking the IP address, href, and referrer for security auditing.
    *
-   * The business context states that moderators are granted privilege within
-   * specific communities, so this login flow is designed for immediate
-   * session access without requiring approval. Since the 'moderator' schema
-   * does not include fields such as 'isBanned' or 'roleStatus', any moderator
-   * account can log in unless revoked system-wide via database deletion—an
-   * action handled externally and not part of this API flow. The login
-   * operation is public and accepts unauthenticated requests, making it the
-   * entry point for moderator session establishment.
+   * This operation allows moderators to establish a secure session for
+   * accessing privileged moderation functions. The authentication process uses
+   * strong cryptographic hashing to protect credentials during transmission and
+   * storage.
    *
-   * When an invalid credential is submitted, the system returns a 401
-   * Unauthorized response without indicating whether the email exists or if
-   * the password was incorrect, following security best practices against
-   * enumeration attacks. The rate-limiting policy from
-   * 'community_platform_system_config' (max 5 failed logins per minute per
-   * IP) is enforced at the gateway level and does not depend on schema
-   * fields. The 'lastLoginAt' field is updated after successful login,
-   * enabling monitoring for suspicious activity or credential reuse.
+   * The successful response includes an access token that authorizes subsequent
+   * API calls on behalf of the authenticated moderator. The system enforces
+   * session expiration through the expired_at field in the sessions table.
    *
-   * The 'access_token' and 'refresh_token' return payloads are structured by
-   * the ICommunityPlatformModerator.IAuthorized type, which internally
-   * handles token encryption and signing through the system's JWT service.
-   * This response type ensures consistency with other authenticated responses
-   * across the API. This operation is mutually exclusive with 'join'
-   * (registration) and 'refresh' in terms of function, but depends on the
-   * existence and integrity of the 'moderator' table fields. No additional
-   * input dependencies exist—it is a direct credential validation flow.
+   * This login flow is critical for maintaining accountability and security in
+   * the moderation ecosystem of communityBBS.
    *
    * @param connection
-   * @param body Request body containing the moderator's email and plaintext
-   *   password for credential validation.
+   * @param body Credentials required to authenticate a moderator user.
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IModerator.IAuth,
-  ): Promise<ICommunityPlatformModerator.IAuthorized> {
-    body;
-    return typia.random<ICommunityPlatformModerator.IAuthorized>();
+    body: ICommunityBBSModerator.ILogin,
+  ): Promise<ICommunityBBSModerator.IAuthorized> {
+    try {
+      return await postAuthModeratorLogin({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Refresh the access token for an active moderator session using a valid
-   * refresh token.
+   * Renews the access token for an active moderator session by validating the
+   * existing refresh token against the community_bbs_moderator_sessions table.
    *
-   * This endpoint allows a moderator to obtain a new access token by
-   * presenting a valid refresh token that was originally issued during login
-   * or registration. The system must maintain a record of issued refresh
-   * tokens for each moderator; despite the absence of a 'refreshToken' field
-   * in the 'moderator' schema, the system uses an external session store
-   * (e.g., Redis) to track refresh token bindings to moderator IDs, as
-   * referenced in the service architecture documentation.
+   * When a moderator's access token expires, this operation checks if the
+   * refresh token is still valid and hasn't exceeded its lifetime. It verifies
+   * that the session exists in the community_bbs_moderator_sessions table with
+   * an expired_at value that is still in the future, indicating an active
+   * session.
    *
-   * The refresh operation does not require any fields from the 'moderator'
-   * table directly, since the token is validated against the external session
-   * storage. The token validation process checks signature integrity,
-   * expiration time, and binds the refresh token to the correct moderator ID
-   * using a UUID link in the cache. The 'lastLoginAt' field in the moderator
-   * schema is not updated during refresh operations, ensuring that the last
-   * login timestamp reflects the initial authentication event, not session
-   * renewals.
+   * The operation creates a new access token while maintaining the same
+   * moderator identity context, preserving session continuity without requiring
+   * re-authentication. The updated expired_at timestamp extends the session
+   * lifetime, ensuring uninterrupted access to moderation functions.
    *
-   * Security is maintained by ensuring refresh tokens are bound to a specific
-   * user ID and device fingerprint, although the latter is not enforced by
-   * schema fields. No refresh token rotation policy is defined in the schema,
-   * so the same refresh token may be reused until expiration. The refresh
-   * token’s validity period is configured at the system level (e.g., 7 days)
-   * and does not depend on any moderator-specific fields. The endpoint
-   * returns a new access token with a fresh 15-minute lifetime, while the
-   * refresh token may or may not be rotated based on policy—though the schema
-   * does not define refresh token rotation support.
+   * This refresh mechanism enhances security by limiting the lifetime of access
+   * tokens while still allowing users to maintain their session through secure
+   * token renewal. The refresh token itself is never transmitted with each
+   * request, reducing exposure risk.
    *
-   * This operation is distinct from login and join as it requires a
-   * previously issued refresh token, not credentials. The operation does not
-   * depend on any fields in the moderator schema but requires persistent
-   * session storage. It enables seamless user experience during extended
-   * sessions without compromising security. Related operations include
-   * 'login' (which issues the initial refresh token) and 'logout' which
-   * invalidates the refresh token stored in the session store.
+   * This process is essential for providing a seamless authentication
+   * experience while maintaining strict security protocols for moderator
+   * accounts in the communityBBS system.
    *
    * @param connection
-   * @param body Request body containing the refresh token provided by the
-   *   client for validation and access token renewal.
+   * @param body Refresh token required to renew an expired access token for a
+   *   moderator session.
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
     @TypedBody()
-    body: IModerator.IRefresh,
-  ): Promise<ICommunityPlatformModerator.IAuthorized> {
-    body;
-    return typia.random<ICommunityPlatformModerator.IAuthorized>();
+    body: ICommunityBBSModerator.IRefresh,
+  ): Promise<ICommunityBBSModerator.IAuthorized> {
+    try {
+      return await postAuthModeratorRefresh({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

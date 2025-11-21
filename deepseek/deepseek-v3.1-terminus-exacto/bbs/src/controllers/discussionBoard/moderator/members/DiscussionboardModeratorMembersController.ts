@@ -12,8 +12,6 @@ import { IDiscussionBoardMember } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/moderator/members")
 export class DiscussionboardModeratorMembersController {
   /**
-   * Search and retrieve a filtered, paginated list of discussion board members.
-   *
    * This operation provides advanced search capabilities for finding discussion
    * board members based on multiple criteria including partial username
    * matching, email domain filtering, registration date ranges, and account
@@ -58,9 +56,6 @@ export class DiscussionboardModeratorMembersController {
   }
 
   /**
-   * Retrieve detailed information for a specific discussion board member by
-   * username.
-   *
    * This operation retrieves complete profile information for a specific
    * discussion board member identified by their unique username. The operation
    * validates that the requested member exists and that the requesting user has

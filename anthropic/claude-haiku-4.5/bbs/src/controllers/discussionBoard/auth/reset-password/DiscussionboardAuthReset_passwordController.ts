@@ -7,8 +7,6 @@ import { IDiscussionBoardPasswordReset } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/auth/reset-password")
 export class DiscussionboardAuthReset_passwordController {
   /**
-   * Reset a contributor account password using a valid reset token.
-   *
    * Complete the password reset process by submitting a valid reset token and
    * a new password. This operation validates the token and implements the new
    * password with strict security requirements.

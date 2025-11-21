@@ -7,9 +7,6 @@ import { ICommunityPlatformProfileImageHistory } from "../../../../../structures
 import { IPageICommunityPlatformProfileImageHistory } from "../../../../../structures/IPageICommunityPlatformProfileImageHistory";
 
 /**
- * Create and record a new profile image entry for the given platform user in
- * the image history table.
- *
  * Add a new profile image entry to the image history for the target user.
  *
  * This operation can be used by an authenticated user to record the upload of a
@@ -122,9 +119,6 @@ export namespace create {
 }
 
 /**
- * Retrieve the full profile image change history for a given user from
- * community_platform_profile_image_history.
- *
  * Retrieve the complete change history of profile images for a specific
  * platform user. This operation provides a list of all prior profile images
  * uploaded by the user, including the current and previous avatars, together
@@ -240,9 +234,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detail for a specific user profile image history event from
- * community_platform_profile_image_history.
- *
  * Fetch detailed information for a single image change event in a user's
  * profile image history. This operation returns the properties of the
  * particular event, including the image URI (reference to the avatar or profile
@@ -349,9 +340,6 @@ export namespace at {
 }
 
 /**
- * Update details of a specific user profile image history record for the target
- * user.
- *
  * Update metadata for a specific entry in a user's profile image history.
  *
  * This operation allows the authenticated user or an administrator to update

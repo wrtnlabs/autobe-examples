@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformPost } from "../../../../../structures/ICommunityPlatformPost";
 
 /**
- * Update the lock status of a post record in the community_platform_posts
- * table.
- *
  * Lock or unlock a post in the community platform by updating its moderation or
  * interaction status.
  *

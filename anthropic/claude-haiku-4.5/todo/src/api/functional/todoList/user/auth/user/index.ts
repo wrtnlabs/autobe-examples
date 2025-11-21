@@ -9,8 +9,6 @@ export * as sessions from "./sessions/index";
 export * as verify_token from "./verify_token/index";
 
 /**
- * Log out current user from the current device.
- *
  * Terminate the current user's authenticated session and invalidate the JWT
  * token used for this request.
  *

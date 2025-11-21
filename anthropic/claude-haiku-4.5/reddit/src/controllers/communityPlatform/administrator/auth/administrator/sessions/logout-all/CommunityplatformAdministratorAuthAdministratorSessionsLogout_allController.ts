@@ -7,8 +7,6 @@ import typia from "typia";
 )
 export class CommunityplatformAdministratorAuthAdministratorSessionsLogout_allController {
   /**
-   * Terminate all active administrator sessions across all devices.
-   *
    * This operation enables platform administrators to log out from all active
    * sessions simultaneously, invalidating all refresh tokens and forcing
    * re-authentication across all connected devices and locations. This is a

@@ -8,8 +8,6 @@ import { IPageIShoppingMallConfig } from "../../../../api/structures/IPageIShopp
 @Controller("/shoppingMall/admin/configs")
 export class ShoppingmallAdminConfigsController {
   /**
-   * Create a new global configuration row in the shopping_mall_configs table.
-   *
    * Create a new global configuration entry in the shoppingMall platform by
    * inserting a row into the `shopping_mall_configs` table.
    *
@@ -54,9 +52,6 @@ export class ShoppingmallAdminConfigsController {
   }
 
   /**
-   * Search and retrieve a paginated list of configuration records from
-   * shopping_mall_configs.
-   *
    * Retrieve a paginated and filtered list of global configuration entries
    * stored in the `shopping_mall_configs` Prisma model.
    *
@@ -113,9 +108,6 @@ export class ShoppingmallAdminConfigsController {
   }
 
   /**
-   * Retrieve a single configuration record from shopping_mall_configs by its
-   * identifier.
-   *
    * Retrieve the full detail of a single configuration entry from the
    * `shopping_mall_configs` Prisma model by its unique identifier.
    *
@@ -162,9 +154,6 @@ export class ShoppingmallAdminConfigsController {
   }
 
   /**
-   * Update an existing global configuration row in the shopping_mall_configs
-   * table by configId.
-   *
    * Update an existing global configuration entry in the shoppingMall
    * platform by modifying the corresponding row in the
    * `shopping_mall_configs` table identified by `configId`.
@@ -214,9 +203,6 @@ export class ShoppingmallAdminConfigsController {
   }
 
   /**
-   * Erase a configuration record from the shopping_mall_configs table by its
-   * unique configId.
-   *
    * Delete a specific global configuration entry from the
    * shopping_mall_configs table using its unique identifier.
    *

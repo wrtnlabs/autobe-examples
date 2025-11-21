@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommentReport } from "../../../../structures/ICommunityPlatformCommentReport";
 
 /**
- * Create a new comment report record in the community_platform_comment_reports
- * table.
- *
  * Create a new report entry for a specific comment in the community platform.
  *
  * This operation is responsible for accepting a member user’s report against an

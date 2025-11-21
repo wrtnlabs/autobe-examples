@@ -13,8 +13,6 @@ import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/admin/categories")
 export class ShoppingmallAdminCategoriesController {
   /**
-   * Create a new product category in the marketplace taxonomy.
-   *
    * Create a new product category within the shopping mall marketplace's
    * hierarchical category structure. This operation allows platform
    * administrators to expand the product taxonomy by adding new categories that
@@ -71,8 +69,6 @@ export class ShoppingmallAdminCategoriesController {
   }
 
   /**
-   * Update an existing product category's information.
-   *
    * Update the attributes of an existing product category identified by its
    * unique category code. This operation allows administrators to modify
    * category information including name, description, parent category
@@ -127,8 +123,6 @@ export class ShoppingmallAdminCategoriesController {
   }
 
   /**
-   * Update an existing product category's information.
-   *
    * Update the attributes of an existing product category identified by its
    * unique category slug. This operation allows administrators to modify
    * category information including name, description, parent category
@@ -183,8 +177,6 @@ export class ShoppingmallAdminCategoriesController {
   }
 
   /**
-   * Permanently delete a product category from the marketplace catalog.
-   *
    * Permanently remove a product category entity from the shopping mall catalog
    * system. This operation performs a hard delete, completely removing the
    * category record from the database rather than marking it as inactive or

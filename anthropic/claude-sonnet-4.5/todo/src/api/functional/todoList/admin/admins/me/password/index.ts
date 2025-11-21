@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListAdmin } from "../../../../../../structures/ITodoListAdmin";
 
 /**
- * Update the authenticated administrator's password.
- *
  * Update the password for the currently authenticated administrator account.
  * This operation allows admins to change their own password as a self-service
  * security management feature.

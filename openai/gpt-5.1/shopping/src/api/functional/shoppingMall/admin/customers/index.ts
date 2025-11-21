@@ -11,9 +11,6 @@ export * as actorSecurityEvents from "./actorSecurityEvents/index";
 export * as helpfulVotes from "./helpfulVotes/index";
 
 /**
- * Search and retrieve a paginated list of shopping_mall_customers records as
- * customer summaries.
- *
  * Retrieve a filtered and paginated list of registered customer accounts from
  * the ShoppingMall platform.
  *
@@ -140,9 +137,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single detailed shopping_mall_customers record by its unique
- * customerId identifier.
- *
  * Retrieve detailed information about a single customer account from the
  * ShoppingMall platform by its unique identifier.
  *

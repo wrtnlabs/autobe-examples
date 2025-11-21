@@ -7,9 +7,6 @@ import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallO
 import { IPageIShoppingMallOrderItem } from "../../../../../structures/IPageIShoppingMallOrderItem";
 
 /**
- * Search and retrieve a paginated list of order items for a shopping mall
- * order.
- *
  * Retrieve a filtered, sorted, and paginated list of order items associated
  * with a specific shopping mall order.
  *

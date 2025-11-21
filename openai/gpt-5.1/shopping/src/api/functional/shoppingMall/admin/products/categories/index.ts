@@ -7,8 +7,6 @@ import { IShoppingMallProductCategory } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallProductCategory } from "../../../../../structures/IPageIShoppingMallProductCategory";
 
 /**
- * Create a new `shopping_mall_product_categories` link for a given product.
- *
  * Create a new product-category association for a specific product in the
  * shoppingMall catalog.
  *
@@ -137,9 +135,6 @@ export namespace create {
 }
 
 /**
- * List and search categories associated with a given product via the
- * shopping_mall_product_categories table.
- *
  * Retrieve a paginated, searchable list of categories linked to a specific
  * product in the shoppingMall catalog.
  *
@@ -283,8 +278,6 @@ export namespace index {
 }
 
 /**
- * Get a specific `shopping_mall_product_categories` link for a given product.
- *
  * Retrieve a single product-category link record for a given product in the
  * shoppingMall catalog.
  *
@@ -406,9 +399,6 @@ export namespace at {
 }
 
 /**
- * Update a specific product–category link row in the
- * `shopping_mall_product_categories` table for a given product.
- *
  * Update an existing product–category link record for a specific product based
  * on the `shopping_mall_product_categories` table.
  *
@@ -562,9 +552,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific product–category link row in the
- * `shopping_mall_product_categories` table for a given product.
- *
  * Erase a single product–category association row for a given product based on
  * the `shopping_mall_product_categories` table.
  *

@@ -8,9 +8,6 @@ import { ICommunityPlatformAdminuserSession } from "../../../../../api/structure
 @Controller("/communityPlatform/adminUser/adminUsers/:username/sessions")
 export class CommunityplatformAdminuserAdminusersSessionsController {
   /**
-   * Index admin user sessions from the community_platform_adminuser_sessions
-   * table by username with pagination and filtering.
-   *
    * Retrieve a paginated list of sessions for a specific admin user
    * identified by username.
    *
@@ -66,9 +63,6 @@ export class CommunityplatformAdminuserAdminusersSessionsController {
   }
 
   /**
-   * Retrieve a specific admin user session
-   * (`community_platform_adminuser_sessions`).
-   *
    * Retrieve a single admin user session record for auditing and security
    * review.
    *
@@ -128,9 +122,6 @@ export class CommunityplatformAdminuserAdminusersSessionsController {
   }
 
   /**
-   * Erase a specific admin user session
-   * (`community_platform_adminuser_sessions`).
-   *
    * Erase an admin user session record to invalidate an active or historical
    * admin session.
    *

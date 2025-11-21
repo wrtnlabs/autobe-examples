@@ -11,9 +11,6 @@ import { ICommunityPlatformUserProfile } from "../../../../../api/structures/ICo
 @Controller("/communityPlatform/user/users/:userId/profiles/:profileId")
 export class CommunityplatformUserUsersProfilesController {
   /**
-   * Update an existing community platform user's profile (display name, avatar,
-   * bio, or status).
-   *
    * Update a user's profile attributes and information by providing new data in
    * the request body. This operation first verifies that both the user account
    * and the targeted profile exist, and that the profile is associated with the
@@ -69,9 +66,6 @@ export class CommunityplatformUserUsersProfilesController {
   }
 
   /**
-   * Permanently delete a user's profile from the system
-   * (community_platform_user_profiles table).
-   *
    * Delete a user profile from the community platform, ensuring the action is
    * authorized and only affects the specific user and profile combination
    * provided in the path.

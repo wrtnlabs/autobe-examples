@@ -7,8 +7,6 @@ import { IPageIEconomicDiscussionComment } from "../../../../structures/IPageIEc
 import { IEconomicDiscussionComment } from "../../../../structures/IEconomicDiscussionComment";
 
 /**
- * Get all comments for a specific economic discussion article.
- *
  * Get a comprehensive list of all comments posted on a specific economic and
  * political discussion article. This operation provides read-only access to the
  * article's discussion thread, returning comment content, author information,
@@ -99,9 +97,6 @@ export namespace index {
 }
 
 /**
- * Search and retrieve paginated comments for a specific economic discussion
- * article.
- *
  * Retrieve all comments associated with a specific economic and political
  * discussion article. This operation returns a paginated list of comments with
  * essential information including comment content, author details, creation
@@ -203,8 +198,6 @@ export namespace search {
 }
 
 /**
- * Update an existing comment on an economic discussion article.
- *
  * This operation allows authenticated economic discussion members to edit their
  * own comments on articles within the political discussion platform. The update
  * process maintains content integrity while providing users the ability to
@@ -318,8 +311,6 @@ export namespace update {
 }
 
 /**
- * Soft delete comment from economic discussion article.
- *
  * This operation enables deletion of comments from economic and political
  * discussion articles on the platform. Members can delete their own comments to
  * remove content they no longer wish to share, while moderators have broader

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardPasswordReset } from "../../../structures/IDiscussionBoardPasswordReset";
 
 /**
- * Request password reset token for account recovery.
- *
  * Initiate a password reset request by generating a secure reset token and
  * sending it to the user's registered email address. This operation supports
  * both member and moderator accounts through polymorphic actor pattern.

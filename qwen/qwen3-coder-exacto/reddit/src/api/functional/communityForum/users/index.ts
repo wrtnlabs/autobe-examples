@@ -9,8 +9,6 @@ export * as comments from "./comments/index";
 export * as karma from "./karma/index";
 
 /**
- * Retrieve a community forum user's public profile by username.
- *
  * Retrieve detailed public profile information for a specific user identified
  * by their unique username. This operation fetches core user details from the
  * community forum users database table without exposing sensitive
@@ -115,8 +113,6 @@ export namespace at {
 }
 
 /**
- * Update a community forum user's profile information.
- *
  * Update the profile information for an existing community forum user. This
  * operation allows users to modify their public profile details while
  * maintaining strict security controls over sensitive authentication

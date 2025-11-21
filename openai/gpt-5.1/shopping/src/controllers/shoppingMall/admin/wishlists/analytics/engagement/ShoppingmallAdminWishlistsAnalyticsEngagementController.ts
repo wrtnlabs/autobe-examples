@@ -7,9 +7,6 @@ import { IShoppingMallWishlistEngagementAnalytics } from "../../../../../../api/
 @Controller("/shoppingMall/admin/wishlists/analytics/engagement")
 export class ShoppingmallAdminWishlistsAnalyticsEngagementController {
   /**
-   * Retrieve aggregated engagement analytics derived from
-   * shopping_mall_wishlists and related wishlist tables.
-   *
    * Retrieve engagement analytics for customer wishlists in the ShoppingMall
    * platform.
    *

@@ -9,9 +9,6 @@ import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/categories/:categoryId/children")
 export class ShoppingmallCategoriesChildrenController {
   /**
-   * Search and retrieve child categories of a specific parent category with
-   * filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of child categories that belong to a
    * specified parent category in the marketplace catalog hierarchy. This
    * operation provides advanced search capabilities for navigating the

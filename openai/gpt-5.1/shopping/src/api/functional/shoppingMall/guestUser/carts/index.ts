@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCart } from "../../../../structures/IShoppingMallCart";
 
 /**
- * Create a new cart header record in the shopping_mall_carts table.
- *
  * Create a new shopping cart header in the shopping mall domain.
  *
  * This operation creates a fresh cart record in the shopping_mall_carts Prisma
@@ -118,8 +116,6 @@ export namespace create {
 }
 
 /**
- * Update an existing cart header in the shopping_mall_carts table by cartId.
- *
  * Update an existing shopping cart header record for the shopping mall
  * platform.
  *

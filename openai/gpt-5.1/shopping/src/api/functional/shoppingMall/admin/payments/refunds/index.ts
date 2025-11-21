@@ -8,9 +8,6 @@ import { IPageIShoppingMallPaymentRefund } from "../../../../../structures/IPage
 export * as items from "./items/index";
 
 /**
- * Create a new refund in shopping_mall_payment_refunds for a specific order
- * payment.
- *
  * Create a new refund record associated with a specific order payment in the
  * shoppingMall platform.
  *
@@ -162,9 +159,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate refund records in shopping_mall_payment_refunds for a
- * specific order payment.
- *
  * Search and retrieve a paginated list of refund records for a specific order
  * payment in the shoppingMall platform.
  *
@@ -319,9 +313,6 @@ export namespace index {
 }
 
 /**
- * Get a specific payment refund from `shopping_mall_payment_refunds` by parent
- * payment ID and refund sequence.
- *
  * Retrieve detailed information for a specific refund executed against a
  * logical order payment.
  *
@@ -463,9 +454,6 @@ export namespace at {
 }
 
 /**
- * Update an existing payment refund in `shopping_mall_payment_refunds`
- * identified by parent payment ID and refund sequence.
- *
  * Update selected fields of an existing refund transaction for a specific
  * logical order payment.
  *
@@ -618,9 +606,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific refund in shopping_mall_payment_refunds for a given order
- * payment.
- *
  * Erase a specific refund entry for an order payment in the ShoppingMall
  * platform.
  *

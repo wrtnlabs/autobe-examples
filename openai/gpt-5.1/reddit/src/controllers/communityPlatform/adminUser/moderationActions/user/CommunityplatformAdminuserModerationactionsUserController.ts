@@ -9,10 +9,6 @@ import { ICommunityPlatformModerationActionOnUser } from "../../../../../api/str
 )
 export class CommunityplatformAdminuserModerationactionsUserController {
   /**
-   * Get user-targeted moderation action details for a given moderation action
-   * (community_platform_moderation_actions +
-   * community_platform_moderation_actions_on_users).
-   *
    * Retrieve detailed information about a moderation action that has been
    * applied to an individual user account by combining the generic moderation
    * action header with its user-targeted metadata.

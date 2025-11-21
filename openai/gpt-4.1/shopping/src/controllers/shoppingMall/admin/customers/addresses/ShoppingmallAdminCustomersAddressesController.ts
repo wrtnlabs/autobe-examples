@@ -14,9 +14,6 @@ import { IShoppingMallAddress } from "../../../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/admin/customers/:customerId/addresses")
 export class ShoppingmallAdminCustomersAddressesController {
   /**
-   * List all addresses belonging to a given customer, paginated and filterable
-   * (from shopping_mall_addresses).
-   *
    * Retrieve a paginated and filterable list of address records for a specific
    * customer.
    *
@@ -69,9 +66,6 @@ export class ShoppingmallAdminCustomersAddressesController {
   }
 
   /**
-   * Retrieve details of a specific customer address by ID (from
-   * shopping_mall_addresses).
-   *
    * Retrieve the complete details of a single address by ID for a given
    * customer.
    *
@@ -117,9 +111,6 @@ export class ShoppingmallAdminCustomersAddressesController {
   }
 
   /**
-   * Update a specific customer address in shopping_mall_addresses by addressId
-   * and customerId.
-   *
    * Update the detailed shipping or billing address of a specific customer in
    * the platform's address book.
    *
@@ -171,9 +162,6 @@ export class ShoppingmallAdminCustomersAddressesController {
   }
 
   /**
-   * Delete a specific customer address (hard delete) in shopping_mall_addresses
-   * by addressId and customerId.
-   *
    * Permanently removes a specific address belonging to a given customer from
    * the platform's address book. This operation checks that the address record
    * identified by addressId is indeed owned by the customer specified by

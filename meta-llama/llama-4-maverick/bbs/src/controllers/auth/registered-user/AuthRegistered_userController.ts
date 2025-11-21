@@ -11,8 +11,6 @@ import { IAuthRefresh } from "../../../api/structures/IAuthRefresh";
 @Controller("/auth/registered-user")
 export class AuthRegistered_userController {
   /**
-   * Create new registered user account.
-   *
    * This operation creates a new registered user account in the system. It
    * requires user registration information such as username, email, and
    * password. The operation validates the input data, creates the user record
@@ -51,8 +49,6 @@ export class AuthRegistered_userController {
   }
 
   /**
-   * Authenticate registered user.
-   *
    * This operation authenticates a registered user based on their login
    * credentials. It requires the user's email/username and password.
    *
@@ -89,8 +85,6 @@ export class AuthRegistered_userController {
   }
 
   /**
-   * Refresh access token.
-   *
    * This operation refreshes the access token for an authenticated registered
    * user using their refresh token.
    *

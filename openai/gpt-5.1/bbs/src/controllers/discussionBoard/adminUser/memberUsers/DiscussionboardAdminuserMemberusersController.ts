@@ -14,10 +14,6 @@ import { IDiscussionBoardMemberuser } from "../../../../api/structures/IDiscussi
 @Controller("/discussionBoard/adminUser/memberUsers")
 export class DiscussionboardAdminuserMemberusersController {
   /**
-   * Search discussion_board_memberusers with filters and pagination for
-   * administrative member account management, exposing only non-sensitive
-   * metadata.
-   *
    * Search and retrieve a paginated list of registered member user accounts
    * from the `discussion_board_memberusers` table using flexible filtering and
    * sorting, returning only non-sensitive account metadata.
@@ -92,9 +88,6 @@ export class DiscussionboardAdminuserMemberusersController {
   }
 
   /**
-   * Retrieve a single discussion_board_memberusers record by memberUserId for
-   * administrative viewing.
-   *
    * Retrieve detailed information for a single discussion board member user
    * record identified by its UUID primary key.
    *
@@ -155,9 +148,6 @@ export class DiscussionboardAdminuserMemberusersController {
   }
 
   /**
-   * Update a discussion_board_memberusers record by memberUserId for
-   * administrative account management.
-   *
    * Modify selected profile and lifecycle fields of an existing discussion
    * board member user account, identified by its UUID primary key.
    *
@@ -223,9 +213,6 @@ export class DiscussionboardAdminuserMemberusersController {
   }
 
   /**
-   * Erase a member user account record from the discussion_board_memberusers
-   * table by identifier.
-   *
    * Erase a specific member user account from the
    * `discussion_board_memberusers` table by its identifier.
    *

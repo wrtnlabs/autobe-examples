@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentAttachment } from "../../../../../structures/I
 import { IPageICommunityPlatformCommentAttachment } from "../../../../../structures/IPageICommunityPlatformCommentAttachment";
 
 /**
- * Search and paginate all attachments for a given comment
- * (community_platform_comment_attachments).
- *
  * Retrieve a filtered and paginated set of attachments linked to a specific
  * comment, with support for advanced query options.
  *
@@ -121,9 +118,6 @@ export namespace index {
 }
 
 /**
- * Update a specific comment attachment
- * (community_platform_comment_attachments).
- *
  * Update properties and URI of a single attachment on a comment. The update
  * operation affects only the metadata linked to the given attachmentId under
  * commentId, ensuring the attachment is properly referenced by the comment in
@@ -246,9 +240,6 @@ export namespace update {
 }
 
 /**
- * Erase (delete) a specific comment attachment
- * (community_platform_comment_attachments).
- *
  * Permanently removes an attachment record from a comment, erasing its metadata
  * association from the community_platform_comment_attachments table. The
  * operation unlinks the specified attachment by ID from the comment indicated

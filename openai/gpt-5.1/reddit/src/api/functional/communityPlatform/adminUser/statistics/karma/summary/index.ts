@@ -5,9 +5,6 @@ import typia from "typia";
 import { ICommunityPlatformKarmaSummaryStatistics } from "../../../../../../structures/ICommunityPlatformKarmaSummaryStatistics";
 
 /**
- * Get aggregated karma statistics computed from the
- * community_platform_user_karmas table.
- *
  * Return an aggregated summary of user karma across the platform, derived from
  * the community_platform_user_karmas table.
  *

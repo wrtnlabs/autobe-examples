@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardAccountAction } from "../../../../api/structures/I
 @Controller("/discussionBoard/moderator/accountActions")
 export class DiscussionboardModeratorAccountactionsController {
   /**
-   * Create a new account suspension or ban action against a member account.
-   *
    * Apply a temporary suspension or permanent ban to a member account for
    * policy violations, creating a complete enforcement record in the
    * discussion_board_account_actions table.
@@ -78,8 +76,6 @@ export class DiscussionboardModeratorAccountactionsController {
   }
 
   /**
-   * Search and retrieve paginated list of account moderation actions.
-   *
    * Search and retrieve a filtered, paginated list of account-level moderation
    * actions from the discussion_board_account_actions table.
    *
@@ -142,9 +138,6 @@ export class DiscussionboardModeratorAccountactionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific account suspension or ban
-   * action.
-   *
    * Retrieve complete details about a specific account-level moderation action
    * including suspensions and bans applied to member accounts.
    *
@@ -197,8 +190,6 @@ export class DiscussionboardModeratorAccountactionsController {
   }
 
   /**
-   * Update an existing account action (suspension or ban) on a member account.
-   *
    * Update the details of an existing account action that was previously
    * applied to a member account. This operation allows moderators to modify
    * suspension or ban records, including changing the duration of temporary
@@ -267,8 +258,6 @@ export class DiscussionboardModeratorAccountactionsController {
   }
 
   /**
-   * Permanently remove an account action record from the system.
-   *
    * Permanently remove a specific account action record from the system. This
    * operation deletes the historical record of a suspension or ban that was
    * previously applied to a member account. The deletion is permanent and

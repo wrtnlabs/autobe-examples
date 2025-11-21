@@ -7,8 +7,6 @@ import { IPageITodoListUserSession } from "../../../../../structures/IPageITodoL
 import { ITodoListUserSession } from "../../../../../structures/ITodoListUserSession";
 
 /**
- * Get user sessions by user ID.
- *
  * Retrieve a list of user sessions for a specific user identified by their user
  * ID. The operation validates the user ID and returns a list of session objects
  * containing details such as IP address, login time, and session status. It
@@ -88,8 +86,6 @@ export namespace index {
 }
 
 /**
- * Get user session by ID.
- *
  * Get a specific user session by user ID and session ID. The operation
  * validates both the user ID and session ID, then returns the session details
  * if the requesting user is authorized to access the session information.

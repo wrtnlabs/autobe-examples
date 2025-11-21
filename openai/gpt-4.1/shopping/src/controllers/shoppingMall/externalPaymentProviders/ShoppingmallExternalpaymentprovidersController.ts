@@ -8,9 +8,6 @@ import { IShoppingMallExternalPaymentProvider } from "../../../api/structures/IS
 @Controller("/shoppingMall/externalPaymentProviders/:providerCode")
 export class ShoppingmallExternalpaymentprovidersController {
   /**
-   * Get external payment provider details by providerCode
-   * (shopping_mall_external_payment_providers).
-   *
    * Retrieve complete metadata for a specific external payment provider using
    * its system integration key (providerCode). This includes the display name,
    * unique code, status (active/inactive/deprecated), legal and integration

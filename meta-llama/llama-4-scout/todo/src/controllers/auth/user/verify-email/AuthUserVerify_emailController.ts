@@ -8,9 +8,6 @@ import { ITodoListUserEmailVerification } from "../../../../api/structures/ITodo
 @Controller("/auth/user/verify-email")
 export class AuthUserVerify_emailController {
   /**
-   * Finalizes user registration by activating account via email token in
-   * todo_list_user_email_verifications.
-   *
    * This endpoint accepts the email verification token (found in the
    * 'todo_list_user_email_verifications' table) and, if valid, activates the
    * associated user's account (sets 'is_verified' to true). Upon redemption,

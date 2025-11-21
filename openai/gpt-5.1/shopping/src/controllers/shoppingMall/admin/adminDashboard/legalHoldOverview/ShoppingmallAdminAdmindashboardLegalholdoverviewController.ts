@@ -7,9 +7,6 @@ import { IShoppingMallLegalHoldOverview } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/adminDashboard/legalHoldOverview")
 export class ShoppingmallAdminAdmindashboardLegalholdoverviewController {
   /**
-   * Get an aggregated legal hold overview for admins based on
-   * `shopping_mall_legal_holds`.
-   *
    * Return a high-level legal hold overview for the administrative dashboard
    * by aggregating information from the `shopping_mall_legal_holds` primary
    * table and the subsidiary `shopping_mall_legal_hold_targets` table,

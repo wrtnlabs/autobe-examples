@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityMembership } from "../../../../../structures/ICommunityPlatformCommunityMembership";
 
 /**
- * Get a single community membership (community_platform_community_memberships)
- * for a given community.
- *
  * Retrieve detailed information about a single community membership record
  * within a specific community.
  *
@@ -135,9 +132,6 @@ export namespace at {
 }
 
 /**
- * Create a community membership (community_platform_community_memberships) for
- * a given community.
- *
  * Create a new membership record for a specific community, establishing or
  * updating the relationship between a member user and the target community.
  *

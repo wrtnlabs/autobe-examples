@@ -7,9 +7,6 @@ import { IShoppingMallCategoryLocalization } from "../../../../structures/IShopp
 import { IPageIShoppingMallCategoryLocalization } from "../../../../structures/IPageIShoppingMallCategoryLocalization";
 
 /**
- * Search shopping_mall_category_localizations for a given category and return a
- * paginated list of localization summaries.
- *
  * Retrieve a filtered, paginated list of localized labels and descriptions for
  * a given category from the shopping_mall_category_localizations table.
  *
@@ -149,9 +146,6 @@ export namespace index {
 }
 
 /**
- * Get a localized ShoppingMall category entry from
- * shopping_mall_category_localizations by categoryId and locale.
- *
  * Fetch a single localized representation of a ShoppingMall category for a
  * specific locale.
  *

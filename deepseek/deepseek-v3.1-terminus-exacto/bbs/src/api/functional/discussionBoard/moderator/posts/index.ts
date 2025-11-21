@@ -9,8 +9,6 @@ export * as views from "./views/index";
 export * as likes from "./likes/index";
 
 /**
- * Permanently delete a discussion board post.
- *
  * This operation permanently removes a discussion board post from the system.
  * When a post is deleted, all associated comments, attachments, and related
  * data are also removed to maintain database integrity.

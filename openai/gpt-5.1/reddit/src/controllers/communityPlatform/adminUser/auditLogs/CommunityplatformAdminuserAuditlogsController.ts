@@ -8,9 +8,6 @@ import { ICommunityPlatformAuditLog } from "../../../../api/structures/ICommunit
 @Controller("/communityPlatform/adminUser/auditLogs")
 export class CommunityplatformAdminuserAuditlogsController {
   /**
-   * Search and paginate audit entries from the community_platform_audit_logs
-   * table.
-   *
    * Retrieve a filtered and paginated list of audit log entries from the
    * `community_platform_audit_logs` table.
    *
@@ -75,9 +72,6 @@ export class CommunityplatformAdminuserAuditlogsController {
   }
 
   /**
-   * Get detailed information for a single audit log row in the
-   * community_platform_audit_logs table by its UUID id.
-   *
    * Retrieve the full details of a single audit log entry from the
    * `community_platform_audit_logs` table using its UUID primary key.
    *

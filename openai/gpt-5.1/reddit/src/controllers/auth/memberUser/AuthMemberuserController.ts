@@ -7,10 +7,6 @@ import { ICommunityPlatformMemberuser } from "../../../api/structures/ICommunity
 @Controller("/auth/memberUser")
 export class AuthMemberuserController {
   /**
-   * Register a new memberUser row in community_platform_memberusers and
-   * create an initial session in community_platform_memberuser_sessions while
-   * returning authorized tokens.
-   *
    * This operation registers a new community platform member user by
    * inserting a record into the community_platform_memberusers table and then
    * creating an associated session in
@@ -83,10 +79,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Authenticate an existing memberUser using community_platform_memberusers
-   * and create a new session row in community_platform_memberuser_sessions
-   * while logging the attempt in community_platform_login_attempts.
-   *
    * This operation implements the primary login flow for the memberUser actor
    * by validating submitted credentials against rows in the
    * community_platform_memberusers table, enforcing account state and lockout
@@ -163,10 +155,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Refresh JWT tokens for a valid memberUser session in
-   * community_platform_memberuser_sessions after verifying the owning row in
-   * community_platform_memberusers is still allowed to authenticate.
-   *
    * This operation renews the JWT-based authentication context for a
    * memberUser by validating an existing session row in
    * community_platform_memberuser_sessions and its associated account state

@@ -7,9 +7,6 @@ import { ICommunityPlatformUserReport } from "../../../../../../structures/IComm
 import { IPageICommunityPlatformUserReport } from "../../../../../../structures/IPageICommunityPlatformUserReport";
 
 /**
- * Retrieve a prioritized moderation queue for user-related reports from
- * community_platform_user_reports.
- *
  * Retrieve a filtered, prioritized queue of open user-related moderation
  * reports that require moderator or administrator attention.
  *

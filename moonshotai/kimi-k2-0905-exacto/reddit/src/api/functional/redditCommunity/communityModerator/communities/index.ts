@@ -8,8 +8,6 @@ export * as rules from "./rules/index";
 export * as memberships from "./memberships/index";
 
 /**
- * Update existing community settings and metadata.
- *
  * Enable authorized community moderators to modify community properties
  * including title, description, categorization, and posting requirements.
  *

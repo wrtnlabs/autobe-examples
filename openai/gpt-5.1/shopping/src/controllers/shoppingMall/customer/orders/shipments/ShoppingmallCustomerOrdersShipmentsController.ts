@@ -8,9 +8,6 @@ import { IShoppingMallShipment } from "../../../../../api/structures/IShoppingMa
 @Controller("/shoppingMall/customer/orders/:orderCode/shipments")
 export class ShoppingmallCustomerOrdersShipmentsController {
   /**
-   * List and search shipments in the `shopping_mall_shipments` table for a
-   * given customer orderCode with pagination.
-   *
    * Retrieve a filtered, paginated list of shipments belonging to a specific
    * customer order from the `shopping_mall_shipments` table.
    *

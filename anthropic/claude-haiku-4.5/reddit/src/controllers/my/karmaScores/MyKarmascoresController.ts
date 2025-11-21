@@ -7,8 +7,6 @@ import { ICommunityPlatformKarmaScore } from "../../../api/structures/ICommunity
 @Controller("/my/karmaScores")
 export class MyKarmascoresController {
   /**
-   * Retrieve detailed karma score information for the authenticated member.
-   *
    * Retrieve the complete karma score record for the authenticated member.
    * This operation provides a detailed view of the member's reputation
    * metrics including post_karma (votes earned on posts), comment_karma

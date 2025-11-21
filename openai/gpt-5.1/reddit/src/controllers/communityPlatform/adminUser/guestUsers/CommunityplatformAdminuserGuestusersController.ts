@@ -8,9 +8,6 @@ import { ICommunityPlatformGuestuser } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/adminUser/guestUsers")
 export class CommunityplatformAdminuserGuestusersController {
   /**
-   * Search and paginate guest user surrogate records from the
-   * community_platform_guestusers table.
-   *
    * Retrieve a filtered and paginated list of guest user surrogate records
    * from the community_platform_guestusers table.
    *
@@ -59,9 +56,6 @@ export class CommunityplatformAdminuserGuestusersController {
   }
 
   /**
-   * Retrieve a single guest user from the community_platform_guestusers table
-   * by identifier for adminUser use.
-   *
    * Retrieve a single guest user record from the
    * `community_platform_guestusers` table for administrative inspection.
    *
@@ -124,9 +118,6 @@ export class CommunityplatformAdminuserGuestusersController {
   }
 
   /**
-   * Delete a guest user record from the community_platform_guestusers table
-   * by identifier for adminUser maintenance.
-   *
    * Delete a single guest user record from the
    * `community_platform_guestusers` table by its identifier for
    * administrative maintenance.

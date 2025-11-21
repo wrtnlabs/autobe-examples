@@ -7,9 +7,6 @@ import { IShoppingMallOrderStatusHistory } from "../../../../../structures/IShop
 import { IPageIShoppingMallOrderStatusHistory } from "../../../../../structures/IPageIShoppingMallOrderStatusHistory";
 
 /**
- * Paginated, filterable retrieval of order status history events from
- * shopping_mall_order_status_histories for a given order.
- *
  * Retrieve a paginated and filtered list of status history entries for a
  * specific order identified by its order number. The response reveals all order
  * state transitions (e.g., pending→paid, paid→shipped, shipped→delivered,
@@ -123,9 +120,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific order status history record for an order from the
- * shopping_mall_order_status_histories table.
- *
  * Retrieve a single status transition record associated with a specific order,
  * enabling review of a particular change event in an order's lifecycle.
  *

@@ -7,8 +7,6 @@ import { IRedditCommunityCommunitySubscription } from "../../../../../../structu
 import { IPageIRedditCommunityCommunitySubscription } from "../../../../../../structures/IPageIRedditCommunityCommunitySubscription";
 
 /**
- * Create a new subscription to a community.
- *
  * Create a new subscription linking a registered user to a subreddit community
  * on the redditCommunity platform.
  *
@@ -107,8 +105,6 @@ export namespace create {
 }
 
 /**
- * List subscriptions of a specified community.
- *
  * Retrieve a filtered and paginated list of users subscribed to the specified
  * community identified by the unique communityName.
  *
@@ -216,8 +212,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific community subscription by ID.
- *
  * Retrieve details of a community subscription linking a registered user to a
  * community on redditCommunity platform.
  *
@@ -315,8 +309,6 @@ export namespace at {
 }
 
 /**
- * Update a community subscription by ID for a specific community.
- *
  * Update an existing subscription of a registered user to a specified
  * redditCommunity community.
  *
@@ -430,8 +422,6 @@ export namespace update {
 }
 
 /**
- * Delete a community subscription by ID for a specific community.
- *
  * Permanently delete a subscription record linking a registered user to a
  * subreddit within the redditCommunity platform.
  *

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCustomerProfile } from "../../../../../structures/IShoppingMallCustomerProfile";
 
 /**
- * Get profile information for a customer from shopping_mall_customer_profiles.
- *
  * Retrieve the extended profile information for a single customer based on
  * their unique customer identifier.
  *
@@ -127,8 +125,6 @@ export namespace at {
 }
 
 /**
- * Update profile information for a customer in shopping_mall_customer_profiles.
- *
  * Update the extended profile information for a specific customer using their
  * unique customer identifier and a structured profile update payload.
  *

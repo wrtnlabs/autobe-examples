@@ -1,55 +1,25 @@
-/// Shopping cart entity that stores customer's cart information.
+/// Shopping cart entity that stores user's selected items before purchase.
 ///
-/// This model represents the main shopping cart entity that contains the
-/// customer's cart information. It serves as the container for cart items and
-/// provides the necessary context for cart operations. The cart is associated
-/// with a specific customer and maintains the cart's state and creation
-/// timestamp.
+/// Represents a user's temporary collection of products they intend to
+/// purchase.
+/// Each cart belongs to a specific customer and contains multiple cart items.
+/// The cart serves as a container for the shopping process before order
+/// placement.
 ///
-/// The cart's primary purpose is to temporarily store items that a customer
-/// intends to purchase, allowing them to review and modify their selection
-/// before proceeding to checkout. The cart's lifecycle is tied to the
-/// customer's
-/// session, and it persists until the customer either completes the purchase
-/// or explicitly clears the cart.
+/// This entity is part of the shopping cart functionality that allows users to
+/// collect products before proceeding to checkout. The cart maintains the
+/// selected items until the user decides to place an order or remove items.
 ///
-/// The cart's state is maintained through the `status` field, which tracks
-/// whether the cart is active, abandoned, or completed. This allows for
-/// better cart management and analytics.
+/// The cart entity is essential for the shopping experience as it provides a
+/// persistent storage for items between user sessions. It enables users to
+/// accumulate products over time and manage their selections before purchase.
 ///
-/// The cart's creation timestamp (`created_at`) is used to track when the cart
-/// was created, which can be useful for cart abandonment analysis and
-/// customer behavior tracking.
+/// The shopping_mall_carts table is a primary entity that requires independent
+/// user management and operations. Users can create, view, and manage their
+/// own carts, and the system tracks cart creation and modification times.
 ///
-/// The cart's relationship with the customer is established through the
-/// `shopping_customer_id` field, which references the {@link
-/// shopping_mall_customers.id} of the customer who owns the cart. This
-/// ensures that each cart is uniquely associated with a specific customer.
-///
-/// The cart's relationship with the customer session is established through the
-/// `shopping_customer_session_id` field, which references the {@link
-/// shopping_mall_customer_sessions.id} of the customer session that created the
-/// cart. This provides additional context for cart operations and allows for
-/// better tracking of customer behavior.
-///
-/// The cart's status is maintained through the `status` field, which tracks
-/// whether the cart is active, abandoned, or completed. This allows for better
-/// cart management and analytics.
-///
-/// The cart's creation timestamp (`created_at`) is used to track when the cart
-/// was created, which can be useful for cart abandonment analysis and
-/// customer behavior tracking.
-///
-/// The cart's relationship with the customer is established through the
-/// `shopping_customer_id` field, which references the {@link
-/// shopping_mall_customers.id} of the customer who owns the cart. This ensures
-/// that each cart is uniquely associated with a specific customer.
-///
-/// The cart's relationship with the customer session is established through the
-/// `shopping_customer_session_id` field, which references the {@link
-/// shopping_mall_customer_sessions.id} of the customer session that created the
-/// cart. This provides additional context for cart operations and allows for
-/// better tracking of customer behavior.
+/// The cart entity is referenced by the shopping_mall_cart_items table to
+/// establish the relationship between carts and the products they contain.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -60,94 +30,50 @@ model shopping_mall_carts {
   /// Primary Key.
   id String @id
   
-  /// Customer who owns the cart. {@link shopping_mall_customers.id}.
-  shopping_customer_id String
+  /// Belongs to customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Customer session that created the cart. {@link
-  /// shopping_mall_customer_sessions.id}.
-  shopping_customer_session_id String
-  
-  /// Current status of the cart. Valid values: active, abandoned, completed.
-  status String
-  
-  /// Timestamp when the cart was created.
+  /// When the cart was created.
   created_at DateTime
+  
+  /// When the cart was last updated.
+  updated_at DateTime
+  
+  /// When the cart was deleted (soft delete).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_customer_session_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
   shopping_mall_cart_items shopping_mall_cart_items[]
   
-  @@index([shopping_customer_session_id])
-  
-  @@index([shopping_customer_id, created_at])
+  @@index([shopping_mall_customer_id])
 }
 
-/// Shopping cart item entity that stores information about items in the cart.
+/// Shopping cart item entity that represents products in a user's cart.
 ///
-/// This model represents the items within a shopping cart. Each cart item is
-/// associated with a specific cart and a sale unit, and it tracks the quantity
-/// of the item. The cart item also maintains timestamps for creation and
-/// updates, which are useful for tracking changes and managing the cart's
-/// content.
+/// Each cart item belongs to a specific cart and references a product unit.
+/// The item stores quantity and other relevant information about the product
+/// in the cart. The cart item entity enables users to specify how many
+/// of each product they want to purchase.
 ///
-/// The cart item's primary purpose is to store the details of the items
-/// that a customer has added to their cart. This allows the customer to
-/// review and modify their selection before proceeding to checkout. The cart
-/// item's lifecycle is tied to the cart's lifecycle, and it is deleted when the
-/// cart is cleared or the customer completes the purchase.
+/// This entity is part of the shopping cart functionality that allows users to
+/// collect products before proceeding to checkout. The cart item maintains
+/// the quantity and other details of each product in the cart.
 ///
-/// The cart item's relationship with the cart is established through the
-/// `shopping_mall_cart_id` field, which references the {@link
-/// shopping_mall_carts.id} of the cart that contains the item. This ensures
-/// that each cart item is uniquely associated with a specific cart.
+/// The cart item entity is essential for the shopping experience as it
+/// provides a way to track the quantity and details of each product in the
+/// cart. It enables users to manage their selections before purchase.
 ///
-/// The cart item's relationship with the sale unit is established through the
-/// `shopping_sale_unit_id` field, which references the {@link
-/// shopping_mall_sale_units.id} of the sale unit that the item represents. This
-/// provides the necessary context for pricing, availability, and other
-/// relevant information about the item.
+/// The shopping_mall_cart_items table is a primary entity that requires
+/// independent user management and operations. Users can create, view,
+/// and manage their own cart items, and the system tracks cart item creation
+/// and modification times.
 ///
-/// The cart item's quantity is maintained through the `quantity` field, which
-/// tracks the number of units of the item that the customer has added to their
-/// cart. This allows the customer to adjust the quantity of the item before
-/// proceeding to checkout.
-///
-/// The cart item's creation timestamp (`created_at`) is used to track when
-/// the item was added to the cart, which can be useful for cart abandonment
-/// analysis and customer behavior tracking.
-///
-/// The cart item's update timestamp (`updated_at`) is used to track when the
-/// item was last modified, which can be useful for tracking changes to the
-/// cart's content and managing the cart's state.
-///
-/// The cart item's relationship with the cart is established through the
-/// `shopping_mall_cart_id` field, which references the {@link
-/// shopping_mall_carts.id} of the cart that contains the item. This ensures
-/// that each
-/// cart item is uniquely associated with a specific cart.
-///
-/// The cart item's relationship with the sale unit is established through the
-/// `shopping_sale_unit_id` field, which references the {@link
-/// shopping_mall_sale_units.id} of the sale unit that the item represents. This
-/// provides the necessary context for pricing, availability, and other
-/// relevant information about the item.
-///
-/// The cart item's quantity is maintained through the `quantity` field, which
-/// tracks the number of units of the item that the customer has added to their
-/// cart. This allows the customer to adjust the quantity of the item before
-/// proceeding to checkout.
-///
-/// The cart item's creation timestamp (`created_at`) is used to track when
-/// the item was added to the cart, which can be useful for cart abandonment
-/// analysis and customer behavior tracking.
-///
-/// The cart item's update timestamp (`updated_at`) is used to track when the
-/// item was last modified, which can be useful for tracking changes to the
-/// cart's content and managing the cart's state.
+/// The cart item entity is referenced by the shopping_mall_carts table to
+/// establish the relationship between carts and the products they contain.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -158,29 +84,30 @@ model shopping_mall_cart_items {
   /// Primary Key.
   id String @id
   
-  /// Cart that contains the item. {@link shopping_mall_carts.id}.
+  /// Belongs to cart's {@link shopping_mall_carts.id}.
   shopping_mall_cart_id String
   
-  /// Sale unit that the item represents. {@link shopping_mall_sale_units.id}.
-  shopping_sale_unit_id String
+  /// Belongs to sale unit's {@link shopping_mall_sale_units.id}.
+  shopping_mall_sale_unit_id String
   
-  /// Number of units of the item in the cart.
+  /// Quantity of the product in the cart.
   quantity Int
   
-  /// Timestamp when the item was added to the cart.
+  /// When the cart item was created.
   created_at DateTime
   
-  /// Timestamp when the item was last modified.
+  /// When the cart item was last updated.
   updated_at DateTime
+  
+  /// When the cart item was deleted (soft delete).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
-  saleUnit shopping_mall_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_sale_unit_id])
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_cart_id, shopping_sale_unit_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_0c6755e3")
+  @@index([shopping_mall_cart_id])
+  @@index([shopping_mall_sale_unit_id])
 }

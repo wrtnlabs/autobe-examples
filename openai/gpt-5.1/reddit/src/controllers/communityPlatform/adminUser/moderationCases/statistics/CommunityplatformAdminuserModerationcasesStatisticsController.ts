@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationCaseStatistics } from "../../../../../api/s
 @Controller("/communityPlatform/adminUser/moderationCases/:caseKey/statistics")
 export class CommunityplatformAdminuserModerationcasesStatisticsController {
   /**
-   * Retrieve aggregated appeal statistics for a specific moderation case
-   * based on the community_platform_appeals table.
-   *
    * Retrieve computed statistics for appeals associated with a single
    * moderation case identified by its business key.
    *

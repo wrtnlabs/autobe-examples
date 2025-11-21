@@ -8,9 +8,6 @@ import { IShoppingMallAdminRoleAssignment } from "../../../../api/structures/ISh
 @Controller("/shoppingMall/admin/adminRoleAssignments")
 export class ShoppingmallAdminAdminroleassignmentsController {
   /**
-   * Search and paginate admin role assignments
-   * (shopping_mall_admin_role_assignments) using rich filters.
-   *
    * Retrieve a filtered, paginated list of admin role assignments from the
    * shopping_mall_admin_role_assignments table using rich search criteria.
    *
@@ -71,9 +68,6 @@ export class ShoppingmallAdminAdminroleassignmentsController {
   }
 
   /**
-   * Get a single admin role assignment from the
-   * shopping_mall_admin_role_assignments table by id.
-   *
    * Retrieve a specific admin role assignment record from the
    * shopping_mall_admin_role_assignments table by its unique identifier.
    *
@@ -131,9 +125,6 @@ export class ShoppingmallAdminAdminroleassignmentsController {
   }
 
   /**
-   * Update an admin role assignment in the
-   * shopping_mall_admin_role_assignments table by id.
-   *
    * Update a specific admin role assignment record in the
    * shopping_mall_admin_role_assignments table using its unique identifier.
    *
@@ -189,9 +180,6 @@ export class ShoppingmallAdminAdminroleassignmentsController {
   }
 
   /**
-   * Erase an existing admin role assignment row in the
-   * `shopping_mall_admin_role_assignments` table by its ID.
-   *
    * Erase an existing admin role assignment record in the RBAC subsystem,
    * identified by its unique assignment identifier.
    *

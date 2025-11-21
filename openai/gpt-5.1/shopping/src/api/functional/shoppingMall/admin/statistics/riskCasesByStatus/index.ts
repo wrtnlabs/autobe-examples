@@ -5,8 +5,6 @@ import typia from "typia";
 import { IShoppingMallRiskCaseStatusStatistics } from "../../../../../structures/IShoppingMallRiskCaseStatusStatistics";
 
 /**
- * Get aggregated statistics of shopping_mall_risk_cases grouped by status.
- *
  * Retrieve aggregated counts of risk cases by their current status for use in
  * risk governance dashboards.
  *

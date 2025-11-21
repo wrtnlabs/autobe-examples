@@ -7,9 +7,6 @@ import { IShoppingMallReviewEligibility } from "../../../../structures/IShopping
 import { IPageIShoppingMallReviewEligibility } from "../../../../structures/IPageIShoppingMallReviewEligibility";
 
 /**
- * Search paginated review eligibility records from the
- * shopping_mall_review_eligibilities table.
- *
  * Retrieve a filtered, paginated list of review eligibility records from the
  * `shopping_mall_review_eligibilities` table.
  *

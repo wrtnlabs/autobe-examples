@@ -1,0 +1,294 @@
+/// Product reviews and ratings submitted by customers for purchased products.
+///
+/// This table serves as the core review management system enabling customers
+/// to share their experiences with products. Reviews include comprehensive
+/// rating systems, detailed text content, and visual media to help other
+/// customers make informed purchasing decisions.
+///
+/// The system maintains verified purchase validation by linking to specific
+/// product orders, ensuring review authenticity. Reviews undergo automated
+/// quality checks and potential moderation workflows to maintain community
+/// standards. Each review supports multiple rating criteria and allows
+/// customers to upload photos or videos demonstrating product usage.
+///
+/// Reviews remain attached to products permanently, providing historical
+/// context and trend analysis for customers and sellers alike. The rating
+/// system supports multiple criteria including overall satisfaction, value
+/// for money, quality assessment, and shipping satisfaction where
+/// applicable. Review visibility is controlled through approval statuses and
+/// content standards enforcement.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who wrote the review. {@link shopping_mall_customer.id}
+  shopping_customer_id String
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}
+  shopping_product_id String
+  
+  /// Order item validating verified purchase requirement. {@link
+  /// shopping_mall_order_items.id}
+  shopping_order_item_id String
+  
+  /// Overall product rating on scale of 1-5 stars. Validates customer
+  /// satisfaction with purchase experience and product quality. Affects
+  /// product discovery and seller reputation.
+  rating Int
+  
+  /// Brief review title summarizing key points. Limited to 100 characters for
+  /// search optimization and preview displays. Appears in review listings and
+  /// search results.
+  title String
+  
+  /// Detailed review content explaining customer experience. Minimum 50
+  /// characters ensures substantive feedback. Supports rich text formatting
+  /// including paragraphs and lines breaks for readability.
+  content String
+  
+  /// Verification status indicating purchase confirmation. Values: 'verified'
+  /// for confirmed purchases, 'unverified' for direct submissions, 'pending'
+  /// for validation queue. Affects review credibility and visibility.
+  verification_status String
+  
+  /// Moderation approval status controlling review visibility. Values:
+  /// 'pending' for queue review, 'approved' for public display, 'rejected' for
+  /// policy violations, 'flagged' for content investigation.
+  approval_status String
+  
+  /// Explanation provided when review is rejected or requires modification.
+  /// Helps educate customers about content guidelines and provides
+  /// constructive feedback for improvement.
+  rejection_reason String?
+  
+  /// Aggregate helpfulness score calculated from community votes. Higher
+  /// scores indicate reviews that provide valuable information to other
+  /// customers. Influences review ranking and recommendation algorithms.
+  helpfulness_score Float
+  
+  /// Featured review designation highlighting exceptional content. Featured
+  /// reviews receive priority placement in product listings and may be
+  /// showcased on category pages or promotional materials.
+  is_featured Boolean
+  
+  /// Indicates presence of uploaded photos or videos in review. Media content
+  /// enhances review credibility and provides visual proof of product usage or
+  /// condition.
+  has_media Boolean
+  
+  /// Timestamp when review was first submitted to the platform. Used for
+  /// chronological review organization and age-based review weighting in
+  /// rankings.
+  created_at DateTime
+  
+  /// Timestamp of last review modification including content edits or status
+  /// changes. Tracks review evolution and maintenance activity over time.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for reviews removed from public display. Supports
+  /// content moderation workflows while preserving historical data for
+  /// analysis and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_review_reports shopping_mall_review_reports[]
+  
+  @@index([shopping_order_item_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_customer_id, shopping_product_id], map: "shopping_mall_product_reviews_shopping_customer_id_sho_11d09399")
+  // spellchecker: ignore-next-line
+  @@index([shopping_product_id, approval_status], map: "shopping_mall_product_reviews_shopping_product_id_appr_f79a5b71")
+  @@index([rating, helpfulness_score])
+  @@index([created_at])
+  @@index([approval_status])
+}
+
+/// Community voting system for review helpfulness and quality assessment
+/// enabling customers to evaluate review value and credibility.
+///
+/// This table implements a community-driven review quality system where
+/// customers can indicate whether reviews were helpful or unhelpful to their
+/// purchase decision process. The voting mechanism provides crowdsourced
+/// review validation, helping identify high-quality feedback that provides
+/// genuine value to other customers shopping for similar products.
+///
+/// The voting system filters out fake or unhelpful reviews through community
+/// participation, reducing the need for extensive manual moderation while
+/// maintaining review quality standards. The design prevents vote
+/// manipulation by limiting voting to authenticated customers and
+/// implementing abuse detection algorithms. Established customers with
+/// voting history receive greater weight in aggregate calculations.
+///
+/// The helpfulness scoring enables sophisticated review ranking algorithms
+/// that prioritize genuinely helpful content over subjective or low-effort
+/// reviews. The voting data supports seller performance analytics by
+/// identifying customers who consistently contribute valuable reviews versus
+/// those whose feedback requires improvement or should be moderated.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being voted on. {@link shopping_mall_product_reviews.id}
+  shopping_mall_product_review_id String
+  
+  /// Customer casting the vote. {@link shopping_mall_customer.id}
+  shopping_customer_id String
+  
+  /// Type of vote cast by community member. Values: 'helpful' for valuable
+  /// content, 'unhelpful' for generic or irrelevant content, 'inappropriate'
+  /// for policy violations. Supports community-driven review quality
+  /// assessment.
+  vote_type String
+  
+  /// Voting weight based on voter reputation and history. Varies from 0.1 (new
+  /// users) to 5.0 (established community members with proven track record).
+  /// Prevents vote manipulation and ensures quality voting.
+  vote_weight Float
+  
+  /// Optional reason or comment explaining vote rationale. Helps improve
+  /// review quality by providing constructive feedback to reviewers and
+  /// supports review ranking algorithm optimizations.
+  vote_reason String?
+  
+  /// Timestamp when vote was cast. Prevents duplicate voting and enables
+  /// time-based vote weighting algorithms that may prioritize recent votes
+  /// over older ones.
+  created_at DateTime
+  
+  /// Timestamp of vote modification or reason addition. Supports review and
+  /// editing capabilities for community voting with audit trail maintenance.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  productReview shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_review_id, shopping_customer_id], map: "shopping_mall_review_votes_shopping_mall_product_revie_60cab9df")
+  @@index([vote_type, vote_weight])
+  @@index([created_at])
+  @@index([shopping_customer_id])
+}
+
+/// Community reporting system for identifying inappropriate, misleading, or
+/// policy-violating review content through structured investigation
+/// workflows.
+///
+/// This table provides a comprehensive community moderation mechanism
+/// enabling customers to report reviews that violate platform policies,
+/// contain inappropriate content, or provide misleading information to other
+/// shoppers. The reporting system creates structured workflows for
+/// investigating reported content while protecting the review algorithm from
+/// manipulation and ensuring fair treatment of all reviewers.
+///
+/// The reporting mechanism balances community engagement with abuse
+/// prevention by tracking reporter credibility and implementing weighted
+/// assessment algorithms. The system distinguishes between legitimate
+/// content concerns and frivolous or malicious reporting, maintaining review
+/// ecosystem integrity while providing appropriate channels for content
+/// improvement and community standards compliance. Multiple reports on
+/// single reviews trigger expedited investigation processes while preventing
+/// coordinated manipulation attempts.
+///
+/// The investigation workflows support different resolution paths based on
+/// report severity and category, ranging from automated content flagging to
+/// manual moderator review and customer service escalation. The reporting
+/// data provides valuable analytics for identifying systemic review quality
+/// issues, common policy violations, and areas where platform guidelines
+/// require clarification or improvement.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being reported for policy violations. {@link
+  /// shopping_mall_product_reviews.id}
+  shopping_mall_product_review_id String
+  
+  /// Customer submitting the report. {@link shopping_mall_customer.id}
+  shopping_customer_id String
+  
+  /// Category of violation being reported. Values: 'inappropriate_content' for
+  /// offensive material, 'fake_review' for purchased or fabricated reviews,
+  /// 'spam' for irrelevant or promotional content, 'personal_information' for
+  /// privacy violations, 'harmful_advice' for dangerous recommendations.
+  report_category String
+  
+  /// Detailed explanation supporting the report claim. Minimum 50 characters
+  /// ensures meaningful reporting. Helps moderators understand context and
+  /// make informed decisions about content actionability.
+  report_description String
+  
+  /// Current status of report investigation process. Values: 'pending' for
+  /// queue assignment, 'under_review' for active investigation, 'resolved' for
+  /// completed actions, 'dismissed' for invalid claims
+  investigation_status String
+  
+  /// Action taken as result of investigation findings. Values: 'no_action' for
+  /// unsubstantiated claims, 'review_modified' for content update requirement,
+  /// 'review_removed' for policy violation confirmation, 'reviewer_warned' for
+  /// education approach, 'reviewer_suspended' for repeat violations
+  moderation_action String?
+  
+  /// Internal notes and analysis from investigator review. Documents
+  /// investigation process, evidence consideration, and decision rationale for
+  /// audit trail and potential appeal review.
+  investigation_notes String?
+  
+  /// Assessment of reporter history and reliability. Varies from 0.0 (frequent
+  /// false reports) to 1.0 (consistently accurate reporting). Used for
+  /// priority assessment and reporting weight calculations in investigation
+  /// algorithms.
+  reporter_credibility_score Float
+  
+  /// Timestamp when report was initially submitted. Used for investigation
+  /// prioritization and reporting volume analysis to identify trending issues
+  /// or coordinated reporting campaigns.
+  created_at DateTime
+  
+  /// Timestamp when investigation was completed and final action determined.
+  /// Used for processing time analysis and workflow efficiency measurement.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productReview shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_review_id, shopping_customer_id], map: "shopping_mall_review_reports_shopping_mall_product_rev_37b744c7")
+  // spellchecker: ignore-next-line
+  @@index([report_category, investigation_status], map: "shopping_mall_review_reports_report_category_investiga_45d09115")
+  @@index([created_at])
+  @@index([investigation_status])
+}

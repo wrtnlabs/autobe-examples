@@ -12,8 +12,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/refundRequests/:refundRequestId")
 export class ShoppingmallAdminRefundrequestsController {
   /**
-   * Retrieve detailed refund request by ID.
-   *
    * Retrieve a specific refund request by its unique identifier. This endpoint
    * returns all pertinent information about the request including refund
    * amount, reason, current status, when it was requested, and when it was
@@ -53,8 +51,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Update a refund request by ID in the shopping mall system.
-   *
    * Update details of an existing refund request by specifying its unique
    * identifier.
    *
@@ -100,8 +96,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Delete a refund request by ID in the shopping mall system.
-   *
    * Delete a refund request permanently from the system by its unique
    * identifier.
    *

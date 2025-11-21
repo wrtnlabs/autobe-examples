@@ -9,8 +9,6 @@ export * as sessions from "./sessions/index";
 export * as reviews from "./reviews/index";
 
 /**
- * Search and retrieve a filtered, paginated list of shopping mall buyers.
- *
  * Retrieve a filtered and paginated list of authenticated buyer accounts from
  * the shopping mall marketplace. This operation provides comprehensive search
  * capabilities for finding buyers based on multiple criteria including name
@@ -116,8 +114,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific buyer account.
- *
  * Retrieve comprehensive details about a specific buyer account in the shopping
  * mall marketplace. This operation returns the complete buyer profile including
  * personal information, contact details, account status, and registration
@@ -213,8 +209,6 @@ export namespace at {
 }
 
 /**
- * Update an existing buyer account's information.
- *
  * Update the profile information and account details of an existing buyer in
  * the shopping mall marketplace. This operation allows modification of buyer
  * account data including personal information, contact details, and account
@@ -322,8 +316,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a buyer account from the platform.
- *
  * Permanently remove a buyer account from the shopping mall platform. This
  * operation performs a hard delete, completely removing the buyer record and
  * all associated data from the database.

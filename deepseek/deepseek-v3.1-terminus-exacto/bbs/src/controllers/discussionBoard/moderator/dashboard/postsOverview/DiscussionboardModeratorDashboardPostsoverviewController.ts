@@ -10,8 +10,6 @@ import { IPageIDiscussionBoardPost } from "../../../../../api/structures/IPageID
 @Controller("/discussionBoard/moderator/dashboard/postsOverview")
 export class DiscussionboardModeratorDashboardPostsoverviewController {
   /**
-   * Retrieve dashboard overview with key metrics for discussion board posts.
-   *
    * This operation provides a comprehensive dashboard overview of discussion
    * board posts, displaying key metrics and summary information for content
    * management. The dashboard includes total post counts by status, recent

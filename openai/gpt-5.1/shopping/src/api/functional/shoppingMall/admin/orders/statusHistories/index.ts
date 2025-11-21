@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderStatusHistory } from "../../../../../structures/IShoppingMallOrderStatusHistory";
 
 /**
- * Create a new ShoppingMall order status history entry for a specific order.
- *
  * Create a new status history entry for a given order identified by its
  * business-level `orderCode`.
  *
@@ -135,9 +133,6 @@ export namespace create {
 }
 
 /**
- * Update an existing ShoppingMall order status history entry for a specific
- * order.
- *
  * Update an existing order status history entry for a given order and history
  * record identifier.
  *
@@ -270,9 +265,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific `shopping_mall_order_status_histories` record for an order
- * identified by `orderCode`.
- *
  * Delete a specific status history record for a given order using its business
  * code and the history entry identifier.
  *

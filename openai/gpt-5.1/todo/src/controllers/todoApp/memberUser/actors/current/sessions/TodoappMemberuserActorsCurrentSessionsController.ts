@@ -12,9 +12,6 @@ import { ITodoAppSession } from "../../../../../../api/structures/ITodoAppSessio
 @Controller("/todoApp/memberUser/actors/current/sessions")
 export class TodoappMemberuserActorsCurrentSessionsController {
   /**
-   * Search and list sessions for the current actor using
-   * todo_app_memberuser_sessions and todo_app_adminuser_sessions.
-   *
    * Retrieve a filtered, paginated list of sessions associated with the
    * currently authenticated actor. This operation allows a logged-in member or
    * administrator to inspect their existing authentication sessions without
@@ -80,9 +77,6 @@ export class TodoappMemberuserActorsCurrentSessionsController {
   }
 
   /**
-   * Terminate a specific current-actor session from
-   * todo_app_memberuser_sessions or todo_app_adminuser_sessions.
-   *
    * Terminate a specific authentication session belonging to the currently
    * authenticated actor. This endpoint allows a member or administrator to
    * explicitly end one of their own login sessions, such as logging out a

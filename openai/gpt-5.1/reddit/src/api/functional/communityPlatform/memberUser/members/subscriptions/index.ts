@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunitySubscription } from "../../../../../structur
 import { IPageICommunityPlatformCommunitySubscription } from "../../../../../structures/IPageICommunityPlatformCommunitySubscription";
 
 /**
- * Create a new record in community_platform_community_subscriptions for a
- * member user.
- *
  * Create a new subscription linking a member user to a target community so that
  * the member can start receiving that community’s posts and updates.
  *
@@ -142,9 +139,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of community subscriptions from
- * community_platform_community_subscriptions for a specific member user.
- *
  * Retrieve a filtered and paginated list of community subscriptions associated
  * with a specific member user.
  *
@@ -291,9 +285,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single community subscription detail from
- * community_platform_community_subscriptions for a specific member user.
- *
  * Retrieve detailed information for a specific community subscription belonging
  * to a given member user.
  *
@@ -419,9 +410,6 @@ export namespace at {
 }
 
 /**
- * Update an existing community_platform_community_subscriptions record for a
- * member user.
- *
  * Update an existing community subscription for a member user, allowing changes
  * to subscription preferences or state stored in
  * community_platform_community_subscriptions.
@@ -555,9 +543,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific community_platform_community_subscriptions record for a
- * member user to unsubscribe from a community.
- *
  * Remove a specific community subscription for a member user so that they no
  * longer receive content and notifications from that community.
  *

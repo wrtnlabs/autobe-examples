@@ -1,9 +1,0 @@
-export * as admin from "./admin/index";
-export * as moderator from "./moderator/index";
-export * as members from "./members/index";
-export * as communities from "./communities/index";
-export * as member from "./member/index";
-export * as reports from "./reports/index";
-export * as karma from "./karma/index";
-export * as creator_applications from "./creator_applications/index";
-export * as tips from "./tips/index";

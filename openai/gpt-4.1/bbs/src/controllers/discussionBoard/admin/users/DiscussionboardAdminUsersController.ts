@@ -13,8 +13,6 @@ import { IDiscussionBoardUser } from "../../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/admin/users")
 export class DiscussionboardAdminUsersController {
   /**
-   * Search and paginate users from the discussion_board_users table.
-   *
    * Search, filter, and paginate through the discussion board's registered user
    * accounts. Administrators can locate specific users quickly by email
    * address, review account status, and navigate through large user sets
@@ -55,9 +53,6 @@ export class DiscussionboardAdminUsersController {
   }
 
   /**
-   * Retrieve details for a specific registered user in discussion_board_users
-   * table.
-   *
    * Retrieve the full profile, audit, and identity information for a single
    * discussion board user.
    *
@@ -100,9 +95,6 @@ export class DiscussionboardAdminUsersController {
   }
 
   /**
-   * Update profile or management data for a specific user in
-   * discussion_board_users.
-   *
    * Updates the information of a single user account for management or
    * correction purposes.
    *

@@ -8,9 +8,6 @@ import { IPageICommunityPlatformUserReport } from "../../../../api/structures/IP
 @Controller("/communityPlatform/adminUser/userReports")
 export class CommunityplatformAdminuserUserreportsController {
   /**
-   * Create a new user report row in the community_platform_user_reports
-   * table.
-   *
    * Create a new user-level report capturing a complaint about a member
    * account’s behavior.
    *
@@ -71,9 +68,6 @@ export class CommunityplatformAdminuserUserreportsController {
   }
 
   /**
-   * Search and paginate user reports stored in the
-   * community_platform_user_reports table for administrative review.
-   *
    * Retrieve a filtered, paginated list of user report records from the
    * `community_platform_user_reports` table for administrative review.
    *
@@ -123,9 +117,6 @@ export class CommunityplatformAdminuserUserreportsController {
   }
 
   /**
-   * Retrieve detailed information for a single user report record from the
-   * community_platform_user_reports table.
-   *
    * Retrieve full details of a single user report entity from the
    * `community_platform_user_reports` table by its unique identifier.
    *
@@ -173,9 +164,6 @@ export class CommunityplatformAdminuserUserreportsController {
   }
 
   /**
-   * Update an existing user report row in the community_platform_user_reports
-   * table by its id.
-   *
    * Modify the details, triage metadata, or lifecycle state of an existing
    * user report entry.
    *
@@ -235,9 +223,6 @@ export class CommunityplatformAdminuserUserreportsController {
   }
 
   /**
-   * Permanently delete a single user report record from the
-   * community_platform_user_reports table by id.
-   *
    * Delete an existing user report from the `community_platform_user_reports`
    * table by its unique identifier.
    *

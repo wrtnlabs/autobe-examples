@@ -7,8 +7,6 @@ import { IRedditCommunityCommunity } from "../../../api/structures/IRedditCommun
 @Controller("/redditCommunity/communities/:communityName")
 export class RedditcommunityCommunitiesController {
   /**
-   * Get detailed information about a specific community.
-   *
    * Retrieve detailed information about a specific community using its unique
    * name identifier. This operation returns comprehensive community data
    * including identification details, descriptive information, configuration

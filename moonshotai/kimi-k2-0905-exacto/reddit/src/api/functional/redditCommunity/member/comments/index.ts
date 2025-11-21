@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityComment } from "../../../../structures/IRedditCommunityComment";
 
 /**
- * Create a new comment on a post or reply to an existing comment.
- *
  * Create a new comment on a post or as a reply to an existing comment in the
  * Reddit-style community platform. This operation enables community members to
  * engage in discussions by adding their thoughts, questions, or responses to
@@ -216,8 +214,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a user comment while preserving thread structure.
- *
  * Soft delete a user comment in the reddit community platform. This operation
  * sets the is_deleted flag to true in the reddit_community_comments table,
  * preserving the comment structure while hiding its content from display.

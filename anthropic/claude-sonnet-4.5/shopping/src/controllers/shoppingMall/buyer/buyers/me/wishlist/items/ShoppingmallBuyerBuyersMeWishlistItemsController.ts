@@ -14,8 +14,6 @@ import { IShoppingMallCartItem } from "../../../../../../../api/structures/IShop
 @Controller("/shoppingMall/buyer/buyers/me/wishlist/items")
 export class ShoppingmallBuyerBuyersMeWishlistItemsController {
   /**
-   * Add a new product item to the authenticated buyer's wishlist.
-   *
    * Create a new wishlist item for the currently authenticated buyer by adding
    * a specific product SKU variant to their saved items list. This operation
    * allows buyers to bookmark products they are interested in but not ready to
@@ -69,8 +67,6 @@ export class ShoppingmallBuyerBuyersMeWishlistItemsController {
   }
 
   /**
-   * Retrieve a specific wishlist item for the authenticated buyer.
-   *
    * Retrieve detailed information about a specific wishlist item from the
    * authenticated buyer's wishlist. This operation allows buyers to view
    * complete details about a product they have previously saved to their
@@ -120,8 +116,6 @@ export class ShoppingmallBuyerBuyersMeWishlistItemsController {
   }
 
   /**
-   * Remove a specific wishlist item from the authenticated buyer's wishlist.
-   *
    * Remove a specific product from the authenticated buyer's wishlist by
    * permanently deleting the wishlist item record. This operation allows buyers
    * to clean up their wishlist by removing products they are no longer
@@ -171,8 +165,6 @@ export class ShoppingmallBuyerBuyersMeWishlistItemsController {
   }
 
   /**
-   * Move a wishlist item to the shopping cart with specified quantity.
-   *
    * Move a specific product from the authenticated buyer's wishlist to their
    * shopping cart for immediate purchase preparation.
    *

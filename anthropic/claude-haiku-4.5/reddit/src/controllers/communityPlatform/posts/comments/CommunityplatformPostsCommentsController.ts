@@ -8,9 +8,6 @@ import { ICommunityPlatformComment } from "../../../../api/structures/ICommunity
 @Controller("/communityPlatform/posts/:postId/comments")
 export class CommunityplatformPostsCommentsController {
   /**
-   * Search and retrieve paginated comments on a post with advanced filtering
-   * and sorting.
-   *
    * Retrieve a filtered, paginated list of comments and nested replies on a
    * specific post, with support for multiple sorting algorithms and search
    * criteria.

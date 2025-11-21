@@ -15,8 +15,6 @@ import { IPageIEconomicDiscussionModeratorSession } from "../../../../../api/str
 @Controller("/economicDiscussion/moderator/moderators/:moderatorId/sessions")
 export class EconomicdiscussionModeratorModeratorsSessionsController {
   /**
-   * Create new moderator session for administrative access.
-   *
    * Create a new moderator session for administrative access to the economic
    * discussion board platform. This operation is essential for moderators to
    * perform content management, user discipline, and administrative functions
@@ -62,9 +60,6 @@ export class EconomicdiscussionModeratorModeratorsSessionsController {
   }
 
   /**
-   * Retrieve paginated list of moderator administrative sessions for security
-   * auditing.
-   *
    * Retrieve all session records for a community moderator, providing
    * administrative access history tracking. This operation returns a
    * comprehensive list of all moderator sessions including login timestamps, IP
@@ -112,9 +107,6 @@ export class EconomicdiscussionModeratorModeratorsSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific moderator administrative
-   * session.
-   *
    * Retrieve detailed information about a specific moderator session, including
    * comprehensive access metadata, IP tracking, and session security details.
    * This operation allows moderators to investigate specific administrative
@@ -161,8 +153,6 @@ export class EconomicdiscussionModeratorModeratorsSessionsController {
   }
 
   /**
-   * Update existing moderator session configuration.
-   *
    * Update an existing moderator session configuration including session
    * lifetime administrative access settings. This operation allows moderators
    * to extend their administrative access period while maintaining
@@ -214,8 +204,6 @@ export class EconomicdiscussionModeratorModeratorsSessionsController {
   }
 
   /**
-   * Terminate moderator administrative session with audit logging.
-   *
    * Terminate an active moderator session and perform secure cleanup of
    * administrative access. This operation ensures moderator sessions are
    * properly closed with appropriate audit logging for security compliance.

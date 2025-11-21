@@ -8,9 +8,6 @@ import { IShoppingMallReviewHelpfulVote } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/reviewHelpfulVotes")
 export class ShoppingmallAdminReviewhelpfulvotesController {
   /**
-   * Search and paginate review helpful vote records from the
-   * shopping_mall_review_helpful_votes table for administrative use.
-   *
    * Search and retrieve a paginated list of review helpful vote records
    * stored in the shopping_mall_review_helpful_votes table.
    *
@@ -65,9 +62,6 @@ export class ShoppingmallAdminReviewhelpfulvotesController {
   }
 
   /**
-   * Retrieve a single review helpful vote record from the
-   * shopping_mall_review_helpful_votes table by helpfulVoteId.
-   *
    * Retrieve detailed information for a single review helpful vote record
    * from the shopping_mall_review_helpful_votes table by its unique
    * identifier.

@@ -12,9 +12,6 @@ import { IDiscussionBoardGuest } from "../../../../api/structures/IDiscussionBoa
 @Controller("/discussionBoard/moderator/guests")
 export class DiscussionboardModeratorGuestsController {
   /**
-   * Search and retrieve paginated list of guest visitor records with analytics
-   * data.
-   *
    * Retrieve a filtered and paginated list of guest visitor records from the
    * discussion board platform. This operation provides comprehensive guest
    * analytics including session identifiers, IP addresses, visit timestamps,
@@ -67,8 +64,6 @@ export class DiscussionboardModeratorGuestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific guest visitor session.
-   *
    * Retrieve comprehensive details about a specific guest visitor session from
    * the discussion board platform. This operation returns complete analytics
    * data for a single guest record including session identifier, IP address,

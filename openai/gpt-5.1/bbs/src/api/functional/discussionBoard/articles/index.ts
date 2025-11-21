@@ -11,8 +11,6 @@ export * as comments from "./comments/index";
 export * as attachments from "./attachments/index";
 
 /**
- * Search and list discussion_board_articles with pagination and filters.
- *
  * Retrieve a filtered and paginated collection of discussion board articles
  * from the `discussion_board_articles` table to support browsing and search
  * flows.
@@ -134,8 +132,6 @@ export namespace index {
 }
 
 /**
- * Get a single discussion_board_articles record by its UUID primary key.
- *
  * Retrieve the full detail of a single discussion article identified by its
  * UUID primary key in the `discussion_board_articles` table.
  *

@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationLog } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardModerationLog } from "../../../../../structures/IPageIDiscussionBoardModerationLog";
 
 /**
- * Search and retrieve the complete moderation history for a specific article.
- *
  * Retrieve a comprehensive, paginated list of all moderation actions that have
  * been applied to a specific article throughout its lifecycle. This operation
  * queries the discussion_board_moderation_logs table filtered by the article ID

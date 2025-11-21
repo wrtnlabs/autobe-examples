@@ -12,9 +12,6 @@ import { IShoppingMallSellerSession } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/sellers/:sellerId/sessions")
 export class ShoppingmallAdminSellersSessionsController {
   /**
-   * List all seller session records for a given seller
-   * (shopping_mall_seller_sessions).
-   *
    * Retrieve a paginated, filterable list of session records belonging to a
    * specific seller account.
    *
@@ -60,9 +57,6 @@ export class ShoppingmallAdminSellersSessionsController {
   }
 
   /**
-   * Retrieve details for a specific seller session
-   * (shopping_mall_seller_sessions).
-   *
    * Retrieve the complete details for a specific authenticated session record
    * for a given seller.
    *

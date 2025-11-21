@@ -7,8 +7,6 @@ import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallO
 import { IPageIShoppingMallOrderItem } from "../../../../../structures/IPageIShoppingMallOrderItem";
 
 /**
- * Search and retrieve order items within a specific order.
- *
  * Retrieve a filtered and paginated list of order items for a specific order.
  * This operation provides search capabilities for buyers, sellers, and admins
  * to find specific items within an order based on multiple criteria including
@@ -123,8 +121,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific order item.
- *
  * Retrieve comprehensive details for a specific order item within an order.
  * This operation provides complete item information including product details,
  * SKU specifications with variant attributes, pricing breakdown, quantity

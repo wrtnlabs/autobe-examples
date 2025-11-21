@@ -12,8 +12,6 @@ import { ITodoListUser } from "../../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/users/me")
 export class TodolistUserUsersMeController {
   /**
-   * Retrieve the authenticated user's profile information from the users table.
-   *
    * Retrieve the authenticated user's profile, containing their basic identity
    * and account settings. This operation ensures only the user themself can
    * access their own data; no IDs are exposed or required in the path because
@@ -50,9 +48,6 @@ export class TodolistUserUsersMeController {
   }
 
   /**
-   * Update profile fields of the currently authenticated user in the users
-   * table.
-   *
    * Update the profile information for the currently authenticated user. This
    * endpoint allows users to update mutable fields in their own profile, such
    * as display name (global uniqueness not enforced per schema). Email address
@@ -95,8 +90,6 @@ export class TodolistUserUsersMeController {
   }
 
   /**
-   * Permanently delete the authenticated user's own account (todo_list_users).
-   *
    * Delete the current authenticated user's account and all owned data,
    * including todos and every authentication/session trace.
    *

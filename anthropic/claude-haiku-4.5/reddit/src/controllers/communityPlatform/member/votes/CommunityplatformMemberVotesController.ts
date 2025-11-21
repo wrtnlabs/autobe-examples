@@ -8,8 +8,6 @@ import { IPageICommunityPlatformVote } from "../../../../api/structures/IPageICo
 @Controller("/communityPlatform/member/votes")
 export class CommunityplatformMemberVotesController {
   /**
-   * Create a new vote on a post or comment.
-   *
    * Create a new vote (upvote or downvote) on a post or comment within a
    * community. This operation allows authenticated members to express their
    * preference for content. Each member can only have one active vote per
@@ -46,8 +44,6 @@ export class CommunityplatformMemberVotesController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of voting records.
-   *
    * Retrieve a filtered and paginated list of voting records from the
    * community platform with advanced search and sorting capabilities. This
    * operation provides comprehensive access to the voting system for
@@ -89,8 +85,6 @@ export class CommunityplatformMemberVotesController {
   }
 
   /**
-   * Retrieve a specific vote record by ID.
-   *
    * Retrieve complete details of a specific vote record identified by its
    * unique ID. This operation returns comprehensive vote information
    * including the voter member, the target entity being voted on (either a
@@ -125,8 +119,6 @@ export class CommunityplatformMemberVotesController {
   }
 
   /**
-   * Update an existing community platform vote record.
-   *
    * Update a vote's type or status for either a post or comment in the
    * community platform. This operation allows authenticated members to change
    * their voting preference on previously voted content. Users can switch
@@ -172,8 +164,6 @@ export class CommunityplatformMemberVotesController {
   }
 
   /**
-   * Delete a community platform vote record.
-   *
    * Permanently remove a vote from the system, reversing its effects on
    * content visibility and creator karma. This operation allows authenticated
    * members to withdraw their voting preference on previously voted content.

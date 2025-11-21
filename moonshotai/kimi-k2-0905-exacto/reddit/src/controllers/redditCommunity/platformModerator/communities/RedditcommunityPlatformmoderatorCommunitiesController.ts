@@ -5,8 +5,6 @@ import typia from "typia";
 @Controller("/redditCommunity/platformModerator/communities/:communityName")
 export class RedditcommunityPlatformmoderatorCommunitiesController {
   /**
-   * Permanently delete a community and all associated data.
-   *
    * Permanently delete a community from the reddit platform. This operation
    * removes the community and all its associated data from the system,
    * including community rules, member relationships, subscriptions, and all

@@ -13,9 +13,6 @@ import { ITodoListUserSession } from "../../../../../api/structures/ITodoListUse
 @Controller("/todoList/admin/users/:userId/sessions")
 export class TodolistAdminUsersSessionsController {
   /**
-   * Searches and lists authentication sessions for a given user account in
-   * todo_list_user_sessions.
-   *
    * Retrieve a filtered and paginated list of authentication session records
    * associated with the specified user. Only the user themselves or an
    * administrative actor can access this information, and the result includes
@@ -60,9 +57,6 @@ export class TodolistAdminUsersSessionsController {
   }
 
   /**
-   * Retrieve complete details for a specific user session from
-   * todo_list_user_sessions table.
-   *
    * Retrieve the detailed information for a specific authentication session
    * belonging to a user by specifying both the userId and sessionId in the URL
    * path.
@@ -112,9 +106,6 @@ export class TodolistAdminUsersSessionsController {
   }
 
   /**
-   * Erase a specific user session from todo_list_user_sessions for
-   * administrative session management.
-   *
    * Permanently delete the specified authentication session for a user,
    * ensuring both user ownership and strict session traceability. This endpoint
    * is designed exclusively for administrative session management – allowing

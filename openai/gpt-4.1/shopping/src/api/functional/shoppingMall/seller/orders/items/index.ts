@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallOrderItem";
 
 /**
- * Retrieve a specific order item by order number and item ID from
- * shopping_mall_order_items.
- *
  * Retrieve detailed information for a single order item associated with a
  * specific shopping mall order.
  *
@@ -120,8 +117,6 @@ export namespace at {
 }
 
 /**
- * Update the details of an order item in shopping_mall_order_items.
- *
  * This API allows updating the details of a specific item attached to a
  * particular order. The endpoint requires both the globally unique order number
  * and the order item UUID to ensure accurate selection and update of the target
@@ -243,8 +238,6 @@ export namespace update {
 }
 
 /**
- * Erase (soft delete) an order item from shopping_mall_order_items.
- *
  * This API endpoint removes a specified order item from its associated order in
  * the system. By requiring both the order's unique business number and the
  * order item's UUID, the endpoint ensures the target entity is found
@@ -347,8 +340,6 @@ export namespace erase {
 }
 
 /**
- * Create a new order item in an existing order in shopping_mall_order_items.
- *
  * Add a new item (SKU/product) to an existing shopping mall order identified by
  * its business order number.
  *

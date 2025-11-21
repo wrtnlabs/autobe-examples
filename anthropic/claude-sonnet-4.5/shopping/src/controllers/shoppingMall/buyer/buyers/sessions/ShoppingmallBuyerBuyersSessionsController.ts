@@ -11,9 +11,6 @@ import { IShoppingMallBuyerSession } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/buyer/buyers/:buyerId/sessions/:sessionId")
 export class ShoppingmallBuyerBuyersSessionsController {
   /**
-   * Retrieve detailed information about a specific buyer authentication
-   * session.
-   *
    * Retrieve comprehensive details about a specific buyer authentication
    * session in the shopping mall platform. This operation provides complete
    * session information including authentication timestamps, JWT token details,
@@ -67,8 +64,6 @@ export class ShoppingmallBuyerBuyersSessionsController {
   }
 
   /**
-   * Terminate and delete a specific buyer authentication session.
-   *
    * Terminate an active buyer authentication session, effectively logging out
    * the buyer from that specific session. This operation permanently removes
    * the session record from the database, invalidating any JWT tokens

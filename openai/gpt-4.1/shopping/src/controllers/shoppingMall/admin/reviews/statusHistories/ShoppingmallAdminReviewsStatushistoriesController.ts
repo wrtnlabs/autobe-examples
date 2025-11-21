@@ -12,9 +12,6 @@ import { IShoppingMallReviewStatusHistory } from "../../../../../api/structures/
 @Controller("/shoppingMall/admin/reviews/:reviewId/statusHistories")
 export class ShoppingmallAdminReviewsStatushistoriesController {
   /**
-   * Search and retrieve a paginated, filterable history of status/moderation
-   * events for a specific review in shopping_mall_review_status_histories.
-   *
    * Retrieve a filtered and paginated list of status history events associated
    * with a specific product review. This operation provides advanced query
    * capabilities to search, filter, sort, and page through the status history
@@ -61,9 +58,6 @@ export class ShoppingmallAdminReviewsStatushistoriesController {
   }
 
   /**
-   * Retrieve detailed information for a specific status/moderation event in
-   * shopping_mall_review_status_histories by review and status history ID.
-   *
    * Retrieve the details of a specific status history record associated with a
    * product review. This operation returns the complete information for one
    * event in the review's moderation history, including status, reason, actor,

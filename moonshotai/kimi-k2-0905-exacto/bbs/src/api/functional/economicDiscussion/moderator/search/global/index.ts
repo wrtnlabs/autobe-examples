@@ -7,10 +7,6 @@ import { IEconomicDiscussionSearch } from "../../../../../structures/IEconomicDi
 import { IPageIEconomicDiscussionSearchQuery } from "../../../../../structures/IPageIEconomicDiscussionSearchQuery";
 
 /**
- * Perform global search across all content types with enhanced moderation
- * features including content flagging, user activity tracking, and
- * cross-platform administrative search capabilities.
- *
  * Search across all economic and political discussion content including
  * articles, categories, and related metadata. This operation provides a unified
  * search experience that helps users discover relevant discussions and topics

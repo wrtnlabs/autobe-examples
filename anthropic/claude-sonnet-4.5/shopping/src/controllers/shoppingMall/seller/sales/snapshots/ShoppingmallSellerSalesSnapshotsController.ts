@@ -12,8 +12,6 @@ import { IShoppingMallSaleSnapshot } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/seller/sales/:saleCode/snapshots")
 export class ShoppingmallSellerSalesSnapshotsController {
   /**
-   * Retrieve paginated historical snapshots of a product sale.
-   *
    * Fetch a filtered and paginated list of historical point-in-time snapshots
    * for a specific product sale listing.
    *
@@ -83,8 +81,6 @@ export class ShoppingmallSellerSalesSnapshotsController {
   }
 
   /**
-   * Retrieve a specific historical snapshot of a product sale.
-   *
    * Retrieve a specific point-in-time snapshot of a product sale's historical
    * information from the shopping_mall_sale_snapshots table. This operation
    * provides access to complete product state as it existed at a specific

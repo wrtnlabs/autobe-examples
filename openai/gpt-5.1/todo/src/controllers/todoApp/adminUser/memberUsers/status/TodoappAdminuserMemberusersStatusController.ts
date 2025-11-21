@@ -11,9 +11,6 @@ import { ITodoAppMemberUserStatus } from "../../../../../api/structures/ITodoApp
 @Controller("/todoApp/adminUser/memberUsers/:memberUserId/status")
 export class TodoappAdminuserMemberusersStatusController {
   /**
-   * Update the status field of a member user account in the
-   * todo_app_memberusers table.
-   *
    * Update the status of a specific member user account in the todoApp system
    * while leaving other profile fields unchanged.
    *

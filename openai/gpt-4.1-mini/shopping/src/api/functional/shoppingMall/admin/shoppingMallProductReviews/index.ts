@@ -5,8 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as shoppingMallReviewModerations from "./shoppingMallReviewModerations/index";
 
 /**
- * Permanently delete a shopping mall product review by ID.
- *
  * Permanently removes a product review from the shopping mall database.
  *
  * Only authorized actors are allowed to perform this operation as it affects

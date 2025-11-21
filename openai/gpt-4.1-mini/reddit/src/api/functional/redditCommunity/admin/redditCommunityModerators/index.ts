@@ -8,8 +8,6 @@ import { IPageIRedditCommunityModerator } from "../../../../structures/IPageIRed
 export * as sessions from "./sessions/index";
 
 /**
- * Create a new reddit community moderator account.
- *
  * Allows creating a new reddit community moderator account in the system.
  *
  * This operation requires the moderator's unique email and securely hashed
@@ -104,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of redditCommunityModerators.
- *
  * Retrieve a filtered and paginated list of redditCommunityModerators from the
  * system. This operation enables administrators to search moderators based on
  * several criteria including community association, user status, and roles.
@@ -203,8 +199,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed info of a redditCommunityModerator by ID.
- *
  * Retrieve a single redditCommunityModerator's detailed information by its
  * unique identifier.
  *
@@ -290,8 +284,6 @@ export namespace at {
 }
 
 /**
- * Update an existing reddit community moderator account.
- *
  * Allows updating an existing reddit community moderator account identified by
  * its unique ID.
  *
@@ -391,8 +383,6 @@ export namespace update {
 }
 
 /**
- * Delete a reddit community moderator by ID.
- *
  * This API operation provides the capability to permanently delete a reddit
  * community moderator from the system.
  *

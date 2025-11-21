@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunitySubscription } from "../../../../../structur
 import { IPageICommunityPlatformCommunitySubscription } from "../../../../../structures/IPageICommunityPlatformCommunitySubscription";
 
 /**
- * Retrieve paginated list of community subscriptions with filtering and
- * sorting.
- *
  * Search and retrieve a filtered, paginated list of community subscriptions
  * (members) for the specified community. This operation provides comprehensive
  * member management capabilities for community creators and moderators through

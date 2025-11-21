@@ -9,8 +9,6 @@ export * as email_change from "./email_change/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Terminate the current administrator session and logout.
- *
  * Invalidate the administrator's current authentication session and prevent
  * further API requests using the associated tokens. This operation marks the
  * administrator's session record with an expiration timestamp, effectively

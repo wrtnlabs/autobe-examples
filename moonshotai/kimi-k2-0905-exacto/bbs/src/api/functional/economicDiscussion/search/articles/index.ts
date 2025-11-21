@@ -7,8 +7,6 @@ import { IEconomicDiscussionArticle } from "../../../../structures/IEconomicDisc
 import { IPageIEconomicDiscussionArticle } from "../../../../structures/IPageIEconomicDiscussionArticle";
 
 /**
- * Search and retrieve filtered, paginated list of economic discussion articles.
- *
  * Retrieve a filtered and paginated list of economic discussion articles with
  * advanced search capabilities. This operation enables comprehensive filtering
  * across article titles, content, author information, categories, publication

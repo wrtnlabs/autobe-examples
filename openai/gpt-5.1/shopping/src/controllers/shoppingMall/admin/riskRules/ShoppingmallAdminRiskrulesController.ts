@@ -9,8 +9,6 @@ import { IShoppingMallRiskRuleEvaluation } from "../../../../api/structures/ISho
 @Controller("/shoppingMall/admin/riskRules")
 export class ShoppingmallAdminRiskrulesController {
   /**
-   * Create a new risk evaluation rule in the shopping_mall_risk_rules table.
-   *
    * Create a new risk evaluation rule record in the shoppingMall_risk_rules
    * table for use by the platform risk engine.
    *
@@ -61,9 +59,6 @@ export class ShoppingmallAdminRiskrulesController {
   }
 
   /**
-   * Search and retrieve a paginated list of shopping_mall_risk_rules
-   * configurations for admins.
-   *
    * Retrieve a filtered and paginated list of risk rule configurations stored
    * in the shopping_mall_risk_rules table for administrative analysis.
    *
@@ -131,9 +126,6 @@ export class ShoppingmallAdminRiskrulesController {
   }
 
   /**
-   * Get detailed configuration of a single shopping_mall_risk_rules entry by
-   * its rule_code for admins.
-   *
    * Retrieve detailed configuration information for a single risk rule
    * identified by its rule_code from the shopping_mall_risk_rules table.
    *
@@ -193,9 +185,6 @@ export class ShoppingmallAdminRiskrulesController {
 
   /**
    * Update an existing risk evaluation rule in the shopping_mall_risk_rules
-   * table by ruleCode.
-   *
-   * Update an existing risk evaluation rule in the shopping_mall_risk_rules
    * table, identified by its unique ruleCode.
    *
    * This operation targets a single record in the shopping_mall_risk_rules
@@ -251,9 +240,6 @@ export class ShoppingmallAdminRiskrulesController {
   }
 
   /**
-   * Logically retire a ShoppingMall risk rule record in
-   * shopping_mall_risk_rules by rule_code.
-   *
    * Disable (logically retire) a specific risk rule in the
    * `shopping_mall_risk_rules` table by its stable business code.
    *
@@ -318,9 +304,6 @@ export class ShoppingmallAdminRiskrulesController {
   }
 
   /**
-   * Evaluate active ShoppingMall risk rules from shopping_mall_risk_rules
-   * against a supplied context.
-   *
    * Evaluate configured risk rules from the `shopping_mall_risk_rules` table
    * against a provided context and return detailed rule-level and aggregated
    * risk results.

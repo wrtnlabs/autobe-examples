@@ -10,8 +10,6 @@ import { ITodoAppTaskCountStatistics } from "../../../../../api/structures/ITodo
 @Controller("/todoApp/user/dashboard/user-progress")
 export class TodoappUserDashboardUser_progressController {
   /**
-   * Retrieve user's task count statistics and basic metrics.
-   *
    * Get basic dashboard metrics for the authenticated user including simple
    * counts of completed tasks versus total tasks. The operation filters tasks
    * by the current user ID and provides basic statistics that can be computed

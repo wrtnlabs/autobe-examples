@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformReport } from "../../../../structures/ICommunityPlatformReport";
 
 /**
- * Create a new content violation report for posts, comments, or users.
- *
  * Submit a new content violation report to the community platform moderation
  * system. This operation allows authenticated members to report posts,
  * comments, or users they believe violate community rules or platform policy.

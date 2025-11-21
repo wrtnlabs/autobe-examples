@@ -7,9 +7,6 @@ import { IShoppingMallProductRating } from "../../../../structures/IShoppingMall
 import { IPageIShoppingMallProductRating } from "../../../../structures/IPageIShoppingMallProductRating";
 
 /**
- * Search and retrieve paginated summaries of product ratings
- * (shopping_mall_product_ratings table).
- *
  * Retrieve a filtered, paginated list of product ratings on the shopping mall
  * platform.
  *

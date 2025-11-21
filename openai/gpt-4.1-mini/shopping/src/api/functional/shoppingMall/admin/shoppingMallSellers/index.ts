@@ -7,8 +7,6 @@ import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller"
 import { IPageIShoppingMallSeller } from "../../../../structures/IPageIShoppingMallSeller";
 
 /**
- * Create a new shopping mall seller registration.
- *
  * Create a new shopping mall seller with provided registration details.
  *
  * This operation allows the system or administrators to register new sellers
@@ -104,8 +102,6 @@ export namespace create {
 }
 
 /**
- * List and search shopping mall sellers with pagination.
- *
  * Retrieve a filtered and paginated list of registered shopping mall seller
  * users.
  *
@@ -199,8 +195,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific shopping mall seller by ID.
- *
  * Retrieve the full details of a registered shopping mall seller using their
  * unique seller ID.
  *

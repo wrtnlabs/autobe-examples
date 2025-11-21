@@ -5,8 +5,6 @@ import typia from "typia";
 import { IShoppingMallProductAvailabilityStatistics } from "../../../../../structures/IShoppingMallProductAvailabilityStatistics";
 
 /**
- * Get aggregated product availability statistics for the ShoppingMall catalog.
- *
  * Retrieve aggregated statistics describing product availability across the
  * ShoppingMall catalog.
  *

@@ -11,8 +11,6 @@ import { IRedditCommunityCommunitySubscription } from "../../../../api/structure
 @Controller("/redditCommunity/member/subscriptions/:communityName")
 export class RedditcommunityMemberSubscriptionsController {
   /**
-   * Subscribe an authenticated member to a specific community.
-   *
    * Create a new community subscription for the authenticated member, allowing
    * them to see posts from this community in their personalized homepage feed.
    *
@@ -68,8 +66,6 @@ export class RedditcommunityMemberSubscriptionsController {
   }
 
   /**
-   * Unsubscribe an authenticated member from a specific community.
-   *
    * Remove the authenticated member's subscription to a specific community,
    * stopping posts from that community from appearing in their personalized
    * homepage feed.

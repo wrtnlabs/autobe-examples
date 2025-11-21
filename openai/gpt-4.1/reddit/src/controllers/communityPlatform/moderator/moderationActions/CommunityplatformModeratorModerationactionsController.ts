@@ -11,8 +11,6 @@ import { ICommunityPlatformModerationAction } from "../../../../api/structures/I
 @Controller("/communityPlatform/moderator/moderationActions")
 export class CommunityplatformModeratorModerationactionsController {
   /**
-   * Create a new moderation action (community_platform_moderation_actions).
-   *
    * Create a new moderation action resulting from a report or violation.
    *
    * This operation allows an administrator or moderator to add a moderation
@@ -57,9 +55,6 @@ export class CommunityplatformModeratorModerationactionsController {
   }
 
   /**
-   * Update an existing moderation action
-   * (community_platform_moderation_actions).
-   *
    * Update an existing moderation action by its unique identifier.
    *
    * This operation enables administrators or moderators to update all mutable

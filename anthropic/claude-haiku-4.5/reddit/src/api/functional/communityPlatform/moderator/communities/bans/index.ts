@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunityBan } from "../../../../../structures/ICommu
 import { IPageICommunityPlatformCommunityBan } from "../../../../../structures/IPageICommunityPlatformCommunityBan";
 
 /**
- * Create a new community ban for a member.
- *
  * Create a new ban record for a member within a specific community. This
  * operation allows authorized moderators to issue temporary suspensions or
  * permanent bans against members who violate community rules. The ban is scoped
@@ -124,8 +122,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve filtered ban records for a community.
- *
  * Retrieve a paginated list of community-specific bans from the
  * community_platform_community_bans table with comprehensive filtering and
  * sorting capabilities. This operation supports advanced search for moderation
@@ -248,8 +244,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific community ban record.
- *
  * Retrieve detailed information about a specific community ban record. This
  * operation fetches complete ban details including the ban type (temporary or
  * permanent), reason for ban, creation and expiration timestamps, and appeal
@@ -358,8 +352,6 @@ export namespace at {
 }
 
 /**
- * Update an existing community ban record with modified terms or appeal status.
- *
  * Modify an existing community ban record for a member within a specific
  * community. This operation enables moderators to adjust ban parameters after
  * initial issuance, including converting temporary suspensions to permanent
@@ -478,8 +470,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a community ban record and restore member access.
- *
  * Permanently remove a community ban record, effectively lifting the ban and
  * restoring the member's access to the community. This operation deletes the
  * ban record entirely from the database, distinguishing it from temporary ban

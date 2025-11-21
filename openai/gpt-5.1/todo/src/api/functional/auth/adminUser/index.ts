@@ -6,10 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppAdminUser } from "../../../structures/ITodoAppAdminUser";
 
 /**
- * Register a new admin account in todo_app_adminusers and create an initial
- * session in todo_app_adminuser_sessions, returning
- * ITodoAppAdminUser.IAuthorized.
- *
  * This endpoint registers a new administrative user by inserting a row into the
  * todo_app_adminusers table and, upon success, establishes an initial
  * authentication session in the todo_app_adminuser_sessions table.
@@ -154,10 +150,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing admin using todo_app_adminusers credentials, create
- * a session in todo_app_adminuser_sessions, and return
- * ITodoAppAdminUser.IAuthorized.
- *
  * This endpoint logs in an existing administrative user by validating
  * credentials against the todo_app_adminusers table and initiating a new record
  * in the todo_app_adminuser_sessions table to represent the authenticated
@@ -294,10 +286,6 @@ export namespace login {
 }
 
 /**
- * Refresh administrative JWT tokens by validating a todo_app_adminuser_sessions
- * record and its owner in todo_app_adminusers, returning
- * ITodoAppAdminUser.IAuthorized.
- *
  * This endpoint rotates administrative authentication tokens by inspecting and
  * validating an existing session stored in the todo_app_adminuser_sessions
  * table and ensuring that the owning admin record in todo_app_adminusers

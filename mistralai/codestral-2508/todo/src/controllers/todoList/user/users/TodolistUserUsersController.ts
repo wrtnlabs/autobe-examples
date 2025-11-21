@@ -14,8 +14,6 @@ import { ITodoListUser } from "../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/users")
 export class TodolistUserUsersController {
   /**
-   * Retrieve a paginated, filterable user list from the todo_list_users table.
-   *
    * Retrieve a paginated list of users who are registered in the Todo List
    * application.
    *
@@ -55,8 +53,6 @@ export class TodolistUserUsersController {
   }
 
   /**
-   * Retrieve details for a specific user record from the todo_list_users table.
-   *
    * Return the complete detail of a specific user account identified by userId
    * from the Todo List application.
    *
@@ -95,8 +91,6 @@ export class TodolistUserUsersController {
   }
 
   /**
-   * Update a registered Todo List user account in the todo_list_users table.
-   *
    * Update details of an existing Todo List user account, identified by their
    * unique userId (UUID).
    *
@@ -142,9 +136,6 @@ export class TodolistUserUsersController {
   }
 
   /**
-   * Permanently delete a Todo List user account from the todo_list_users table
-   * by UUID.
-   *
    * Permanently remove a Todo List user account from the system, using the
    * unique userId as a hard delete.
    *

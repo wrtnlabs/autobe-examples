@@ -7,8 +7,6 @@ import { IDiscussionBoardModerator } from "../../../api/structures/IDiscussionBo
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register a new moderator account for the discussion board.
-   *
    * Creates a new moderator account in the discussion_board_moderators table.
    * This endpoint accepts email, password, and username to establish a new
    * moderator identity with administrative permissions for content moderation
@@ -55,8 +53,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate a moderator and issue JWT tokens for moderation access.
-   *
    * Authenticates an existing moderator using email and password credentials
    * against the discussion_board_moderators table. This endpoint validates
    * the provided email address, verifies the bcrypt-hashed password, and
@@ -102,8 +98,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh moderator JWT access token using a valid refresh token.
-   *
    * Refreshes the JWT access token for an authenticated moderator using a
    * valid refresh token. This operation accepts a refresh token issued during
    * login or registration and validates it against the moderator's active

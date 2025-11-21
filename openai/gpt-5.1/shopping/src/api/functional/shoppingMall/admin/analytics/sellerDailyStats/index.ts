@@ -7,9 +7,6 @@ import { IShoppingMallSellerDailyStat } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallSellerDailyStat } from "../../../../../structures/IPageIShoppingMallSellerDailyStat";
 
 /**
- * Search and retrieve a paginated list of `shopping_mall_seller_daily_stats`
- * snapshot records with filtering and sorting.
- *
  * Retrieve a paginated, filterable list of seller daily statistics snapshots
  * from the `shopping_mall_seller_daily_stats` Prisma table.
  *
@@ -135,9 +132,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single seller daily stats snapshot row from
- * shopping_mall_seller_daily_stats by primary key.
- *
  * Fetch a single seller daily statistics snapshot row from the
  * shopping_mall_seller_daily_stats table using its primary key.
  *

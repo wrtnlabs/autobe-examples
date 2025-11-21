@@ -8,9 +8,6 @@ import { IPageIShoppingMallProductSku } from "../../../../../structures/IPageISh
 export * as images from "./images/index";
 
 /**
- * Search and retrieve paginated SKUs for a product from
- * shopping_mall_product_skus.
- *
  * Retrieve a list of SKUs for a given product with advanced filtering and
  * pagination.
  *

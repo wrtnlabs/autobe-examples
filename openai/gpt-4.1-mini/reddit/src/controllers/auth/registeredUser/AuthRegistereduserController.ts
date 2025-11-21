@@ -12,8 +12,6 @@ import { IRedditCommunityRegisteredUser } from "../../../api/structures/IRedditC
 @Controller("/auth/registeredUser")
 export class AuthRegistereduserController {
   /**
-   * Create a new registeredUser account and issue initial tokens.
-   *
    * This operation enables new registered users to create accounts within the
    * redditCommunity platform. It accepts user registration data including
    * unique email and password, which is securely stored in the password_hash
@@ -59,8 +57,6 @@ export class AuthRegistereduserController {
   }
 
   /**
-   * Authenticate registeredUser credentials and issue JWT tokens.
-   *
    * This operation enables registered users to authenticate their identity and
    * obtain JWT authorization tokens allowing access to protected endpoints.
    * Credentials are validated against the email and password_hash fields in the
@@ -101,8 +97,6 @@ export class AuthRegistereduserController {
   }
 
   /**
-   * Refresh JWT tokens for registeredUser to maintain authentication.
-   *
    * This operation refreshes JWT access tokens for registered users using a
    * valid refresh token. This process maintains active session continuity
    * without requiring re-login.

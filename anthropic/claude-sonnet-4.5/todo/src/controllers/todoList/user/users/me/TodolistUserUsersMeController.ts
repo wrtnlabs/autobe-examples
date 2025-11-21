@@ -11,8 +11,6 @@ import { ITodoListUser } from "../../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/users/me")
 export class TodolistUserUsersMeController {
   /**
-   * Retrieve authenticated user's own account information.
-   *
    * Retrieve the current authenticated user's account profile information
    * including email address, account creation timestamp, and last update
    * timestamp. This operation allows users to view their own account details
@@ -60,8 +58,6 @@ export class TodolistUserUsersMeController {
   }
 
   /**
-   * Update authenticated user's own account information.
-   *
    * Update the current authenticated user's account profile information
    * including email address and password. This operation enables users to
    * maintain their account security and keep contact information current

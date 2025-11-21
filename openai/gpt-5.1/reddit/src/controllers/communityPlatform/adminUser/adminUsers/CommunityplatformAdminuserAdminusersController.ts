@@ -8,9 +8,6 @@ import { ICommunityPlatformAdminuser } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/adminUser/adminUsers")
 export class CommunityplatformAdminuserAdminusersController {
   /**
-   * Search and paginate through admin user accounts in the
-   * community_platform_adminusers table.
-   *
    * Retrieve a filtered, sorted, and paginated list of administrative user
    * accounts from the `community_platform_adminusers` table for internal
    * platform management purposes.
@@ -66,8 +63,6 @@ export class CommunityplatformAdminuserAdminusersController {
   }
 
   /**
-   * Get a single admin user from community_platform_adminusers by username.
-   *
    * Retrieve detailed information for a single platform administrator account
    * identified by username.
    *
@@ -112,9 +107,6 @@ export class CommunityplatformAdminuserAdminusersController {
   }
 
   /**
-   * Update an admin user in community_platform_adminusers identified by
-   * username.
-   *
    * Update mutable attributes of a platform administrator account identified
    * by username.
    *
@@ -167,9 +159,6 @@ export class CommunityplatformAdminuserAdminusersController {
   }
 
   /**
-   * Erase an admin user record in the community_platform_adminusers table by
-   * username.
-   *
    * Erase an existing admin user account identified by username from the
    * community platform.
    *

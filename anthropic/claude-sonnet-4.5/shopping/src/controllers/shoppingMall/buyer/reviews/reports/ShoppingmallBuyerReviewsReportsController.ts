@@ -11,8 +11,6 @@ import { IShoppingMallReviewReport } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/buyer/reviews/:reviewId/reports")
 export class ShoppingmallBuyerReviewsReportsController {
   /**
-   * Report a product review for policy violations.
-   *
    * Submit a report against a product review that violates platform policies
    * such as spam, offensive content, fake reviews, or other policy violations.
    * This operation allows authenticated buyers to flag problematic reviews for
@@ -62,8 +60,6 @@ export class ShoppingmallBuyerReviewsReportsController {
   }
 
   /**
-   * Retrieve detailed information about a specific review report.
-   *
    * Fetch complete details of a review report submission including the report
    * reason, description, reporter information, submission timestamp, and
    * current moderation status. This operation provides transparency into the

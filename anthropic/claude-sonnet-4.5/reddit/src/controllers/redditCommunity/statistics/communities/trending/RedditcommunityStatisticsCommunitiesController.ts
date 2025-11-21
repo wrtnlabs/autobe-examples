@@ -8,9 +8,6 @@ import { IRedditCommunityTrendingStatistics } from "../../../../../api/structure
 @Controller("/redditCommunity/statistics/communities/trending")
 export class RedditcommunityStatisticsCommunitiesController {
   /**
-   * Retrieve statistical data about currently trending communities on the
-   * platform.
-   *
    * Retrieve statistical analytics identifying trending communities based on
    * recent activity, growth metrics, and engagement patterns. This operation
    * provides insights into which communities are experiencing increased

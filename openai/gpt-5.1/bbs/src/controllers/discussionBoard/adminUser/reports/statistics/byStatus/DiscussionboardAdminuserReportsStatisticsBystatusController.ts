@@ -10,9 +10,6 @@ import { IDiscussionBoardReportByStatusStatistics } from "../../../../../../api/
 @Controller("/discussionBoard/adminUser/reports/statistics/byStatus")
 export class DiscussionboardAdminuserReportsStatisticsBystatusController {
   /**
-   * Get aggregated report statistics by status based on
-   * discussion_board_reports.
-   *
    * Retrieve aggregated statistics of moderation reports grouped by status
    * based on the discussion_board_reports table.
    *

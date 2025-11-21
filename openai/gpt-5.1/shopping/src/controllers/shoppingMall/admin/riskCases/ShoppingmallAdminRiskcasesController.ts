@@ -8,9 +8,6 @@ import { IPageIShoppingMallRiskCase } from "../../../../api/structures/IPageISho
 @Controller("/shoppingMall/admin/riskCases")
 export class ShoppingmallAdminRiskcasesController {
   /**
-   * Create a new risk case record in the shopping_mall_risk_cases table for
-   * the ShoppingMall platform.
-   *
    * Create a new high-level risk or fraud case in the ShoppingMall platform
    * so that governance and risk teams can investigate and track it over
    * time.
@@ -68,9 +65,6 @@ export class ShoppingmallAdminRiskcasesController {
   }
 
   /**
-   * Search and retrieve a paginated list of risk cases from the
-   * shopping_mall_risk_cases table.
-   *
    * Search and retrieve a filtered, paginated list of risk cases from the
    * `shopping_mall_risk_cases` model.
    *
@@ -135,9 +129,6 @@ export class ShoppingmallAdminRiskcasesController {
   }
 
   /**
-   * Retrieve a single risk case from the shopping_mall_risk_cases table by
-   * its business riskCaseCode.
-   *
    * Retrieve detailed information about a single risk case identified by its
    * business code from the `shopping_mall_risk_cases` model.
    *
@@ -191,9 +182,6 @@ export class ShoppingmallAdminRiskcasesController {
   }
 
   /**
-   * Update an existing shopping_mall_risk_cases record identified by its
-   * business riskCaseCode.
-   *
    * Update an existing risk case identified by its business-level
    * riskCaseCode, reflecting changes to status, severity, ownership, or
    * descriptive metadata in the shopping_mall_risk_cases table.
@@ -247,9 +235,6 @@ export class ShoppingmallAdminRiskcasesController {
   }
 
   /**
-   * Permanently delete a risk case from the shopping_mall_risk_cases table by
-   * its business riskCaseCode.
-   *
    * Delete a specific risk case record from the `shopping_mall_risk_cases`
    * table using its unique business code.
    *

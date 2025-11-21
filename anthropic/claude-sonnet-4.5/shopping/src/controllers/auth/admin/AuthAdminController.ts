@@ -10,8 +10,6 @@ import { IShoppingMallAdmin } from "../../../api/structures/IShoppingMallAdmin";
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new platform administrator account and issue JWT tokens.
-   *
    * Creates a new administrator account in the platform and issues initial JWT
    * authentication tokens (access token and refresh token) for immediate system
    * access.
@@ -60,8 +58,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate existing admin account and issue JWT tokens.
-   *
    * Authenticates an existing administrator account using email and password
    * credentials, then issues new JWT authentication tokens (access token and
    * refresh token) for platform access.
@@ -109,8 +105,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh JWT access token using a valid refresh token.
-   *
    * Refreshes the administrator's JWT access token using a valid refresh token,
    * extending the authenticated session without requiring credential re-entry.
    *

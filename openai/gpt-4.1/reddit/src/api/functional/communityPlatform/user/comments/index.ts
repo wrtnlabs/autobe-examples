@@ -8,9 +8,6 @@ export * as attachments from "./attachments/index";
 export * as editHistory from "./editHistory/index";
 
 /**
- * Create a new community platform comment (threaded or top-level) in
- * community_platform_comments.
- *
  * Create a new comment on a community post or as a threaded reply. This
  * operation allows users to initiate fresh discussions or participate in
  * ongoing threads by replying to existing comments.
@@ -111,8 +108,6 @@ export namespace create {
 }
 
 /**
- * Update an existing community platform comment in community_platform_comments.
- *
  * Update the content of an existing community platform comment. This operation
  * supports both minor corrections and substantial re-edits, tracking every
  * modification for audit and moderation.
@@ -218,8 +213,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a comment from the community_platform_comments table.
- *
  * Permanently removes a comment entity, along with all references necessary for
  * audit and compliance, from the community platform.
  *

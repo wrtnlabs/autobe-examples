@@ -7,9 +7,6 @@ import { IShoppingMallReviewReport } from "../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/customer/reviewReports")
 export class ShoppingmallCustomerReviewreportsController {
   /**
-   * Create a new review report record in shopping_mall_review_reports for a
-   * flagged review.
-   *
    * Create a new review report entry in the `shopping_mall_review_reports`
    * table when a user flags a product review for moderation.
    *

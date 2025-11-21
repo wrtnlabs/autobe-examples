@@ -7,8 +7,6 @@ import { ITodoAppTask } from "../../../../../structures/ITodoAppTask";
 import { IPageITodoAppTask } from "../../../../../structures/IPageITodoAppTask";
 
 /**
- * Create a new task for a specific user.
- *
  * Creates a new task for the specified user in the Todo application.
  *
  * This operation handles task creation with essential fields including title,
@@ -117,8 +115,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve filtered, paginated list of user tasks.
- *
  * This operation enables users to perform sophisticated searches across their
  * personal task collection with support for multiple filter criteria, text
  * search, and result organization. Users can filter by task status
@@ -230,8 +226,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific task by ID for the authenticated user.
- *
  * Retrieves detailed information for a specific task belonging to the user.
  *
  * This operation provides complete task information including the task title,
@@ -333,8 +327,6 @@ export namespace at {
 }
 
 /**
- * Update an existing task belonging to the authenticated user.
- *
  * Update an existing task in the user's todo list. This operation allows
  * authenticated users to modify various properties of their tasks including the
  * task title, description, due date, priority level, and completion status.

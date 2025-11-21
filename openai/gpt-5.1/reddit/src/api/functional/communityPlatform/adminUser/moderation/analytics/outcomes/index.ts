@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationAnalyticsOutcomes } from "../../../../../../structures/ICommunityPlatformModerationAnalyticsOutcomes";
 
 /**
- * Retrieve aggregated moderation outcome analytics composed from moderation
- * action and case tables.
- *
  * Retrieve aggregated moderation outcome analytics summarizing moderation
  * actions and case resolutions across the community platform.
  *

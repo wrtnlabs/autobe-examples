@@ -128,8 +128,6 @@ export namespace create {
 }
 
 /**
- * Update an existing product sale listing by code.
- *
  * Update the details of an existing product sale listing in the shopping
  * marketplace using its unique business identifier code. This operation allows
  * authenticated sellers to modify their product information including the

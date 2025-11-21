@@ -10,8 +10,6 @@ import { IRedditCommunityReport } from "../../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/member/posts/:postId/reports")
 export class RedditcommunityMemberPostsReportsController {
   /**
-   * Submit a content violation report for a specific post.
-   *
    * Create a new content violation report for a specific post within the
    * platform. This operation enables community members to flag posts that
    * violate community rules or platform policies, contributing to content

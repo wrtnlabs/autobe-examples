@@ -8,9 +8,6 @@ import { IPageIShoppingMallLegalHold } from "../../../../api/structures/IPageISh
 @Controller("/shoppingMall/admin/legalHolds")
 export class ShoppingmallAdminLegalholdsController {
   /**
-   * Create a new legal hold record in the shopping_mall_legal_holds table for
-   * the ShoppingMall platform.
-   *
    * Create a new legal hold configuration in the ShoppingMall platform,
    * storing it in the shopping_mall_legal_holds table.
    *
@@ -70,9 +67,6 @@ export class ShoppingmallAdminLegalholdsController {
   }
 
   /**
-   * Search and paginate legal hold records from the shopping_mall_legal_holds
-   * table.
-   *
    * Search and retrieve a filtered, paginated list of legal hold records from
    * the `shopping_mall_legal_holds` table.
    *
@@ -139,9 +133,6 @@ export class ShoppingmallAdminLegalholdsController {
   }
 
   /**
-   * Retrieve a specific legal hold record from the shopping_mall_legal_holds
-   * table by its unique legalHoldCode.
-   *
    * Retrieve the detailed information for a specific legal hold identified by
    * its unique business code from the `shopping_mall_legal_holds` table.
    *
@@ -197,9 +188,6 @@ export class ShoppingmallAdminLegalholdsController {
   }
 
   /**
-   * Update an existing legal hold in the shopping_mall_legal_holds table
-   * using its unique legalHoldCode.
-   *
    * Update an existing legal hold in the ShoppingMall platform, identified by
    * its unique legalHoldCode in the shopping_mall_legal_holds table.
    *
@@ -266,9 +254,6 @@ export class ShoppingmallAdminLegalholdsController {
   }
 
   /**
-   * Erase a legal hold record identified by legalHoldCode from the
-   * shopping_mall_legal_holds table.
-   *
    * Erase an existing legal hold from the `shopping_mall_legal_holds` table
    * using its business-level code.
    *

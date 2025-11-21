@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallDisputeHistory } from "../../../../../structures/IShoppingMallDisputeHistory";
 
 /**
- * Retrieve a specific dispute history record for an audit of
- * shopping_mall_dispute_histories table.
- *
  * Retrieve a single historical status or audit snapshot for a dispute.
  *
  * This operation fetches a specific record from the

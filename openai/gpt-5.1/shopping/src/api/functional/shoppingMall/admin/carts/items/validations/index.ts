@@ -7,9 +7,6 @@ import { IShoppingMallCartItemValidation } from "../../../../../../structures/IS
 import { IPageIShoppingMallCartItemValidation } from "../../../../../../structures/IPageIShoppingMallCartItemValidation";
 
 /**
- * Search and retrieve paginated validation records for all items in a specific
- * cart from shopping_mall_cart_item_validations.
- *
  * Retrieve a filtered, paginated list of validation records for all items
  * within a specific shopping cart.
  *
@@ -140,9 +137,6 @@ export namespace index {
 }
 
 /**
- * Search and retrieve paginated validation records for a specific cart item
- * from shopping_mall_cart_item_validations.
- *
  * Retrieve a filtered, paginated list of validation records for a specific cart
  * item within a given shopping cart.
  *

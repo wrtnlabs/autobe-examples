@@ -13,9 +13,6 @@ import { ICommunityPlatformReport } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/administrator/reports")
 export class CommunityplatformAdministratorReportsController {
   /**
-   * Search and retrieve a paginated list of user-generated reports from the
-   * community_platform_reports table.
-   *
    * Search and paginate through platform reports of policy violations, abuse,
    * and problematic content for moderation and compliance workflow.
    *
@@ -58,9 +55,6 @@ export class CommunityplatformAdministratorReportsController {
   }
 
   /**
-   * Update an existing community platform report (community_platform_reports)
-   * by report ID.
-   *
    * Update an existing user report identified by its unique ID. The report
    * represents a user's submission regarding problematic content or policy
    * violation; all fields changed will be reflected in audit logs for
@@ -112,9 +106,6 @@ export class CommunityplatformAdministratorReportsController {
   }
 
   /**
-   * Soft-delete a community platform report (community_platform_reports) by
-   * report ID.
-   *
    * Marks an existing user report as deleted by setting its deleted_at field to
    * the current time, thereby removing it from active moderation and user
    * workflows. This soft deletion ensures traceability and maintains a

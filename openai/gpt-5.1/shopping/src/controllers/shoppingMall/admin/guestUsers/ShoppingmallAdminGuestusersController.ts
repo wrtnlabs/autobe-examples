@@ -8,9 +8,6 @@ import { IShoppingMallGuestUser } from "../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/admin/guestUsers")
 export class ShoppingmallAdminGuestusersController {
   /**
-   * Search and retrieve paginated guest user accounts from the
-   * shopping_mall_guestusers table for admin use.
-   *
    * Search and retrieve a filtered, paginated list of guest user accounts
    * from the `shopping_mall_guestusers` table for administrative oversight,
    * governance, and risk operations.
@@ -73,9 +70,6 @@ export class ShoppingmallAdminGuestusersController {
   }
 
   /**
-   * Get detailed information for a specific guest user row in
-   * shopping_mall_guestusers by its identifier.
-   *
    * Retrieve detailed information for a single guest user from the
    * `shopping_mall_guestusers` table, identified by the `{guestUserId}` path
    * parameter, for administrative review and governance.
@@ -128,9 +122,6 @@ export class ShoppingmallAdminGuestusersController {
   }
 
   /**
-   * Delete a guest user record from the `shopping_mall_guestusers` table by
-   * its unique identifier.
-   *
    * Delete a specific guest user record from the `shopping_mall_guestusers`
    * table using its unique identifier.
    *

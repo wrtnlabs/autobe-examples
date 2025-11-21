@@ -11,9 +11,6 @@ import { IDiscussionBoardAdminuserNotificationPreference } from "../../../../../
 @Controller("/discussionBoard/adminUser/notifications/adminUser/preferences")
 export class DiscussionboardAdminuserNotificationsAdminuserPreferencesController {
   /**
-   * Get notification preferences for the authenticated admin user from
-   * `discussion_board_adminuser_notification_preferences`.
-   *
    * Retrieve the current notification preference configuration for the
    * authenticated admin user.
    *
@@ -86,9 +83,6 @@ export class DiscussionboardAdminuserNotificationsAdminuserPreferencesController
   }
 
   /**
-   * Update notification preferences for the authenticated admin user in
-   * `discussion_board_adminuser_notification_preferences`.
-   *
    * Update the notification preference configuration for the authenticated
    * admin user.
    *

@@ -10,8 +10,6 @@ import { ICommunityForumCommunityReport } from "../../../../api/structures/IComm
 @Controller("/communityForum/administrator/reports/:reportId")
 export class CommunityforumAdministratorReportsController {
   /**
-   * Retrieve a specific report by its ID.
-   *
    * Retrieve detailed information about a specific report using its unique
    * identifier. This endpoint provides moderators and administrators with
    * access to all relevant information about a report, including what content

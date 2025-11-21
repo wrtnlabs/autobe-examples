@@ -10,9 +10,6 @@ import { IRedditCommunityCommunityMembership } from "../../../../../api/structur
 )
 export class RedditcommunityCommunitymoderatorCommunitiesMembershipsController {
   /**
-   * Search and retrieve filtered community memberships with detailed member
-   * information.
-   *
    * Retrieve a comprehensive list of community memberships for the specified
    * community with advanced filtering, searching, and sorting capabilities.
    * This operation provides community moderators with powerful tools to
@@ -56,8 +53,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesMembershipsController {
   }
 
   /**
-   * Retrieve detailed information for a specific community membership.
-   *
    * Get comprehensive details about a specific community membership including
    * member information, role assignments, activity history, and moderation
    * records. This operation provides community moderators with detailed
@@ -100,8 +95,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesMembershipsController {
   }
 
   /**
-   * Update a community membership role and administrative details.
-   *
    * Update an existing community membership by modifying the member's role,
    * activity status, or administrative notes. This operation allows community
    * moderators to manage member privileges and roles within their
@@ -157,8 +150,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesMembershipsController {
   }
 
   /**
-   * Remove a member from a community by deleting their membership.
-   *
    * Permanently remove a community membership relationship, effectively
    * removing a user's participation rights within the specified community.
    * This operation supports community governance by enabling moderators to

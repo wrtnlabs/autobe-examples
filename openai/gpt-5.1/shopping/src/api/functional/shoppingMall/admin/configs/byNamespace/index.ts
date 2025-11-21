@@ -7,9 +7,6 @@ import { IShoppingMallConfig } from "../../../../../structures/IShoppingMallConf
 import { IPageIShoppingMallConfig } from "../../../../../structures/IPageIShoppingMallConfig";
 
 /**
- * Search and list configuration records from the shopping_mall_configs table by
- * namespace using rich filter criteria.
- *
  * Retrieve a paginated list of configuration records from the
  * shopping_mall_configs table filtered by namespace and other optional
  * criteria.

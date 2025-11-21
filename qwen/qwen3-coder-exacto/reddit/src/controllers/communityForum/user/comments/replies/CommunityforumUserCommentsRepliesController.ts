@@ -10,8 +10,6 @@ import { ICommunityForumPostComment } from "../../../../../api/structures/ICommu
 @Controller("/communityForum/user/comments/:commentId/replies")
 export class CommunityforumUserCommentsRepliesController {
   /**
-   * Create a new reply to a community forum comment.
-   *
    * Create a new reply to an existing forum comment, contributing to threaded
    * discussions.
    *

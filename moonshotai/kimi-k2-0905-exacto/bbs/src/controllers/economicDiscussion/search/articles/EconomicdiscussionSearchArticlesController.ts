@@ -9,9 +9,6 @@ import { IEconomicDiscussionArticle } from "../../../../api/structures/IEconomic
 @Controller("/economicDiscussion/search/articles")
 export class EconomicdiscussionSearchArticlesController {
   /**
-   * Search and retrieve filtered, paginated list of economic discussion
-   * articles.
-   *
    * Retrieve a filtered and paginated list of economic discussion articles with
    * advanced search capabilities. This operation enables comprehensive
    * filtering across article titles, content, author information, categories,

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberSession } from "../../../../structures/IDiscussionBoardMemberSession";
 
 /**
- * Update an existing member session with new connection details.
- *
  * This operation allows updating the details of an existing member session,
  * including connection information such as IP address, access URL, and
  * referrer. The session must belong to the specified member and must be active
@@ -113,8 +111,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a member session by marking it as deleted.
- *
  * This operation performs a soft delete of a member session by setting the
  * deleted_at timestamp. The session record is preserved for audit purposes but
  * excluded from normal queries. The operation validates that the session

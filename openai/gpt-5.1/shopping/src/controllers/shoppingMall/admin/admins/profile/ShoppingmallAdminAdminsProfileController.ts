@@ -7,9 +7,6 @@ import { IShoppingMallAdminProfile } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/admins/:adminId/profile")
 export class ShoppingmallAdminAdminsProfileController {
   /**
-   * Get detailed admin profile data from the shopping_mall_admin_profiles
-   * table for a specific admin.
-   *
    * Retrieve detailed profile information for a specific administrator based
    * on the `shopping_mall_admin_profiles` model.
    *
@@ -54,9 +51,6 @@ export class ShoppingmallAdminAdminsProfileController {
   }
 
   /**
-   * Update an existing admin profile record stored in the
-   * shopping_mall_admin_profiles table.
-   *
    * Update the profile information of a specific admin account in the
    * shoppingMall platform.
    *

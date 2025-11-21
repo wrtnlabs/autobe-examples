@@ -7,9 +7,6 @@ import { ICommunityPlatformUserSettings } from "../../../../structures/ICommunit
 import { IPageICommunityPlatformUserSettings } from "../../../../structures/IPageICommunityPlatformUserSettings";
 
 /**
- * Search and retrieve paginated user settings records from the
- * community_platform_user_settings table.
- *
  * Retrieve and search user settings records with support for pagination,
  * advanced filtering options, and sorting. This endpoint enables end users or
  * administrators to list and manage settings across the platform.

@@ -7,9 +7,6 @@ import { IShoppingMallOrderPayment } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallOrderPayment } from "../../../../../structures/IPageIShoppingMallOrderPayment";
 
 /**
- * List and search payments for a specific order from the
- * shopping_mall_order_payments table.
- *
  * Retrieve a filtered and paginated list of logical payments for a specific
  * order from the `shopping_mall_order_payments` table.
  *

@@ -7,8 +7,6 @@ import { IEconomicDiscussionRecommendationsRequest } from "../../../../../struct
 import { IEconomicDiscussionRecommendationsList } from "../../../../../structures/IEconomicDiscussionRecommendationsList";
 
 /**
- * Get personalized economic and political content recommendations.
- *
  * Provides personalized article recommendations based on user browsing history
  * and interaction patterns. The recommendation engine analyzes user activity
  * including search queries, viewed articles, comment participation, and

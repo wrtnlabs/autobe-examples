@@ -10,8 +10,6 @@ import { ITodoListLogoutResponse } from "../../../../../../api/structures/ITodoL
 @Controller("/todoList/user/auth/user/logout")
 export class TodolistUserAuthUserController {
   /**
-   * Log out current user from the current device.
-   *
    * Terminate the current user's authenticated session and invalidate the JWT
    * token used for this request.
    *

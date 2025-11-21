@@ -7,9 +7,6 @@ import { ICommunityPlatformUserSession } from "../../../../../structures/ICommun
 import { IPageICommunityPlatformUserSession } from "../../../../../structures/IPageICommunityPlatformUserSession";
 
 /**
- * Search and paginate all session records in community_platform_user_sessions
- * for a given userId.
- *
  * Obtain a paginated list of all active or historical sessions associated with
  * a specific user account, based on their unique userId.
  *
@@ -113,9 +110,6 @@ export namespace index {
 }
 
 /**
- * Retrieve audit details for a specific user session entry in
- * community_platform_user_sessions.
- *
  * Retrieve detailed information of a specific user session by user and session
  * IDs. This endpoint is used by administrators to obtain session context,
  * including login timing, IP address, entry point, referrer, and expiration (if

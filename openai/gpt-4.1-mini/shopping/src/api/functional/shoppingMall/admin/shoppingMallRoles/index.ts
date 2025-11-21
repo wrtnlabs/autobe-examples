@@ -98,8 +98,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve shopping mall roles.
- *
  * Retrieve a filtered and paginated list of shopping mall roles.
  *
  * This operation allows administrators to search and filter system roles by
@@ -192,8 +190,6 @@ export namespace index {
 }
 
 /**
- * Get a shopping mall role by unique name.
- *
  * Retrieve detailed information of a specific shopping mall role by its unique
  * name.
  *
@@ -286,8 +282,6 @@ export namespace at {
 }
 
 /**
- * Update a shopping mall role by unique name.
- *
  * Update an existing system role in the shopping mall platform by its unique
  * name.
  *
@@ -389,8 +383,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall role by unique name.
- *
  * Permanently remove a shopping mall role identified by its unique name from
  * the system.
  *

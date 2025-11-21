@@ -8,9 +8,6 @@ import { IDiscussionBoardUserSuspension } from "../../../../../api/structures/ID
 @Controller("/discussionBoard/moderator/moderation/suspensions")
 export class DiscussionboardModeratorModerationSuspensionsController {
   /**
-   * Search and retrieve a filtered, paginated list of contributor account
-   * suspensions and restrictions.
-   *
    * Retrieve a comprehensive list of contributor account suspension and
    * restriction records with advanced filtering and search capabilities. This
    * operation provides moderators visibility into all enforcement actions

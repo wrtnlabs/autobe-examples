@@ -7,8 +7,6 @@ import { IShoppingMallReview } from "../../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/customer/products/:productId/reviews")
 export class ShoppingmallCustomerProductsReviewsController {
   /**
-   * Create a new review row in shopping_mall_reviews for a given product.
-   *
    * Create a new product review record in the shopping_mall_reviews table for
    * the specified product.
    *
@@ -81,9 +79,6 @@ export class ShoppingmallCustomerProductsReviewsController {
   }
 
   /**
-   * Update a specific product review record in the shopping_mall_reviews
-   * table for a given product.
-   *
    * Update an existing product review that belongs to a specific product,
    * reflecting changes such as rating adjustment, edited review text, or
    * status flags in the underlying reviews table.
@@ -157,9 +152,6 @@ export class ShoppingmallCustomerProductsReviewsController {
   }
 
   /**
-   * Delete a specific product review record from the shopping_mall_reviews
-   * table for a given product.
-   *
    * Delete an existing product review that belongs to a specific product by
    * removing its corresponding record from the shopping_mall_reviews table.
    *

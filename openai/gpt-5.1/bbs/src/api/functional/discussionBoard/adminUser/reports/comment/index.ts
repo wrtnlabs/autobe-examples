@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportOfComment } from "../../../../../structures/IDiscussionBoardReportOfComment";
 
 /**
- * Get a single comment-targeting report from discussion_board_reports with its
- * comment link from discussion_board_report_of_comments.
- *
  * Retrieve detailed information for a single discussion board report that
  * targets a comment, combining the core report record from
  * discussion_board_reports with its comment association from

@@ -7,8 +7,6 @@ import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller"
 export * as shoppingMallSellerSessions from "./shoppingMallSellerSessions/index";
 
 /**
- * Update an existing shopping mall seller.
- *
  * Update the information of a specific seller in the shopping mall system.
  *
  * This endpoint allows authenticated sellers to update their profile and
@@ -113,8 +111,6 @@ export namespace update {
 }
 
 /**
- * Delete an existing shopping mall seller.
- *
  * Permanently remove a specific seller from the shopping mall system.
  *
  * This operation allows authenticated sellers to delete their own accounts. The

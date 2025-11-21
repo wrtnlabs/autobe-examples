@@ -10,9 +10,6 @@ import { IDiscussionBoardReportOfMemberUser } from "../../../../../../api/struct
 @Controller("/discussionBoard/adminUser/reports/:reportId/reporter/memberUser")
 export class DiscussionboardAdminuserReportsReporterMemberuserController {
   /**
-   * Get the member user reporter linked to a specific report from
-   * `discussion_board_report_of_memberusers`.
-   *
    * Retrieve the member user who reported a specific piece of content, using
    * the report identifier as input.
    *

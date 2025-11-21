@@ -13,9 +13,6 @@ import { IEconomicDiscussionSearchAnalytics } from "../../../../../api/structure
 @Controller("/economicDiscussion/moderator/search/analytics")
 export class EconomicdiscussionModeratorSearchAnalyticsController {
   /**
-   * Retrieve search analytics trends showing popular queries and usage patterns
-   * over time.
-   *
    * Retrieve comprehensive search analytics trends for the economic discussion
    * board platform. This operation analyzes search query patterns from the
    * economic_discussion_search_queries table to identify trending topics,
@@ -55,8 +52,6 @@ export class EconomicdiscussionModeratorSearchAnalyticsController {
   }
 
   /**
-   * Retrieve detailed performance analytics for the search functionality.
-   *
    * Retrieve comprehensive performance analytics for the economic discussion
    * board's search functionality. This operation analyzes search performance
    * metrics from the economic_discussion_search_queries table and related data

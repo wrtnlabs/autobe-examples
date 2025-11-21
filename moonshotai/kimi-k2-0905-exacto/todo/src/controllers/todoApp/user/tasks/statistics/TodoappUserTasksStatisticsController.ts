@@ -10,8 +10,6 @@ import { ITodoAppTaskStatistics } from "../../../../../api/structures/ITodoAppTa
 @Controller("/todoApp/user/tasks/statistics")
 export class TodoappUserTasksStatisticsController {
   /**
-   * Retrieve task statistics and analytics.
-   *
    * Retrieve comprehensive task statistics and analytics for the authenticated
    * user's todo list. This operation provides detailed insights into task
    * management patterns including overall task counts, completion rates,

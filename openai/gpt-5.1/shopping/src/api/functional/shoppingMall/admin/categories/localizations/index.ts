@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCategoryLocalization } from "../../../../../structures/IShoppingMallCategoryLocalization";
 
 /**
- * Create a new ShoppingMall category localization row in
- * shopping_mall_category_localizations for a given category.
- *
  * Register a new localized label and SEO metadata for a ShoppingMall category.
  *
  * This operation writes to the shopping_mall_category_localizations table,
@@ -146,8 +143,6 @@ export namespace create {
 }
 
 /**
- * Update one category localization in shopping_mall_category_localizations.
- *
  * Update a single category localization record for a given category and locale.
  *
  * This PUT operation allows a privileged actor to modify the localized
@@ -285,8 +280,6 @@ export namespace update {
 }
 
 /**
- * Delete one category localization from shopping_mall_category_localizations.
- *
  * Remove a single category localization record for a given category and locale.
  *
  * This DELETE operation enables a privileged actor to permanently remove one

@@ -8,9 +8,6 @@ import { UserPayload } from "../../../../../decorators/payload/UserPayload";
 @Controller("/todoList/user/users/:email/sessions/:sessionId")
 export class TodolistUserUsersSessionsController {
   /**
-   * Delete a specific user session from the todo_list_user_sessions table by
-   * email and sessionId with full ownership enforcement.
-   *
    * This endpoint allows an authenticated user to permanently delete
    * (invalidate) one of their own active or expired sessions using the
    * sessionId and their registered email. The operation irrevocably removes the

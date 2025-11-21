@@ -10,8 +10,6 @@ import { IRedditCommunityCommunityRule } from "../../../../api/structures/IReddi
 @Controller("/redditCommunity/communities/:communityName/rules")
 export class RedditcommunityCommunitiesRulesController {
   /**
-   * Search and retrieve community rules with filtering and pagination.
-   *
    * Retrieve a filtered, paginated list of rules defined for a specific
    * community.
    *
@@ -70,8 +68,6 @@ export class RedditcommunityCommunitiesRulesController {
   }
 
   /**
-   * Retrieve detailed information about a specific community rule.
-   *
    * Retrieve complete details of a specific community rule including its title,
    * description, and metadata. This operation provides access to individual
    * rule information for community members to understand specific behavioral

@@ -8,8 +8,6 @@ export * as sessions from "./sessions/index";
 export * as subscriptions from "./subscriptions/index";
 
 /**
- * Update a member's own profile information.
- *
  * Update profile information and privacy settings for the authenticated member.
  *
  * This operation enables members to customize their public profile by modifying
@@ -128,8 +126,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a member account and all associated data.
- *
  * Permanently remove a member account from the Reddit community platform using
  * their unique username identifier. This operation performs a hard delete that
  * completely removes the member record from the database.

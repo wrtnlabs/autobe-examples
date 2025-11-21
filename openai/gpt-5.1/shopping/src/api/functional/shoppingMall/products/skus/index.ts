@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSku } from "../../../../structures/IShoppingMallSku";
 
 /**
- * Retrieve a specific SKU (shopping_mall_skus) for a given product.
- *
  * Retrieve detailed information for a specific SKU that belongs to a given
  * product.
  *

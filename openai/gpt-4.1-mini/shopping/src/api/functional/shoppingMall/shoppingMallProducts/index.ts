@@ -7,8 +7,6 @@ import { IShoppingMallProduct } from "../../../structures/IShoppingMallProduct";
 import { IPageIShoppingMallProduct } from "../../../structures/IPageIShoppingMallProduct";
 
 /**
- * Retrieve filtered, paginated list of shopping mall products.
- *
  * Retrieve a filtered and paginated list of shopping mall products.
  *
  * This operation enables clients to search and browse products using multiple
@@ -105,8 +103,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a shopping mall product by product code.
- *
  * Fetch detailed product information by providing the unique productCode.
  *
  * This operation retrieves a complete product entity including description,

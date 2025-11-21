@@ -12,9 +12,6 @@ import { IDiscussionBoardAdminuserSession } from "../../../../../api/structures/
 @Controller("/discussionBoard/adminUser/adminUsers/:adminUserId/sessions")
 export class DiscussionboardAdminuserAdminusersSessionsController {
   /**
-   * Search admin user sessions for a specific admin from the
-   * discussion_board_adminuser_sessions table.
-   *
    * Search and list admin user sessions for a specific admin account from the
    * discussion_board_adminuser_sessions table.
    *
@@ -74,9 +71,6 @@ export class DiscussionboardAdminuserAdminusersSessionsController {
   }
 
   /**
-   * Get a single admin session record from discussion_board_adminuser_sessions
-   * for administrative audit purposes.
-   *
    * Retrieve detailed information about a single admin user session recorded in
    * the discussion_board_adminuser_sessions table.
    *

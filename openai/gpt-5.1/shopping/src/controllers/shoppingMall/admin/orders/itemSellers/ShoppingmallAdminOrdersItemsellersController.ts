@@ -8,9 +8,6 @@ import { IShoppingMallOrderItemSeller } from "../../../../../api/structures/ISho
 @Controller("/shoppingMall/admin/orders/:orderCode/itemSellers")
 export class ShoppingmallAdminOrdersItemsellersController {
   /**
-   * Search and list seller mappings for order items from the
-   * shopping_mall_order_item_sellers table for a given order code.
-   *
    * Retrieve a filtered, paginated list of seller mappings for items
    * belonging to a specific order identified by its business order code.
    *

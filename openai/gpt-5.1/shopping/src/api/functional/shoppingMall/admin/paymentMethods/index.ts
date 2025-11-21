@@ -8,8 +8,6 @@ import { IPageIShoppingMallPaymentMethod } from "../../../../structures/IPageISh
 export * as surcharges from "./surcharges/index";
 
 /**
- * Create a new payment method in shopping_mall_payment_methods.
- *
  * Create a new payment method configuration record in the
  * shopping_mall_payment_methods table.
  *
@@ -132,9 +130,6 @@ export namespace create {
 }
 
 /**
- * Search and list configured payment methods from the
- * shopping_mall_payment_methods table with filtering and pagination.
- *
  * Retrieve a paginated list of payment methods defined in the
  * `shopping_mall_payment_methods` Prisma model with support for search,
  * filtering, and sorting.
@@ -257,9 +252,6 @@ export namespace index {
 }
 
 /**
- * Get one payment method from shopping_mall_payment_methods by its business
- * code.
- *
  * Retrieve detailed configuration of a single payment method from the
  * shopping_mall_payment_methods table by its unique business code.
  *
@@ -376,9 +368,6 @@ export namespace at {
 }
 
 /**
- * Update an existing payment method in the shopping_mall_payment_methods table
- * by its business code.
- *
  * Update an existing payment method configuration identified by its business
  * code in the `shopping_mall_payment_methods` table.
  *
@@ -526,9 +515,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a payment method in the shopping_mall_payment_methods
- * table by its business code.
- *
  * Permanently remove a payment method configuration identified by its business
  * code from the `shopping_mall_payment_methods` table.
  *

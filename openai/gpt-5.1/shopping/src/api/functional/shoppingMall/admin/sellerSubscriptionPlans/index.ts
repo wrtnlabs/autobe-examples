@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSellerSubscriptionPlan } from "../../../../structures/IShoppingMallSellerSubscriptionPlan";
 
 /**
- * Create a new seller subscription plan in
- * shopping_mall_seller_subscription_plans.
- *
  * Register a new seller subscription plan in the shopping mall platform based
  * on the shopping_mall_seller_subscription_plans table.
  *
@@ -127,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Update an existing seller subscription plan in
- * shopping_mall_seller_subscription_plans by its unique code.
- *
  * Modify details of an existing seller subscription plan, identified by its
  * business code, in the shopping_mall_seller_subscription_plans table.
  *
@@ -262,9 +256,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a seller subscription plan record from the
- * shopping_mall_seller_subscription_plans table by its unique planCode.
- *
  * Delete a single seller subscription plan identified by its unique plan code
  * from the shopping mall platform configuration.
  *

@@ -7,8 +7,6 @@ import { ICommunityPlatformPost } from "../../../../structures/ICommunityPlatfor
 import { IPageICommunityPlatformPost } from "../../../../structures/IPageICommunityPlatformPost";
 
 /**
- * Search and retrieve a filtered, paginated list of posts from a community.
- *
  * Retrieve a paginated collection of posts from a specific community with
  * comprehensive filtering, sorting, and search capabilities. This operation
  * provides the primary mechanism for community content discovery and feed

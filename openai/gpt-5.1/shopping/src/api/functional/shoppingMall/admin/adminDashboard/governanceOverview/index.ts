@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallAdminGovernanceOverview } from "../../../../../structures/IShoppingMallAdminGovernanceOverview";
 
 /**
- * Provide an aggregated governance overview dashboard for admins using
- * shopping_mall_* governance and KPI snapshot tables.
- *
  * Retrieve a comprehensive governance overview dashboard for shoppingMall
  * administrators.
  *

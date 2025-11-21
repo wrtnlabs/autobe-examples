@@ -12,8 +12,6 @@ import { IDiscussionBoardChannel } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/moderator/channels")
 export class DiscussionboardModeratorChannelsController {
   /**
-   * Create a new discussion board channel.
-   *
    * This operation allows authorized administrators to create new discussion
    * board channels that serve as major content categories for organizing
    * discussions.
@@ -59,8 +57,6 @@ export class DiscussionboardModeratorChannelsController {
   }
 
   /**
-   * Update an existing discussion board channel.
-   *
    * This operation enables authorized administrators to modify the properties
    * of an existing discussion board channel identified by its unique name.
    * Channel updates may include changes to the description, status
@@ -112,8 +108,6 @@ export class DiscussionboardModeratorChannelsController {
   }
 
   /**
-   * Permanently delete a discussion board channel by its unique name.
-   *
    * This operation permanently removes a discussion board channel from the
    * system using the channel's unique name identifier. The deletion process
    * includes validation checks to ensure the channel exists and is not

@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberFollower } from "../../../../api/structures/ICo
 @Controller("/communityPlatform/members/:memberId/followers")
 export class CommunityplatformMembersFollowersController {
   /**
-   * Retrieve the list of members following a specific member.
-   *
    * Retrieve a complete list of members who are following the specified
    * member (identified by memberId path parameter). This operation queries
    * the community_platform_member_followers table for all records where the

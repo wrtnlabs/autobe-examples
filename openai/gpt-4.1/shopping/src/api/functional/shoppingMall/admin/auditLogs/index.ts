@@ -7,9 +7,6 @@ import { IShoppingMallAuditLog } from "../../../../structures/IShoppingMallAudit
 import { IPageIShoppingMallAuditLog } from "../../../../structures/IPageIShoppingMallAuditLog";
 
 /**
- * Search and retrieve a filtered, paginated list of audit log entries from
- * shopping_mall_audit_logs.
- *
  * Provides administrators access to the full set of audit log records for
  * investigation or compliance review.
  *
@@ -106,9 +103,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific audit log entry from shopping_mall_audit_logs by unique
- * identifier.
- *
  * Retrieve detailed information about a single audit log entry from
  * shopping_mall_audit_logs, using its unique identifier as the primary data
  * key.

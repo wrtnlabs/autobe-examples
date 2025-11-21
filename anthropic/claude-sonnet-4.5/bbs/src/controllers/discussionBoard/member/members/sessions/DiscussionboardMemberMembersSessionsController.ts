@@ -12,8 +12,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/member/members/:memberId/sessions")
 export class DiscussionboardMemberMembersSessionsController {
   /**
-   * Retrieve paginated list of authentication sessions for a specific member.
-   *
    * Retrieve a filtered and paginated list of authentication sessions
    * associated with a specific member account from the discussion board
    * platform.
@@ -75,8 +73,6 @@ export class DiscussionboardMemberMembersSessionsController {
   }
 
   /**
-   * Terminate a specific member authentication session.
-   *
    * Remove a specific active authentication session for a member, logging them
    * out from the associated device or browser.
    *

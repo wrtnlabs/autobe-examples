@@ -8,9 +8,6 @@ import { IDiscussionBoardArticleOfAdminusersAdminAuthor } from "../../../../api/
 @Controller("/discussionBoard/articles/:articleId/adminAuthor")
 export class DiscussionboardArticlesAdminauthorController {
   /**
-   * Get the admin user author linked via discussion_board_article_of_adminusers
-   * for the specified article.
-   *
    * Retrieve information about the admin user who authored a particular
    * discussion board article.
    *

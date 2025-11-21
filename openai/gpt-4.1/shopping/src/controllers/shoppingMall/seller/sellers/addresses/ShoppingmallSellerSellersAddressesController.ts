@@ -14,9 +14,6 @@ import { IShoppingMallAddress } from "../../../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/seller/sellers/:sellerId/addresses")
 export class ShoppingmallSellerSellersAddressesController {
   /**
-   * Search and retrieve the list of addresses for a given seller from the
-   * shopping_mall_addresses table.
-   *
    * Retrieve a filtered and paginated list of addresses associated with the
    * specified seller account, supporting advanced search, filter, and sorting
    * capabilities.
@@ -65,9 +62,6 @@ export class ShoppingmallSellerSellersAddressesController {
   }
 
   /**
-   * Retrieve detailed information for a specific seller address in
-   * shopping_mall_addresses table.
-   *
    * Retrieve a detailed address record associated with a registered seller
    * account.
    *
@@ -119,9 +113,6 @@ export class ShoppingmallSellerSellersAddressesController {
   }
 
   /**
-   * Update the details of a specific seller address in shopping_mall_addresses
-   * table.
-   *
    * Update the information of a specific address owned by a seller.
    *
    * This operation is available to authenticated sellers on their own address
@@ -176,9 +167,6 @@ export class ShoppingmallSellerSellersAddressesController {
   }
 
   /**
-   * Permanently delete an address for a specific seller
-   * (shopping_mall_addresses).
-   *
    * Remove a business address associated with a registered seller from the
    * system.
    *

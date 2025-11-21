@@ -1,295 +1,298 @@
 # Product Catalog Requirements Specification
 
-## Product Catalog Overview
+## Executive Summary
+
+This document defines the comprehensive business requirements for the shopping mall platform's product catalog management system. The product catalog serves as the foundation of the e-commerce platform, enabling customers to discover, browse, and purchase products while providing sellers with robust tools for product management and inventory control.
 
 ### Business Context
-The product catalog serves as the foundation of the e-commerce platform, enabling customers to discover, browse, and purchase products while providing sellers with comprehensive product management capabilities. The catalog must support complex product relationships, variant management, and real-time inventory tracking to ensure accurate product representation and availability.
+The product catalog must support a multi-vendor marketplace model where multiple sellers can list products within a unified categorization system. The catalog must scale to accommodate thousands of products across diverse categories while maintaining optimal performance and search accuracy.
 
-### Strategic Importance
-THE product catalog SHALL serve as the primary interface between customers and sellers, providing comprehensive product discovery capabilities while maintaining accurate inventory and pricing information.
+## Product Management Overview
 
-## Category Management System
+### Core Product Management Functions
+THE product catalog system SHALL provide comprehensive product management capabilities for sellers and administrators.
+
+WHEN a seller registers on the platform, THE system SHALL provide access to product listing and management tools.
+WHEN a seller creates a new product listing, THE system SHALL validate all required product attributes before publication.
+WHEN a product is published, THE system SHALL make it immediately available for customer browsing and purchase.
+
+### Product Lifecycle States
+THE product catalog SHALL manage products through the following lifecycle states:
+- **Draft**: Product created but not visible to customers
+- **Pending Review**: Product submitted for admin approval (if required)
+- **Active**: Product published and available for purchase
+- **Out of Stock**: Product temporarily unavailable
+- **Archived**: Product permanently removed from catalog
+- **Suspended**: Product temporarily removed due to policy violations
+
+## Product Categories and Classification System
 
 ### Category Hierarchy Structure
-THE system SHALL support a hierarchical category structure with unlimited nesting levels to organize products logically.
+THE product catalog SHALL organize products using a hierarchical category system with the following levels:
+- **Level 1**: Major product groups (e.g., Electronics, Clothing, Home & Garden)
+- **Level 2**: Subcategories (e.g., Electronics → Smartphones, Electronics → Laptops)
+- **Level 3**: Specific product types (e.g., Smartphones → Android, Smartphones → iOS)
 
 ### Category Management Requirements
-WHEN creating a new category, THE system SHALL require category name, description, and parent category selection.
-WHEN a category is deleted, THE system SHALL provide options to move existing products to another category or delete all products within the category.
+WHEN creating a new category, THE system SHALL require:
+- Category name (2-50 characters)
+- Category description (optional, max 500 characters)
+- Parent category selection (for levels 2 and 3)
+- Display order position
+- Active/inactive status
 
-### Category Display Rules
-THE system SHALL display categories in a tree structure with breadcrumb navigation for easy customer navigation.
-WHERE categories contain subcategories, THE system SHALL display category counts including all nested products.
+WHILE a category is marked as inactive, THE system SHALL hide it from customer browsing while maintaining existing product associations.
 
-### Category Validation Rules
-WHEN creating or updating categories, THE system SHALL validate:
-- Category name uniqueness within the same parent category
-- Maximum category depth not exceeding 5 levels
-- Proper URL slug generation for SEO optimization
-- Category image requirements (size, format, aspect ratio)
+### Product-Category Association
+WHEN assigning a product to categories, THE system SHALL:
+- Allow assignment to one primary category
+- Allow assignment to up to three secondary categories
+- Validate that categories exist and are active
+- Prevent circular category references
 
-## Product Variants and SKU Management
+## Product Attributes and Specifications
 
-### Product Variant System
-THE system SHALL support product variants with multiple attributes including color, size, material, and custom options.
+### Core Product Attributes
+THE product catalog SHALL require the following mandatory attributes for all products:
+- Product title (5-200 characters)
+- Product description (10-2000 characters)
+- Product images (minimum 1, maximum 8)
+- Price (numeric, 2 decimal places, minimum $0.01)
+- Stock quantity (integer, minimum 0)
+- SKU (stock keeping unit, unique per seller, 3-50 characters)
+- Category assignment
+- Product condition (New, Used, Refurbished)
 
-### Variant Attribute Definition
-WHEN creating a product, THE system SHALL allow sellers to define variant attributes with corresponding values.
-THE system SHALL generate unique SKUs for each product variant combination automatically using the format: [ProductID]-[Attribute1]-[Attribute2]-[VariantCode].
+### Extended Product Attributes
+WHERE products require additional specifications, THE system SHALL support attribute groups:
+- **Electronics**: Brand, Model, Color, Storage Capacity, Screen Size
+- **Clothing**: Size, Color, Material, Gender, Age Group
+- **Home & Garden**: Dimensions, Weight, Material, Color
+- **Books**: Author, ISBN, Publisher, Publication Date
 
-### Variant Inventory Tracking
-WHILE managing product inventory, THE system SHALL track stock levels individually for each SKU variant.
-IF a variant goes out of stock, THE system SHALL automatically mark it as unavailable while keeping other variants active.
+### Attribute Validation Rules
+WHEN a seller enters product attributes, THE system SHALL validate:
+- Numeric attributes fall within acceptable ranges
+- Text attributes meet length requirements
+- Required attributes are not empty
+- Attribute values match defined data types
 
-### Variant Pricing Rules
-WHERE variants have different pricing, THE system SHALL apply variant-specific pricing while displaying the base product price range.
-THE system SHALL support variant-specific images and descriptions to differentiate product options visually.
+## Search and Filtering Requirements
 
-### Variant Combination Validation
-WHEN sellers create variant combinations, THE system SHALL:
-- Validate that all required variant attributes are defined
-- Prevent duplicate variant combinations
-- Ensure consistent pricing across similar variants
-- Support variant-specific shipping rules and costs
+### Search Algorithm Specifications
+WHEN a customer searches for products, THE system SHALL:
+- Search across product titles, descriptions, and attributes
+- Return results ordered by relevance score
+- Support partial matching and fuzzy search
+- Handle common misspellings and synonyms
+- Return results within 500ms for typical queries
 
-## Inventory Management Requirements
-
-### Real-time Stock Tracking
-THE system SHALL maintain real-time inventory counts for each SKU with automatic deduction upon order placement.
-
-### Inventory Control Mechanisms
-WHEN inventory reaches low threshold levels, THE system SHALL notify sellers and optionally mark products as low stock.
-THE system SHALL prevent overselling by validating available inventory before completing order transactions.
-
-### Inventory Synchronization
-THE system SHALL support inventory synchronization with external systems through API integration.
-WHERE multiple sellers offer the same product, THE system SHALL manage inventory separately for each seller.
-
-### Stock Management Features
-THE system SHALL provide inventory history tracking showing stock movements, adjustments, and sales patterns.
-THE system SHALL support bulk inventory updates through CSV import/export functionality.
-
-### Inventory Alert System
-WHEN inventory levels fall below predefined thresholds, THE system SHALL:
-- Send immediate notifications to sellers via email and dashboard alerts
-- Provide restocking recommendations based on sales velocity
-- Allow sellers to set custom alert thresholds per product or category
-- Generate inventory reports for seasonal planning
-
-## Product Search and Filtering Capabilities
-
-### Search Functionality
-THE system SHALL provide full-text search across product titles, descriptions, SKU numbers, and brand names.
-
-### Advanced Filtering Options
-WHEN customers search for products, THE system SHALL provide filtering by:
-- Price range with customizable increments
-- Category with multi-select capability
-- Brand with alphabetical sorting
-- Availability status (in stock, out of stock, pre-order)
-- Rating range (1-5 stars)
-- Variant attributes (color, size, material, etc.)
-- Shipping options (free shipping, express delivery)
+### Advanced Filtering Capabilities
+THE product catalog SHALL provide filtering by:
+- Price range (minimum and maximum)
+- Product category and subcategory
+- Product condition
+- Seller rating and reputation
+- Availability (in stock/out of stock)
+- Brand and manufacturer
+- Product attributes specific to category
 
 ### Search Performance Requirements
-THE system SHALL return search results within 2 seconds for common queries.
-WHERE search results exceed 1000 products, THE system SHALL implement pagination with configurable products per page (20, 40, 60 options).
+WHILE handling concurrent search requests, THE system SHALL maintain response times under 1 second for 95% of queries.
+IF search query returns more than 1000 results, THEN THE system SHALL provide pagination with 20 products per page.
 
-### Search Relevance
-THE system SHALL prioritize search results based on relevance factors including:
-- Exact matches in product titles and descriptions
-- Category relevance and product popularity
-- Sales performance and customer ratings
-- Recent product additions and updates
+## Product Display Specifications
 
-### Search Autocomplete
-WHEN customers type in the search box, THE system SHALL provide real-time autocomplete suggestions including:
-- Popular search terms and trending products
-- Category matches and brand suggestions
-- Previously searched terms for returning customers
-- Spelling correction for common misspellings
+### Product Listing Display
+WHEN displaying products in search results or category browsing, THE system SHALL show:
+- Product thumbnail image
+- Product title (truncated if necessary)
+- Seller name and rating
+- Current price
+- Discount percentage (if applicable)
+- "In Stock" or "Out of Stock" badge
+- Quick add to cart button
 
-## Product Display Requirements
+### Product Detail Page Requirements
+WHEN a customer views a product detail page, THE system SHALL display:
+- Product image gallery with zoom capability
+- Complete product title and description
+- All product attributes and specifications
+- Seller information with rating and contact options
+- Customer reviews and ratings
+- Related products suggestions
+- Social sharing options
 
-### Product Information Structure
-THE system SHALL display products with the following comprehensive information:
-- Product title, brand, and manufacturer details
-- Detailed product description with formatting support
-- Multiple product images with zoom capability and gallery navigation
-- Variant selection options with visual representations
-- Pricing information including base price, sale price, and savings
-- Availability status with stock quantity display
-- Customer ratings and reviews with aggregate scores
-- Shipping information including costs and delivery estimates
-- Seller information with ratings and contact options
-- Product specifications and technical details
-- Related products and frequently bought together suggestions
+### Mobile Display Optimization
+WHERE customers access the platform via mobile devices, THE product display SHALL be optimized for touch interaction and smaller screens.
 
-### Product Image Management
-THE system SHALL support multiple product images with automatic thumbnail generation.
-WHERE products have variants, THE system SHALL display variant-specific images when selected.
-THE system SHALL validate image uploads for format, size, and content appropriateness.
+## Inventory Management and Stock Control
 
-### Mobile Optimization
-THE product display interface SHALL be fully responsive and optimized for mobile devices.
-THE system SHALL maintain image quality and variant selection usability across all screen sizes.
+### Real-time Inventory Tracking
+THE product catalog SHALL maintain real-time inventory counts for all products.
+WHEN a customer adds a product to cart, THE system SHALL reserve the quantity.
+WHEN an order is completed, THE system SHALL deduct the purchased quantity from inventory.
+WHEN an order is cancelled, THE system SHALL restore the inventory quantity.
 
-### Product Page Performance
-THE system SHALL load product detail pages within 3 seconds under normal load conditions.
-THE system SHALL implement lazy loading for product images and related content.
+### Low Stock Alerts
+IF product inventory falls below a predefined threshold, THEN THE system SHALL notify the seller.
+WHERE sellers set custom low-stock thresholds, THE system SHALL use those values for alert generation.
 
-## Pricing and Discount Management
-
-### Pricing Structure
-THE system SHALL support multiple pricing tiers including:
-- Base price for standard purchases
-- Sale price with date ranges
-- Member pricing for registered customers
-- Bulk pricing discounts for quantity purchases
-- Seasonal pricing adjustments
-
-### Discount Application Rules
-WHEN applying discounts, THE system SHALL calculate prices based on predefined discount rules.
-THE system SHALL support percentage-based and fixed-amount discounts.
-
-### Promotional Pricing
-THE system SHALL support time-limited promotional pricing with automatic activation and expiration.
-WHERE multiple discounts apply, THE system SHALL calculate the final price using the most beneficial discount for the customer.
-
-### Currency Support
-THE system SHALL support multiple currencies with automatic conversion based on current exchange rates.
-THE system SHALL display prices in the customer's preferred currency when available.
-
-### Price History Tracking
-THE system SHALL maintain complete price history for audit and customer transparency.
-WHEN prices change, THE system SHALL log the change with timestamp and reason.
+### Inventory Synchronization
+WHILE multiple sellers offer the same product, THE system SHALL maintain separate inventory counts for each seller.
 
 ## Product Lifecycle Management
 
-### Product Creation Workflow
-WHEN a seller creates a new product, THE system SHALL guide them through a step-by-step process including:
-- Basic product information (title, description, category)
-- Variant configuration and attribute definition
-- Pricing setup with tiered options
-- Inventory initialization and stock levels
-- Image upload with validation and optimization
-- SEO settings and meta information
-- Shipping configuration and packaging details
+### Product Publication Workflow
+```mermaid
+graph LR
+  A["Seller Creates Product"] --> B["Draft State"]
+  B --> C{"Requires Admin Approval?"}
+  C -->|"Yes"| D["Pending Review State"]
+  C -->|"No"| E["Active State"]
+  D --> F["Admin Reviews Product"]
+  F --> G{"Approval Decision?"}
+  G -->|"Approve"| E
+  G -->|"Reject"| H["Draft State with Rejection Notes"]
+  E --> I["Product Visible to Customers"]
+```
 
-### Product Status Management
-THE system SHALL support multiple product statuses including:
-- Draft (not visible to customers, under development)
-- Active (available for purchase and search)
-- Inactive (temporarily unavailable but preserved)
-- Discontinued (permanently removed from active catalogs)
-- Archived (historical reference only)
+### Product Modification Rules
+WHEN a seller modifies an active product, THE system SHALL:
+- Maintain the product's active status during editing
+- Save changes as a new version while preserving the live version
+- Require seller confirmation to publish changes
+- Log all modification activities for audit purposes
 
-### Product Approval Process
-WHERE seller products require approval, THE system SHALL route new products to administrators for review before activation.
-THE system SHALL provide approval/rejection reasons to sellers for transparency.
+### Product Archiving and Deletion
+WHEN a seller archives a product, THE system SHALL:
+- Remove the product from search results and category browsing
+- Maintain the product record for order history purposes
+- Allow restoration within 30 days
+- Permanently delete product data after 90 days of archiving
 
-### Product Updates and Versioning
-THE system SHALL maintain product version history to track changes over time.
-WHEN product information is updated, THE system SHALL preserve historical data for order reference.
+## Performance and Scalability Requirements
 
-### Product Retirement
-WHEN products are discontinued, THE system SHALL maintain product information for historical order reference while removing them from active catalogs.
-THE system SHALL provide options to suggest alternative products to customers who previously purchased discontinued items.
+### Catalog Performance Standards
+THE product catalog SHALL meet the following performance benchmarks:
+- Category browsing: < 200ms response time
+- Product search: < 500ms response time
+- Product detail loading: < 300ms response time
+- Image loading: < 1 second for standard quality images
 
-## Business Rules and Validation
+### Scalability Requirements
+WHILE the platform grows to 10,000+ products, THE catalog system SHALL maintain performance standards.
+WHEN concurrent users exceed 1,000, THE system SHALL continue to operate without degradation.
 
-### Product Data Validation
-THE system SHALL validate all product information before saving, including:
-- Required field completion with meaningful error messages
-- Price format validation and range checking
-- Image format validation and size restrictions
-- SKU uniqueness validation across the platform
-- Category assignment validation and hierarchy integrity
-
-### Inventory Validation Rules
-THE system SHALL prevent negative inventory values through validation checks.
-THE system SHALL validate inventory updates against current stock levels to prevent data corruption.
-
-### Category Validation
-THE system SHALL prevent circular category references in hierarchical structures.
-THE system SHALL validate category assignments to ensure products are properly categorized.
-
-### Variant Validation
-THE system SHALL validate that variant combinations are logically consistent.
-THE system SHALL prevent variant attribute conflicts and ensure proper SKU generation.
-
-## Performance Requirements
-
-### Catalog Loading Performance
-THE system SHALL load category pages with up to 100 products within 3 seconds.
-THE system SHALL implement lazy loading for product images to optimize page performance.
-
-### Search Performance
-THE system SHALL return search results for common queries within 2 seconds.
-THE system SHALL maintain search index freshness with near-real-time updates.
-
-### Inventory Calculation Performance
-THE system SHALL calculate available inventory in real-time without noticeable performance impact.
-THE system SHALL handle concurrent inventory updates without data conflicts.
-
-### Scalability Targets
-THE system SHALL support:
-- 10,000+ concurrent users browsing the catalog
-- 1,000+ simultaneous product searches
-- Real-time inventory updates for 100,000+ products
-- Category hierarchy management for 1,000+ categories
+### Caching Strategy
+THE product catalog SHALL implement caching for:
+- Category hierarchies and product counts
+- Popular search results
+- Product detail pages for high-traffic items
+- Attribute lists and filter options
 
 ## Integration Requirements
 
-### External System Integration
-THE system SHALL provide APIs for inventory synchronization with external systems.
-THE system SHALL support webhook notifications for product updates and inventory changes.
+### Shopping Cart Integration
+THE product catalog SHALL provide real-time inventory information to the shopping cart system.
+WHEN products are added to cart, THE catalog SHALL update inventory reservations immediately.
 
-### Analytics Integration
-THE system SHALL integrate with analytics platforms to track product views, searches, and conversion rates.
-THE system SHALL provide product performance metrics to sellers and administrators.
+### Order Management Integration
+THE product catalog SHALL maintain product information consistency with completed orders.
+WHILE orders reference specific product versions, THE catalog SHALL preserve product data as it existed at order time.
 
-### Authentication Integration
-THE system SHALL integrate with the platform authentication system to enforce:
-- Customer permissions for product browsing and purchasing
-- Seller permissions for product management and inventory control
-- Admin permissions for catalog oversight and moderation
+### Seller Management Integration
+THE product catalog SHALL integrate with seller management systems to:
+- Validate seller permissions for product management
+- Track seller performance metrics
+- Enforce seller-specific product listing limits
 
 ## Error Handling and Edge Cases
 
-### Product Not Found
-IF a product is not found, THE system SHALL display a user-friendly error message with suggestions for similar products.
+### Product Not Found Scenarios
+IF a customer requests a product that does not exist, THEN THE system SHALL return a user-friendly error message.
+IF a product has been archived or suspended, THEN THE system SHALL inform the customer appropriately.
 
 ### Inventory Discrepancies
-IF inventory discrepancies are detected, THE system SHALL log the issue and notify administrators while preventing order fulfillment.
+WHEN inventory quantities become negative due to system errors, THEN THE system SHALL:
+- Log the discrepancy for investigation
+- Prevent further purchases until resolved
+- Notify administrators and affected sellers
 
-### Category Structure Issues
-IF category hierarchy becomes corrupted, THE system SHALL provide tools for administrators to repair the structure.
+### Search Performance Degradation
+IF search performance degrades below acceptable thresholds, THEN THE system SHALL:
+- Implement search query optimization
+- Provide fallback search mechanisms
+- Notify administrators of performance issues
 
-### Variant Configuration Errors
-IF variant configuration leads to invalid combinations, THE system SHALL provide clear error messages and correction guidance.
+## Business Rules and Validation
 
-### Search Index Failures
-IF search index becomes corrupted or outdated, THE system SHALL provide reindexing tools and fallback search mechanisms.
+### Product Pricing Rules
+THE system SHALL enforce minimum and maximum price limits based on product category.
+WHEN sellers attempt to set prices outside acceptable ranges, THE system SHALL reject the price setting.
 
-## Success Metrics
+### Product Content Moderation
+THE system SHALL automatically flag products containing prohibited content based on:
+- Keyword filtering for restricted terms
+- Image analysis for inappropriate content
+- Seller reputation and history
 
-### Performance Metrics
-- Average product page load time: < 3 seconds
-- Search response time: < 2 seconds for 95% of queries
-- Inventory update latency: < 1 second
-- Category navigation performance: < 2 seconds
+### Duplicate Product Prevention
+THE system SHALL detect and prevent listing of identical products by the same seller.
+WHEN similar products are detected, THE system SHALL suggest product variation options instead.
 
-### Business Metrics
-- Product discovery conversion rate: > 3%
-- Search-to-purchase conversion rate: > 15%
-- Catalog completeness score: > 95%
-- Inventory accuracy rate: > 99.5%
+## Success Metrics and Monitoring
 
-### User Experience Metrics
-- Customer satisfaction with product discovery: > 4.5/5 stars
-- Seller satisfaction with catalog management: > 4.5/5 stars
-- Search relevance score: > 90%
-- Mobile usability rating: > 4.5/5 stars
+### Key Performance Indicators
+THE product catalog success SHALL be measured by:
+- Product discovery rate (searches leading to views)
+- Conversion rate (views leading to purchases)
+- Search accuracy and relevance scores
+- Inventory accuracy percentage
+- System uptime and performance metrics
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+### Monitoring Requirements
+THE system SHALL provide real-time monitoring of:
+- Search query performance
+- Inventory synchronization status
+- Product publication success rates
+- Category browsing performance
+
+## Additional Business Processes
+
+### Product Import and Export
+WHEN sellers need to bulk manage products, THE system SHALL provide:
+- CSV import functionality for product creation
+- Export capabilities for inventory reporting
+- Template-based product upload with validation
+- Batch processing for large product catalogs
+
+### Product Variation Management
+WHERE products have variations (size, color, etc.), THE system SHALL support:
+- Parent-child product relationships
+- Variation-specific pricing and inventory
+- Combined product listings with option selection
+- Visual variation representation
+
+### Cross-selling and Upselling
+THE product catalog SHALL implement intelligent product recommendations:
+- "Customers who bought this also bought" suggestions
+- Complementary product recommendations
+- Bundle creation capabilities
+- Seasonal and promotional product highlighting
+
+### Product Review and Rating System
+WHEN customers interact with products, THE system SHALL:
+- Collect and display customer reviews
+- Calculate average product ratings
+- Moderate review content for appropriateness
+- Provide helpfulness voting for reviews
+
+### Product Analytics and Reporting
+THE catalog system SHALL provide sellers with:
+- Product view and conversion statistics
+- Search term performance analysis
+- Inventory turnover rates
+- Customer engagement metrics
+
+This document defines the complete business requirements for the product catalog system. Development teams should use these requirements to design and implement the technical solution that meets these business needs while maintaining flexibility for future enhancements.

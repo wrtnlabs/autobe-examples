@@ -7,9 +7,6 @@ import { IShoppingMallReviewModerationAction } from "../../../../../structures/I
 import { IPageIShoppingMallReviewModerationAction } from "../../../../../structures/IPageIShoppingMallReviewModerationAction";
 
 /**
- * Create a new review moderation action record in
- * shopping_mall_review_moderation_actions for a specific review.
- *
  * Create and persist a new moderation action for a given customer review,
  * recording the decision and associated policy context.
  *
@@ -146,9 +143,6 @@ export namespace create {
 }
 
 /**
- * Index moderation actions from the shopping_mall_review_moderation_actions
- * table for a given review.
- *
  * Retrieve a filtered, paginated list of moderation actions recorded against a
  * specific product review for governance and audit purposes.
  *
@@ -284,9 +278,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single review moderation action record from
- * shopping_mall_review_moderation_actions.
- *
  * Retrieve detailed information about a single moderation action record that
  * was applied to a specific review.
  *
@@ -424,9 +415,6 @@ export namespace at {
 }
 
 /**
- * Update a specific review moderation action record in the
- * shopping_mall_review_moderation_actions table.
- *
  * Update a specific moderation action record applied to a customer-written
  * review, allowing administrators to correct or adjust previous moderation
  * decisions while maintaining a full audit trail.
@@ -575,9 +563,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific review moderation action from the
- * shopping_mall_review_moderation_actions table.
- *
  * Erase a specific moderation action associated with a review, removing the
  * selected moderation record from the moderation history when allowed by
  * governance and compliance rules.

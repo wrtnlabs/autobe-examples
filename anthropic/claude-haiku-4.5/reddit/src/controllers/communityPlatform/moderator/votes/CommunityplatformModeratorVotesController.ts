@@ -8,8 +8,6 @@ import { ICommunityPlatformVote } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/moderator/votes")
 export class CommunityplatformModeratorVotesController {
   /**
-   * Search and retrieve a filtered, paginated list of voting records.
-   *
    * Retrieve a filtered and paginated list of voting records from the
    * community platform with advanced search and sorting capabilities. This
    * operation provides comprehensive access to the voting system for

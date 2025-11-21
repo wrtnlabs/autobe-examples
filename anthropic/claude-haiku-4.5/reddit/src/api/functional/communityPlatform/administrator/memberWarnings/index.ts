@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberWarning } from "../../../../structures/ICommuni
 import { IPageICommunityPlatformMemberWarning } from "../../../../structures/IPageICommunityPlatformMemberWarning";
 
 /**
- * Create a new member warning record for a rule violation.
- *
  * Create a new member warning record in the community_platform_member_warnings
  * table to document a non-removal warning issued to a member for violating
  * community rules. This operation is used by moderators and administrators when
@@ -120,9 +118,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of member warnings with
- * sorting and filtering options.
- *
  * Retrieve a filtered and paginated list of member warnings from the
  * community_platform_member_warnings table with comprehensive search and
  * filtering capabilities. This operation supports searching by member ID,
@@ -232,8 +227,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific member warning record.
- *
  * Fetch a complete member warning record by its unique identifier from the
  * community_platform_member_warnings table.
  *
@@ -338,9 +331,6 @@ export namespace at {
 }
 
 /**
- * Remove a member warning record through soft-delete (typically via appeal
- * approval).
- *
  * Perform soft-delete of a member warning record by setting the deleted_at
  * timestamp while preserving the complete warning record in the database for
  * audit trail and historical tracking.

@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardAdmin } from "../../../../api/structures/IPageIDis
 @Controller("/discussionBoard/admin/discussionBoardAdmins")
 export class DiscussionboardAdminDiscussionboardadminsController {
   /**
-   * Create a new discussion board admin user.
-   *
    * Create a new discussion board administrator with all required credentials.
    *
    * This operation validates uniqueness of email and proper password hashing.
@@ -51,8 +49,6 @@ export class DiscussionboardAdminDiscussionboardadminsController {
   }
 
   /**
-   * Search and list discussion board administrators with pagination.
-   *
    * Retrieve a filtered and paginated list of discussion board administrators.
    *
    * This operation enables system administrators to fetch administrators with
@@ -90,8 +86,6 @@ export class DiscussionboardAdminDiscussionboardadminsController {
   }
 
   /**
-   * Retrieve a specific discussion board admin by ID.
-   *
    * Retrieve detailed information about a specific discussion board
    * administrator.
    *
@@ -133,8 +127,6 @@ export class DiscussionboardAdminDiscussionboardadminsController {
   }
 
   /**
-   * Update a discussion board administrator's details.
-   *
    * Update the details of a specific discussion board administrator. Only
    * authorized system administrators can perform this action. The update
    * operation accepts fields that can modify administrator information such as
@@ -177,8 +169,6 @@ export class DiscussionboardAdminDiscussionboardadminsController {
   }
 
   /**
-   * Delete a discussion board administrator.
-   *
    * Permanently remove a specific discussion board administrator from the
    * system. This action is irreversible and should only be executed by users
    * with administrative privileges.

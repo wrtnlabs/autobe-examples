@@ -11,8 +11,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/member/members/:username/sessions/:sessionId")
 export class DiscussionboardMemberMembersSessionsController {
   /**
-   * Update an existing member session with new connection details.
-   *
    * This operation allows updating the details of an existing member session,
    * including connection information such as IP address, access URL, and
    * referrer. The session must belong to the specified member and must be
@@ -59,8 +57,6 @@ export class DiscussionboardMemberMembersSessionsController {
   }
 
   /**
-   * Permanently delete a member session from the system.
-   *
    * This operation permanently removes a member session record from the
    * database. The deletion is irreversible and cannot be recovered. The
    * operation validates that the session belongs to the specified member before

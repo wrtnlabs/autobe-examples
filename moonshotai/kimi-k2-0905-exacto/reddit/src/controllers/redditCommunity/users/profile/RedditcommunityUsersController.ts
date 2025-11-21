@@ -7,8 +7,6 @@ import { IRedditCommunityUserProfiles } from "../../../../api/structures/IReddit
 @Controller("/redditCommunity/users/:memberCode/profile")
 export class RedditcommunityUsersController {
   /**
-   * Retrieve member profile information.
-   *
    * Retrieve complete profile information for a specific community member
    * identified by their unique member code. This operation returns all
    * publicly available profile data including display name, biography,

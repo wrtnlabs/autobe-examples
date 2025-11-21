@@ -8,9 +8,6 @@ import { IShoppingMallCustomerDailyStat } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/analytics/customerDailyStats")
 export class ShoppingmallAdminAnalyticsCustomerdailystatsController {
   /**
-   * Search and paginate customer daily stats snapshot rows from
-   * shopping_mall_customer_daily_stats using flexible analytics filters.
-   *
    * Retrieve a filtered and paginated list of customer daily statistics
    * snapshot rows from the shopping_mall_customer_daily_stats table according
    * to flexible search criteria.
@@ -87,9 +84,6 @@ export class ShoppingmallAdminAnalyticsCustomerdailystatsController {
   }
 
   /**
-   * Get a single customer daily statistics snapshot from the
-   * shopping_mall_customer_daily_stats table by ID.
-   *
    * Retrieve a detailed customer daily statistics snapshot record from the
    * `shopping_mall_customer_daily_stats` snapshot table using its unique
    * identifier.

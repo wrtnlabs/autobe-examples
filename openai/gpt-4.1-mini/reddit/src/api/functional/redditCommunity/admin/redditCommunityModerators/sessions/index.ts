@@ -7,8 +7,6 @@ import { IRedditCommunityModeratorSession } from "../../../../../structures/IRed
 import { IPageIRedditCommunityModeratorSession } from "../../../../../structures/IPageIRedditCommunityModeratorSession";
 
 /**
- * List paginated sessions of a reddit community moderator.
- *
  * Retrieve a filtered and paginated list of session records for a given reddit
  * community moderator.
  *
@@ -118,8 +116,6 @@ export namespace index {
 }
 
 /**
- * Update a reddit community moderator session.
- *
  * Update the attributes of an existing reddit community moderator session
  * record.
  *
@@ -228,8 +224,6 @@ export namespace update {
 }
 
 /**
- * Delete a reddit community moderator session.
- *
  * Permanently remove a reddit community moderator session record from the
  * database.
  *

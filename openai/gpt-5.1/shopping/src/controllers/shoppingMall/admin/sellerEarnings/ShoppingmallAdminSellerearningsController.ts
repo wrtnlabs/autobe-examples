@@ -8,9 +8,6 @@ import { IShoppingMallSellerEarning } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/sellerEarnings")
 export class ShoppingmallAdminSellerearningsController {
   /**
-   * Search and retrieve a paginated list of seller earnings from
-   * shopping_mall_seller_earnings.
-   *
    * Retrieve a paginated, filterable list of seller earnings from the
    * `shopping_mall_seller_earnings` table for financial oversight and
    * reporting.
@@ -57,9 +54,6 @@ export class ShoppingmallAdminSellerearningsController {
   }
 
   /**
-   * Get a single seller earnings record from the
-   * shopping_mall_seller_earnings table by sellerEarningId.
-   *
    * Retrieve detailed information for a single seller earnings record
    * identified by its unique sellerEarningId.
    *

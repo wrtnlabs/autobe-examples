@@ -7,8 +7,6 @@ import { ITodoListTodo } from "../../../../structures/ITodoListTodo";
 import { IPageITodoListTodo } from "../../../../structures/IPageITodoListTodo";
 
 /**
- * Create a new Todo in the todo_list_todos table for the requesting user.
- *
  * Create a new Todo item for the currently authenticated user, storing it in
  * the todo_list_todos table.
  *
@@ -109,9 +107,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate the authenticated user's todo_list_todos records with
- * filtering.
- *
  * Retrieve and search the authenticated user's Todo tasks with optional
  * filters, search keywords, and pagination.
  *
@@ -214,9 +209,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single Todo by its UUID (from todo_list_todos table) for its owner
- * only.
- *
  * Retrieve a single Todo item owned by the authenticated user, based on the
  * provided Todo UUID.
  *
@@ -305,9 +297,6 @@ export namespace at {
 }
 
 /**
- * Update details of a specific todo task for the authenticated user
- * (todo_list_todos table).
- *
  * Update an existing todo task belonging to the authenticated user, replacing
  * its details with the specified data. Authenticated users may use this
  * endpoint to change the text, completion status, or other properties of a
@@ -417,9 +406,6 @@ export namespace update {
 }
 
 /**
- * Erase (hard delete) a todo task belonging to the authenticated user
- * (todo_list_todos table).
- *
  * Remove a specific todo task for the authenticated user by its unique todoId.
  * This operation allows users to permanently delete tasks from their personal
  * todo list, ensuring private, user-owned management and strict access control.

@@ -7,9 +7,6 @@ import { ITodoAppMemberUserStatus } from "../../../../../structures/ITodoAppMemb
 import { ITodoAppMemberUser } from "../../../../../structures/ITodoAppMemberUser";
 
 /**
- * Update the status field of a member user account in the todo_app_memberusers
- * table.
- *
  * Update the status of a specific member user account in the todoApp system
  * while leaving other profile fields unchanged.
  *

@@ -15,9 +15,6 @@ import { IPageICommunityPlatformReportEscalation } from "../../../../api/structu
 @Controller("/communityPlatform/administrator/reportEscalations")
 export class CommunityplatformAdministratorReportescalationsController {
   /**
-   * Create a new report escalation (community_platform_report_escalations
-   * table).
-   *
    * Create a new report escalation record for a community platform report
    * requiring administrative attention.
    *
@@ -63,9 +60,6 @@ export class CommunityplatformAdministratorReportescalationsController {
   }
 
   /**
-   * Search CommunityPlatformReportEscalations with advanced filters and return
-   * paginated results.
-   *
    * Return a paginated list of report escalation records matching provided
    * filtering and sorting criteria.
    *
@@ -110,9 +104,6 @@ export class CommunityplatformAdministratorReportescalationsController {
   }
 
   /**
-   * Retrieve a specific report escalation by unique ID
-   * (community_platform_report_escalations table).
-   *
    * Retrieve the full details of a specific report escalation entry in the
    * community platform.
    *
@@ -155,9 +146,6 @@ export class CommunityplatformAdministratorReportescalationsController {
   }
 
   /**
-   * Update an existing report escalation (community_platform_report_escalations
-   * table) by ID.
-   *
    * Update a specific report escalation record by its unique identifier.
    *
    * This endpoint allows authorized actors, such as platform administrators, to
@@ -206,9 +194,6 @@ export class CommunityplatformAdministratorReportescalationsController {
   }
 
   /**
-   * Delete a report escalation by ID (community_platform_report_escalations
-   * table).
-   *
    * Permanently remove a specific report escalation record by its unique
    * identifier.
    *

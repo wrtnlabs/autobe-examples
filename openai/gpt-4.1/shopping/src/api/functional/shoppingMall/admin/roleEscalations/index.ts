@@ -7,9 +7,6 @@ import { IShoppingMallRoleEscalation } from "../../../../structures/IShoppingMal
 import { IPageIShoppingMallRoleEscalation } from "../../../../structures/IPageIShoppingMallRoleEscalation";
 
 /**
- * Search and paginate shopping_mall_role_escalations records for compliance or
- * admin review.
- *
  * Search and retrieve a filtered, paginated list of all role escalation
  * requests and admin privilege change actions recorded in the system.
  *
@@ -104,9 +101,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific privilege escalation record from
- * shopping_mall_role_escalations.
- *
  * Retrieve the full details of a single role escalation request or
  * administrative role change action.
  *
@@ -200,9 +194,6 @@ export namespace at {
 }
 
 /**
- * Update result, status, or reviewer comments of a role escalation in
- * shopping_mall_role_escalations.
- *
  * Update the status, processing result, or admin notes of an existing role
  * escalation entry. Only privileged admin actors may access this endpoint to
  * approve, reject, or adjust any pending escalation.
@@ -313,9 +304,6 @@ export namespace update {
 }
 
 /**
- * Delete a role escalation request from the shopping_mall_role_escalations
- * table.
- *
  * Permanently delete a role escalation request from the system's audit and
  * privilege management records.
  *

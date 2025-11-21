@@ -8,8 +8,6 @@ import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/communities/:communityId/posts")
 export class CommunityplatformCommunitiesPostsController {
   /**
-   * Search and retrieve a filtered, paginated list of posts from a community.
-   *
    * Retrieve a paginated collection of posts from a specific community with
    * comprehensive filtering, sorting, and search capabilities. This operation
    * provides the primary mechanism for community content discovery and feed

@@ -14,9 +14,6 @@ import { IShoppingMallReturnRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/returnRequests")
 export class ShoppingmallAdminReturnrequestsController {
   /**
-   * Search, filter, and page through return requests via the
-   * shopping_mall_return_requests table.
-   *
    * Retrieve a paginated, searchable index of all return, pickup, and shipment
    * reverse logistics requests filed with the shopping mall platform.
    *
@@ -60,9 +57,6 @@ export class ShoppingmallAdminReturnrequestsController {
   }
 
   /**
-   * Retrieve full detail for a specific return request in
-   * shopping_mall_return_requests using its unique ID.
-   *
    * Retrieve the complete detail of a single return, pickup, or shipment
    * reverse logistics request.
    *
@@ -103,9 +97,6 @@ export class ShoppingmallAdminReturnrequestsController {
   }
 
   /**
-   * Update a return or pickup request in the shopping_mall_return_requests
-   * table.
-   *
    * Update the details or workflow status of an existing return or pickup
    * request in the shopping mall platform.
    *
@@ -151,9 +142,6 @@ export class ShoppingmallAdminReturnrequestsController {
   }
 
   /**
-   * Permanently erase a return request entry from the
-   * shopping_mall_return_requests table.
-   *
    * Permanently remove a return or reverse logistics request from the system
    * database. This operation completely deletes the targeted return/pickup
    * request record from the platform, eliminating all status, shipment, actor

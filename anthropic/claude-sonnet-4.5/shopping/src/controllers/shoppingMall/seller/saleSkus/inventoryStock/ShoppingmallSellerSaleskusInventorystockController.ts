@@ -12,8 +12,6 @@ import { IShoppingMallInventoryStock } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/seller/saleSkus/:saleSkuId/inventoryStock")
 export class ShoppingmallSellerSaleskusInventorystockController {
   /**
-   * Retrieve current inventory stock levels for a product SKU variant.
-   *
    * Retrieve the current inventory stock information for a specific product SKU
    * variant from the shopping_mall_inventory_stocks table. This operation
    * provides real-time visibility into stock levels, availability status, and
@@ -71,8 +69,6 @@ export class ShoppingmallSellerSaleskusInventorystockController {
   }
 
   /**
-   * Create initial inventory stock record for a product SKU variant.
-   *
    * Initialize inventory tracking for a specific product SKU variant in the
    * shopping marketplace. This operation creates the first inventory stock
    * record for a given sale SKU, establishing baseline quantity tracking that
@@ -124,8 +120,6 @@ export class ShoppingmallSellerSaleskusInventorystockController {
   }
 
   /**
-   * Update inventory stock information for a product SKU variant.
-   *
    * Modify existing inventory stock tracking for a specific product SKU variant
    * in the shopping marketplace. This operation allows sellers to update
    * inventory quantities and tracking metadata for their product variants,

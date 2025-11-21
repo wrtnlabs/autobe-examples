@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/adminUser/communities/:communitySlug")
 export class CommunityplatformAdminuserCommunitiesController {
   /**
-   * Update an existing community_platform_communities record identified by
-   * its communitySlug.
-   *
    * Update an existing community identified by its slug, modifying
    * configurable attributes while preserving its identity and relationships.
    *
@@ -75,9 +72,6 @@ export class CommunityplatformAdminuserCommunitiesController {
   }
 
   /**
-   * Delete an existing community_platform_communities record identified by
-   * its communitySlug.
-   *
    * Permanently remove an existing community identified by its slug,
    * according to the constraints and relationships defined for
    * community_platform_communities.

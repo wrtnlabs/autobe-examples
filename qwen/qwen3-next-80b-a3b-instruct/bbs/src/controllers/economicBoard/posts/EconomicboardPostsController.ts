@@ -10,8 +10,6 @@ import { IEconomicBoardPost } from "../../../api/structures/IEconomicBoardPost";
 @Controller("/economicBoard/posts")
 export class EconomicboardPostsController {
   /**
-   * Search and retrieve a filtered, paginated list of economic board posts.
-   *
    * Retrieve a filtered and paginated list of economic board discussion posts
    * based on configurable search and filtering parameters.
    *
@@ -58,8 +56,6 @@ export class EconomicboardPostsController {
   }
 
   /**
-   * Retrieve a single economic board post by its unique identifier.
-   *
    * Retrieve the detailed information of a single economic board discussion
    * post by its unique identifier.
    *

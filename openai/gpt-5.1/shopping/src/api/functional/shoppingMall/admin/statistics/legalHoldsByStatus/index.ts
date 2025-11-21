@@ -5,8 +5,6 @@ import typia from "typia";
 import { IShoppingMallLegalHoldStatusStatistics } from "../../../../../structures/IShoppingMallLegalHoldStatusStatistics";
 
 /**
- * Get aggregated statistics of shopping_mall_legal_holds grouped by status.
- *
  * Retrieve aggregated counts of legal holds by their current status to support
  * compliance and governance reporting.
  *

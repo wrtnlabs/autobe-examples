@@ -5,9 +5,6 @@ import typia from "typia";
 @Controller("/shoppingMall/admin/sellerWarehouses/:warehouseId/address")
 export class ShoppingmallAdminSellerwarehousesAddressController {
   /**
-   * Delete the seller warehouse address record associated with a warehouseId
-   * from shopping_mall_seller_warehouse_addresses.
-   *
    * Delete the stored address for a specific seller warehouse, identified by
    * its warehouse identifier, from the seller warehouse address table.
    *

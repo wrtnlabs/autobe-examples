@@ -8,8 +8,6 @@ import { ICommunityForumPostComment } from "../../../api/structures/ICommunityFo
 @Controller("/communityForum/comments/:commentId")
 export class CommunityforumCommentsController {
   /**
-   * Get detailed information for a specific comment.
-   *
    * Retrieve detailed information about a specific forum comment.
    *
    * This operation fetches a single comment from the community forum by its

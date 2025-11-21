@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformNotificationSettings } from "../../../../structures/ICommunityPlatformNotificationSettings";
 
 /**
- * Create a new notification settings record
- * (community_platform_notification_settings).
- *
  * Create a new set of notification preferences for a community platform user,
  * recording their explicit choices for channel-based and event-based
  * notification delivery.
@@ -119,9 +116,6 @@ export namespace create {
 }
 
 /**
- * Update an existing notification settings record
- * (community_platform_notification_settings).
- *
  * Update notification preferences for an existing community platform user,
  * specifically revising any or all channel-based and event-based flags. This
  * enables a user to modify which notifications they receive and via which
@@ -236,9 +230,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a user's notification settings by notificationSettingsId
- * (community_platform_notification_settings table).
- *
  * Permanently delete a user's notification settings, removing all messaging,
  * email, push, and other notification delivery rules from the system.
  *

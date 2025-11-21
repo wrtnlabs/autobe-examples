@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleVersion } from "../../../../structures/IDiscussionBoardArticleVersion";
 
 /**
- * Retrieve a specific version of an article.
- *
  * This operation allows users to retrieve a specific version of an article by
  * providing both the article ID and the version ID. It is useful for tracking
  * changes and viewing historical versions of articles. The operation validates

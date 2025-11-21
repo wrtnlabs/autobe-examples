@@ -7,8 +7,6 @@ import { ICommunityPlatformComment } from "../../../../../api/structures/ICommun
 @Controller("/communityPlatform/member/posts/:postId/comments")
 export class CommunityplatformMemberPostsCommentsController {
   /**
-   * Create a new top-level comment on a post.
-   *
    * Create a new comment as a direct reply to a specific post in the
    * community platform. This operation allows authenticated members to submit
    * comments with markdown-formatted content on any post they can access. The

@@ -14,8 +14,6 @@ import { IShoppingMallProductVariant } from "../../../../../api/structures/IShop
 )
 export class ShoppingmallCustomerShoppingmallproductsShoppingmallproductvariantsController {
   /**
-   * Search and retrieve paginated list of product variants for a given product.
-   *
    * Retrieve a filtered and paginated list of product variants (SKUs) for a
    * given product in the shopping mall system. This operation supports detailed
    * search criteria including color, size, pricing ranges, availability status,
@@ -66,8 +64,6 @@ export class ShoppingmallCustomerShoppingmallproductsShoppingmallproductvariants
   }
 
   /**
-   * Retrieve detailed product variant information by product code and sku code.
-   *
    * Retrieve detailed information about a specific product variant (SKU)
    * identified by its unique skuCode, scoped within its parent product
    * identified by productCode.

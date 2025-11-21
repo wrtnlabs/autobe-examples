@@ -1,0 +1,864 @@
+/// Financial transaction processing records capturing complete payment
+/// lifecycle from authorization through settlement. Manages multi-party
+/// transactions between customers, sellers, and the platform while
+/// maintaining transaction integrity, security standards, and audit
+/// compliance.
+///
+/// Stores payment authorization requests, transaction processing status,
+/// financial institution responses, and settlement confirmations across
+/// multiple payment gateways. Supports complex transaction scenarios
+/// including split payments, partial authorizations, currency conversions,
+/// and fee calculations while maintaining strict audit trails for regulatory
+/// compliance.
+///
+/// The system handles real-time payment coordination with external gateways,
+/// automatic retry mechanisms for failed transactions, and comprehensive
+/// transaction state management to ensure reliable payment processing for
+/// the marketplace ecosystem.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order payment's {@link shopping_mall_order_payments.id} for
+  /// transaction correlation.
+  shopping_mall_order_payment_id String
+  
+  /// Processing gateway's {@link shopping_mall_payment_gateways.id} for
+  /// routing identification.
+  shopping_mall_payment_gateway_id String
+  
+  /// Payment method's {@link shopping_mall_payment_methods.id} used for this
+  /// transaction.
+  shopping_mall_payment_method_id String
+  
+  /// External transaction identifier from payment gateway system for reference
+  /// and reconciliation.
+  transaction_id String
+  
+  /// Transaction amount in the original currency with precision support for
+  /// fractional amounts.
+  amount Float
+  
+  /// ISO 4217 currency code for the transaction amount ensuring proper
+  /// financial tracking.
+  currency String
+  
+  /// Transaction type distinguishing authorizations, captures, refunds, and
+  /// voids for proper accounting.
+  transaction_type String
+  
+  /// Current transaction status reflecting processing state from initiation
+  /// through completion for tracking.
+  status String
+  
+  /// Raw gateway response code for technical troubleshooting and detailed
+  /// transaction analysis.
+  gateway_response_code String?
+  
+  /// Human-readable gateway response message for customer service and user
+  /// communication purposes.
+  gateway_message String?
+  
+  /// Transaction success indicator for quick status assessments and reporting
+  /// aggregation efficiency.
+  is_successful Boolean
+  
+  /// Authorization status flag distinguishing between authorized and completed
+  /// transaction states.
+  is_authorized Boolean
+  
+  /// Capture completion status indicating whether funds have been transferred
+  /// for settlement processing.
+  is_captured Boolean
+  
+  /// Authorization expiration timestamp for pre-authorized transactions
+  /// requiring completion within time limits.
+  expires_at DateTime?
+  
+  /// Transaction processing timestamp for audit trail and financial reporting
+  /// compliance requirements.
+  processed_at DateTime?
+  
+  /// Internal reference identifier for merchant reconciliation and accounting
+  /// system integration.
+  merchant_reference String?
+  
+  /// Fraud detection risk score calculated during transaction processing for
+  /// security monitoring.
+  risk_score Float?
+  
+  /// Record creation timestamp for audit trail and transaction sequence
+  /// tracking.
+  created_at DateTime
+  
+  /// Record modification timestamp for change tracking and data integrity
+  /// maintenance.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  paymentGateway shopping_mall_payment_gateways @relation(fields: [shopping_mall_payment_gateway_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_transaction_snapshots shopping_mall_payment_transaction_snapshots[]
+  shopping_mall_payment_refund_snapshots shopping_mall_payment_refund_snapshots[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_gateway_id], map: "shopping_mall_payment_transactions_shopping_mall_payme_4990b734")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id], map: "shopping_mall_payment_transactions_shopping_mall_payme_bc504092")
+  
+  // spellchecker: ignore-next-line
+  @@unique([transaction_id, shopping_mall_payment_gateway_id], map: "shopping_mall_payment_transactions_transaction_id_shop_1789aa4f")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_payment_id, transaction_type], map: "shopping_mall_payment_transactions_shopping_mall_order_63710651")
+  @@index([status, created_at])
+  @@index([is_successful, created_at])
+  @@index([currency, created_at])
+  @@index([risk_score, is_successful])
+}
+
+/// Refund processing management system handling return of funds from
+/// completed transactions. Supports various refund scenarios including full
+/// refunds, partial refunds, chargebacks, and administrative adjustments
+/// while maintaining complete financial audit trails.
+///
+/// Manages refund authorization workflows, seller approval processes,
+/// customer communication, and settlement coordination across multiple
+/// payment methods and currencies. The system ensures refund transactions
+/// are processed securely while maintaining proper accounting relationships
+/// with original payment transactions.
+///
+/// Provides comprehensive refund tracking capabilities including status
+/// management, approval processes, automated seller notifications, and
+/// detailed refund analytics to support dispute resolution and regulatory
+/// compliance requirements.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original transaction's {@link shopping_mall_payment_transactions.id} for
+  /// refund correlation.
+  shopping_mall_payment_transaction_id String
+  
+  /// Approving admin's {@link shopping_mall_admin.id} for manual refund
+  /// authorization processes.
+  reviewing_administrator_id String?
+  
+  /// Unique refund reference identifier for external communication and
+  /// financial tracking systems.
+  refund_reference String
+  
+  /// Refund amount in original currency with precision support for partial
+  /// refunds and adjustments.
+  amount Float
+  
+  /// ISO 4217 currency code for the refund amount ensuring accurate accounting
+  /// across currencies.
+  currency String
+  
+  /// Refund category distinguishing merchant refunds, chargebacks, and
+  /// administrative adjustments for accounting.
+  refund_type String
+  
+  /// Standardized refund reason code for analytics, reporting, and automated
+  /// decision-making processes.
+  reason_code String
+  
+  /// Detailed explanation of refund circumstances for customer service and
+  /// dispute resolution records.
+  reason_description String
+  
+  /// Refund processing status from initiation through completion for workflow
+  /// management and tracking.
+  status String
+  
+  /// Approval status indicator for refunds requiring manual authorization
+  /// before processing commences.
+  is_approved Boolean?
+  
+  /// Processing completion flag indicating funds have been returned to the
+  /// customer successfully.
+  is_processed Boolean
+  
+  /// External system refund identifier from payment gateway for reconciliation
+  /// and tracking purposes.
+  external_refund_id String?
+  
+  /// Refund processing fee retained by the platform to cover operational costs
+  /// and gateway charges.
+  processing_fee Float?
+  
+  /// Original refund request timestamp for SLA tracking and customer
+  /// communication timing.
+  requested_at DateTime
+  
+  /// Refund completion timestamp for financial reporting and audit trail
+  /// documentation.
+  processed_at DateTime?
+  
+  /// Record creation timestamp for audit trail and workflow tracking accuracy.
+  created_at DateTime
+  
+  /// Record modification timestamp for change history and status tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  reviewingAdministrator shopping_mall_admin? @relation(fields: [reviewing_administrator_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_refunds shopping_mall_order_refunds[]
+  shopping_mall_payment_refund_snapshots shopping_mall_payment_refund_snapshots[]
+  
+  @@index([reviewing_administrator_id])
+  
+  @@unique([refund_reference])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_payment_transaction_id, refund_type], map: "shopping_mall_payment_refunds_shopping_mall_payment_tr_dc535fe3")
+  @@index([status, requested_at])
+  @@index([is_approved, is_processed])
+  @@index([refund_type, created_at])
+}
+
+/// Payment gateway configuration management system defining integration
+/// parameters, authentication settings, and operational characteristics for
+/// each supported payment provider. Manages gateway-specific settings, API
+/// credentials, service capabilities, and compliance features across
+/// multiple payment processing channels.
+///
+/// Supports diverse payment gateway integrations including credit card
+/// processors, digital wallets, bank transfer systems, and alternative
+/// payment methods while maintaining security standards and regulatory
+/// compliance requirements. The system provides comprehensive gateway
+/// monitoring, performance tracking, and failover capabilities to ensure
+/// reliable payment processing across all supported channels.
+///
+/// Enables flexible payment provider configuration with international
+/// currency support, regional compliance features, and business-specific
+/// customization options while maintaining centralized management and
+/// consistent operational patterns across the marketplace ecosystem.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateways {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique gateway identifier code for system references and API routing
+  /// decisions.
+  gateway_code String
+  
+  /// Descriptive gateway name for administrative interfaces and user-facing
+  /// communications.
+  gateway_name String
+  
+  /// Gateway category distinguishing credit card processors, digital wallets,
+  /// and alternative payment methods.
+  gateway_type String
+  
+  /// Supported currency list in JSON format for multi-currency transaction
+  /// processing capabilities.
+  supported_currencies String
+  
+  /// Gateway operational status indicating whether payment processing is
+  /// currently enabled or disabled.
+  is_active Boolean
+  
+  /// Primary gateway designation for preferred routing and default payment
+  /// method prioritization.
+  is_primary Boolean
+  
+  /// Availability status for new transactions while maintaining existing
+  /// payment processing capabilities.
+  is_available Boolean
+  
+  /// Primary API endpoint URL for payment processing requests and integration
+  /// communication.
+  api_endpoint String
+  
+  /// Testing environment endpoint for development and integration testing
+  /// activities.
+  sandbox_endpoint String?
+  
+  /// Webhook authentication secret for secure callback verification and event
+  /// validation.
+  webhook_secret String?
+  
+  /// Supported country list in JSON format for geographic processing
+  /// restrictions and compliance.
+  country_availability String
+  
+  /// Fee structure definition in JSON format for transparent cost calculations
+  /// and pricing models.
+  processing_fees String
+  
+  /// Maximum transaction amount limit for risk management and regulatory
+  /// compliance requirements.
+  max_transaction_amount Float?
+  
+  /// Configuration parameter schema definition for gateway-specific settings
+  /// and capabilities.
+  configuration_schema String
+  
+  /// Maximum acceptable risk score for automatic transaction processing with
+  /// manual review triggers.
+  risk_score_threshold Float?
+  
+  /// Retry policy configuration for failed transactions with backoff
+  /// strategies and limits.
+  retry_configuration String
+  
+  /// Gateway configuration creation timestamp for audit and change tracking
+  /// purposes.
+  created_at DateTime
+  
+  /// Configuration modification timestamp for maintenance and monitoring
+  /// accuracy.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  shopping_mall_payment_transaction_snapshots shopping_mall_payment_transaction_snapshots[]
+  
+  @@unique([gateway_code])
+  @@unique([gateway_name])
+  @@index([gateway_type, is_active])
+  @@index([is_primary, is_available])
+  @@index([gateway_name, is_active])
+}
+
+/// Payment method configuration system defining available payment types,
+/// validation rules, and processing characteristics for customer-facing
+/// payment options. Manages configuration for credit cards, digital wallets,
+/// bank transfers, and alternative payment methods while maintaining
+/// security standards and user experience optimization.
+///
+/// Supports comprehensive payment method management including type-specific
+/// validation rules, regional availability settings, user preference
+/// tracking, and integration requirements across all supported payment
+/// gateways. The system provides flexible configuration options supporting
+/// payment method onboarding, deactivation workflows, and capability-based
+/// filtering while maintaining consistent user experience throughout the
+/// payment selection process.
+///
+/// Enables sophisticated payment method logic including payment method
+/// prioritization, conditional availability based on transaction
+/// characteristics, and dynamic fee structure calculations while maintaining
+/// security compliance and regulatory support for diverse payment processing
+/// requirements.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated gateway's {@link shopping_mall_payment_gateways.id} for
+  /// method-to-gateway correlation.
+  shopping_mall_payment_gateway_id String
+  
+  /// Unique payment method identifier for system referencing and customer
+  /// interface labeling purposes.
+  method_code String
+  
+  /// User-friendly method name displayed in payment interfaces for clear
+  /// customer selection guidance.
+  method_name String
+  
+  /// Payment method category including credit_cards, digital_wallets,
+  /// bank_transfers for business logic classification.
+  method_type String
+  
+  /// Business category grouping for operational reporting and analytics
+  /// consolidation purposes.
+  method_category String
+  
+  /// Interface display sequence for payment method prioritization in customer
+  /// selection interfaces.
+  display_order Int
+  
+  /// Availability status determining whether customers can select this payment
+  /// method during checkout.
+  is_active Boolean
+  
+  /// Customer interface visibility control for phased rollouts or maintenance
+  /// scenarios affecting method availability.
+  is_visible Boolean
+  
+  /// Authorization requirement flag for payment methods needing real-time
+  /// approval during transaction processing.
+  requires_authorization Boolean
+  
+  /// Geographic restrictions in JSON format supporting regional payment method
+  /// availability management.
+  country_restrictions String?
+  
+  /// Currency limitations in JSON format defining supported currencies for
+  /// specific payment method types.
+  currency_restrictions String?
+  
+  /// Minimum transaction amount requirement for payment method eligibility and
+  /// selection validation.
+  minimum_amount Float?
+  
+  /// Maximum transaction amount limit for payment method availability based on
+  /// processing capabilities.
+  maximum_amount Float?
+  
+  /// Payment method icon URL for visual representation in payment selection
+  /// interfaces.
+  icon_url String?
+  
+  /// Detailed method description providing customers with processing
+  /// expectations and important feature information.
+  description String
+  
+  /// Method-specific configuration schema in JSON format for validation and
+  /// processing parameter requirements.
+  configuration_options String
+  
+  /// Required verification data in JSON format for payment method activation
+  /// and security compliance.
+  verification_requirements String?
+  
+  /// Special processing instructions or notes for operational teams managing
+  /// payment method configurations.
+  processing_instructions String?
+  
+  /// Method configuration creation timestamp for configuration management and
+  /// audit trail maintenance.
+  created_at DateTime
+  
+  /// Configuration update timestamp for change tracking and operational
+  /// monitoring purposes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentGateway shopping_mall_payment_gateways @relation(fields: [shopping_mall_payment_gateway_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_payment_fees shopping_mall_payment_fees[]
+  shopping_mall_payment_transaction_snapshots shopping_mall_payment_transaction_snapshots[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_gateway_id], map: "shopping_mall_payment_methods_shopping_mall_payment_ga_787c1da1")
+  
+  // spellchecker: ignore-next-line
+  @@unique([method_code, shopping_mall_payment_gateway_id], map: "shopping_mall_payment_methods_method_code_shopping_mal_11ba165b")
+  @@index([method_type, method_category])
+  @@index([is_active, is_visible])
+  @@index([method_name, display_order])
+}
+
+/// Payment fee structure management system defining commission rates,
+/// processing charges, and fee calculation mechanisms for platform revenue
+/// generation and cost management. Manages complex fee structures including
+/// percentage-based commissions, fixed transaction fees, currency conversion
+/// charges, and platform service fees across diverse payment scenarios and
+/// business arrangements.
+///
+/// Supports tiered fee structures, promotional discounts, volume-based
+/// incentives, and custom fee arrangements while maintaining transparent
+/// pricing and accurate financial calculations throughout transaction
+/// processing. The system provides comprehensive fee analytics, commission
+/// tracking, and revenue reporting capabilities to support business
+/// decision-making and financial optimization strategies.
+///
+/// Enables sophisticated fee management including fee categorization, tax
+/// implications, settlement timing, and allocation rules while maintaining
+/// regulatory compliance and supporting international payment processing
+/// requirements across different jurisdictions and currency environments.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_fees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated payment method's {@link shopping_mall_payment_methods.id} for
+  /// method-specific fee structures.
+  shopping_mall_payment_method_id String?
+  
+  /// Unique fee identifier code for system referencing and business logic
+  /// integration purposes.
+  fee_code String
+  
+  /// Descriptive fee name for administrative interfaces and financial
+  /// reporting clarity.
+  fee_name String
+  
+  /// Fee category distinguishing platform_commissions, gateway_fees,
+  /// currency_conversion_fees for analytics.
+  fee_type String
+  
+  /// Fee computation method specifying percentage-based, fixed-amount, or
+  /// tiered calculation approaches.
+  calculation_method String
+  
+  /// Percentage-based fee rate for commission calculations and
+  /// percentage-based pricing structures.
+  fee_percentage Float?
+  
+  /// Fixed fee amount for transaction-based charges and minimum fee
+  /// applications.
+  fixed_amount Float?
+  
+  /// Minimum fee amount ensuring platform revenue thresholds for small
+  /// transaction value protection.
+  minimum_fee Float?
+  
+  /// Maximum fee cap for rate limitation and regulatory compliance with fee
+  /// structure guidelines.
+  maximum_fee Float?
+  
+  /// Fee currency specification for fixed amounts and percentage base
+  /// calculations.
+  currency String?
+  
+  /// Fee structure activation status for availability in transaction fee
+  /// calculation processes.
+  is_active Boolean
+  
+  /// Fee structure activation date for time-based fee management and
+  /// historical rate tracking.
+  effective_date DateTime
+  
+  /// Fee structure expiration date for planned obsolescence and policy change
+  /// management.
+  expiration_date DateTime?
+  
+  /// Seller fee application flag determining whether fee is charged to
+  /// merchants for services.
+  apply_to_seller Boolean
+  
+  /// Customer fee application flag for direct fee charges on payment
+  /// transactions.
+  apply_to_customer Boolean
+  
+  /// Platform fee application flag for internal cost management and
+  /// profitability tracking.
+  apply_to_platform Boolean
+  
+  /// Tier-based fee configuration in JSON format supporting volume-based
+  /// pricing and incentives.
+  tier_configuration String?
+  
+  /// Special business logic configuration in JSON format for conditional fee
+  /// applications.
+  business_rules String?
+  
+  /// Fee structure creation timestamp for configuration management and
+  /// historical tracking.
+  created_at DateTime
+  
+  /// Configuration modification timestamp for change management and audit
+  /// accuracy.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentMethod shopping_mall_payment_methods? @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_payment_method_id])
+  
+  @@unique([fee_code])
+  @@index([fee_type, calculation_method])
+  @@index([is_active, effective_date])
+  // spellchecker: ignore-next-line
+  @@index([apply_to_seller, apply_to_customer], map: "shopping_mall_payment_fees_apply_to_seller_apply_to_cu_1a15b7a4")
+}
+
+/// Point-in-time financial transaction snapshots preserving complete payment
+/// states for audit trails, regulatory compliance, and historical reporting
+/// requirements. Captures full transaction context including amounts,
+/// currencies, gateway responses, authorization states, and processing
+/// metadata for reconciliation and dispute resolution.
+///
+/// Essential for financial audit compliance, transaction reconciliation
+/// across accounting systems, dispute investigation workflows, and
+/// comprehensive payment analytics with historical trend analysis. Provides
+/// immutable transaction state preservation supporting regulatory
+/// requirements, financial reporting, and business intelligence analysis.
+///
+/// Supports multi-year audit retention requirements, cross-gateway
+/// transaction migration, and comprehensive payment history analysis for
+/// business intelligence and optimization strategies. The snapshot system
+/// ensures transactional integrity for complex payment processing scenarios
+/// while maintaining detailed audit trails required by financial
+/// regulations.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transaction_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original transaction's {@link shopping_mall_payment_transactions.id} for
+  /// snapshot correlation and reference preservation.
+  shopping_mall_payment_transaction_id String
+  
+  /// Associated order payment's {@link shopping_mall_order_payments.id} for
+  /// financial reconciliation across systems.
+  shopping_mall_order_payment_id String
+  
+  /// Processing gateway's {@link shopping_mall_payment_gateways.id} for
+  /// gateway performance historical tracking.
+  shopping_mall_payment_gateway_id String
+  
+  /// Payment method's {@link shopping_mall_payment_methods.id} used at
+  /// transaction snapshot time for method analysis.
+  shopping_mall_payment_method_id String
+  
+  /// External transaction identifier snapshot from payment gateway system for
+  /// audit reference.
+  transaction_id String
+  
+  /// Snapshot of transaction amount in original currency for financial
+  /// reconciliation and reporting.
+  amount Float
+  
+  /// ISO 4217 currency code snapshot for multi-currency transaction analysis
+  /// and compliance reporting.
+  currency String
+  
+  /// Transaction type snapshot distinguishing authorizations, captures,
+  /// refunds, and voids for accounting categorization.
+  transaction_type String
+  
+  /// Transaction status snapshot reflecting processing state at moment of
+  /// snapshot creation.
+  status String
+  
+  /// Gateway response code snapshot for historical gateway performance
+  /// analysis and troubleshooting.
+  gateway_response_code String?
+  
+  /// Gateway message snapshot preserving customer service and operational
+  /// information from processing time.
+  gateway_message String?
+  
+  /// Transaction success indicator snapshot for historical success rate
+  /// analysis and reporting.
+  is_successful Boolean
+  
+  /// Authorization status snapshot showing whether transaction was authorized
+  /// at snapshot time.
+  is_authorized Boolean
+  
+  /// Capture completion status snapshot indicating fund settlement state for
+  /// reconciliation tracking.
+  is_captured Boolean
+  
+  /// Authorization expiration timestamp snapshot for pre-authorized
+  /// transaction timeline management.
+  expires_at DateTime?
+  
+  /// Transaction processing timestamp snapshot for audit trail sequence
+  /// tracking and timeline analysis.
+  processed_at DateTime?
+  
+  /// Internal reference identifier snapshot for merchant reconciliation and
+  /// accounting audit trail.
+  merchant_reference String?
+  
+  /// Fraud detection risk score snapshot for security analysis and historical
+  /// fraud pattern detection.
+  risk_score Float?
+  
+  /// Automated reason for snapshot creation including status changes, amount
+  /// modifications, authorization updates.
+  snapshot_reason String
+  
+  /// Snapshot creation timestamp for audit trail and transaction history
+  /// sequence tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  orderPayment shopping_mall_order_payments @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
+  paymentGateway shopping_mall_payment_gateways @relation(fields: [shopping_mall_payment_gateway_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_payment_id], map: "shopping_mall_payment_transaction_snapshots_shopping_m_ba5148be")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_gateway_id], map: "shopping_mall_payment_transaction_snapshots_shopping_m_749e595a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id], map: "shopping_mall_payment_transaction_snapshots_shopping_m_dc4ea7fb")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_payment_transaction_id, snapshot_reason, created_at], map: "shopping_mall_payment_transaction_snapshots_shopping_m_12242755")
+  // spellchecker: ignore-next-line
+  @@unique([transaction_id, created_at], map: "shopping_mall_payment_transaction_snapshots_transactio_ca9a496d")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "shopping_mall_payment_transaction_snapshots_status_cre_1d0e6af7")
+  // spellchecker: ignore-next-line
+  @@index([is_successful, created_at], map: "shopping_mall_payment_transaction_snapshots_is_success_6b4fd36f")
+  // spellchecker: ignore-next-line
+  @@index([currency, created_at], map: "shopping_mall_payment_transaction_snapshots_currency_c_c918315f")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_reason, created_at], map: "shopping_mall_payment_transaction_snapshots_snapshot_r_31608b1f")
+}
+
+/// Point-in-time refund transaction snapshots preserving complete refund
+/// states for audit trails, dispute resolution, and regulatory compliance
+/// requirements. Captures refund processing states, approval workflows,
+/// financial calculations, and administrative actions with timestamps for
+/// comprehensive refund history analysis.
+///
+/// Essential for refund dispute investigation, financial reconciliation in
+/// multi-seller environments, regulatory reporting of refund activities, and
+/// comprehensive refund analytics with historical trend tracking. Provides
+/// immutable refund state preservation supporting complex refund scenarios,
+/// chargeback disputes, and business intelligence analysis of seller
+/// performance and customer satisfaction.
+///
+/// Supports multi-year audit retention for financial compliance,
+/// cross-gateway refund migration scenarios, and comprehensive refund
+/// history analysis for seller performance evaluation and customer service
+/// optimization. The snapshot system ensures transactional integrity for
+/// complex refund processing while maintaining complete audit trails
+/// required by payment processing regulations.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refund_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original refund's {@link shopping_mall_payment_refunds.id} for refund
+  /// snapshot correlation and reference preservation.
+  shopping_mall_payment_refund_id String
+  
+  /// Original transaction's {@link shopping_mall_payment_transactions.id} for
+  /// cross-reference correlation and audit trail linking.
+  shopping_mall_payment_transaction_id String
+  
+  /// Related order refund's {@link shopping_mall_order_refunds.id} for
+  /// order-level refund correlation tracking.
+  shopping_mall_order_refund_id String?
+  
+  /// Refund reference identifier snapshot for external communication and
+  /// financial tracking audit trail.
+  refund_reference String
+  
+  /// Refund amount snapshot in original currency for refund rate analysis and
+  /// financial reconciliation tracking.
+  amount Float
+  
+  /// ISO 4217 currency code snapshot for multi-currency refund analysis and
+  /// compliance reporting.
+  currency String
+  
+  /// Refund category snapshot distinguishing merchant refunds, chargebacks for
+  /// audit trail categorization.
+  refund_type String
+  
+  /// Refund reason code snapshot for analytics, reporting, and automated
+  /// refund pattern detection.
+  reason_code String
+  
+  /// Refund explanation snapshot preserving detailed circumstances for dispute
+  /// investigation and audit trail.
+  reason_description String
+  
+  /// Refund processing status snapshot reflecting workflow state at moment of
+  /// snapshot creation.
+  status String
+  
+  /// Refund approval status snapshot showing whether refund was manually
+  /// approved at snapshot time.
+  is_approved Boolean?
+  
+  /// Processing completion status snapshot indicating funds return state for
+  /// reconciliation tracking.
+  is_processed Boolean
+  
+  /// External system refund identifier snapshot for reconciliation and gateway
+  /// performance tracking.
+  external_refund_id String?
+  
+  /// Processing fee snapshot for platform cost analysis and investor reporting
+  /// across refund scenarios.
+  processing_fee Float?
+  
+  /// Original refund request timestamp snapshot for SLA tracking and refund
+  /// timeline analysis.
+  requested_at DateTime
+  
+  /// Refund completion timestamp snapshot for refund cycle time analysis and
+  /// performance metrics.
+  processed_at DateTime?
+  
+  /// Automated reason for refund snapshot creation including status changes,
+  /// amount adjustments, approval updates.
+  snapshot_reason String
+  
+  /// Snapshot creation timestamp for audit trail and refund history sequence
+  /// tracking across operations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentRefund shopping_mall_payment_refunds @relation(fields: [shopping_mall_payment_refund_id], references: [id], onDelete: Cascade)
+  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  orderRefund shopping_mall_order_refunds? @relation(fields: [shopping_mall_order_refund_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_transaction_id], map: "shopping_mall_payment_refund_snapshots_shopping_mall_p_0673fdbc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_refund_id], map: "shopping_mall_payment_refund_snapshots_shopping_mall_o_e8afe352")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_payment_refund_id, snapshot_reason, created_at], map: "shopping_mall_payment_refund_snapshots_shopping_mall_p_f202935d")
+  // spellchecker: ignore-next-line
+  @@unique([refund_reference, created_at], map: "shopping_mall_payment_refund_snapshots_refund_referenc_81aba5c0")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([is_approved, is_processed], map: "shopping_mall_payment_refund_snapshots_is_approved_is__916565d4")
+  // spellchecker: ignore-next-line
+  @@index([refund_type, created_at], map: "shopping_mall_payment_refund_snapshots_refund_type_cre_a99e618c")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_reason, created_at], map: "shopping_mall_payment_refund_snapshots_snapshot_reason_77731661")
+}

@@ -10,9 +10,6 @@ export * as statuses from "./statuses/index";
 export * as auditLogs from "./auditLogs/index";
 
 /**
- * Create a new payment record in the shopping mall platform
- * (shopping_mall_payments table).
- *
  * Initiate a new payment by providing all relevant details, including the
  * customer reference, payment amount, currency, method type, external payment
  * ID, transaction token, request timestamp, and links to the external provider.
@@ -115,8 +112,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate shopping mall payment records (shopping_mall_payments).
- *
  * Search and retrieve a paginated, filtered list of payment records from the
  * shopping mall platform. This operation enables administrators to perform
  * powerful, structured searches across hundreds of thousands of payment
@@ -215,9 +210,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific shopping mall payment record by its unique identifier
- * (shopping_mall_payments table).
- *
  * Obtain all available data about a single payment processed within the
  * shopping mall system.
  *
@@ -309,9 +301,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall payment record (shopping_mall_payments
- * table).
- *
  * Update payment information for a specific payment record.
  *
  * This operation permits modification of mutable properties of a shopping
@@ -430,9 +419,6 @@ export namespace update {
 }
 
 /**
- * Delete (soft delete) a shopping mall payment record (shopping_mall_payments
- * table).
- *
  * Delete (soft delete) a payment record in the shopping mall payments table.
  *
  * This operation sets the 'deleted_at' timestamp of a payment record to

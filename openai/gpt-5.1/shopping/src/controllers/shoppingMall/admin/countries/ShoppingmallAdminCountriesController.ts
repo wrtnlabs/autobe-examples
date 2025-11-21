@@ -7,9 +7,6 @@ import { IShoppingMallCountry } from "../../../../api/structures/IShoppingMallCo
 @Controller("/shoppingMall/admin/countries")
 export class ShoppingmallAdminCountriesController {
   /**
-   * Create a new country record in shopping_mall_countries using
-   * administrative input.
-   *
    * Create a new country master record in the shopping_mall_countries table
    * using structured administrative input.
    *
@@ -63,9 +60,6 @@ export class ShoppingmallAdminCountriesController {
   }
 
   /**
-   * Update a shopping_mall_countries record identified by country_code using
-   * admin-only configuration controls.
-   *
    * Update the mutable properties of a specific country master record in the
    * shopping_mall_countries table using its business identifier
    * country_code.
@@ -136,9 +130,6 @@ export class ShoppingmallAdminCountriesController {
   }
 
   /**
-   * Hard-delete a shopping_mall_countries record by its unique country_code
-   * for exceptional administrative cleanup, bypassing logical deletion.
-   *
    * Erase an existing country master record from the shopping_mall_countries
    * table, locating it by its business identifier country_code and performing
    * a permanent deletion from the database when allowed by policy.

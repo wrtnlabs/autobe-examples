@@ -9,8 +9,6 @@ import { ITodoListGuest } from "../../../api/structures/ITodoListGuest";
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Register a new guest user account in the todo_list_users table.
-   *
    * Creates a new guest user account in the todo_list_users table with email
    * and password credentials. This endpoint is publicly accessible and allows
    * unauthenticated users to register for temporary access to the Todo List
@@ -66,9 +64,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh expired JWT tokens for a guest user session in the
-   * todo_list_sessions table.
-   *
    * Renews JWT access tokens for a guest user by validating the provided
    * refresh token against the session and token management system. This
    * endpoint is publicly accessible for guests with valid refresh tokens

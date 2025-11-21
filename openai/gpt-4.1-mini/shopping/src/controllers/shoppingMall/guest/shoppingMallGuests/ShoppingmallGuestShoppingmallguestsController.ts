@@ -11,8 +11,6 @@ import { IShoppingMallGuest } from "../../../../api/structures/IShoppingMallGues
 @Controller("/shoppingMall/guest/shoppingMallGuests/:shoppingMallGuestId")
 export class ShoppingmallGuestShoppingmallguestsController {
   /**
-   * Update a shopping mall guest by ID.
-   *
    * Update an existing shopping mall guest record by its unique id.
    *
    * This operation allows guest users to modify guest session details and
@@ -57,8 +55,6 @@ export class ShoppingmallGuestShoppingmallguestsController {
   }
 
   /**
-   * Delete a shopping mall guest by ID.
-   *
    * Permanently delete a shopping mall guest identified by its unique id.
    *
    * This operation allows guest users to remove guest session data from the

@@ -10,9 +10,6 @@ import { IShoppingMallInventory } from "../../../../api/structures/IShoppingMall
 )
 export class ShoppingmallShoppingmallproductvariantsShoppingmallinventoriesController {
   /**
-   * Get detailed inventory info for a product variant by skuCode and inventory
-   * ID.
-   *
    * Retrieve details of a specific inventory record belonging to the given
    * product variant SKU.
    *

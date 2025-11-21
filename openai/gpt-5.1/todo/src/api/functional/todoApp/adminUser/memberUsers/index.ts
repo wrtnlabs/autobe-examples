@@ -9,9 +9,6 @@ export * as status from "./status/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Search and paginate member user accounts from the todo_app_memberusers table
- * using complex filters.
- *
  * Retrieve a filtered, sorted, and paginated list of member user accounts from
  * the todo_app_memberusers table based on flexible search criteria.
  *
@@ -132,8 +129,6 @@ export namespace index {
 }
 
 /**
- * Get a single TodoApp member user from the todo_app_memberusers table by ID.
- *
  * Retrieve a single member user record from the todo_app_memberusers table by
  * its unique identifier.
  *
@@ -243,8 +238,6 @@ export namespace at {
 }
 
 /**
- * Update a TodoApp member user record in the todo_app_memberusers table by ID.
- *
  * Update mutable attributes of a member user stored in the todo_app_memberusers
  * table, using its unique identifier as the target.
  *
@@ -370,9 +363,6 @@ export namespace update {
 }
 
 /**
- * Permanently erase a member user account row from the todo_app_memberusers
- * table by id.
- *
  * Erase a specific member user account from the todoApp system using its
  * primary key identifier.
  *

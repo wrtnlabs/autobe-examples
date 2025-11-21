@@ -7,9 +7,6 @@ import { ITodoAppSystemSetting } from "../../../../structures/ITodoAppSystemSett
 import { IPageITodoAppSystemSetting } from "../../../../structures/IPageITodoAppSystemSetting";
 
 /**
- * Create a new todo_app_system_settings configuration entry via POST
- * /systemSettings.
- *
  * Create a new global configuration entry in the todoApp backend using the
  * todo_app_system_settings table.
  *
@@ -143,9 +140,6 @@ export namespace create {
 }
 
 /**
- * Search and list todo_app_system_settings entries with filtering and
- * pagination.
- *
  * Search and retrieve a filtered, paginated list of global system configuration
  * entries from the todo_app_system_settings table.
  *
@@ -270,9 +264,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single todo_app_system_settings entry by
- * its unique key.
- *
  * Retrieve the full detail of a single global configuration entry from the
  * todo_app_system_settings table using its unique business key.
  *
@@ -393,9 +384,6 @@ export namespace at {
 }
 
 /**
- * Update an existing todo_app_system_settings configuration entry via PUT
- * /systemSettings/{settingKey}.
- *
  * Update an existing global configuration entry in the todoApp backend,
  * targeting a row in the todo_app_system_settings table by its unique key.
  *
@@ -536,9 +524,6 @@ export namespace update {
 }
 
 /**
- * Logically delete a global configuration entry from the
- * todo_app_system_settings table by its unique key.
- *
  * Delete a specific global system setting record in the todoApp backend,
  * identified by its unique business key, while preserving the underlying row in
  * the todo_app_system_settings Prisma table for historical reference.

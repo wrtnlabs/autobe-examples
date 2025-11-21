@@ -1,179 +1,266 @@
-/// User accounts for the economic discussion board platform. Stores
-/// authentication credentials and basic profile information for registered
-/// users. Each user can create posts, comments, and manage their own
-/// content. User accounts are required for all interactive features of the
-/// platform.
+/// Guest users who can view articles and comments but cannot create or edit
+/// content.
+///
+/// Guests are unauthenticated users who can only view public content on the
+/// discussion board. They do not have the ability to create articles,
+/// comments, or attachments. Guest users are identified by their IP address
+/// and session information, which is stored in the guest_sessions table.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_users {
+model economic_political_discussion_board_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address used for authentication and communication. Must be
-  /// unique across all users.
-  email String
+  /// IP address of the guest user.
+  ip String
   
-  /// Secure hash of the user's password for authentication purposes. Never
-  /// store plain text passwords.
-  password_hash String
-  
-  /// Display name chosen by the user for public identification.
-  nickname String
-  
-  /// Timestamp when the user account was created.
+  /// Timestamp when the guest record was created.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated.
+  /// Timestamp when the guest record was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft-deleted. Null if account is
-  /// active.
+  /// Timestamp when the guest record was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  economic_discussion_board_user_sessions economic_discussion_board_user_sessions[]
-  economic_discussion_board_posts economic_discussion_board_posts[]
-  economic_discussion_board_comments economic_discussion_board_comments[]
-  
-  @@unique([email])
-  @@index([created_at])
+  economic_political_discussion_board_guest_sessions economic_political_discussion_board_guest_sessions[]
 }
 
-/// Authentication sessions for users on the economic discussion board.
-/// Tracks active user sessions with connection details and temporal
-/// information. Each session is associated with a specific user account and
-/// provides audit trail for user activities.
+/// Session records for guest users.
+///
+/// Session records store information about the guest user's session,
+/// including the IP address, connection URL, and referrer URL. This
+/// information is used to track the guest user's activity on the discussion
+/// board and to ensure that the guest user's session is valid.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_user_sessions {
+model economic_political_discussion_board_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the user account that owns this session. {@link
-  /// economic_discussion_board_users.id}
-  economic_discussion_board_user_id String
+  /// Guest user associated with this session. {@link
+  /// economic_political_discussion_board_guests.id}
+  economic_political_discussion_board_guest_id String
   
-  /// IP address from which the session was initiated.
+  /// IP address of the guest user.
   ip String
   
-  /// URL of the page where the session was initiated.
+  /// Connection URL of the guest user.
   href String
   
-  /// Referrer URL that led to the session initiation.
+  /// Referrer URL of the guest user.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session record was created.
   created_at DateTime
   
-  /// Timestamp when the session expired or was terminated. Null if session is
-  /// active.
+  /// Timestamp when the session record expired.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user economic_discussion_board_users @relation(fields: [economic_discussion_board_user_id], references: [id], onDelete: Cascade)
-  
-  economic_discussion_board_posts economic_discussion_board_posts[]
-  economic_discussion_board_comments economic_discussion_board_comments[]
+  guest economic_political_discussion_board_guests @relation(fields: [economic_political_discussion_board_guest_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_user_id, created_at], map: "economic_discussion_board_user_sessions_economic_discu_2cbe764c")
+  @@index([economic_political_discussion_board_guest_id, created_at], map: "economic_political_discussion_board_guest_sessions_eco_9cbeb19b")
 }
 
-/// Administrator accounts for managing the economic discussion board
-/// platform. Stores authentication credentials and basic profile information
-/// for administrators. Admins have elevated privileges to moderate content
-/// and manage platform settings.
+/// Registered members who can create, edit, and delete their own articles
+/// and comments.
+///
+/// Members are authenticated users who have registered on the discussion
+/// board. They have the ability to create, edit, and delete their own
+/// articles and comments. Member users are identified by their username,
+/// email address, and password hash, which is stored securely in the
+/// database.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_admins {
+model economic_political_discussion_board_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Admin's email address used for authentication and communication. Must be
-  /// unique across all admins.
+  /// Username of the member user.
+  username String
+  
+  /// Email address of the member user.
   email String
   
-  /// Secure hash of the admin's password for authentication purposes. Never
-  /// store plain text passwords.
+  /// Secure hash of the member user's password.
   password_hash String
   
-  /// Display name chosen by the admin for public identification.
-  nickname String
-  
-  /// Timestamp when the admin account was created.
+  /// Timestamp when the member record was created.
   created_at DateTime
   
-  /// Timestamp when the admin account was last updated.
+  /// Timestamp when the member record was last updated.
   updated_at DateTime
   
-  /// Timestamp when the admin account was soft-deleted. Null if account is
-  /// active.
+  /// Timestamp when the member record was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  economic_discussion_board_admin_sessions economic_discussion_board_admin_sessions[]
+  economic_political_discussion_board_member_sessions economic_political_discussion_board_member_sessions[]
+  economic_political_discussion_board_article_of_members economic_political_discussion_board_article_of_members[]
+  economic_political_discussion_board_article_actors economic_political_discussion_board_article_actors[]
+  economic_political_discussion_board_comment_of_members economic_political_discussion_board_comment_of_members[]
   
   @@unique([email])
-  @@index([created_at])
 }
 
-/// Authentication sessions for administrators on the economic discussion
-/// board. Tracks active admin sessions with connection details and temporal
-/// information. Each session is associated with a specific admin account and
-/// provides audit trail for admin activities.
+/// Session records for member users.
+///
+/// Session records store information about the member user's session,
+/// including the IP address, connection URL, and referrer URL. This
+/// information is used to track the member user's activity on the discussion
+/// board and to ensure that the member user's session is valid.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_admin_sessions {
+model economic_political_discussion_board_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the admin account that owns this session. {@link
-  /// economic_discussion_board_admins.id}
-  economic_discussion_board_admin_id String
+  /// Member user associated with this session. {@link
+  /// economic_political_discussion_board_members.id}
+  economic_political_discussion_board_member_id String
   
-  /// IP address from which the session was initiated.
+  /// IP address of the member user.
   ip String
   
-  /// URL of the page where the session was initiated.
+  /// Connection URL of the member user.
   href String
   
-  /// Referrer URL that led to the session initiation.
+  /// Referrer URL of the member user.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session record was created.
   created_at DateTime
   
-  /// Timestamp when the session expired or was terminated. Null if session is
-  /// active.
+  /// Timestamp when the session record expired.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin economic_discussion_board_admins @relation(fields: [economic_discussion_board_admin_id], references: [id], onDelete: Cascade)
+  member economic_political_discussion_board_members @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_article_of_members economic_political_discussion_board_article_of_members[]
+  economic_political_discussion_board_article_actors economic_political_discussion_board_article_actors[]
+  economic_political_discussion_board_comment_of_members economic_political_discussion_board_comment_of_members[]
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_admin_id, created_at], map: "economic_discussion_board_admin_sessions_economic_disc_eba1ce0f")
+  @@index([economic_political_discussion_board_member_id, created_at], map: "economic_political_discussion_board_member_sessions_ec_ad9baa8a")
+}
+
+/// Moderators who can manage all articles, comments, and user accounts.
+///
+/// Moderators are authenticated users who have administrative privileges on
+/// the discussion board. They have the ability to manage all articles,
+/// comments, and user accounts. Moderator users are identified by their
+/// username, email address, and password hash, which is stored securely in
+/// the database.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Username of the moderator user.
+  username String
+  
+  /// Email address of the moderator user.
+  email String
+  
+  /// Secure hash of the moderator user's password.
+  password_hash String
+  
+  /// Timestamp when the moderator record was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_moderator_sessions economic_political_discussion_board_moderator_sessions[]
+  economic_political_discussion_board_article_of_moderators economic_political_discussion_board_article_of_moderators[]
+  economic_political_discussion_board_comment_of_moderators economic_political_discussion_board_comment_of_moderators[]
+  
+  @@unique([email])
+}
+
+/// Session records for moderator users.
+///
+/// Session records store information about the moderator user's session,
+/// including the IP address, connection URL, and referrer URL. This
+/// information is used to track the moderator user's activity on the
+/// discussion board and to ensure that the moderator user's session is
+/// valid.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator user associated with this session. {@link
+  /// economic_political_discussion_board_moderators.id}
+  economic_political_discussion_board_moderator_id String
+  
+  /// IP address of the moderator user.
+  ip String
+  
+  /// Connection URL of the moderator user.
+  href String
+  
+  /// Referrer URL of the moderator user.
+  referrer String
+  
+  /// Timestamp when the session record was created.
+  created_at DateTime
+  
+  /// Timestamp when the session record expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator economic_political_discussion_board_moderators @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_article_of_moderators economic_political_discussion_board_article_of_moderators[]
+  economic_political_discussion_board_comment_of_moderators economic_political_discussion_board_comment_of_moderators[]
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_id, created_at], map: "economic_political_discussion_board_moderator_sessions_a13280ae")
 }

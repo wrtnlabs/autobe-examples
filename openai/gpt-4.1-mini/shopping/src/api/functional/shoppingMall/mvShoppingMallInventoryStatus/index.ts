@@ -7,8 +7,6 @@ import { IShoppingMallMvShoppingMallInventoryStatus } from "../../../structures/
 import { IPageIShoppingMallMvShoppingMallInventoryStatus } from "../../../structures/IPageIShoppingMallMvShoppingMallInventoryStatus";
 
 /**
- * Retrieve paginated list of mall inventory status records.
- *
  * This operation retrieves paginated records from the materialized view
  * mv_shopping_mall_inventory_status, which provides up-to-date aggregated SKU
  * inventory information across the entire mall.
@@ -109,8 +107,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single mall inventory status record by ID.
- *
  * This operation fetches detailed information for a single inventory status
  * record by its UUID identifier from the materialized view
  * mv_shopping_mall_inventory_status.

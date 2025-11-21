@@ -7,8 +7,6 @@ import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/member/posts")
 export class CommunityplatformMemberPostsController {
   /**
-   * Create a new post in a community.
-   *
    * Create a new user-generated post within a community. This operation
    * allows authenticated members to create new posts in specific communities,
    * choosing from three types: text posts with markdown-formatted content,
@@ -57,8 +55,6 @@ export class CommunityplatformMemberPostsController {
   }
 
   /**
-   * Update an existing community post's content and metadata.
-   *
    * Update an existing community platform post by modifying its content,
    * metadata, or visibility status. This operation allows post creators to
    * modify post details within 24 hours of creation through the
@@ -115,8 +111,6 @@ export class CommunityplatformMemberPostsController {
   }
 
   /**
-   * Permanently delete a post from the community platform.
-   *
    * Remove a post and all associated data from the community platform
    * database. This operation performs a hard delete on the target post record
    * from the community_platform_posts table, permanently removing it along

@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/communities/:communityId/rules")
 export class CommunityplatformCommunitiesRulesController {
   /**
-   * Search and retrieve a filtered list of community rules for a specific
-   * community.
-   *
    * This operation provides comprehensive retrieval of community rules with
    * advanced search and filtering capabilities. Members access this endpoint
    * to understand community standards before posting content, while
@@ -62,8 +59,6 @@ export class CommunityplatformCommunitiesRulesController {
   }
 
   /**
-   * Retrieve a specific community rule by ID.
-   *
    * Fetch a single community rule with complete details including title,
    * description, and rule positioning. This operation retrieves from the
    * community_platform_community_rules table and returns the full rule record

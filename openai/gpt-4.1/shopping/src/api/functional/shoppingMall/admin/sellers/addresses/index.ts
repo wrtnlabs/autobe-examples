@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAddress } from "../../../../../structures/IShoppingMallAddress";
 
 /**
- * Retrieve detailed information for a specific seller address in
- * shopping_mall_addresses table.
- *
  * Retrieve a detailed address record associated with a registered seller
  * account.
  *
@@ -110,9 +107,6 @@ export namespace at {
 }
 
 /**
- * Update the details of a specific seller address in shopping_mall_addresses
- * table.
- *
  * Update the information of a specific address owned by a seller.
  *
  * This operation is available to authenticated sellers on their own address
@@ -225,9 +219,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete an address for a specific seller
- * (shopping_mall_addresses).
- *
  * Remove a business address associated with a registered seller from the
  * system.
  *

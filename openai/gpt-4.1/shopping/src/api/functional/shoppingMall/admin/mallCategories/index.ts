@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCategory";
 
 /**
- * Create a new product or navigation category in shopping_mall_categories
- * table.
- *
  * Create a new shopping mall category for products or navigation taxonomy.
  *
  * This operation enables system administrators or trusted API clients to add
@@ -110,8 +107,6 @@ export namespace create {
 }
 
 /**
- * Update an existing mall category in the shopping_mall_categories table.
- *
  * Update properties of a product or navigation category present in the shopping
  * mall's taxonomy. The category is uniquely identified by its 'name' field,
  * enforcing the unique business identifier constraint set in the schema.
@@ -224,9 +219,6 @@ export namespace update {
 }
 
 /**
- * Deactivate (soft delete) a mall category identified by unique name in the
- * shopping_mall_categories table.
- *
  * Deactivate (soft delete) a category in the shopping mall system by setting
  * its deleted_at field. This operation prevents the deleted category from
  * appearing in standard browsing, filter, and reference flows, maintaining

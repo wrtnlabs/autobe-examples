@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderCustomerContact } from "../../../../../structures/IShoppingMallOrderCustomerContact";
 
 /**
- * Get the `shopping_mall_order_customer_contacts` snapshot for an order
- * identified by `orderCode`.
- *
  * Retrieve the saved customer contact snapshot for a given order identified by
  * its business `orderCode`.
  *

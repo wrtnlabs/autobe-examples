@@ -57,8 +57,6 @@ export class TodolistAdminTodolistsystemconfigurationsController {
   }
 
   /**
-   * Retrieve a filtered, paginated list of todo list system configurations.
-   *
    * Retrieve a filtered and paginated list of todo list system configurations
    * from the system.
    *
@@ -99,8 +97,6 @@ export class TodolistAdminTodolistsystemconfigurationsController {
   }
 
   /**
-   * Retrieve a single todo list system configuration by its unique key.
-   *
    * Retrieve detailed information of a single todo list system configuration
    * identified by its unique key.
    *
@@ -138,8 +134,6 @@ export class TodolistAdminTodolistsystemconfigurationsController {
   }
 
   /**
-   * Update an existing system configuration entry by key.
-   *
    * Update an existing system configuration entry in the Todo List application
    * by its unique key.
    *
@@ -185,8 +179,6 @@ export class TodolistAdminTodolistsystemconfigurationsController {
   }
 
   /**
-   * Delete a system configuration entry by its unique key.
-   *
    * Delete a specific system configuration entry identified by its unique key.
    *
    * This operation performs a hard delete, permanently removing the record from

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMember } from "../../../structures/ICommunityPlatformMember";
 
 /**
- * Register a new guest account for temporary read-only access to the platform.
- *
  * Creates a temporary guest user account that grants read-only access to public
  * communities, posts, comments, and user profiles without requiring email or
  * password credentials. Guest accounts are designed for users who want to
@@ -82,8 +80,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest session tokens to extend access period.
- *
  * Renews the access token for an existing guest session using a valid refresh
  * token. Guest accounts have temporary sessions that may expire after periods
  * of inactivity or after a defined duration. This endpoint allows guest users

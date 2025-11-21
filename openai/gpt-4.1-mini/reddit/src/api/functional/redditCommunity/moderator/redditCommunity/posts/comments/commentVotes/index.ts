@@ -7,8 +7,6 @@ import { IRedditCommunityCommentVote } from "../../../../../../../structures/IRe
 import { IPageIRedditCommunityCommentVote } from "../../../../../../../structures/IPageIRedditCommunityCommentVote";
 
 /**
- * Retrieve paginated comment votes for a specific comment.
- *
  * Retrieve a filtered and paginated list of votes cast on a comment within a
  * Reddit community post.
  *

@@ -17,8 +17,6 @@ import { IPageIShoppingMallSellerSession } from "../../../../../api/structures/I
 )
 export class ShoppingmallSellerShoppingmallsellersShoppingmallsellersessionsController {
   /**
-   * Create a new seller session.
-   *
    * Create a new session for a shopping mall seller.
    *
    * This operation allows an authenticated seller to create a session
@@ -64,8 +62,6 @@ export class ShoppingmallSellerShoppingmallsellersShoppingmallsellersessionsCont
   }
 
   /**
-   * Retrieve a paginated list of seller sessions.
-   *
    * Retrieve a filtered and paginated list of shopping mall seller session
    * records. These sessions represent authenticated connections that the seller
    * has made to the platform.
@@ -110,8 +106,6 @@ export class ShoppingmallSellerShoppingmallsellersShoppingmallsellersessionsCont
   }
 
   /**
-   * Retrieve detailed information for a specific seller session.
-   *
    * Retrieve detailed information for a specific shopping mall seller session.
    *
    * The session is identified by unique session ID and is associated with a
@@ -155,8 +149,6 @@ export class ShoppingmallSellerShoppingmallsellersShoppingmallsellersessionsCont
   }
 
   /**
-   * Update an existing seller session.
-   *
    * Update an existing session for a shopping mall seller.
    *
    * This operation requires the seller's UUID and the session's UUID as path
@@ -205,8 +197,6 @@ export class ShoppingmallSellerShoppingmallsellersShoppingmallsellersessionsCont
   }
 
   /**
-   * Delete a seller session by ID.
-   *
    * Delete a specific seller session identified by seller ID and session ID.
    * This operation permanently removes the session record from the database.
    *

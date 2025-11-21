@@ -7,8 +7,6 @@ import { IRedditCommunityRegisteredUser } from "../../../../structures/IRedditCo
 export * as sessions from "./sessions/index";
 
 /**
- * Update redditCommunity user account by ID.
- *
  * Update an existing registered user account identified by ID.
  *
  * This operation allows changing the user's email and password hash, updating

@@ -11,9 +11,6 @@ import { IDiscussionBoardAccountAction } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/moderators/:moderatorId/accountActions")
 export class DiscussionboardModeratorModeratorsAccountactionsController {
   /**
-   * Search and retrieve account moderation actions performed by a specific
-   * moderator.
-   *
    * Retrieve a filtered and paginated list of account-level moderation actions
    * (suspensions and bans) that were applied by a specific moderator on the
    * discussion board platform. This operation provides comprehensive search and

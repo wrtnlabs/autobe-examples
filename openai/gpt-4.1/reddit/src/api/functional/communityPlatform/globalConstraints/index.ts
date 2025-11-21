@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformGlobalConstraint } from "../../../structures/ICommunityPlatformGlobalConstraint";
 
 /**
- * Retrieve a specific global constraint by unique constraint_key from the
- * global registry table.
- *
  * Retrieve the full details of a global constraint by its unique key.
  *
  * This operation fetches the constraint's type, value, detailed description,

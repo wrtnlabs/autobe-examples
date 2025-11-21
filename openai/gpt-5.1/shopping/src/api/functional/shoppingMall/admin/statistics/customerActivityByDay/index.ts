@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallCustomerActivityDailyStatistics } from "../../../../../structures/IShoppingMallCustomerActivityDailyStatistics";
 
 /**
- * Retrieve daily customer activity statistics based on
- * shopping_mall_customer_daily_stats and related snapshot tables.
- *
  * Retrieve time-series statistics that describe how customers behave on the
  * shoppingMall platform on a day-by-day basis.
  *

@@ -8,9 +8,6 @@ import { ICommunityPlatformKarmaByContentStatistics } from "../../../../../../ap
 @Controller("/communityPlatform/adminUser/statistics/karma/byContent")
 export class CommunityplatformAdminuserStatisticsKarmaBycontentController {
   /**
-   * Retrieve paginated content-level karma analytics derived from posts,
-   * comments, and their vote tables.
-   *
    * Retrieve aggregated karma statistics for individual content items such as
    * posts and comments, producing a paginated analytical view that combines
    * information from `community_platform_posts`,

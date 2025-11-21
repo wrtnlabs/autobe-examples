@@ -7,9 +7,6 @@ import { ITodoListUserSession } from "../../../../structures/ITodoListUserSessio
 import { IPageITodoListUserSession } from "../../../../structures/IPageITodoListUserSession";
 
 /**
- * Retrieve all session records for a user by unique email from
- * todo_list_user_sessions table.
- *
  * Fetch a paginated collection of user session records for the specified Todo
  * List user, using their global email address as a unique identifier.
  *
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a user session by email and sessionId from
- * todo_list_user_sessions table.
- *
  * Fetch full details for a single authenticated user session record from the
  * todo_list_user_sessions table. Both the user's globally unique email and the
  * session's unique ID (UUID) must be specified to identify the target session

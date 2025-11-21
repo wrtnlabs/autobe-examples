@@ -7,9 +7,6 @@ import { ITodoListTodo } from "../../../../structures/ITodoListTodo";
 import { IPageITodoListTodo } from "../../../../structures/IPageITodoListTodo";
 
 /**
- * Create a new Todo item in the todo_list_todos table for the authenticated
- * user.
- *
  * Create a new Todo item for the authenticated user.
  *
  * When invoked, the system validates the request: description is required, must
@@ -110,9 +107,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated, filtered list of the authenticated user's Todo items
- * from the todo_list_todos table.
- *
  * This endpoint allows an authenticated user to list their own Todo items,
  * retrieving them with advanced filtering options. Users may filter Todos by
  * completion status (completed or uncompleted) and due date range. All results
@@ -214,8 +208,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific Todo item from the todo_list_todos table.
- *
  * Retrieve the details of a specific Todo item owned by the authenticated user.
  *
  * On invocation, the API validates that the provided todoId uniquely identifies
@@ -310,9 +302,6 @@ export namespace at {
 }
 
 /**
- * Update a single todo item in the todo_list_todos table by its unique
- * identifier.
- *
  * Update an existing todo item using the todo item's unique identifier.
  *
  * This operation allows an authenticated user to modify the details of one of
@@ -419,9 +408,6 @@ export namespace update {
 }
 
 /**
- * Delete (erase) a single todo item, given its unique ID, from the
- * todo_list_todos table.
- *
  * Permanently remove a specific todo item identified by its unique ID from the
  * todo_list_todos table.
  *

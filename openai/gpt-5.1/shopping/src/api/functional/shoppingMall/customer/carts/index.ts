@@ -9,8 +9,6 @@ export * as items from "./items/index";
 export * as checkoutPreview from "./checkoutPreview/index";
 
 /**
- * Create a new cart header record in the shopping_mall_carts table.
- *
  * Create a new shopping cart header in the shopping mall domain.
  *
  * This operation creates a fresh cart record in the shopping_mall_carts Prisma
@@ -121,8 +119,6 @@ export namespace create {
 }
 
 /**
- * Update an existing cart header in the shopping_mall_carts table by cartId.
- *
  * Update an existing shopping cart header record for the shopping mall
  * platform.
  *
@@ -244,8 +240,6 @@ export namespace update {
 }
 
 /**
- * Validate a specific shopping_mall_carts cart and its items before checkout.
- *
  * Validate the current contents and configuration of a specific shopping cart
  * before checkout using the shopping_mall_carts and shopping_mall_cart_items
  * tables as the primary data sources.

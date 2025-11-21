@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityMembership } from "../../../../structures/IC
 import { IPageICommunityPlatformCommunityMembership } from "../../../../structures/IPageICommunityPlatformCommunityMembership";
 
 /**
- * Index community_platform_community_memberships records to list subscribers
- * for a specific community.
- *
  * Retrieve a filtered and paginated list of subscribers or members for a given
  * community by querying the community_platform_community_memberships table.
  *

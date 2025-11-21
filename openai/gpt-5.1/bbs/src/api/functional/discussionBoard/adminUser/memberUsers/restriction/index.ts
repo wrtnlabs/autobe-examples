@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberuserRestriction } from "../../../../../structures/IDiscussionBoardMemberuserRestriction";
 
 /**
- * Create a discussion_board_memberuser_restrictions record for a given member
- * user.
- *
  * Create a new restriction state for the specified member user in the
  * discussionBoard system.
  *
@@ -150,9 +147,6 @@ export namespace create {
 }
 
 /**
- * Update an existing discussion_board_memberuser_restrictions record for a
- * given member user.
- *
  * Update the current restriction state for the specified member user in the
  * discussionBoard service.
  *
@@ -294,9 +288,6 @@ export namespace update {
 }
 
 /**
- * Lift the current restriction for a member user by deleting its record in
- * discussion_board_memberuser_restrictions.
- *
  * Remove the current restriction state record for a specific member user,
  * thereby lifting any active restriction associated with that account.
  *

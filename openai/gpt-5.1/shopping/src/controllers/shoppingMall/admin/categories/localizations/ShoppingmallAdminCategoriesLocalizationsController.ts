@@ -7,9 +7,6 @@ import { IShoppingMallCategoryLocalization } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/categories/:categoryId/localizations")
 export class ShoppingmallAdminCategoriesLocalizationsController {
   /**
-   * Create a new ShoppingMall category localization row in
-   * shopping_mall_category_localizations for a given category.
-   *
    * Register a new localized label and SEO metadata for a ShoppingMall
    * category.
    *
@@ -77,8 +74,6 @@ export class ShoppingmallAdminCategoriesLocalizationsController {
   }
 
   /**
-   * Update one category localization in shopping_mall_category_localizations.
-   *
    * Update a single category localization record for a given category and
    * locale.
    *
@@ -140,9 +135,6 @@ export class ShoppingmallAdminCategoriesLocalizationsController {
   }
 
   /**
-   * Delete one category localization from
-   * shopping_mall_category_localizations.
-   *
    * Remove a single category localization record for a given category and
    * locale.
    *

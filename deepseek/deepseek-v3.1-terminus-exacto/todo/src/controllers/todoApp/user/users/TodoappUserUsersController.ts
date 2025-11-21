@@ -14,8 +14,6 @@ import { ITodoAppUser } from "../../../../api/structures/ITodoAppUser";
 @Controller("/todoApp/user/users")
 export class TodoappUserUsersController {
   /**
-   * Search and retrieve a filtered, paginated list of todo application users.
-   *
    * Perform advanced search and filtering operations on todo application user
    * accounts with comprehensive query capabilities.
    *
@@ -61,8 +59,6 @@ export class TodoappUserUsersController {
   }
 
   /**
-   * Retrieve a specific todo application user by email address.
-   *
    * Retrieve detailed information for a specific todo application user account
    * identified by their unique email address.
    *
@@ -109,8 +105,6 @@ export class TodoappUserUsersController {
   }
 
   /**
-   * Update an existing user account by email address.
-   *
    * This operation allows authenticated users to update their own account
    * information in the Todo application. It modifies user profile data
    * including display name, password hash, and account status while maintaining
@@ -160,8 +154,6 @@ export class TodoappUserUsersController {
   }
 
   /**
-   * Permanently delete a user account by email address.
-   *
    * This operation allows users to permanently remove their own accounts from
    * the Todo application. It performs a hard deletion that completely removes
    * the user record and all associated data from the database, including any

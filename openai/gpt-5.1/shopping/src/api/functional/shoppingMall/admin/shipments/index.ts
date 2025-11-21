@@ -9,9 +9,6 @@ export * as items from "./items/index";
 export * as events from "./events/index";
 
 /**
- * Create a new shipment in the shopping_mall_shipments table based on order and
- * logistics data.
- *
  * Create a new shipment header in the shopping_mall_shipments table and its
  * related child records based on provided order and logistics information.
  *
@@ -142,9 +139,6 @@ export namespace create {
 }
 
 /**
- * Search shipments in the `shopping_mall_shipments` table with filters,
- * sorting, and pagination.
- *
  * Search and retrieve a filtered, paginated list of shipment headers from the
  * `shopping_mall_shipments` table.
  *
@@ -268,9 +262,6 @@ export namespace index {
 }
 
 /**
- * Get a single shipment from the `shopping_mall_shipments` table by its unique
- * shipment code.
- *
  * Retrieve detailed information about a single shipment header from the
  * `shopping_mall_shipments` table using its unique shipment code.
  *
@@ -384,9 +375,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shipment in the shopping_mall_shipments table by its
- * unique shipment code.
- *
  * Update an existing shipment in the shopping_mall_shipments table, identified
  * by its globally unique shipment code, to reflect new status, tracking
  * information, or other mutable logistics details.
@@ -526,9 +514,6 @@ export namespace update {
 }
 
 /**
- * Delete a shipment header in the `shopping_mall_shipments` table by its
- * shipmentCode.
- *
  * Delete an existing shipment identified by its business shipment code from the
  * `shopping_mall_shipments` table.
  *

@@ -11,9 +11,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/admin/reviews")
 export class ShoppingmallAdminReviewsController {
   /**
-   * Search and list product reviews from shopping_mall_reviews with
-   * multi-criteria filtering and pagination.
-   *
    * Perform advanced search and retrieval of product reviews, supporting
    * filtering by various attributes such as product, SKU, customer, moderation
    * state, and keyword matches on title or body fields.

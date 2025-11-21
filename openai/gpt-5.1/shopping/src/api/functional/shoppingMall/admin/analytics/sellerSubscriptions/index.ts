@@ -7,9 +7,6 @@ import { IShoppingMallSellerSubscription } from "../../../../../structures/IShop
 import { IPageIShoppingMallSellerSubscription } from "../../../../../structures/IPageIShoppingMallSellerSubscription";
 
 /**
- * Retrieve aggregated analytics for seller subscriptions based on
- * shopping_mall_seller_subscriptions and related tables.
- *
  * Retrieve analytical statistics about seller subscriptions on the shoppingMall
  * platform.
  *

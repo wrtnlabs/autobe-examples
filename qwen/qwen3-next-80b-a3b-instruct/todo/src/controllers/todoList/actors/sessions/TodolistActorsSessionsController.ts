@@ -10,9 +10,6 @@ import { ITodoListUserSession } from "../../../../api/structures/ITodoListUserSe
 @Controller("/todoList/actors/:userId/sessions")
 export class TodolistActorsSessionsController {
   /**
-   * Search and retrieve a paginated list of active user sessions for a specific
-   * actor.
-   *
    * Retrieve a paginated list of active user sessions for a specific actor
    * (user) from the todo_list_user_sessions table. This operation provides
    * advanced filtering capabilities for user sessions based on status, creation
@@ -65,8 +62,6 @@ export class TodolistActorsSessionsController {
   }
 
   /**
-   * Retrieve details of a specific user session by session ID.
-   *
    * Retrieve complete details of a specific user session identified by its
    * unique session ID for the authenticated user. This operation provides
    * detailed information about a single session including device, location, and

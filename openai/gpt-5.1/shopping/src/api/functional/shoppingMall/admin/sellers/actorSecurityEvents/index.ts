@@ -7,9 +7,6 @@ import { IShoppingMallActorSecurityEvent } from "../../../../../structures/IShop
 import { IPageIShoppingMallActorSecurityEvent } from "../../../../../structures/IPageIShoppingMallActorSecurityEvent";
 
 /**
- * Search seller-scoped actor security events from
- * shopping_mall_actor_security_events for a given seller.
- *
  * Retrieve a paginated list of security-related events associated with a
  * specific seller account for audit and troubleshooting purposes.
  *

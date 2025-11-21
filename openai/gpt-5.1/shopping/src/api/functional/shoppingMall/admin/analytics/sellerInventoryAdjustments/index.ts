@@ -7,9 +7,6 @@ import { IShoppingMallInventoryAdjustment } from "../../../../../structures/ISho
 import { IPageIShoppingMallInventoryAdjustment } from "../../../../../structures/IPageIShoppingMallInventoryAdjustment";
 
 /**
- * Retrieve aggregated analytics for seller inventory adjustments based on
- * shopping_mall_inventory_adjustments and related tables.
- *
  * Retrieve aggregated analytics for seller inventory adjustments recorded in
  * the shoppingMall platform.
  *

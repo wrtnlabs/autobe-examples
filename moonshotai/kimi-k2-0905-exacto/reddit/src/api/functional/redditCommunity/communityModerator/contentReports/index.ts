@@ -7,8 +7,6 @@ import { IRedditCommunityContentReport } from "../../../../structures/IRedditCom
 import { IPageIRedditCommunityContentReport } from "../../../../structures/IPageIRedditCommunityContentReport";
 
 /**
- * Search and retrieve filtered, paginated content reports for moderation.
- *
  * Retrieve a filtered and paginated list of content reports from the Reddit
  * Community platform. This operation provides comprehensive search capabilities
  * for moderators and administrators to efficiently browse through reported
@@ -212,8 +210,6 @@ export namespace at {
 }
 
 /**
- * Update content report moderation status and workflow details.
- *
  * Update an existing content report's moderation status and processing details
  * within the content moderation workflow. This operation enables moderators to
  * manage the review process by modifying report status, adding internal notes,
@@ -337,8 +333,6 @@ export namespace update {
 }
 
 /**
- * Delete a resolved or dismissed content report.
- *
  * This operation permanently deletes a content report that has been resolved or
  * dismissed from the moderation system. When moderators complete their review
  * process and either take action on reported content or dismiss invalid

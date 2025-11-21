@@ -8,9 +8,6 @@ import { IPageIShoppingMallCustomerAddress } from "../../../../../api/structures
 @Controller("/shoppingMall/customer/customers/:customerId/addresses")
 export class ShoppingmallCustomerCustomersAddressesController {
   /**
-   * Create a new customer shipping address in the
-   * shopping_mall_customer_addresses table.
-   *
    * Create a new shipping address for a specific customer and persist it in
    * the shopping_mall_customer_addresses table.
    *
@@ -72,9 +69,6 @@ export class ShoppingmallCustomerCustomersAddressesController {
   }
 
   /**
-   * Search and list shipping addresses in shopping_mall_customer_addresses
-   * for a specific customer with pagination and filtering.
-   *
    * Retrieve a filtered, sorted, and paginated list of shipping addresses
    * belonging to a specific customer from the
    * shopping_mall_customer_addresses table.
@@ -143,9 +137,6 @@ export class ShoppingmallCustomerCustomersAddressesController {
   }
 
   /**
-   * Retrieve a single customer shipping address from the
-   * shopping_mall_customer_addresses table.
-   *
    * Retrieve a single shipping address record belonging to a specific
    * customer based on the customer identifier and the address identifier.
    *
@@ -219,9 +210,6 @@ export class ShoppingmallCustomerCustomersAddressesController {
   }
 
   /**
-   * Update a specific customer shipping address in the
-   * shopping_mall_customer_addresses table.
-   *
    * Update a specific customer shipping address belonging to a particular
    * customer.
    *
@@ -300,9 +288,6 @@ export class ShoppingmallCustomerCustomersAddressesController {
   }
 
   /**
-   * Delete a customer shipping address record from the
-   * shopping_mall_customer_addresses table.
-   *
    * Delete a specific customer shipping address belonging to a particular
    * customer.
    *

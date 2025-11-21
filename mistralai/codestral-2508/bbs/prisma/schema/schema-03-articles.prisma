@@ -1,0 +1,285 @@
+/// Main article entity for economic/political discussion board.
+///
+/// Contains shared fields for all articles including title, content, and
+/// creation metadata. The actor_type field indicates which user type created
+/// the article (member or moderator).
+///
+/// Articles can have multiple attachments through the
+/// {@link economic_political_discussion_board_attachment_of_articles}
+/// relationship. Comments are associated through the
+/// {@link economic_political_discussion_board_comments} relationship.
+///
+/// Each article is associated with a channel and section for
+/// categorization. Historical versions are tracked through the
+/// {@link economic_political_discussion_board_article_snapshots}
+/// relationship.
+///
+/// Soft deletion is supported through the deleted_at field to allow
+/// content recovery while maintaining audit trails.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel this article belongs to. {@link
+  /// economic_political_discussion_board_channels.id}
+  economic_political_discussion_board_channel_id String
+  
+  /// Section this article belongs to. {@link
+  /// economic_political_discussion_board_sections.id}
+  economic_political_discussion_board_section_id String
+  
+  /// Type of actor who created this article. Either 'member' or 'moderator'.
+  actor_type String
+  
+  /// Title of the article.
+  title String
+  
+  /// Main content of the article.
+  content String
+  
+  /// When this article was created.
+  created_at DateTime
+  
+  /// When this article was last updated.
+  updated_at DateTime
+  
+  /// When this article was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel economic_political_discussion_board_channels @relation(fields: [economic_political_discussion_board_channel_id], references: [id], onDelete: Cascade)
+  section economic_political_discussion_board_sections @relation(fields: [economic_political_discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_article_of_members economic_political_discussion_board_article_of_members?
+  economic_political_discussion_board_article_of_moderators economic_political_discussion_board_article_of_moderators?
+  economic_political_discussion_board_article_snapshots economic_political_discussion_board_article_snapshots[]
+  economic_political_discussion_board_article_actors economic_political_discussion_board_article_actors?
+  economic_political_discussion_board_comments economic_political_discussion_board_comments[]
+  economic_political_discussion_board_attachment_of_articles economic_political_discussion_board_attachment_of_articles[]
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_channel_id, created_at], map: "economic_political_discussion_board_articles_economic__def68990")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_section_id, created_at], map: "economic_political_discussion_board_articles_economic__c765162a")
+}
+
+/// Tracks articles created by members.
+///
+/// Contains member-specific information about articles created by regular
+/// members. Each record links to a specific article and member, recording
+/// the member's session at creation time.
+///
+/// This table establishes the 1:1 relationship between articles and the
+/// members who created them, while the main article table tracks the
+/// shared article data.
+///
+/// The combination of article_id and member_id is unique to ensure
+/// each article is associated with exactly one member.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_article_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article created by this member. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
+  
+  /// Member who created this article. {@link
+  /// economic_political_discussion_board_members.id}
+  economic_political_discussion_board_member_id String
+  
+  /// Session used when this article was created. {@link
+  /// economic_political_discussion_board_member_sessions.id}
+  economic_political_discussion_board_member_session_id String
+  
+  /// When this article was created by the member.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
+  member economic_political_discussion_board_members @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession economic_political_discussion_board_member_sessions @relation(fields: [economic_political_discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_member_id], map: "economic_political_discussion_board_article_of_members_27162541")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_member_session_id], map: "economic_political_discussion_board_article_of_members_2779d1c0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_political_discussion_board_article_id], map: "economic_political_discussion_board_article_of_members_6f4e0d16")
+}
+
+/// Tracks articles created by moderators.
+///
+/// Contains moderator-specific information about articles created by
+/// moderators. Each record links to a specific article and moderator,
+/// recording the moderator's session at creation time.
+///
+/// This table establishes the 1:1 relationship between articles and the
+/// moderators who created them, while the main article table tracks the
+/// shared article data.
+///
+/// The combination of article_id and moderator_id is unique to ensure
+/// each article is associated with exactly one moderator.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_article_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article created by this moderator. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
+  
+  /// Moderator who created this article. {@link
+  /// economic_political_discussion_board_moderators.id}
+  economic_political_discussion_board_moderator_id String
+  
+  /// Session used when this article was created. {@link
+  /// economic_political_discussion_board_moderator_sessions.id}
+  economic_political_discussion_board_moderator_session_id String
+  
+  /// When this article was created by the moderator.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
+  moderator economic_political_discussion_board_moderators @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession economic_political_discussion_board_moderator_sessions @relation(fields: [economic_political_discussion_board_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_id], map: "economic_political_discussion_board_article_of_moderat_1a70d257")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_session_id], map: "economic_political_discussion_board_article_of_moderat_ee934f78")
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_political_discussion_board_article_id], map: "economic_political_discussion_board_article_of_moderat_e04be2c3")
+}
+
+/// Historical versions of articles for audit trail.
+///
+/// Captures point-in-time states of articles for historical tracking and
+/// audit purposes. Each snapshot records the complete state of an article
+/// at a specific point in time, including all shared fields from the main
+/// article table.
+///
+/// Snapshots are created whenever an article is created, updated,
+/// or deleted. This allows for complete reconstruction of an article's
+/// lifecycle and provides a complete audit trail of all changes.
+///
+/// The relationship to the main article table allows tracking all versions
+/// of each article, while the created_at field records when each snapshot
+/// was taken.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article this snapshot belongs to. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
+  
+  /// Type of actor who created this article. Either 'member' or 'moderator'.
+  actor_type String
+  
+  /// Title of the article at this snapshot.
+  title String
+  
+  /// Content of the article at this snapshot.
+  content String
+  
+  /// When this snapshot was taken.
+  created_at DateTime
+  
+  /// When this article was last updated at this snapshot.
+  updated_at DateTime
+  
+  /// When this article was soft-deleted at this snapshot (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_article_id, created_at], map: "economic_political_discussion_board_article_snapshots__82ce4a1c")
+}
+
+/// Tracks articles created by members or moderators.
+///
+/// Contains actor-specific information about articles created by members or
+/// moderators. Each record links to a specific article and actor, recording
+/// the actor's session at creation time.
+///
+/// This table establishes the 1:1 relationship between articles and the
+/// actors who created them, while the main article table tracks the
+/// shared article data.
+///
+/// The combination of article_id and actor_id is unique to ensure
+/// each article is associated with exactly one actor.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_article_actors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article created by this actor. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
+  
+  /// Actor who created this article. Either a member or moderator.
+  actor_id String
+  
+  /// Session used when this article was created. Either a member session or
+  /// moderator session.
+  actor_session_id String
+  
+  /// When this article was created by the actor.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
+  actor economic_political_discussion_board_members @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  actorSession economic_political_discussion_board_member_sessions @relation(fields: [actor_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([actor_id], map: "economic_political_discussion_board_article_actors_act_2cd26cfd")
+  // spellchecker: ignore-next-line
+  @@index([actor_session_id], map: "economic_political_discussion_board_article_actors_act_72d345a3")
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_political_discussion_board_article_id], map: "economic_political_discussion_board_article_actors_eco_757298f8")
+}

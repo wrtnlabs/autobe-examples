@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardAccountRestriction } from "../../../../../structures/IDiscussionBoardAccountRestriction";
 
 /**
- * Manually lift an active account restriction from a contributor.
- *
  * Lift an active account restriction that was previously imposed on a
  * discussion board contributor account.
  *

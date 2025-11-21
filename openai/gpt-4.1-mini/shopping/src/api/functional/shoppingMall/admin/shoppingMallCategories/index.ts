@@ -7,8 +7,6 @@ import { IShoppingMallShoppingMallCategory } from "../../../../structures/IShopp
 export * as shoppingMallCategoryHierarchies from "./shoppingMallCategoryHierarchies/index";
 
 /**
- * Update a shopping mall category by categoryName.
- *
  * Update the details of a specific shopping mall category using its unique
  * categoryName as identifier.
  *
@@ -115,8 +113,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall category by categoryName.
- *
  * Permanently delete a shopping mall category specified by its unique
  * categoryName.
  *

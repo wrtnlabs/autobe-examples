@@ -7,8 +7,6 @@ import { ICommunityPlatformSavedContent } from "../../../../../structures/ICommu
 import { IPageICommunityPlatformSavedContent } from "../../../../../structures/IPageICommunityPlatformSavedContent";
 
 /**
- * Retrieve a filtered and paginated list of saved content for a member.
- *
  * Retrieve and filter a member's saved content collection with comprehensive
  * search, sorting, and pagination support. This operation queries the
  * community_platform_saved_content table to return all posts and comments that
@@ -132,8 +130,6 @@ export namespace index {
 }
 
 /**
- * Delete a saved content item from a member's saved collection.
- *
  * Remove a specific saved content item from a member's personal bookmarked
  * collection. This operation deletes the record from the
  * community_platform_saved_content table, removing the association between the

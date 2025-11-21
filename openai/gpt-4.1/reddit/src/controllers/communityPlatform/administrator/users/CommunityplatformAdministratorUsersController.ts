@@ -14,9 +14,6 @@ import { ICommunityPlatformUser } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/administrator/users")
 export class CommunityplatformAdministratorUsersController {
   /**
-   * Search and retrieve paginated users from community_platform_users for
-   * administrative/audit purposes.
-   *
    * Retrieve and search the list of registered users in the community platform
    * using advanced filtering, pagination, and sorting features. This
    * administrative operation allows compliance and support staff to find users
@@ -60,8 +57,6 @@ export class CommunityplatformAdministratorUsersController {
   }
 
   /**
-   * Retrieve user details from the community_platform_users table by userId.
-   *
    * Retrieve the complete profile of a registered user from the system.
    *
    * This operation allows administrative actors to view a user's registered
@@ -106,9 +101,6 @@ export class CommunityplatformAdministratorUsersController {
   }
 
   /**
-   * Update a user's profile and account state by userId in the
-   * community_platform_users table.
-   *
    * Update one or more attributes of a registered user account identified by
    * userId.
    *
@@ -160,8 +152,6 @@ export class CommunityplatformAdministratorUsersController {
   }
 
   /**
-   * Erase a user record from the community_platform_users table by userId.
-   *
    * Permanently remove a registered user account from the platform based on
    * their unique userId.
    *

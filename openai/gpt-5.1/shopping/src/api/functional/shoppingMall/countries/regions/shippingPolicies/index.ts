@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallRegionShippingPolicy } from "../../../../../structures/IShoppingMallRegionShippingPolicy";
 
 /**
- * Get detail of a specific region shipping policy from
- * shopping_mall_region_shipping_policies.
- *
  * Retrieve a single region-level shipping policy configuration for a specific
  * country and region context.
  *
@@ -146,9 +143,6 @@ export namespace at {
 }
 
 /**
- * Create a new region shipping policy record in
- * shopping_mall_region_shipping_policies.
- *
  * Create a new region-level shipping policy configuration under a specific
  * country and region.
  *

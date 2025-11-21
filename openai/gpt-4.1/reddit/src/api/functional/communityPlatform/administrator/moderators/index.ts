@@ -9,9 +9,6 @@ export * as sessions from "./sessions/index";
 export * as profiles from "./profiles/index";
 
 /**
- * Search and paginate all platform moderators (community_platform_moderators
- * table).
- *
  * Retrieve a paginated, filterable list of all platform moderators registered
  * on the community platform. Supports filtering parameters including email,
  * status (pending, active, suspended, banned), and date ranges for account
@@ -109,9 +106,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed info of a specific community platform moderator by
- * moderatorId.
- *
  * Retrieve detailed information about a community platform moderator by
  * specifying their unique moderator ID.
  *
@@ -204,9 +198,6 @@ export namespace at {
 }
 
 /**
- * Update editable business attributes of a specific community platform
- * moderator by moderatorId.
- *
  * Update the business attributes of a specific community platform moderator
  * using their UUID as the path parameter. Fields supported for update include
  * email, account status (active, pending, suspended, banned), and business
@@ -309,9 +300,6 @@ export namespace update {
 }
 
 /**
- * Deactivate a specific moderator by soft delete in the
- * community_platform_moderators table.
- *
  * Permanently deactivate a platform moderator by marking the deleted_at field,
  * thereby disabling the account for authentication and workflow actions.
  *

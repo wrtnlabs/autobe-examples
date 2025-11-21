@@ -10,8 +10,6 @@ export * as images from "./images/index";
 export * as attributes from "./attributes/index";
 
 /**
- * Update a product in the shopping_mall_products table by productId.
- *
  * Update the business and catalog information for a specific product identified
  * by its primary key (productId) within the marketplace.
  *
@@ -127,8 +125,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a product in shopping_mall_products by productId.
- *
  * Permanently remove an existing product from the database, identified by its
  * UUID productId, from the shopping_mall_products table. This operation is a
  * hard delete: all product information is irreversibly eliminated from the

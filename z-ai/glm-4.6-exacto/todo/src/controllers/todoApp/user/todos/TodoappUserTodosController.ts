@@ -15,8 +15,6 @@ import { IPageITodoAppTodo } from "../../../../api/structures/IPageITodoAppTodo"
 @Controller("/todoApp/user/todos")
 export class TodoappUserTodosController {
   /**
-   * Create a new todo item (todo_app_todos) for the authenticated user.
-   *
    * Create a new todo item owned by the currently authenticated user.
    *
    * This endpoint enables users to add personal todo items with required title,
@@ -64,9 +62,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of todo items
-   * (todo_app_todos).
-   *
    * Retrieve a filtered and paginated list of todo items from the application.
    * This operation provides advanced search capabilities, including partial
    * matching of titles or descriptions, deadline-based filtering, completion
@@ -111,9 +106,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Retrieve detailed information of a specific todo item (todo_app_todos) by
-   * todoId.
-   *
    * Fetch the full details of a single todo task identified by its unique
    * todoId UUID. The returned data includes all fields of the todo item, such
    * as title, content or description, completion state, due date, and
@@ -153,8 +145,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Update a todo item (todo_app_todos) owned by the authenticated user by id.
-   *
    * Update mutable fields of an existing todo item owned by the authenticated
    * user.
    *
@@ -206,9 +196,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Permanently delete (erase) a specific todo item by UUID from todo_app_todos
-   * table.
-   *
    * Permanently erase a single todo item from the application database.
    *
    * This operation allows an authenticated user (the owner of the todo item) or

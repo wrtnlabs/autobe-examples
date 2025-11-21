@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMember } from "../../../../../../structures/ICommunityPlatformMember";
 
 /**
- * Confirm email verification with token from verification email link.
- *
  * Completes the email verification process by validating the verification token
  * provided in the member's email and marking their email address as verified in
  * the system. This operation is critical for account security and access

@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaByContentStatistics } from "../../../../../../st
 import { IPageICommunityPlatformKarmaByContentStatistics } from "../../../../../../structures/IPageICommunityPlatformKarmaByContentStatistics";
 
 /**
- * Retrieve paginated content-level karma analytics derived from posts,
- * comments, and their vote tables.
- *
  * Retrieve aggregated karma statistics for individual content items such as
  * posts and comments, producing a paginated analytical view that combines
  * information from `community_platform_posts`, `community_platform_comments`,

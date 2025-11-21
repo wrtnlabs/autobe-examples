@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleAttachment } from "../../../../../structures/IDiscussionBoardArticleAttachment";
 
 /**
- * Create a new attachment for a discussion board article.
- *
  * Upload and attach a new image or document file to an existing discussion
  * board article. This operation allows authenticated members to add supporting
  * materials, visual evidence, charts, documents, and reference materials to

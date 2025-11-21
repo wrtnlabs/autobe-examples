@@ -7,8 +7,6 @@ import { IPageIEconomicBoardContentFlag } from "../../../../../structures/IPageI
 import { IEconomicBoardContentFlag } from "../../../../../structures/IEconomicBoardContentFlag";
 
 /**
- * Retrieve all content flag configuration categories.
- *
  * Retrieve a comprehensive list of all content flag categories defined in the
  * economic_board_content_flags table.
  *
@@ -77,8 +75,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific content flag by its code identifier.
- *
  * Retrieve a specific content flag category by its machine-readable code
  * identifier from the economic_board_content_flags table.
  *

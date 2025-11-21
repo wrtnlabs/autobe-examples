@@ -13,9 +13,6 @@ import { ICommunityPlatformSubscriptionAuditLog } from "../../../../../api/struc
 )
 export class CommunityplatformUserCommunitysubscriptionsAuditlogsController {
   /**
-   * Retrieve audit log history for a specific community subscription from the
-   * community_platform_subscription_audit_logs table.
-   *
    * Search historical audit logs related to a specific community subscription,
    * such as subscribe or unsubscribe actions.
    *

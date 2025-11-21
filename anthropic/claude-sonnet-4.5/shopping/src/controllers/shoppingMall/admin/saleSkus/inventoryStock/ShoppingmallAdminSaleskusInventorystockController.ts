@@ -10,8 +10,6 @@ import { IShoppingMallInventoryStock } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/saleSkus/:saleSkuId/inventoryStock")
 export class ShoppingmallAdminSaleskusInventorystockController {
   /**
-   * Retrieve current inventory stock levels for a product SKU variant.
-   *
    * Retrieve the current inventory stock information for a specific product SKU
    * variant from the shopping_mall_inventory_stocks table. This operation
    * provides real-time visibility into stock levels, availability status, and

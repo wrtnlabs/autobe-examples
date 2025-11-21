@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunity } from "../../../../../../api/structures/IC
 @Controller("/communityPlatform/auth/member/password-reset/confirm")
 export class CommunityplatformAuthMemberPassword_resetConfirmController {
   /**
-   * Complete password reset for a member using a valid reset token and new
-   * password.
-   *
    * Complete the password reset workflow for a member account. This operation
    * validates a password reset token received via email and applies a new
    * password to the member's account.

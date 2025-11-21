@@ -8,8 +8,6 @@ export * as activity from "./activity/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve detailed information about a specific moderator by username.
- *
  * Fetch comprehensive profile information for a moderator identified by their
  * unique username. This operation returns detailed moderator account data
  * including registration information, moderation activity statistics, account
@@ -107,8 +105,6 @@ export namespace at {
 }
 
 /**
- * Update moderator account information and settings.
- *
  * Modify existing moderator account information including profile details,
  * preferences, and account settings. This operation allows moderators to update
  * their own profile information or enables administrators to modify moderator
@@ -222,8 +218,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a moderator account from the platform.
- *
  * Permanently remove a moderator account from the Reddit Community platform.
  * This operation performs a hard delete, completely removing the moderator
  * entity from the database along with all associated data.

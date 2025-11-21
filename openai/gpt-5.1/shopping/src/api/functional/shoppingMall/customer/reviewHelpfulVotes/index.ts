@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewHelpfulVote } from "../../../../structures/IShoppingMallReviewHelpfulVote";
 
 /**
- * Create a helpful vote record in shopping_mall_review_helpful_votes for a
- * given review and customer.
- *
  * Create a helpful vote entry for a review in the shopping mall platform.
  *
  * This operation creates a new row in the shopping_mall_review_helpful_votes
@@ -130,9 +127,6 @@ export namespace create {
 }
 
 /**
- * Update an existing shopping_mall_review_helpful_votes record identified by
- * helpfulVoteId.
- *
  * Update a previously created helpful vote entry for a review.
  *
  * This operation updates a row in the shopping_mall_review_helpful_votes table,
@@ -259,9 +253,6 @@ export namespace update {
 }
 
 /**
- * Remove a review helpful vote from the shopping_mall_review_helpful_votes
- * table by identifier.
- *
  * Delete a specific helpful vote record from the
  * `shopping_mall_review_helpful_votes` table by its unique identifier.
  *

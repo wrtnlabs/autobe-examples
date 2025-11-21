@@ -7,9 +7,6 @@ import { IShoppingMallOrderItemSeller } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallOrderItemSeller } from "../../../../../structures/IPageIShoppingMallOrderItemSeller";
 
 /**
- * Search and list seller mappings for order items from the
- * shopping_mall_order_item_sellers table for a given order code.
- *
  * Retrieve a filtered, paginated list of seller mappings for items belonging to
  * a specific order identified by its business order code.
  *

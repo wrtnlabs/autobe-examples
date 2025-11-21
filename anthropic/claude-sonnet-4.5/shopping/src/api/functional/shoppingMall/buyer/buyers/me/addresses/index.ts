@@ -114,9 +114,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve authenticated buyer's delivery addresses with filtering
- * and pagination.
- *
  * Retrieve a filtered, paginated list of delivery addresses from the
  * authenticated buyer's address book.
  *
@@ -230,8 +227,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific delivery address for the authenticated buyer.
- *
  * Retrieve detailed information about a specific delivery address belonging to
  * the authenticated buyer. This operation allows buyers to view the complete
  * details of one of their saved shipping addresses, which is essential for
@@ -327,8 +322,6 @@ export namespace at {
 }
 
 /**
- * Update a specific delivery address in the authenticated buyer's address book.
- *
  * Update an existing delivery address for the authenticated buyer. This
  * operation allows buyers to modify their saved shipping addresses by providing
  * updated address information including recipient details, contact information,
@@ -439,9 +432,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific delivery address from the authenticated buyer's address
- * book.
- *
  * Remove a delivery address from the authenticated buyer's saved address book.
  * This operation allows buyers to delete addresses they no longer need or use
  * for shipping purposes.
@@ -542,8 +532,6 @@ export namespace erase {
 }
 
 /**
- * Set a buyer's delivery address as their default address.
- *
  * Mark a specific delivery address as the default address for the authenticated
  * buyer. This operation updates the is_default flag for the specified address
  * and automatically unsets the default flag on all other addresses belonging to

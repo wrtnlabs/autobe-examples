@@ -7,8 +7,6 @@ import { IEconomicDiscussionAttachment } from "../../../../structures/IEconomicD
 import { IPageIEconomicDiscussionAttachment } from "../../../../structures/IPageIEconomicDiscussionAttachment";
 
 /**
- * Retrieve paginated list of file attachments for an article.
- *
  * This operation retrieves all file attachments associated with a specific
  * economic discussion article. It returns a paginated list of attachment
  * metadata including filename, file size, MIME type, upload timestamp, and

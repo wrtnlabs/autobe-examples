@@ -10,9 +10,6 @@ import { IDiscussionBoardMemberuserRestriction } from "../../../../../api/struct
 @Controller("/discussionBoard/memberUser/memberUsers/:memberUserId/restriction")
 export class DiscussionboardMemberuserMemberusersRestrictionController {
   /**
-   * Get the current restriction status for a member user from
-   * discussion_board_memberuser_restrictions.
-   *
    * Retrieve the current restriction state for a single member user as recorded
    * in the discussion_board_memberuser_restrictions table.
    *

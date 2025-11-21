@@ -8,8 +8,6 @@ import { IMvTodoAppActiveConfiguration } from "../../../../api/structures/IMvTod
 @Controller("/todoApp/configurations/:configKey/values/:environment")
 export class TodoappConfigurationsValuesController {
   /**
-   * Retrieve active configuration value for specific environment.
-   *
    * This operation retrieves the currently active configuration value for a
    * specified deployment environment by querying the materialized view
    * mv_todo_app_active_configurations. The view combines configuration

@@ -11,8 +11,6 @@ import { IDiscussionBoardContentReport } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/member/contentReports")
 export class DiscussionboardMemberContentreportsController {
   /**
-   * Create a new content report for moderation.
-   *
    * This operation allows authenticated members to submit content reports for
    * moderation on the discussion board platform. Members can report various
    * types of content including posts, comments, and member profiles by
@@ -62,8 +60,6 @@ export class DiscussionboardMemberContentreportsController {
   }
 
   /**
-   * Update an existing content report.
-   *
    * This operation allows authorized members to update existing content reports
    * during the moderation workflow. Only the original report creator can modify
    * report details and additional information, with proper ownership validation

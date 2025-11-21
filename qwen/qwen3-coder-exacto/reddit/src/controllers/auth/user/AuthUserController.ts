@@ -12,9 +12,6 @@ import { ICommunityForumCommunityUser } from "../../../api/structures/ICommunity
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Register a new user account with email, username, and password in the
-   * community_forum_users table.
-   *
    * This endpoint enables new users to register for the community forum
    * platform. It requires three key pieces of information: email address,
    * username, and password. The email and username must be unique across all
@@ -70,9 +67,6 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticate user credentials and generate JWT tokens for the
-   * community_forum_users table.
-   *
    * This endpoint allows existing users to authenticate with the community
    * forum platform by providing their email and password credentials. The
    * system verifies these credentials against the community_forum_users table,
@@ -127,9 +121,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refresh JWT tokens for authenticated users using the
-   * community_forum_user_sessions table.
-   *
    * This endpoint enables authenticated users to extend their session by
    * refreshing their access tokens using a valid refresh token. The operation
    * validates the refresh token and, if valid, generates new access and refresh

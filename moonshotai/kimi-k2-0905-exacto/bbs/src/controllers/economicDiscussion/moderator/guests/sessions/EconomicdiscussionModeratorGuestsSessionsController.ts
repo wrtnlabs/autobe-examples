@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../../decorators/payload/ModeratorPay
 @Controller("/economicDiscussion/moderator/guests/:guestId/sessions/:sessionId")
 export class EconomicdiscussionModeratorGuestsSessionsController {
   /**
-   * Delete a guest session record permanently.
-   *
    * Permanently removes a guest session record from the system. This operation
    * is typically called when a guest's session expires or when system cleanup
    * processes run to maintain database hygiene. Guest sessions track browsing

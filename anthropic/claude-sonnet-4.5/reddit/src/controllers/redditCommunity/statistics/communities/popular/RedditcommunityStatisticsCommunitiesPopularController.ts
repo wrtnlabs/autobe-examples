@@ -8,9 +8,6 @@ import { IRedditCommunityCommunityPopularStatistics } from "../../../../../api/s
 @Controller("/redditCommunity/statistics/communities/popular")
 export class RedditcommunityStatisticsCommunitiesPopularController {
   /**
-   * Retrieve statistical data about the most popular communities on the
-   * platform.
-   *
    * Retrieve aggregated statistical data about the most popular communities on
    * the Reddit-like platform. This operation provides key metrics that help
    * users discover trending and highly-engaged communities.

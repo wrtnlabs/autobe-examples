@@ -8,8 +8,6 @@ import { IPageIShoppingMallSaleSku } from "../../../../structures/IPageIShopping
 export * as images from "./images/index";
 
 /**
- * Search and retrieve a filtered, paginated list of product SKUs for a sale.
- *
  * Retrieve a comprehensive list of SKU variants for a specific product sale
  * with advanced filtering, searching, sorting, and pagination capabilities.
  * This operation enables sellers and buyers to explore all available product
@@ -131,9 +129,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific SKU variant within a product
- * sale.
- *
  * Retrieve comprehensive details about a specific Stock Keeping Unit (SKU)
  * variant identified by its unique business code within a product sale listing.
  * This operation provides complete information about the SKU's configuration,

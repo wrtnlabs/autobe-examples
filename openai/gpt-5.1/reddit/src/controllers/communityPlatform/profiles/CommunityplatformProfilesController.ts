@@ -8,9 +8,6 @@ import { ICommunityPlatformUserProfile } from "../../../api/structures/ICommunit
 @Controller("/communityPlatform/profiles")
 export class CommunityplatformProfilesController {
   /**
-   * Search and paginate community user profiles from
-   * community_platform_user_profiles.
-   *
    * Search and list community user profiles using the
    * community_platform_user_profiles table as the primary data source.
    *
@@ -67,9 +64,6 @@ export class CommunityplatformProfilesController {
   }
 
   /**
-   * Get a single community_platform_user_profiles record by its unique
-   * handle.
-   *
    * Retrieve a single public-facing user profile from the
    * community_platform_user_profiles table by using the profile's public
    * handle as the unique identifier. This operation is primarily used

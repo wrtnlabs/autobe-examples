@@ -9,10 +9,6 @@ import { IShoppingMallCancellationRequestItem } from "../../../../../api/structu
 )
 export class ShoppingmallCustomerCancellationrequestsItemsController {
   /**
-   * Create cancellation request items in the
-   * shopping_mall_cancellation_request_items table for an existing
-   * cancellation request.
-   *
    * Create one or more cancellation request item records under an existing
    * cancellation request in the `shopping_mall_cancellation_request_items`
    * table.
@@ -85,10 +81,6 @@ export class ShoppingmallCustomerCancellationrequestsItemsController {
   }
 
   /**
-   * Update a cancellation request item in the
-   * shopping_mall_cancellation_request_items table for a given cancellation
-   * request.
-   *
    * Update an existing cancellation request item in the
    * `shopping_mall_cancellation_request_items` table that belongs to a
    * specific parent cancellation request.

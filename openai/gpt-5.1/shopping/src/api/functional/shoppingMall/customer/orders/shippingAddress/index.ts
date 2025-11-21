@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderShippingAddress } from "../../../../../structures/IShoppingMallOrderShippingAddress";
 
 /**
- * Create shipping address snapshot for an order in shopping_mall_orders.
- *
  * Create or attach a shipping address snapshot for the specified order,
  * identified by its business orderCode.
  *
@@ -143,8 +141,6 @@ export namespace create {
 }
 
 /**
- * Update shipping address snapshot for an order in shopping_mall_orders.
- *
  * Update the shipping address snapshot currently associated with the specified
  * order, identified by its business orderCode.
  *

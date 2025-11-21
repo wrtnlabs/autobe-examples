@@ -8,9 +8,6 @@ import { IShoppingMallReviewVersion } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/reviewVersions")
 export class ShoppingmallAdminReviewversionsController {
   /**
-   * Search and paginate review version snapshots across the
-   * shopping_mall_review_versions table for admins.
-   *
    * Retrieve a paginated and filterable list of review version snapshot
    * records from the shopping_mall_review_versions table.
    *

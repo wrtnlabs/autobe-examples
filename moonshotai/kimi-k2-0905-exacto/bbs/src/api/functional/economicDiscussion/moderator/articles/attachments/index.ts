@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionAttachment } from "../../../../../structures/IEconomicDiscussionAttachment";
 
 /**
- * Upload and attach files to an economic discussion article.
- *
  * This operation enables members and moderators to upload file attachments to
  * economic discussion articles. The system enforces strict file type and size
  * restrictions while providing immediate upload confirmation.
@@ -118,8 +116,6 @@ export namespace create {
 }
 
 /**
- * Get file attachment metadata for an economic discussion article.
- *
  * Retrieve detailed metadata for a specific file attachment associated with an
  * economic discussion article. This operation provides access to attachment
  * information including filename, file size, MIME type, upload timestamp, and
@@ -221,8 +217,6 @@ export namespace at {
 }
 
 /**
- * Update file attachment metadata for an economic discussion article.
- *
  * Update metadata for an existing file attachment associated with an economic
  * discussion article. This operation allows authorized users to modify
  * attachment properties while preserving the original file content.\n\nThe
@@ -332,8 +326,6 @@ export namespace update {
 }
 
 /**
- * Delete a file attachment from an article.
- *
  * Remove a file attachment from an economic/political discussion article. This
  * operation allows article owners to delete their own attachments, or
  * moderators to remove inappropriate content.

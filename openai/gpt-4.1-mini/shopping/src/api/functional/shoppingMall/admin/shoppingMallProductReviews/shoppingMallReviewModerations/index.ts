@@ -7,8 +7,6 @@ import { IShoppingMallReviewModeration } from "../../../../../structures/IShoppi
 import { IPageIShoppingMallReviewModeration } from "../../../../../structures/IPageIShoppingMallReviewModeration";
 
 /**
- * Create a new moderation record for a product review.
- *
  * Create a new moderation entry for a given product review.
  *
  * Administrators use this operation to document moderation actions, such as
@@ -115,8 +113,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve moderation actions for a product review.
- *
  * Retrieve a list of moderation records for a specified product review.
  *
  * Use this operation to audit content moderation actions performed by
@@ -225,8 +221,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific moderation record for a product review.
- *
  * Retrieve detailed information for a single moderation record related to a
  * product review.
  *
@@ -327,8 +321,6 @@ export namespace at {
 }
 
 /**
- * Update a specific review moderation linked to a product review.
- *
  * Update a specific review moderation record related to a product review in the
  * shopping mall. This operation enables administrators to change moderation
  * details, such as approval status, notes, and flags.
@@ -436,8 +428,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific review moderation linked to a product review.
- *
  * Permanently delete a specific review moderation record associated with a
  * product review in the shopping mall platform. Only users with administrative
  * privileges ("admin" role) can perform this irreversible action.

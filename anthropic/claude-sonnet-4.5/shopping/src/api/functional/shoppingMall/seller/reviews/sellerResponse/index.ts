@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewSellerResponse } from "../../../../../structures/IShoppingMallReviewSellerResponse";
 
 /**
- * Create a seller's response to a specific product review.
- *
  * Create a new seller response to address a specific product review in the
  * shopping marketplace. This operation allows authenticated sellers to engage
  * with customer feedback by posting thoughtful, professional responses to
@@ -124,8 +122,6 @@ export namespace create {
 }
 
 /**
- * Create or update seller response to a product review.
- *
  * Create or update a seller's response to a customer review on their product.
  * This operation enables sellers to engage with buyers who have provided
  * feedback by posting official responses to reviews.
@@ -230,8 +226,6 @@ export namespace update {
 }
 
 /**
- * Delete seller response to a product review.
- *
  * Permanently remove a seller's response to a customer review. This operation
  * enables sellers to delete their previously posted responses if they wish to
  * retract their comments or if the response is no longer relevant.

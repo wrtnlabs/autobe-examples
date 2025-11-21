@@ -3,8 +3,6 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
 /**
- * Request email verification token for moderator.
- *
  * Generates and sends an email verification token to the moderator's registered
  * email address for email ownership confirmation.
  *

@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunitySettings } from "../../../../api/structures/
 @Controller("/communityPlatform/communities/:communityId/settings")
 export class CommunityplatformCommunitiesSettingsController {
   /**
-   * Retrieve community settings configuration from
-   * community_platform_community_settings.
-   *
    * Fetch the extended configuration options for a specific community,
    * including moderation preferences, accessibility controls, and display
    * settings.
@@ -66,9 +63,6 @@ export class CommunityplatformCommunitiesSettingsController {
   }
 
   /**
-   * Update community settings configuration in
-   * community_platform_community_settings.
-   *
    * Modify the extended configuration options for a specific community,
    * including moderation preferences, accessibility controls, and display
    * settings.

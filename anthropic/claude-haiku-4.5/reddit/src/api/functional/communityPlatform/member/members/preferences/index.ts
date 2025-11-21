@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberPreference } from "../../../../../structures/ICommunityPlatformMemberPreference";
 
 /**
- * Retrieve member preferences and settings from
- * community_platform_member_preferences.
- *
  * This operation fetches the complete preference record for an authenticated
  * member, including all notification settings, display preferences, privacy
  * controls, and content filtering options stored in the
@@ -119,9 +116,6 @@ export namespace at {
 }
 
 /**
- * Update member preferences and settings in
- * community_platform_member_preferences.
- *
  * This operation updates preference settings for an authenticated member,
  * allowing modification of notification preferences, display settings, privacy
  * controls, and content filtering options stored in the

@@ -9,9 +9,6 @@ import { IShoppingMallProductAttributeValue } from "../../../../../../api/struct
 )
 export class ShoppingmallSellerProductsAttributesValuesController {
   /**
-   * Create a new value row in the shopping_mall_product_attribute_values
-   * table for a given product attribute.
-   *
    * Register a new allowed value for a product-level attribute defined for a
    * specific product in the shopping mall catalog.
    *
@@ -78,9 +75,6 @@ export class ShoppingmallSellerProductsAttributesValuesController {
   }
 
   /**
-   * Update an existing row in the shopping_mall_product_attribute_values
-   * table for a specific product attribute value.
-   *
    * Modify an existing product attribute value for a given product attribute
    * in the shopping mall catalog.
    *
@@ -148,9 +142,6 @@ export class ShoppingmallSellerProductsAttributesValuesController {
   }
 
   /**
-   * Delete a specific shopping_mall_product_attribute_values row for a
-   * product attribute of a product.
-   *
    * Delete a single product attribute value belonging to a specific product
    * attribute of a product in the catalog.
    *

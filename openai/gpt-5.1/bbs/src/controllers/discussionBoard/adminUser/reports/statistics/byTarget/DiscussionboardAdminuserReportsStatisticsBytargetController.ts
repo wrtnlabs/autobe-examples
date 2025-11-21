@@ -10,9 +10,6 @@ import { IDiscussionBoardReportStatisticsByTarget } from "../../../../../../api/
 @Controller("/discussionBoard/adminUser/reports/statistics/byTarget")
 export class DiscussionboardAdminuserReportsStatisticsBytargetController {
   /**
-   * Get aggregated report statistics by target_type from
-   * discussion_board_reports.
-   *
    * Get report statistics grouped by target type using aggregated data from the
    * discussion_board_reports table.
    *

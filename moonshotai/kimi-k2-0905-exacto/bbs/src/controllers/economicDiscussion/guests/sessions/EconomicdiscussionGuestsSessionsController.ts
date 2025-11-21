@@ -12,8 +12,6 @@ import { IEconomicDiscussionGuestSession } from "../../../../api/structures/IEco
 @Controller("/economicDiscussion/guests/:guestId/sessions")
 export class EconomicdiscussionGuestsSessionsController {
   /**
-   * Create new guest browsing session for activity tracking.
-   *
    * Create a new guest session for tracking browsing activity and download
    * limits. This operation establishes a session record that enables the system
    * to monitor guest user behavior, enforce download limits, and provide
@@ -65,8 +63,6 @@ export class EconomicdiscussionGuestsSessionsController {
   }
 
   /**
-   * Get guest session details and activity information.
-   *
    * Retrieve detailed information about a specific guest browsing session. This
    * operation returns comprehensive session data including creation timestamp,
    * expiration time, browsing context, and activity metrics for the specified
@@ -115,8 +111,6 @@ export class EconomicdiscussionGuestsSessionsController {
   }
 
   /**
-   * Update guest session activity tracking data.
-   *
    * Update an existing guest session to refresh activity tracking data for
    * unregistered users browsing the economic discussion board. This operation
    * allows the system to maintain current session information including the

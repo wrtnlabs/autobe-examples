@@ -9,9 +9,6 @@ import { ICommunityPlatformCommentEditHistory } from "../../../../api/structures
 )
 export class CommunityplatformCommentsEdithistoriesController {
   /**
-   * Get a specific comment edit history record from
-   * community_platform_comment_edit_histories.
-   *
    * Retrieve the details of a specific comment edit history entry associated
    * with a given comment.
    *

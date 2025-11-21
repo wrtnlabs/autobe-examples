@@ -5,8 +5,6 @@ import typia from "typia";
 @Controller("/communityPlatform/moderator/auth/moderator/sessions/logout-all")
 export class CommunityplatformModeratorAuthModeratorSessionsLogout_allController {
   /**
-   * Terminate all moderator sessions across all devices.
-   *
    * This operation allows an authenticated moderator to immediately terminate
    * all of their active sessions across all devices. Upon invocation, every
    * session associated with the moderator's account is invalidated, requiring

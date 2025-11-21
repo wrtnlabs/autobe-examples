@@ -7,9 +7,6 @@ import { IDiscussionBoardUserSuspension } from "../../../../../structures/IDiscu
 import { IPageIDiscussionBoardUserSuspension } from "../../../../../structures/IPageIDiscussionBoardUserSuspension";
 
 /**
- * Search and retrieve a filtered, paginated list of contributor account
- * suspensions and restrictions.
- *
  * Retrieve a comprehensive list of contributor account suspension and
  * restriction records with advanced filtering and search capabilities. This
  * operation provides moderators visibility into all enforcement actions taken

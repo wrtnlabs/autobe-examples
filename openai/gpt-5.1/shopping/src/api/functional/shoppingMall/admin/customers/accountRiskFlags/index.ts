@@ -7,10 +7,6 @@ import { IShoppingMallAccountRiskFlag } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallAccountRiskFlag } from "../../../../../structures/IPageIShoppingMallAccountRiskFlag";
 
 /**
- * Search and retrieve a paginated list of risk flags associated with a specific
- * customer via shopping_mall_account_risk_flags and
- * shopping_mall_account_risk_flags_of_customers.
- *
  * Retrieve a paginated, filterable list of account risk flags attached to a
  * specific customer, using the shopping_mall_account_risk_flags and
  * shopping_mall_account_risk_flags_of_customers tables as the primary data

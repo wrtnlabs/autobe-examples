@@ -7,9 +7,6 @@ import { IShoppingMallSellerFeeAnalytics } from "../../../../../structures/IShop
 import { IPageIShoppingMallSellerFeeAnalytics } from "../../../../../structures/IPageIShoppingMallSellerFeeAnalytics";
 
 /**
- * Search and analyze ShoppingMall seller fee and commission metrics with
- * flexible filters and aggregations.
- *
  * Search and analyze seller fee and commission metrics across the ShoppingMall
  * financial tables with flexible filters and aggregation options.
  *

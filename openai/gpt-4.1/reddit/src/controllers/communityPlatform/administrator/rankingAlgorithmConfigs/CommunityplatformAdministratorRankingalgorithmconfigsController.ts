@@ -15,9 +15,6 @@ import { IPageICommunityPlatformRankingAlgorithmConfigs } from "../../../../api/
 @Controller("/communityPlatform/administrator/rankingAlgorithmConfigs")
 export class CommunityplatformAdministratorRankingalgorithmconfigsController {
   /**
-   * Create new community_platform_ranking_algorithm_configs configuration
-   * record.
-   *
    * Create a new configuration for a community platform ranking algorithm.
    *
    * This operation allows administrators to register a new configuration for
@@ -65,9 +62,6 @@ export class CommunityplatformAdministratorRankingalgorithmconfigsController {
   }
 
   /**
-   * Search and retrieve a paginated list of ranking algorithm configurations
-   * (community_platform_ranking_algorithm_configs table).
-   *
    * Retrieve a paginated, filterable list of all ranking algorithm
    * configurations defined in the system. This API endpoint allows
    * administrators and relevant platform operators to search, sort, and audit
@@ -114,9 +108,6 @@ export class CommunityplatformAdministratorRankingalgorithmconfigsController {
   }
 
   /**
-   * Retrieve full details for a specific ranking algorithm configuration
-   * (community_platform_ranking_algorithm_configs table).
-   *
    * Retrieve all configuration details and metadata for a specific content
    * ranking algorithm version. Administrators can use this endpoint to inspect
    * or audit exact ranking formula parameters used in the platform's ranking
@@ -166,9 +157,6 @@ export class CommunityplatformAdministratorRankingalgorithmconfigsController {
   }
 
   /**
-   * Update configuration in community_platform_ranking_algorithm_configs by
-   * algorithm name and version.
-   *
    * Update an existing platform ranking algorithm configuration identified by
    * algorithm name and version.
    *
@@ -224,10 +212,6 @@ export class CommunityplatformAdministratorRankingalgorithmconfigsController {
   }
 
   /**
-   * Permanently delete a ranking algorithm configuration (composite key:
-   * algorithm_name + version) from
-   * community_platform_ranking_algorithm_configs.
-   *
    * Remove a ranking algorithm configuration by specifying both the algorithm
    * name and its precise version string. This operation is intended for rare
    * cases where outdated or erroneous configuration records must be purged

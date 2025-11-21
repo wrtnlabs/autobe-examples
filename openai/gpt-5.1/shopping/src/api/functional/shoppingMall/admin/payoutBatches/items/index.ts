@@ -7,9 +7,6 @@ import { IShoppingMallSellerPayoutItem } from "../../../../../structures/IShoppi
 import { IPageIShoppingMallSellerPayoutItem } from "../../../../../structures/IPageIShoppingMallSellerPayoutItem";
 
 /**
- * Create a new payout item within a specific payout batch in
- * `shopping_mall_seller_payout_items`.
- *
  * Create a new payout item under a specific seller payout batch identified by
  * its business code.
  *
@@ -146,9 +143,6 @@ export namespace create {
 }
 
 /**
- * Search payout items within a specific payout batch in
- * `shopping_mall_seller_payout_items`.
- *
  * Retrieve a filtered and paginated list of payout items for a specific seller
  * payout batch identified by its business code.
  *
@@ -283,9 +277,6 @@ export namespace index {
 }
 
 /**
- * Get a specific seller payout item from shopping_mall_seller_payout_items
- * within a payout batch identified by batchCode.
- *
  * Retrieve detailed information for a single seller payout item within a
  * specific payout batch.
  *
@@ -412,9 +403,6 @@ export namespace at {
 }
 
 /**
- * Update a seller payout item in shopping_mall_seller_payout_items for a
- * specific payout batch identified by batchCode.
- *
  * Update an existing seller payout item record within a payout batch using
  * administrative finance tooling.
  *
@@ -557,9 +545,6 @@ export namespace update {
 }
 
 /**
- * Delete a seller payout item from a payout batch in
- * shopping_mall_seller_payout_items.
- *
  * Delete a single seller payout item from a specific payout batch before or
  * during controlled payout preparation.
  *

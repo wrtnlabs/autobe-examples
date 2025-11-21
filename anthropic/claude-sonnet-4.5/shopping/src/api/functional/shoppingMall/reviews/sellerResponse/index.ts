@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewSellerResponse } from "../../../../structures/IShoppingMallReviewSellerResponse";
 
 /**
- * Retrieve the seller's response to a specific product review.
- *
  * Retrieve the seller's response associated with a specific product review from
  * the shopping marketplace. This operation allows users to view how sellers
  * have addressed customer feedback and concerns expressed in product reviews.

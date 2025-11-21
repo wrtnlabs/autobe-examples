@@ -10,8 +10,6 @@ import { IDiscussionBoardModerator } from "../../../../../api/structures/IDiscus
 @Controller("/auth/moderator/password/change")
 export class AuthModeratorPasswordChangeController {
   /**
-   * Change moderator password with current password validation.
-   *
    * Enables authenticated moderators to change their password by providing
    * their current password and new password.
    *

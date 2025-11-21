@@ -7,9 +7,6 @@ import { IShoppingMallWishlistItem } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallWishlistItem } from "../../../../../structures/IPageIShoppingMallWishlistItem";
 
 /**
- * Create a new wishlist item record in the shopping_mall_wishlist_items table
- * for the specified wishlist.
- *
  * Create a new item within the specified wishlist so that customers can save
  * products or SKUs for later consideration.
  *
@@ -140,9 +137,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate items for a specific wishlist using
- * shopping_mall_wishlist_items.
- *
  * Retrieve a paginated and filterable list of items belonging to a specific
  * wishlist.
  *
@@ -273,9 +267,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single wishlist item from the
- * shopping_mall_wishlist_items table.
- *
  * Retrieve a single wishlist item associated with a particular wishlist so that
  * clients can display its full detail view.
  *
@@ -402,9 +393,6 @@ export namespace at {
 }
 
 /**
- * Update a wishlist item in the shopping_mall_wishlist_items table for a given
- * wishlist.
- *
  * Update a specific wishlist item record within a given wishlist based on the
  * `shopping_mall_wishlist_items` Prisma table.
  *
@@ -550,9 +538,6 @@ export namespace update {
 }
 
 /**
- * Erase a wishlist item from the shopping_mall_wishlist_items table for a given
- * wishlist.
- *
  * Erase a specific wishlist item associated with a given wishlist, based on the
  * `shopping_mall_wishlist_items` Prisma table.
  *

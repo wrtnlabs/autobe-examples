@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete an image attachment from a discussion board comment.
- *
  * Remove an image file attachment from a specific comment within an article
  * discussion. This operation enables contributors to manage their own
  * attachments by removing unwanted or erroneous files they have uploaded to

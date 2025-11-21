@@ -7,9 +7,6 @@ import { ICommunityPlatformUserReport } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/memberUser/userReports")
 export class CommunityplatformMemberuserUserreportsController {
   /**
-   * Create a new user report row in the community_platform_user_reports
-   * table.
-   *
    * Create a new user-level report capturing a complaint about a member
    * account’s behavior.
    *

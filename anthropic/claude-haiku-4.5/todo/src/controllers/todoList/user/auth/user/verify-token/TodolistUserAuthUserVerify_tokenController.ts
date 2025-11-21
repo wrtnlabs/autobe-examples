@@ -10,8 +10,6 @@ import { ITodoListUser } from "../../../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/auth/user/verify-token")
 export class TodolistUserAuthUserVerify_tokenController {
   /**
-   * Verify the validity of an authenticated user's JWT token.
-   *
    * This operation validates the authenticity and current state of a user's JWT
    * authentication token. It performs comprehensive verification including
    * token signature validation, expiration time check, revocation status

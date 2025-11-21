@@ -7,8 +7,6 @@ import { IShoppingMallInventoryReservation } from "../../../../structures/IShopp
 import { IPageIShoppingMallInventoryReservation } from "../../../../structures/IPageIShoppingMallInventoryReservation";
 
 /**
- * Retrieve paginated list of active inventory reservations.
- *
  * Retrieve a filtered and paginated list of inventory reservations representing
  * temporary inventory holds during the checkout process. This operation
  * provides critical visibility into reserved inventory quantities that are
@@ -120,8 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific inventory reservation.
- *
  * Retrieve complete details of a specific inventory reservation record from the
  * system. This operation provides comprehensive information about a temporary
  * inventory hold that was created during the checkout process to prevent

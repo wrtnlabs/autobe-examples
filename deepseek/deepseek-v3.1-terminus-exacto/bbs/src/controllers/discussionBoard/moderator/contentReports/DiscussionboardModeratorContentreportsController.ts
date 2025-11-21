@@ -13,8 +13,6 @@ import { IDiscussionBoardContentReport } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/moderator/contentReports")
 export class DiscussionboardModeratorContentreportsController {
   /**
-   * Search and retrieve a filtered, paginated list of content reports.
-   *
    * This operation provides comprehensive search capabilities for content
    * reports submitted on the discussion board platform. It enables moderators
    * and administrators to filter reports based on various criteria including
@@ -65,8 +63,6 @@ export class DiscussionboardModeratorContentreportsController {
   }
 
   /**
-   * Retrieve detailed information for a specific content report.
-   *
    * This operation provides complete details for a single content report
    * identified by its unique report ID. It returns all relevant information
    * from the main content report table along with actor-specific details from
@@ -113,8 +109,6 @@ export class DiscussionboardModeratorContentreportsController {
   }
 
   /**
-   * Permanently delete a specific content report from the discussion board.
-   *
    * This operation removes a content report record from the discussion board
    * system using a hard delete approach. The report is identified by its unique
    * UUID identifier and is permanently removed from the database.

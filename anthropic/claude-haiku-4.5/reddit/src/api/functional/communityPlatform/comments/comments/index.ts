@@ -7,9 +7,6 @@ import { ICommunityPlatformComment } from "../../../../structures/ICommunityPlat
 import { IPageICommunityPlatformComment } from "../../../../structures/IPageICommunityPlatformComment";
 
 /**
- * Search and retrieve nested comments (replies) to a specific comment with
- * pagination and filtering.
- *
  * Retrieve a paginated, filtered list of comments that are direct replies to a
  * specific parent comment, supporting advanced search and sorting capabilities.
  * This operation fetches all nested comments where the parent_comment_id

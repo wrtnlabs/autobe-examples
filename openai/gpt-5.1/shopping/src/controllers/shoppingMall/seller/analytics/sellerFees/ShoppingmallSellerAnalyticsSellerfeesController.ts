@@ -8,9 +8,6 @@ import { IShoppingMallSellerFeeAnalytics } from "../../../../../api/structures/I
 @Controller("/shoppingMall/seller/analytics/sellerFees")
 export class ShoppingmallSellerAnalyticsSellerfeesController {
   /**
-   * Search and analyze ShoppingMall seller fee and commission metrics with
-   * flexible filters and aggregations.
-   *
    * Search and analyze seller fee and commission metrics across the
    * ShoppingMall financial tables with flexible filters and aggregation
    * options.

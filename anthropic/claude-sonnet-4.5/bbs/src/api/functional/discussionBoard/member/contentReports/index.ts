@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardContentReport } from "../../../../structures/IDiscussionBoardContentReport";
 
 /**
- * Retrieve detailed information about a specific content report by ID.
- *
  * Retrieve detailed information about a specific content report submitted by a
  * member flagging an article for policy violations.
  *
@@ -105,8 +103,6 @@ export namespace at {
 }
 
 /**
- * Submit a new content report flagging an article for policy violations.
- *
  * Create a new content report flagging an article for policy violations or
  * inappropriate content.
  *

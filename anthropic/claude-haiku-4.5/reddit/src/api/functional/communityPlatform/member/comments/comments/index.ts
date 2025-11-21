@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformComment } from "../../../../../structures/ICommunityPlatformComment";
 
 /**
- * Create a nested reply comment on an existing comment.
- *
  * Create a new nested comment (reply) attached to an existing parent comment
  * within the community platform. This operation enables members to reply to
  * comments and create threaded conversation hierarchies.

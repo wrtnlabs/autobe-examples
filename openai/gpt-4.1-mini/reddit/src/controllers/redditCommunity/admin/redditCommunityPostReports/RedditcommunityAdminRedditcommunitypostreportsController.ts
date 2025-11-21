@@ -13,8 +13,6 @@ import { IRedditCommunityPostReport } from "../../../../api/structures/IRedditCo
 @Controller("/redditCommunity/admin/redditCommunityPostReports")
 export class RedditcommunityAdminRedditcommunitypostreportsController {
   /**
-   * Search and retrieve paginated list of post reports.
-   *
    * Retrieve a paginated list of post reports submitted by users on posts
    * within the redditCommunity platform.
    *
@@ -53,8 +51,6 @@ export class RedditcommunityAdminRedditcommunitypostreportsController {
   }
 
   /**
-   * Retrieve detailed information for a specific post report by ID.
-   *
    * Fetch detailed data for a single post report submitted by a user on a post
    * within the redditCommunity platform.
    *
@@ -90,8 +86,6 @@ export class RedditcommunityAdminRedditcommunitypostreportsController {
   }
 
   /**
-   * Delete a specific reddit community post report.
-   *
    * This operation permanently deletes a reddit community post report
    * identified by the postReportId path parameter.
    *

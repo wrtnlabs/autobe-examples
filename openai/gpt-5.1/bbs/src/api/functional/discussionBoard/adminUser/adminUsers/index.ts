@@ -8,9 +8,6 @@ import { IPageIDiscussionBoardAdminuser } from "../../../../structures/IPageIDis
 export * as sessions from "./sessions/index";
 
 /**
- * Search and paginate administrator accounts from the
- * discussion_board_adminusers table.
- *
  * Retrieve a paginated, searchable list of administrator user accounts from the
  * `discussion_board_adminusers` table.
  *
@@ -121,9 +118,6 @@ export namespace index {
 }
 
 /**
- * Get a single admin profile from the discussion_board_adminusers table by its
- * identifier.
- *
  * Retrieve a single administrator user profile by its unique identifier from
  * the discussion_board_adminusers table.
  *
@@ -231,8 +225,6 @@ export namespace at {
 }
 
 /**
- * Update an admin profile record in the discussion_board_adminusers table.
- *
  * Update an existing administrator user profile stored in the
  * discussion_board_adminusers table.
  *
@@ -355,9 +347,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a single administrator account from the
- * discussion_board_adminusers table by identifier.
- *
  * Delete a single administrator user record from the
  * discussion_board_adminusers table using its unique identifier.
  *

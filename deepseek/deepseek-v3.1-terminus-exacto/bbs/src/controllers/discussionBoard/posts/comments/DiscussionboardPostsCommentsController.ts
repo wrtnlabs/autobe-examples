@@ -8,9 +8,6 @@ import { IDiscussionBoardComment } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/posts/:postId/comments/:commentId")
 export class DiscussionboardPostsCommentsController {
   /**
-   * Retrieve a specific comment from a discussion board post by its unique
-   * identifier.
-   *
    * This operation retrieves detailed information about a specific comment
    * within a discussion board post. The operation requires both the post
    * identifier and comment identifier to ensure the comment belongs to the

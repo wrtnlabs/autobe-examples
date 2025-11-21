@@ -9,8 +9,6 @@ import { IEconomicBoardSearchMetadata } from "../../../api/structures/IEconomicB
 @Controller("/economicBoard/search")
 export class EconomicboardController {
   /**
-   * Search for posts using full-text search with topic filtering.
-   *
    * Perform a full-text search across economic board posts with advanced
    * filtering capabilities.
    *

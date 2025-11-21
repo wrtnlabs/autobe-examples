@@ -7,9 +7,6 @@ import { IShoppingMallReviewHelpfulVote } from "../../../../../structures/IShopp
 import { IPageIShoppingMallReviewHelpfulVote } from "../../../../../structures/IPageIShoppingMallReviewHelpfulVote";
 
 /**
- * Create a shopping_mall_review_helpful_votes entry for a customer’s
- * helpfulness vote on a review.
- *
  * Create a new helpfulness vote by a customer for a specific review.
  *
  * This operation creates a record in the shopping_mall_review_helpful_votes
@@ -142,9 +139,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of helpful vote records from
- * shopping_mall_review_helpful_votes for a specific customer.
- *
  * Retrieve a paginated and filterable list of helpful vote records created by a
  * specific customer in the shoppingMall platform.
  *
@@ -279,9 +273,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information from shopping_mall_review_helpful_votes for a
- * specific helpful vote of a customer.
- *
  * Retrieve the full detailed representation of a single helpful vote record
  * associated with a given customer.
  *
@@ -400,9 +391,6 @@ export namespace at {
 }
 
 /**
- * Update a shopping_mall_review_helpful_votes entry representing a customer’s
- * helpfulness vote on a review.
- *
  * Update an existing helpfulness vote by a customer for a review.
  *
  * This operation targets a single row of the shopping_mall_review_helpful_votes
@@ -544,9 +532,6 @@ export namespace update {
 }
 
 /**
- * Delete a review helpful vote record from the
- * shopping_mall_review_helpful_votes table for a specific customer.
- *
  * Delete a single review helpful vote record associated with a specific
  * customer.
  *

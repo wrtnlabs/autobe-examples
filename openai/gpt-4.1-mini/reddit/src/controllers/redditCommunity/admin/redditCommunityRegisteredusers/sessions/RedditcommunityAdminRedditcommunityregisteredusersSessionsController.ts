@@ -13,8 +13,6 @@ import { IRedditCommunityRegistereduserSession } from "../../../../../api/struct
 )
 export class RedditcommunityAdminRedditcommunityregisteredusersSessionsController {
   /**
-   * Search login sessions of a registered user.
-   *
    * Retrieve a paginated, filtered list of login sessions belonging to the
    * specified user.
    *

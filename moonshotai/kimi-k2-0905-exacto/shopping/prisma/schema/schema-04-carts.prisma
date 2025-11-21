@@ -1,0 +1,173 @@
+/// Shopping cart management for temporary item storage during browsing and
+/// pre-purchase phases.
+///
+/// Tracks customer shopping sessions with comprehensive state management for
+/// conversion tracking and Analytics. Manages cart lifecycle through status
+/// tracking and expiration handling. Supports polymorphic ownership for
+/// guests, authenticated customers, and system scenarios.
+///
+/// The cart system enables seamless multi-seller shopping experiences by
+/// coordinating product selections from different vendors while preserving
+/// cart integrity across sessions. Maintains cart-level configuration
+/// preferences and supports seamless transition to order processing systems.
+///
+/// Carts serve as temporary aggregation points for customer intent,
+/// supporting wishlist conversion, promotional application, and shipping
+/// coordination across multiple marketplace sellers.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Total number of individual items across all cart lines.
+  total_item_count Int
+  
+  /// Total number of distinct products in cart.
+  total_product_count Int
+  
+  /// Cart lifecycle status: active, abandoned, converted.
+  status String
+  
+  /// Whether cart is being processed for checkout.
+  is_locked_for_checkout Boolean
+  
+  /// When cart converted to order.
+  converted_at DateTime?
+  
+  /// When cart will expire if not converted. Usually 30 days from creation.
+  /// Used for cleanup processes and abandoned cart analytics. This field
+  /// enables automated cart lifecycle management while preserving data
+  /// integrity during status transitions. Timestamp serves as reference for
+  /// automated cleanup jobs and conversion analysis reporting.
+  expires_at DateTime?
+  
+  /// Last cart modification timestamp.
+  last_activity_at DateTime
+  
+  /// Customer's preferred shipping method JSON configuration.
+  customer_shipping_preference String?
+  
+  /// Applied promotion codes JSON array.
+  promotional_codes String?
+  
+  /// Customer notes or special instructions.
+  customer_notes String?
+  
+  /// Cart creation timestamp.
+  created_at DateTime
+  
+  /// Last cart modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for cart removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@index([status, updated_at])
+  @@index([expires_at, status])
+}
+
+/// Individual product items within shopping cart with pricing and variant
+/// specifications.
+///
+/// Tracks specific product selections, quantities, variants, and pricing
+/// breaks for each item in a shopping cart. Supports multi-seller cart
+/// compositions with individual seller shipping and tax calculations.
+/// Maintains correc product configuration including color, size, material
+/// and other settings.
+///
+/// The cart items system enables granular shopping cart functionality by
+/// preserving specific details necessary for accurate order conversion while
+/// maintaining cart integrity throughout the browsing session.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shopping cart this item belongs to. {@link shopping_mall_carts.id}
+  shopping_mall_cart_id String
+  
+  /// Product this item represents. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Selected product variant with specific options. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Product unit specification for item quantity. {@link
+  /// shopping_mall_product_units.id}
+  shopping_mall_product_unit_id String?
+  
+  /// Number of this specific product variant in the cart.
+  quantity Int
+  
+  /// Price per individual unit before tax and shipping.
+  unit_price Float
+  
+  /// Total price for this line item before add-ons.
+  line_item_price Float
+  
+  /// Applicable tax rate based on category and location.
+  tax_rate Float
+  
+  /// Calculated tax for this line item.
+  tax_amount Float
+  
+  /// Seller's shipping cost estimate for this SKU.
+  seller_shipping_estimate Float
+  
+  /// Discount amount applied from promotions.
+  promotional_discount Float?
+  
+  /// Human-readable summary of selected variant options.
+  option_summary String?
+  
+  /// Whether the item is gift wrapped
+  is_gift_wrapped Boolean
+  
+  /// Vendor-specific notes or handling instructions
+  seller_notes String?
+  
+  /// When inventory was reserved for this item.
+  inventory_reserved_at DateTime?
+  
+  /// When item was added to cart
+  created_at DateTime
+  
+  /// Last quantity or option update
+  updated_at DateTime
+  
+  /// When item was removed from cart
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  productUnit shopping_mall_product_units? @relation(fields: [shopping_mall_product_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_unit_id])
+  
+  @@index([shopping_mall_cart_id, deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, shopping_mall_cart_id], map: "shopping_mall_cart_items_shopping_mall_product_variant_4a7dd164")
+  @@index([created_at])
+  @@index([inventory_reserved_at])
+}

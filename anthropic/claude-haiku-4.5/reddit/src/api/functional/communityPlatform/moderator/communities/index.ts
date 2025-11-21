@@ -10,8 +10,6 @@ export * as bans from "./bans/index";
 export * as moderators from "./moderators/index";
 
 /**
- * Update community settings and configuration.
- *
  * Update an existing community's metadata, visibility, and moderation settings.
  * This operation allows community creators and senior moderators to modify
  * community properties including display name, description, category

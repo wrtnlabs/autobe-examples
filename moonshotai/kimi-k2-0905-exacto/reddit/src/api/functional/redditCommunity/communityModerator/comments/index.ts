@@ -7,9 +7,6 @@ import { IRedditCommunityComment } from "../../../../structures/IRedditCommunity
 import { IPageIRedditCommunityComment } from "../../../../structures/IPageIRedditCommunityComment";
 
 /**
- * Search and retrieve paginated community comments with advanced filtering and
- * moderation support.
- *
  * Search and retrieve paginated community comments with advanced filtering
  * capabilities. This operation provides comprehensive search functionality for
  * finding comments based on multiple criteria including post association,

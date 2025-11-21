@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductRating } from "../../../structures/IShoppingMallProductRating";
 
 /**
- * Retrieve a specific product rating by its unique identifier from the
- * shopping_mall_product_ratings table.
- *
  * Retrieve full details for a standalone product rating record identified by
  * its unique ID.
  *

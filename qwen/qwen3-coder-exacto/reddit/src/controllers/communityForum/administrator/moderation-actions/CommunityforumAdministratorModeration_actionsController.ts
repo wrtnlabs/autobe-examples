@@ -14,9 +14,6 @@ import { ICommunityForumCommunityModerationAction } from "../../../../api/struct
 @Controller("/communityForum/administrator/moderation-actions")
 export class CommunityforumAdministratorModeration_actionsController {
   /**
-   * Search and retrieve a filtered, paginated list of community forum
-   * moderation actions.
-   *
    * Retrieve a filtered and paginated list of community forum moderation
    * actions from the system. This operation provides advanced search
    * capabilities for finding moderation actions based on multiple criteria
@@ -65,8 +62,6 @@ export class CommunityforumAdministratorModeration_actionsController {
   }
 
   /**
-   * Get detailed information about a specific moderation action by its ID.
-   *
    * Retrieve detailed information about a specific moderation action taken in
    * the community forum.
    *
@@ -113,8 +108,6 @@ export class CommunityforumAdministratorModeration_actionsController {
   }
 
   /**
-   * Update an existing moderation action record with new information.
-   *
    * Update an existing moderation action record in the community forum.
    *
    * This endpoint allows authorized users to modify details of a previously
@@ -170,8 +163,6 @@ export class CommunityforumAdministratorModeration_actionsController {
   }
 
   /**
-   * Delete a moderation action by ID.
-   *
    * Permanently remove a moderation action record from the system.
    *
    * This endpoint allows authorized administrators or moderators to delete a

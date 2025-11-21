@@ -7,9 +7,6 @@ import { IShoppingMallRiskCaseEvent } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallRiskCaseEvent } from "../../../../../structures/IPageIShoppingMallRiskCaseEvent";
 
 /**
- * Create a new risk case event in shopping_mall_risk_case_events for a given
- * risk case.
- *
  * Append a new event to the timeline of a specific risk case for governance,
  * fraud, or compliance workflows.
  *
@@ -145,9 +142,6 @@ export namespace create {
 }
 
 /**
- * List and search risk case events from the shopping_mall_risk_case_events
- * table for a given risk case code.
- *
  * Retrieve a paginated and filterable list of risk case events for a single
  * risk case from the `shopping_mall_risk_case_events` snapshot table.
  *
@@ -278,9 +272,6 @@ export namespace index {
 }
 
 /**
- * Get a specific risk case event from shopping_mall_risk_case_events by risk
- * case code and event ID.
- *
  * Retrieve detailed information for a single risk case event belonging to a
  * specific risk case.
  *

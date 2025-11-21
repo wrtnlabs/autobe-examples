@@ -11,8 +11,6 @@ import { IRedditCommunityBanAppeal } from "../../../../../api/structures/IReddit
 @Controller("/redditCommunity/moderator/communities/:communityName/banAppeals")
 export class RedditcommunityModeratorCommunitiesBanappealsController {
   /**
-   * Search and retrieve ban appeals for a community.
-   *
    * Retrieve a filtered and paginated list of ban appeals submitted for a
    * specific community. This operation provides moderators with comprehensive
    * search capabilities to manage the ban appeal queue, supporting filters by

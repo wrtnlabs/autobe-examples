@@ -9,9 +9,6 @@ export * as status from "./status/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Search and list administrative users from the `todo_app_adminusers` table
- * with filtering and pagination.
- *
  * Retrieve a filtered and paginated list of TodoApp administrative users based
  * on flexible search criteria.
  *
@@ -127,8 +124,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information of a single todo_app_adminusers admin user by ID.
- *
  * Retrieve the full detail view of a single administrative user record from the
  * todo_app_adminusers table.
  *
@@ -244,8 +239,6 @@ export namespace at {
 }
 
 /**
- * Update fields of a todo_app_adminusers admin user identified by its UUID.
- *
  * Modify details of an existing administrative user stored in the
  * todo_app_adminusers table, identified by its UUID primary key.
  *
@@ -375,9 +368,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a todo_app_adminusers administrative user by primary key
- * id.
- *
  * Delete an existing administrative user account from the todo_app_adminusers
  * table using its unique identifier.
  *

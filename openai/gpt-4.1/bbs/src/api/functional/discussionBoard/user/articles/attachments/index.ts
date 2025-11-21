@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleAttachment } from "../../../../../structures/IDiscussionBoardArticleAttachment";
 
 /**
- * Attach a new file (image/document) to an article
- * (discussion_board_article_attachments).
- *
  * Upload and attach a file to an existing article on the discussion board.
  *
  * This operation lets a registered user (article author) or admin add new
@@ -123,9 +120,6 @@ export namespace create {
 }
 
 /**
- * Update or replace an existing attachment on an article
- * (discussion_board_article_attachments).
- *
  * Modify an existing attachment for the specified article, either by updating
  * its metadata or replacing the stored file.
  *
@@ -246,9 +240,6 @@ export namespace update {
 }
 
 /**
- * Delete an attachment from an article (discussion_board_article_attachments
- * table).
- *
  * Deletes a specific attachment (file or image) associated with an article on
  * the discussion board.
  *

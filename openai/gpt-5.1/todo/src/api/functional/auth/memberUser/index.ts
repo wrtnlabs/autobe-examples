@@ -9,9 +9,6 @@ import { ITodoAppMemberUserLogin } from "../../../structures/ITodoAppMemberUserL
 import { ITodoAppMemberUserRefresh } from "../../../structures/ITodoAppMemberUserRefresh";
 
 /**
- * Register a new member user in the todo_app_memberusers table and issue
- * initial authorization tokens.
- *
  * This API operation registers a new member user account in the todoApp service
  * by inserting a record into the `todo_app_memberusers` table and then issuing
  * authentication tokens. The underlying table stores authenticated member users
@@ -146,9 +143,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing member user using todo_app_memberusers and record a
- * session in todo_app_memberuser_sessions, returning authorization tokens.
- *
  * This API operation authenticates an existing member user of the todoApp
  * service by validating their credentials against the `todo_app_memberusers`
  * table and then establishing a session in `todo_app_memberuser_sessions`. The
@@ -282,9 +276,6 @@ export namespace login {
 }
 
 /**
- * Refresh authorization tokens for a member user using a valid refresh token
- * and optional session validation against todo_app_memberuser_sessions.
- *
  * This API operation renews authentication tokens for a member user of the
  * todoApp service by accepting a refresh token and issuing a new
  * `ITodoAppMemberUser.IAuthorized` response. The underlying member identity and

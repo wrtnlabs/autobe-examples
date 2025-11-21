@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerationStatisticsByType } from "../../../../../../structures/IDiscussionBoardModerationStatisticsByType";
 
 /**
- * Retrieve moderation action statistics grouped by action type.
- *
  * Retrieve aggregated statistics showing the distribution and volume of
  * moderation actions grouped by action type (article_edited, article_deleted,
  * attachment_removed, account_suspended, account_banned, account_restored).

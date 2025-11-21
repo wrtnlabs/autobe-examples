@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunityModerator } from "../../../../../structures/
 import { IPageICommunityPlatformCommunityModerator } from "../../../../../structures/IPageICommunityPlatformCommunityModerator";
 
 /**
- * Appoint a new moderator to a community with specified tier and permissions.
- *
  * Create a new moderator assignment, promoting a member to moderator status
  * within a specific community. This operation is used by community creators and
  * administrators to expand the moderation team. The requesting user must have
@@ -136,9 +134,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of moderators for a specific
- * community.
- *
  * Retrieve a filtered and paginated list of moderators assigned to manage a
  * specific community. This operation provides advanced search capabilities for
  * finding moderators based on multiple criteria including moderator tier
@@ -259,8 +254,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific community moderator.
- *
  * Retrieve comprehensive details about a moderator assigned to a specific
  * community. This operation fetches the moderator assignment record including
  * role tier (Creator, Senior, Junior), appointment timestamp, and removal
@@ -372,9 +365,6 @@ export namespace at {
 }
 
 /**
- * Update a community moderator's role tier or remove them from moderation
- * duties.
- *
  * Update moderator assignment details within a community or remove a moderator
  * from their role. This operation modifies records in the
  * community_platform_community_moderators table, supporting role tier changes

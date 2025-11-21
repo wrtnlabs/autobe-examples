@@ -8,9 +8,6 @@ import { ICommunityPlatformModerationCaseReport } from "../../../../../api/struc
 @Controller("/communityPlatform/adminUser/moderationCases/:caseKey/reports")
 export class CommunityplatformAdminuserModerationcasesReportsController {
   /**
-   * Search and paginate reports linked to a moderation case
-   * (`community_platform_moderation_cases`).
-   *
    * Retrieve a filtered, paginated list of reports associated with a specific
    * moderation case identified by its `caseKey`.
    *

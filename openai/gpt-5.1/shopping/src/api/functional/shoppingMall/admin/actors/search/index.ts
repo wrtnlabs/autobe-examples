@@ -7,9 +7,6 @@ import { IShoppingMallActorSearch } from "../../../../../structures/IShoppingMal
 import { IPageIShoppingMallActorSearch } from "../../../../../structures/IPageIShoppingMallActorSearch";
 
 /**
- * Search across customers, sellers, admins, and guest users using a unified
- * actor search over multiple shoppingMall actor tables.
- *
  * Search across all major actor types (customers, sellers, admins, and guest
  * users) in the shoppingMall platform using a unified query interface.
  *

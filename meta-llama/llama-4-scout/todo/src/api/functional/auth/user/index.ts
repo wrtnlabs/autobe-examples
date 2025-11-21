@@ -11,8 +11,6 @@ export * as change_password from "./change_password/index";
 export * as erase_account from "./erase_account/index";
 
 /**
- * Registers a new user in the todo_list_users table (pending verification).
- *
  * This endpoint enables registration for new users by accepting a unique email
  * address and password. The registration process involves strict email
  * uniqueness enforcement—if a duplicate is detected in the 'todo_list_users'
@@ -122,8 +120,6 @@ export namespace join {
 }
 
 /**
- * Authenticates verified user from todo_list_users and issues tokens.
- *
  * Handles user login, validating submitted credentials against the
  * 'todo_list_users' table using the combination of 'email' and securely-hashed
  * 'password_hash' values. Only users marked as both 'is_verified' and
@@ -231,9 +227,6 @@ export namespace login {
 }
 
 /**
- * Issues new tokens for users with valid refresh tokens via
- * todo_list_user_sessions.
- *
  * Allows users to obtain a new access token by submitting a valid, unexpired
  * refresh token. The operation cross-checks the provided token against the
  * active session records in 'todo_list_user_sessions', confirming that the
@@ -337,9 +330,6 @@ export namespace refresh {
 }
 
 /**
- * Logs out authenticated user, invalidating all todo_list_user_sessions,
- * forcing re-authentication.
- *
  * Terminates all active user sessions, including access and refresh tokens, by
  * updating or marking all corresponding entries as expired in the
  * 'todo_list_user_sessions' table. This operation is exclusively for the

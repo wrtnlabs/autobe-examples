@@ -12,8 +12,6 @@ import { IDiscussionBoardDiscussionBoardMember } from "../../../../api/structure
 @Controller("/discussionBoard/admin/discussionBoardMembers")
 export class DiscussionboardAdminDiscussionboardmembersController {
   /**
-   * Search and list discussion board members.
-   *
    * Retrieve a paginated list of discussion board members filtered by provided
    * search parameters.
    *
@@ -51,8 +49,6 @@ export class DiscussionboardAdminDiscussionboardmembersController {
   }
 
   /**
-   * Get a registered discussion board member by ID.
-   *
    * Retrieve details of a registered discussion board member by their unique
    * identifier.
    *

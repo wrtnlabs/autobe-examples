@@ -7,9 +7,6 @@ import { ICommunityPlatformSearchDocuments } from "../../../../structures/ICommu
 import { IPageICommunityPlatformSearchResult } from "../../../../structures/IPageICommunityPlatformSearchResult";
 
 /**
- * Search public community platform documents across communities, posts,
- * comments, and profiles.
- *
  * Execute a rich, cross-entity search over public documents in the community
  * platform.
  *

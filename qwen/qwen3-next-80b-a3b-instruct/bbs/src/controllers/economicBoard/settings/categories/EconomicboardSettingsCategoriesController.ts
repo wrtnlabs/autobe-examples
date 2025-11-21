@@ -10,8 +10,6 @@ import { IEconomicBoardCategory } from "../../../../api/structures/IEconomicBoar
 @Controller("/economicBoard/settings/categories")
 export class EconomicboardSettingsCategoriesController {
   /**
-   * Retrieve a list of all system-defined economic board categories.
-   *
    * Retrieve a paginated list of all system-defined economic board categories
    * that are used to classify and filter discussion posts.
    *
@@ -62,8 +60,6 @@ export class EconomicboardSettingsCategoriesController {
   }
 
   /**
-   * Retrieve details of a specific economic board category by its code.
-   *
    * Retrieve the full details of a single economic board category identified by
    * its unique code.
    *

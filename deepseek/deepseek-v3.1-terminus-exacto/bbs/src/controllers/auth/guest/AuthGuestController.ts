@@ -11,9 +11,6 @@ import { IDiscussionBoardGuest } from "../../../api/structures/IDiscussionBoardG
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Create a temporary guest account for anonymous browsing of discussion board
-   * content.
-   *
    * This API operation handles guest registration for the discussion board
    * platform, creating temporary anonymous accounts that allow users to browse
    * public content without full authentication. The operation generates a
@@ -60,9 +57,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh guest authentication token to extend session validity for anonymous
-   * browsing.
-   *
    * This API operation handles guest token refresh for the discussion board
    * platform, allowing existing guest users to extend their session validity
    * without requiring re-authentication. The operation validates the current

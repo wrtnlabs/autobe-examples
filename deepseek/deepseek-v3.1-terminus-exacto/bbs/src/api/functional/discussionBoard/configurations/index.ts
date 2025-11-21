@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardConfiguration } from "../../../structures/IDiscussionBoardConfiguration";
 
 /**
- * Retrieve a specific configuration setting by its unique key.
- *
  * This operation allows clients to retrieve individual configuration settings
  * from the discussion board platform. Each configuration is identified by a
  * unique config_key that corresponds to a specific system setting such as

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUserSession } from "../../../../../../structures/ITodoListUserSession";
 
 /**
- * Retrieve specific user session details by session ID.
- *
  * Fetch detailed information about a specific authentication session for the
  * currently authenticated user. This operation enables users to view session
  * metadata and connection context for security monitoring and session
@@ -114,8 +112,6 @@ export namespace at {
 }
 
 /**
- * Terminate a specific user session by ID.
- *
  * Terminates a specific authenticated session for the currently logged-in user
  * by setting the session's expired_at timestamp. This operation enables users
  * to log out from individual devices or browsers while keeping other sessions
@@ -213,8 +209,6 @@ export namespace erase {
 }
 
 /**
- * Terminate all user sessions (logout from all devices).
- *
  * Terminates all active authenticated sessions for the currently logged-in user
  * by setting expired_at timestamps on all session records. This operation
  * implements the critical security feature of logging out from all devices

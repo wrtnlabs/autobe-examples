@@ -7,9 +7,6 @@ import { ICommunityPlatformAppeal } from "../../../../../structures/ICommunityPl
 import { IPageICommunityPlatformAppeal } from "../../../../../structures/IPageICommunityPlatformAppeal";
 
 /**
- * Search appeals for a specific moderation action in the
- * community_platform_appeals table with pagination and filters.
- *
  * Retrieve a filtered and paginated list of appeals linked to a specific
  * moderation action, enabling moderation administrators to review how users
  * have contested enforcement decisions.

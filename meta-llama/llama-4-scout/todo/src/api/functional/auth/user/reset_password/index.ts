@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUserPasswordReset } from "../../../../structures/ITodoListUserPasswordReset";
 
 /**
- * Updates user's password via valid reset token in
- * todo_list_user_password_resets; single-use only.
- *
  * Redemption endpoint for password reset: accepts the one-time reset token
  * (from 'todo_list_user_password_resets') along with a new password. If the
  * token is present, unconsumed, and not expired, the associated user's password

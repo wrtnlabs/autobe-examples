@@ -8,9 +8,6 @@ import { ICommunityPlatformUserProfile } from "../../../../api/structures/ICommu
 @Controller("/communityPlatform/users/:userId/profiles/:profileId")
 export class CommunityplatformUsersProfilesController {
   /**
-   * Retrieve a specific community platform user's profile by user and profile
-   * identifiers.
-   *
    * Retrieve an individual user's public profile and customizable metadata
    * using the user and profile identifiers provided in the path parameters.
    * This operation ensures that the specified user and their profile both

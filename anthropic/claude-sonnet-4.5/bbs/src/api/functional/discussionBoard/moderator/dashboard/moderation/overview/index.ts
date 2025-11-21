@@ -5,9 +5,6 @@ import typia from "typia";
 import { IDiscussionBoardModerationDashboard } from "../../../../../../structures/IDiscussionBoardModerationDashboard";
 
 /**
- * Retrieve real-time moderation dashboard overview with key metrics and pending
- * tasks.
- *
  * Retrieve a comprehensive real-time overview of moderation activity, platform
  * health metrics, and actionable pending tasks for moderators. This dashboard
  * provides the essential information moderators need when they first log into

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardPasswordReset } from "../../../../structures/IDiscussionBoardPasswordReset";
 
 /**
- * Reset a contributor account password using a valid reset token.
- *
  * Complete the password reset process by submitting a valid reset token and a
  * new password. This operation validates the token and implements the new
  * password with strict security requirements.

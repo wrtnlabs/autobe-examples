@@ -1,0 +1,12 @@
+export * as actors from "./actors/index";
+export * as customer from "./customer/index";
+export * as admin from "./admin/index";
+export * as products from "./products/index";
+export * as seller from "./seller/index";
+export * as carts from "./carts/index";
+export * as orders from "./orders/index";
+export * as my from "./my/index";
+export * as reviews from "./reviews/index";
+export * as inventory from "./inventory/index";
+export * as promotions from "./promotions/index";
+export * as notifications from "./notifications/index";

@@ -7,9 +7,6 @@ import { IShoppingMallRiskCase } from "../../../../../structures/IShoppingMallRi
 import { IPageIShoppingMallRiskCase } from "../../../../../structures/IPageIShoppingMallRiskCase";
 
 /**
- * Search risk cases from the shopping_mall_risk_cases table for governance and
- * fraud operations.
- *
  * Search and retrieve a filtered, paginated list of risk cases from the
  * `shopping_mall_risk_cases` primary table for governance and fraud
  * management.

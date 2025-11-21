@@ -8,9 +8,6 @@ import { ICommunityPlatformKarmaHistory } from "../../../../api/structures/IComm
 @Controller("/communityPlatform/administrator/karmaHistory")
 export class CommunityplatformAdministratorKarmahistoryController {
   /**
-   * Search and retrieve a filtered, paginated list of karma history records
-   * with advanced filtering options.
-   *
    * Retrieve a filtered and paginated list of karma history records from the
    * platform. This operation provides advanced search capabilities for
    * finding karma changes based on multiple criteria including change reason,

@@ -8,3424 +8,1713 @@
 - [Posts](#posts)
 - [Comments](#comments)
 - [Votes](#votes)
+- [Subscriptions](#subscriptions)
+- [Profiles](#profiles)
 - [Reports](#reports)
-- [Karma](#karma)
-- [Notifications](#notifications)
-- [Payouts](#payouts)
+- [Sessions](#sessions)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"community_platform_portal_settings" {
+"community_bbs_system_config" {
   String id PK
-  String website_title
-  String homepage_banner_text "nullable"
-  String footer_text
-  String theme_color_primary
-  String theme_color_secondary
-  String default_post_sort
-  Boolean enable_guest_browsing
-  Int max_post_length
-  Int max_comment_length
-  Int max_image_size_mb
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"community_platform_system_config" {
+"community_bbs_platform_settings" {
   String id PK
-  Int max_login_attempts
-  Int lockout_duration_minutes
-  Int access_token_expiration_minutes
-  Int refresh_token_expiration_days
-  Int max_post_rate_per_hour
-  Int max_comment_rate_per_hour
-  Int max_vote_rate_per_hour
-  Int max_report_rate_per_hour
-  Int max_subscription_rate_per_hour
-  Int audit_log_retention_days
-  Int max_archive_inactivity_months
-  Int moderation_report_threshold
-  Int post_rejection_threshold
-  Int comment_rejection_threshold
-  Int death_karma_threshold
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"community_platform_suspended_ips" {
+"community_bbs_content_categories" {
   String id PK
-  String ip_address UK
-  String suspended_by_admin_id
-  String reason
-  DateTime suspended_at
-  DateTime expires_at "nullable"
-  Boolean is_active
+  String name UK
+  String description "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"community_platform_analytics_config" {
+"community_bbs_badge_types" {
   String id PK
-  Boolean enable_post_view_tracking
-  Boolean enable_vote_tracking
-  Boolean enable_comment_creation_tracking
-  Boolean enable_subscription_tracking
-  Boolean enable_report_tracking
-  Boolean aggregate_analytics_only
-  Int event_batch_size
-  Int event_batch_interval_seconds
-  Boolean hash_user_identifiers
-  Boolean hash_ip_addresses
-  String analytics_provider
+  String name UK
+  String description "nullable"
+  String icon "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"community_platform_global_moderation_rules" {
+"community_bbs_report_reasons" {
   String id PK
-  String prohibited_content_types
-  String harassment_definition
-  String acceptable_use_policy
-  String fraud_detection_rules
-  String automated_filtering_keywords
-  Int false_report_penalty_threshold
-  Int false_report_penalty_duration_days
-  String rule_revision_notes
+  String name UK
+  String description "nullable"
+  String severity_level
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
+}
+"community_bbs_content_moderation_rules" {
+  String id PK
+  String name UK
+  String description "nullable"
+  String trigger_type
+  Int trigger_value
+  String action
+  DateTime created_at
+  DateTime updated_at
 }
 ```
 
-### `community_platform_portal_settings`
+### `community_bbs_system_config`
 
-Global portal settings that define the behavior and appearance of the
-CommunityPlatform user interface.
+Core system configuration settings that control platform-wide behavior
+and operational parameters.
 
-Contains configuration constants and display options that affect the
-entire platform. These settings control UI elements like theme colors,
-footer text, website title, and other global presentation parameters.
-Changes to these settings affect all users across all communities.
-
-This table is managed exclusively by administrators through secure
-administrative interfaces and is referenced by the frontend application
-to render consistent branding and behavior throughout the platform.
+This table stores critical system-level configuration values that apply
+across all communities and user interactions. Contains administrative
+controls for default behavior, rate limiting thresholds, and
+platform-wide settings managed by system administrators.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `website_title`
-  > The title displayed in the browser tab and website header. Must not
-  > exceed 100 characters.
-- `homepage_banner_text`
-  > Text displayed in the banner on the homepage. Supports HTML formatting
-  > for styling.
-- `footer_text`
-  > Text displayed in the site footer. Typically includes copyright
-  > information and links to terms of service.
-- `theme_color_primary`
-  > Primary color hex code used for buttons, links, and highlights (e.g.,
-  > #2563EB). Must be a valid CSS hex color.
-- `theme_color_secondary`
-  > Secondary color hex code used for accents and secondary buttons (e.g.,
-  > #1d4ed8). Must be a valid CSS hex color.
-- `default_post_sort`
-  > Default sorting method for feed view: 'new', 'hot', 'top', or
-  > 'controversial'. Defines the initial sort order when users visit the
-  > homepage.
-- `enable_guest_browsing`
-  > Whether unauthenticated guests can view posts and communities without
-  > logging in. If false, users must log in to access any content.
-- `max_post_length`
-  > Maximum allowed character count for text posts. Must be between 1 and
-  > 10000. Provides an upper limit to post content length.
-- `max_comment_length`
-  > Maximum allowed character count for comments. Must be between 1 and 500.
-  > Prevents excessively long comments.
-- `max_image_size_mb`
-  > Maximum allowed file size for image uploads in megabytes. Must be between
-  > 1 and 20. Controls storage costs and bandwidth usage.
-- `created_at`: Timestamp when this configuration record was created in the system.
-- `updated_at`: Timestamp when this configuration record was last modified.
-- `deleted_at`
-  > Timestamp when this configuration record was logically deleted. Null
-  > indicates active configuration. Used for audit trails.
+- `created_at`: Timestamp when this system configuration was created.
+- `updated_at`: Timestamp when this system configuration was last updated.
 
-### `community_platform_system_config`
+### `community_bbs_platform_settings`
 
-Core system configuration parameters that define platform-wide
-operational behavior and technical settings.
+Platform-wide configuration settings that define operational parameters
+for the entire communityBBS system.
 
-Contains critical runtime configuration that governs how the platform
-functions, including moderation rules, rate limits, storage
-configurations, and performance tuning. Unlike portal_settings which are
-UI-focused, this table holds infrastructure-level configuration that
-affects system behavior.
-
-All changes to this table require administrative access and should be
-carefully documented due to their global impact on platform functionality
-and user experience.
+Manages global configuration for platform features including posting
+limits, user permissions, system notifications, and default behavior for
+all communities. These settings override any community-specific
+configurations and are managed by system administrators.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `max_login_attempts`
-  > Maximum number of consecutive failed login attempts before account
-  > lockout. Default value is 5. Prevents brute force attacks.
-- `lockout_duration_minutes`
-  > Duration (in minutes) that an account remains locked after exceeding
-  > max_login_attempts. Default value is 30. Controls security response time.
-- `access_token_expiration_minutes`
-  > Duration (in minutes) that a JWT access token remains valid before
-  > requiring refresh. Default value is 15. Balances security and user
-  > experience.
-- `refresh_token_expiration_days`
-  > Duration (in days) that a JWT refresh token remains valid before
-  > requiring re-authentication. Default value is 30. Manages long-term
-  > session persistence.
-- `max_post_rate_per_hour`
-  > Maximum number of posts a member can create per hour. Default value is
-  > 50. Prevents spam flooding.
-- `max_comment_rate_per_hour`
-  > Maximum number of comments a member can create per hour. Default value is
-  > 100. Prevents spam flooding.
-- `max_vote_rate_per_hour`
-  > Maximum number of votes a member can cast per hour. Default value is 300.
-  > Prevents vote manipulation.
-- `max_report_rate_per_hour`
-  > Maximum number of reports a member can submit per hour. Default value is
-  > 50. Prevents abuse of reporting system.
-- `max_subscription_rate_per_hour`
-  > Maximum number of community subscriptions a member can make per hour.
-  > Default value is 20. Prevents spam subscriptions.
-- `audit_log_retention_days`
-  > Number of days to retain audit logs before purging. Default value is 2555
-  > (7 years). Complies with data retention laws.
-- `max_archive_inactivity_months`
-  > Number of months of inactivity before a community is automatically
-  > archived. Default value is 12. Manages system storage and performance.
-- `moderation_report_threshold`
-  > Number of reports a post or comment needs to trigger automatic moderation
-  > review. Default value is 3. Balances workload between users and
-  > moderators.
-- `post_rejection_threshold`
-  > Number of reports that triggers automatic removal of a post. Default
-  > value is 10. Prevents toxic content proliferation.
-- `comment_rejection_threshold`
-  > Number of reports that triggers automatic removal of a comment. Default
-  > value is 15. Balances freedom of expression with content safety.
-- `death_karma_threshold`
-  > Karma threshold below which users are suspended from posting. Default
-  > value is -500. Prevents necromancy and trolling behaviour.
-- `created_at`: Timestamp when this configuration record was created in the system.
-- `updated_at`: Timestamp when this configuration record was last modified.
-- `deleted_at`
-  > Timestamp when this configuration record was logically deleted. Null
-  > indicates active configuration. Used for audit trails.
+- `created_at`: Timestamp when this platform setting was created.
+- `updated_at`: Timestamp when this platform setting was last updated.
 
-### `community_platform_suspended_ips`
+### `community_bbs_content_categories`
 
-Record of IP addresses that have been suspended from accessing the
-CommunityPlatform due to violations of terms of service.
+System-defined categories for organizing and classifying user-generated
+content.
 
-This table maintains a list of IP addresses that have been flagged for
-abusive behavior, such as spamming, distributed denial-of-service
-attacks, or coordinated vote manipulation. Suspended IPs are blocked from
-performing any action on the platform.
-
-The system uses this table to enforce IP-based bans at the network layer,
-preventing bypass of user account suspensions through account farming or
-proxy usage. Suspensions are temporary and automatically expire after a
-configurable duration.
-
-This table plays a critical role in platform security and is referenced
-by the authentication and rate-limiting systems to enforce global bans.
+Provides a standardized taxonomy for categorizing posts and other content
+types across the platform. Used for content filtering, moderation, and
+recommendation systems. Each category represents a broad theme for
+community discussion (e.g., "Technology", "Community News", "Events").
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `ip_address`
-  > The IP address that has been suspended, stored in standard IPv4 or IPv6
-  > format (e.g., '192.168.1.1' or
-  > '2001:0db8:85a3:0000:0000:8a2e:0370:7334'). Must be unique.
-- `suspended_by_admin_id`
-  > The ID of the administrator who initiated this suspension. References
-  > community_platform_admin.id. Provides accountability for bans.
-- `reason`
-  > The reason for this suspension (e.g., 'spamming', 'DDoS attack', 'virtual
-  > account farming'). Must be less than 255 characters.
-- `suspended_at`
-  > Timestamp when this IP address was suspended. Indicates when the ban
-  > became active.
-- `expires_at`
-  > Timestamp when this suspension will automatically expire and be lifted.
-  > Null indicates permanent suspension.
-- `is_active`
-  > Indicates whether this suspension is currently active. May be false if
-  > suspension has expired or been manually lifted.
-- `created_at`: Timestamp when this record was created in the system.
-- `updated_at`: Timestamp when this record was last modified.
-- `deleted_at`
-  > Timestamp when this suspension was lifted and the record logically
-  > deleted. Null indicates active suspension. Used for audit trails.
+- `name`: Human-readable name of the content category.
+- `description`: Detailed description explaining the purpose and scope of this category.
+- `created_at`: Timestamp when this content category was created.
+- `updated_at`: Timestamp when this content category was last updated.
 
-### `community_platform_analytics_config`
+### `community_bbs_badge_types`
 
-Configuration for analytics collection and tracking behavior in the
-CommunityPlatform system.
+System-defined badge types that recognize user achievements and
+contributions within the community.
 
-Defines which user behaviors are tracked, what level of anonymity is
-maintained, and how analytics data is processed. This configuration
-controls the data collection pipeline for business intelligence and
-system monitoring.
-
-The platform prioritizes user privacy, so this table ensures that
-analytics instrumentation follows strict privacy principles, anonymizing
-user data before transmission and never collecting personally
-identifiable information.
-
-Administrators adjust these settings to balance business insight needs
-with user privacy expectations.
+Provides a standardized set of achievement badges that can be awarded to
+citizens based on their activity and contributions. Each badge type
+represents a specific milestone or behavior (e.g., "First Post", "Trusted
+Contributor", "Moderator") and is displayed on user profiles.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `enable_post_view_tracking`
-  > Whether to track when users view individual posts. Enables analytics on
-  > content popularity and engagement patterns.
-- `enable_vote_tracking`
-  > Whether to track when users upvote or downvote content. Essential for
-  > understanding community sentiment and moderation effectiveness.
-- `enable_comment_creation_tracking`
-  > Whether to track when users create comments. Provides insight into
-  > conversation depth and community interaction levels.
-- `enable_subscription_tracking`
-  > Whether to track when users subscribe to or unsubscribe from communities.
-  > Essential for understanding community growth and audience segmentation.
-- `enable_report_tracking`
-  > Whether to track when users report content. Critical for identifying
-  > emerging moderation issues and user community standards.
-- `aggregate_analytics_only`
-  > Whether to send only aggregated statistical data to analytics services
-  > instead of individual event data. When true, ensures greater user privacy
-  > and compliance.
-- `event_batch_size`
-  > Number of analytics events to batch before transmission to reduce server
-  > load. Default value is 100. Balances real-time data needs with system
-  > performance.
-- `event_batch_interval_seconds`
-  > Maximum time interval (in seconds) between analytics event batches,
-  > regardless of size. Default value is 30. Ensures timely data
-  > transmission.
-- `hash_user_identifiers`
-  > Whether to hash user IDs before sending to the analytics platform. When
-  > true, users are tracked by pseudonymous identifiers, never their actual
-  > IDs.
-- `hash_ip_addresses`
-  > Whether to hash IP addresses before sending to the analytics platform.
-  > When true, geographic and network patterns are analyzed without exposing
-  > user locations.
-- `analytics_provider`
-  > The identifier of the analytics service provider being used (e.g.,
-  > 'amplitude', 'mixpanel', 'plausible'). Controls configuration parameters
-  > for the connected service.
-- `created_at`: Timestamp when this configuration record was created in the system.
-- `updated_at`: Timestamp when this configuration record was last modified.
-- `deleted_at`
-  > Timestamp when this configuration record was logically deleted. Null
-  > indicates active configuration. Used for audit trails.
+- `name`: Human-readable name of the badge type.
+- `description`: Detailed explanation of the criteria for earning this badge.
+- `icon`: Optional reference to icon asset for this badge type.
+- `created_at`: Timestamp when this badge type was created.
+- `updated_at`: Timestamp when this badge type was last updated.
 
-### `community_platform_global_moderation_rules`
+### `community_bbs_report_reasons`
 
-Platform-wide moderation rules and content policies that apply to all
-communities and users across the CommunityPlatform.
+System-defined reasons for reporting content, standardizing user feedback
+on inappropriate material.
 
-Contains the foundational content moderation guidelines that every
-community and user must follow. This includes prohibited content types,
-definition of harassment, acceptable use policies, and automated flagging
-criteria.
-
-These rules serve as the baseline for automated moderation systems and
-provide consistency in enforcement across all communities. Communities
-can have additional specific rules, but they cannot be less restrictive
-than these global standards.
-
-The rules in this table are referenced by AI moderation tools, reporter
-systems, and human moderators to ensure uniform enforcement of platform
-policy.
+Provides a comprehensive but standardized set of reasons users can select
+when reporting content violations. This ensures consistent categorization
+of reported content by moderators and enables effective content
+moderation patterns across the platform.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `prohibited_content_types`
-  > List of prohibited content categories as comma-separated strings (e.g.,
-  > 'child_exploitation, harassment, threats, hate_speech, misinformation').
-  > Categories must be from a predefined system list.
-- `harassment_definition`
-  > Detailed definition of what constitutes harassment on the platform,
-  > including examples of behavior that is considered abusive, threatening,
-  > or intimidation-based.
-- `acceptable_use_policy`
-  > Complete acceptable use policy outlining expected user behavior,
-  > prohibited activities, and consequences for violations. Includes
-  > guidelines around impersonation, spam, and coordinated manipulation.
-- `fraud_detection_rules`
-  > Rules for detecting fraudulent behavior including vote manipulation, fake
-  > accounts, shell communities, and coordinated inauthentic activity.
-- `automated_filtering_keywords`
-  > List of keywords and phrases that automatically trigger content filtering
-  > for suspected policy violations. Each keyword should be separated by a
-  > comma. Examples include slurs, threats, and code words for illegal
-  > activity.
-- `false_report_penalty_threshold`
-  > Number of false reports (reports on approved content) that triggers a
-  > penalty for a user. Default value is 5. Prevents abuse of reporting
-  > system.
-- `false_report_penalty_duration_days`
-  > Number of days a user is penalized after accumulating
-  > false_report_penalty_threshold false reports. Default value is 7. Deters
-  > malicious reporting.
-- `rule_revision_notes`
-  > Detailed notes on recent changes to the global moderation rules,
-  > including date, revision number, and summary of modifications. Used for
-  > audit and legal compliance.
-- `created_at`: Timestamp when this configuration record was created in the system.
-- `updated_at`: Timestamp when this configuration record was last modified.
-- `deleted_at`
-  > Timestamp when this configuration record was logically deleted. Null
-  > indicates active configuration. Used for audit trails.
+- `name`: Human-readable name of the report reason.
+- `description`: Detailed explanation of what constitutes a violation of this category.
+- `severity_level`: Severity level designation for this reason (e.g., low, medium, high).
+- `created_at`: Timestamp when this report reason was created.
+- `updated_at`: Timestamp when this report reason was last updated.
+
+### `community_bbs_content_moderation_rules`
+
+System-defined content moderation rules that define how the system
+automatically handles reported content and user behavior.
+
+Contains the policy rules that govern automated moderation actions
+including when to hide content, issue warnings, suspend users, and
+escalate to human moderators. These rules are based on thresholds for
+reports, user reputation, time-based factors, and spam patterns across
+the platform.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `name`: Human-readable name of this moderation rule.
+- `description`: Detailed explanation of this rule's purpose and trigger conditions.
+- `trigger_type`
+  > Type of trigger for this rule (e.g., report_count, reputation_threshold,
+  > spam_pattern).
+- `trigger_value`
+  > Threshold value that triggers this rule (e.g., 5 reports, reputation
+  > below 0).
+- `action`
+  > Action to perform when rule is triggered (e.g., hide, warn, suspend,
+  > delete).
+- `created_at`: Timestamp when this moderation rule was created.
+- `updated_at`: Timestamp when this moderation rule was last updated.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"community_platform_guest" {
-  String id PK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  String status
-}
-"community_platform_member" {
+"community_bbs_citizen" {
   String id PK
   String email UK
+  String username UK
   String password_hash
+  String nickname "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
 }
-"community_platform_moderator" {
+"community_bbs_citizen_sessions" {
+  String id PK
+  String community_bbs_citizen_id FK,UK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_bbs_moderator" {
   String id PK
   String email UK
+  String username UK
   String password_hash
+  String nickname "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
 }
-"community_platform_admin" {
+"community_bbs_moderator_sessions" {
+  String id PK
+  String community_bbs_moderator_id FK,UK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_bbs_admin" {
   String id PK
   String email UK
+  String username UK
   String password_hash
+  String nickname "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
 }
-"community_platform_guest_sessions" {
+"community_bbs_admin_sessions" {
   String id PK
-  String community_platform_guest_id FK
+  String community_bbs_admin_id FK,UK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"community_platform_member_sessions" {
-  String id PK
-  String community_platform_member_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"community_platform_moderator_sessions" {
-  String id PK
-  String community_platform_moderator_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"community_platform_admin_sessions" {
-  String id PK
-  String community_platform_admin_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"guest" {
-  String id PK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  String status
-  String created_by
-  String updated_by "nullable"
-}
-"member" {
-  String id PK
-  String email UK
-  String password_hash
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
-  String created_by
-  String updated_by "nullable"
-}
-"moderator" {
-  String id PK
-  String email UK
-  String password_hash
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
-  String created_by
-  String updated_by "nullable"
-}
-"admin" {
-  String id PK
-  String email UK
-  String password_hash
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  String status
-  Boolean email_verified
-  String created_by
-  String updated_by "nullable"
-}
-"guest_sessions" {
-  String id PK
-  String guest_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"member_sessions" {
-  String id PK
-  String member_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"moderator_sessions" {
-  String id PK
-  String moderator_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"admin_sessions" {
-  String id PK
-  String admin_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"community_platform_guest_sessions" }o--|| "community_platform_guest" : guest
-"community_platform_member_sessions" }o--|| "community_platform_member" : member
-"community_platform_moderator_sessions" }o--|| "community_platform_moderator" : moderator
-"community_platform_admin_sessions" }o--|| "community_platform_admin" : admin
-"guest_sessions" }o--|| "guest" : guest
-"member_sessions" }o--|| "member" : member
-"moderator_sessions" }o--|| "moderator" : moderator
-"admin_sessions" }o--|| "admin" : admin
+"community_bbs_citizen_sessions" |o--|| "community_bbs_citizen" : citizen
+"community_bbs_moderator_sessions" |o--|| "community_bbs_moderator" : moderator
+"community_bbs_admin_sessions" |o--|| "community_bbs_admin" : admin
 ```
 
-### `community_platform_guest`
+### `community_bbs_citizen`
 
-Represents anonymous users who can browse content without authentication.
-
-Guests are unauthenticated visitors who can view public communities and
-posts but cannot interact with content (vote, comment, subscribe). They
-are identified by anonymous session context and cannot have a persistent
-identity. This table stores minimal information about guests, primarily
-for logging system usage and analytics.
-
-Although guests do not need authentication, their activities are tracked
-for analytics and moderation purposes. Guest records are not linked to
-any login credentials and do not have passwords. The status field
-indicates whether this guest session is active or inactive, useful for
-cleanup processes.
+Primary citizen actor in the community system. Represents a registered
+user who can participate in discussions, create posts, and comment on
+content. Each citizen has a unique username, email, and password_hash
+credential for authentication.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `created_at`: Timestamp when the guest record was first created in the system.
-- `updated_at`
-  > Timestamp when the guest record was last updated (e.g., when session
-  > expired).
-- `deleted_at`
-  > Timestamp when this guest record was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the guest session. Values: 'active', 'inactive',
-  > 'banned'. Used to indicate if the guest can continue browsing.
-
-### `community_platform_member`
-
-Represents authenticated standard users who can create content, vote,
-comment, and subscribe to communities.
-
-Members are the primary content-producing actors in the system. They must
-register with an email and password, and verify their email. Members can
-create posts, upvote/downvote, comment on posts, reply to comments,
-subscribe to communities, and have a persistent reputation (karma) that
-travels across communities.
-
-This table includes essential authentication fields (password_hash) and
-status controls for suspended/banned accounts. Members can be promoted to
-moderators through admin action. The status field determines if the
-account is active, suspended, or banned.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
+- `email`
+  > Email address used for authentication and account recovery. Must be
+  > unique and verified.
+- `username`
+  > Public-facing username displayed in posts and comments. Must be unique
+  > and follow naming conventions.
 - `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since members must authenticate to use the platform.
-- `created_at`: Timestamp when the member account was created.
-- `updated_at`
-  > Timestamp when the member account was last updated (e.g., password
-  > change, profile update).
-- `deleted_at`
-  > Timestamp when this member account was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the member account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform actions.
-- `email_verified`
-  > Whether the member has verified their email address. Required to unlock
-  > posting and commenting privileges.
+  > BCrypt-hashed password for secure authentication. Never stored in plain
+  > text.
+- `nickname`
+  > Optional display name that may differ from username. Used in
+  > notifications and UI.
+- `created_at`: Timestamp when the citizen account was registered.
+- `updated_at`: Timestamp of the last update to citizen profile or authentication data.
+- `deleted_at`: Soft delete timestamp; null indicates account is active.
 
-### `community_platform_moderator`
+### `community_bbs_citizen_sessions`
 
-Represents community-level administrators who have moderation privileges
-in specific communities.
-
-Moderators are members who have been granted moderation rights over one
-or more communities by an administrator. They can delete posts and
-comments, ban users from specific communities, approve pending content,
-and manage community settings. Moderators log in using the same
-authentication system as members but have additional permissions encoded
-in their JWT token.
-
-This table contains authentication fields and status controls. Unlike
-members, moderators have explicit authority over specific communities
-(managed in other tables like community_platform_community_moderators).
-This table represents the core identity of a moderator user.
+Session record for citizen authentication. Each session represents an
+active login instance from a specific device or browser. Session data is
+ephemeral and tied to the citizen's identity for tracking authenticated
+interactions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
-- `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since moderators must authenticate to use the platform.
-- `created_at`: Timestamp when the moderator account was created.
-- `updated_at`
-  > Timestamp when the moderator account was last updated (e.g., password
-  > change, profile update).
-- `deleted_at`
-  > Timestamp when this moderator account was soft-deleted. Null means
-  > active. Used for audit trails and data cleanup.
-- `status`
-  > Current status of the moderator account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform moderation actions.
-- `email_verified`
-  > Whether the moderator has verified their email address. Required for full
-  > access to moderation features.
+- `community_bbs_citizen_id`
+  > Reference to the citizen account this session belongs to. {@link
+  > community_bbs_citizen.id}
+- `ip`
+  > IP address from which the session was initiated. Used for security and
+  > geographic analysis.
+- `href`
+  > Full URL of the page where the login occurred. Used for session context
+  > tracking.
+- `referrer`: HTTP referrer URL indicating where the user came from before login.
+- `created_at`: Timestamp when the session was initiated.
+- `expired_at`
+  > Timestamp when this session expires or was manually revoked. Null if
+  > still active.
 
-### `community_platform_admin`
+### `community_bbs_moderator`
 
-Represents system-wide administrators with unrestricted control over the
-entire platform.
-
-Admins have full authority to manage all users, communities, content, and
-system settings. They can ban users globally, promote/demote moderators,
-view audit logs, modify system-wide policies, and perform emergency
-moderation actions. Admins log in using the same authentication system as
-members and moderators.
-
-This table contains essential authentication fields and status controls.
-Admins are granted privileges through system-wide configuration; there
-are no community-specific permissions.
-
-An admin can be a member or moderator, but this table represents their
-elevated role in the system with broader permissions.
+Moderator actor with elevated permissions to review, hide, or remove
+content. Moderators are selected from trusted citizen users and given
+limited authority over community content. Their identity remains distinct
+from regular citizens.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
+- `email`
+  > Email address used for authentication and account recovery. Must be
+  > unique and verified.
+- `username`
+  > Public-facing username displayed in moderation logs and community
+  > communications. Must be unique.
 - `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since admins must authenticate to use the platform.
+  > BCrypt-hashed password for secure authentication. Never stored in plain
+  > text.
+- `nickname`: Optional display name used in moderation notices and system notifications.
+- `created_at`: Timestamp when the moderator account was activated.
+- `updated_at`: Timestamp of the last update to moderator profile or authentication data.
+- `deleted_at`: Soft delete timestamp; null indicates account is active.
+
+### `community_bbs_moderator_sessions`
+
+Session record for moderator authentication. Tracks each active login
+session for moderators, enabling accountability and security isolation
+from regular citizen sessions.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_bbs_moderator_id`
+  > Reference to the moderator account this session belongs to. {@link
+  > community_bbs_moderator.id}
+- `ip`
+  > IP address from which the session was initiated. Used for security and
+  > geographic analysis.
+- `href`
+  > Full URL of the page where the login occurred. Used for session context
+  > tracking.
+- `referrer`: HTTP referrer URL indicating where the user came from before login.
+- `created_at`: Timestamp when the session was initiated.
+- `expired_at`
+  > Timestamp when this session expires or was manually revoked. Null if
+  > still active.
+
+### `community_bbs_admin`
+
+Administrator actor with full system access. Admins manage platform
+settings, handle legal compliance, oversee moderator actions, and resolve
+citizen disputes. Admin accounts are highly restricted and require
+multi-factor authentication.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > Email address used for authentication and system notifications. Must be
+  > unique and verified.
+- `username`
+  > Public-facing administrator username, used in audit logs and system
+  > communications.
+- `password_hash`
+  > BCrypt-hashed password for secure authentication. Never stored in plain
+  > text.
+- `nickname`: Optional display name for administrative interfaces and internal notes.
 - `created_at`: Timestamp when the admin account was created.
-- `updated_at`
-  > Timestamp when the admin account was last updated (e.g., password change,
-  > profile update).
-- `deleted_at`
-  > Timestamp when this admin account was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the admin account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform administrative actions.
-- `email_verified`
-  > Whether the admin has verified their email address. Required for security
-  > and compliance.
+- `updated_at`: Timestamp of the last update to admin profile or authentication data.
+- `deleted_at`: Soft delete timestamp; null indicates account is active.
 
-### `community_platform_guest_sessions`
+### `community_bbs_admin_sessions`
 
-Tracks anonymous browsing sessions for guest users who are not
-authenticated.
-
-Each guest session represents a single browsing session (e.g., from a
-browser or device). This session table is used for analytics, abuse
-detection, and rate limiting. It does not represent a persistent identity
-and has no relation to a user account.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on guest_id
-and created_at enables efficient tracking of session activity patterns.
+Session record for administrator authentication. Every admin login
+creates a session that is strictly tracked for security and audit
+purposes. Admin sessions are isolated from all other actor sessions to
+prevent privilege escalation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_guest_id`
-  > References the guest record that this session belongs to. {@link
-  > community_platform_guest.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
+- `community_bbs_admin_id`
+  > Reference to the admin account this session belongs to. {@link
+  > community_bbs_admin.id}
+- `ip`
+  > IP address from which the session was initiated. Used for security and
+  > geographic analysis.
+- `href`
+  > Full URL of the page where the login occurred. Used for session context
+  > tracking.
+- `referrer`: HTTP referrer URL indicating where the user came from before login.
+- `created_at`: Timestamp when the session was initiated.
 - `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `community_platform_member_sessions`
-
-Tracks authenticated user sessions for member accounts.
-
-Each session represents an active login session for a member (standard
-user). When a member logs in, a session record is created with a JWT
-token (stored externally). This table enables session management,
-revocation, and security monitoring.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on member_id
-and created_at enables efficient tracking of login patterns and for
-revocation purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_member_id`
-  > References the member record that this session belongs to. {@link
-  > community_platform_member.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `community_platform_moderator_sessions`
-
-Tracks authenticated user sessions for moderator accounts.
-
-Each session represents an active login session for a moderator.
-Moderator sessions are treated the same as member sessions for
-authentication purposes, but are tracked separately for audit and
-security purposes.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on
-moderator_id and created_at enables efficient tracking of moderator
-activity patterns.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_moderator_id`
-  > References the moderator record that this session belongs to. {@link
-  > community_platform_moderator.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `community_platform_admin_sessions`
-
-Tracks authenticated user sessions for administrative accounts with
-system-wide privileges.
-
-Each session represents an active login session for an admin. Admin
-sessions have stricter security requirements, including shorter idle
-timeouts and mandatory two-factor authentication in production. This
-table enables audit trails for critical administrative actions.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on admin_id
-and created_at enables efficient tracking of admin activity patterns and
-security analysis.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_admin_id`
-  > References the admin record that this session belongs to. {@link
-  > community_platform_admin.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 15 minutes of
-  > inactivity). Null means the session is still active.
-
-### `guest`
-
-Represents anonymous users who can browse content without authentication.
-
-Guests are unauthenticated visitors who can view public communities and
-posts but cannot interact with content (vote, comment, subscribe). They
-are identified by anonymous session context and cannot have a persistent
-identity. This table stores minimal information about guests, primarily
-for logging system usage and analytics.
-
-Although guests do not need authentication, their activities are tracked
-for analytics and moderation purposes. Guest records are not linked to
-any login credentials and do not have passwords. The status field
-indicates whether this guest session is active or inactive, useful for
-cleanup processes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `created_at`: Timestamp when the guest record was first created in the system.
-- `updated_at`
-  > Timestamp when the guest record was last updated (e.g., when session
-  > expired).
-- `deleted_at`
-  > Timestamp when this guest record was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the guest session. Values: 'active', 'inactive',
-  > 'banned'. Used to indicate if the guest can continue browsing.
-- `created_by`
-  > System identifier of the entity that created this record. Standardized as
-  > 'system' for auto-generated records.
-- `updated_by`
-  > System identifier of the entity that last updated this record. Null means
-  > no update has occurred since creation.
-
-### `member`
-
-Represents authenticated standard users who can create content, vote,
-comment, and subscribe to communities.
-
-Members are the primary content-producing actors in the system. They must
-register with an email and password, and verify their email. Members can
-create posts, upvote/downvote, comment on posts, reply to comments,
-subscribe to communities, and have a persistent reputation (karma) that
-travels across communities.
-
-This table includes essential authentication fields (password_hash) and
-status controls for suspended/banned accounts. Members can be promoted to
-moderators through admin action. The status field determines if the
-account is active, suspended, or banned.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
-- `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since members must authenticate to use the platform.
-- `created_at`: Timestamp when the member account was created.
-- `updated_at`
-  > Timestamp when the member account was last updated (e.g., password
-  > change, profile update).
-- `deleted_at`
-  > Timestamp when this member account was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the member account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform actions.
-- `email_verified`
-  > Whether the member has verified their email address. Required to unlock
-  > posting and commenting privileges.
-- `created_by`
-  > System identifier of the entity that created this record. Standardized as
-  > 'system' for auto-generated records.
-- `updated_by`
-  > System identifier of the entity that last updated this record. Null means
-  > no update has occurred since creation.
-
-### `moderator`
-
-Represents community-level administrators who have moderation privileges
-in specific communities.
-
-Moderators are members who have been granted moderation rights over one
-or more communities by an administrator. They can delete posts and
-comments, ban users from specific communities, approve pending content,
-and manage community settings. Moderators log in using the same
-authentication system as members but have additional permissions encoded
-in their JWT token.
-
-This table contains authentication fields and status controls. Unlike
-members, moderators have explicit authority over specific communities
-(managed in other tables like community_platform_community_moderators).
-This table represents the core identity of a moderator user.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
-- `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since moderators must authenticate to use the platform.
-- `created_at`: Timestamp when the moderator account was created.
-- `updated_at`
-  > Timestamp when the moderator account was last updated (e.g., password
-  > change, profile update).
-- `deleted_at`
-  > Timestamp when this moderator account was soft-deleted. Null means
-  > active. Used for audit trails and data cleanup.
-- `status`
-  > Current status of the moderator account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform moderation actions.
-- `email_verified`
-  > Whether the moderator has verified their email address. Required for full
-  > access to moderation features.
-- `created_by`
-  > System identifier of the entity that created this record. Standardized as
-  > 'system' for auto-generated records.
-- `updated_by`
-  > System identifier of the entity that last updated this record. Null means
-  > no update has occurred since creation.
-
-### `admin`
-
-Represents system-wide administrators with unrestricted control over the
-entire platform.
-
-Admins have full authority to manage all users, communities, content, and
-system settings. They can ban users globally, promote/demote moderators,
-view audit logs, modify system-wide policies, and perform emergency
-moderation actions. Admins log in using the same authentication system as
-members and moderators.
-
-This table contains essential authentication fields and status controls.
-Admins are granted privileges through system-wide configuration; there
-are no community-specific permissions.
-
-An admin can be a member or moderator, but this table represents their
-elevated role in the system with broader permissions.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`: Email address used for registration and verification. Must be unique.
-- `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > since admins must authenticate to use the platform.
-- `created_at`: Timestamp when the admin account was created.
-- `updated_at`
-  > Timestamp when the admin account was last updated (e.g., password change,
-  > profile update).
-- `deleted_at`
-  > Timestamp when this admin account was soft-deleted. Null means active.
-  > Used for audit trails and data cleanup.
-- `status`
-  > Current status of the admin account. Values: 'active', 'suspended',
-  > 'banned'. Indicates if the account can perform administrative actions.
-- `email_verified`
-  > Whether the admin has verified their email address. Required for security
-  > and compliance.
-- `created_by`
-  > System identifier of the entity that created this record. Standardized as
-  > 'system' for auto-generated records.
-- `updated_by`
-  > System identifier of the entity that last updated this record. Null means
-  > no update has occurred since creation.
-
-### `guest_sessions`
-
-Tracks anonymous browsing sessions for guest users who are not
-authenticated.
-
-Each guest session represents a single browsing session (e.g., from a
-browser or device). This session table is used for analytics, abuse
-detection, and rate limiting. It does not represent a persistent identity
-and has no relation to a user account.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on guest_id
-and created_at enables efficient tracking of session activity patterns.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `guest_id`
-  > References the guest record that this session belongs to. {@link
-  > guest.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `member_sessions`
-
-Tracks authenticated user sessions for member accounts.
-
-Each session represents an active login session for a member (standard
-user). When a member logs in, a session record is created with a JWT
-token (stored externally). This table enables session management,
-revocation, and security monitoring.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on member_id
-and created_at enables efficient tracking of login patterns and for
-revocation purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `member_id`
-  > References the member record that this session belongs to. {@link
-  > member.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `moderator_sessions`
-
-Tracks authenticated user sessions for moderator accounts.
-
-Each session represents an active login session for a moderator.
-Moderator sessions are treated the same as member sessions for
-authentication purposes, but are tracked separately for audit and
-security purposes.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on
-moderator_id and created_at enables efficient tracking of moderator
-activity patterns.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `moderator_id`
-  > References the moderator record that this session belongs to. {@link
-  > moderator.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
-
-### `admin_sessions`
-
-Tracks authenticated user sessions for administrative accounts with
-system-wide privileges.
-
-Each session represents an active login session for an admin. Admin
-sessions have stricter security requirements, including shorter idle
-timeouts and mandatory two-factor authentication in production. This
-table enables audit trails for critical administrative actions.
-
-This table follows the strict session pattern: no token hashes, no device
-info, no updated_at, no deleted_at. Only exposes required fields: ip,
-href, referrer, created_at, expired_at. The composite index on admin_id
-and created_at enables efficient tracking of admin activity patterns and
-security analysis.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `admin_id`
-  > References the admin record that this session belongs to. {@link
-  > admin.id}.
-- `ip`: Client IP address from which the session was initiated.
-- `href`: URL of the page the user was viewing when the session was created.
-- `referrer`
-  > Referrer URL indicating where the user came from before visiting the
-  > platform.
-- `created_at`: Timestamp when this session was initiated.
-- `expired_at`
-  > Timestamp when this session expired (e.g., after 30 minutes of
-  > inactivity). Null means the session is still active.
+  > Timestamp when this session expires or was manually revoked. Null if
+  > still active.
 
 ## Communities
 
 ```mermaid
 erDiagram
-"community_platform_communities" {
+"community_bbs_communities" {
   String id PK
+  String created_by_id FK
+  String category_id FK
   String name UK
+  String title
   String description
+  String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
+  Int post_count
   Int subscriber_count
+  Boolean is_nsfw
 }
-"community_platform_community_settings" {
+"community_bbs_community_settings" {
   String id PK
   String community_id FK,UK
-  Boolean nsfw
-  Boolean requires_moderator_approval
-  Boolean allow_image_posts
-  Boolean allow_link_posts
-  Boolean allow_text_posts
+  DateTime created_at
+  DateTime updated_at
+  Boolean allow_posting
+  Boolean require_post_approval
   Boolean allow_comments
-  DateTime created_at
-  DateTime updated_at
+  Boolean allow_anonymous_posting
+  Int min_karma_to_post
+  Int max_post_length
+  Int max_comment_length
+  Boolean enable_replies
+  Boolean allow_self_promotion
+  DateTime posting_hours_start "nullable"
+  DateTime posting_hours_end "nullable"
+  String default_sort_order
 }
-"community_platform_community_subscriptions" {
+"community_bbs_community_moderators" {
   String id PK
   String community_id FK
-  String member_id FK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_community_moderators" {
-  String id PK
-  String community_id FK
-  String moderator_id FK
+  String citizen_id FK
+  String assigned_by_id
   DateTime assigned_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_community_tags" {
-  String id PK
-  String community_id FK
-  String tag
+  Boolean is_owner
+  Boolean is_suspended
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"community_platform_community_archive_logs" {
+"community_bbs_community_subscribers" {
   String id PK
   String community_id FK
-  String acted_by_id FK
-  String action
-  String reason
+  String citizen_id FK
+  DateTime subscribed_at
+  Boolean is_active
+  String notification_preference
   DateTime created_at
+  DateTime updated_at
+  DateTime unsubscribed_at "nullable"
 }
-"community_platform_community_settings" |o--|| "community_platform_communities" : community
-"community_platform_community_subscriptions" }o--|| "community_platform_communities" : community
-"community_platform_community_moderators" }o--|| "community_platform_communities" : community
-"community_platform_community_tags" }o--|| "community_platform_communities" : community
-"community_platform_community_archive_logs" }o--|| "community_platform_communities" : community
+"community_bbs_community_invitations" {
+  String id PK
+  String community_id FK
+  String invited_citizen_id FK
+  String invited_by_id FK
+  String invite_role
+  String status
+  String invitation_code UK
+  DateTime expires_at
+  DateTime sent_at
+  DateTime accepted_at "nullable"
+  DateTime rejected_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"community_bbs_community_settings" |o--|| "community_bbs_communities" : community
+"community_bbs_community_moderators" }o--|| "community_bbs_communities" : community
+"community_bbs_community_subscribers" }o--|| "community_bbs_communities" : community
+"community_bbs_community_invitations" }o--|| "community_bbs_communities" : community
 ```
 
-### `community_platform_communities`
+### `community_bbs_communities`
 
-Main community entity representing a user-created discussion group.
-
-Each community is a self-governing space where users can post, comment,
-and vote. Communities are created by members and have a unique name,
-description, and settings.
-
-Communities are the foundational organizational unit of the platform.
-Users can subscribe to communities to see their content in their home
-feed.
-
-Communities can be archived by administrators, which changes their state
-but preserves all historical content. Machines do not automatically
-delete communities. However, communities can be renamed or have their
-moderation rules updated through their settings.
-
-This is the primary entity for community content and must support
-independent CRUD operations for both users and admins.
+Main community entity representing independent discussion spaces
+(subreddits). Each community has its own rules, moderators, and
+subscribers. Communities are created by citizens and can be discovered by
+others based on their category and status.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `created_by_id`: The citizen who created this community. [community_bbs_citizen.id](#community_bbs_citizen).
+- `category_id`
+  > The content category this community belongs to. {@link
+  > community_bbs_content_categories.id}.
 - `name`
-  > The unique display name of the community. Must be globally unique,
-  > contain only alphanumeric characters, hyphens, and underscores, and be
-  > between 3 and 50 characters long.
-- `description`
-  > A brief description of the community's purpose or topic. This text is
-  > shown to users when browsing communities.
-- `created_at`
-  > Timestamp when the community was created. Set to the moment of creation
-  > in Asia/Seoul timezone.
-- `updated_at`
-  > Timestamp of the last update to the community's metadata. Updated
-  > whenever the name, description, or any setting changes.
-- `deleted_at`
-  > Null if the community is active. Non-null if the community has been
-  > soft-deleted (archived permanently by admin). This supports soft
-  > deletion, preserving data for audit trails while hiding content from
-  > regular users.
-- `subscriber_count`
-  > The current number of members subscribed to this community. This is a
-  > denormalized counter field for performance, updated whenever a
-  > subscription is added or removed. It should be calculated from the
-  > community_platform_community_subscriptions table.
-
-### `community_platform_community_settings`
-
-Configuration settings for a community, linked one-to-one to a community.
-
-This table holds non-core configuration parameters for a community that
-affect its behavior and appearance, such as whether new posts require
-moderator approval, whether the community is marked as NSFW, or whether
-embedded images are allowed.
-
-All settings are managed entirely through the corresponding community
-entity and are not independently accessible. This table prevents bloat in
-the main community table while preserving data integrity.
-
-This table is strictly owned by and has a 1:1 relationship with the
-community_platform_communities table.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_id`
-  > Reference to the parent community which this setting belongs to. {@link
-  > community_platform_communities.id}.
-- `nsfw`
-  > If true, this community is marked as Not Safe For Work. Users must opt-in
-  > to see this community's content. Default is false.
-- `requires_moderator_approval`
-  > If true, new posts in this community must be approved by a moderator
-  > before becoming visible. Default is false.
-- `allow_image_posts`
-  > If true, users may upload images when creating posts. If false, only text
-  > and link posts are allowed. Default is true.
-- `allow_link_posts`
-  > If true, users may submit external links as posts. If false, only text
-  > and image posts are allowed. Default is true.
-- `allow_text_posts`
-  > If true, users may submit text posts. If false, only image and link posts
-  > are allowed. Default is true.
-- `allow_comments`
-  > If true, users may comment on posts in this community. If false, no
-  > comments are permitted. Default is true.
-- `created_at`
-  > Timestamp when these settings were created or first initialized. This
-  > matches the creation of the associated community.
-- `updated_at`: Timestamp when any setting was last modified.
-
-### `community_platform_community_subscriptions`
-
-Junction table for the many-to-many relationship between members and
-communities.
-
-This table represents which members are subscribed to which communities.
-A member must be subscribed to a community to see its posts in their
-personalized feed.
-
-This table is essential for implementing the personalized content feed
-feature. It is managed indirectly through the community and member
-interfaces; users subscribe and unsubscribe via their profile, not
-through direct CRUD on this table.
-
-This is a pure junction table without additional business data, enabling
-a scalable and flexible subscription system.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_id`
-  > Reference to the community this subscription belongs to. {@link
-  > community_platform_communities.id}.
-- `member_id`
-  > Reference to the member who subscribed to the community. {@link
-  > community_platform_member.id}.
-- `created_at`: Timestamp when this subscription was created.
-- `updated_at`
-  > Timestamp when this subscription was last modified (e.g., if unsubscribed
-  > and re-subscribed).
-- `deleted_at`
-  > Null if subscribed. Non-null if the subscription was deactivated (user
-  > unsubscribed). This supports soft-deletion so subscription history is
-  > preserved for analytics and audit trails.
-
-### `community_platform_community_moderators`
-
-Junction table that defines which moderators are assigned to which
-communities.
-
-Each community can have multiple moderators, and a single member can be a
-moderator of multiple communities. This table establishes the
-relationship between moderators (from community_platform_moderator) and
-communities (from community_platform_communities).
-
-This table is essential for permission management. Moderators are granted
-rights and responsibilities within a community through this assignment.
-Modifying this table requires admin approval. Removing a moderator from
-this table revokes their moderation rights without deleting the moderator
-account.
-
-This table ensures that moderation is decoupled from user roles and is
-precisely scoped to individual communities.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_id`
-  > Reference to the community this moderator is assigned to. {@link
-  > community_platform_communities.id}.
-- `moderator_id`
-  > Reference to the moderator user who manages this community. {@link
-  > community_platform_moderator.id}.
-- `assigned_at`
-  > Timestamp when the moderator was assigned to this community. This helps
-  > track the history of moderation assignments.
-- `updated_at`
-  > Timestamp of the last update to this relationship (e.g., if assigned
-  > again after removal).
-- `deleted_at`
-  > Null if still an active moderator. Non-null if the moderator was removed
-  > from this community. This supports soft-deletion so the history of
-  > moderation assignments is preserved for audit trails.
-
-### `community_platform_community_tags`
-
-Tags associated with communities for categorization and filtering.
-
-Each community can have multiple tags, and tags can be shared across
-multiple communities. This table facilitates discovery of communities
-related by similar topics.
-
-This table enables users to filter communities by interest (e.g.,
-"photography", "technology"), enhancing content discovery without
-requiring a hierarchical category structure. Tags are simple strings
-chosen by creators or administrators and are not managed in a
-domain-specific vocabulary.
-
-No independent CRUD operations exist for this table; tags are added or
-removed through the community settings or admin panel.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_id`
-  > Reference to the community this tag belongs to. {@link
-  > community_platform_communities.id}.
-- `tag`
-  > The actual tag text (e.g., 'gaming', 'science', 'books'). Must be
-  > lowercase and use only alphanumeric characters and hyphens. Maximum 50
+  > Unique identifier for the community in URL format (e.g., 'python',
+  > 'technology'). Must be unique across all communities.
+- `title`
+  > Display name of the community shown to users. Can use spaces and special
   > characters.
-- `created_at`: Timestamp when this tag was added to the community.
-- `updated_at`
-  > Timestamp of the last modification (rare, typically when tag is made
-  > unique).
-- `deleted_at`
-  > Null if the tag is still associated. Non-null if the tag was removed from
-  > the community. This allows the tag to be reused and preserves history for
-  > analytics.
+- `description`
+  > Brief description explaining the purpose and rules of the community,
+  > visible to all members.
+- `status`
+  > Current status of the community. Valid values: 'active', 'archived',
+  > 'pending_review', 'suspended'.
+- `created_at`: Timestamp when the community was created.
+- `updated_at`: Timestamp when the community was last updated.
+- `deleted_at`: Timestamp when the community was soft-deleted (null if active).
+- `post_count`
+  > Cumulative count of posts in this community. Updated automatically when
+  > posts are created/removed.
+- `subscriber_count`
+  > Current number of subscribers to this community. Updated automatically
+  > when subscribers join/leave.
+- `is_nsfw`
+  > Whether this community contains content that may be inappropriate for
+  > some audiences.
 
-### `community_platform_community_archive_logs`
+### `community_bbs_community_settings`
 
-Audit trail of community archive/unarchive events.
-
-This table records all historical state changes to a community’s archive
-status. Each record represents a single event: a community was either
-archived (made inactive) or unarchived (re-activated) by either a
-moderator or admin.
-
-Since community archive status is a snapshot that needs to be preserved
-for compliance and audit trails, this table is entirely append-only. No
-updates or deletions are allowed once logged. The soft-delete flag in the
-main community table mirrors the latest status in this log.
-
-This structure ensures that all historical decisions about community
-health are transparent and retrievable.
-
-To determine if a community is currently archived: query this table for
-the latest log for the community where action = 'archive' without a
-corresponding 'unarchive' event.
+Configuration settings for each community that determine behavior,
+moderation rules, and visibility. Different communities can have
+different settings for posting permissions, voting rules, etc. This table
+maintains 1:1 relationship with main community entity.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `community_id`
-  > Reference to the community that was archived or unarchived. {@link
-  > community_platform_communities.id}.
-- `acted_by_id`
-  > Reference to the admin or moderator who performed the archive/unarchive
-  > action. [community_platform_admin.id](#community_platform_admin) or {@link
-  > community_platform_moderator.id}.
-- `action`
-  > The type of action performed: 'archive' or 'unarchive'. This defines
-  > whether the state change is enabling or disabling the community.
-- `reason`
-  > The human-readable reason for the archive/unarchive action provided by
-  > the acting admin/moderator. Examples: 'Excessive reports', 'Violated
-  > community guidelines', 'Community inactivity', 'Requested by owner'.
-- `created_at`
-  > Timestamp of when the archive/unarchive action was taken. This is
-  > immutable and set at record creation.
+  > The community this setting applies to. {@link
+  > community_bbs_communities.id}.
+- `created_at`: Timestamp when these settings were created.
+- `updated_at`: Timestamp when these settings were last updated.
+- `allow_posting`: Whether users are allowed to create new posts in this community.
+- `require_post_approval`: Whether new posts must be approved by a moderator before becoming visible.
+- `allow_comments`: Whether users can add comments to posts in this community.
+- `allow_anonymous_posting`
+  > Whether users can post without being logged in (not applicable in this
+  > system).
+- `min_karma_to_post`
+  > Minimum karma threshold a citizen must have to post in this community. -1
+  > means no threshold.
+- `max_post_length`: Maximum character limit for post content in this community.
+- `max_comment_length`: Maximum character limit for comments in this community.
+- `enable_replies`: Whether threads can have nested replies to comments.
+- `allow_self_promotion`: Whether users can promote their own content (links, products, services).
+- `posting_hours_start`: Start time when posting is allowed (in UTC). May be null for 24/7 posting.
+- `posting_hours_end`: End time when posting is allowed (in UTC). May be null for 24/7 posting.
+- `default_sort_order`
+  > Default sort order for posts in this community. Valid values: 'hot',
+  > 'new', 'top', 'controversial'.
+
+### `community_bbs_community_moderators`
+
+Represents moderators assigned to communities, giving them authority to
+manage content and users within a specific community. Each moderator is a
+citizen assigned to a particular community with specific moderation
+privileges.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`
+  > The community this moderator is assigned to. {@link
+  > community_bbs_communities.id}.
+- `citizen_id`
+  > The citizen who is serving as a moderator. {@link
+  > community_bbs_citizen.id}.
+- `assigned_by_id`
+  > The citizen or admin who assigned this moderator to the community. {@link
+  > community_bbs_citizen.id}.
+- `assigned_at`: Timestamp when this moderator was assigned to the community.
+- `is_owner`
+  > Whether this moderator is the original creator of the community. Owner
+  > has ultimate authority.
+- `is_suspended`
+  > Whether this moderator's privileges have been temporarily suspended for
+  > misconduct.
+- `created_at`: Timestamp when this moderator assignment was created.
+- `updated_at`: Timestamp when this moderator assignment was last updated.
+
+### `community_bbs_community_subscribers`
+
+Tracks which citizens are subscribed to which communities, enabling
+notification delivery and content personalization. A subscription
+indicates interest in receiving new content from the community.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`: The community being subscribed to. [community_bbs_communities.id](#community_bbs_communities).
+- `citizen_id`: The citizen who is subscribed. [community_bbs_citizen.id](#community_bbs_citizen).
+- `subscribed_at`: Timestamp when the citizen subscribed to this community.
+- `is_active`: Whether the subscription is currently active (not muted or unsubscribed).
+- `notification_preference`
+  > How often this citizen wants to be notified about new posts. Values:
+  > 'every_post', 'daily_digest', 'weekly_digest', 'none'.
+- `created_at`: Timestamp when this subscription record was created.
+- `updated_at`: Timestamp when this subscription record was last updated.
+- `unsubscribed_at`: Timestamp when this subscription was deactivated (null if still active).
+
+### `community_bbs_community_invitations`
+
+Manages invitations sent to citizens to join a community as a moderator
+or subscriber. This allows community owners to invite trusted users and
+extends community growth beyond public discovery.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`: The community being invited to. [community_bbs_communities.id](#community_bbs_communities).
+- `invited_citizen_id`: The citizen who was invited. [community_bbs_citizen.id](#community_bbs_citizen).
+- `invited_by_id`: The citizen who sent the invitation. [community_bbs_citizen.id](#community_bbs_citizen).
+- `invite_role`: The role being invited for. Values: 'moderator', 'subscriber'.
+- `status`
+  > Current status of the invitation. Values: 'pending', 'accepted',
+  > 'rejected', 'expired'.
+- `invitation_code`
+  > Unique code used to accept the invitation securely. Must be randomly
+  > generated.
+- `expires_at`: Timestamp when the invitation will expire if not accepted.
+- `sent_at`: Timestamp when the invitation was sent.
+- `accepted_at`: Timestamp when the invitation was accepted (null if not accepted).
+- `rejected_at`: Timestamp when the invitation was rejected (null if not rejected).
+- `created_at`: Timestamp when this invitation record was created.
+- `updated_at`: Timestamp when this invitation record was last updated.
 
 ## Posts
 
 ```mermaid
 erDiagram
-"community_platform_posts" {
+"community_bbs_posts" {
   String id PK
-  String member_id FK
   String community_id FK
+  String citizen_id FK
   String title
+  String body "nullable"
   String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  Int total_votes
-  Int comment_count
 }
-"community_platform_post_texts" {
+"community_bbs_post_images" {
   String id PK
   String post_id FK,UK
-  String body
+  String(80000) url UK
+  String filename "nullable"
+  Int size
+  Int width "nullable"
+  Int height "nullable"
   DateTime created_at
 }
-"community_platform_post_links" {
+"community_bbs_post_links" {
   String id PK
   String post_id FK,UK
   String(80000) url UK
   String title "nullable"
   String description "nullable"
-  String domain
+  String(80000) favicon_url "nullable"
   DateTime created_at
 }
-"community_platform_post_images" {
+"community_bbs_post_categories" {
   String id PK
   String post_id FK,UK
-  String(80000) image_url UK
-  String(80000) thumbnail_url
-  String original_filename "nullable"
-  Int width
-  Int height
-  Int file_size_kb
-  String mime_type
+  String community_id FK
+  String category
   DateTime created_at
 }
-"community_platform_post_snapshots" {
+"community_bbs_post_snapshots" {
   String id PK
   String post_id FK
-  String edited_by_id FK "nullable"
   String title
+  String body "nullable"
   String status
-  Int total_votes
-  Int comment_count
-  DateTime snapshot_at
-  String snapshot_reason
-}
-"community_platform_post_tags" {
-  String id PK
-  String post_id FK
-  String tag_id FK
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  DateTime snapshot_created_at
+  String snapshot_reason
+  String edited_by "nullable"
 }
-"community_platform_post_texts" |o--|| "community_platform_posts" : post
-"community_platform_post_links" |o--|| "community_platform_posts" : post
-"community_platform_post_images" |o--|| "community_platform_posts" : post
-"community_platform_post_snapshots" }o--|| "community_platform_posts" : post
-"community_platform_post_tags" }o--|| "community_platform_posts" : post
+"community_bbs_post_images" |o--|| "community_bbs_posts" : post
+"community_bbs_post_links" |o--|| "community_bbs_posts" : post
+"community_bbs_post_categories" |o--|| "community_bbs_posts" : post
+"community_bbs_post_snapshots" }o--|| "community_bbs_posts" : post
 ```
 
-### `community_platform_posts`
+### `community_bbs_posts`
 
-Main post entity containing shared fields for all post types.
+User-submitted content including text, links, or images posted to
+communities.
 
-Tracks the core metadata for every post on the platform, regardless of
-content type (text, link, or image). This table serves as the
-authoritative source for post lifetime events, authorship, community
-association, and visibility state. All other post-specific tables
-reference this entity.
+Represents primary content that citizens create and interact with in
+community forums. Posts serve as the foundation for discussion with
+comments and votes. Each post belongs to a specific community and is
+created by a citizen account.
 
-The status field determines visibility: 'published' makes the post
-publicly visible, 'pending_moderation' hides it from feeds until
-approved, 'hidden' indicates removal by moderator or system, and
-'deleted' denotes user-initiated deletion with retained metadata.
+Posts support rich content through separate linked entities (images or
+links). The status field controls visibility - posts can be published,
+pending review, or hidden for moderation. Soft deletion allows moderation
+and user-initiated removal while maintaining audit trails. This table
+must preserve all raw post data without any calculated fields.
 
-All posts have a created_at and updated_at timestamp for audit trails.
-Soft delete is implemented via deleted_at to preserve historical data
-integrity for karma calculations and reporting.
+Critical for community engagement - enables sorting by hot, new, top, and
+controversial metrics through external computation. The snapshot
+mechanism ensures historical preservation when posts are edited or
+moderated.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `member_id`: The member who created this post. [community_platform_member.id](#community_platform_member).
-- `community_id`
-  > The community to which this post belongs. {@link
-  > community_platform_communities.id}.
-- `title`: The title of the post. Must be present and non-empty for visibility.
-- `status`
-  > The visibility state of this post. Valid values: 'published',
-  > 'pending_moderation', 'hidden', 'deleted'.
-- `created_at`
-  > Timestamp when the post was created. Always set to server time in
-  > Asia/Seoul timezone.
-- `updated_at`
-  > Timestamp when the post was last updated. Updated whenever content,
-  > visibility, or metadata changes.
-- `deleted_at`
-  > Timestamp when the post was soft-deleted. NULL if the post is active.
-  > Used to persist post history.
-- `total_votes`
-  > Cumulative sum of upvotes minus downvotes. Updated atomically on every
-  > vote. Does NOT use triggers.
-- `comment_count`: Total number of direct comments and replies to this post.
-
-### `community_platform_post_texts`
-
-Stores the text content of text-type posts.
-
-This table contains the full full-length body text of posts that are
-created as text content. Each record is linked exactly one-to-one with a
-record in community_platform_posts via post_id. This separation ensures
-that the primary entity does not contain nullable fields and maintains
-strict 3NF.
-
-The text content is stored as plain unstructured text with a
-10,000-character limit as specified in business requirements. No
-formatting or markdown is parsed at database level.
-
-This table is managed only through its parent post entity and never
-accessed directly by user-facing APIs.
+Reference: [community_bbs_communities](#community_bbs_communities), {@link
+community_bbs_citizen}, [community_bbs_post_images](#community_bbs_post_images), {@link
+community_bbs_post_links}, [community_bbs_post_categories](#community_bbs_post_categories), {@link
+community_bbs_post_snapshots}
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `post_id`
-  > The main post this text content belongs to. {@link
-  > community_platform_posts.id}.
+- `community_id`: The community this post belongs to. [community_bbs_communities.id](#community_bbs_communities).
+- `citizen_id`: The citizen who created this post. [community_bbs_citizen.id](#community_bbs_citizen).
+- `title`
+  > The title of the post, limited to 200 characters. Required for post
+  > creation.
 - `body`
-  > The full text content of the post, up to 10,000 characters. Must not be
-  > empty.
-- `created_at`
-  > Timestamp when this text content was created. Always synchronized with
-  > community_platform_posts.created_at.
-
-### `community_platform_post_links`
-
-Stores URL information for link-type posts.
-
-This table contains the URL and metadata for posts that are created as
-external links. Each record is linked exactly one-to-one with a record in
-community_platform_posts via post_id. This ensures that links are stored
-separately from text or image posts, maintaining 3NF and performance.
-
-The URL is validated at application level to ensure it begins with
-http:// or https://. The title and description are extracted by the
-backend from the linked page (optional), but stored here if provided for
-better user experience.
-
-This table is managed only through its parent post entity and never
-accessed directly by user-facing APIs.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `post_id`: The main post this link belongs to. [community_platform_posts.id](#community_platform_posts).
-- `url`: The external URL for the link post. Must be a valid HTTP or HTTPS address.
-- `title`: Title of the linked resource, if extracted. May be null if not available.
-- `description`
-  > Description or summary of the linked resource, if extracted. May be null
-  > if not available.
-- `domain`
-  > The extracted domain name from the URL (e.g., 'example.com'). Used for
-  > spam filtering.
-- `created_at`
-  > Timestamp when this link was added. Always synchronized with
-  > community_platform_posts.created_at.
-
-### `community_platform_post_images`
-
-Stores information for image-type posts.
-
-This table contains metadata for image posts, including file paths,
-dimensions, and size information. Each image is associated with exactly
-one post in community_platform_posts. This separation prevents the main
-entity from having nullable fields and allows for scalable image
-management.
-
-Image files are stored in external object storage (e.g., Cloudinary).
-This table only stores the secure URL and metadata. File uploads are
-validated at application layer for size (max 10MB) and format (JPG, PNG,
-GIF, WebP).
-
-This table is managed only through its parent post entity and never
-accessed directly by user-facing APIs.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `post_id`: The main post this image belongs to. [community_platform_posts.id](#community_platform_posts).
-- `image_url`
-  > Secure, time-limited URL to the image file in cloud storage. Generated by
-  > backend after upload.
-- `thumbnail_url`: URL to a 150x150px thumbnail of the image. Auto-generated on upload.
-- `original_filename`
-  > The original filename including extension (e.g., 'photo.png'). Retained
-  > for reference and archival.
-- `width`: Width of the original image in pixels.
-- `height`: Height of the original image in pixels.
-- `file_size_kb`: File size in kilobytes. Used for storage tracking.
-- `mime_type`: MIME type of the image (e.g., 'image/png', 'image/jpeg').
-- `created_at`
-  > Timestamp when the image was uploaded. Always synchronized with
-  > community_platform_posts.created_at.
-
-### `community_platform_post_snapshots`
-
-Historical snapshots of post states for audit trails and versioning.
-
-This table captures the entire state of a post at the moment it was
-edited, moderated, or otherwise altered. Each record represents a
-point-in-time copy of the baseline data from community_platform_posts,
-community_platform_post_texts, etc., replicated here for historical
-integrity.
-
-Each snapshot is immutable and append-only. The post_id links to the
-current version. The snapshot_at timestamp corresponds to the moment of
-snapshot. This design ensures no data loss when users edit posts or
-moderators modify visibility.
-
-This table enables full history review without incurring joins or complex
-queries on the main tables.
-
-This table is managed by the system automatically (via triggers or
-service logic) and never exposed directly via user APIs.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `post_id`
-  > The original post this snapshot represents. {@link
-  > community_platform_posts.id}.
-- `edited_by_id`
-  > The user ID who triggered this snapshot (author or moderator). {@link
-  > community_platform_member.id}.
-- `title`: Title of the post at the time of snapshot.
+  > The main content of the post, containing user-submitted text. Can be
+  > empty if post contains only an image or link.
 - `status`
-  > Visibility state of the post at the time of snapshot. Valid values:
-  > 'published', 'pending_moderation', 'hidden', 'deleted'.
-- `total_votes`: Total upvotes minus downvotes at time of snapshot.
-- `comment_count`: Total number of comments at time of snapshot.
-- `snapshot_at`
-  > Timestamp when this snapshot was taken. Always stored in Asia/Seoul
-  > timezone.
-- `snapshot_reason`: Reason for snapshot: 'edit', 'moderation', 'auto', 'delete'.
+  > Current status of the post: 'published', 'pending', or 'hidden'. Affects
+  > visibility to users.
+- `created_at`: When the post was originally created by the citizen. Immutable timestamp.
+- `updated_at`
+  > When the post was last updated (e.g., edited).
+  >
+  > Modified on any edit within the 24-hour editable window.
+- `deleted_at`
+  > Timestamp when the post was soft-deleted by the author or moderator.
+  >
+  > Null indicates the post is still active.
 
-### `community_platform_post_tags`
+### `community_bbs_post_images`
 
-Junction table linking posts to their assigned tags.
+Image attachments associated with posts in the community forum.
 
-This table implements a many-to-many relationship between
-community_platform_posts and community_platform_community_tags. Each row
-represents the assignment of a specific tag to a specific post.
+Each post can have zero or one image attachment. Images are stored as
+references to external URLs for scalability. This separate table ensures
+normalization - an image is not a nullable field in posts but a distinct
+entity with its own lifecycle.
 
-Enables efficient filtering, searching, and aggregation of posts by tag.
-Also allows community tags to be reused across multiple posts.
+Managed entirely through the parent post - users cannot manage images
+independently, only through their associated post. Follows 3NF by
+isolating image data that depends on the post.
 
-Each post can have multiple tags. Each tag can be applied to many posts.
-Built-in uniqueness constraint prevents identical tag-to-post pair
-duplicates.
-
-This table is managed by the system when tags are added/removed from
-posts and is never directly altered by API consumers.
+Reference: [community_bbs_posts](#community_bbs_posts)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `post_id`: The post that has this tag. [community_platform_posts.id](#community_platform_posts).
-- `tag_id`
-  > The community tag assigned to this post. {@link
-  > community_platform_community_tags.id}.
-- `created_at`: Timestamp when this tag was applied to the post.
+- `post_id`: The post this image is attached to. [community_bbs_posts.id](#community_bbs_posts).
+- `url`: The public URL to the image file. Must be a valid HTTP/HTTPS URI.
+- `filename`: The original filename of the image when uploaded.
+- `size`: Size of the image file in bytes for storage and bandwidth estimation.
+- `width`: Pixel width of the image.
+- `height`: Pixel height of the image.
+- `created_at`: When the image was uploaded and attached to the post.
+
+### `community_bbs_post_links`
+
+External link attachments associated with posts in the community forum.
+
+Each post can have zero or one external link. Links are stored as
+distinct entities to maintain normalization and avoid nullable fields in
+the main post table. This design allows proper indexing and searching of
+link content while keeping the post data clean.
+
+Managed entirely through the parent post - users cannot manage links
+independently. Follows 3NF by isolating link data from post data.
+
+Reference: [community_bbs_posts](#community_bbs_posts)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `post_id`: The post this link is attached to. [community_bbs_posts.id](#community_bbs_posts).
+- `url`
+  > The full external URL being shared in the post. Must be a valid
+  > HTTP/HTTPS URI.
+- `title`
+  > Title of the linked resource, extracted from the linked website's meta
+  > title tag.
+- `description`
+  > Description of the linked resource, extracted from the linked website's
+  > meta description tag.
+- `favicon_url`: The favicon URL for the linked website, for display purposes.
+- `created_at`: When the link was attached to the post.
+
+### `community_bbs_post_categories`
+
+Categorization of posts by topic or category in the community forum.
+
+Supports organization of posts into different categories (e.g., 'Events',
+'Announcements', 'Discussion', 'Help'). Each post can belong to one
+category. A separate table is used to avoid embedded arrays or
+comma-separated values in a single field, ensuring proper normalization.
+
+Managed through the parent post and community - categories are selected
+by users when posting and can be configured by community moderators.
+
+Reference: [community_bbs_posts](#community_bbs_posts), [community_bbs_communities](#community_bbs_communities)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `post_id`: The post this category applies to. [community_bbs_posts.id](#community_bbs_posts).
+- `community_id`
+  > The community where this category is defined. {@link
+  > community_bbs_communities.id}.
+- `category`
+  > The name of the category, selected from community-predefined options
+  > (e.g., 'Events', 'Announcements', 'Discussion').
+- `created_at`: When the category was assigned to the post.
+
+### `community_bbs_post_snapshots`
+
+Historical snapshots of posts for audit trail and versioning purposes.
+
+Captures the precise state of a post at the time it was saved, modified,
+or moderated. All fields from the main community_bbs_posts table are
+duplicated here to ensure historical data integrity. Read-only snapshots
+enable auditing of changes over time.
+
+This snapshot table is critical for compliance and moderation - allows
+review of content at the time of reporting or violation. Uses append-only
+pattern - snapshots are never modified or deleted, only created when the
+original post changes.
+
+Reference: [community_bbs_posts](#community_bbs_posts)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `post_id`: The post this snapshot represents. [community_bbs_posts.id](#community_bbs_posts).
+- `title`: The post's title at the time of this snapshot.
+- `body`: The main content of the post at the time of this snapshot.
+- `status`
+  > The status of the post at the time of this snapshot: 'published',
+  > 'pending', or 'hidden'.
+- `created_at`: Original creation time of the post (copied from community_bbs_posts).
+- `updated_at`
+  > Time the post was last updated before this snapshot (copied from
+  > community_bbs_posts).
+- `deleted_at`
+  > Timestamp when the original post was soft-deleted (copied from
+  > community_bbs_posts). Null if not deleted.
+- `snapshot_created_at`: When this snapshot was captured (e.g., on edit or moderation action).
+- `snapshot_reason`: Why this snapshot was created: 'edit', 'moderation', 'report', 'initial'.
+- `edited_by`
+  > The citizen or moderator who triggered this snapshot (if applicable).
+  > References either community_bbs_citizen or community_bbs_moderator via
+  > application logic.
 
 ## Comments
 
 ```mermaid
 erDiagram
-"community_platform_comments" {
+"community_bbs_comments" {
   String id PK
-  String community_platform_post_id FK
-  String parent_comment_id FK "nullable"
-  String content
+  String post_id FK
+  String citizen_id FK
+  String body
+  String business_status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  String actor_type
 }
-"community_platform_comment_threads" {
+"community_bbs_comment_replies" {
   String id PK
-  String community_platform_comment_id FK,UK
-  String root_comment_id FK
-  Int depth
-}
-"community_platform_comment_snapshots" {
-  String id PK
-  String community_platform_comment_id FK
-  String community_platform_guest_id FK "nullable"
-  String community_platform_member_id FK "nullable"
-  String community_platform_moderator_id FK "nullable"
-  String community_platform_admin_id FK "nullable"
-  String content
-  DateTime snapshot_timestamp
-  Boolean is_edited
-  String actor_type
-}
-"community_platform_comment_tags" {
-  String id PK
-  String community_platform_comment_id FK
-  String community_platform_tag_id FK
-}
-"community_platform_comment_of_guests" {
-  String id PK
-  String community_platform_comment_id FK,UK
-  String community_platform_guest_id FK
   DateTime created_at
+  DateTime updated_at
 }
-"community_platform_comment_of_members" {
+"community_bbs_comment_threads" {
   String id PK
-  String community_platform_comment_id FK,UK
-  String community_platform_member_id FK
+  String root_comment_id FK,UK
+  String parent_comment_id FK "nullable"
+  Int thread_depth
+  String ancestor_ids
   DateTime created_at
+  DateTime updated_at
 }
-"community_platform_comment_of_moderators" {
+"community_bbs_comment_snapshots" {
   String id PK
-  String community_platform_comment_id FK,UK
-  String community_platform_moderator_id FK
+  String comment_id FK
+  String body
+  String business_status
   DateTime created_at
+  DateTime updated_at
+  String edited_by "nullable"
+  String editor_id "nullable"
+  String reason_for_modification "nullable"
+  DateTime deleted_at "nullable"
 }
-"community_platform_comment_of_admins" {
-  String id PK
-  String community_platform_comment_id FK,UK
-  String community_platform_admin_id FK
-  DateTime created_at
-}
-"community_platform_comments" }o--o| "community_platform_comments" : parent
-"community_platform_comment_threads" |o--|| "community_platform_comments" : comment
-"community_platform_comment_threads" }o--|| "community_platform_comments" : rootComment
-"community_platform_comment_snapshots" }o--|| "community_platform_comments" : originalComment
-"community_platform_comment_tags" }o--|| "community_platform_comments" : comment
-"community_platform_comment_of_guests" |o--|| "community_platform_comments" : comment
-"community_platform_comment_of_members" |o--|| "community_platform_comments" : comment
-"community_platform_comment_of_moderators" |o--|| "community_platform_comments" : comment
-"community_platform_comment_of_admins" |o--|| "community_platform_comments" : comment
+"community_bbs_comment_threads" |o--|| "community_bbs_comments" : rootComment
+"community_bbs_comment_threads" }o--o| "community_bbs_comments" : parentComment
+"community_bbs_comment_snapshots" }o--|| "community_bbs_comments" : comment
 ```
 
-### `community_platform_comments`
+### `community_bbs_comments`
 
-User comments posted on community platform posts.
+Primary user comments on posts, representing direct textual responses to
+content.
 
-Primary entity for storing content comments on posts. Supports unlimited
-nesting through self-referential parent-child relationships. Users can
-create, edit (within 24 hours), and delete their own comments. Comments
-are associated with a specific post and authored by a member, moderator,
-or admin.
+Each comment is a discrete unit of user-generated content attached to a
+specific post and authored by a registered citizen. Comments can receive
+votes and be reported by other users. They form the core of threaded
+discourse and are subject to moderation workflows. Each comment has its
+own lifecycle and can be independently edited (within 24-hour window) or
+deleted by the author, and moderated by community moderators.
 
-This table represents the core comment entity and serves as the base for
-all comment-related interactions. It contains the raw text content and
-metadata about the comment's creation and modification. Parent-child
-relationships are stored directly within this table to enable efficient
-querying of comment threads. This table remains primary since it contains
-the shared comment structure, but storage of actor information is moved
-to subtype tables to preserve 3NF normalization.
-
-To determine the actor type that created a comment, query the
-corresponding actor-specific subtype table (e.g.,
-community_platform_comment_of_members). The actor_type field is used as a
-discriminator to identify which subtype table contains the actor-specific
-data for this comment.
+Comments are not nested within other comments in the primary model —
+reply relationships are managed via the community_bbs_comment_replies
+subsidiary entity to ensure normalized data structure and clean query
+patterns.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_post_id`: The post this comment belongs to. [community_platform_posts.id](#community_platform_posts).
-- `parent_comment_id`
-  > The parent comment this comment is replying to. {@link
-  > community_platform_comments.id}. If null, this is a top-level comment.
-- `content`: The text content of the comment. Must be between 1 and 500 characters.
-- `created_at`: The timestamp when this comment was created (Asia/Seoul timezone).
-- `updated_at`: The timestamp when this comment was last updated (Asia/Seoul timezone).
+- `post_id`: Post this comment belongs to. [community_bbs_posts.id](#community_bbs_posts).
+- `citizen_id`: User who authored this comment. [community_bbs_citizen.id](#community_bbs_citizen).
+- `body`
+  > The main text content of the comment. Must be at least 3 characters long.
+  > Cannot contain prohibited language or spam patterns.
+- `business_status`
+  > Current moderation state of the comment. Valid values: 'pending_review',
+  > 'approved', 'rejected', 'hidden'. Determined by automated filters or
+  > moderator action.
+- `created_at`: Timestamp when the comment was created. Immutable after creation.
+- `updated_at`
+  > Timestamp when the comment was last edited. Updated only within 24-hour
+  > window of creation. Reflects edit history for transparency.
 - `deleted_at`
-  > The timestamp when this comment was deleted (soft delete). If null, the
-  > comment is active.
-- `actor_type`
-  > Actor type that created this comment. Valid values: 'guest', 'member',
-  > 'moderator', 'admin'. This field serves as a discriminator to determine
-  > which subtype table (community_platform_comment_of_*) contains the
-  > actor-specific data for this comment.
+  > Null if comment is active. Timestamp when comment was soft-deleted by
+  > author or moderator. Enables recovery of content while maintaining audit
+  > trail.
 
-### `community_platform_comment_threads`
+### `community_bbs_comment_replies`
 
-Thread metadata for comment hierarchies, optimizing navigation performance.
+Supporting entity that defines the direct reply relationship to a primary
+comment.
 
-Stores structural information for comment thread navigation to optimize
-performance, especially for deep nesting. This table maintains metadata
-on the root comment of a thread and the depth of each comment in the
-hierarchy. While comment content resides in community_platform_comments,
-this table supports efficient queries for thread structure and depth
-limits.
+This entity establishes a 1:1 relationship with the primary
+community_bbs_comments record, enabling the representation of replies
+without denormalizing the main comment data. When a user replies directly
+to a comment, this table stores the metadata that links the reply to its
+parent comment. This separation ensures optimal query performance and
+prevents nullable field proliferation in the primary comment table.
 
-This subsidiary entity exists to avoid costly recursive queries on large
-comment threads. By pre-calculating and storing thread structure data
-here, the system can quickly retrieve the entire thread hierarchy,
-determine if a comment exceeds nesting limits, and identify root comments
-without traversing the entire tree in the comments table.
+The existence of a record in this table indicates that a comment has
+received a direct reply. The parent comment's id is mapped to this
+entity's id as the primary and foreign key via unique constraint,
+enforcing exactly one reply relationship per comment.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this thread metadata belongs to. {@link
-  > community_platform_comments.id}.
+- `id`
+  > Primary Key. Same value as the parent comment's id to enforce 1:1
+  > relationship.
+- `created_at`
+  > Timestamp when the reply relationship was established. This reflects the
+  > creation time of the reply, separate from the parent comment's creation
+  > time.
+- `updated_at`
+  > Timestamp when this reply relationship was last updated. Only updated if
+  > metadata about the reply changes.
+
+### `community_bbs_comment_threads`
+
+Supporting entity that maintains the logical thread context of a comment
+within a post's comment hierarchy.
+
+This entity captures the full ancestry path of a comment by recording its
+direct parent (if any) and all ancestor comment IDs, forming a closed
+thread context. It is updated whenever a reply chain becomes active or
+grows. This allows for efficient retrieval of entire comment threads
+without complex recursive queries.
+
+The thread_id represents the root-level comment of the thread. This table
+is updated atomically when a new reply is created or when comments are
+moved between contexts. It is managed internally by the system and never
+directly modified by users.
+
+Properties as follows:
+
+- `id`: Primary Key. Same value as the root comment's id in this thread.
 - `root_comment_id`
-  > The ID of the root comment in this thread (the top-level comment). {@link
-  > community_platform_comments.id}.
-- `depth`
-  > The depth level of this comment in the thread hierarchy. Root comments
-  > have depth 0, direct replies have depth 1, and so on.
-
-### `community_platform_comment_snapshots`
-
-Historical snapshots of comments for audit trail and versioning.
-
-Captures the state of comments at the time they were created and after
-edits, preserving an audit trail for moderation and compliance. This
-snapshot table is immutable (append-only) and records the content,
-timestamp, and author of every comment state. This ensures that even if a
-comment is edited or deleted, its historical versions remain available
-for review.
-
-Following snapshot architecture principles, this table is crucial for
-maintaining trust in the platform's moderation system. It allows
-moderators to compare current and past versions of a comment, understand
-context for moderation decisions, and preserve content even after
-deletion. Snapshots are populated on comment creation and any edit. This
-table now follows the main entity + subtype pattern for actor ownership,
-aligning with the corrected structure of community_platform_comments and
-its subtype tables.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The original comment that this snapshot captures. {@link
-  > community_platform_comments.id}.
-- `community_platform_guest_id`
-  > The guest user who authored this snapshot version. {@link
-  > community_platform_guest.id}. For comments originally created by guests.
-- `community_platform_member_id`
-  > The member user who authored this snapshot version. {@link
-  > community_platform_member.id}. For comments originally created by
-  > members.
-- `community_platform_moderator_id`
-  > The moderator user who authored this snapshot version. {@link
-  > community_platform_moderator.id}. For comments originally created by
-  > moderators.
-- `community_platform_admin_id`
-  > The admin user who authored this snapshot version. {@link
-  > community_platform_admin.id}. For comments originally created by admins.
-- `content`: The content of the comment at this point in time.
-- `snapshot_timestamp`: The timestamp when this snapshot was taken (Asia/Seoul timezone).
-- `is_edited`
-  > Indicates whether this snapshot was created after an edit (true) or was
-  > the initial creation (false).
-- `actor_type`
-  > Actor type that created the comment at the time of this snapshot. Valid
-  > values: 'guest', 'member', 'moderator', 'admin'. References the
-  > actor_type in the original comment to maintain audit consistency.
-
-### `community_platform_comment_tags`
-
-Many-to-many relationship table for tagging comments with custom tags.
-
-Enables flexible categorization of comments with user-defined or
-system-generated tags. This junction table links comments to tags,
-allowing each comment to have multiple tags and each tag to be applied to
-multiple comments. This supports structured navigation, filtering, and
-content discovery systems.
-
-This subsidiary table optimizes for search and filtering performance by
-creating an explicit many-to-many relationship. It decouples tag names
-from comment data, allowing tags to be changed without modifying the
-comment content, and enabling efficient queries to find all comments with
-a specific tag.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment associated with this tag. {@link
-  > community_platform_comments.id}.
-- `community_platform_tag_id`
-  > The tag associated with this comment. {@link
-  > community_platform_community_tags.id}.
-
-### `community_platform_comment_of_guests`
-
-Subtype table that captures guest-created comments with guest-specific
-context.
-
-Enforces that a comment created by a guest must be associated with a
-specific guest user through a required foreign key relationship. This
-table exists to properly implement polymorphic ownership for guest
-commenters, following the same pattern successfully used in
-community_platform_report_of_guests.
-
-By isolating guest comment ownership information in a separate table, we
-achieve 3NF compliance, ensure referential integrity (guest_id cannot be
-null), control the 1:1 relationship with the main comment, and prevent
-invalid states where a comment has no actor or multiple actors assigned.
-This table enables precise tracking of anonymous user activity while
-maintaining database-level constraints.
-
-This table should never be accessed directly by frontend interfaces but
-must be referenced by backend authorization systems to validate guest
-comment ownership for moderation and deletion requests.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this subtype belongs to. {@link
-  > community_platform_comments.id}. Mandatory 1:1 relationship.
-- `community_platform_guest_id`
-  > The guest user who created this comment. {@link
-  > community_platform_guest.id}. Non-nullable to enforce that every guest
-  > comment has a valid guest record.
+  > The root-level comment that starts this thread. {@link
+  > community_bbs_comments.id}.
+- `parent_comment_id`
+  > Direct parent comment of this thread context. Null if this is a root
+  > comment. [community_bbs_comments.id](#community_bbs_comments).
+- `thread_depth`
+  > Number of levels deep this comment thread is nested from the root. Root
+  > level = 0, first reply = 1, etc.
+- `ancestor_ids`
+  > Comma-separated list of parent comment IDs leading to this root. Format:
+  > 'id1,id2,id3'. Used for efficient thread traversal. No foreign keys to
+  > preserve performance.
 - `created_at`
-  > The timestamp when this guest created the comment. Maintained separately
-  > from the comment's created_at to minimize confusion between comment
-  > creation time and guest interaction time.
+  > Timestamp when this thread context was first established. Updated only
+  > when thread structure changes.
+- `updated_at`
+  > Timestamp when this thread structure was last modified (e.g., new reply
+  > added).
 
-### `community_platform_comment_of_members`
+### `community_bbs_comment_snapshots`
 
-Subtype table that captures member-created comments with member-specific
-context.
+Historical snapshot of comment states for audit trails and content
+moderation.
 
-Enforces that a comment created by a member must be associated with a
-specific member user through a required foreign key relationship. This
-table exists to properly implement polymorphic ownership for member
-commenters, following the same pattern successfully used in
-community_platform_report_of_members.
+Each time a comment is edited by its author (within 24-hour window) or
+modified by a moderator, a snapshot is created capturing the state of the
+comment before the change. This enables tracking of content evolution,
+review of moderator actions, and restoration of content if needed.
+Snapshots are immutable and append-only. They preserve the original text,
+author, and context at the point of modification.
 
-By isolating member comment ownership information in a separate table, we
-achieve 3NF compliance, ensure referential integrity (member_id cannot be
-null), control the 1:1 relationship with the main comment, and prevent
-invalid states where a comment has no actor or multiple actors assigned.
-This table enables precise tracking of authenticated user activity while
-maintaining database-level constraints.
-
-This table should never be accessed directly by frontend interfaces but
-must be referenced by backend authorization systems to validate member
-comment ownership for moderation, karma calculations, and deletion
-requests.
+This table does not participate in real-time queries but serves
+exclusively for compliance, historical review, and forensic analysis.
+Queries against this table are read-only and used primarily by admin and
+compliance workflows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this subtype belongs to. {@link
-  > community_platform_comments.id}. Mandatory 1:1 relationship.
-- `community_platform_member_id`
-  > The member user who created this comment. {@link
-  > community_platform_member.id}. Non-nullable to enforce that every member
-  > comment has a valid member record.
+- `comment_id`
+  > The comment this snapshot records the state of. {@link
+  > community_bbs_comments.id}.
+- `body`
+  > The exact text content of the comment at the moment this snapshot was
+  > taken.
+- `business_status`
+  > The moderation state of the comment at the moment this snapshot was
+  > taken. Values: 'pending_review', 'approved', 'rejected', 'hidden'.
 - `created_at`
-  > The timestamp when this member created the comment. Maintained separately
-  > from the comment's created_at to minimize confusion between comment
-  > creation time and member interaction time.
-
-### `community_platform_comment_of_moderators`
-
-Subtype table that captures moderator-created comments with
-moderator-specific context.
-
-Enforces that a comment created by a moderator must be associated with a
-specific moderator user through a required foreign key relationship. This
-table exists to properly implement polymorphic ownership for moderator
-commenters, following the same pattern successfully used in
-community_platform_report_of_moderators.
-
-By isolating moderator comment ownership information in a separate table,
-we achieve 3NF compliance, ensure referential integrity (moderator_id
-cannot be null), control the 1:1 relationship with the main comment, and
-prevent invalid states where a comment has no actor or multiple actors
-assigned. This table enables precise tracking of moderator activity while
-maintaining database-level constraints.
-
-This table should never be accessed directly by frontend interfaces but
-must be referenced by backend authorization systems to validate moderator
-comment ownership for audit trails and moderation oversight.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this subtype belongs to. {@link
-  > community_platform_comments.id}. Mandatory 1:1 relationship.
-- `community_platform_moderator_id`
-  > The moderator user who created this comment. {@link
-  > community_platform_moderator.id}. Non-nullable to enforce that every
-  > moderator comment has a valid moderator record.
-- `created_at`
-  > The timestamp when this moderator created the comment. Maintained
-  > separately from the comment's created_at to minimize confusion between
-  > comment creation time and moderator interaction time.
-
-### `community_platform_comment_of_admins`
-
-Subtype table that captures admin-created comments with admin-specific
-context.
-
-Enforces that a comment created by an admin must be associated with a
-specific admin user through a required foreign key relationship. This
-table exists to properly implement polymorphic ownership for admin
-commenters, following the same pattern successfully used in
-community_platform_report_of_admins.
-
-By isolating admin comment ownership information in a separate table, we
-achieve 3NF compliance, ensure referential integrity (admin_id cannot be
-null), control the 1:1 relationship with the main comment, and prevent
-invalid states where a comment has no actor or multiple actors assigned.
-This table enables precise tracking of system administrator activity
-while maintaining database-level constraints.
-
-This table should never be accessed directly by frontend interfaces but
-must be referenced by backend authorization systems to validate admin
-comment ownership for security audit trails and privileged action
-logging.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this subtype belongs to. {@link
-  > community_platform_comments.id}. Mandatory 1:1 relationship.
-- `community_platform_admin_id`
-  > The admin user who created this comment. {@link
-  > community_platform_admin.id}. Non-nullable to enforce that every admin
-  > comment has a valid admin record.
-- `created_at`
-  > The timestamp when this admin created the comment. Maintained separately
-  > from the comment's created_at to minimize confusion between comment
-  > creation time and admin interaction time.
+  > The timestamp when this snapshot was captured, not the original comment
+  > creation time.
+- `updated_at`
+  > The timestamp when the original comment was last edited before this
+  > snapshot was taken.
+- `edited_by`
+  > Identifies who modified the comment: 'author' if edited by original user,
+  > 'moderator' if edited by moderator. Null for creation snapshots.
+- `editor_id`
+  > The ID of the user who modified the comment. For author edits:
+  > citizen_id. For moderator edits: moderator_id. Null for creation
+  > snapshots. [community_bbs_citizen.id](#community_bbs_citizen) or {@link
+  > community_bbs_moderator.id}.
+- `reason_for_modification`
+  > Optional reason provided by moderator when modifying content. For author
+  > edits: contains edit summary if provided.
+- `deleted_at`
+  > The snapshot captures the soft-delete state of the comment at this point
+  > in time. Null if comment was active, timestamp if deleted.
 
 ## Votes
 
 ```mermaid
 erDiagram
-"community_platform_post_votes" {
+"community_bbs_post_votes" {
   String id PK
-  String community_platform_post_id FK,UK
-  String actor_type
-  String vote_type
+  String community_bbs_post_id FK
+  String community_bbs_citizen_id FK
+  String type
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"community_platform_comment_votes" {
+"community_bbs_comment_votes" {
   String id PK
-  String community_platform_comment_id FK,UK
-  String actor_type
-  String vote_type
+  String community_bbs_comment_id FK
+  String community_bbs_citizen_id FK
+  String type
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"community_platform_post_vote_of_members" {
+"community_bbs_karma_history" {
   String id PK
-  String community_platform_post_vote_id FK,UK
-  String community_platform_member_id FK
-  String community_platform_member_session_id FK
+  String community_bbs_citizen_id FK
+  String community_bbs_post_id FK "nullable"
+  String community_bbs_comment_id FK "nullable"
+  String community_bbs_post_vote_id FK "nullable"
+  String community_bbs_comment_vote_id FK "nullable"
+  String community_bbs_report_id FK "nullable"
+  Int change_amount
+  String event_type
+  String event_reason "nullable"
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"community_platform_post_vote_of_moderators" {
-  String id PK
-  String community_platform_post_vote_id FK,UK
-  String community_platform_moderator_id FK
-  String community_platform_moderator_session_id FK
-  DateTime created_at
-}
-"community_platform_post_vote_of_admins" {
-  String id PK
-  String community_platform_post_vote_id FK,UK
-  String community_platform_admin_id FK
-  String community_platform_admin_session_id FK
-  DateTime created_at
-}
-"community_platform_comment_vote_of_members" {
-  String id PK
-  String community_platform_comment_vote_id FK,UK
-  String community_platform_member_id FK
-  String community_platform_member_session_id FK
-  DateTime created_at
-}
-"community_platform_comment_vote_of_moderators" {
-  String id PK
-  String community_platform_comment_vote_id FK,UK
-  String community_platform_moderator_id FK
-  String community_platform_moderator_session_id FK
-  DateTime created_at
-}
-"community_platform_comment_vote_of_admins" {
-  String id PK
-  String community_platform_comment_vote_id FK,UK
-  String community_platform_admin_id FK
-  String community_platform_admin_session_id FK
-  DateTime created_at
-}
-"community_platform_post_vote_of_members" |o--|| "community_platform_post_votes" : postVote
-"community_platform_post_vote_of_moderators" |o--|| "community_platform_post_votes" : postVote
-"community_platform_post_vote_of_admins" |o--|| "community_platform_post_votes" : postVote
-"community_platform_comment_vote_of_members" |o--|| "community_platform_comment_votes" : commentVote
-"community_platform_comment_vote_of_moderators" |o--|| "community_platform_comment_votes" : commentVote
-"community_platform_comment_vote_of_admins" |o--|| "community_platform_comment_votes" : commentVote
+"community_bbs_karma_history" }o--o| "community_bbs_post_votes" : postVote
+"community_bbs_karma_history" }o--o| "community_bbs_comment_votes" : commentVote
 ```
 
-### `community_platform_post_votes`
+### `community_bbs_post_votes`
 
-Main entity for post votes that captures shared attributes across all
-actor types. Tracks user upvotes and downvotes for posts.
+Records upvote and downvote actions on posts.
 
-Contains only shared field data for post votes regardless of who cast
-them. This is the main entity in a polymorphic ownership pattern where
-each actor type (member, moderator, admin) is represented by a separate
-subtype table. This design enforces referential integrity and prevents
-invalid states where zero or multiple actors could have cast the same
-vote.
+Each record represents a single voting action by a citizen on a specific
+post. Votes are binary (upvote or downvote) and are used for ranking
+posts by popularity and determining user karma changes.
 
-The vote_type field indicates the current state (up/down/null) and can be
-toggled. All temporal fields are maintained for audit and user operation
-history. This table is primary because users directly interact with post
-votes through upvote/downvote interface, requiring independent
-management, cross-post search, and filtering regardless of the voting
-actor type.
+Voting is a direct, user-initiated action that affects post visibility
+and community reputation. Users can change their vote or revoke it, which
+is tracked via the deleted_at field. Each user can vote on a post only
+once.
 
-Actors are tracked through the actor_type field and their separate
-subtype table relations, which contain actor-specific session information
-and temporal data.
-
-This design replaces the previous model that used multiple nullable
-foreign keys, which violated normalization principles and allowed invalid
-data states.
+Votes are referenced to posts through community_bbs_posts.id and to
+citizens through community_bbs_citizen.id. This table does not store post
+state or summary data - it only logs individual voter actions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_post_id`
-  > The post this vote is associated with. {@link
-  > community_platform_posts.id}.
-- `actor_type`
-  > Type of actor who created this vote. Values: 'member', 'moderator',
-  > 'admin'. This field determines which subtype table contains the
-  > actor-specific session data.
-- `vote_type`
-  > The type of vote: 'up', 'down', or null if vote is removed. This field
-  > tracks the current vote state (not history).
+- `community_bbs_post_id`: The post that was voted on. [community_bbs_posts.id](#community_bbs_posts).
+- `community_bbs_citizen_id`: The citizen who cast the vote. [community_bbs_citizen.id](#community_bbs_citizen).
+- `type`
+  > The type of vote: 'upvote' or 'downvote'. Determines whether the post's
+  > score increases or decreases.
 - `created_at`
-  > When the vote was initially cast. UTC timestamp. Required field that
-  > cannot be null.
+  > Timestamp when the vote was cast. Always set at creation and never
+  > changed.
 - `updated_at`
-  > When the vote was last updated (e.g., toggled from up to down). UTC
-  > timestamp. Required field that cannot be null.
+  > Timestamp when the vote was last modified (e.g., when vote type was
+  > changed).
 - `deleted_at`
-  > When the vote was soft-deleted (user removed their vote). If null, the
-  > vote is active. Required field that can be null.
+  > Timestamp when the vote was revoked by the voter or removed by
+  > moderation. If null, the vote is still active.
 
-### `community_platform_comment_votes`
+### `community_bbs_comment_votes`
 
-Main entity for comment votes that captures shared attributes across all
-actor types. Tracks user upvotes and downvotes for comments.
+Records upvote and downvote actions on comments.
 
-Contains only shared field data for comment votes regardless of who cast
-them. This is the main entity in a polymorphic ownership pattern where
-each actor type (member, moderator, admin) is represented by a separate
-subtype table. This design enforces referential integrity and prevents
-invalid states where zero or multiple actors could have cast the same
-vote.
+Each record represents a single voting action by a citizen on a specific
+comment. Votes are binary (upvote or downvote) and are used for ranking
+comments within threads and determining user karma changes.
 
-The vote_type field indicates the current state (up/down/null) and can be
-toggled. All temporal fields are maintained for audit and user operation
-history. This table is primary because users directly interact with
-comment votes through upvote/downvote interface, requiring independent
-management, cross-comment search, and filtering regardless of the voting
-actor type.
+Voting on comments is a direct, user-initiated action that affects
+comment visibility and community reputation. Users can change their vote
+or revoke it, which is tracked via the deleted_at field. Each user can
+vote on a comment only once.
 
-Actors are tracked through the actor_type field and their separate
-subtype table relations, which contain actor-specific session information
-and temporal data.
-
-This design replaces the previous model that used multiple nullable
-foreign keys, which violated normalization principles and allowed invalid
-data states.
+Votes are referenced to comments through community_bbs_comments.id and to
+citizens through community_bbs_citizen.id. This table does not store
+comment content or state - it only logs individual voter actions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_comment_id`
-  > The comment this vote is associated with. {@link
-  > community_platform_comments.id}.
-- `actor_type`
-  > Type of actor who created this vote. Values: 'member', 'moderator',
-  > 'admin'. This field determines which subtype table contains the
-  > actor-specific session data.
-- `vote_type`
-  > The type of vote: 'up', 'down', or null if vote is removed. This field
-  > tracks the current vote state (not history).
+- `community_bbs_comment_id`: The comment that was voted on. [community_bbs_comments.id](#community_bbs_comments).
+- `community_bbs_citizen_id`: The citizen who cast the vote. [community_bbs_citizen.id](#community_bbs_citizen).
+- `type`
+  > The type of vote: 'upvote' or 'downvote'. Determines whether the
+  > comment's score increases or decreases.
 - `created_at`
-  > When the vote was initially cast. UTC timestamp. Required field that
-  > cannot be null.
+  > Timestamp when the vote was cast. Always set at creation and never
+  > changed.
 - `updated_at`
-  > When the vote was last updated (e.g., toggled from up to down). UTC
-  > timestamp. Required field that cannot be null.
+  > Timestamp when the vote was last modified (e.g., when vote type was
+  > changed).
 - `deleted_at`
-  > When the vote was soft-deleted (user removed their vote). If null, the
-  > vote is active. Required field that can be null.
+  > Timestamp when the vote was revoked by the voter or removed by
+  > moderation. If null, the vote is still active.
 
-### `community_platform_post_vote_of_members`
+### `community_bbs_karma_history`
 
-Subtype table for post votes created by regular members. Stores the
-member-specific session information for votes cast by authenticated
-members.
+Tracks all changes to a citizen's karma score over time.
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When a member votes on a post, their vote is stored in the main
-community_platform_post_votes table with actor_type = 'member', and the
-specific member session details (member_id and member_session_id) are
-stored in this subtype table.
+Each record represents a single event that caused a change in a citizen's
+karma score. Karma changes occur in response to posts, comments, votes,
+reports, and moderation actions. This table provides a complete audit
+trail of reputation changes.
 
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on post_vote_id. This design ensures referential integrity -
-votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
+The karma score is calculated as the sum of all events, where upvotes add
++1, downvotes subtract -1, reports result in ±1, and moderation actions
+apply custom multipliers. Only positive or negative numeric changes are
+recorded. Zero-value changes are not tracked.
 
-This table supports independent querying for member-only vote patterns
-while maintaining the core vote data in the primary entity. Only members
-can create records in this table.
-
-The created_at field captures when this vote was initially cast by the
-member, separate from the main vote's creation time.
+This table is critical for reputation systems, trust-level calculations,
+and moderation reviews. It connects to citizens through
+community_bbs_citizen.id and references the event type and affected
+content where applicable.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_post_vote_id`
-  > The main post vote entity this subvote belongs to. {@link
-  > community_platform_post_votes.id}.
-- `community_platform_member_id`: The member who created this vote. [community_platform_member.id](#community_platform_member).
-- `community_platform_member_session_id`
-  > The member session that cast this vote. {@link
-  > community_platform_member_sessions.id}.
+- `community_bbs_citizen_id`: The citizen whose karma changed. [community_bbs_citizen.id](#community_bbs_citizen).
+- `community_bbs_post_id`
+  > Optional reference to a post that triggered the karma change. {@link
+  > community_bbs_posts.id}.
+- `community_bbs_comment_id`
+  > Optional reference to a comment that triggered the karma change. {@link
+  > community_bbs_comments.id}.
+- `community_bbs_post_vote_id`
+  > Optional reference to the specific post vote that triggered the karma
+  > change. [community_bbs_post_votes.id](#community_bbs_post_votes).
+- `community_bbs_comment_vote_id`
+  > Optional reference to the specific comment vote that triggered the karma
+  > change. [community_bbs_comment_votes.id](#community_bbs_comment_votes).
+- `community_bbs_report_id`
+  > Optional reference to a report that triggered the karma change (e.g., for
+  > successful reports). [community_bbs_reports.id](#community_bbs_reports).
+- `change_amount`
+  > The numerical amount added to the citizen's karma score (positive or
+  > negative integer). Examples: +1 (upvote), -1 (downvote), +3 (successful
+  > report).
+- `event_type`
+  > The category of event that caused the change. Examples: 'voted_post',
+  > 'voted_comment', 'reported_post', 'reported_comment', 'post_approved',
+  > 'comment_removed', 'reputation_adjustment'.
+- `event_reason`
+  > Optional detailed reason for the karma change (e.g., 'Post marked as
+  > spam' or 'Comment flagged for harassment'). Used for audit trails.
 - `created_at`
-  > When the vote was initially cast by this member. UTC timestamp. Required
-  > field that cannot be null.
+  > Timestamp when the karma change event occurred. Always set at creation
+  > and never changed.
+- `updated_at`: Timestamp when this karma history record was last modified (rare).
+- `deleted_at`
+  > Timestamp when this karma history record was removed or reversed (e.g.,
+  > if a moderator reversed a decision). If null, the change is still active.
 
-### `community_platform_post_vote_of_moderators`
+## Subscriptions
 
-Subtype table for post votes created by moderators. Stores the
-moderator-specific session information for votes cast by community
-moderators.
+```mermaid
+erDiagram
+"community_bbs_subscriptions" {
+  String id PK
+  String community_bbs_citizen_id FK
+  String community_bbs_communities_id FK
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+```
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When a moderator votes on a post, their vote is stored in the main
-community_platform_post_votes table with actor_type = 'moderator', and
-the specific moderator session details (moderator_id and
-moderator_session_id) are stored in this subtype table.
+### `community_bbs_subscriptions`
 
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on post_vote_id. This design ensures referential integrity -
-votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
+Junction table managing the many-to-many relationship between citizens
+and communities for content personalization.
 
-This table supports independent querying for moderator-only vote patterns
-while maintaining the core vote data in the primary entity. Only
-moderators can create records in this table.
+Tracks which citizens subscribe to which communities, enabling
+personalized content feeds based on subscription preferences. Each
+subscription represents a user's active interest in receiving posts from
+a specific community.
 
-The created_at field captures when this vote was initially cast by the
-moderator, separate from the main vote's creation time.
+Subscriptions are soft-deleted when users unsubscribe, preserving audit
+trails of historical community interest while removing current access.
+The system prevents duplicate subscriptions through a composite unique
+constraint on citizen_id and community_id.
+
+Subscribers receive community updates and can access community-specific
+features. Subscription status is managed solely through the deletion
+timestamp - no separate status field is needed, following soft-delete
+architecture patterns.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_post_vote_id`
-  > The main post vote entity this subvote belongs to. {@link
-  > community_platform_post_votes.id}.
-- `community_platform_moderator_id`
-  > The moderator who created this vote. {@link
-  > community_platform_moderators.id}.
-- `community_platform_moderator_session_id`
-  > The moderator session that cast this vote. {@link
-  > community_platform_moderator_sessions.id}.
+- `community_bbs_citizen_id`
+  > Citizen who has subscribed to the community. {@link
+  > community_bbs_citizen.id}.
+- `community_bbs_communities_id`
+  > Community that the citizen is subscribed to. {@link
+  > community_bbs_communities.id}.
 - `created_at`
-  > When the vote was initially cast by this moderator. UTC timestamp.
-  > Required field that cannot be null.
+  > Timestamp when the subscription was created. Indicates when the citizen
+  > began following this community.
+- `updated_at`
+  > Timestamp when the subscription was last updated. Usually coincides with
+  > creation time unless the subscription is reactivated after deletion.
+- `deleted_at`
+  > Soft delete timestamp tracking when a citizen unsubscribed from the
+  > community. If null, the subscription is active. Used for audit trails and
+  > historical analysis of community interest.
 
-### `community_platform_post_vote_of_admins`
+## Profiles
 
-Subtype table for post votes created by system administrators. Stores the
-admin-specific session information for votes cast by system
-administrators.
+```mermaid
+erDiagram
+"community_bbs_profiles" {
+  String id PK
+  String citizen_id FK,UK
+  String display_name UK
+  String bio "nullable"
+  String(80000) avatar_url "nullable"
+  String location "nullable"
+  String(80000) website "nullable"
+  String custom_theme "nullable"
+  String default_sort_order
+  Boolean notification_email_enabled
+  Boolean notification_in_app_enabled
+  DateTime created_at
+  DateTime updated_at
+}
+"community_bbs_user_activity_summary" {
+  String id PK
+  String citizen_id FK,UK
+  Int post_count
+  Int comment_count
+  Int reply_count
+  Int upvote_count
+  Int downvote_count
+  Int report_count
+  Int report_approved_count
+  String most_active_community_id "nullable"
+  DateTime last_post_at "nullable"
+  DateTime last_comment_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"community_bbs_user_badges" {
+  String id PK
+  String citizen_id FK
+  String badge_type_id FK
+  DateTime earned_at
+  Int display_order
+  Boolean is_visible
+  String description_override "nullable"
+}
+"community_bbs_user_karma_summary" {
+  String id PK
+  String citizen_id FK,UK
+  Int karma_score
+  Int karma_changes_count
+  DateTime karma_last_updated
+  Boolean trusted_contributor
+  DateTime trusted_at "nullable"
+  Int suspension_count
+  Int post_rejection_count
+  DateTime created_at
+  DateTime updated_at
+}
+"community_bbs_user_followers" {
+  String id PK
+  String follower_citizen_id FK
+  String followed_citizen_id FK
+  DateTime created_at
+}
+```
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When an admin votes on a post, their vote is stored in the main
-community_platform_post_votes table with actor_type = 'admin', and the
-specific admin session details (admin_id and admin_session_id) are stored
-in this subtype table.
+### `community_bbs_profiles`
 
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on post_vote_id. This design ensures referential integrity -
-votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
+Core profile representation for each citizen, storing essential identity
+and preference data.
 
-This table supports independent querying for admin-only vote patterns
-while maintaining the core vote data in the primary entity. Only admins
-can create records in this table.
-
-The created_at field captures when this vote was initially cast by the
-admin, separate from the main vote's creation time.
+This table serves as the primary profile entity that citizens view and
+update, containing display information and preferences. It links to the
+citizen account through the citizen_id, but stores user-facing profile
+information separately to allow for profile customization without
+affecting authentication data. Profiles are directly managed by citizens
+and appear in public user views across the platform.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_post_vote_id`
-  > The main post vote entity this subvote belongs to. {@link
-  > community_platform_post_votes.id}.
-- `community_platform_admin_id`: The admin who created this vote. [community_platform_admins.id](#community_platform_admins).
-- `community_platform_admin_session_id`
-  > The admin session that cast this vote. {@link
-  > community_platform_admin_sessions.id}.
+- `citizen_id`: Reference to the citizen account. [community_bbs_citizen.id](#community_bbs_citizen).
+- `display_name`
+  > The public-facing name displayed on posts and comments. Must be unique
+  > within the community. Used instead of username for user-facing display.
+- `bio`
+  > Optional biography or description the user provides about themselves.
+  > Limited to 500 characters.
+- `avatar_url`
+  > URL to the user's profile avatar image. Stored as a URI reference to an
+  > uploaded image file.
+- `location`
+  > User-provided location information (e.g., city or neighborhood). Used for
+  > local community relevance.
+- `website`: Optional personal or professional website URL provided by the user.
+- `custom_theme`
+  > User-selected theme preference for their profile interface (e.g., light,
+  > dark, high-contrast).
+- `default_sort_order`
+  > Default post sorting preference when viewing communities (e.g., 'hot',
+  > 'new', 'top', 'controversial').
+- `notification_email_enabled`
+  > Whether the user wants to receive email notifications for replies, likes,
+  > and moderation actions.
+- `notification_in_app_enabled`
+  > Whether the user wants to receive in-app notifications for interactions
+  > on their content.
 - `created_at`
-  > When the vote was initially cast by this admin. UTC timestamp. Required
-  > field that cannot be null.
+  > Timestamp when this profile was created. Matches the citizen account
+  > creation time.
+- `updated_at`
+  > Timestamp of the last profile update. Updated whenever display_name, bio,
+  > avatar_url, or preferences change.
 
-### `community_platform_comment_vote_of_members`
+### `community_bbs_user_activity_summary`
 
-Subtype table for comment votes created by regular members. Stores the
-member-specific session information for votes cast by authenticated
-members.
+Aggregate summary of a citizen's posting and commenting activity across
+the platform.
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When a member votes on a comment, their vote is stored in the main
-community_platform_comment_votes table with actor_type = 'member', and
-the specific member session details (member_id and member_session_id) are
-stored in this subtype table.
-
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on comment_vote_id. This design ensures referential integrity
-- votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
-
-This table supports independent querying for member-only vote patterns
-while maintaining the core vote data in the primary entity. Only members
-can create records in this table.
-
-The created_at field captures when this vote was initially cast by the
-member, separate from the main vote's creation time.
+This table provides a rapidly queryable summary of user activity
+statistics derived from posts, comments, votes, and reports. It is
+updated asynchronously by background jobs whenever a user's activities
+change. This table enables fast loading of profile activity counts
+without joining multiple transactional tables, improving performance
+during profile views and community leaderboards.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_comment_vote_id`
-  > The main comment vote entity this subvote belongs to. {@link
-  > community_platform_comment_votes.id}.
-- `community_platform_member_id`: The member who created this vote. [community_platform_members.id](#community_platform_members).
-- `community_platform_member_session_id`
-  > The member session that cast this vote. {@link
-  > community_platform_member_sessions.id}.
+- `citizen_id`: Reference to the citizen account. [community_bbs_citizen.id](#community_bbs_citizen).
+- `post_count`
+  > Total number of posts created by this citizen, including published,
+  > pending, and deleted posts.
+- `comment_count`: Total number of comments created by this citizen across all posts.
+- `reply_count`: Total number of direct replies to comments made by this citizen.
+- `upvote_count`: Total number of upvotes received on all posts and comments combined.
+- `downvote_count`: Total number of downvotes received on all posts and comments combined.
+- `report_count`
+  > Total number of reports filed against this citizen's content by other
+  > users.
+- `report_approved_count`
+  > Number of reports against this citizen's content that were approved and
+  > led to content removal.
+- `most_active_community_id`
+  > ID of the community where this citizen has contributed the most content.
+  > Nullable if activity is spread evenly.
+- `last_post_at`
+  > Timestamp of the most recent post created by this citizen. Used to
+  > determine recent activity.
+- `last_comment_at`
+  > Timestamp of the most recent comment created by this citizen. Used to
+  > identify active users.
 - `created_at`
-  > When the vote was initially cast by this member. UTC timestamp. Required
-  > field that cannot be null.
+  > Timestamp when this summary was initially created, which occurs when the
+  > citizen's first post or comment is published.
+- `updated_at`
+  > Timestamp when this summary was last updated following any change in the
+  > citizen's activity metrics.
 
-### `community_platform_comment_vote_of_moderators`
+### `community_bbs_user_badges`
 
-Subtype table for comment votes created by moderators. Stores the
-moderator-specific session information for votes cast by community
-moderators.
+Collection of badges earned by a citizen for achieving specific community
+milestones or behaviors.
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When a moderator votes on a comment, their vote is stored in the main
-community_platform_comment_votes table with actor_type = 'moderator', and
-the specific moderator session details (moderator_id and
-moderator_session_id) are stored in this subtype table.
-
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on comment_vote_id. This design ensures referential integrity
-- votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
-
-This table supports independent querying for moderator-only vote patterns
-while maintaining the core vote data in the primary entity. Only
-moderators can create records in this table.
-
-The created_at field captures when this vote was initially cast by the
-moderator, separate from the main vote's creation time.
+This table tracks the badges awarded to each citizen based on their
+activity, reputation, and contributions. Badges are automatically granted
+by the system when predetermined thresholds are met. Each badge
+represents an achievement such as 'First Post', 'Helpful Commenter', or
+'Trusted Contributor'. This table stores the relationship between
+citizens and their earned badges along with the timestamp of when the
+badge was awarded.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_comment_vote_id`
-  > The main comment vote entity this subvote belongs to. {@link
-  > community_platform_comment_votes.id}.
-- `community_platform_moderator_id`
-  > The moderator who created this vote. {@link
-  > community_platform_moderators.id}.
-- `community_platform_moderator_session_id`
-  > The moderator session that cast this vote. {@link
-  > community_platform_moderator_sessions.id}.
-- `created_at`
-  > When the vote was initially cast by this moderator. UTC timestamp.
-  > Required field that cannot be null.
+- `citizen_id`
+  > Reference to the citizen who earned the badge. {@link
+  > community_bbs_citizen.id}.
+- `badge_type_id`
+  > Reference to the type of badge earned. {@link
+  > community_bbs_badge_types.id}.
+- `earned_at`
+  > Timestamp when the badge was granted to the citizen. Determined by the
+  > system when eligibility criteria were met.
+- `display_order`
+  > Order in which this badge should be displayed in the user's badge
+  > collection. Lower values appear first.
+- `is_visible`
+  > Whether this badge is currently visible on the user's public profile. Can
+  > be toggled by user preferences.
+- `description_override`
+  > Optional custom description override for this badge instance, if the
+  > system allows personalized badge messages.
 
-### `community_platform_comment_vote_of_admins`
+### `community_bbs_user_karma_summary`
 
-Subtype table for comment votes created by system administrators. Stores
-the admin-specific session information for votes cast by system
-administrators.
+Aggregate summary of a citizen's reputation and karma based on community
+interactions.
 
-This table implements the "subsidiary" pattern for polymorphic ownership.
-When an admin votes on a comment, their vote is stored in the main
-community_platform_comment_votes table with actor_type = 'admin', and the
-specific admin session details (admin_id and admin_session_id) are stored
-in this subtype table.
-
-The relationship with the main vote entity is 1:1, enforced by a unique
-constraint on comment_vote_id. This design ensures referential integrity
-- votes can only be created through a specific actor's session, and the
-system prevents invalid states where a vote has no actor or multiple
-actors.
-
-This table supports independent querying for admin-only vote patterns
-while maintaining the core vote data in the primary entity. Only admins
-can create records in this table.
-
-The created_at field captures when this vote was initially cast by the
-admin, separate from the main vote's creation time.
+This table stores the calculated karma score for each citizen, derived
+from upvotes, downvotes, report actions, and moderation outcomes. The
+karma score is updated asynchronously as citizen actions trigger karma
+changes. This summary enables fast display of reputation metrics on user
+profiles and content without recomputing scores from transactional tables
+in real time. The karma score influences whether posts bypass initial
+moderation and determines eligibility for Trusted Contributor status.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_comment_vote_id`
-  > The main comment vote entity this subvote belongs to. {@link
-  > community_platform_comment_votes.id}.
-- `community_platform_admin_id`: The admin who created this vote. [community_platform_admins.id](#community_platform_admins).
-- `community_platform_admin_session_id`
-  > The admin session that cast this vote. {@link
-  > community_platform_admin_sessions.id}.
+- `citizen_id`
+  > Reference to the citizen whose karma is being summarized. {@link
+  > community_bbs_citizen.id}.
+- `karma_score`
+  > The current total karma score for the citizen, calculated as the sum of
+  > all karma changes from actions received.
+- `karma_changes_count`
+  > Total number of karma changes recorded for this citizen, representing the
+  > volume of reputation-modifying interactions.
+- `karma_last_updated`
+  > Timestamp when the karma score was last recalculated based on new
+  > interactions or moderation actions.
+- `trusted_contributor`
+  > Flag indicating whether the citizen has reached Trusted Contributor
+  > status (karma >= 100). This determines post moderation bypass
+  > eligibility.
+- `trusted_at`
+  > Timestamp when the citizen first achieved Trusted Contributor status
+  > (karma >= 100). Null if never achieved.
+- `suspension_count`
+  > Number of times this citizen has been temporarily suspended for guideline
+  > violations.
+- `post_rejection_count`
+  > Number of posts by this citizen that have been permanently rejected by
+  > moderators.
 - `created_at`
-  > When the vote was initially cast by this admin. UTC timestamp. Required
-  > field that cannot be null.
+  > Timestamp when this karma summary was first created, which occurs when
+  > the citizen's first action triggers a karma change.
+- `updated_at`
+  > Timestamp when this karma summary was last updated after a karma change
+  > event.
+
+### `community_bbs_user_followers`
+
+Relationship table tracking which citizens are following other citizens
+on the platform.
+
+This table represents the follower/following relationships between
+citizens, enabling social connection and content discovery. When citizen
+A follows citizen B, a record is created in this table. The relationships
+are bidirectional in the UI (showing 'followers' and 'following' views)
+but stored as unidirectional records. This table allows for quick queries
+about who follows whom, and supports notifications when followed users
+post or comment.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `follower_citizen_id`
+  > The citizen who is following another user. {@link
+  > community_bbs_citizen.id}.
+- `followed_citizen_id`: The citizen who is being followed. [community_bbs_citizen.id](#community_bbs_citizen).
+- `created_at`: Timestamp when the follower relationship was established.
 
 ## Reports
 
 ```mermaid
 erDiagram
-"community_platform_reports" {
+"community_bbs_reports" {
   String id PK
-  String target_id FK
+  String citizen_id FK,UK "nullable"
+  String moderator_id FK,UK "nullable"
+  String admin_id FK,UK "nullable"
+  String report_reason_id FK
   String actor_type
-  String target_type
-  String reason
+  String targeted_entity_type
   String status
+  String review_status
+  String comment "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime reviewed_at "nullable"
+  DateTime deleted_at "nullable"
+}
+"community_bbs_reported_posts" {
+  String id PK
+  String post_id FK,UK
+  String report_id FK,UK
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"community_platform_report_of_guests" {
+"community_bbs_reported_comments" {
   String id PK
-  String community_platform_report_id FK,UK
-  String ip
-  String href
-  String referrer
+  String comment_id FK,UK
+  String report_id FK,UK
   DateTime created_at
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"community_platform_report_of_members" {
-  String id PK
-  String community_platform_report_id FK,UK
-  String community_platform_member_id FK
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_report_of_moderators" {
-  String id PK
-  String community_platform_report_id FK,UK
-  String community_platform_moderator_id FK
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_report_of_admins" {
-  String id PK
-  String community_platform_report_id FK,UK
-  String community_platform_admin_id FK
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_report_of_guests" |o--|| "community_platform_reports" : report
-"community_platform_report_of_members" |o--|| "community_platform_reports" : report
-"community_platform_report_of_moderators" |o--|| "community_platform_reports" : report
-"community_platform_report_of_admins" |o--|| "community_platform_reports" : report
+"community_bbs_reported_posts" |o--|| "community_bbs_reports" : report
+"community_bbs_reported_comments" |o--|| "community_bbs_reports" : report
 ```
 
-### `community_platform_reports`
+### `community_bbs_reports`
 
-Main entity for all user-generated reports on the platform.
+Main report entity that records content reports from citizens,
+moderators, or admins.
 
-This is the central hub for all moderation reports across the system,
-regardless of reporter type. It holds the core metadata needed for
-moderation workflows including the report reason, the targeted content,
-and its current status. The actor_type field identifies which subtype
-table contains the specific reporter's information.
+This is the central table for all content reports in the system, with a
+polymorphic relationship to report targets (posts or comments). Each
+report has exactly one reporter (citizen, moderator, or admin) and one
+target, identified through the actor_type and targeted_entity_type
+fields. The main entity holds the report status, reason, metadata, and
+audit trail.
 
-Each report is linked to a target (post or comment) via target_id and
-target_type fields, allowing the system to locate and handle the content
-appropriately. The status field tracks the report lifecycle from pending
-review to resolved or ignored.
+This design avoids nullable foreign key proliferation by using subtype
+tables (community_bbs_reported_posts and community_bbs_reported_comments)
+to enforce referential integrity. Reports are created by any actor type,
+and the system tracks whether they are pending review, approved, or
+rejected.
 
-This model enforces 3NF by separating reporter-specific data into subtype
-tables, keeping this table clean with only essential reporting metadata.
-Do not place reporter identities directly here.
-
-Subtype tables (report_of_guests, report_of_members, etc.) have 1:1
-relationships with this model and contain the actor-specific details
-necessary to establish accountability.
+When a report is submitted, it enters a pending state and is reviewed by
+a moderator. The reporter can track the status of their report through
+the UI. Reports are never deleted but are archived via soft delete when
+resolved.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `target_id`
-  > The unique ID of the content being reported. Target can be a post or
-  > comment. [community_platform_posts.id](#community_platform_posts) or {@link
-  > community_platform_comments.id}.
+- `citizen_id`
+  > The citizen who submitted the report if the reporter is a citizen. {@link
+  > community_bbs_citizen.id}.
+- `moderator_id`
+  > The moderator who submitted the report if the reporter is a moderator.
+  > [community_bbs_moderator.id](#community_bbs_moderator).
+- `admin_id`
+  > The admin who submitted the report if the reporter is an admin. {@link
+  > community_bbs_admin.id}.
+- `report_reason_id`
+  > The reason category for the report. {@link
+  > community_bbs_report_reasons.id}.
 - `actor_type`
-  > Type of actor who submitted the report. Must be one of: 'guest',
-  > 'member', 'moderator', 'admin'. Defines which subtype table contains full
-  > reporter details.
-- `target_type`
-  > Type of content being reported. Either 'post' or 'comment'. Used to
-  > determine correct target table and perform appropriate moderation
-  > actions.
-- `reason`
-  > The reason selected by the reporter for making the report. Must be one
-  > of: 'Spam', 'Harassment', 'Nudity or sexual content', 'Violence or
-  > dangerous content', 'Hate speech or symbols', 'Misinformation', 'Other'.
-  > Provided as free text if 'Other'.
+  > The type of user who submitted the report. One of: 'citizen',
+  > 'moderator', 'admin'.
+- `targeted_entity_type`
+  > The type of content being reported. One of: 'post', 'comment'. Specifies
+  > which subtype table to reference.
 - `status`
-  > Current status of this report in the moderation workflow. Valid values:
-  > 'pending', 'resolved', 'ignored', 'escalated', 'rejected'.
-- `created_at`
-  > Timestamp when this report was submitted. Always populated with server
-  > time in Asia/Seoul timezone.
-- `updated_at`
-  > Timestamp of the last update to this report's status or metadata. Always
-  > updated on any change.
-- `deleted_at`
-  > Timestamp when this report was soft-deleted. This field is nullable. If
-  > null, the report is active.
+  > Current status of the report. Valid values: 'pending', 'approved',
+  > 'rejected'.
+- `review_status`
+  > Moderator's review outcome for the report. Valid values: 'unreviewed',
+  > 'dismissed', 'actioned'.
+- `comment`
+  > Additional context or notes provided by the reporter about why the
+  > content should be reviewed.
+- `created_at`: Timestamp when the report was submitted.
+- `updated_at`: Timestamp when the report was last modified.
+- `reviewed_at`: Timestamp when the report was reviewed by a moderator. Null if unreviewed.
+- `deleted_at`: Soft delete timestamp for archival. Null if report is active.
 
-### `community_platform_report_of_guests`
+### `community_bbs_reported_posts`
 
-Subtype entity tracking reports submitted by anonymous guests.
+Subtype table for reports targeting specific posts. This ensures
+referential integrity for reports on posts.
 
-This table records information about reports made by unauthenticated
-users (guests) on the platform. It is linked 1:1 to the main
-community_platform_reports table and contains the actor-specific details
-necessary to maintain data integrity without requiring a user account.
+This table serves as the target destination for reports on posts in the
+polymorphic reporting system. It links directly to the main
+community_bbs_reports table with a 1:1 relationship. Each reported post
+has exactly one associated report and one associated post target
+(community_bbs_posts.id).
 
-Since guests are not authenticated, this table provides a way to track
-the origin of a report using metadata like IP address and href
-(connection URL) without violating user privacy requirements to not store
-personal data. The embedded guidance from 02-user-actors.md on guest
-behavior is followed: reports can be made anonymously, and this table
-preserves the context of that anonymous activity.
+The table exists to avoid having nullable foreign keys in the main report
+table when the target could be either a post or comment. This design
+allows the database to enforce integrity at the schema level - a report
+targeting a post must always reference a valid post_id.
 
-This table should never be accessed directly as a standalone entity. It
-is always managed through the main report entity, which enforces the
-connection to one specific guest report record via the unique
-relationship.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_report_id`
-  > The main report entity that this guest report belongs to. {@link
-  > community_platform_reports.id}.
-- `ip`
-  > The IP address of the guest making the report at the time of submission.
-  > This is stored for moderation auditing purposes only and is not used for
-  > user identification or targeting.
-- `href`
-  > The URL where the guest was browsing when they submitted this report.
-  > This provides context to where the report originated from on the
-  > platform.
-- `referrer`
-  > The URL of the referring page from which the guest came to the reported
-  > content. Helps determine if a pattern of bad actor behavior is present.
-- `created_at`: Timestamp when this guest report was created in the system.
-- `deleted_at`
-  > Timestamp when this guest report record was soft-deleted. This field is
-  > nullable. If null, the record is active.
-
-### `community_platform_report_of_members`
-
-Subtype entity tracking reports submitted by authenticated members.
-
-This table records information about reports made by registered,
-authenticated platform members. It is linked 1:1 to the main
-community_platform_reports table and contains specific member context
-needed for accountability and notification systems.
-
-This table ensures that member-reported content is traceable to the
-user's account without requiring non-nullable relationship fields in the
-main report table (which would break normalization). This pattern follows
-the communityPlatform specification that member reports should have
-verifiable owner identity, but the main entity remains actor-agnostic for
-simplicity.
-
-The member_id field references the community_platform_member table to
-ensure referential integrity. The relationship is unique because each
-report can only be associated with one member.
-
-This table is always accessed through the main report entity. Do not
-create or modify this table directly.
+This table records the original post_id as a reference. It does not
+duplicate content data - that remains in the community_bbs_posts table.
+The purpose is purely to establish a strong, non-nullable relationship
+between reports and posts.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_report_id`
-  > The main report entity that this member's report belongs to. {@link
-  > community_platform_reports.id}.
-- `community_platform_member_id`
-  > The member who submitted this report. {@link
-  > community_platform_member.id}.
-- `created_at`: Timestamp when this member report was created in the system.
-- `deleted_at`
-  > Timestamp when this member report record was soft-deleted. This field is
-  > nullable. If null, the record is active.
+- `post_id`: The original post being reported. [community_bbs_posts.id](#community_bbs_posts).
+- `report_id`
+  > The main report entity that this subtype belongs to. {@link
+  > community_bbs_reports.id}.
+- `created_at`: Timestamp when this report-subtype relationship was created.
+- `updated_at`: Timestamp when this relationship was last modified.
+- `deleted_at`: Soft delete timestamp. Null if relationship is active.
 
-### `community_platform_report_of_moderators`
+### `community_bbs_reported_comments`
 
-Subtype entity tracking reports submitted by community moderators.
+Subtype table for reports targeting specific comments. This ensures
+referential integrity for reports on comments.
 
-This table records information about reports made by users who have been
-granted moderator privileges for specific communities. It is linked 1:1
-to the main community_platform_reports table, capturing the additional
-context and accountability required when a moderator submits a report.
+This table serves as the target destination for reports on comments in
+the polymorphic reporting system. It links directly to the main
+community_bbs_reports table with a 1:1 relationship. Each reported
+comment has exactly one associated report and one associated comment
+target (community_bbs_comments.id).
 
-When a moderator reports content, it signifies a formal internal
-moderation action. This table captures the specific moderator who
-initiated the report and ensures it can be tied to staff audit trails.
-The reported content is still tracked in the main report entity, adhering
-to the principle of separation of concerns.
+The table exists to avoid having nullable foreign keys in the main report
+table when the target could be either a post or comment. This design
+allows the database to enforce integrity at the schema level - a report
+targeting a comment must always reference a valid comment_id.
 
-This table follows the same 1:1 relationship pattern as other subtypes
-and references community_platform_moderator for actor verification. Do
-not create a separate report model for moderators without using this
-pattern.
+This table records the original comment_id as a reference. It does not
+duplicate content data - that remains in the community_bbs_comments
+table. The purpose is purely to establish a strong, non-nullable
+relationship between reports and comments.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_report_id`
-  > The main report entity that this moderator's report belongs to. {@link
-  > community_platform_reports.id}.
-- `community_platform_moderator_id`
-  > The moderator who submitted this report. {@link
-  > community_platform_moderator.id}.
-- `created_at`: Timestamp when this moderator report was created in the system.
-- `deleted_at`
-  > Timestamp when this moderator report record was soft-deleted. This field
-  > is nullable. If null, the record is active.
+- `comment_id`: The original comment being reported. [community_bbs_comments.id](#community_bbs_comments).
+- `report_id`
+  > The main report entity that this subtype belongs to. {@link
+  > community_bbs_reports.id}.
+- `created_at`: Timestamp when this report-subtype relationship was created.
+- `updated_at`: Timestamp when this relationship was last modified.
+- `deleted_at`: Soft delete timestamp. Null if relationship is active.
 
-### `community_platform_report_of_admins`
-
-Subtype entity tracking reports submitted by system administrators.
-
-This table records information about reports made by system
-administrators, often related to policy violations, system
-investigations, or workarounds for edge cases. It is linked 1:1 to the
-main community_platform_reports table to maintain a complete audit trail
-for platform-level actions.
-
-When an admin submits a report, it may not be tied to user-reported
-content but could be a proactive decision based on internal reviews,
-legal compliance obligations, or system vigilance. This table ensures
-that admin actions are traceable, accountable, and auditable within the
-system's governance architecture.
-
-The admin_id field references the community_platform_admin table to
-ensure verified identity. The 1:1 relationship with the main report
-entity ensures normalization is maintained, and there is never direct
-storage of admin ID in the main report table.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_report_id`
-  > The main report entity that this admin's report belongs to. {@link
-  > community_platform_reports.id}.
-- `community_platform_admin_id`
-  > The system administrator who submitted this report. {@link
-  > community_platform_admin.id}.
-- `created_at`: Timestamp when this admin report was created in the system.
-- `deleted_at`
-  > Timestamp when this admin report record was soft-deleted. This field is
-  > nullable. If null, the record is active.
-
-## Karma
+## Sessions
 
 ```mermaid
 erDiagram
-"community_platform_karma_tracker" {
+"community_bbs_sessions" {
   String id PK
-  String community_platform_member_id FK,UK
-  Int total_post_karma
-  Int total_comment_karma
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_post_karma" {
-  String id PK
-  String community_platform_member_id FK
-  String community_platform_post_id FK,UK
-  Int karma_change
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_comment_karma" {
-  String id PK
-  String community_platform_member_id FK
-  String community_platform_comment_id FK,UK
-  Int karma_change
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_karma_decay_logs" {
-  String id PK
-  String community_platform_member_id FK
-  Int old_total_karma
-  Int new_total_karma
-  Int karma_change
-  String reason
-  String metadata "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
 ```
 
-### `community_platform_karma_tracker`
+### `community_bbs_sessions`
 
-Aggregated karma balance for each member, tracking the sum of post and
-comment karma.
-
-This table serves as the primary source for a member's total karma
-displayed on their profile. It is updated in real-time whenever a user's
-post or comment karma changes. The tracker does not store individual
-post/comment karma events; it maintains a calculated sum. This design
-ensures fast profile loading while maintaining referential integrity with
-the detailed post_karma and comment_karma tables. It is updated by a
-background service that processes changes from the detail tables.
-
-This is a primary entity because users directly view and rely on this
-value for their reputation status, and the system requires it for core
-features like ranking and moderation thresholds.
+Placeholder model to satisfy schema requirement for non-empty models
+array. This component intentionally contains no actual tables as session
+management is exclusively handled by the Actors component.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_platform_member_id`
-  > The member whose karma is being tracked. {@link
-  > community_platform_member.id}.
-- `total_post_karma`
-  > The sum of all karma earned from posts. This value is updated
-  > incrementally by the background service based on post_karma and
-  > comment_karma records.
-- `total_comment_karma`
-  > The sum of all karma earned from comments. This value is updated
-  > incrementally by the background service based on post_karma and
-  > comment_karma records.
-- `created_at`: Timestamp when this karma tracker record was created for the member.
-- `updated_at`
-  > Timestamp of the last time the total_post_karma or total_comment_karma
-  > was updated.
-- `deleted_at`
-  > Timestamp when this tracker was logically deleted (soft delete). If null,
-  > the tracker is active. Used to preserve history for suspended users.
-
-### `community_platform_post_karma`
-
-Tracks the individual karma changes attributable to a specific post
-created by a member.
-
-Each recording represents the net karma gained or lost from a single post
-(sum of all upvotes and downvotes received). This table is immutable
-after creation; updates are not allowed. It is referenced by the
-karma_tracker to calculate the post_karma portion of a member's total.
-When a user deletes a post, its associated post_karma record is logically
-deleted (deleted_at is set) but preserved in the audit trail.
-
-This is a primary entity because users need to be able to see which
-specific posts contributed to their karma, and moderators need to debug
-karma discrepancies by looking up individual post contributions. It
-supports independent querying for reporting.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_member_id`: The member who created the post. [community_platform_member.id](#community_platform_member).
-- `community_platform_post_id`
-  > The post this karma entry is associated with. {@link
-  > community_platform_posts.id}.
-- `karma_change`
-  > The net karma gained (positive) or lost (negative) from this post.
-  > Calculated as (upvotes - downvotes). Positive if post was upvoted more,
-  > negative if downvoted more.
-- `created_at`
-  > Timestamp when the post received its first karma. This is the timestamp
-  > of the last vote that finalized the karma change.
-- `updated_at`
-  > Timestamp when the post_karma record was last updated. For posts like
-  > images or links, this could be when the post was modified after creation.
-- `deleted_at`
-  > Timestamp when this post_karma entry was logically deleted (soft delete).
-  > If null, the entry is active. Set when the associated post is deleted by
-  > its author.
-
-### `community_platform_comment_karma`
-
-Tracks the individual karma changes attributable to a specific comment
-created by a member.
-
-Each recording represents the net karma gained or lost from a single
-comment (sum of all upvotes and downvotes received). This table is
-immutable after creation; updates are not allowed. It is referenced by
-the karma_tracker to calculate the comment_karma portion of a member's
-total. When a user deletes a comment, its associated comment_karma record
-is logically deleted (deleted_at is set) but preserved in the audit
-trail.
-
-This is a primary entity because users need to be able to see which
-specific comments contributed to their karma, and moderators need to
-debug karma discrepancies by looking up individual comment contributions.
-It supports independent querying for reporting.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_member_id`: The member who created the comment. [community_platform_member.id](#community_platform_member).
-- `community_platform_comment_id`
-  > The comment this karma entry is associated with. {@link
-  > community_platform_comments.id}.
-- `karma_change`
-  > The net karma gained (positive) or lost (negative) from this comment.
-  > Calculated as (upvotes - downvotes). Positive if comment was upvoted
-  > more, negative if downvoted more.
-- `created_at`
-  > Timestamp when the comment received its first karma. This is the
-  > timestamp of the last vote that finalized the karma change.
-- `updated_at`
-  > Timestamp when the comment_karma record was last updated. For comments,
-  > this is rarely changed but retains the timestamp of the last vote.
-- `deleted_at`
-  > Timestamp when this comment_karma entry was logically deleted (soft
-  > delete). If null, the entry is active. Set when the associated comment is
-  > deleted by its author.
-
-### `community_platform_karma_decay_logs`
-
-Logs historical events where a member's karma was reduced due to decay,
-system adjustments, or administrative actions.
-
-This table tracks scheduled or manual reductions in a member's total
-karma. Common reasons include: automatic decay of old karma points after
-12 months of inactivity, manual karma reset by an admin, or correction of
-erroneous karma calculations.
-
-This is a subsidiary entity because the logs are not directly managed by
-users. They are written by system processes and accessed by admins for
-auditing purposes. Users do not interact with this table directly, but
-they receive notifications of significant changes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `community_platform_member_id`: The member whose karma was adjusted. [community_platform_member.id](#community_platform_member).
-- `old_total_karma`
-  > The member's total karma (post_karma + comment_karma) before the decay
-  > adjustment was applied.
-- `new_total_karma`
-  > The member's total karma (post_karma + comment_karma) after the decay
-  > adjustment was applied.
-- `karma_change`
-  > The amount of karma subtracted (negative value) or added (positive value)
-  > by this adjustment. For decay events, this is negative.
-- `reason`
-  > The reason for the decay or adjustment. Examples:
-  > 'automatic_decay_12_months', 'admin_override',
-  > 'post_deletion_correction', 'system_audit'. Descriptive explanation of
-  > why the karma was modified.
-- `metadata`
-  > Optional JSON string containing additional details about the decay event,
-  > such as the specific post or comment IDs involved, the decay algorithm
-  > settings, or the admin who performed the action.
-- `created_at`: Timestamp when the decay adjustment was applied and logged.
-- `updated_at`
-  > Timestamp when this log entry was last updated (e.g., if metadata was
-  > added later).
-- `deleted_at`
-  > Timestamp when this log entry was logically deleted (soft delete). Unlike
-  > content, decay logs are preserved indefinitely for audit purposes. This
-  > field is only used in extreme cases (e.g., legal compliance request to
-  > delete data).
-
-## Notifications
-
-```mermaid
-erDiagram
-"community_platform_notifications" {
-  String id PK
-  String user_id FK
-  String type
-  String target_id "nullable"
-  String target_type "nullable"
-  String title
-  String body
-  String status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_notification_preferences" {
-  String id PK
-  String user_id FK
-  String type
-  Boolean active
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_notification_logs" {
-  String id PK
-  String notification_id FK
-  String channel
-  String status
-  String error_code "nullable"
-  String error_message "nullable"
-  Int attempt_count
-  DateTime created_at
-  DateTime updated_at
-}
-"community_platform_notification_logs" }o--|| "community_platform_notifications" : notification
-```
-
-### `community_platform_notifications`
-
-Core notification records sent to users for system events, moderation
-actions, and social interactions.
-
-Stores all user-facing notifications including new comments, reports,
-moderation actions, system updates, and community events. Each
-notification is associated with a specific user (via user_id) and can be
-categorized by type for filtering and preference management.
-Notifications have a lifecycle from creation to read, archived, or
-dismissed status, managed by user interaction.
-
-Notifications are targeted based on the notification target_id and
-target_type, enabling a unified system for diverse events. Soft deletion
-is implemented to allow recovery of accidentally dismissed notifications
-while keeping database size manageable.
-
-The status field controls visibility in the user interface. Newly created
-notifications are marked as "unread" and transition to "read" when viewed
-by the user. Users can manually archive or dismiss notifications, which
-changes the status accordingly.
-
-All notifications are connected to the actor tables (member, moderator,
-admin, guest) via the user_id field to ensure accurate targeting and
-persistent identity.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`
-  > The recipient of this notification. [community_platform_member.id](#community_platform_member)
-  > or [community_platform_moderator.id](#community_platform_moderator) or {@link
-  > community_platform_admin.id} or [community_platform_guest.id](#community_platform_guest).
-- `type`
-  > Category of the notification. Examples: 'comment_mention',
-  > 'moderation_action', 'report_update', 'system_announcement',
-  > 'community_invite'.
-- `target_id`
-  > ID of the related entity (e.g., post, comment, report, community). May be
-  > null for system-wide notifications.
-- `target_type`
-  > Type of the related entity (e.g., 'post', 'comment', 'report',
-  > 'community'). May be null for system-wide notifications.
-- `title`
-  > Brief title or subject of the notification. Example: 'You were mentioned
-  > in a comment'.
-- `body`
-  > Detailed content of the notification. Supports markdown formatting for
-  > rich text display in the UI. Example: 'User @john_doe replied to your
-  > comment on post #54321: "Thanks for the feedback!"'
-- `status`
-  > Current state of the notification in the user's view. Possible values:
-  > 'unread', 'read', 'archived', 'dismissed'.
-- `created_at`: Timestamp when the notification was created and queued for delivery.
-- `updated_at`
-  > Timestamp when the notification was last modified (e.g., status changed
-  > from unread to read).
-- `deleted_at`
-  > Timestamp when the notification was soft-deleted by the user. Null if
-  > still active.
-
-### `community_platform_notification_preferences`
-
-User-specific preferences for which types of notifications they wish to
-receive.
-
-Allows users to customize their notification experience by enabling or
-disabling categories. Users can opt-in to receive notifications for
-specific activities while blocking others. This table is tied directly to
-the user account and uses the active flag to toggle notification delivery
-per type.
-
-Preferences apply universally across all communities and are independent
-of community-specific moderation rules. Users can change their
-preferences at any time, and changes take effect immediately.
-
-The type field mirrors the notification type values used in
-community_platform_notifications (e.g., 'comment_mention',
-'moderation_action') to ensure alignment between notification generation
-and user preferences.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`
-  > The user whose preferences these are. {@link
-  > community_platform_member.id} or [community_platform_moderator.id](#community_platform_moderator)
-  > or [community_platform_admin.id](#community_platform_admin) or {@link
-  > community_platform_guest.id}.
-- `type`
-  > Notification category to control. Must match types in
-  > community_platform_notifications: 'comment_mention', 'moderation_action',
-  > 'report_update', 'system_announcement', 'community_invite',
-  > 'new_follower'.
-- `active`
-  > Whether this notification type is enabled for this user. True means
-  > receive notifications, false means suppress them.
-- `created_at`: Timestamp when this preference was created or first set.
-- `updated_at`: Timestamp when this preference was last modified.
-- `deleted_at`: Timestamp when this preference was soft-deleted. Null if active.
-
-### `community_platform_notification_logs`
-
-Tracking logs for attempted and actual delivery of notifications.
-
-This subsidiary table records detailed events related to notification
-processing: delivery attempts via email and in-app, delivery successes,
-failures, and retry attempts. It is used for system monitoring, debugging
-delivery issues, and compliance auditing.
-
-Logs are not directly accessible or manageable by users. They are
-maintained by the system and provide visibility into whether
-notifications were successfully delivered to the intended endpoints
-(email or browser). This table contains no user-configurable data and is
-strictly for operational and support purposes.
-
-It references the primary notification record to tie delivery events back
-to the original notification.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `notification_id`
-  > The notification this log entry pertains to. {@link
-  > community_platform_notifications.id}.
-- `channel`
-  > Delivery method used. Possible values: 'in_app', 'email',
-  > 'push_notification'.
-- `status`
-  > Outcome of the delivery attempt. Possible values: 'pending', 'sent',
-  > 'failed', 'delivered', 'opened', 'bounced'.
-- `error_code`
-  > Specific error code if delivery failed. Example:
-  > 'EMAIL_DOMAIN_NOT_FOUND', 'USER_UNSUBSCRIBED'.
-- `error_message`: Human-readable description of the failure reason if applicable.
-- `attempt_count`: Number of times this delivery attempt has been retried. Starts at 1.
-- `created_at`: Timestamp when this log entry was created.
-- `updated_at`
-  > Timestamp when this log entry was last updated (e.g., status changed from
-  > 'pending' to 'sent').
-
-## Payouts
-
-```mermaid
-erDiagram
-"community_platform_tips" {
-  String id PK
-  String creator_id FK
-  String member_id FK
-  Float amount
-  String status
-  String currency
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_subscriptions" {
-  String id PK
-  String member_id FK
-  Float amount
-  String billing_cycle
-  DateTime start_date
-  DateTime end_date
-  String status
-  String currency
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"community_platform_payouts" {
-  String id PK
-  String creator_id FK
-  Float amount
-  DateTime billing_period_start
-  DateTime billing_period_end
-  String status
-  String currency
-  DateTime created_at
-  DateTime updated_at
-  String payment_method_details
-  DateTime deleted_at "nullable"
-}
-"community_platform_payment_logs" {
-  String id PK
-  String tip_id FK "nullable"
-  String subscription_id FK "nullable"
-  String payout_id FK "nullable"
-  String event_type
-  String event_payload
-  DateTime created_at
-}
-"community_platform_creator_monetization_applications" {
-  String id PK
-  String member_id FK,UK
-  String status
-  String submission_notes "nullable"
-  DateTime created_at
-  DateTime updated_at
-  String approved_by "nullable"
-  String email_used_for_payouts UK
-  String rejection_reason "nullable"
-  Int total_upvotes
-  Int total_accepted_posts
-  Int total_accepted_comments
-  DateTime deleted_at "nullable"
-}
-"community_platform_payment_logs" }o--o| "community_platform_tips" : tip
-"community_platform_payment_logs" }o--o| "community_platform_subscriptions" : subscription
-"community_platform_payment_logs" }o--o| "community_platform_payouts" : payout
-```
-
-### `community_platform_tips`
-
-User-initiated monetary tips to content creators.
-
-Tracks voluntary financial contributions from members to creators for
-valuable content. Each tip represents a single transaction initiated by a
-member in support of a creator's work. Tips are processed through
-third-party payment providers, with the platform retaining a 10% service
-fee and distributing 90% to the creator.
-
-This table records the financial transfer itself, including the payment
-status, amount, and associated user information. Tips are independent
-transactions that can be associated with any creator who has been
-approved for monetization.
-
-NOTES FOR REVISION: The platform_fee and net_amount fields are calculated
-fields that should not be stored at the business entity level as they
-create data drift risk when calculation logic changes. These are now
-computed at query time by the application layer. The calculation remains:
-platform_fee = amount * 0.10, net_amount = amount - platform_fee.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `creator_id`: The creator receiving the tip. [community_platform_member.id](#community_platform_member).
-- `member_id`: The member who sent the tip. [community_platform_member.id](#community_platform_member).
-- `amount`
-  > The amount of the tip in USD. Always a positive value representing the
-  > tip amount before platform fee.
-- `status`
-  > The payment status: 'pending', 'succeeded', or 'failed'. Indicates
-  > whether the payment was processed successfully.
-- `currency`
-  > The currency used for the tip. Always 'USD' as specified in business
-  > requirements.
-- `created_at`: When the tip was initiated. Fixed at creation and never updated.
-- `updated_at`
-  > When the tip status was last updated. Updated whenever the payment status
-  > changes.
-- `deleted_at`
-  > If the tip is soft-deleted, records when it was marked as deleted for
-  > audit purposes. Will be null if not deleted.
-
-### `community_platform_subscriptions`
-
-User-initiated premium subscription payments to the platform.
-
-Tracks monthly or annual payments from members who upgrade to the
-CommunityPlus premium tier. Reinforces platform stability by establishing
-recurring revenue that directly supports infrastructure and service
-maintenance without ads or creator payouts.
-
-Each subscription can have a trial period before becoming active.
-Subscriptions are managed through third-party payment providers with
-automated renewal. When a subscription is successfully paid, the member
-receives the premium benefits described in the business requirements.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `member_id`
-  > The member who subscribed to CommunityPlus. {@link
-  > community_platform_member.id}.
-- `amount`: The subscription amount charged in USD ($4.99 monthly or $49.99 annually).
-- `billing_cycle`
-  > The subscription billing cycle: 'monthly' or 'annual'. Determined by user
-  > selection at checkout.
-- `start_date`
-  > When the subscription became active. For trial periods, this is the day
-  > the trial began.
-- `end_date`
-  > When the subscription ends. For active subscriptions, this is the next
-  > renewal date. For canceled subscriptions, this is the date they expired.
-- `status`
-  > The subscription status: 'trial', 'active', 'canceled', or 'expired'.
-  > Does not include failed payments.
-- `currency`
-  > The currency used for the subscription. Always 'USD' as specified in
-  > business requirements.
-- `created_at`: When the subscription was initiated. Fixed at creation and never updated.
-- `updated_at`
-  > When the subscription status was last updated. Updated when status
-  > changes occur.
-- `deleted_at`
-  > If the subscription is soft-deleted, records when it was marked as
-  > deleted for audit purposes. Will be null if not deleted.
-
-### `community_platform_payouts`
-
-Platform-initiated payouts to approved creators from accumulated earnings.
-
-Tracks scheduled payments from the platform to creators who have
-accumulated earnings from tips and/or premium collections. Payouts are
-processed programmatically on a monthly basis from the platform's revenue
-pool after applying business rules.
-
-Payouts are not automatically triggered by tip payments; instead, they
-occur in batch on a schedule based on accumulated totals. Each payout
-represents the total amount due to a creator for a specific period, which
-may include multiple tip batches and/or monthly revenue allocations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `creator_id`: The creator receiving this payout. [community_platform_member.id](#community_platform_member).
-- `amount`
-  > The total payout amount in USD. Sum of all eligible earnings for the
-  > payout cycle.
-- `billing_period_start`: The start date of the revenue period covered by this payout.
-- `billing_period_end`: The end date of the revenue period covered by this payout.
-- `status`
-  > The payout status: 'pending', 'processing', 'succeeded', 'failed', or
-  > 'canceled'.
-- `currency`
-  > The currency used for the payout. Always 'USD' as specified in business
-  > requirements.
-- `created_at`: When the payout was scheduled. Fixed at creation and never updated.
-- `updated_at`
-  > When the payout status was last updated. Updated whenever the payout
-  > status changes.
-- `payment_method_details`
-  > Engines' encrypted payment method details representing the creator's
-  > designated payout method (e.g., Stripe ID, PayPal email) as provided
-  > during monetization application. This field contains encrypted data and
-  > requires decryption to access the actual payment details.
-- `deleted_at`
-  > If the payout record is soft-deleted, records when it was marked as
-  > deleted for audit purposes. Will be null if not deleted.
-
-### `community_platform_payment_logs`
-
-Audit trail of all payment-related events and system notifications.
-
-Maintains a complete chronological log of all payment events, including
-payment initiation attempts, gateway responses, system errors,
-confirmation receipts, and fee calculations. Essential for financial
-auditing and reconciliation with third-party payment providers.
-
-This subsidiary table is automatically populated by system events
-whenever a payment transaction occurs in the tips, subscriptions, or
-payouts tables. Logs are created at every stage of each payment workflow
-and are never modified after creation.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `tip_id`: Tip payment this log relates to. [community_platform_tips.id](#community_platform_tips).
-- `subscription_id`
-  > Subscription payment this log relates to. {@link
-  > community_platform_subscriptions.id}.
-- `payout_id`: Payout payment this log relates to. [community_platform_payouts.id](#community_platform_payouts).
-- `event_type`
-  > The type of payment event: 'payment_initiated', 'payment_processing',
-  > 'payment_succeeded', 'payment_failed', 'payment_refunded', 'fee_applied',
-  > 'system_notification', or 'reconciliation'.
-- `event_payload`
-  > JSON string containing the full payment processor response and system
-  > metadata. Contains all relevant error codes, transaction IDs, and
-  > statuses returned by the external payment gateway.
-- `created_at`: When the payment event occurred. Fixed at creation and never updated.
-
-### `community_platform_creator_monetization_applications`
-
-User-initiated applications to participate in Creator Monetization program.
-
-Tracks applications from members who wish to receive tips and participate
-in revenue sharing. Applications require manual review by a system admin
-and must meet specific eligibility criteria: at least 50 accepted posts
-or comments with 1,000 total upvotes combined.
-
-This table captures the application metadata including status, submission
-details, and admin review information. The application is a prerequisite
-for receiving tips - a creator cannot receive payments until their
-application has been approved.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `member_id`
-  > The member applying to become a creator. {@link
-  > community_platform_member.id}.
-- `status`
-  > The application status: 'pending', 'approved', or 'rejected'. Must be
-  > 'approved' before the member can receive tips.
-- `submission_notes`
-  > Optional notes provided by the applicant about their contributions or
-  > goals for monetization.
-- `created_at`: When the application was submitted. Fixed at creation and never updated.
-- `updated_at`
-  > When the application status was last updated. Updated when admin reviews
-  > application.
-- `approved_by`
-  > The admin who approved this application. {@link
-  > community_platform_admin.id}. Null if status is pending or rejected.
-- `email_used_for_payouts`
-  > Specific email address designated for receiving payout notifications and
-  > earnings summary. Must be verified and unique per creator.
-- `rejection_reason`
-  > When status is 'rejected', this field contains the reason for rejection
-  > (e.g., 'not enough upvotes', 'community rule violation').
-- `total_upvotes`
-  > The total count of upvotes accumulated by the applicant's posts and
-  > comments when applying. This is a snapshot value captured at application
-  > time and should be validated against actual content in the database
-  > during approval review.
-- `total_accepted_posts`
-  > The total count of accepted posts created by the applicant when applying.
-  > This is a snapshot value captured at application time and should be
-  > validated against actual content in the database during approval review.
-- `total_accepted_comments`
-  > The total count of accepted comments created by the applicant when
-  > applying. This is a snapshot value captured at application time and
-  > should be validated against actual content in the database during
-  > approval review.
-- `deleted_at`
-  > If the application record is soft-deleted, records when it was marked as
-  > deleted for audit purposes. Will be null if not deleted.

@@ -13,25 +13,23 @@ export async function deleteTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the todo item by ID
+  // First, find the todo to verify it exists and belongs to the user
   const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
-    where: { id: props.todoId },
+    where: {
+      id: props.todoId,
+      todo_list_user_id: props.user.id,
+    },
   });
 
+  // If todo doesn't exist or doesn't belong to the user, throw 404
   if (!todo) {
     throw new HttpException("Todo not found", 404);
   }
 
-  // Ensure the authenticated user is the owner
-  if (todo.user_id !== props.user.id) {
-    throw new HttpException(
-      "Forbidden: You do not have permission to delete this todo.",
-      403,
-    );
-  }
-
-  // Permanently delete the todo item
+  // Perform hard delete
   await MyGlobal.prisma.todo_list_todos.delete({
-    where: { id: props.todoId },
+    where: {
+      id: props.todoId,
+    },
   });
 }

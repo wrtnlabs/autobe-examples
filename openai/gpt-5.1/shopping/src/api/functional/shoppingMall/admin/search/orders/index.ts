@@ -7,9 +7,6 @@ import { IShoppingMallOrderSearch } from "../../../../../structures/IShoppingMal
 import { IPageIShoppingMallOrderSearch } from "../../../../../structures/IPageIShoppingMallOrderSearch";
 
 /**
- * Search orders in shopping_mall_orders with rich administrative filters and
- * pagination.
- *
  * Search and retrieve a paginated list of orders based on complex criteria such
  * as status, customer, seller, payment, and shipment attributes.
  *

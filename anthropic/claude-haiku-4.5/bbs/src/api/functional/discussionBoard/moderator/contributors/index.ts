@@ -8,8 +8,6 @@ export * as suspend from "./suspend/index";
 export * as lift_restriction from "./lift_restriction/index";
 
 /**
- * Apply a posting or account restriction to a contributor account.
- *
  * Create a new account restriction on a discussion board contributor account as
  * a moderation enforcement action.
  *

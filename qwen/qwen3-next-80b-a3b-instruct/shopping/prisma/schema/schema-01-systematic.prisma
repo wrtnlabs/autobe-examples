@@ -1,18 +1,254 @@
-/// Product category hierarchy for the shopping platform.
+/// System-wide tax category definitions used for product pricing and order
+/// calculations.
 ///
-/// Defines the hierarchical taxonomy of product categories used for catalog
-/// organization and navigation.
-/// Each category can have a parent category to form a tree structure,
-/// supporting multi-level categorization.
+/// Defines standardized tax categories applied across all products and
+/// orders. Each tax category represents a tax rate with associated
+/// jurisdiction and description.
 ///
-/// Categories are managed exclusively by admin users and determine how
-/// products are grouped for display in storefront navigation.
+/// Used by shopping_mall_products, shopping_mall_orders, and
+/// shopping_mall_order_items to determine applicable tax rates.
 ///
-/// The category tree is cached for performance, and changes to parent
-/// categories will update all child category display paths.
+/// This table ensures consistent tax application across the system,
+/// referenced by tax_category_id in product and order tables.
 ///
-/// This entity is referenced by shopping_mall_products to associate products
-/// with their categorization.
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_tax_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the tax category (e.g., 'VAT', 'GST', 'Sales Tax').
+  name String
+  
+  /// Tax rate as decimal percentage (e.g., 0.08 for 8%). Must be between 0 and
+  /// 1.
+  rate Float
+  
+  /// Detailed description of the tax category's jurisdiction and application
+  /// rules.
+  description String?
+  
+  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'JP', 'KR') where this tax
+  /// category applies.
+  country_code String
+  
+  /// Specific region or state name where this tax category applies (e.g.,
+  /// 'California', 'Tokyo').
+  region String?
+  
+  /// Whether this tax category is currently active and applicable for new
+  /// orders.
+  is_active Boolean
+  
+  /// Timestamp when this tax category was created.
+  created_at DateTime
+  
+  /// Timestamp when this tax category was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([name, country_code, region])
+  @@index([country_code])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// System-defined payment method types supported by the platform for
+/// transaction processing.
+///
+/// Defines the payment methods that customers can use to complete
+/// transactions. These are fixed system types, not user-specific payment
+/// details.
+///
+/// Used by shopping_mall_order_payments to determine permitted payment types
+/// and processing rules.
+///
+/// This table enables consistent payment handling across all orders,
+/// referenced by payment_method_id in order payment records.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the payment method (e.g., 'Credit Card', 'PayPal', 'Bank
+  /// Transfer').
+  name String
+  
+  /// System code identifier for this payment method (e.g., 'CREDIT_CARD',
+  /// 'PAYPAL', 'BANK_TRANSFER'). Used in API and integration logic.
+  code String
+  
+  /// Detailed description of how this payment method works and any special
+  /// requirements.
+  description String?
+  
+  /// Whether this payment method is currently enabled for customer use.
+  is_enabled Boolean
+  
+  /// Whether this payment method is displayed as a priority option during
+  /// checkout.
+  is_priority Boolean
+  
+  /// Fixed processing fee charged when using this payment method (in USD).
+  /// Zero if no fee.
+  processing_fee Float
+  
+  /// Timestamp when this payment method was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this payment method was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_payments shopping_mall_order_payments[]
+  
+  @@unique([code])
+  @@index([is_enabled])
+  @@index([is_priority])
+}
+
+/// System-defined shipping options available to customers during checkout.
+///
+/// Defines the shipping methods that sellers can offer and customers can
+/// select during checkout.
+///
+/// Used by shopping_mall_order_shipping to determine available shipping
+/// options, costs, and delivery time estimates.
+///
+/// This table maintains standardized shipping configurations that can be
+/// referenced by multiple sellers, linked to shipping_method_id in order
+/// shipping records.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the shipping method (e.g., 'Standard Delivery', 'Express
+  /// Shipping', 'Same-Day Pickup').
+  name String
+  
+  /// System code identifier for this shipping method (e.g., 'STANDARD',
+  /// 'EXPRESS', 'PICKUP'). Used in logistics integrations.
+  code String
+  
+  /// Detailed description of the shipping method's capabilities, restrictions,
+  /// and delivery window.
+  description String?
+  
+  /// Whether this shipping method is currently active and available to
+  /// customers.
+  is_active Boolean
+  
+  /// Base shipping cost in USD for this method. May be overridden per seller
+  /// or order.
+  base_cost Float
+  
+  /// Minimum number of business days for delivery using this method.
+  estimated_days_min Int
+  
+  /// Maximum number of business days for delivery using this method.
+  estimated_days_max Int
+  
+  /// Whether this shipping method can be used for international orders.
+  enabled_for_international Boolean
+  
+  /// Timestamp when this shipping method was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this shipping method was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_shipping shopping_mall_order_shipping[]
+  
+  @@unique([code])
+  @@index([is_active])
+  @@index([enabled_for_international])
+}
+
+/// Global system configuration flags that enable or disable platform-wide
+/// features and behaviors.
+///
+/// Contains boolean flags that control platform functionality without
+/// requiring code deployment. Used to toggle features on/off per environment
+/// or business need.
+///
+/// Referenced by application services to determine system behavior, such as
+/// allowing new registrations, payment processing, etc.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the system flag (e.g., 'ENABLE_NEW_REGISTRATIONS',
+  /// 'ALLOW_PAYMENT_PROCESSING', 'MAINTENANCE_MODE').
+  name String
+  
+  /// Current state of the flag. True means enabled, false means disabled.
+  value Boolean
+  
+  /// Explanation of what this flag controls and its impact on system behavior.
+  description String?
+  
+  /// Timestamp when this system flag was created.
+  created_at DateTime
+  
+  /// Timestamp when this system flag was last updated.
+  updated_at DateTime
+  
+  /// ID of the admin who last modified this flag, referencing
+  /// shopping_mall_admins.id.
+  updated_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([value])
+  @@index([created_at])
+}
+
+/// Hierarchical product category structure that organizes all products in
+/// the marketplace.
+///
+/// Defines the complete category taxonomy used to classify products.
+/// Categories support nesting (parent-child relationships) to create deep
+/// hierarchies.
+///
+/// Used by shopping_mall_products, shopping_mall_product_categories to
+/// determine product categorization and navigation.
+///
+/// This table creates the authoritative category structure referenced
+/// throughout the system, linked by category_id in product category
+/// mappings.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,383 +259,104 @@ model shopping_mall_categories {
   /// Primary Key.
   id String @id
   
-  /// Parent category in the hierarchy. {@link shopping_mall_categories.id}.
-  parent_id String?
+  /// Parent category in the hierarchy. Referencing the same
+  /// shopping_mall_categories.id for nested categories. Null for top-level
+  /// categories.
+  parent_category_id String?
   
-  /// The display name of the category (e.g., 'Electronics', 'Clothing'). Must
-  /// be unique within scope.
+  /// Display name of the category (e.g., 'Electronics', 'Books > Fiction').
   name String
   
-  /// URL-friendly identifier for the category, generated from name. Used in
-  /// product URLs and SEO.
+  /// URL-friendly identifier for this category (e.g., 'electronics',
+  /// 'books-fiction').
   slug String
   
-  /// Detailed description of the category's purpose and included products.
+  /// Detailed description of the category and what products belong in it.
   description String?
   
-  /// Determines display order in navigation menus. Lower values appear first.
-  order_weight Int
-  
-  /// Controls whether category is visible to customers. Inactive categories
-  /// are hidden from storefront.
+  /// Whether this category is currently active and visible to customers.
   is_active Boolean
   
-  /// Timestamp when the category was created.
+  /// Order in which this category should be displayed in UI lists. Lower
+  /// numbers appear first.
+  display_order Int
+  
+  /// Timestamp when this category was created.
   created_at DateTime
   
-  /// Timestamp when the category was last updated.
+  /// Timestamp when this category was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  parentCategory shopping_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
   
   recursive shopping_mall_categories[] @relation("recursive")
-  shopping_mall_products shopping_mall_products[]
+  shopping_mall_product_categories shopping_mall_product_categories[]
   
   @@unique([slug])
-  @@unique([name])
-  @@index([parent_id])
-  @@index([is_active, order_weight])
-}
-
-/// System-wide configuration settings that control platform behavior.
-///
-/// Stores key-value pairs of runtime configuration options that affect
-/// platform functionality.
-///
-/// Each configuration item is identified by a unique name and has a string
-/// value that may represent boolean, numeric, or string configurations.
-///
-/// The configuration system supports dynamic updates without requiring code
-/// deployment.
-///
-/// The system reads these configurations at service startup and caches them
-/// for performance.
-///
-/// This is a single-point-of-truth for system settings and overrides default
-/// values across all platform components.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key identifier (e.g., 'payment_gateway_type',
-  /// 'max_cart_items'). Must be unique.
-  name String
-  
-  /// The configuration value stored as string. Can represent boolean
-  /// ('true'/'false'), numeric ('123'), or string patterns.
-  value String
-  
-  /// Human-readable explanation of what this configuration controls and
-  /// acceptable values.
-  description String
-  
-  /// Logical grouping of related configurations (e.g., 'payments', 'shipping',
-  /// 'security').
-  category String
-  
-  /// Whether this configuration is currently active and applied by the system.
-  is_active Boolean
-  
-  /// Timestamp when the configuration was created or first registered.
-  created_at DateTime
-  
-  /// Timestamp when the configuration was last modified.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([name])
-  @@index([category])
+  @@unique([parent_category_id, name])
+  @@index([parent_category_id])
   @@index([is_active])
-}
-
-/// Payment gateway configurations for processing transactions.
-///
-/// Defines the connection parameters and settings for external payment
-/// processors (e.g., Stripe, PayPal, KakaoPay).
-///
-/// Each gateway instance represents a specific configuration for one payment
-/// provider with different credentials for sandbox and production
-/// environments.
-///
-/// The system routes payments to the appropriate gateway based on customer
-/// region, currency, and configured preference.
-///
-/// This entity stores secure credentials (encryped) to communicate with
-/// external payment APIs.
-///
-/// Multiple gateways can be configured simultaneously to provide payment
-/// method options to customers.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_gateways {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Display name of the payment gateway (e.g., 'Stripe', 'PayPal',
-  /// 'KakaoPay').
-  name String
-  
-  /// External provider system name (e.g., 'stripe', 'paypal', 'kakaopay').
-  /// Must match supported provider code.
-  provider String
-  
-  /// Whether this gateway is enabled for customer transactions.
-  is_active Boolean
-  
-  /// Indicates whether this configuration uses sandbox/test mode (true) or
-  /// production mode (false).
-  is_sandbox Boolean
-  
-  /// Client/public identifier provided by the payment provider. Stored
-  /// encrypted.
-  client_id String
-  
-  /// Secret/private key provided by the payment provider. Stored encrypted and
-  /// never exposed.
-  secret_key String
-  
-  /// Merchant account identifier assigned by the payment provider.
-  merchant_id String?
-  
-  /// Primary currency supported by this gateway configuration (e.g., 'USD',
-  /// 'KRW').
-  currency String
-  
-  /// Timestamp when the gateway configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when the gateway configuration was last modified.
-  updated_at DateTime
-  
-  /// Timestamp when this gateway configuration was last successfully tested
-  /// for connectivity.
-  last_tested_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_order_payments shopping_mall_order_payments[]
-  
-  @@unique([provider, is_sandbox])
-  @@index([is_active, provider])
-}
-
-/// Delivery carrier configurations for order fulfillment.
-///
-/// Defines the connection settings for logistics providers (e.g., FedEx,
-/// DHL, CJ Logistics) used for shipment tracking and label generation.
-///
-/// Each carrier record contains authentication credentials, API endpoints,
-/// and service options for integration.
-///
-/// This entity enables the system to support multiple international carriers
-/// with region-specific settings.
-///
-/// The carrier selection during checkout determines shipping method
-/// availability and rate calculation.
-///
-/// This configuration is used by the system to generate shipping labels,
-/// track packages, and fetch delivery statuses.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipping_carriers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Display name of the carrier (e.g., 'FedEx', 'DHL', 'CJ Logistics').
-  name String
-  
-  /// External provider system name (e.g., 'fedex', 'dhl', 'cjs'). Must match
-  /// supported provider code.
-  provider String
-  
-  /// Whether this carrier is enabled for shipping label generation and
-  /// tracking.
-  is_active Boolean
-  
-  /// Indicates whether this carrier supports international shipments.
-  is_international Boolean
-  
-  /// Base API endpoint URL for the carrier's services.
-  api_url String
-  
-  /// Carrier account number assigned to the merchant. Stored encrypted.
-  account_number String
-  
-  /// API authentication key. Stored encrypted.
-  api_key String
-  
-  /// API secret token. Stored encrypted.
-  api_secret String
-  
-  /// Default service level (e.g., 'standard', 'express', 'overnight') for this
-  /// carrier.
-  default_service String?
-  
-  /// Timestamp when the carrier configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when the carrier configuration was last modified.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_order_shipments shopping_mall_order_shipments[]
-  shopping_mall_shipments shopping_mall_shipments[]
-  
-  @@index([is_active, is_international])
-}
-
-/// Audit logs of system events and administrative actions.
-///
-/// Records critical system events for security, debugging, and compliance
-/// purposes.
-///
-/// Contains immutable records of user actions, system errors, configuration
-/// changes, and security events.
-///
-/// This table is append-only and never modified or deleted after creation.
-///
-/// The logs are used for forensic analysis, traceability of administrative
-/// actions, and compliance auditing.
-///
-/// System logs provide a full history that can be queried for
-/// troubleshooting and investigation.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_logs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The user or system component that performed the action. {@link
-  /// shopping_mall_administrators.id} or {@link shopping_mall_sellers.id} or
-  /// {@link shopping_mall_customers.id}.
-  actor_id String?
-  
-  /// Log severity level (error, warning, info, debug, audit).
-  level String
-  
-  /// Category of the event (e.g., 'auth', 'payment', 'inventory', 'config').
-  category String
-  
-  /// Specific action performed (e.g., 'login', 'update_config',
-  /// 'process_refund').
-  action String
-  
-  /// JSON string containing detailed context of the event, including
-  /// parameters and object states.
-  details String
-  
-  /// Source IP address of the request that triggered this log entry.
-  ip_address String
-  
-  /// User agent string from the client making the request.
-  user_agent String?
-  
-  /// Timestamp when the event was logged. Immutable after creation.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  actor shopping_mall_administrators? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
-  
-  @@index([category])
-  @@index([action])
+  @@index([display_order])
   @@index([created_at])
-  @@index([actor_id, created_at])
-  @@index([level, created_at])
 }
 
-/// Pre-defined email templates for system-generated communications.
+/// System-defined product tags for enhanced product categorization and
+/// search filtering.
 ///
-/// Stores the content structure for automated emails sent to customers,
-/// sellers, and administrators.
+/// Defines a pool of standardized tags that can be applied to products to
+/// improve search and filtering capabilities.
 ///
-/// Each template includes subject line, HTML body, and plain text version,
-/// with placeholders for dynamic content.
+/// Used by shopping_mall_product_tags_products to associate tags with
+/// products, enabling keyword-based discovery and faceted navigation.
 ///
-/// Template fields are parsed at send time to substitute values like
-/// {{customer_name}}, {{order_id}}, {{delivery_date}}.
-///
-/// This allows easy modification of email content without code changes and
-/// supports multiple languages.
-///
-/// Templates are versioned and can be previewed and tested by admins before
-/// deployment.
+/// This table creates a controlled vocabulary of tags that can be referenced
+/// across all products, linked by tag_id in the junction table.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_email_templates {
+model shopping_mall_product_tags {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the template (e.g., 'order_confirmation',
-  /// 'password_reset').
+  /// Display name of the product tag (e.g., 'Organic', 'Wireless',
+  /// 'Heavy-Duty').
   name String
   
-  /// Email subject line with optional placeholders like {{customer_name}}.
-  subject String
+  /// URL-friendly identifier for this tag (e.g., 'organic', 'wireless',
+  /// 'heavy-duty').
+  slug String
   
-  /// HTML content of the email, with placeholders for dynamic content like
-  /// {{order_id}} or {{total_amount}}.
-  body_html String
+  /// Detailed description of what this tag represents and what products it
+  /// should be applied to.
+  description String?
   
-  /// Plain text version of the email content for clients that don't support
-  /// HTML.
-  body_text String
-  
-  /// Logical category of the email (e.g., 'transactional', 'marketing',
-  /// 'notification').
-  category String
-  
-  /// Language code this template is written in (e.g., 'en', 'ko').
-  language String
-  
-  /// Whether this template version is currently active and used by the system.
+  /// Whether this tag is currently active and available for selection.
   is_active Boolean
   
-  /// Timestamp when this template version was created.
+  /// Order in which this tag should be displayed in UI lists. Lower numbers
+  /// appear first.
+  display_order Int
+  
+  /// Timestamp when this tag was created.
   created_at DateTime
   
-  /// Timestamp when this template version was last modified.
+  /// Timestamp when this tag was last updated.
   updated_at DateTime
-  
-  /// Version identifier for template editing and rollback purposes (e.g.,
-  /// 'v1.2').
-  version String
   
   //----
   // RELATIONS
   //----
-  @@unique([name, language])
-  @@index([category])
-  @@index([is_active, language])
+  shopping_mall_product_tags_products shopping_mall_product_tags_products[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([is_active])
+  @@index([display_order])
+  @@index([created_at])
 }

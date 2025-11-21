@@ -8,9 +8,6 @@ import { IDiscussionBoardMember } from "../../../../../../api/structures/IDiscus
 @Controller("/auth/member/password/reset/complete")
 export class AuthMemberPasswordResetCompleteController {
   /**
-   * Complete password reset by updating member password in
-   * discussion_board_members table.
-   *
    * Completes the password reset process by validating the reset token and
    * updating the member's password in the discussion_board_members table. This
    * operation consumes a single-use token from

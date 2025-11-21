@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityGuest } from "../../../structures/IRedditCommunityGuest";
 
 /**
- * Register new guest user account (temporary access) in reddit_community_guests
- * table.
- *
  * Register a new guest account with temporary credentials and limited access.
  * This operation creates a guest user in the reddit_community_guests table,
  * including session and access token generation. It integrates with
@@ -99,8 +96,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest user access token in reddit_community_guests table.
- *
  * Refresh the access token for an existing guest user based on a valid refresh
  * token. This operation checks the reddit_community_guests table for valid
  * refresh token and issues a new access token. It supports secure session

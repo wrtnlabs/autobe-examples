@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewReport } from "../../../../../structures/IShoppingMallReviewReport";
 
 /**
- * Create a new shopping_mall_review_reports entry for a given
- * shopping_mall_reviews record.
- *
  * Create a new report against a specific review to flag potentially problematic
  * content.
  *

@@ -8,9 +8,6 @@ import { IShoppingMallLegalHold } from "../../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/admin/adminSearch/legalHolds")
 export class ShoppingmallAdminAdminsearchLegalholdsController {
   /**
-   * Search and list legal hold records from the shopping_mall_legal_holds
-   * table for admin users.
-   *
    * Retrieve a filtered and paginated list of legal hold records for
    * administrative review.
    *

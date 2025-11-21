@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IPageICommunityPlatformKarmaHistory } from "../../../../../structures/IPageICommunityPlatformKarmaHistory";
 
 /**
- * Retrieve complete karma history for a specific member ordered by recency.
- *
  * Retrieve the detailed karma history for a specific member, showing all karma
  * adjustments and their contributing factors. This operation returns all karma
  * changes for the target member in reverse chronological order (newest first),

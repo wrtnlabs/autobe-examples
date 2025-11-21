@@ -7,9 +7,6 @@ import { ICommunityPlatformMember } from "../../../api/structures/ICommunityPlat
 @Controller("/auth/member")
 export class AuthMemberController {
   /**
-   * Create a new member account and issue authentication tokens for community
-   * platform registration.
-   *
    * The member registration endpoint creates a new authenticated user account
    * with email-based credentials. This operation corresponds to the
    * community_platform_members table and establishes the foundational user
@@ -57,9 +54,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Authenticate member credentials and issue JWT tokens for authenticated
-   * platform access.
-   *
    * The member login endpoint authenticates existing user accounts through
    * email and password credential validation. This operation corresponds to
    * the community_platform_members table and implements standard JWT-based
@@ -109,9 +103,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Refresh member access tokens using valid refresh tokens for continued
-   * authenticated access.
-   *
    * The member token refresh endpoint enables access token renewal for
    * members with valid refresh tokens. This operation corresponds to the
    * community_platform_member_sessions table and implements secure token

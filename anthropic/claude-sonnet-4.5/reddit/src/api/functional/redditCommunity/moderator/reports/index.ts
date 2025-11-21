@@ -7,8 +7,6 @@ import { IRedditCommunityReport } from "../../../../structures/IRedditCommunityR
 import { IPageIRedditCommunityReport } from "../../../../structures/IPageIRedditCommunityReport";
 
 /**
- * Search and retrieve a filtered, paginated list of content reports.
- *
  * Retrieve a filtered and paginated list of content violation reports from the
  * system. This operation provides comprehensive search capabilities for finding
  * reports based on multiple criteria including report status (pending,
@@ -116,8 +114,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific content report.
- *
  * Retrieve complete details for a specific content violation report identified
  * by its unique report ID. This operation returns comprehensive information
  * about the report including the reported content (either post or comment), the
@@ -216,8 +212,6 @@ export namespace at {
 }
 
 /**
- * Update report status and moderator review for content violation reports.
- *
  * Update the status and moderator review information for a specific content
  * violation report.
  *

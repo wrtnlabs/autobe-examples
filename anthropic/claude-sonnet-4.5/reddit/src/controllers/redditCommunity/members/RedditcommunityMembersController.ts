@@ -10,8 +10,6 @@ import { IRedditCommunityMemberKarma } from "../../../api/structures/IRedditComm
 @Controller("/redditCommunity/members/:username")
 export class RedditcommunityMembersController {
   /**
-   * Retrieve a member's public profile by username.
-   *
    * Retrieve detailed public profile information for a specific community
    * member identified by their unique username.
    *
@@ -62,8 +60,6 @@ export class RedditcommunityMembersController {
   }
 
   /**
-   * Retrieve total karma score breakdown for a specific member.
-   *
    * Retrieve the complete karma statistics for a community member, providing a
    * breakdown of reputation earned through posts and comments. This operation
    * calculates karma scores in real-time based on all votes received across the

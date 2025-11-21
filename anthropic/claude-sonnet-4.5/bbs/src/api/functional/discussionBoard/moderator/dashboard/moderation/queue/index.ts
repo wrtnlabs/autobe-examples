@@ -7,8 +7,6 @@ import { IDiscussionBoardContentReport } from "../../../../../../structures/IDis
 import { IPageIDiscussionBoardContentReport } from "../../../../../../structures/IPageIDiscussionBoardContentReport";
 
 /**
- * Retrieve filtered and paginated content reports from the moderation queue.
- *
  * Retrieve a comprehensive list of content reports from the moderation queue
  * with advanced filtering, searching, sorting, and pagination capabilities.
  * This operation enables moderators to efficiently review community-submitted

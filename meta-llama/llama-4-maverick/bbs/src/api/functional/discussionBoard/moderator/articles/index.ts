@@ -6,8 +6,6 @@ export * as attachments from "./attachments/index";
 export * as versions from "./versions/index";
 
 /**
- * Permanently delete an article by ID.
- *
  * This operation completely removes an article from the database along with all
  * related data such as attachments and comments. It requires the articleId path
  * parameter to identify the target article. The operation is restricted to

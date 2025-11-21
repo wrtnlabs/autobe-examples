@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticle } from "../../../structures/IDiscussionBoardArticle";
 
 /**
- * Get a specific discussion board article by its UUID.
- *
  * Retrieve detailed information of a discussion board article by its unique
  * identifier.
  *

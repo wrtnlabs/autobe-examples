@@ -14,9 +14,6 @@ import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSel
 @Controller("/shoppingMall/admin/sellers")
 export class ShoppingmallAdminSellersController {
   /**
-   * Paginated, filtered search and listing of sellers from
-   * shopping_mall_sellers.
-   *
    * Retrieve a filtered and paginated list of registered sellers from the
    * platform database.
    *
@@ -62,9 +59,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Retrieve full business and registration details for a specified seller
-   * (shopping_mall_sellers).
-   *
    * Retrieve complete details about a single seller account specified by unique
    * sellerId.
    *
@@ -111,9 +105,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Update an existing shopping mall seller account ('shopping_mall_sellers'
-   * table).
-   *
    * Update details for a registered seller account in the shopping mall system.
    *
    * This operation allows authorized actors to modify mutable fields of a
@@ -164,9 +155,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Permanently delete a shopping mall seller account ('shopping_mall_sellers'
-   * table).
-   *
    * Permanently remove a seller account from the shopping mall platform.
    *
    * This operation enables authorized administrators to erase a seller’s

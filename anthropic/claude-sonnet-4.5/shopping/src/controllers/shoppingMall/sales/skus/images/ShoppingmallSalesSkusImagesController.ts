@@ -10,9 +10,6 @@ import { IShoppingMallSaleImage } from "../../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/sales/:saleCode/skus/:skuCode/images")
 export class ShoppingmallSalesSkusImagesController {
   /**
-   * Search and retrieve paginated list of product images for a specific sale
-   * SKU variant.
-   *
    * Retrieve a filtered and paginated list of product images associated with a
    * specific SKU variant within a sale listing. This operation provides
    * advanced search capabilities for finding images that are specifically
@@ -71,9 +68,6 @@ export class ShoppingmallSalesSkusImagesController {
   }
 
   /**
-   * Retrieve detailed information about a specific product image for a SKU
-   * variant.
-   *
    * Retrieve comprehensive details about a specific product image attached to a
    * SKU variant within a sale listing. This operation provides access to
    * individual image metadata including the image URI, display order, creation

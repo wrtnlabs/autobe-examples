@@ -8,9 +8,6 @@ import { ICommunityPlatformReport } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/administrator/reports")
 export class CommunityplatformAdministratorReportsController {
   /**
-   * Search and retrieve a filtered, paginated list of community content
-   * violation reports.
-   *
    * Retrieve a filtered and paginated list of content violation reports from
    * the community platform. This operation provides advanced search
    * capabilities for finding reports based on multiple criteria including
@@ -56,8 +53,6 @@ export class CommunityplatformAdministratorReportsController {
   }
 
   /**
-   * Retrieve detailed information for a specific moderation report.
-   *
    * Retrieve complete details of a specific community platform moderation
    * report identified by its unique identifier. This operation allows
    * moderators and administrators to view comprehensive information about
@@ -100,8 +95,6 @@ export class CommunityplatformAdministratorReportsController {
   }
 
   /**
-   * Update an existing moderation report with new information or decisions.
-   *
    * Update an existing community platform moderation report identified by its
    * unique identifier. This operation allows authorized moderation personnel
    * to modify report details throughout the moderation lifecycle, including
@@ -153,8 +146,6 @@ export class CommunityplatformAdministratorReportsController {
   }
 
   /**
-   * Delete a moderation report by ID.
-   *
    * Remove a specific moderation report from the community platform system.
    * This operation permanently deletes the report record and all associated
    * decision records and audit logs. Only platform administrators can delete

@@ -7,8 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../../api/structures/IC
 @Controller("/communityPlatform/member/auth/member/sessions/logout-all")
 export class CommunityplatformMemberAuthMemberSessionsLogout_allController {
   /**
-   * Logout member from all active sessions across all devices.
-   *
    * This operation terminates all active sessions for the authenticated
    * member across all devices and browsers. When executed, all session tokens
    * issued to this member are invalidated, requiring the member to

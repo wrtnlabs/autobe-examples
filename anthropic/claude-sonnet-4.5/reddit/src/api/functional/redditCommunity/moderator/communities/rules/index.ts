@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunityRule } from "../../../../../structures/IRedditCommunityCommunityRule";
 
 /**
- * Create a new community rule for a specific community.
- *
  * Create a new rule to define acceptable behavior and content standards within
  * a community. This operation allows authenticated community moderators to
  * establish rules that guide member conduct and content creation.
@@ -123,8 +121,6 @@ export namespace create {
 }
 
 /**
- * Update an existing community rule.
- *
  * Update the details of a specific community rule including its title,
  * description, and display order. This operation enables community moderators
  * to refine and maintain their community guidelines as the community evolves.
@@ -238,8 +234,6 @@ export namespace update {
 }
 
 /**
- * Delete a community rule.
- *
  * Permanently remove a specific rule from a community's ruleset. This operation
  * enables moderators to eliminate outdated, redundant, or no-longer-applicable
  * rules from their community guidelines.

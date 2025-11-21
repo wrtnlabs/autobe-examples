@@ -9,8 +9,6 @@ import { IEconomicDiscussionComment } from "../../../../api/structures/IEconomic
 @Controller("/economicDiscussion/search/comments")
 export class EconomicdiscussionSearchCommentsController {
   /**
-   * Search and retrieve filtered, paginated list of discussion comments.
-   *
    * Retrieve a filtered and paginated list of comments posted on economic
    * discussion articles. This operation enables comprehensive filtering across
    * comment content, associated articles, comment authors, moderation status,

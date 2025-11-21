@@ -9,8 +9,6 @@ import { ICommunityPlatformMemberFollower } from "../../../../../api/structures/
 )
 export class CommunityplatformMemberMembersFollowingController {
   /**
-   * Create a new follow relationship between two members.
-   *
    * Establish a new follow relationship where the specified member (memberId)
    * starts following another member (followingId). This operation adds a
    * record to the community_platform_member_followers table, creating a
@@ -56,8 +54,6 @@ export class CommunityplatformMemberMembersFollowingController {
   }
 
   /**
-   * Unfollow a member by removing the follow relationship.
-   *
    * Remove a follow relationship where the authenticated member (identified
    * by memberId path parameter) unfollows another member (identified by
    * followingId path parameter). This operation permanently removes the

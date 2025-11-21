@@ -7,8 +7,6 @@ import { ITodoListGuest } from "../../../../structures/ITodoListGuest";
 import { IPageITodoListGuest } from "../../../../structures/IPageITodoListGuest";
 
 /**
- * Search and retrieve a filtered, paginated list of guest visitors.
- *
  * Retrieve a filtered and paginated list of guest visitors to the Todo List
  * application.
  *

@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunitySettings } from "../../../../api/structures/
 @Controller("/communityPlatform/communities/:communityName/settings")
 export class CommunityplatformCommunitiesSettingsController {
   /**
-   * Retrieve settings for a given community
-   * (community_platform_community_settings table).
-   *
    * Retrieve the specific configuration and settings for a particular community
    * using its unique slug.
    *

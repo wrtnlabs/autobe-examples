@@ -9,9 +9,6 @@ import { ICommunityPlatformNotification } from "../../../../../api/structures/IC
 )
 export class CommunityplatformMemberuserNotificationsMarkreadController {
   /**
-   * Mark a community_platform_notifications record as read for the current
-   * member user.
-   *
    * Mark a single notification from the `community_platform_notifications`
    * table as read for the authenticated member user.
    *

@@ -8,8 +8,6 @@ import { IPageIShoppingMallShipment } from "../../../../structures/IPageIShoppin
 export * as trackingHistories from "./trackingHistories/index";
 
 /**
- * Create a new shipment record for an order item (shopping_mall_shipments).
- *
  * Create a new shipment record for an order item, referencing a specific order
  * and assigning fulfillment responsibility to a shipping partner. This
  * operation requires that the target order and order item are valid and not yet
@@ -118,9 +116,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filtered list of shipment records from
- * shopping_mall_shipments.
- *
  * Fetch a paginated and filtered list of shipment records for logistics
  * operations and monitoring.
  *
@@ -228,9 +223,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single shipment record by shipment ID
- * (shopping_mall_shipments).
- *
  * Fetch complete detail information for a single shipment record, given its
  * unique ID.
  *
@@ -326,8 +318,6 @@ export namespace at {
 }
 
 /**
- * Update shipment record and logistics status (shopping_mall_shipments).
- *
  * Update shipment details—such as status, carrier tracking, manifests,
  * delivery/cancellation timestamps, or API provider result—by specifying the
  * shipmentId of the target shipment record. This operation allows status
@@ -441,8 +431,6 @@ export namespace update {
 }
 
 /**
- * Delete a shipment record from the shopping_mall_shipments table.
- *
  * This endpoint deletes a shipment record from the system by its unique
  * identifier. Deleting a shipment is an irreversible operation and should only
  * be performed when the shipment has not been delivered, is not in transit, or

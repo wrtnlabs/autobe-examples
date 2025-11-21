@@ -7,8 +7,6 @@ import { IShoppingMallPermission } from "../../../../structures/IShoppingMallPer
 import { IPageIShoppingMallPermission } from "../../../../structures/IPageIShoppingMallPermission";
 
 /**
- * Create a new shopping mall permission.
- *
  * Creates a new permission entity within the shopping mall backend system. This
  * permission defines a specific access right that can be assigned to users or
  * roles.
@@ -103,8 +101,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of shopping mall permissions.
- *
  * Retrieve a filtered and paginated list of shopping mall permissions from the
  * system. The permissions define what actions administrators can perform within
  * the shopping mall platform.
@@ -197,8 +193,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a shopping mall permission by its unique name.
- *
  * This operation allows clients to fetch detailed information about a specific
  * shopping mall permission identified by its unique name.
  *
@@ -296,8 +290,6 @@ export namespace at {
 }
 
 /**
- * Update a shopping mall permission by unique name.
- *
  * Update a specific shopping mall permission, identified by its unique 'name'.
  * The operation allows changing the label and detailed description of the
  * permission to reflect changes in access control policies.
@@ -395,8 +387,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall permission by unique name.
- *
  * Delete a specific shopping mall permission by its unique name.
  *
  * This operation permanently removes the permission entry from the database and

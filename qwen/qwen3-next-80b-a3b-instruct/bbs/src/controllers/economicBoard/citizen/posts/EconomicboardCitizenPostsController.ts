@@ -11,8 +11,6 @@ import { IEconomicBoardPost } from "../../../../api/structures/IEconomicBoardPos
 @Controller("/economicBoard/citizen/posts")
 export class EconomicboardCitizenPostsController {
   /**
-   * Submit a new discussion post for moderator review.
-   *
    * Allows authenticated citizens to submit a new discussion post to the
    * economic board with title and content. Upon submission, the post is
    * immediately placed in a 'pending' state and is never visible to other
@@ -71,8 +69,6 @@ export class EconomicboardCitizenPostsController {
   }
 
   /**
-   * Edit your own post within 24 hours of creation.
-   *
    * Permits a citizen to update the title or body of their own post, but only
    * if the edit occurs within 24 hours of the original post submission. This
    * operation does not modify the main economic_board_posts record; instead, it

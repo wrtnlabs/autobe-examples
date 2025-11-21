@@ -8,8 +8,6 @@ import { IPageIShoppingMallPolicyOverride } from "../../../../api/structures/IPa
 @Controller("/shoppingMall/admin/policyOverrides")
 export class ShoppingmallAdminPolicyoverridesController {
   /**
-   * Create a new policy override in the shopping_mall_policy_overrides table.
-   *
    * Create a new policy override row in the shopping_mall_policy_overrides
    * table to capture explicit exceptions to default business policies.
    *
@@ -73,9 +71,6 @@ export class ShoppingmallAdminPolicyoverridesController {
   }
 
   /**
-   * Search and list policy overrides from the shopping_mall_policy_overrides
-   * table with filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of policy override records from
    * the `shopping_mall_policy_overrides` table.
    *
@@ -139,9 +134,6 @@ export class ShoppingmallAdminPolicyoverridesController {
   }
 
   /**
-   * Get detailed information for a single policy override record from
-   * shopping_mall_policy_overrides.
-   *
    * Retrieve detailed information about a single policy override identified
    * by its unique identifier in the `shopping_mall_policy_overrides` table.
    *
@@ -193,9 +185,6 @@ export class ShoppingmallAdminPolicyoverridesController {
   }
 
   /**
-   * Update an existing policy override in the shopping_mall_policy_overrides
-   * table.
-   *
    * Update an existing row in the shopping_mall_policy_overrides table
    * identified by policyOverrideId, allowing administrators to adjust the
    * configuration of an explicit business policy exception.
@@ -256,9 +245,6 @@ export class ShoppingmallAdminPolicyoverridesController {
   }
 
   /**
-   * Delete a specific policy override record from
-   * shopping_mall_policy_overrides by ID.
-   *
    * Delete a specific policy override record from the
    * shopping_mall_policy_overrides table using its unique identifier.
    *

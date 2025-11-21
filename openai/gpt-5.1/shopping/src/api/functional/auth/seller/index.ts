@@ -9,9 +9,6 @@ import { IShoppingMallSellerAuthLogin } from "../../../structures/IShoppingMallS
 import { IShoppingMallSellerAuthRefresh } from "../../../structures/IShoppingMallSellerAuthRefresh";
 
 /**
- * Register a new seller account in `shopping_mall_sellers` and issue initial
- * authorized seller tokens.
- *
  * This API operation registers a new seller account by inserting a record into
  * the `shopping_mall_sellers` table, which is described as "Registered seller
  * accounts on the shoppingMall platform" and serves as the root identity for
@@ -169,9 +166,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing seller in `shopping_mall_sellers` using email and
- * password, issuing authorized seller tokens and recording a session.
- *
  * This API operation authenticates sellers by validating credentials against
  * the `shopping_mall_sellers` table, which represents registered merchant
  * accounts and contains the primary login identifiers `email` and
@@ -313,9 +307,6 @@ export namespace login {
 }
 
 /**
- * Refresh seller JWT tokens using a valid refresh token while validating seller
- * and session state linked to `shopping_mall_sellers`.
- *
  * This API operation renews a seller’s authenticated context by accepting a
  * refresh token packaged in `IShoppingMallSellerAuthRefresh.IRequest` and
  * issuing a new authorized seller response of type

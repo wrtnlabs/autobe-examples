@@ -8,9 +8,6 @@ export * as items from "./items/index";
 
 /**
  * Create a new cancellation request record in the
- * shopping_mall_cancellation_requests table.
- *
- * Create a new cancellation request record in the
  * `shopping_mall_cancellation_requests` table based on the provided request
  * payload.
  *

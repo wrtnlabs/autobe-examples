@@ -11,8 +11,6 @@ import { IPageIShoppingMallGuest } from "../../../api/structures/IPageIShoppingM
 @Controller("/shoppingMall/shoppingMallGuests")
 export class ShoppingmallShoppingmallguestsController {
   /**
-   * Create a new shopping mall guest user record.
-   *
    * This operation allows the system to register a new guest user for the
    * shopping mall, who can browse the product catalog without authentication.
    *
@@ -50,8 +48,6 @@ export class ShoppingmallShoppingmallguestsController {
   }
 
   /**
-   * Search and list paginated shopping mall guest users.
-   *
    * Retrieve a paginated and optionally filtered list of guest users visiting
    * the shopping mall platform.
    *
@@ -90,8 +86,6 @@ export class ShoppingmallShoppingmallguestsController {
   }
 
   /**
-   * Retrieve details of a specific shopping mall guest user.
-   *
    * This operation retrieves detailed information about a specific shopping
    * mall guest user who is browsing the e-commerce mall without
    * authentication.

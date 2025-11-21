@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumPostCommentVote } from "../../../../../structures/ICommunityForumPostCommentVote";
 
 /**
- * Vote on a specific comment in the community forum.
- *
  * Create a new vote record for a comment in the community forum. This endpoint
  * allows authenticated users to express their opinion on comments by casting
  * either an upvote or downvote.
@@ -113,8 +111,6 @@ export namespace create {
 }
 
 /**
- * Remove a user's vote from a specific comment.
- *
  * Delete a previously cast vote on a comment in the community forum. This
  * endpoint allows authenticated users to retract their voting decision by
  * removing their vote record from the system.

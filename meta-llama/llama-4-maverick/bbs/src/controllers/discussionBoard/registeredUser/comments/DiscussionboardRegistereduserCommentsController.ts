@@ -12,8 +12,6 @@ import { IDiscussionBoardComment } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/registeredUser/comments")
 export class DiscussionboardRegistereduserCommentsController {
   /**
-   * Retrieve a specific comment by ID.
-   *
    * This operation allows authenticated users to retrieve detailed information
    * about a specific comment identified by its unique commentId. The comment
    * details include its content, creation timestamp, and associated resource or
@@ -76,8 +74,6 @@ export class DiscussionboardRegistereduserCommentsController {
   }
 
   /**
-   * Create a new comment on an article/resource.
-   *
    * This operation allows authenticated users to create new comments on
    * articles or resources. The request body must conform to the ICreate DTO
    * type for comments, including required fields such as content and associated

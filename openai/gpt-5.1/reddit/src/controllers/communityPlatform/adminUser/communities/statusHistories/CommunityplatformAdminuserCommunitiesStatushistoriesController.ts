@@ -10,9 +10,6 @@ import { ICommunityPlatformCommunityStatusHistory } from "../../../../../api/str
 )
 export class CommunityplatformAdminuserCommunitiesStatushistoriesController {
   /**
-   * Search status history records for a community from
-   * `community_platform_community_status_histories`.
-   *
    * Retrieve a filtered, paginated list of status and visibility change
    * history records for a specific community, identified by its `slug` in the
    * `community_platform_communities` table.
@@ -105,9 +102,6 @@ export class CommunityplatformAdminuserCommunitiesStatushistoriesController {
   }
 
   /**
-   * Get a single community status history record from
-   * `community_platform_community_status_histories`.
-   *
    * Retrieve a single detailed status and visibility change history record
    * for a specific community, scoping by both community slug and history
    * record identifier.

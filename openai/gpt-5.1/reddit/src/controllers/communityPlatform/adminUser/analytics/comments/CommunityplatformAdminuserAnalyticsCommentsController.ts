@@ -8,9 +8,6 @@ import { ICommunityPlatformCommentAnalytics } from "../../../../../api/structure
 @Controller("/communityPlatform/adminUser/analytics/comments")
 export class CommunityplatformAdminuserAnalyticsCommentsController {
   /**
-   * Retrieve paginated analytics for comments based on
-   * community_platform_comments and related vote data.
-   *
    * Retrieve a filtered, paginated list of comment analytics derived from the
    * community_platform_comments model and its related vote data.
    *

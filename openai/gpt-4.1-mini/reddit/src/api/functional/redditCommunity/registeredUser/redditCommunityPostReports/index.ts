@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityPostReport } from "../../../../structures/IRedditCommunityPostReport";
 
 /**
- * Create a new reddit community post report.
- *
  * Create a new report entry for a reddit community post in the system.
  *
  * This allows registered users to submit reports indicating inappropriate or
@@ -102,8 +100,6 @@ export namespace create {
 }
 
 /**
- * Update an existing reddit community post report.
- *
  * Update details of an existing reddit community post report.
  *
  * This operation allows modification of the report's reason and updates

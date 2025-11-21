@@ -7,9 +7,6 @@ import { ICommunityPlatformPostReport } from "../../../../structures/ICommunityP
 import { IPageICommunityPlatformPostReport } from "../../../../structures/IPageICommunityPlatformPostReport";
 
 /**
- * Search community_platform_post_reports to retrieve a paginated list of post
- * reports for moderation use.
- *
  * Search and retrieve a paginated list of post-level reports stored in the
  * community_platform_post_reports table for moderation and administrative
  * review.
@@ -134,9 +131,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single post report record from community_platform_post_reports by
- * its identifier.
- *
  * Get detailed information for a single post report from the community
  * platform.
  *
@@ -263,9 +257,6 @@ export namespace at {
 }
 
 /**
- * Update an existing post report in the `community_platform_post_reports` table
- * by its identifier.
- *
  * Update an existing post-level report in the community moderation system.
  *
  * This operation targets the `community_platform_post_reports` Prisma table,
@@ -411,9 +402,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a post report record from the
- * `community_platform_post_reports` table by its identifier.
- *
  * Permanently delete a post-level report by its identifier from the community
  * platform.
  *

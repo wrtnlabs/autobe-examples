@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a specific reply to a comment.
- *
  * Permanently removes a reply to a comment from the discussion board. Requires
  * moderator privileges. The operation validates both commentId and replyId
  * before performing the deletion.

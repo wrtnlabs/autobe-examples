@@ -7,9 +7,6 @@ import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/adminUser/posts/:postId")
 export class CommunityplatformAdminuserPostsController {
   /**
-   * Permanently delete a post record from the community_platform_posts table
-   * by ID.
-   *
    * Delete a single post from the community platform by its unique
    * identifier.
    *
@@ -72,9 +69,6 @@ export class CommunityplatformAdminuserPostsController {
   }
 
   /**
-   * Unlock a locked post in the community_platform_posts table to re-enable
-   * new comments and interactions.
-   *
    * Unlock a previously locked post in the community platform so that new
    * comments and interactions become possible again.
    *

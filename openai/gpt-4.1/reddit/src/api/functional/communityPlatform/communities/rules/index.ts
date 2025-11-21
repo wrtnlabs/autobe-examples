@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../structures/ICommuni
 import { IPageICommunityPlatformCommunityRule } from "../../../../structures/IPageICommunityPlatformCommunityRule";
 
 /**
- * List and search moderation/content rules for a given community
- * (community_platform_community_rules).
- *
  * Retrieve a paginated and filtered list of moderation or content rules for the
  * given community using its unique community name.
  *
@@ -116,9 +113,6 @@ export namespace index {
 }
 
 /**
- * Get details of specific moderation rule in a community
- * (community_platform_community_rules).
- *
  * Retrieve the full details of a specific rule belonging to the provided
  * community and rule code. This endpoint offers the complete canonical
  * representation of a community rule, for UI display or management. If the rule

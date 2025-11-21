@@ -12,8 +12,6 @@ import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrde
 @Controller("/shoppingMall/seller/orders")
 export class ShoppingmallSellerOrdersController {
   /**
-   * Search and retrieve a filtered, paginated list of orders.
-   *
    * Retrieve a comprehensive, filtered, and paginated list of orders from the
    * marketplace. This operation provides advanced search capabilities for
    * finding orders based on multiple criteria including order number, status,
@@ -75,8 +73,6 @@ export class ShoppingmallSellerOrdersController {
   }
 
   /**
-   * Retrieve detailed information for a specific order.
-   *
    * Retrieve comprehensive details of a specific order identified by its unique
    * order ID. This operation provides complete order information including
    * buyer information, current order status, payment details, shipping address,

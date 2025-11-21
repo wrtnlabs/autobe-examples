@@ -1,0 +1,445 @@
+/// Real-time inventory tracking for product variants across warehouse
+/// locations.
+///
+/// Maintains current stock levels, reserved quantities, and availability
+/// status for each product variant and warehouse combination. Supports
+/// sophisticated low-stock monitoring, automatic reordering triggers, and
+/// multi-location inventory distribution. Core component for preventing
+/// overselling while enabling marketplace sellers to manage stock across
+/// multiple fulfillment centers.
+///
+/// Links product variants to specific warehouse locations with precise
+/// SKU-level tracking. Provides granular inventory data for demand
+/// forecasting, stock optimization, and operational efficiency analysis
+/// across the marketplace ecosystem.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_levels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related product variant's {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Owning seller's {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Storage location's {@link shopping_mall_warehouses.id}
+  shopping_mall_warehouse_id String
+  
+  /// Available inventory quantity for sale. Represents actual stock level
+  /// minus any reserved quantities for pending orders. Must be non-negative
+  /// and updated in real-time.
+  current_stock Int
+  
+  /// Quantity reserved for pending orders awaiting payment confirmation.
+  /// Prevents overselling by temporarily holding inventory for customer
+  /// checkout processes.
+  reserved_stock Int
+  
+  /// Quantity committed to confirmed orders in processing. Represents
+  /// inventory that cannot be sold to other customers and is being prepared
+  /// for shipment.
+  allocated_stock Int
+  
+  /// Maximum storage capacity allocated to this SKU in the warehouse. Used for
+  /// capacity planning and storage optimization calculations.
+  total_capacity Int?
+  
+  /// Inventory threshold that triggers automatic low-stock alerts. When
+  /// current stock drops to this level, sellers are notified to replenish
+  /// inventory.
+  reorder_point Int
+  
+  /// Recommended quantity to restock when reorder alerts are triggered. Helps
+  /// sellers maintain optimal inventory levels based on demand patterns.
+  restock_quantity Int
+  
+  /// Date and time of last physical inventory count. Used for inventory
+  /// accuracy validation and audit trail maintenance.
+  last_counted DateTime?
+  
+  /// Last modification timestamp for inventory level changes. Automatically
+  /// updated when stock levels change due to sales, restocking, or
+  /// adjustments.
+  updated_at DateTime
+  
+  /// Creation timestamp when inventory record was established. Permanent
+  /// record of when tracking began for this SKU-warehouse combination.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  warehouse shopping_mall_warehouses @relation(fields: [shopping_mall_warehouse_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_inventory_levels_shopping_mall_product_v_230f5baa")
+  @@index([shopping_mall_warehouse_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id, shopping_mall_warehouse_id], map: "shopping_mall_inventory_levels_shopping_mall_product_v_3764ca38")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, shopping_mall_product_variant_id], map: "shopping_mall_inventory_levels_shopping_mall_seller_id_dbb6b035")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, current_stock], map: "shopping_mall_inventory_levels_shopping_mall_seller_id_643fedc4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, updated_at], map: "shopping_mall_inventory_levels_shopping_mall_product_v_4000ce13")
+  @@index([current_stock, reorder_point])
+}
+
+/// Comprehensive audit trail tracking all inventory changes with detailed
+/// attribution.
+///
+/// Records every inventory adjustment including sales, restocking,
+/// transfers, returns, damages, and manual corrections. Provides complete
+/// transaction history for inventory reconciliation, demand analysis, and
+/// operational auditing. Critical for maintaining inventory accuracy and
+/// detecting discrepancies across warehouse operations.
+///
+/// Supports sophisticated inventory analytics including turnover rates,
+/// seasonality patterns, and demand forecasting while providing complete
+/// accountability for all stock movements within the marketplace ecosystem.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related inventory level record's {@link shopping_mall_inventory_levels.id}
+  shopping_mall_inventory_level_id String
+  
+  /// Affected product variant's {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Owning seller's {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Related order item's {@link shopping_mall_order_items.id} when movement
+  /// is due to sale
+  shopping_mall_order_item_id String?
+  
+  /// Storage location's {@link shopping_mall_warehouses.id}
+  shopping_mall_warehouse_id String
+  
+  /// Type of inventory adjustment. Valid values: sale, restock, return,
+  /// transfer, adjustment, damage, theft. Used for categorization and
+  /// analytics of inventory changes.
+  movement_type String
+  
+  /// Net quantity change for this movement. Positive for restocking, negative
+  /// for sales and removals. Captures actual inventory impact for
+  /// reconciliation purposes.
+  quantity_change Int
+  
+  /// Cost per unit for accounting purposes when applicable. Used for inventory
+  /// valuation and cost of goods sold calculations in financial reporting.
+  unit_cost Float?
+  
+  /// Detailed explanation for inventory adjustment. Required for manual
+  /// corrections and unusual movements to provide accountability and audit
+  /// trail context.
+  reason String?
+  
+  /// External reference number like purchase order or transfer document.
+  /// Enables linking to external systems and provides traceability for
+  /// inventory transactions.
+  reference_number String?
+  
+  /// Timestamp recording when inventory movement occurred. Immutable record of
+  /// transaction timing for audit trails and historical analysis.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLevel shopping_mall_inventory_levels @relation(fields: [shopping_mall_inventory_level_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  warehouse shopping_mall_warehouses @relation(fields: [shopping_mall_warehouse_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_inventory_movements_shopping_mall_produc_74a5eb33")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_inventory_movements_shopping_mall_order__5d0a0cd0")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_level_id, created_at], map: "shopping_mall_inventory_movements_shopping_mall_invent_60ae70c1")
+  @@index([movement_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_inventory_movements_shopping_mall_seller_4c8100b5")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_warehouse_id, created_at], map: "shopping_mall_inventory_movements_shopping_mall_wareho_8cc8983f")
+}
+
+/// Automated inventory monitoring and alert system for proactive stock
+/// management.
+///
+/// Manages threshold-based alerting including low-stock warnings, reorder
+/// notifications, and overstock alerts across all warehouse locations.
+/// Enables sellers to maintain optimal inventory levels while preventing
+/// stockouts and minimizing carrying costs. Core component for automated
+/// inventory management and operational efficiency.
+///
+/// Supports sophisticated alert logic including seasonality adjustments,
+/// lead time considerations, and custom threshold configurations. Provides
+/// configurable notification preferences and escalation procedures to ensure
+/// critical inventory situations receive immediate attention from
+/// responsible parties.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related inventory level's {@link shopping_mall_inventory_levels.id}
+  shopping_mall_inventory_level_id String
+  
+  /// Affected product variant's {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Owning seller's {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Storage location's {@link shopping_mall_warehouses.id}
+  shopping_mall_warehouse_id String
+  
+  /// Category of inventory alert. Valid values: low_stock, out_of_stock,
+  /// overstock, slow_moving, seasonal_demand. Defines the alert purpose and
+  /// determines notification content and escalation procedures.
+  alert_type String
+  
+  /// Inventory level that triggers this alert. Represents stock quantity where
+  /// notification is generated based on alert type and comparison logic.
+  threshold_value Int
+  
+  /// Mathematical comparison for alert triggering. Valid values: less_than,
+  /// greater_than, equals. Determines relationship between current stock and
+  /// threshold value.
+  comparison_operator String
+  
+  /// How often to send repeated alerts for the same condition. Valid values:
+  /// immediate, daily, weekly, monthly, once. Prevents alert spam while
+  /// ensuring appropriate awareness.
+  notification_frequency String
+  
+  /// High-priority alert requiring immediate attention. Used for situations
+  /// where stock level critically impacts business operations or customer
+  /// service levels.
+  is_emergency Boolean
+  
+  /// Active status determining if alert should be monitored. Allows sellers to
+  /// disable specific alerts while maintaining configuration for future use.
+  is_enabled Boolean
+  
+  /// Timestamp when alert was most recently activated. Used for frequency
+  /// management and to avoid duplicate notifications for same conditions.
+  last_triggered DateTime?
+  
+  /// Optional personalized alert message for sellers. Allows customized
+  /// notification content specific to business requirements or inventory
+  /// situations.
+  custom_message String?
+  
+  /// Alert configuration creation timestamp. Permanent record of when alert
+  /// monitoring was established for this inventory item.
+  created_at DateTime
+  
+  /// Last modification time for alert settings. Automatically updated when
+  /// alert configuration changes, threshold adjustments, or status
+  /// modifications occur.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLevel shopping_mall_inventory_levels @relation(fields: [shopping_mall_inventory_level_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  warehouse shopping_mall_warehouses @relation(fields: [shopping_mall_warehouse_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_inventory_alerts_shopping_mall_product_v_f838c7e7")
+  @@index([shopping_mall_warehouse_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_level_id, alert_type], map: "shopping_mall_inventory_alerts_shopping_mall_inventory_e85375bd")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, is_enabled], map: "shopping_mall_inventory_alerts_shopping_mall_seller_id_f8d74f76")
+  @@index([alert_type, is_emergency])
+  // spellchecker: ignore-next-line
+  @@index([last_triggered, notification_frequency], map: "shopping_mall_inventory_alerts_last_triggered_notifica_8a208cae")
+}
+
+/// Physical storage locations supporting inventory distribution and
+/// fulfillment operations.
+///
+/// Defines warehouse properties including location, capacity, operational
+/// parameters, and storage capabilities for marketplace sellers. Enables
+/// distributed inventory management with geographic optimization and
+/// capacity planning. Critical component for supporting complex
+/// multi-location inventory operations and fulfillment efficiency.
+///
+/// Provides infrastructure for warehouse-specific inventory tracking,
+/// transfer operations, and logistics coordination while maintaining
+/// operational parameters and performance metrics for supply chain
+/// optimization across the marketplace ecosystem.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_warehouses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller's {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Associated sales channel's {@link shopping_mall_channels.id} this
+  /// warehouse supports
+  shopping_mall_channel_id String
+  
+  /// Unique identifier code for warehouse operations. Alphanumeric code used
+  /// for internal references, shipping documentation, and operational tracking
+  /// across systems and processes.
+  warehouse_code String
+  
+  /// Descriptive name for warehouse location. Human-readable identifier used
+  /// for operational reference, location mapping, and staff communication
+  /// within the fulfillment network.
+  name String
+  
+  /// Primary street address for warehouse location. Specifies the building
+  /// location for shipping, receiving, and operational coordination with
+  /// carriers and suppliers.
+  address_line1 String
+  
+  /// Secondary address information such as suite or building number. Provides
+  /// additional location specificity for large facilities with multiple units
+  /// or sections.
+  address_line2 String?
+  
+  /// City name for warehouse location. Critical for shipping rate
+  /// calculations, delivery zone determination, and geographic service area
+  /// identification.
+  city String
+  
+  /// State or province for warehouse location. Essential for tax calculations,
+  /// regional shipping regulations, and jurisdictional compliance
+  /// requirements.
+  state_province String
+  
+  /// Postal or ZIP code for warehouse location. Required for carrier services,
+  /// rate calculations, and geographic shipping zone determination.
+  postal_code String
+  
+  /// Country code for warehouse location. Critical for international shipping,
+  /// customs processing, and cross-border fulfillment operations.
+  country String
+  
+  /// Geographic latitude coordinate for precise location mapping. Used for
+  /// distance calculations, delivery optimization, and geographic analytics.
+  latitude Float?
+  
+  /// Geographic longitude coordinate for precise location mapping. Used with
+  /// latitude for accurate location plotting and distance-based calculations.
+  longitude Float?
+  
+  /// Total cubic volume storage capacity in feet. Used for capacity planning,
+  /// storage optimization, and operational metrics for facility management.
+  capacity_cubic_feet Int
+  
+  /// Primary storage methodology. Valid values: general, cold, frozen,
+  /// hazardous, bulk. Determines operational capabilities and compliance
+  /// requirements for stored inventory.
+  storage_type String
+  
+  /// Daily operation start time. Indicates when warehouse staff begin
+  /// processing operations for receiving, fulfillment, and shipping
+  /// activities.
+  operating_hours_start DateTime
+  
+  /// Daily operation end time. Indicates when warehouse processing operations
+  /// conclude for the business day affecting order cutoff times.
+  operating_hours_end DateTime
+  
+  /// Local timezone for warehouse operations. Critical for accurate
+  /// scheduling, cutoff times, and coordination with different time zones
+  /// across the supply chain.
+  timezone String
+  
+  /// Operational status of warehouse location. Indicates whether the warehouse
+  /// is accepting inventory, fulfilling orders, and participating in
+  /// operations.
+  is_active Boolean
+  
+  /// Customer pickup availability. Indicates whether customers can collect
+  /// orders directly from this warehouse location for local fulfillment
+  /// options.
+  is_picked_up_enabled Boolean
+  
+  /// Soft deletion flag for warehouse. Used for historical tracking while
+  /// removing location from active operations and assignment pools.
+  is_deactivated Boolean
+  
+  /// Primary contact email for warehouse operations. Used for coordination,
+  /// notifications, and communication regarding inventory transfers and
+  /// shipping operations.
+  contact_email String?
+  
+  /// Primary contact phone number for warehouse operations. Used for urgent
+  /// coordination and real-time communication regarding operational issues.
+  contact_phone String?
+  
+  /// Maximum weight capacity in pounds. Used for operational planning and to
+  /// ensure safe storage and handling limits are not exceeded.
+  maximum_weight_limit Int?
+  
+  /// Warehouse record creation timestamp. Permanent record of when warehouse
+  /// location was added to the fulfillment network.
+  created_at DateTime
+  
+  /// Last modification timestamp for warehouse details. Automatically updated
+  /// when operational parameters or configuration settings change.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_levels shopping_mall_inventory_levels[]
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  
+  @@index([shopping_mall_channel_id])
+  
+  @@unique([warehouse_code])
+  @@unique([shopping_mall_seller_id, name])
+  @@index([city, state_province])
+  @@index([is_active, is_picked_up_enabled])
+  @@index([storage_type, is_active])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, is_deactivated], map: "shopping_mall_warehouses_shopping_mall_seller_id_is_de_f64ad443")
+}

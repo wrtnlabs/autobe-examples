@@ -10,8 +10,6 @@ import { IDiscussionBoardCommentReply } from "../../../../api/structures/IDiscus
 @Controller("/discussionBoard/comments/:commentId/replies")
 export class DiscussionboardCommentsRepliesController {
   /**
-   * Retrieve paginated list of replies to a comment.
-   *
    * This operation provides a comprehensive way to fetch replies to a specific
    * comment, allowing for pagination, filtering, and sorting. It is designed to
    * support complex query requirements while maintaining performance.
@@ -54,8 +52,6 @@ export class DiscussionboardCommentsRepliesController {
   }
 
   /**
-   * Retrieve a specific reply to a comment.
-   *
    * This operation fetches a single reply to a comment using its unique
    * identifier. It provides comprehensive details about the reply, including
    * its content, author, and creation timestamp.

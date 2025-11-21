@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumCommunitySubscription } from "../../../../../structures/ICommunityForumCommunitySubscription";
 
 /**
- * Subscribe to a community.
- *
  * Subscribe the authenticated user to a specific community.
  *
  * This endpoint allows users to subscribe to communities they're interested in.
@@ -108,8 +106,6 @@ export namespace create {
 }
 
 /**
- * Unsubscribe from a community.
- *
  * Unsubscribe the authenticated user from a specific community.
  *
  * This endpoint allows users to unsubscribe from communities they're no longer

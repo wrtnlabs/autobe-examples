@@ -7,9 +7,6 @@ import { ICommunityForumPostComment } from "../../../../structures/ICommunityFor
 import { IPageICommunityForumPostComment } from "../../../../structures/IPageICommunityForumPostComment";
 
 /**
- * Retrieve paginated comments for a specific forum post with sorting and
- * filtering options.
- *
  * Retrieves a paginated list of comments associated with a specific forum post.
  * This operation queries the community_forum_comments table to fetch all
  * comments related to the specified post, including direct replies to the post

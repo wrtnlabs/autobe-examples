@@ -7,8 +7,6 @@ import { IRedditCommunityBanAppeal } from "../../../../structures/IRedditCommuni
 import { IPageIRedditCommunityBanAppeal } from "../../../../structures/IPageIRedditCommunityBanAppeal";
 
 /**
- * Retrieve paginated list of ban appeals with filtering and search.
- *
  * Retrieve a filtered and paginated list of ban appeals submitted by members
  * challenging their community bans. This operation provides advanced search
  * capabilities for moderators to review pending, approved, and rejected appeals
@@ -115,8 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific ban appeal.
- *
  * Retrieve comprehensive details about a specific ban appeal using its unique
  * identifier. This operation provides access to the complete appeal record
  * including the user's appeal reason, current review status, moderator response
@@ -211,8 +207,6 @@ export namespace at {
 }
 
 /**
- * Update a ban appeal with moderator review decision and response.
- *
  * Update an existing ban appeal with a moderator's review decision and response
  * message. This operation is the core mechanism for moderators to process ban
  * appeals by providing their decision (approve or reject) along with a detailed

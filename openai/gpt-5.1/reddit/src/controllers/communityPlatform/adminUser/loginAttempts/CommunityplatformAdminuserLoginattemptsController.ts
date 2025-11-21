@@ -8,9 +8,6 @@ import { ICommunityPlatformLoginAttempt } from "../../../../api/structures/IComm
 @Controller("/communityPlatform/adminUser/loginAttempts")
 export class CommunityplatformAdminuserLoginattemptsController {
   /**
-   * Index and search community_platform_login_attempts records with rich
-   * filters and pagination for adminUser security monitoring.
-   *
    * Search and list login attempt records from the
    * community_platform_login_attempts Prisma table with advanced filters,
    * pagination, and sorting for administrative security analysis.
@@ -67,9 +64,6 @@ export class CommunityplatformAdminuserLoginattemptsController {
   }
 
   /**
-   * Retrieve a specific login attempt record from the
-   * community_platform_login_attempts table for administrative auditing.
-   *
    * Retrieve detailed information about a single login attempt record from
    * the community_platform_login_attempts table for security auditing and
    * administrative analysis.

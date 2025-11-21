@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewModerationAnalytics } from "../../../../../../structures/IShoppingMallReviewModerationAnalytics";
 
 /**
- * Retrieve review moderation workload and outcome analytics from
- * shopping_mall_review_reports and related moderation tables.
- *
  * Retrieve aggregated analytics about review moderation activity, workload, and
  * outcomes based on review-related moderation and reporting tables.
  *

@@ -1,0 +1,214 @@
+/// Main report entity that records content reports from citizens,
+/// moderators, or admins.
+///
+/// This is the central table for all content reports in the system, with a
+/// polymorphic relationship to report targets (posts or comments). Each
+/// report has exactly one reporter (citizen, moderator, or admin) and one
+/// target, identified through the actor_type and targeted_entity_type
+/// fields. The main entity holds the report status, reason, metadata, and
+/// audit trail.
+///
+/// This design avoids nullable foreign key proliferation by using subtype
+/// tables (community_bbs_reported_posts and community_bbs_reported_comments)
+/// to enforce referential integrity. Reports are created by any actor type,
+/// and the system tracks whether they are pending review, approved, or
+/// rejected.
+///
+/// When a report is submitted, it enters a pending state and is reviewed by
+/// a moderator. The reporter can track the status of their report through
+/// the UI. Reports are never deleted but are archived via soft delete when
+/// resolved.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who submitted the report if the reporter is a citizen. {@link
+  /// community_bbs_citizen.id}.
+  citizen_id String?
+  
+  /// The moderator who submitted the report if the reporter is a moderator.
+  /// {@link community_bbs_moderator.id}.
+  moderator_id String?
+  
+  /// The admin who submitted the report if the reporter is an admin. {@link
+  /// community_bbs_admin.id}.
+  admin_id String?
+  
+  /// The reason category for the report. {@link
+  /// community_bbs_report_reasons.id}.
+  report_reason_id String
+  
+  /// The type of user who submitted the report. One of: 'citizen',
+  /// 'moderator', 'admin'.
+  actor_type String
+  
+  /// The type of content being reported. One of: 'post', 'comment'. Specifies
+  /// which subtype table to reference.
+  targeted_entity_type String
+  
+  /// Current status of the report. Valid values: 'pending', 'approved',
+  /// 'rejected'.
+  status String
+  
+  /// Moderator's review outcome for the report. Valid values: 'unreviewed',
+  /// 'dismissed', 'actioned'.
+  review_status String
+  
+  /// Additional context or notes provided by the reporter about why the
+  /// content should be reviewed.
+  comment String?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the report was reviewed by a moderator. Null if unreviewed.
+  reviewed_at DateTime?
+  
+  /// Soft delete timestamp for archival. Null if report is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen? @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  moderator community_bbs_moderator? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  admin community_bbs_admin? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  reason community_bbs_report_reasons @relation(fields: [report_reason_id], references: [id], onDelete: Cascade)
+  
+  community_bbs_karma_history community_bbs_karma_history[]
+  community_bbs_reported_posts community_bbs_reported_posts?
+  community_bbs_reported_comments community_bbs_reported_comments?
+  
+  @@index([report_reason_id])
+  
+  @@unique([citizen_id])
+  @@unique([moderator_id])
+  @@unique([admin_id])
+  @@index([status, created_at])
+  @@index([review_status, actor_type])
+  @@index([targeted_entity_type, created_at])
+  @@index([citizen_id, status])
+  @@index([moderator_id, status])
+  @@index([admin_id, status])
+}
+
+/// Subtype table for reports targeting specific posts. This ensures
+/// referential integrity for reports on posts.
+///
+/// This table serves as the target destination for reports on posts in the
+/// polymorphic reporting system. It links directly to the main
+/// community_bbs_reports table with a 1:1 relationship. Each reported post
+/// has exactly one associated report and one associated post target
+/// (community_bbs_posts.id).
+///
+/// The table exists to avoid having nullable foreign keys in the main report
+/// table when the target could be either a post or comment. This design
+/// allows the database to enforce integrity at the schema level - a report
+/// targeting a post must always reference a valid post_id.
+///
+/// This table records the original post_id as a reference. It does not
+/// duplicate content data - that remains in the community_bbs_posts table.
+/// The purpose is purely to establish a strong, non-nullable relationship
+/// between reports and posts.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_reported_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original post being reported. {@link community_bbs_posts.id}.
+  post_id String
+  
+  /// The main report entity that this subtype belongs to. {@link
+  /// community_bbs_reports.id}.
+  report_id String
+  
+  /// Timestamp when this report-subtype relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this relationship was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if relationship is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  report community_bbs_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  @@unique([report_id])
+  @@index([post_id, created_at])
+  @@index([report_id, created_at])
+}
+
+/// Subtype table for reports targeting specific comments. This ensures
+/// referential integrity for reports on comments.
+///
+/// This table serves as the target destination for reports on comments in
+/// the polymorphic reporting system. It links directly to the main
+/// community_bbs_reports table with a 1:1 relationship. Each reported
+/// comment has exactly one associated report and one associated comment
+/// target (community_bbs_comments.id).
+///
+/// The table exists to avoid having nullable foreign keys in the main report
+/// table when the target could be either a post or comment. This design
+/// allows the database to enforce integrity at the schema level - a report
+/// targeting a comment must always reference a valid comment_id.
+///
+/// This table records the original comment_id as a reference. It does not
+/// duplicate content data - that remains in the community_bbs_comments
+/// table. The purpose is purely to establish a strong, non-nullable
+/// relationship between reports and comments.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_reported_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original comment being reported. {@link community_bbs_comments.id}.
+  comment_id String
+  
+  /// The main report entity that this subtype belongs to. {@link
+  /// community_bbs_reports.id}.
+  report_id String
+  
+  /// Timestamp when this report-subtype relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this relationship was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if relationship is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  report community_bbs_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@unique([comment_id])
+  @@unique([report_id])
+  @@index([comment_id, created_at])
+  @@index([report_id, created_at])
+}

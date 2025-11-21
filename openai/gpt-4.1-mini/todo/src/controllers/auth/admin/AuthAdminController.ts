@@ -12,8 +12,6 @@ import { ITodoListAdmin } from "../../../api/structures/ITodoListAdmin";
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new admin account in the Todo List system.
-   *
    * This API operation facilitates the registration of a new administrator
    * account within the Todo List system. It directly interfaces with the
    * todo_list_admins Prisma table storing admin credentials such as email and
@@ -57,8 +55,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate an admin and issue access tokens.
-   *
    * This API operation manages administrative user login for the Todo List
    * application. It verifies provided email and password credentials against
    * the stored hashed password in the todo_list_admins Prisma table.
@@ -101,8 +97,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh admin access tokens using a valid refresh token.
-   *
    * This API operation provides token refresh capabilities for administrators
    * of the Todo List application. It accepts a valid refresh token and issues
    * new JWT access and refresh tokens upon verification.

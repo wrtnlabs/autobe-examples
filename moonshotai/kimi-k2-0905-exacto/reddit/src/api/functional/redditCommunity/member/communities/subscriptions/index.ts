@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunitySubscriptions } from "../../../../../structures/IRedditCommunityCommunitySubscriptions";
 
 /**
- * Create a new community subscription for authenticated member.
- *
  * Create a new community subscription for an authenticated member to join a
  * specific Reddit community. This operation establishes the relationship
  * between a member and a community, enabling the member to receive community
@@ -125,8 +123,6 @@ export namespace create {
 }
 
 /**
- * Update community subscription settings and notification preferences.
- *
  * Manage subscription settings and notification preferences for a specific
  * community. This operation allows authenticated members to subscribe to
  * communities, update their notification preferences, or unsubscribe entirely.
@@ -241,8 +237,6 @@ export namespace updateSubscription {
 }
 
 /**
- * Get detailed information about a community subscription.
- *
  * Retrieve detailed information about a specific community subscription. This
  * operation provides complete subscription details including the community that
  * was subscribed to, notification preferences, subscription date, and current
@@ -349,8 +343,6 @@ export namespace getSubscription {
 }
 
 /**
- * Update existing community subscription settings and preferences.
- *
  * Update an existing community subscription for an authenticated member,
  * allowing modification of notification preferences, subscription status, and
  * notification scheduling settings. This operation provides members with
@@ -476,8 +468,6 @@ export namespace update {
 }
 
 /**
- * Unsubscribe from a community by deleting the subscription record.
- *
  * This operation permanently removes a community subscription, unsubscribing
  * the requesting user from community content and notifications. The
  * subscription is identified by the subscriptionId path parameter and must

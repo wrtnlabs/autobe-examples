@@ -7,8 +7,6 @@ import { ITodoListSystemSetting } from "../../../../structures/ITodoListSystemSe
 import { IPageITodoListSystemSetting } from "../../../../structures/IPageITodoListSystemSetting";
 
 /**
- * Create a new system setting entry in todo_list_system_settings.
- *
  * Create a new system-wide application configuration setting for the Todo List
  * system.
  *
@@ -108,9 +106,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of system settings
- * (todo_list_system_settings table).
- *
  * Search and retrieve a paginated list of system-wide application settings.
  * This operation allows an administrator to query, filter, and review details
  * about all current configuration settings stored in the
@@ -213,9 +208,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific system setting by unique key from
- * todo_list_system_settings.
- *
  * Retrieve a single system-level application setting by its unique
  * configuration key.
  *
@@ -309,9 +301,6 @@ export namespace at {
 }
 
 /**
- * Update a system-wide application setting by key in the
- * todo_list_system_settings table.
- *
  * Update a specific application-wide system configuration setting identified by
  * its unique key. This endpoint allows administrators to modify the value,
  * description, or other fields of a setting, thereby changing runtime
@@ -424,9 +413,6 @@ export namespace update {
 }
 
 /**
- * Permanently remove a system-wide application setting by key from the
- * todo_list_system_settings table.
- *
  * Remove an application-wide configuration record identified by its unique key
  * from the todo_list_system_settings table. This operation is intended solely
  * for administrators performing system maintenance or cleaning up obsolete

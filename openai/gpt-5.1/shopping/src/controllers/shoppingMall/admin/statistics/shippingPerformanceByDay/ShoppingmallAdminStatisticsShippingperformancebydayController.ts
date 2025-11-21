@@ -7,9 +7,6 @@ import { IPageIShoppingMallShippingPerformanceByDay } from "../../../../../api/s
 @Controller("/shoppingMall/admin/statistics/shippingPerformanceByDay")
 export class ShoppingmallAdminStatisticsShippingperformancebydayController {
   /**
-   * Retrieve daily shipping and delivery performance statistics from
-   * shopping_mall_shipping_performance_stats snapshot data.
-   *
    * Retrieve aggregated shipping and delivery performance metrics per day for
    * each shipping method on the shoppingMall platform.
    *

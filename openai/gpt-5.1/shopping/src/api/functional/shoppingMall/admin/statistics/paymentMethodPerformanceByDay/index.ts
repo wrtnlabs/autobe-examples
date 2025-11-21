@@ -5,9 +5,6 @@ import typia from "typia";
 import { IPageIShoppingMallPaymentMethodPerformanceByDay } from "../../../../../structures/IPageIShoppingMallPaymentMethodPerformanceByDay";
 
 /**
- * Retrieve daily payment method performance statistics from snapshot-based
- * shopping_mall_payment_method_stats data.
- *
  * Retrieve aggregated payment method performance metrics per day for the
  * shoppingMall platform.
  *

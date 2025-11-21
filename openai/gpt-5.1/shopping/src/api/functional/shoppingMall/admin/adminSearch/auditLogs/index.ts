@@ -7,9 +7,6 @@ import { IShoppingMallAdminAuditLog } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallAdminAuditLog } from "../../../../../structures/IPageIShoppingMallAdminAuditLog";
 
 /**
- * Search admin audit log snapshots from the shopping_mall_admin_audit_logs
- * table for administrative oversight.
- *
  * Search and retrieve a filtered, paginated list of admin audit log entries
  * from the `shopping_mall_admin_audit_logs` snapshot table.
  *

@@ -7,8 +7,6 @@ import { IRedditCommunityPostVote } from "../../../../../../structures/IRedditCo
 import { IPageIRedditCommunityPostVote } from "../../../../../../structures/IPageIRedditCommunityPostVote";
 
 /**
- * Create a new vote for a redditCommunity post.
- *
  * Create a new vote by a registered user on a specific post within the
  * redditCommunity platform.
  *
@@ -111,8 +109,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated list of votes for a specific post.
- *
  * Retrieve a paginated list of post votes for the target post, including
  * details of each vote's type (upvote/downvote), the user who cast it, and
  * timing information.
@@ -215,8 +211,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific post vote by ID.
- *
  * Retrieve detailed information for a specific post vote on a given post, using
  * its unique vote identifier.
  *
@@ -308,8 +302,6 @@ export namespace at {
 }
 
 /**
- * Update an existing vote on a redditCommunity post.
- *
  * Update an existing vote record cast by a registered user on a specific post
  * in the redditCommunity platform.
  *
@@ -412,8 +404,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific vote on a Reddit community post.
- *
  * Delete a specific post vote for a Reddit community post. This allows removal
  * of invalid or abusive votes on posts.
  *

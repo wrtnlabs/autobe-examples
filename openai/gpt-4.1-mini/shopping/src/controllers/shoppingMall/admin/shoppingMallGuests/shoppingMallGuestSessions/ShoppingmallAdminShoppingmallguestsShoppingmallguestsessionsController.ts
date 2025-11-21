@@ -15,8 +15,6 @@ import { IShoppingMallGuestSession } from "../../../../../api/structures/IShoppi
 )
 export class ShoppingmallAdminShoppingmallguestsShoppingmallguestsessionsController {
   /**
-   * Retrieve paginated list of guest sessions for a specific guest user.
-   *
    * This operation enables retrieval of a filtered and paginated list of
    * shopping mall guest sessions tied to a particular guest user.
    *
@@ -70,8 +68,6 @@ export class ShoppingmallAdminShoppingmallguestsShoppingmallguestsessionsControl
   }
 
   /**
-   * Retrieve a specific guest session by ID.
-   *
    * This operation provides detailed retrieval of a specific shopping mall
    * guest session.
    *
@@ -122,8 +118,6 @@ export class ShoppingmallAdminShoppingmallguestsShoppingmallguestsessionsControl
   }
 
   /**
-   * Delete a specific guest session by ID.
-   *
    * Delete a single guest session identified by its unique session ID for the
    * specified guest. This operation allows the system to remove stale or
    * terminated guest sessions.

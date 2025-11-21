@@ -8,9 +8,6 @@ import { IPageIEconomicDiscussionModerator } from "../../../../structures/IPageI
 export * as sessions from "./sessions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of economic discussion board
- * moderators.
- *
  * Retrieve a filtered and paginated list of economic discussion board
  * moderators from the system. This operation provides advanced search
  * capabilities for finding moderators based on multiple criteria including
@@ -113,9 +110,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific economic discussion board
- * moderator.
- *
  * Retrieve comprehensive details about a specific economic discussion board
  * moderator identified by their unique UUID. This operation returns complete
  * moderator profile information including their username, email verification
@@ -213,8 +207,6 @@ export namespace at {
 }
 
 /**
- * Update moderator account details and permissions.
- *
  * Update an existing economics discussion moderator account with enhanced
  * security features and permission management through the moderation panel.
  * This operation allows modification of essential moderator information
@@ -329,8 +321,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a moderator account.
- *
  * Permanently remove an economics discussion moderator account from the
  * platform with immediate effect through the administrative moderator panel.
  * This operation performs a complete deletion of the moderator record from the

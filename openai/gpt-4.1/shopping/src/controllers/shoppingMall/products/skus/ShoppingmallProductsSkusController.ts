@@ -8,9 +8,6 @@ import { IShoppingMallProductSku } from "../../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/products/:productId/skus/:skuId")
 export class ShoppingmallProductsSkusController {
   /**
-   * Retrieve the details for a specific SKU variant for a product
-   * (shopping_mall_product_skus).
-   *
    * Retrieve comprehensive information about a specific SKU variant belonging
    * to a particular product. The operation requires both the productId and
    * skuId as path parameters to ensure uniqueness, reflecting the composite key

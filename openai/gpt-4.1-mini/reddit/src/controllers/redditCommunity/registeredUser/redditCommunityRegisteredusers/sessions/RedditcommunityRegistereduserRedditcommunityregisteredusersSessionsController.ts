@@ -15,8 +15,6 @@ import { IRedditCommunityRegistereduserSession } from "../../../../../api/struct
 )
 export class RedditcommunityRegistereduserRedditcommunityregisteredusersSessionsController {
   /**
-   * Retrieve a registered user's session details by IDs.
-   *
    * Retrieve details of a specific login session for a registered user in the
    * redditCommunity platform.
    *
@@ -62,8 +60,6 @@ export class RedditcommunityRegistereduserRedditcommunityregisteredusersSessions
   }
 
   /**
-   * Update a registered user session information.
-   *
    * Update the properties of a registered user session including IP address,
    * session URLs, and expiry date.
    *
@@ -113,8 +109,6 @@ export class RedditcommunityRegistereduserRedditcommunityregisteredusersSessions
   }
 
   /**
-   * Delete a registered user session.
-   *
    * Permanently removes a registered user session identified by the session ID
    * and registered user ID.
    *
@@ -157,8 +151,6 @@ export class RedditcommunityRegistereduserRedditcommunityregisteredusersSessions
   }
 
   /**
-   * Create a new session for a registered user.
-   *
    * Create a new session record representing a user login session for a
    * registered user in the redditCommunity platform.
    *

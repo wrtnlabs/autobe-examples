@@ -8,8 +8,6 @@ import { IRedditCommunityPostType } from "../../../api/structures/IRedditCommuni
 @Controller("/redditCommunity/postTypes")
 export class RedditcommunityPosttypesController {
   /**
-   * Search and retrieve a filtered, paginated list of Reddit post types.
-   *
    * Retrieve a comprehensive paginated list of Reddit post type
    * classifications available across the platform. This operation provides
    * advanced search capabilities for finding post types based on multiple
@@ -40,8 +38,6 @@ export class RedditcommunityPosttypesController {
   }
 
   /**
-   * Retrieve detailed information about a specific post type.
-   *
    * Retrieve comprehensive details about a specific Reddit post type
    * configuration. This operation provides complete information about the
    * post type including its name, description, content capabilities, and

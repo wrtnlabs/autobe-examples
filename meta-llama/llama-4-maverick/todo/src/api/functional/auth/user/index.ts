@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../structures/ITodoListUser";
 
 /**
- * Registers a new user account.
- *
  * Creates a new user account with the provided credentials. This operation
  * validates the input data, checks for uniqueness of username and email, and
  * securely stores the user information in the database. The user is issued a

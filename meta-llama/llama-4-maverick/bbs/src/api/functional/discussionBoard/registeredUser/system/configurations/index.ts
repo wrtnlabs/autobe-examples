@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardConfiguration } from "../../../../../structures/IDiscussionBoardConfiguration";
 
 /**
- * Retrieve a system configuration by key.
- *
  * This operation retrieves a specific system configuration identified by the
  * configKey path parameter. It returns the configuration details including the
  * key, value, and description. The operation is typically used by system
@@ -87,8 +85,6 @@ export namespace at {
 }
 
 /**
- * Update system configuration value.
- *
  * This operation updates the system configuration value associated with the
  * specified configuration key. It requires the new configuration value to be
  * provided in the request body. The operation validates that the provided
@@ -181,8 +177,6 @@ export namespace update {
 }
 
 /**
- * Delete system configuration.
- *
  * This operation deletes the system configuration associated with the specified
  * configuration key. It requires the configuration key to be provided as a path
  * parameter. The operation validates that the configuration key exists before
@@ -263,8 +257,6 @@ export namespace erase {
 }
 
 /**
- * Create a new system configuration.
- *
  * This operation creates a new system configuration entry. It requires the
  * configuration key, value, and optionally a description in the request body.
  * The operation is typically used during system setup or to add new

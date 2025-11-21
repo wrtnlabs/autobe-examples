@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardNotificationPreference } from "../../../../api/str
 @Controller("/discussionBoard/member/notificationPreferences")
 export class DiscussionboardMemberNotificationpreferencesController {
   /**
-   * Retrieve the current member's notification preference configuration.
-   *
    * This operation fetches the notification preference configuration for the
    * authenticated member. Since the Prisma schema enforces a unique constraint
    * ensuring each member can have only one preference configuration, this
@@ -58,8 +56,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Search and retrieve notification preferences with filtering and pagination.
-   *
    * This operation provides advanced search capabilities for retrieving
    * notification preference configurations from the system. Users can filter
    * preferences based on notification types (post interactions, comment
@@ -105,8 +101,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Retrieve detailed notification preference information by ID.
-   *
    * This operation fetches comprehensive notification preference details for a
    * specific preference configuration identified by its unique identifier. The
    * operation returns complete preference information including email
@@ -152,9 +146,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Update notification preferences configuration for a discussion board
-   * member.
-   *
    * Update an existing notification preference configuration with new settings
    * for delivery methods and notification categories. This operation allows
    * users to customize how they receive notifications from the discussion
@@ -208,8 +199,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Permanently delete notification preferences configuration.
-   *
    * Permanently remove a notification preference configuration from the
    * discussion board system. This operation completely deletes the user's
    * notification settings and cannot be undone.
@@ -258,9 +247,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Update notification preferences configuration for a discussion board
-   * member.
-   *
    * Update an existing notification preference configuration with new settings
    * for delivery methods and notification categories. This operation allows
    * users to customize how they receive notifications from the discussion
@@ -305,8 +291,6 @@ export class DiscussionboardMemberNotificationpreferencesController {
   }
 
   /**
-   * Permanently delete notification preferences configuration.
-   *
    * Permanently remove a notification preference configuration from the
    * discussion board system. This operation completely deletes the user's
    * notification settings and cannot be undone.

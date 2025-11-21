@@ -7,8 +7,6 @@ import { IRedditCommunityCommunity } from "../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/communityModerator/communities/:communityName")
 export class RedditcommunityCommunitymoderatorCommunitiesController {
   /**
-   * Update existing community settings and metadata.
-   *
    * Enable authorized community moderators to modify community properties
    * including title, description, categorization, and posting requirements.
    *

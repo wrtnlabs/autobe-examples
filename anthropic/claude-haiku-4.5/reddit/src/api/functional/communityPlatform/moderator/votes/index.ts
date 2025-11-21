@@ -7,8 +7,6 @@ import { ICommunityPlatformVote } from "../../../../structures/ICommunityPlatfor
 import { IPageICommunityPlatformVote } from "../../../../structures/IPageICommunityPlatformVote";
 
 /**
- * Search and retrieve a filtered, paginated list of voting records.
- *
  * Retrieve a filtered and paginated list of voting records from the community
  * platform with advanced search and sorting capabilities. This operation
  * provides comprehensive access to the voting system for analytics, moderation,

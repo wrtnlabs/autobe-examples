@@ -10,8 +10,6 @@ import { IDiscussionBoardReport } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/memberUser/reports")
 export class DiscussionboardMemberuserReportsController {
   /**
-   * Create a new report record in discussion_board_reports.
-   *
    * Create a new discussion board report describing problematic content on the
    * board.
    *

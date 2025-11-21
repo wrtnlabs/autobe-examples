@@ -8,9 +8,6 @@ import { ICommunityPlatformSearchDocuments } from "../../../../api/structures/IC
 @Controller("/communityPlatform/search/documents")
 export class CommunityplatformSearchDocumentsController {
   /**
-   * Search public community platform documents across communities, posts,
-   * comments, and profiles.
-   *
    * Execute a rich, cross-entity search over public documents in the
    * community platform.
    *

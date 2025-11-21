@@ -11,8 +11,6 @@ import { IDiscussionBoardPostLike } from "../../../../api/structures/IDiscussion
 @Controller("/members/:memberId/posts/:postId/likes")
 export class MembersPostsLikesController {
   /**
-   * Create a new like record for a discussion board post.
-   *
    * This operation allows authenticated members to create a like record for a
    * specific discussion board post, indicating their appreciation for the
    * content. The system validates that the member has not already liked the
@@ -63,8 +61,6 @@ export class MembersPostsLikesController {
   }
 
   /**
-   * Permanently remove a like record from a discussion board post.
-   *
    * This operation allows authenticated members to permanently delete their
    * like record from a specific discussion board post, effectively retracting
    * their appreciation for the content. The operation performs a hard delete

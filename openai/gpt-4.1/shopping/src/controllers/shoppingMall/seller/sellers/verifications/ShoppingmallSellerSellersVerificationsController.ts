@@ -12,9 +12,6 @@ import { IShoppingMallSellerVerification } from "../../../../../api/structures/I
 @Controller("/shoppingMall/seller/sellers/:sellerId/verifications")
 export class ShoppingmallSellerSellersVerificationsController {
   /**
-   * Search and list all seller verification records for a seller
-   * (shopping_mall_seller_verifications).
-   *
    * Retrieve a paginated, filtered list of business verification records
    * associated with a seller.
    *
@@ -62,9 +59,6 @@ export class ShoppingmallSellerSellersVerificationsController {
   }
 
   /**
-   * Retrieve a specific seller verification record from
-   * shopping_mall_seller_verifications.
-   *
    * Retrieve detailed information for a specific seller verification record
    * associated with a given seller.
    *

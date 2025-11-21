@@ -1,18 +1,14 @@
-/// Core community entities representing subreddit-like communities on the
-/// platform.
+/// Core community entities representing user-created groups focused on
+/// specific topics or interests.
 ///
-/// Each community serves as a container for user-generated content,
-/// discussions, and member interactions. Communities can be created by
-/// authenticated members and have configurable settings for privacy, content
-/// rules, and moderation policies.
+/// Each community serves as a container for posts, comments, and member
+/// interactions. Communities can be public (anyone can view) or private
+/// (approval required) and are managed by moderators who enforce
+/// community-specific rules.
 ///
-/// Communities support various states including active, restricted, and
-/// private modes to accommodate different community needs. The platform
-/// tracks community activity through separate materialized views rather than
-/// denormalized fields.
-///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// community removal when necessary.
+/// Communities maintain their own identity, settings, and membership base
+/// while participating in the broader platform ecosystem. The community
+/// lifecycle includes creation, growth, moderation, and potential archival.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,194 +19,112 @@ model community_platform_communities {
   /// Primary Key.
   id String @id
   
-  /// Community creator's member reference. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
+  /// Category classification for this community. {@link
+  /// community_platform_community_categories.id}
+  community_platform_category_id String?
   
-  /// Unique community name used for identification and URL generation. Must be
-  /// 3-21 characters containing only letters, numbers, and hyphens.
+  /// Unique community name displayed to users. Must be between 3-21 characters
+  /// and contain only alphanumeric characters and underscores.
   name String
   
-  /// Human-readable community display name shown to users. Supports up to 100
-  /// characters with special characters and spaces.
-  display_name String
+  /// URL-friendly identifier for the community. Used in community URLs and
+  /// must be unique across all communities.
+  slug String
   
-  /// Community description explaining purpose, rules, and focus area. Maximum
-  /// 500 characters with markdown support.
-  description String?
-  
-  /// Current community status: active, restricted, private, or archived.
-  /// Controls visibility and participation rules.
-  status String
-  
-  /// Timestamp when the community was created. Used for sorting and community
-  /// age calculations.
-  created_at DateTime
-  
-  /// Timestamp of last community update. Tracks settings changes and metadata
-  /// modifications.
-  updated_at DateTime
-  
-  /// Timestamp when community was soft deleted. Null indicates active
-  /// community.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
-  community_platform_community_rules community_platform_community_rules[]
-  community_platform_community_categories community_platform_community_categories[]
-  community_platform_community_moderators community_platform_community_moderators[]
-  community_platform_posts community_platform_posts[]
-  community_platform_automated_filters community_platform_automated_filters[]
-  community_platform_subscriptions community_platform_subscriptions[]
-  community_platform_community_discovery community_platform_community_discovery[]
-  community_platform_subscription_analytics community_platform_subscription_analytics[]
-  community_platform_user_activities community_platform_user_activities[]
-  community_platform_engagement_metrics community_platform_engagement_metrics[]
-  community_platform_activity_heatmaps community_platform_activity_heatmaps[]
-  community_platform_behavioral_patterns community_platform_behavioral_patterns[]
-  
-  @@unique([name])
-  @@index([status, created_at])
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, created_at], map: "community_platform_communities_community_platform_memb_4d63df64")
-}
-
-/// Community-specific rules and guidelines that govern member behavior and
-/// content standards.
-///
-/// Each community can define multiple rules to establish clear expectations
-/// for participation. Rules support hierarchical organization with ordering
-/// and categorization for better user comprehension.
-///
-/// Rule violations are tracked through the moderation system and can result
-/// in content removal or member restrictions. Rules are versioned to
-/// maintain historical context for moderation decisions.
-///
-/// Community moderators can create, update, and reorder rules to adapt to
-/// changing community needs while maintaining consistent enforcement
-/// standards.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community that owns this rule. {@link community_platform_communities.id}
-  community_platform_community_id String
-  
-  /// Member who created or last updated this rule. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
-  
-  /// Short, descriptive title for the rule. Maximum 100 characters for clear
-  /// identification.
-  title String
-  
-  /// Detailed rule explanation with examples and context. Maximum 1000
-  /// characters with markdown support.
+  /// Community description explaining the purpose and focus of the community.
+  /// Supports markdown formatting for rich content.
   description String
   
-  /// Rule category for organizational grouping: content, behavior, posting, or
-  /// moderation.
-  category String?
+  /// Current community status. Valid values: active, archived, suspended,
+  /// pending. Controls community visibility and functionality.
+  status String
   
-  /// Display priority for rule ordering. Lower numbers appear first in rule
-  /// lists.
-  priority Int
+  /// Community privacy setting. Valid values: public, private, restricted.
+  /// Determines who can view and join the community.
+  privacy String
   
-  /// Whether this rule is currently active and being enforced by moderators.
-  enabled Boolean
-  
-  /// Timestamp when the rule was originally created.
+  /// Timestamp when the community was created.
   created_at DateTime
   
-  /// Timestamp of last rule modification. Tracks changes for moderation
-  /// consistency.
+  /// Timestamp when the community was last updated.
   updated_at DateTime
   
-  /// Timestamp when rule was soft deleted. Maintains historical context for
-  /// past moderation.
+  /// Timestamp when the community was soft deleted. Null if community is
+  /// active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  category community_platform_community_categories? @relation(fields: [community_platform_category_id], references: [id], onDelete: Cascade)
   
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id], map: "community_platform_community_rules_community_platform__707c6bac")
+  community_platform_community_settings community_platform_community_settings?
+  community_platform_community_members community_platform_community_members[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_posts community_platform_posts[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_user_communities community_platform_user_communities[]
+  community_platform_community_popularity community_platform_community_popularity?
+  mv_community_platform_community_popularity mv_community_platform_community_popularity?
   
+  @@unique([name])
+  @@unique([slug])
+  @@index([status])
+  @@index([privacy])
   // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, title], map: "community_platform_community_rules_community_platform__9b8609e1")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, priority], map: "community_platform_community_rules_community_platform__b29be8a8")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, category], map: "community_platform_community_rules_community_platform__70c10c6a")
-  @@index([enabled, created_at])
+  @@index([community_platform_category_id], map: "community_platform_communities_community_platform_cate_ec8e6d6d")
+  @@index([created_at])
 }
 
-/// Categorization system for organizing communities by topic, interest, or
-/// theme.
+/// Community-specific configuration settings that control behavior,
+/// appearance, and moderation rules.
 ///
-/// Categories help users discover relevant communities and provide
-/// organizational structure for the platform. Categories can be hierarchical
-/// with parent-child relationships for detailed topic classification.
+/// Each community has its own set of customizable settings that moderators
+/// can configure. These settings include submission requirements, moderation
+/// workflows, appearance customization, and community-specific rules.
 ///
-/// Each community can belong to multiple categories to support cross-topic
-/// discovery. Category assignments are managed by community moderators with
-/// platform-level oversight for consistency.
-///
-/// Category popularity metrics are tracked through separate materialized
-/// views to maintain normalization while supporting discovery features.
+/// Settings are managed through the community interface and affect how
+/// members interact with the community content.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_categories {
+model community_platform_community_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community being categorized. {@link community_platform_communities.id}
+  /// Community that these settings belong to. {@link
+  /// community_platform_communities.id}
   community_platform_community_id String
   
-  /// Category name for display and filtering. Examples: Technology, Sports,
-  /// Arts, Gaming, Science.
-  name String
+  /// Types of posts allowed in this community. Comma-separated values: text,
+  /// link, image, video, poll.
+  post_types_allowed String
   
-  /// Category description explaining scope and typical content. Helps users
-  /// understand category purpose.
-  description String?
+  /// Whether posts require moderator approval before being published.
+  moderation_required Boolean
   
-  /// Optional parent category reference for hierarchical organization. Enables
-  /// detailed topic classification. {@link
-  /// community_platform_community_categories.id}
-  parent_category_id String?
+  /// Membership joining requirements. Valid values: open, approval, invite.
+  join_requirement String
   
-  /// Display priority for category ordering in discovery interfaces. Lower
-  /// numbers appear first.
-  priority Int
+  /// URL to the community banner image displayed at the top of the community
+  /// page.
+  banner_image_url String?
   
-  /// Timestamp when category was created. Used for tracking category lifecycle.
+  /// URL to the community icon image used in listings and navigation.
+  icon_image_url String?
+  
+  /// Community rules and guidelines in markdown format. Displayed to all
+  /// members and visitors.
+  rules_markdown String?
+  
+  /// Timestamp when these settings were created.
   created_at DateTime
   
-  /// Timestamp of last category update. Tracks changes to category
-  /// organization.
+  /// Timestamp when these settings were last updated.
   updated_at DateTime
-  
-  /// Timestamp when category was soft deleted. Maintains historical
-  /// relationships.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
@@ -218,29 +132,89 @@ model community_platform_community_categories {
   community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, name], map: "community_platform_community_categories_community_plat_19e4d384")
-  @@index([name, priority])
-  // spellchecker: ignore-next-line
-  @@index([parent_category_id, priority], map: "community_platform_community_categories_parent_categor_f7103ef7")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, priority], map: "community_platform_community_categories_community_plat_658e9621")
+  @@unique([community_platform_community_id], map: "community_platform_community_settings_community_platfo_63b30153")
+  @@index([moderation_required])
+  @@index([join_requirement])
 }
 
-/// Moderator assignments linking users to communities they moderate.
+/// Records of user memberships in communities, tracking subscription status
+/// and member roles.
 ///
-/// This table establishes the many-to-many relationship between moderators
-/// and communities, tracking appointment dates, permission levels, and
-/// moderation activity. Each assignment includes specific moderation
-/// permissions granted to the user for that community.
+/// This table manages the many-to-many relationship between users and
+/// communities. Each record represents a user's membership in a specific
+/// community, including their join date, subscription status, and any
+/// special member roles.
 ///
-/// Moderator appointments can have different permission levels (full,
-/// content, limited) to support distributed moderation teams. Activity
-/// tracking helps identify active moderators and supports community health
-/// monitoring.
+/// Membership records enable community-specific user tracking and support
+/// features like personalized feeds and community-specific notifications.
 ///
-/// Moderator assignments support temporary appointments with expiration
-/// dates and can be revoked by community owners or platform administrators
-/// when necessary.
+/// This table requires independent management as users can join/leave
+/// communities independently of other operations, making it a primary entity
+/// rather than subsidiary.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that the user is a member of. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// User who is a member of this community. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Member role within the community. Valid values: member,
+  /// approved_submitter, trusted_member.
+  role String
+  
+  /// Timestamp when the user joined the community.
+  joined_at DateTime
+  
+  /// Timestamp when the user left the community. Null if still active member.
+  left_at DateTime?
+  
+  /// Whether the user is subscribed to receive notifications from this
+  /// community.
+  is_subscribed Boolean
+  
+  /// Timestamp when this membership record was created.
+  created_at DateTime
+  
+  /// Timestamp when this membership record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_members_community_platfor_67665fda")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_community_members_community_platfor_018c80b7")
+  @@index([role])
+  @@index([is_subscribed])
+  @@index([joined_at])
+}
+
+/// Main entity for tracking moderator assignments across different actor types.
+///
+/// This table serves as the central record for moderator privileges,
+/// supporting multiple actor types (members, moderators, admins) who can be
+/// assigned moderator roles in communities. The polymorphic ownership
+/// pattern ensures proper referential integrity while supporting flexible
+/// assignment scenarios.
+///
+/// Moderator assignments require independent management as they can be
+/// created, modified, and revoked independently of other community
+/// operations.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -251,54 +225,255 @@ model community_platform_community_moderators {
   /// Primary Key.
   id String @id
   
-  /// Community being moderated. {@link community_platform_communities.id}
+  /// Community where the user has moderator privileges. {@link
+  /// community_platform_communities.id}
   community_platform_community_id String
   
-  /// Member assigned as moderator. {@link community_platform_members.id}
-  community_platform_member_id String
+  /// Type of actor assigned as moderator. Valid values: member, moderator,
+  /// admin.
+  actor_type String
   
-  /// Moderator permission level: full (all permissions), content (post/comment
-  /// moderation), or limited (specific tasks).
+  /// Level of moderator permissions. Valid values: full, content_only, limited.
   permission_level String
   
-  /// Entity that appointed this moderator: community_creator,
-  /// existing_moderator, or platform_admin.
-  appointed_by String
+  /// Timestamp when moderator privileges were assigned.
+  assigned_at DateTime
   
-  /// Timestamp when moderator was appointed to the community.
-  appointed_at DateTime
+  /// Timestamp when moderator privileges were revoked. Null if still active.
+  revoked_at DateTime?
   
-  /// Optional expiration date for temporary moderator appointments. Null
-  /// indicates permanent assignment.
-  expires_at DateTime?
-  
-  /// Timestamp of last moderation activity. Used for identifying inactive
-  /// moderators.
-  last_active_at DateTime?
-  
-  /// Timestamp when moderator assignment was created.
+  /// Timestamp when this moderator assignment was created.
   created_at DateTime
   
-  /// Timestamp of last assignment update. Tracks permission changes and
-  /// activity updates.
+  /// Timestamp when this moderator assignment was last updated.
   updated_at DateTime
   
-  /// Timestamp when moderator assignment was revoked. Maintains historical
-  /// record.
+  /// Timestamp when this moderator assignment was soft deleted. Null if
+  /// assignment is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  moderator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_community_moderator_of_members community_platform_community_moderator_of_members?
+  community_platform_community_moderator_of_moderators community_platform_community_moderator_of_moderators?
+  community_platform_community_moderator_of_admins community_platform_community_moderator_of_admins?
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_moderators_community_plat_b8c7ad75")
+  @@unique([community_platform_community_id, actor_type], map: "community_platform_community_moderators_community_plat_024d4411")
+  @@index([actor_type])
+  @@index([permission_level])
+  @@index([assigned_at])
   // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, appointed_at], map: "community_platform_community_moderators_community_plat_10e85b79")
+  @@index([community_platform_community_id], map: "community_platform_community_moderators_community_plat_31557b9f")
+}
+
+/// Classification categories for organizing communities by topic, interest,
+/// or type.
+///
+/// Categories help users discover communities by browsing organized
+/// groupings. Each category represents a broad topic area that communities
+/// can be associated with, enabling better content discovery and
+/// organization.
+///
+/// Categories are managed at the platform level and can be used to feature
+/// specific topic areas or guide new users to relevant communities.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name displayed to users for browsing and discovery.
+  name String
+  
+  /// URL-friendly identifier for the category. Used in category browsing URLs.
+  slug String
+  
+  /// Description of the category explaining what types of communities it
+  /// contains.
+  description String?
+  
+  /// URL to the category icon image used in category listings.
+  icon_url String?
+  
+  /// Whether this category is featured and prominently displayed to users.
+  is_featured Boolean
+  
+  /// Display order for category sorting in listings. Lower numbers appear
+  /// first.
+  sort_order Int
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted. Null if category is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([is_featured])
+  @@index([sort_order])
+  @@index([created_at])
+}
+
+/// Subtype entity linking moderator assignments to specific member actors.
+///
+/// This table establishes the 1:1 relationship between moderator assignments
+/// and member users who have been granted moderator privileges. It ensures
+/// referential integrity while supporting the polymorphic ownership pattern
+/// for moderator assignments.
+///
+/// Each record represents a specific member's moderator assignment with
+/// their session context for audit trail purposes.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator assignment record. {@link
+  /// community_platform_community_moderators.id}
+  community_platform_community_moderator_id String
+  
+  /// Member user assigned as moderator. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session context when moderator was assigned. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Timestamp when this member moderator assignment was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderatorAssignment community_platform_community_moderators @relation(fields: [community_platform_community_moderator_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
   // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, permission_level], map: "community_platform_community_moderators_community_plat_9a8dcb27")
+  @@unique([community_platform_community_moderator_id], map: "community_platform_community_moderator_of_members_comm_6a7dee2e")
   // spellchecker: ignore-next-line
-  @@index([expires_at, last_active_at], map: "community_platform_community_moderators_expires_at_las_3a82a2fd")
+  @@index([community_platform_member_id], map: "community_platform_community_moderator_of_members_comm_94f13cae")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_community_moderator_of_members_comm_cd55eb74")
+}
+
+/// Subtype entity linking moderator assignments to specific moderator actors.
+///
+/// This table establishes the 1:1 relationship between moderator assignments
+/// and moderator users who have been granted additional moderator privileges
+/// in communities. It ensures referential integrity while supporting the
+/// polymorphic ownership pattern.
+///
+/// Each record represents a specific moderator's assignment with their
+/// session context for audit trail purposes.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator assignment record. {@link
+  /// community_platform_community_moderators.id}
+  community_platform_community_moderator_id String
+  
+  /// Moderator user assigned as community moderator. {@link
+  /// community_platform_moderators.id}
+  community_platform_moderator_id String
+  
+  /// Session context when moderator was assigned. {@link
+  /// community_platform_moderator_sessions.id}
+  community_platform_moderator_session_id String
+  
+  /// Timestamp when this moderator assignment was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderatorAssignment community_platform_community_moderators @relation(fields: [community_platform_community_moderator_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_moderator_id], map: "community_platform_community_moderator_of_moderators_c_d6e5152f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id], map: "community_platform_community_moderator_of_moderators_c_ef527220")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id], map: "community_platform_community_moderator_of_moderators_c_e90bb50f")
+}
+
+/// Subtype entity linking moderator assignments to specific administrator
+/// actors.
+///
+/// This table establishes the 1:1 relationship between moderator assignments
+/// and admin users who have been granted moderator privileges in
+/// communities. It ensures referential integrity while supporting the
+/// polymorphic ownership pattern.
+///
+/// Each record represents a specific admin's assignment with their session
+/// context for audit trail purposes.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator assignment record. {@link
+  /// community_platform_community_moderators.id}
+  community_platform_community_moderator_id String
+  
+  /// Admin user assigned as community moderator. {@link
+  /// community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Session context when admin was assigned. {@link
+  /// community_platform_admin_sessions.id}
+  community_platform_admin_session_id String
+  
+  /// Timestamp when this admin moderator assignment was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderatorAssignment community_platform_community_moderators @relation(fields: [community_platform_community_moderator_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_moderator_id], map: "community_platform_community_moderator_of_admins_commu_a4e2c18d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id], map: "community_platform_community_moderator_of_admins_commu_350d49ac")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id], map: "community_platform_community_moderator_of_admins_commu_355a3808")
 }

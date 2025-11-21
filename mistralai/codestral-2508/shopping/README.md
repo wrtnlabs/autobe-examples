@@ -113,8 +113,8 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 3, documents: 11 | 100.00 % | 562,066 | 1932 sec
-✅ prisma | namespaces: 10, models: 31 | 95.65 % | 974,743 | 116 sec
+✅ analyze | actors: 3, documents: 10 | 104.76 % | 470,823 | 531 sec
+✅ prisma | namespaces: 10, models: 33 | 100.00 % | 965,065 | 559 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 
@@ -133,12 +133,12 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 46 | 1 | 0 | 45 | 97.83 %
-analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 11 | 0 | 0 | 11 | 100.00 %
-analyzeReview | 11 | 0 | 0 | 11 | 100.00 %
+total | 43 | 0 | 0 | 44 | 102.33 %
+analyzeScenario | 1 | 0 | 0 | 2 | 200.00 %
+analyzeWrite | 10 | 0 | 0 | 10 | 100.00 %
+analyzeReview | 10 | 0 | 0 | 10 | 100.00 %
 prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
-prismaSchema | 11 | 1 | 0 | 10 | 90.91 %
+prismaSchema | 10 | 0 | 0 | 10 | 100.00 %
 prismaReview | 10 | 0 | 0 | 10 | 100.00 %
 prismaCorrect | 1 | 0 | 0 | 1 | 100.00 %
 

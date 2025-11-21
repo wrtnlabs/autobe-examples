@@ -1,105 +1,157 @@
-/// User comments on economic discussion board posts.
+/// Main entity for storing comments on articles in the economic/political
+/// discussion board.
 ///
-/// Stores user comments with content, timestamps, and relationships to posts
-/// and users.
-/// Each comment is associated with a specific post and created by an
-/// authenticated user.
-/// Comments support soft deletion for content moderation while maintaining
-/// audit trails.
-/// The comment content includes body text and timestamps for creation and
-/// modification.
+/// This table serves as the central repository for all user comments,
+/// capturing the core content and metadata for each comment. It establishes
+/// the foundational structure for the comment system by tracking the
+/// relationship between comments and articles, as well as identifying the
+/// type of user who created the comment.
+///
+/// The comment content includes a title and body for structured
+/// communication, and it maintains temporal information for auditing
+/// purposes. Soft deletion is supported to maintain audit trails while
+/// allowing content moderation.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_comments {
+model economic_political_discussion_board_comments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Target post's {@link economic_discussion_board_posts.id}.
-  economic_discussion_board_post_id String
+  /// The article that this comment belongs to. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
   
-  /// Comment creator's {@link economic_discussion_board_users.id}.
-  economic_discussion_board_user_id String
+  /// Type of user who created the comment. Valid values: 'member' or
+  /// 'moderator'.
+  actor_type String
   
-  /// Session used to create comment's {@link
-  /// economic_discussion_board_user_sessions.id}.
-  economic_discussion_board_user_session_id String
+  /// Title of the comment.
+  title String
   
-  /// Comment content text.
+  /// Content of the comment.
   body String
   
-  /// Comment creation timestamp.
+  /// When the comment was created.
   created_at DateTime
   
-  /// Comment modification timestamp.
+  /// When the comment was last updated.
   updated_at DateTime
   
-  /// Comment deletion timestamp for soft delete.
+  /// When the comment was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  post economic_discussion_board_posts @relation(fields: [economic_discussion_board_post_id], references: [id], onDelete: Cascade)
-  user economic_discussion_board_users @relation(fields: [economic_discussion_board_user_id], references: [id], onDelete: Cascade)
-  userSession economic_discussion_board_user_sessions @relation(fields: [economic_discussion_board_user_session_id], references: [id], onDelete: Cascade)
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
   
-  economic_discussion_board_comment_snapshots economic_discussion_board_comment_snapshots[]
-  economic_discussion_board_attachments economic_discussion_board_attachments[]
-  economic_discussion_board_comment_attachments economic_discussion_board_comment_attachments[]
+  economic_political_discussion_board_comment_of_members economic_political_discussion_board_comment_of_members?
+  economic_political_discussion_board_comment_of_moderators economic_political_discussion_board_comment_of_moderators?
+  economic_political_discussion_board_attachment_of_comments economic_political_discussion_board_attachment_of_comments[]
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_user_id], map: "economic_discussion_board_comments_economic_discussion_3ae00edf")
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_user_session_id], map: "economic_discussion_board_comments_economic_discussion_510ecccc")
-  
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_post_id, created_at], map: "economic_discussion_board_comments_economic_discussion_f21d9cbd")
+  @@index([economic_political_discussion_board_article_id, created_at], map: "economic_political_discussion_board_comments_economic__c53051c8")
 }
 
-/// Historical snapshots of economic discussion board comments.
+/// Subtype entity for storing member-specific information about comments.
 ///
-/// Stores point-in-time states of comments for audit trails and change
-/// tracking.
-/// Each snapshot captures the complete state of a comment at a specific
-/// moment in time.
-/// Snapshots are created whenever a comment is modified and are never
-/// updated or deleted.
-/// The snapshot includes all comment fields at the time of creation for
-/// historical accuracy.
+/// This table captures member-specific details for comments created by
+/// registered members. It maintains the relationship between comments and
+/// the member who created them, including the member's session information
+/// for audit purposes.
+///
+/// The table ensures that only members can create comments, and it tracks
+/// the specific member session that was active when the comment was created.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_comment_snapshots {
+model economic_political_discussion_board_comment_of_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Source comment's {@link economic_discussion_board_comments.id}.
-  economic_discussion_board_comment_id String
+  /// The comment that this record extends. {@link
+  /// economic_political_discussion_board_comments.id}
+  economic_political_discussion_board_comment_id String
   
-  /// Comment content text at snapshot time.
-  body String
+  /// The member who created the comment. {@link
+  /// economic_political_discussion_board_members.id}
+  economic_political_discussion_board_member_id String
   
-  /// Snapshot creation timestamp.
+  /// The session that was active when the comment was created. {@link
+  /// economic_political_discussion_board_member_sessions.id}
+  economic_political_discussion_board_member_session_id String
+  
+  /// When the comment was created by the member.
   created_at DateTime
-  
-  /// Comment modification timestamp at snapshot time.
-  updated_at DateTime
-  
-  /// Comment deletion timestamp at snapshot time.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  comment economic_discussion_board_comments @relation(fields: [economic_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  comment economic_political_discussion_board_comments @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  member economic_political_discussion_board_members @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession economic_political_discussion_board_member_sessions @relation(fields: [economic_political_discussion_board_member_session_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_comment_id, created_at], map: "economic_discussion_board_comment_snapshots_economic_d_b5d62c79")
+  @@unique([economic_political_discussion_board_comment_id], map: "economic_political_discussion_board_comment_of_members_36e196b4")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_member_id], map: "economic_political_discussion_board_comment_of_members_9772f083")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_member_session_id], map: "economic_political_discussion_board_comment_of_members_4efd2220")
+}
+
+/// Subtype entity for storing moderator-specific information about comments.
+///
+/// This table captures moderator-specific details for comments created by
+/// moderators. It maintains the relationship between comments and the
+/// moderator who created them, including the moderator's session information
+/// for audit purposes.
+///
+/// The table ensures that only moderators can create comments, and it tracks
+/// the specific moderator session that was active when the comment was
+/// created.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_comment_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that this record extends. {@link
+  /// economic_political_discussion_board_comments.id}
+  economic_political_discussion_board_comment_id String
+  
+  /// The moderator who created the comment. {@link
+  /// economic_political_discussion_board_moderators.id}
+  economic_political_discussion_board_moderator_id String
+  
+  /// The session that was active when the comment was created. {@link
+  /// economic_political_discussion_board_moderator_sessions.id}
+  economic_political_discussion_board_moderator_session_id String
+  
+  /// When the comment was created by the moderator.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment economic_political_discussion_board_comments @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  moderator economic_political_discussion_board_moderators @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession economic_political_discussion_board_moderator_sessions @relation(fields: [economic_political_discussion_board_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_political_discussion_board_comment_id], map: "economic_political_discussion_board_comment_of_moderat_81c2072d")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_id], map: "economic_political_discussion_board_comment_of_moderat_1d0f04d9")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_session_id], map: "economic_political_discussion_board_comment_of_moderat_13e83e48")
 }

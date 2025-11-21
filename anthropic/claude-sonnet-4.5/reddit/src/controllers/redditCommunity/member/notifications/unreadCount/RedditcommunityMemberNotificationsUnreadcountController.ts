@@ -10,8 +10,6 @@ import { IRedditCommunityNotificationUnreadCount } from "../../../../../api/stru
 @Controller("/redditCommunity/member/notifications/unreadCount")
 export class RedditcommunityMemberNotificationsUnreadcountController {
   /**
-   * Get the count of unread notifications for the authenticated user.
-   *
    * Retrieve the total number of unread notifications for the currently
    * authenticated user. This operation queries the notifications table and
    * counts all notifications where the is_read flag is set to false for the

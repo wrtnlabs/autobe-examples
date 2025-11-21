@@ -8,9 +8,6 @@ import { IShoppingMallActorSearch } from "../../../../../api/structures/IShoppin
 @Controller("/shoppingMall/admin/actors/search")
 export class ShoppingmallAdminActorsSearchController {
   /**
-   * Search across customers, sellers, admins, and guest users using a unified
-   * actor search over multiple shoppingMall actor tables.
-   *
    * Search across all major actor types (customers, sellers, admins, and
    * guest users) in the shoppingMall platform using a unified query
    * interface.

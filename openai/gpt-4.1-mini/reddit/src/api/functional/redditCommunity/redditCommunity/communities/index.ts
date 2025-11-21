@@ -7,8 +7,6 @@ import { IRedditCommunityCommunity } from "../../../../structures/IRedditCommuni
 import { IPageIRedditCommunityCommunity } from "../../../../structures/IPageIRedditCommunityCommunity";
 
 /**
- * Search and retrieve a filtered, paginated list of communities.
- *
  * Retrieve a list of communities within the redditCommunity platform,
  * supporting advanced filtering, sorting, and pagination.
  *
@@ -103,8 +101,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific community by name.
- *
  * Get detailed information of a community identified by its unique name within
  * the redditCommunity platform.
  *

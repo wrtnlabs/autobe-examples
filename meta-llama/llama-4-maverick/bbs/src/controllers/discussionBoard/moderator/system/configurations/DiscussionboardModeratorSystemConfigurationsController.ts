@@ -10,8 +10,6 @@ import { IDiscussionBoardConfiguration } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/system/configurations")
 export class DiscussionboardModeratorSystemConfigurationsController {
   /**
-   * Update discussion board configurations.
-   *
    * Modify system configuration settings using a patch operation. This allows
    * for updating specific configuration values while leaving other settings
    * unchanged. The request body should contain the configuration fields to be

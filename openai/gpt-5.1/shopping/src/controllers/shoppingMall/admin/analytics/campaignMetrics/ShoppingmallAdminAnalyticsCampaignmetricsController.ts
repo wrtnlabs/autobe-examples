@@ -8,10 +8,6 @@ import { IShoppingMallCampaignMetric } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/analytics/campaignMetrics")
 export class ShoppingmallAdminAnalyticsCampaignmetricsController {
   /**
-   * Search and list campaign analytics metrics from the
-   * shopping_mall_campaign_metrics snapshot table with filtering and
-   * pagination.
-   *
    * Search and retrieve a paginated list of campaign analytics metrics from
    * the `shopping_mall_campaign_metrics` snapshot table using flexible
    * filtering, sorting, and pagination criteria.
@@ -64,9 +60,6 @@ export class ShoppingmallAdminAnalyticsCampaignmetricsController {
   }
 
   /**
-   * Retrieve a single campaign metric record from
-   * `shopping_mall_campaign_metrics` by ID.
-   *
    * Retrieve a single analytics campaign metric snapshot from the
    * `shopping_mall_campaign_metrics` table by its unique identifier.
    *

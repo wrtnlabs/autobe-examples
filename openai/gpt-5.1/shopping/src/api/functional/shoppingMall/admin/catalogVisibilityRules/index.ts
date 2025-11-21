@@ -7,9 +7,6 @@ import { IShoppingMallCatalogVisibilityRule } from "../../../../structures/IShop
 import { IPageIShoppingMallCatalogVisibilityRule } from "../../../../structures/IPageIShoppingMallCatalogVisibilityRule";
 
 /**
- * Create a new shopping_mall_catalog_visibility_rules record to define a
- * catalog visibility rule.
- *
  * Create a new catalog visibility rule in the
  * shopping_mall_catalog_visibility_rules table to control catalog exposure
  * behavior.
@@ -136,9 +133,6 @@ export namespace create {
 }
 
 /**
- * Search catalog visibility rules from the
- * shopping_mall_catalog_visibility_rules table with filtering and pagination.
- *
  * Search and retrieve a paginated list of catalog visibility rule
  * configurations stored in the `shopping_mall_catalog_visibility_rules` table.
  *
@@ -265,9 +259,6 @@ export namespace index {
 }
 
 /**
- * Get a single shopping_mall_catalog_visibility_rules record by its UUID
- * primary key.
- *
  * Retrieve the full detail of a single catalog visibility rule stored in the
  * shopping_mall_catalog_visibility_rules table using its UUID primary key.
  *
@@ -389,9 +380,6 @@ export namespace at {
 }
 
 /**
- * Update an existing catalog visibility rule row in
- * shopping_mall_catalog_visibility_rules.
- *
  * Update an existing catalog visibility rule in the shopping mall catalog
  * system.
  *
@@ -544,9 +532,6 @@ export namespace update {
 }
 
 /**
- * Erase a catalog visibility rule row from the
- * shopping_mall_catalog_visibility_rules table.
- *
  * Erase an existing catalog visibility rule from the shopping mall catalog
  * configuration.
  *

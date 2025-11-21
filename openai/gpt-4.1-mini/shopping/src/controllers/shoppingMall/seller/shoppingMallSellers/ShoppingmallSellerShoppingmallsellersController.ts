@@ -11,8 +11,6 @@ import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSel
 @Controller("/shoppingMall/seller/shoppingMallSellers/:shoppingMallSellerId")
 export class ShoppingmallSellerShoppingmallsellersController {
   /**
-   * Update an existing shopping mall seller.
-   *
    * Update the information of a specific seller in the shopping mall system.
    *
    * This endpoint allows authenticated sellers to update their profile and
@@ -60,8 +58,6 @@ export class ShoppingmallSellerShoppingmallsellersController {
   }
 
   /**
-   * Delete an existing shopping mall seller.
-   *
    * Permanently remove a specific seller from the shopping mall system.
    *
    * This operation allows authenticated sellers to delete their own accounts.

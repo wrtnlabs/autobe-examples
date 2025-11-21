@@ -7,8 +7,6 @@ import { IDiscussionBoardChannelStatistics } from "../../../../../api/structures
 @Controller("/discussion-board/moderator/statistics/posts-by-channel")
 export class Discussion_boardModeratorStatisticsPosts_by_channelController {
   /**
-   * Retrieve statistical breakdown of posts by discussion board channel.
-   *
    * This operation provides statistical analytics showing how posts are
    * distributed across different discussion board channels. It aggregates post
    * data from the discussion_board_posts table and groups results by channel to

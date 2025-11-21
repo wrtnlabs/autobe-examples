@@ -7,9 +7,6 @@ import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/customer/customers/:customerId")
 export class ShoppingmallCustomerCustomersController {
   /**
-   * Update a ShoppingMall customer record in the `shopping_mall_customers`
-   * table.
-   *
    * Update an existing customer account stored in the
    * `shopping_mall_customers` table and return the fully refreshed customer
    * representation.
@@ -67,9 +64,6 @@ export class ShoppingmallCustomerCustomersController {
   }
 
   /**
-   * Delete a ShoppingMall customer record from the `shopping_mall_customers`
-   * table.
-   *
    * Permanently remove an existing customer account from the
    * `shopping_mall_customers` table using its unique identifier.
    *

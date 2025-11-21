@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallShipmentEvent } from "../../../../../structures/IShoppingMallShipmentEvent";
 
 /**
- * Update a shipment event record in the shopping_mall_shipment_events timeline
- * for a shipment.
- *
  * Update a specific shipment event in the detailed shipping timeline for a
  * shipment identified by its business shipment code.
  *
@@ -151,9 +148,6 @@ export namespace update {
 }
 
 /**
- * Erase a shipment event record from the shopping_mall_shipment_events timeline
- * for a shipment.
- *
  * Erase a specific shipment event from the detailed shipping and tracking
  * timeline for a shipment identified by its shipment code.
  *

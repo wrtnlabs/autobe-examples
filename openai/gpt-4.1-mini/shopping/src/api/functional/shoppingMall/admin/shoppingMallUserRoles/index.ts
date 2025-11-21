@@ -102,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Search and list shopping mall user role assignments.
- *
  * Retrieve a filtered and paginated list of shopping mall user role assignments
  * from the system.
  *
@@ -197,8 +195,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific user role assignment by ID.
- *
  * Retrieve detailed information about a single shopping mall user role
  * assignment identified by its unique ID.
  *
@@ -395,8 +391,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall user role mapping by ID.
- *
  * This DELETE operation removes the specified shopping mall user role mapping
  * identified by its unique ID. It is used when an administrator's role needs to
  * be revoked or adjusted.

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardContributor } from "../../../../../structures/IDiscussionBoardContributor";
 
 /**
- * Change contributor account password.
- *
  * This endpoint allows authenticated contributors to update their account
  * password. The operation requires verification of the current password to
  * prevent unauthorized password changes. The new password must meet security

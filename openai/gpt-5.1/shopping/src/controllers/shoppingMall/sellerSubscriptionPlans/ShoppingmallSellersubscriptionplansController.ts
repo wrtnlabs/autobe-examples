@@ -8,9 +8,6 @@ import { IShoppingMallSellerSubscriptionPlan } from "../../../api/structures/ISh
 @Controller("/shoppingMall/sellerSubscriptionPlans")
 export class ShoppingmallSellersubscriptionplansController {
   /**
-   * Search and retrieve a paginated list of seller subscription plans from
-   * shopping_mall_seller_subscription_plans.
-   *
    * Retrieve a paginated and filterable list of seller subscription plans
    * defined in the `shopping_mall_seller_subscription_plans` table.
    *
@@ -61,9 +58,6 @@ export class ShoppingmallSellersubscriptionplansController {
   }
 
   /**
-   * Get detailed information for a specific seller subscription plan by its
-   * business planCode from shopping_mall_seller_subscription_plans.
-   *
    * Retrieve detailed information of a single seller subscription plan
    * identified by its unique `planCode` in the
    * `shopping_mall_seller_subscription_plans` table.

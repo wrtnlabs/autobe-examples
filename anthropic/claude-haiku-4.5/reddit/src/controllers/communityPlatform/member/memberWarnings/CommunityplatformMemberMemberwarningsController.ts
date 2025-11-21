@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberWarning } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/member/memberWarnings/:warningId")
 export class CommunityplatformMemberMemberwarningsController {
   /**
-   * Retrieve detailed information about a specific member warning record.
-   *
    * Fetch a complete member warning record by its unique identifier from the
    * community_platform_member_warnings table.
    *

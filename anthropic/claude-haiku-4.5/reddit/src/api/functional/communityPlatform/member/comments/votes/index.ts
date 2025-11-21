@@ -7,8 +7,6 @@ import { ICommunityPlatformVote } from "../../../../../structures/ICommunityPlat
 import { IPageICommunityPlatformVote } from "../../../../../structures/IPageICommunityPlatformVote";
 
 /**
- * Cast a vote (upvote or downvote) on a specific comment.
- *
  * Cast a vote on a specific community platform comment, contributing to the
  * member's karma and the comment's engagement score. Members can upvote
  * comments they find valuable or downvote comments they believe are low-quality
@@ -117,9 +115,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of votes on a specific
- * comment.
- *
  * Retrieve a filtered and paginated list of votes cast on a specific community
  * platform comment. This operation provides comprehensive search capabilities
  * for analyzing voting activity on comments, including filtering by vote type

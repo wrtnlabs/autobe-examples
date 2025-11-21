@@ -12,9 +12,6 @@ import { IDiscussionBoardMemberuserRestriction } from "../../../../../api/struct
 @Controller("/discussionBoard/adminUser/memberUsers/:memberUserId/restriction")
 export class DiscussionboardAdminuserMemberusersRestrictionController {
   /**
-   * Create a discussion_board_memberuser_restrictions record for a given member
-   * user.
-   *
    * Create a new restriction state for the specified member user in the
    * discussionBoard system.
    *
@@ -96,9 +93,6 @@ export class DiscussionboardAdminuserMemberusersRestrictionController {
   }
 
   /**
-   * Update an existing discussion_board_memberuser_restrictions record for a
-   * given member user.
-   *
    * Update the current restriction state for the specified member user in the
    * discussionBoard service.
    *
@@ -177,9 +171,6 @@ export class DiscussionboardAdminuserMemberusersRestrictionController {
   }
 
   /**
-   * Lift the current restriction for a member user by deleting its record in
-   * discussion_board_memberuser_restrictions.
-   *
    * Remove the current restriction state record for a specific member user,
    * thereby lifting any active restriction associated with that account.
    *

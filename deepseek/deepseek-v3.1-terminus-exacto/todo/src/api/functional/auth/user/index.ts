@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppUser } from "../../../structures/ITodoAppUser";
 
 /**
- * Creates a new user account with email verification workflow support.
- *
  * This API operation creates a new user account in the todo_app_users table,
  * enabling users to register for the Todo application. The operation validates
  * the provided email address for uniqueness against existing accounts and
@@ -120,8 +118,6 @@ export namespace join {
 }
 
 /**
- * Authenticates user credentials and returns JWT tokens for session management.
- *
  * This API operation authenticates users by validating their email and password
  * credentials against the todo_app_users table. The operation performs secure
  * password comparison using the stored password_hash field and updates the
@@ -229,9 +225,6 @@ export namespace login {
 }
 
 /**
- * Refreshes JWT access tokens using valid refresh tokens for session
- * continuity.
- *
  * This API operation refreshes user authentication tokens by validating
  * existing refresh tokens and issuing new access tokens. The refresh mechanism
  * allows users to maintain active sessions without repeatedly providing

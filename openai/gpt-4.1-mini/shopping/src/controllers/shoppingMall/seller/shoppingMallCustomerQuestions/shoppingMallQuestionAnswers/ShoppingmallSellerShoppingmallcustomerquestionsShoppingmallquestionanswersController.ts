@@ -14,9 +14,6 @@ import { IShoppingMallQuestionAnswer } from "../../../../../api/structures/IShop
 )
 export class ShoppingmallSellerShoppingmallcustomerquestionsShoppingmallquestionanswersController {
   /**
-   * Create a new answer for a customer question by a seller in the shopping
-   * mall.
-   *
    * Create a new seller answer for an existing customer question in the
    * shopping mall platform.
    *
@@ -128,8 +125,6 @@ export class ShoppingmallSellerShoppingmallcustomerquestionsShoppingmallquestion
   }
 
   /**
-   * Delete a specific shopping mall question answer.
-   *
    * Permanently delete a specific seller-provided answer to a customer question
    * in the shopping mall platform.
    *

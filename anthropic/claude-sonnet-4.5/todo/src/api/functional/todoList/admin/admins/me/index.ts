@@ -8,8 +8,6 @@ export * as password from "./password/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve authenticated administrator's own profile information.
- *
  * Retrieve the currently authenticated administrator's profile information
  * including account details and metadata.
  *
@@ -81,8 +79,6 @@ export namespace at {
 }
 
 /**
- * Update authenticated administrator's own account information.
- *
  * Update the currently authenticated administrator's account information,
  * primarily for changing account password through secure verification.
  *

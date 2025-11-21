@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityMembership } from "../../../../../structures
 import { IPageICommunityPlatformCommunityMembership } from "../../../../../structures/IPageICommunityPlatformCommunityMembership";
 
 /**
- * Search memberships in community_platform_community_memberships for a given
- * community with pagination and filters.
- *
  * Search and retrieve a paginated list of community membership records for a
  * specific community.
  *
@@ -137,9 +134,6 @@ export namespace index {
 }
 
 /**
- * Update a community membership in the community_platform_community_memberships
- * table for a given community.
- *
  * Update an existing community membership within a specific community
  * identified by its slug.
  *
@@ -285,9 +279,6 @@ export namespace update {
 }
 
 /**
- * Delete a community membership from the
- * community_platform_community_memberships table for a given community.
- *
  * Remove an existing community membership record for a specific community,
  * effectively removing a user from that community.
  *

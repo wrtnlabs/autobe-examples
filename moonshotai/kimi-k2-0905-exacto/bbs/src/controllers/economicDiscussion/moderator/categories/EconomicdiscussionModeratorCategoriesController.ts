@@ -12,9 +12,6 @@ import { IEconomicDiscussionCategory } from "../../../../api/structures/IEconomi
 @Controller("/economicDiscussion/moderator/categories")
 export class EconomicdiscussionModeratorCategoriesController {
   /**
-   * Create a new discussion category for organizing economic and political
-   * articles.
-   *
    * Creates a new category for organizing discussion articles within the
    * economic and political discourse platform. This operation enables
    * administrators to expand the taxonomy system by adding new topical areas
@@ -56,8 +53,6 @@ export class EconomicdiscussionModeratorCategoriesController {
   }
 
   /**
-   * Update an existing discussion category's properties and configuration.
-   *
    * Updates the properties of an existing discussion category within the
    * economic and political discourse platform. This operation enables
    * administrators to modify category metadata while maintaining the integrity
@@ -103,8 +98,6 @@ export class EconomicdiscussionModeratorCategoriesController {
   }
 
   /**
-   * Delete a discussion category using soft deletion.
-   *
    * Permanently deactivate a discussion category by marking it as deleted. This
    * operation logically removes categories from active use while preserving all
    * historical data and relationships.

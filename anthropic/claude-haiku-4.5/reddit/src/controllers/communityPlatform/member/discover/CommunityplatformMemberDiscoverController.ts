@@ -7,9 +7,6 @@ import { ICommunityPlatformTrendingContent } from "../../../../api/structures/IC
 @Controller("/communityPlatform/member/discover")
 export class CommunityplatformMemberDiscoverController {
   /**
-   * Retrieve personalized trending and recommended posts for content
-   * discovery.
-   *
    * Retrieve a curated feed of trending posts and community recommendations
    * tailored to the authenticated member's interests and engagement history.
    * This operation fetches posts from communities the member subscribes to,

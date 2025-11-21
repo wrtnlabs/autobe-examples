@@ -10,9 +10,6 @@ import { IDiscussionBoardArticleAttachment } from "../../../../api/structures/ID
 @Controller("/discussionBoard/articles/:articleId/attachments")
 export class DiscussionboardArticlesAttachmentsController {
   /**
-   * List and paginate attachments for a specific article using the article
-   * attachments table.
-   *
    * Retrieve a filtered and paginated list of all attachments (images,
    * documents, files) associated with the specified discussion board article.
    *
@@ -57,9 +54,6 @@ export class DiscussionboardArticlesAttachmentsController {
   }
 
   /**
-   * Retrieve metadata for a specified article attachment using article and
-   * attachment IDs.
-   *
    * Retrieve full detailed metadata for a single attachment that is linked to
    * the given article, identified by its UUID within the article's set of
    * attachments.

@@ -7,9 +7,6 @@ import { IShoppingMallDisputeHistory } from "../../../../../structures/IShopping
 import { IPageIShoppingMallDisputeHistory } from "../../../../../structures/IPageIShoppingMallDisputeHistory";
 
 /**
- * Retrieve paginated status/action history for a specific dispute
- * (shopping_mall_dispute_histories table).
- *
  * Returns a paginated list capturing the entire audit trail of status changes,
  * actions, and notes for a specific dispute's lifecycle.
  *
@@ -115,9 +112,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific dispute history record for an audit of
- * shopping_mall_dispute_histories table.
- *
  * Retrieve a single historical status or audit snapshot for a dispute.
  *
  * This operation fetches a specific record from the

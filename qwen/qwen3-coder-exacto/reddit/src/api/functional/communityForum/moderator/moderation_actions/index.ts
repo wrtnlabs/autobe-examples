@@ -7,8 +7,6 @@ import { ICommunityForumCommunityModerationAction } from "../../../../structures
 import { IPageICommunityForumCommunityModerationAction } from "../../../../structures/IPageICommunityForumCommunityModerationAction";
 
 /**
- * Create a new community forum moderation action record.
- *
  * Create a new moderation action record in the community forum system. This
  * operation allows authenticated moderators to document actions they have taken
  * in response to content reports or observed policy violations. Each moderation
@@ -110,9 +108,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of community forum moderation
- * actions.
- *
  * Retrieve a filtered and paginated list of community forum moderation actions
  * from the system. This operation provides advanced search capabilities for
  * finding moderation actions based on multiple criteria including moderator ID,
@@ -220,8 +215,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information about a specific moderation action by its ID.
- *
  * Retrieve detailed information about a specific moderation action taken in the
  * community forum.
  *
@@ -322,8 +315,6 @@ export namespace at {
 }
 
 /**
- * Delete a moderation action by ID.
- *
  * Permanently remove a moderation action record from the system.
  *
  * This endpoint allows authorized administrators or moderators to delete a

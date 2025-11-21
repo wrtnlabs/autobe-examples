@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityModerator } from "../../../../structures/ICo
 import { IPageICommunityPlatformCommunityModerator } from "../../../../structures/IPageICommunityPlatformCommunityModerator";
 
 /**
- * List and search moderators (community_platform_community_moderators) for a
- * specific community with filtering and pagination.
- *
  * Retrieve a paginated, filterable list of all moderators assigned to a
  * specific community. This operation enables community administrators, platform
  * staff, or community users (depending on access policy) to inspect the current

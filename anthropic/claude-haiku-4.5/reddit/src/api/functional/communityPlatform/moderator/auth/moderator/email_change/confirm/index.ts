@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../../../../../structures/ICommunityPlatformModerator";
 
 /**
- * Confirm moderator email address change with verification token.
- *
  * Complete the email change process for a moderator by confirming the new email
  * address with a verification token. This operation is the second step in the
  * email change workflow, following the initial email change request where a

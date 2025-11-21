@@ -8,8 +8,6 @@ export * as change_password from "./change_password/index";
 export * as _delete from "./_delete/index";
 
 /**
- * Retrieve the authenticated user's complete profile information.
- *
  * Fetch the current authenticated user's profile including account details,
  * email, username, account status, and verification state.
  *

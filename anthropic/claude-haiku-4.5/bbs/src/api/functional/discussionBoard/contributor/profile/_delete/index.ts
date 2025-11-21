@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardContributor } from "../../../../../structures/IDiscussionBoardContributor";
 
 /**
- * Soft-delete contributor account.
- *
  * This endpoint allows authenticated contributors to delete their own account
  * through a soft-delete operation. The account is marked for deletion by
  * setting the deleted_at timestamp to the current time and changing the

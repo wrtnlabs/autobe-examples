@@ -14,8 +14,6 @@ import { IPageICommunityForumCommunityModerator } from "../../../../../api/struc
 @Controller("/communityForum/administrator/communities/:communityId/moderators")
 export class CommunityforumAdministratorCommunitiesModeratorsController {
   /**
-   * Create a new moderator for a community.
-   *
    * Assign a user as moderator for a specific community.
    *
    * This endpoint creates a new moderator association between a user and a
@@ -72,9 +70,6 @@ export class CommunityforumAdministratorCommunitiesModeratorsController {
   }
 
   /**
-   * Retrieve paginated list of moderators for a specific community with search
-   * capabilities.
-   *
    * Retrieve a filtered and paginated list of moderator accounts assigned to a
    * specific community. This operation provides community owners and
    * administrators with the ability to view all moderators assigned to a
@@ -125,8 +120,6 @@ export class CommunityforumAdministratorCommunitiesModeratorsController {
   }
 
   /**
-   * Add a user as moderator to a community.
-   *
    * Add a user as a moderator to a community.
    *
    * This operation creates a new moderator relationship between a user and a

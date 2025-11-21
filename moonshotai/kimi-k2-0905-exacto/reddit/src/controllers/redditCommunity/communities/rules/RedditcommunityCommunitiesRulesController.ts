@@ -7,8 +7,6 @@ import { IRedditCommunityCommunityRule } from "../../../../api/structures/IReddi
 @Controller("/redditCommunity/communities/:communityName/rules")
 export class RedditcommunityCommunitiesRulesController {
   /**
-   * Get community rule details with multi-level authorization support.
-   *
    * Retrieve detailed information about a specific community rule by its
    * identifier within the specified community. This unified operation
    * supports multiple authorization levels through a single endpoint,
@@ -47,8 +45,6 @@ export class RedditcommunityCommunitiesRulesController {
   }
 
   /**
-   * Create community governance rule with moderator authorization.
-   *
    * Create a new rule within a specific community to establish governance
    * policies with comprehensive validation and metadata tracking. This
    * operation enables community moderators to add governance guidelines with

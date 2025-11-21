@@ -11,8 +11,6 @@ import { IDiscussionBoardMember } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/member/members/:memberId")
 export class DiscussionboardMemberMembersController {
   /**
-   * Update member account profile information.
-   *
    * Update profile information for an existing member account in the discussion
    * board system.
    *
@@ -68,8 +66,6 @@ export class DiscussionboardMemberMembersController {
   }
 
   /**
-   * Delete member account from the discussion board.
-   *
    * Mark a member account as deleted in the discussion board system through
    * soft deletion mechanism.
    *

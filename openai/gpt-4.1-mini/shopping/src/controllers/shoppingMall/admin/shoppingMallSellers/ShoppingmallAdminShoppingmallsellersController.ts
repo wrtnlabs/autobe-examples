@@ -13,8 +13,6 @@ import { IPageIShoppingMallSeller } from "../../../../api/structures/IPageIShopp
 @Controller("/shoppingMall/admin/shoppingMallSellers")
 export class ShoppingmallAdminShoppingmallsellersController {
   /**
-   * Create a new shopping mall seller registration.
-   *
    * Create a new shopping mall seller with provided registration details.
    *
    * This operation allows the system or administrators to register new sellers
@@ -55,8 +53,6 @@ export class ShoppingmallAdminShoppingmallsellersController {
   }
 
   /**
-   * List and search shopping mall sellers with pagination.
-   *
    * Retrieve a filtered and paginated list of registered shopping mall seller
    * users.
    *
@@ -95,8 +91,6 @@ export class ShoppingmallAdminShoppingmallsellersController {
   }
 
   /**
-   * Retrieve a specific shopping mall seller by ID.
-   *
    * Retrieve the full details of a registered shopping mall seller using their
    * unique seller ID.
    *

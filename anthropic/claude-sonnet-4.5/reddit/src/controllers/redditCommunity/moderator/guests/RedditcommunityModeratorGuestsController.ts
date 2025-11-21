@@ -13,8 +13,6 @@ import { IRedditCommunityGuest } from "../../../../api/structures/IRedditCommuni
 @Controller("/redditCommunity/moderator/guests")
 export class RedditcommunityModeratorGuestsController {
   /**
-   * Search and retrieve a filtered, paginated list of platform guest visitors.
-   *
    * Retrieve a filtered and paginated list of unauthenticated guest visitors
    * who are browsing the Reddit community platform. This operation provides
    * advanced search capabilities for finding guests based on multiple criteria
@@ -64,8 +62,6 @@ export class RedditcommunityModeratorGuestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific guest visitor by identifier.
-   *
    * Retrieve complete detailed information about a specific unauthenticated
    * guest visitor identified by their unique guest ID. This operation provides
    * comprehensive access to guest session data including session identifiers,
@@ -113,8 +109,6 @@ export class RedditcommunityModeratorGuestsController {
   }
 
   /**
-   * Permanently delete a guest user account from the system.
-   *
    * Permanently removes a guest user account and all associated data from the
    * reddit_community platform. This operation performs a hard delete on the
    * reddit_community_guests table, completely removing the guest record from

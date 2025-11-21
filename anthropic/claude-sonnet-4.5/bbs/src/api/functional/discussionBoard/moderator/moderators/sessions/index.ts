@@ -7,9 +7,6 @@ import { IDiscussionBoardModeratorSession } from "../../../../../structures/IDis
 import { IPageIDiscussionBoardModeratorSession } from "../../../../../structures/IPageIDiscussionBoardModeratorSession";
 
 /**
- * Search and retrieve moderator authentication sessions with filtering and
- * pagination.
- *
  * Retrieve a filtered, paginated list of authentication sessions for a specific
  * moderator from the discussion_board_moderator_sessions table. This operation
  * provides comprehensive search capabilities for reviewing moderator login
@@ -132,8 +129,6 @@ export namespace index {
 }
 
 /**
- * Terminate a specific moderator authentication session.
- *
  * Terminate and remove a specific moderator authentication session, effectively
  * logging out the moderator from that particular session. This operation
  * implements explicit session termination, allowing moderators to end their

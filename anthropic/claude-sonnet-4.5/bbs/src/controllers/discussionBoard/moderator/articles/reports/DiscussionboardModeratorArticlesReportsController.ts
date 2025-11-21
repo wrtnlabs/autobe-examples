@@ -11,8 +11,6 @@ import { IDiscussionBoardContentReport } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/articles/:articleId/reports")
 export class DiscussionboardModeratorArticlesReportsController {
   /**
-   * Search and retrieve filtered content reports for a specific article.
-   *
    * Retrieve a filtered and paginated list of content reports submitted against
    * a specific article in the discussion board.
    *

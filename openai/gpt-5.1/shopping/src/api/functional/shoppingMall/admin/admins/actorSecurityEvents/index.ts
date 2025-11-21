@@ -7,9 +7,6 @@ import { IShoppingMallActorSecurityEvent } from "../../../../../structures/IShop
 import { IPageIShoppingMallActorSecurityEvent } from "../../../../../structures/IPageIShoppingMallActorSecurityEvent";
 
 /**
- * Search admin-scoped actor security events from
- * shopping_mall_actor_security_events for a given admin.
- *
  * Retrieve a paginated list of security-related events associated with a
  * specific admin account for governance, audit, and security investigation
  * purposes.

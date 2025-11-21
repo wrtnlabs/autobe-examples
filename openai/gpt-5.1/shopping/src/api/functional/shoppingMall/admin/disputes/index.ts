@@ -10,9 +10,6 @@ export * as events from "./events/index";
 export * as evidences from "./evidences/index";
 
 /**
- * Create a new dispute record in the shopping_mall_disputes table for the
- * ShoppingMall platform.
- *
  * Create a new dispute case in the ShoppingMall dispute management subsystem.
  *
  * This endpoint operates on the shopping_mall_disputes table, which stores
@@ -139,9 +136,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of disputes from the
- * shopping_mall_disputes table.
- *
  * Retrieve a filtered and paginated list of dispute records from the shopping
  * mall platform based on the `shopping_mall_disputes` Prisma table.
  *
@@ -265,9 +259,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single dispute from the
- * shopping_mall_disputes table by disputeCode.
- *
  * Retrieve a single detailed dispute record from the shopping mall platform
  * using its unique dispute code, backed by the `shopping_mall_disputes` Prisma
  * table.
@@ -382,9 +373,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping_mall_disputes record using its disputeCode
- * business identifier.
- *
  * Update an existing dispute identified by disputeCode in the
  * shopping_mall_disputes table.
  *
@@ -520,9 +508,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a dispute in the `shopping_mall_disputes` table by its
- * business disputeCode.
- *
  * Delete a single dispute record from the `shopping_mall_disputes` table using
  * its business-visible dispute code.
  *

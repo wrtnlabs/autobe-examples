@@ -8,9 +8,6 @@ import { IShoppingMallGuestuserSession } from "../../../../../api/structures/ISh
 @Controller("/shoppingMall/admin/guestUsers/:guestUserId/sessions")
 export class ShoppingmallAdminGuestusersSessionsController {
   /**
-   * Search and list session records in `shopping_mall_guestuser_sessions` for
-   * a specific guest user.
-   *
    * Retrieve a filtered, paginated list of authentication session records for
    * a specific guest user from the `shopping_mall_guestuser_sessions` table.
    *
@@ -72,9 +69,6 @@ export class ShoppingmallAdminGuestusersSessionsController {
   }
 
   /**
-   * Get a specific shopping_mall_guestuser_sessions record for a guest user
-   * by session identifier.
-   *
    * Retrieve detailed information about a specific guest user session for
    * administrative security and auditing purposes.
    *
@@ -128,9 +122,6 @@ export class ShoppingmallAdminGuestusersSessionsController {
   }
 
   /**
-   * Delete a specific shopping_mall_guestuser_sessions record for a guest
-   * user by session identifier.
-   *
    * Permanently remove a specific guest user session record for
    * administrative session termination and cleanup.
    *

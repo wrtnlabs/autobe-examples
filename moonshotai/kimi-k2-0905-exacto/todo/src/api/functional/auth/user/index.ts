@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppUser } from "../../../structures/ITodoAppUser";
 
 /**
- * Create a new user account with email/password authentication.
- *
  * This endpoint creates new user accounts for the Todo List Application. Upon
  * successful registration, the system creates a user record in the
  * todo_app_users table with the provided email address and hashed password. The
@@ -118,8 +116,6 @@ export namespace join {
 }
 
 /**
- * Authenticate user with email and password.
- *
  * This endpoint authenticates users with their email address and password
  * credentials. The login system validates credentials by comparing the provided
  * password against the stored password_hash in the todo_app_users table using
@@ -231,8 +227,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT access token using valid refresh token.
- *
  * This endpoint refreshes JWT access tokens for users with valid refresh
  * tokens. The system validates the provided refresh token against stored
  * session data in related todo_app_sessions table, ensuring token authenticity

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallInventory } from "../../../../structures/IShoppingMallInventory";
 
 /**
- * Get detailed inventory info for a product variant by skuCode and inventory
- * ID.
- *
  * Retrieve details of a specific inventory record belonging to the given
  * product variant SKU.
  *

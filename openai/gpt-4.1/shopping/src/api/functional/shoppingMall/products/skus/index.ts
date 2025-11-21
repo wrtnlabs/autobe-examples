@@ -7,9 +7,6 @@ import { IShoppingMallProductSku } from "../../../../structures/IShoppingMallPro
 export * as images from "./images/index";
 
 /**
- * Retrieve the details for a specific SKU variant for a product
- * (shopping_mall_product_skus).
- *
  * Retrieve comprehensive information about a specific SKU variant belonging to
  * a particular product. The operation requires both the productId and skuId as
  * path parameters to ensure uniqueness, reflecting the composite key structure

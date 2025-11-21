@@ -7,8 +7,6 @@ import { IDiscussionBoardNotificationPreference } from "../../../../structures/I
 import { IPageIDiscussionBoardNotificationPreference } from "../../../../structures/IPageIDiscussionBoardNotificationPreference";
 
 /**
- * Retrieve the current member's notification preference configuration.
- *
  * This operation fetches the notification preference configuration for the
  * authenticated member. Since the Prisma schema enforces a unique constraint
  * ensuring each member can have only one preference configuration, this
@@ -76,8 +74,6 @@ export namespace get {
 }
 
 /**
- * Search and retrieve notification preferences with filtering and pagination.
- *
  * This operation provides advanced search capabilities for retrieving
  * notification preference configurations from the system. Users can filter
  * preferences based on notification types (post interactions, comment replies,
@@ -182,8 +178,6 @@ export namespace patch {
 }
 
 /**
- * Retrieve detailed notification preference information by ID.
- *
  * This operation fetches comprehensive notification preference details for a
  * specific preference configuration identified by its unique identifier. The
  * operation returns complete preference information including email
@@ -281,8 +275,6 @@ export namespace at {
 }
 
 /**
- * Update notification preferences configuration for a discussion board member.
- *
  * Update an existing notification preference configuration with new settings
  * for delivery methods and notification categories. This operation allows users
  * to customize how they receive notifications from the discussion platform.
@@ -398,8 +390,6 @@ export namespace putByPreferenceid {
 }
 
 /**
- * Permanently delete notification preferences configuration.
- *
  * Permanently remove a notification preference configuration from the
  * discussion board system. This operation completely deletes the user's
  * notification settings and cannot be undone.
@@ -497,8 +487,6 @@ export namespace eraseByPreferenceid {
 }
 
 /**
- * Update notification preferences configuration for a discussion board member.
- *
  * Update an existing notification preference configuration with new settings
  * for delivery methods and notification categories. This operation allows users
  * to customize how they receive notifications from the discussion platform.
@@ -614,8 +602,6 @@ export namespace putByMemberid {
 }
 
 /**
- * Permanently delete notification preferences configuration.
- *
  * Permanently remove a notification preference configuration from the
  * discussion board system. This operation completely deletes the user's
  * notification settings and cannot be undone.

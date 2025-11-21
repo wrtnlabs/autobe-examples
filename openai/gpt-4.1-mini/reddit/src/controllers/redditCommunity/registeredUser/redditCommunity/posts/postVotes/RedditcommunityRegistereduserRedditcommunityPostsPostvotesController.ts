@@ -17,8 +17,6 @@ import { IPageIRedditCommunityPostVote } from "../../../../../../api/structures/
 )
 export class RedditcommunityRegistereduserRedditcommunityPostsPostvotesController {
   /**
-   * Create a new vote for a redditCommunity post.
-   *
    * Create a new vote by a registered user on a specific post within the
    * redditCommunity platform.
    *
@@ -66,8 +64,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsPostvotesControlle
   }
 
   /**
-   * Retrieve paginated list of votes for a specific post.
-   *
    * Retrieve a paginated list of post votes for the target post, including
    * details of each vote's type (upvote/downvote), the user who cast it, and
    * timing information.
@@ -115,8 +111,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsPostvotesControlle
   }
 
   /**
-   * Retrieve details of a specific post vote by ID.
-   *
    * Retrieve detailed information for a specific post vote on a given post,
    * using its unique vote identifier.
    *
@@ -158,8 +152,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsPostvotesControlle
   }
 
   /**
-   * Update an existing vote on a redditCommunity post.
-   *
    * Update an existing vote record cast by a registered user on a specific post
    * in the redditCommunity platform.
    *
@@ -206,8 +198,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsPostvotesControlle
   }
 
   /**
-   * Delete a specific vote on a Reddit community post.
-   *
    * Delete a specific post vote for a Reddit community post. This allows
    * removal of invalid or abusive votes on posts.
    *

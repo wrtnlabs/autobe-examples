@@ -7,8 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../api/structures/IComm
 @Controller("/communityPlatform/auth/member/password-reset/request")
 export class CommunityplatformAuthMemberPassword_resetRequestController {
   /**
-   * Request password reset email for member account.
-   *
    * Initiate a password reset request for a member account by providing the
    * email address associated with the account. This operation sends a secure
    * password reset link via email that allows the member to establish a new

@@ -15,9 +15,6 @@ import { IPageICommunityPlatformProfileImageHistory } from "../../../../../api/s
 @Controller("/communityPlatform/user/users/:userId/profileImageHistory")
 export class CommunityplatformUserUsersProfileimagehistoryController {
   /**
-   * Create and record a new profile image entry for the given platform user in
-   * the image history table.
-   *
    * Add a new profile image entry to the image history for the target user.
    *
    * This operation can be used by an authenticated user to record the upload of
@@ -67,9 +64,6 @@ export class CommunityplatformUserUsersProfileimagehistoryController {
   }
 
   /**
-   * Retrieve the full profile image change history for a given user from
-   * community_platform_profile_image_history.
-   *
    * Retrieve the complete change history of profile images for a specific
    * platform user. This operation provides a list of all prior profile images
    * uploaded by the user, including the current and previous avatars, together
@@ -120,9 +114,6 @@ export class CommunityplatformUserUsersProfileimagehistoryController {
   }
 
   /**
-   * Retrieve detail for a specific user profile image history event from
-   * community_platform_profile_image_history.
-   *
    * Fetch detailed information for a single image change event in a user's
    * profile image history. This operation returns the properties of the
    * particular event, including the image URI (reference to the avatar or
@@ -173,9 +164,6 @@ export class CommunityplatformUserUsersProfileimagehistoryController {
   }
 
   /**
-   * Update details of a specific user profile image history record for the
-   * target user.
-   *
    * Update metadata for a specific entry in a user's profile image history.
    *
    * This operation allows the authenticated user or an administrator to update
@@ -227,9 +215,6 @@ export class CommunityplatformUserUsersProfileimagehistoryController {
   }
 
   /**
-   * Delete a specified profile image history record for a user
-   * (community_platform_profile_image_history).
-   *
    * Delete a specific profile image history record associated with a user. This
    * allows for the selective removal of historical profile image audit logs,
    * aiding in regulatory compliance or privacy-driven data minimization.

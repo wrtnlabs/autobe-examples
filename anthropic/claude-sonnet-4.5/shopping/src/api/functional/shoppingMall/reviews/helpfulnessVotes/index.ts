@@ -7,8 +7,6 @@ import { IShoppingMallReviewHelpfulnessVote } from "../../../../structures/IShop
 import { IPageIShoppingMallReviewHelpfulnessVote } from "../../../../structures/IPageIShoppingMallReviewHelpfulnessVote";
 
 /**
- * Search and retrieve paginated helpfulness votes for a specific review.
- *
  * Retrieve a filtered and paginated list of helpfulness votes submitted by
  * buyers for a specific product review. This operation provides comprehensive
  * search capabilities for analyzing vote patterns, including filtering by vote

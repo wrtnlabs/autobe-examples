@@ -7,8 +7,6 @@ import { IShoppingMallRefundTransaction } from "../../../../../structures/IShopp
 import { IPageIShoppingMallRefundTransaction } from "../../../../../structures/IPageIShoppingMallRefundTransaction";
 
 /**
- * Retrieve paginated list of refund transactions for a specific order.
- *
  * Retrieve a filtered and paginated list of refund transactions for a specific
  * order in the shopping mall system. This operation provides comprehensive
  * search capabilities for finding refund transactions based on various criteria

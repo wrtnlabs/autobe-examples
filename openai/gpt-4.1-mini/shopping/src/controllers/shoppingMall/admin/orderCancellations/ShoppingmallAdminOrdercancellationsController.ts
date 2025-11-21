@@ -13,8 +13,6 @@ import { IShoppingMallOrderCancellation } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/orderCancellations")
 export class ShoppingmallAdminOrdercancellationsController {
   /**
-   * Search and retrieve list of order cancellation requests.
-   *
    * Retrieve a paginated list of shopping mall order cancellation requests
    * submitted by customers. This operation supports filtering cancellation
    * requests by customer ID, status, submission date, and other relevant
@@ -54,8 +52,6 @@ export class ShoppingmallAdminOrdercancellationsController {
   }
 
   /**
-   * Retrieve detailed order cancellation request by ID.
-   *
    * Retrieve detailed information about a specific order cancellation request
    * using its unique identifier.
    *
@@ -91,9 +87,6 @@ export class ShoppingmallAdminOrdercancellationsController {
   }
 
   /**
-   * Delete an individual order cancellation request by ID in the shopping mall
-   * system.
-   *
    * Permanently deletes a single order cancellation request. The request is
    * identified by its unique UUID `orderCancellationId`.
    *

@@ -12,9 +12,10 @@ erDiagram
 "todo_list_users" {
   String id PK
   String email UK
-  String password_hash
+  String password
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 "todo_list_user_sessions" {
   String id PK
@@ -30,73 +31,68 @@ erDiagram
 
 ### `todo_list_users`
 
-Registered user accounts for the Todo List application.
+Authenticated users of the Todo List application.
 
-Represents individual users who may register, authenticate, and securely
-manage their own todo items. Each user is uniquely identified by a
-system-generated UUID and a distinct email address. Users are the
-exclusive owners of all todo items they create, with no concept of
-delegation or impersonation. Passwords are securely hashed to prevent
-credential exposure. There is no support for multiple user roles,
-administrative access, or cross-user operations—each user is fully
-isolated. Email addresses must be unique among all users. All
-authentication and access permissions in the system are managed
-exclusively through this table.
+This table stores the core identity information for users who can
+authenticate and manage their todo items. Each user is identified by a
+unique email address and has a securely hashed password for
+authentication. The system supports standard member privileges for all
+users, with no differentiation between user types.
 
-This model forms the root for all ownership, authentication, and
-permission structures in the system.
+Users must register with a valid email and strong password before they
+can access the todo management features. Passwords are stored as securely
+hashed values using industry-standard algorithms, never in plain text.
+
+The user's account status is maintained through the deleted_at field,
+allowing for soft deletion and account recovery if needed. All timestamps
+track important lifecycle events including account creation and last
+update times.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address used for authentication and identification. Must be
-  > unique among all users and verified before granting access. Used as the
-  > primary login credential.
-- `password_hash`
-  > Securely hashed password for authentication. Plaintext passwords are
-  > never stored. Only the cryptographically hashed value is persisted for
-  > verification.
-- `created_at`
-  > Timestamp recording when the user account was created. Set automatically
-  > at registration.
-- `updated_at`
-  > Timestamp of the most recent update to the user's account details. Used
-  > for audit and concurrency control.
+  > Unique email address used for user authentication. Must be a valid email
+  > format and is case-insensitive for login purposes.
+- `password`
+  > Securely hashed password for user authentication. Stored using bcrypt or
+  > equivalent industry-standard hashing algorithm with appropriate salt and
+  > minimum 12 rounds.
+- `created_at`: Timestamp when the user account was created.
+- `updated_at`: Timestamp when the user account was last modified.
+- `deleted_at`
+  > Timestamp when the user account was soft deleted. NULL indicates an
+  > active account.
 
 ### `todo_list_user_sessions`
 
-Authentication sessions for tracking user login events and access history.
+Authentication sessions for Todo List users.
 
-Enables secure management of each user's authentication sessions, storing
-the association between sessions and their owning users. Each session
-includes metadata on client IP, accessed URL, referring URL, and temporal
-fields that mark login and expiry time. Used for audit logging,
-concurrent session control, and security analytics. Session records are
-referenced during JWT or token validation and for enforcing
-single/multiple session policies as required.
+This table tracks active user sessions to maintain authentication state
+across requests. Each session is associated with exactly one user and
+contains connection context information for security auditing purposes.
 
-All session records are linked to their respective users for full
-auditability. Sessions are subsidiary to users and hold no independent
-business identity apart from their owning account.
+Sessions are created when a user successfully authenticates and are used
+to validate subsequent requests without requiring re-authentication. The
+session records include IP address, connection URL, and referrer
+information to help with security monitoring and fraud detection.
+
+Sessions can be explicitly expired by setting the expired_at field,
+allowing for forced logout capabilities. The temporal fields track when
+sessions were created and when they ended, providing an audit trail of
+user access patterns.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_user_id`
-  > Reference to the authenticated user who owns this session. {@link
-  > todo_list_users.id}.
-- `ip`: IP address from which the session was initiated. Captured at login.
-- `href`
-  > URL of the page or client context where the session was started. Used for
-  > logging session entry point.
-- `referrer`
-  > URL that referred the user to the login/session creation page. For audit
-  > and analytics.
-- `created_at`: Timestamp marking when the session was established.
+- `todo_list_user_id`: The user associated with this session. [todo_list_users.id](#todo_list_users).
+- `ip`: IP address from which the session was initiated.
+- `href`: Connection URL when the session was created.
+- `referrer`: Referrer URL that led to the session creation.
+- `created_at`: Timestamp when the session was created.
 - `expired_at`
-  > Timestamp marking when the session became inactive or expired. Nullable
-  > to allow for active sessions.
+  > Timestamp when the session was explicitly expired. NULL indicates an
+  > active session.
 
 ## Todos
 
@@ -104,46 +100,65 @@ Properties as follows:
 erDiagram
 "todo_list_todos" {
   String id PK
-  String user_id FK
+  String todo_list_user_id FK
   String title
   String description "nullable"
   Boolean completed
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 ```
 
 ### `todo_list_todos`
 
-Represents a single todo item owned and managed by an authenticated user.
+Todo items created by authenticated users.
 
-Each row stores a unique, user-owned task with a required, non-empty
-title (up to 255 characters), an optional description (up to 1000
-characters), and a boolean indicating completion. Timestamps for creation
-and last update track lifecycle changes; no soft deletion or history is
-recorded, as per business requirements.
+This table stores individual task items that users create to track their
+personal activities and responsibilities. Each todo item is associated
+with exactly one user who owns and manages it. The table maintains both
+the current state of the task and timestamps for audit purposes.
 
-Every todo must belong to an existing user in the system, enforced via a
-mandatory foreign key (user_id) reference to the identity component. Only
-the owning user can access, update, or delete this row. All fields follow
-strict normalization and privacy guarantees—no other business entities,
-roles, or polymorphic ownership structures exist. This model represents
-the entirety of domain-scope CRUD operations for the MVP.
+Todos can be in either a pending or completed state, which is tracked in
+the completed field. Users can update task details including the title
+and completion status at any time. The system automatically maintains
+creation and modification timestamps.
+
+The relationship to users is strictly enforced with a foreign key
+constraint ensuring data integrity. Each todo item can only belong to one
+user, and users can have multiple todo items.
+
+For performance optimization, the table includes appropriate indexes to
+support common query patterns such as retrieving a user's todo items and
+filtering by completion status. Soft deletion is supported through the
+deleted_at field to maintain audit trails while allowing content
+management.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `user_id`
-  > The owner of this todo. References the primary key of the authenticated
-  > user. [todo_list_users.id](#todo_list_users).
+- `todo_list_user_id`: The user who owns this todo item. [todo_list_users.id](#todo_list_users).
 - `title`
-  > The title of the todo item. Required and limited to 255 characters. Must
-  > not be blank.
+  > The descriptive text of the task to be completed. This field contains the
+  > main content of the todo item that describes what needs to be done.
+  > Maximum length is 255 characters to ensure concise task descriptions.
 - `description`
-  > Optional description for the todo item. Limited to 1000 characters if
-  > provided.
-- `completed`: Completion status of the todo. True when marked complete, false otherwise.
+  > Optional detailed description providing additional context or information
+  > about the task. This field allows users to add more comprehensive
+  > information beyond the title. Maximum length is 1000 characters.
+- `completed`
+  > Status indicator showing whether the task has been completed. True
+  > indicates the task is completed, false indicates it is still pending.
+  > This field supports the core functionality of the todo application.
 - `created_at`
-  > Timestamp of todo creation (set automatically when the todo is first
-  > created).
-- `updated_at`: Timestamp of last modification of the todo (updated on each change).
+  > Timestamp when the todo item was initially created. This field provides
+  > an audit trail of when tasks were added to the system and supports
+  > ordering of tasks by creation time.
+- `updated_at`
+  > Timestamp when the todo item was last modified. This field automatically
+  > updates whenever any changes are made to the task, providing an audit
+  > trail of modifications.
+- `deleted_at`
+  > Timestamp when the todo item was soft deleted. NULL indicates an active
+  > item. This field is essential for content recovery and maintaining audit
+  > trails without permanently removing data.

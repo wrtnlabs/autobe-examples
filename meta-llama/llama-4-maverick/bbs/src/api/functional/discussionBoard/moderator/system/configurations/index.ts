@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardConfiguration } from "../../../../../structures/IDiscussionBoardConfiguration";
 
 /**
- * Update discussion board configurations.
- *
  * Modify system configuration settings using a patch operation. This allows for
  * updating specific configuration values while leaving other settings
  * unchanged. The request body should contain the configuration fields to be

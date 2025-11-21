@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityMembership } from "../../../../../structures/ICommunityPlatformCommunityMembership";
 
 /**
- * Update a community membership (community_platform_community_memberships
- * table).
- *
  * Edit the status, audit information, or soft-delete flag of an existing
  * community membership record. This operation is used by authorized moderators
  * or platform administrators when a member's status needs to be changed (e.g.,
@@ -124,9 +121,6 @@ export namespace update {
 }
 
 /**
- * Delete (remove or soft-delete) a community membership
- * (community_platform_community_memberships table).
- *
  * Delete (by removing or marking as deleted) a user's membership from the
  * specified community. Administrators and community moderators use this
  * endpoint to enforce moderation policies, respond to user requests, or manage

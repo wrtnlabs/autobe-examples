@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Register new guest session for anonymous browsing access to discussion board
- * content.
- *
  * Creates a new guest session for unauthenticated visitors to browse the
  * discussion board with read-only access to public content.
  *
@@ -133,9 +130,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest JWT tokens to extend browsing session and maintain read-only
- * access.
- *
  * Refreshes JWT access tokens for guest users to maintain continuous browsing
  * sessions and read-only access to discussion board content.
  *

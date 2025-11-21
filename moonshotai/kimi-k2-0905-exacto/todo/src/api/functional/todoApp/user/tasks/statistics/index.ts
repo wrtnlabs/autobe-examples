@@ -5,8 +5,6 @@ import typia from "typia";
 import { ITodoAppTaskStatistics } from "../../../../../structures/ITodoAppTaskStatistics";
 
 /**
- * Retrieve task statistics and analytics.
- *
  * Retrieve comprehensive task statistics and analytics for the authenticated
  * user's todo list. This operation provides detailed insights into task
  * management patterns including overall task counts, completion rates, priority

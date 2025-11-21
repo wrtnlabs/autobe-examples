@@ -7,9 +7,6 @@ import { IShoppingMallSellerOverviewDashboard } from "../../../../../api/structu
 @Controller("/shoppingMall/seller/dashboard/sellerOverview")
 export class ShoppingmallSellerDashboardSelleroverviewController {
   /**
-   * Get a consolidated seller overview dashboard aggregating data from
-   * ShoppingMall seller-related tables.
-   *
    * Retrieve a consolidated seller dashboard overview aggregating KPIs and
    * status summaries from multiple ShoppingMall domain tables.
    *

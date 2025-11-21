@@ -13,9 +13,6 @@ import { ICommunityPlatformModerationActionOfModerator } from "../../../../../ap
 )
 export class CommunityplatformModeratorModerationactionsModeratoractionController {
   /**
-   * Create a moderator-specific moderation action record
-   * (community_platform_moderation_action_of_moderators).
-   *
    * Create a new moderator-specific record for a moderation action performed by
    * a community moderator.
    *
@@ -70,9 +67,6 @@ export class CommunityplatformModeratorModerationactionsModeratoractionControlle
   }
 
   /**
-   * Update moderator-specific moderation action record
-   * (community_platform_moderation_action_of_moderators).
-   *
    * Update an existing moderator-specific moderation action record associated
    * with a particular moderation action.
    *

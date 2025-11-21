@@ -1,541 +1,325 @@
-# User Actors and Authentication Requirements
+# User Actors and Authentication Requirements Document
 
-## 1. Introduction and Business Context
+## Executive Summary
 
-This document defines the complete authentication system and user actor structure for the e-commerce shopping mall platform. The authentication system provides secure access control for customers, sellers, and administrators, enabling appropriate permissions and capabilities based on user roles. This system serves as the foundation for all platform interactions and ensures secure, role-based access to platform features.
+This document defines the comprehensive authentication and authorization framework for the shoppingMall e-commerce platform. The system supports three primary user actors: customers, sellers, and administrators, each with distinct permissions and capabilities. The authentication system ensures secure access control while providing seamless user experience across all platform functionalities.
 
-## 2. Comprehensive User Actor Definitions
+## User Actor Definitions
 
-### 2.1 Customer Actor
-
-**Role Definition**: Registered customers who browse products, make purchases, and manage their shopping experience.
-
-**Business Capabilities**:
-- Browse product catalog and search for items with advanced filtering
-- Add products to shopping cart and manage quantities
-- Create and manage multiple wishlists with sharing capabilities
-- Place orders and process payments through secure gateways
-- Track order status and shipping information in real-time
-- Manage personal profile information and contact details
-- Maintain address book with multiple shipping and billing addresses
-- Write product reviews and ratings for purchased items
-- View comprehensive order history with filtering options
-- Request order cancellations and refunds within policy guidelines
-- Manage payment methods with secure tokenization
-- Configure communication preferences and notification settings
-
-**Authentication Requirements**:
-- WHEN a customer registers, THE system SHALL require email verification before account activation
-- WHERE customers provide passwords, THE system SHALL enforce minimum 8-character complexity
-- WHEN customers forget passwords, THE system SHALL provide secure reset functionality
-- THE system SHALL maintain session security with automatic logout after 30 minutes inactivity
-
-### 2.2 Seller Actor
-
-**Role Definition**: Business sellers who manage product catalogs, inventory, and order fulfillment operations.
+### Customer Actor
+**Role**: Standard platform user with purchasing capabilities
 
 **Business Capabilities**:
-- Create and manage comprehensive product listings with variants
-- Set product pricing, inventory levels, and availability status
-- Process customer orders and manage fulfillment workflows
-- Generate shipping labels and track order deliveries
-- Monitor sales analytics and performance metrics
-- Manage business profile and storefront configuration
-- Handle customer inquiries and provide seller support
-- Configure shipping options and delivery timeframes
-- Manage product categories and catalog organization
-- Process returns and refund requests according to policy
-- Access sales reports and business intelligence dashboards
-- Manage multiple staff accounts with role-based permissions
+- Browse and search product catalog
+- Add items to shopping cart
+- Place orders and make payments
+- Track order status and history
+- Manage personal profile and preferences
+- Create and manage wishlists
+- Save shipping addresses and payment methods
+- Write product reviews and ratings
 
 **Authentication Requirements**:
-- WHEN sellers register, THE system SHALL require business verification and documentation
-- WHERE sellers access sensitive business data, THE system SHALL enforce enhanced security
-- THE system SHALL support multi-user access with permission hierarchies
-- WHEN suspicious activity is detected, THE system SHALL trigger security reviews
+- Self-service registration with email verification
+- Standard login with email/password
+- Password recovery functionality
+- Session management with automatic logout
 
-### 2.3 Admin Actor
-
-**Role Definition**: System administrators with full platform management and oversight capabilities.
+### Seller Actor
+**Role**: Product provider with inventory management capabilities
 
 **Business Capabilities**:
-- Manage all user accounts including customers, sellers, and administrative staff
-- Oversee product catalog content moderation and quality control
-- Monitor platform performance metrics and system health indicators
-- Configure system settings and integration parameters
-- Generate comprehensive analytics reports and business insights
-- Handle escalated customer service issues and dispute resolution
-- Manage platform security policies and compliance requirements
-- Oversee payment processing and financial reconciliation
-- Monitor seller performance and platform policy enforcement
-- Manage platform promotions and marketing campaigns
-- Access system logs and audit trails for security monitoring
-- Configure tax settings and regional compliance requirements
+- Create and manage product listings
+- Update inventory levels and pricing
+- Process customer orders
+- Generate sales reports and analytics
+- Manage seller profile and store information
+- Communicate with customers regarding orders
+- Handle returns and refund requests
 
 **Authentication Requirements**:
-- WHEN admin accounts are created, THE system SHALL require multi-factor authentication
-- WHERE administrative functions are accessed, THE system SHALL log all activities
-- THE system SHALL enforce strict session timeout policies for admin accounts
-- WHEN security breaches occur, THE system SHALL implement immediate access revocation
+- Seller registration with business verification
+- Enhanced security for financial operations
+- Multi-factor authentication for sensitive actions
+- Role-based access for team members
 
-## 3. Complete Authentication System Requirements
+### Admin Actor
+**Role**: Platform administrator with full system control
 
-### 3.1 User Registration Process
+**Business Capabilities**:
+- Manage all user accounts (customers, sellers, administrators)
+- Oversee product catalog and content moderation
+- Monitor and manage platform orders
+- Configure system settings and policies
+- Generate platform-wide analytics and reports
+- Handle escalated customer service issues
+- Manage payment gateway configurations
 
-**WHEN** a new user attempts to register, **THE** system **SHALL**:
-- Validate email format and check for existing accounts
-- Enforce password complexity requirements (minimum 8 characters with uppercase, lowercase, numbers)
-- Send verification email with secure token expiration
-- Create account in pending verification status
-- Log registration attempt for security monitoring
+**Authentication Requirements**:
+- Administrative registration requires super-admin approval
+- Strict multi-factor authentication
+- Session timeout with automatic re-authentication for sensitive operations
+- Audit logging for all administrative actions
 
-**WHERE** business sellers register, **THE** system **SHALL**:
-- Collect comprehensive business information including tax identification
-- Require business verification documents upload
-- Route registration for administrative approval
-- Provide status tracking during verification process
-- Notify sellers of approval/rejection with detailed reasons
+## Authentication System Requirements
 
-### 3.2 User Login Authentication
+### Core Authentication Functions
 
-**WHEN** valid credentials are provided, **THE** system **SHALL**:
-- Authenticate user against stored credentials using secure hashing
-- Generate JWT access token with appropriate role permissions
-- Establish secure session with httpOnly cookies
-- Log successful login with timestamp and IP address
-- Update user's last login timestamp
+**User Registration**:
+- WHEN a new user attempts to register, THE system SHALL validate email format and uniqueness
+- THE system SHALL require email verification before account activation
+- WHERE registration is for seller accounts, THE system SHALL require business verification
+- WHERE registration is for admin accounts, THE system SHALL require approval from existing administrators
 
-**WHEN** invalid credentials are provided, **THE** system **SHALL**:
-- Return authentication error without revealing specific failure reason
-- Increment failed login attempt counter
-- Implement account lockout after 5 consecutive failed attempts
-- Send security notification if suspicious pattern detected
+**User Login**:
+- WHEN a user provides login credentials, THE system SHALL validate and authenticate within 2 seconds
+- THE system SHALL implement secure password hashing using bcrypt algorithm
+- IF login attempts exceed 5 within 10 minutes, THEN THE system SHALL temporarily lock the account
+- THE system SHALL maintain user sessions with secure token management
 
-### 3.3 Password Management System
+**Password Management**:
+- WHEN a user requests password reset, THE system SHALL send secure reset link to registered email
+- THE system SHALL enforce password complexity requirements (minimum 8 characters, including uppercase, lowercase, numbers, and special characters)
+- THE system SHALL prevent password reuse from last 5 passwords
+- WHERE password change is requested, THE system SHALL require current password verification
 
-**THE** system **SHALL** enforce the following password policies:
-- Minimum 8 character length with complexity requirements
-- Password history prevention (cannot reuse last 5 passwords)
-- Regular password expiration (90-day rotation recommended)
-- Secure password reset functionality with time-limited tokens
-- Password strength indicator during creation/update
+**Session Management**:
+- THE user session SHALL expire after 30 minutes of inactivity
+- THE system SHALL provide secure logout functionality that invalidates all tokens
+- WHERE sensitive operations are performed, THE system SHALL require re-authentication
+- THE system SHALL support concurrent sessions across multiple devices
 
-### 3.4 Session Management Requirements
-
-**THE** system **SHALL** implement comprehensive session management:
-- JWT access tokens with 30-minute expiration
-- Refresh tokens with 7-day expiration for persistent sessions
-- Secure token storage using httpOnly cookies
-- Session termination capability from all devices
-- Concurrent session support with device tracking
-- Automatic logout after 30 minutes of inactivity
-
-## 4. Detailed Permission Matrices
-
-### 4.1 Customer Permission Matrix
-
-| Operation | Permission Level | Constraints |
-|-----------|------------------|-------------|
-| Browse Products | Full Access | Public content only |
-| Search Products | Full Access | Apply seller filters |
-| Add to Cart | Authenticated Only | Inventory validation |
-| Place Orders | Authenticated Only | Payment verification |
-| View Order History | Owner Only | Personal orders only |
-| Write Reviews | Purchase Verified | After delivery completion |
-| Manage Addresses | Owner Only | Maximum 10 addresses |
-| Update Profile | Owner Only | Email verification required |
-
-### 4.2 Seller Permission Matrix
-
-| Operation | Permission Level | Constraints |
-|-----------|------------------|-------------|
-| Manage Products | Seller Owned | Approval required for new listings |
-| View Sales Analytics | Seller Specific | Own products only |
-| Process Orders | Seller Specific | Own product orders only |
-| Update Inventory | Seller Specific | Real-time validation |
-| Manage Store Settings | Seller Admin | Business verification required |
-| Access Payment Reports | Seller Specific | Payout cycle constraints |
-| Manage Staff Accounts | Seller Admin | Role-based permissions |
-
-### 4.3 Admin Permission Matrix
-
-| Operation | Permission Level | Constraints |
-|-----------|------------------|-------------|
-| User Management | Full Access | Audit logging required |
-| System Configuration | Full Access | Change approval process |
-| Content Moderation | Full Access | Policy compliance checking |
-| Financial Oversight | Full Access | Dual authorization for payments |
-| Security Monitoring | Full Access | Real-time alerting |
-| Platform Analytics | Full Access | Data privacy compliance |
-| API Management | Full Access | Rate limiting enforcement |
-
-## 5. Step-by-Step Authentication Flows
-
-### 5.1 Customer Registration Flow
-
-```mermaid
-graph TD
-    A["Customer Accesses Registration"] --> B["Enter Email and Password"]
-    B --> C["Complete Profile Information"]
-    C --> D{"Validate All Inputs"}
-    D -->|"Validation Failed"| E["Display Specific Errors"]
-    D -->|"Validation Passed"| F["Create Pending Account"]
-    F --> G["Send Verification Email"]
-    G --> H["Customer Checks Email"]
-    H --> I["Click Verification Link"]
-    I --> J{"Verify Token Validity"}
-    J -->|"Valid"| K["Activate Customer Account"]
-    J -->|"Invalid"| L["Show Error and Offer Resend"]
-    K --> M["Redirect to Login Page"]
-    L --> G
-    E --> B
-```
-
-### 5.2 Seller Registration and Approval Flow
-
-```mermaid
-graph TD
-    A["Seller Registration Start"] --> B["Submit Business Information"]
-    B --> C["Upload Verification Documents"]
-    C --> D["Complete Business Profile"]
-    D --> E{"Validate Business Data"}
-    E -->|"Validation Failed"| F["Request Corrections"]
-    E -->|"Validation Passed"| G["Create Pending Seller Account"]
-    G --> H["Route for Admin Review"]
-    H --> I["Admin Reviews Application"]
-    I --> J{"Approval Decision"}
-    J -->|"Approved"| K["Activate Seller Account"]
-    J -->|"Rejected"| L["Notify Seller with Reason"]
-    J -->|"More Info Needed"| M["Request Additional Documentation"]
-    K --> N["Seller Can Access Dashboard"]
-    L --> O["Provide Appeal Process"]
-    M --> C
-    F --> B
-```
-
-### 5.3 User Login Authentication Flow
-
-```mermaid
-graph TD
-    A["User Login Attempt"] --> B["Enter Email/Password"]
-    B --> C{"Validate Credentials"}
-    C -->|"Invalid"| D["Increment Failed Attempts"]
-    D --> E{"5+ Failed Attempts?"}
-    E -->|"Yes"| F["Lock Account Temporarily"]
-    E -->|"No"| G["Show Authentication Error"]
-    C -->|"Valid"| H{"Account Active?"}
-    H -->|"No"| I["Show Account Status Message"]
-    H -->|"Yes"| J["Generate JWT Tokens"]
-    J --> K["Establish User Session"]
-    K --> L["Redirect to Appropriate Dashboard"]
-    F --> M["Send Security Alert"]
-    M --> G
-```
-
-### 5.4 Password Reset Flow
-
-```mermaid
-graph TD
-    A["Password Reset Request"] --> B["Enter Registered Email"]
-    B --> C{"Email Exists?"}
-    C -->|"No"| D["Show Generic Success Message"]
-    C -->|"Yes"| E["Generate Reset Token"]
-    E --> F["Send Reset Email"]
-    F --> G["User Clicks Reset Link"]
-    G --> H{"Validate Reset Token"}
-    H -->|"Invalid"| I["Show Error Message"]
-    H -->|"Valid"| J["Display Password Reset Form"]
-    J --> K["Enter New Password"]
-    K --> L{"Meet Complexity Rules?"}
-    L -->|"No"| M["Show Password Requirements"]
-    L -->|"Yes"| N["Update Password Hash"]
-    N --> O["Invalidate All Active Sessions"]
-    O --> P["Send Confirmation Email"]
-    P --> Q["Redirect to Login Page"]
-    M --> K
-```
-
-## 6. Comprehensive Session Management
-
-### 6.1 JWT Token Strategy
-
-**Access Token Specifications**:
-- Algorithm: HS256 with secure secret key
-- Expiration: 30 minutes from issuance
-- Payload: User ID, role, permissions, issue timestamp
-- Storage: httpOnly cookie with secure flags
-
-**Refresh Token Specifications**:
-- Expiration: 7 days from issuance
-- Storage: Secure server-side with user association
-- Usage: Single-use for access token refresh
-- Rotation: New refresh token issued on each use
-
-### 6.2 Token Refresh Flow
+### Authentication Flow Requirements
 
 ```mermaid
 graph LR
-    A["Access Token Expired"] --> B["Send Refresh Request"]
-    B --> C{"Validate Refresh Token"}
-    C -->|"Valid"| D["Issue New Access Token"]
-    C -->|"Invalid"| E["Require Re-authentication"]
-    D --> F["Continue User Session"]
-    E --> G["Redirect to Login Page"]
+  A["User Registration Flow"] --> B["Email Verification Required"]
+  B --> C["Account Activation Complete"]
+  C --> D["User Login Available"]
+  
+  E["User Login Flow"] --> F["Credential Validation"]
+  F --> G{"Credentials Valid?"}
+  G -->|"Yes"| H["Generate JWT Token"]
+  G -->|"No"| I["Show Error Message"]
+  H --> J["Establish Secure Session"]
+  
+  K["Password Reset Flow"] --> L["Request Reset Link"]
+  L --> M["Email Sent with Secure Token"]
+  M --> N["User Clicks Reset Link"]
+  N --> O["Validate Reset Token"]
+  O --> P{"Token Valid?"}
+  P -->|"Yes"| Q["Allow Password Change"]
+  P -->|"No"| R["Show Invalid Token Error"]
 ```
 
-### 6.3 Concurrent Session Management
+## Permission Matrix and Access Control
 
-**THE** system **SHALL** support multiple concurrent sessions per user with:
-- Device tracking and session management
-- Ability to view active sessions from security settings
-- Remote session termination capability
-- Session activity logging for security monitoring
+### Customer Permissions Matrix
 
-## 7. Detailed Security Protocols
+| Action | Customer | Seller | Admin |
+|--------|----------|--------|-------|
+| Browse products | ✅ | ✅ | ✅ |
+| Search products | ✅ | ✅ | ✅ |
+| Add to cart | ✅ | ❌ | ❌ |
+| Place orders | ✅ | ❌ | ❌ |
+| View own orders | ✅ | ❌ | ❌ |
+| Write reviews | ✅ | ❌ | ❌ |
+| Manage profile | ✅ | ✅ | ✅ |
 
-### 7.1 Password Security Requirements
+### Seller Permissions Matrix
 
-**Password Storage**:
-- THE system SHALL use bcrypt with work factor 12 for password hashing
-- WHEN passwords are stored, THE system SHALL use salt per user
-- THE system SHALL never log or display passwords in clear text
+| Action | Customer | Seller | Admin |
+|--------|----------|--------|-------|
+| Create product listings | ❌ | ✅ | ✅ |
+| Update inventory | ❌ | ✅ | ✅ |
+| Manage own products | ❌ | ✅ | ✅ |
+| Process orders | ❌ | ✅ | ✅ |
+| View sales analytics | ❌ | ✅ | ✅ |
+| Manage seller profile | ❌ | ✅ | ✅ |
 
-**Password Policy Enforcement**:
-- Minimum length: 8 characters
-- Complexity: At least one uppercase, one lowercase, one number
-- History: Prevent reuse of last 5 passwords
-- Expiration: Recommend change every 90 days
-- Strength: Implement real-time strength indicator
+### Admin Permissions Matrix
 
-### 7.2 Account Security Features
+| Action | Customer | Seller | Admin |
+|--------|----------|--------|-------|
+| Manage all users | ❌ | ❌ | ✅ |
+| Manage all products | ❌ | ❌ | ✅ |
+| View all orders | ❌ | ❌ | ✅ |
+| System configuration | ❌ | ❌ | ✅ |
+| Platform analytics | ❌ | ❌ | ✅ |
+| Content moderation | ❌ | ❌ | ✅ |
 
-**Security Monitoring**:
-- THE system SHALL log all authentication attempts with IP and timestamp
-- WHEN new device logs in, THE system SHALL send notification email
-- WHERE suspicious patterns detected, THE system SHALL require additional verification
+## JWT Token Management
 
-**Account Protection**:
-- THE system SHALL implement account lockout after 5 failed attempts
-- WHEN account locked, THE system SHALL require admin unlock or time delay
-- THE system SHALL support voluntary account freezing for security concerns
+### Token Structure Requirements
 
-### 7.3 Data Protection Compliance
-
-**GDPR Compliance**:
-- THE system SHALL provide data export functionality
-- WHEN accounts deleted, THE system SHALL anonymize personal data
-- THE system SHALL obtain explicit consent for data processing
-
-**PCI DSS Compliance**:
-- THE system SHALL never store sensitive payment information
-- WHEN handling payment data, THE system SHALL use tokenization
-- THE system SHALL maintain secure audit trails for financial transactions
-
-## 8. Complete JWT Token Specifications
-
-### 8.1 Customer JWT Payload Structure
-
+**Access Token Payload**:
 ```json
 {
-  "userId": "c7d8e9f0-a1b2-c3d4-e5f6-a7b8c9d0e1f2",
-  "email": "customer@example.com",
-  "role": "customer",
-  "permissions": [
-    "browse:products",
-    "purchase:orders", 
-    "manage:profile",
-    "write:reviews",
-    "view:order_history"
-  ],
-  "accountStatus": "active",
-  "emailVerified": true,
-  "lastLogin": "2024-01-15T10:30:00Z",
-  "iat": 1705300200,
-  "exp": 1705302000
+  "userId": "uuid-string",
+  "email": "user@example.com",
+  "role": "customer|seller|admin",
+  "permissions": ["array-of-specific-permissions"],
+  "iat": 1234567890,
+  "exp": 1234567890
 }
 ```
 
-### 8.2 Seller JWT Payload Structure
+**Refresh Token Requirements**:
+- THE refresh token SHALL have longer expiration (7 days)
+- THE system SHALL store refresh tokens securely with user association
+- WHEN access token expires, THE system SHALL use refresh token to generate new access token
+- WHERE refresh token is compromised, THE system SHALL invalidate all associated tokens
 
-```json
-{
-  "userId": "d8e9f0a1-b2c3-d4e5-f6a7-b8c9d0e1f2a3",
-  "email": "seller@business.com",
-  "role": "seller",
-  "businessId": "b9c8d7e6-f5a4-b3c2-d1e0-f9e8d7c6b5a4",
-  "permissions": [
-    "browse:products",
-    "purchase:orders",
-    "manage:profile", 
-    "write:reviews",
-    "view:order_history",
-    "manage:products",
-    "process:orders",
-    "view:analytics",
-    "manage:inventory"
-  ],
-  "storeStatus": "verified",
-  "subscriptionTier": "professional",
-  "iat": 1705300200,
-  "exp": 1705302000
-}
-```
+### Token Security Specifications
+- THE JWT secret key SHALL be at least 256 bits
+- THE system SHALL rotate JWT secrets periodically
+- THE system SHALL implement token blacklisting for logged-out users
+- WHERE token theft is detected, THE system SHALL immediately revoke all tokens
 
-### 8.3 Admin JWT Payload Structure
+## Security Requirements
 
-```json
-{
-  "userId": "e9f0a1b2-c3d4-e5f6-a7b8-c9d0e1f2a3b4",
-  "email": "admin@platform.com",
-  "role": "admin",
-  "permissions": [
-    "browse:products",
-    "purchase:orders",
-    "manage:profile",
-    "write:reviews",
-    "view:order_history",
-    "manage:products",
-    "process:orders",
-    "view:analytics",
-    "manage:inventory",
-    "manage:users",
-    "system:config",
-    "content:moderate",
-    "financial:oversight"
-  ],
-  "adminLevel": "super",
-  "mfaEnabled": true,
-  "lastSecurityReview": "2024-01-01T00:00:00Z",
-  "iat": 1705300200,
-  "exp": 1705302000
-}
-```
+### Authentication Security
+- THE system SHALL enforce HTTPS for all authentication requests
+- THE system SHALL implement rate limiting on login attempts
+- THE system SHALL use secure cookies with HttpOnly and Secure flags
+- WHERE sensitive data is transmitted, THE system SHALL use encryption
 
-## 9. Comprehensive Error Handling
+### Authorization Security
+- THE system SHALL validate user permissions on every API request
+- THE system SHALL implement role-based access control (RBAC)
+- THE system SHALL log all authorization attempts and failures
+- WHERE permission escalation is attempted, THE system SHALL deny access and log the event
 
-### 9.1 Authentication Error Scenarios
+### Data Protection
+- THE system SHALL encrypt sensitive user data at rest
+- THE system SHALL implement data minimization principles
+- THE system SHALL provide data export and deletion capabilities
+- WHERE GDPR compliance is required, THE system SHALL implement appropriate controls
+
+## Error Handling and Recovery
+
+### Authentication Error Scenarios
 
 **Invalid Credentials**:
-- WHEN invalid credentials provided, THE system SHALL return HTTP 401 Unauthorized
-- THE error response SHALL include generic message: "Invalid email or password"
-- THE system SHALL increment failed attempt counter for security monitoring
+- WHEN login credentials are invalid, THE system SHALL return HTTP 401 with error code "INVALID_CREDENTIALS"
+- THE system SHALL increment failed login counter
+- IF failed attempts exceed threshold, THEN THE system SHALL lock account temporarily
 
 **Account Locked**:
-- WHEN account is temporarily locked, THE system SHALL return HTTP 423 Locked
-- THE error response SHALL indicate lock duration and unlock procedure
-- THE system SHALL log lock event for security analysis
-
-**Email Not Verified**:
-- WHEN unverified account attempts login, THE system SHALL return HTTP 403 Forbidden
-- THE error response SHALL provide option to resend verification email
-- THE system SHALL track verification request frequency
-
-### 9.2 Token Management Errors
+- WHEN account is locked due to excessive failed attempts, THE system SHALL return HTTP 423 with error code "ACCOUNT_LOCKED"
+- THE system SHALL provide unlock instructions via email
+- THE lock SHALL automatically expire after 30 minutes
 
 **Token Expired**:
-- WHEN expired token used, THE system SHALL return HTTP 401 with "token_expired"
-- THE client SHALL automatically attempt token refresh
-- IF refresh fails, THE system SHALL require re-authentication
+- WHEN JWT token expires, THE system SHALL return HTTP 401 with error code "TOKEN_EXPIRED"
+- THE client SHALL use refresh token to obtain new access token
+- IF refresh token is also expired, THEN THE user SHALL be required to login again
 
-**Invalid Token**:
-- WHEN malformed token provided, THE system SHALL return HTTP 401 with "invalid_token"
-- THE system SHALL log token validation failures for security monitoring
-- THE client SHALL clear stored tokens and redirect to login
+### Recovery Processes
 
-### 9.3 Permission Denied Errors
+**Password Recovery**:
+- WHEN password reset is requested, THE system SHALL generate secure token with 1-hour expiration
+- THE reset email SHALL contain clear instructions and security warnings
+- WHERE reset token is used, THE system SHALL invalidate it immediately
 
-**Insufficient Permissions**:
-- WHEN user lacks required permissions, THE system SHALL return HTTP 403 Forbidden
-- THE error response SHALL indicate required permission level
-- THE system SHALL log permission denial for audit purposes
+**Account Recovery**:
+- WHEN account access is lost, THE system SHALL provide email-based recovery
+- THE recovery process SHALL require identity verification
+- WHERE suspicious activity is detected, THE system SHALL require additional verification
 
-## 10. Integration Requirements
+## Integration Guidelines
 
-### 10.1 External Authentication Providers
+### API Authentication Integration
+- ALL API endpoints SHALL require valid JWT token in Authorization header
+- THE system SHALL validate token signature and expiration on every request
+- WHERE role-based access is required, THE system SHALL check user permissions
 
-**Social Login Integration**:
-- THE system SHALL support OAuth2 integration with Google, Facebook, Apple
-- WHEN social login used, THE system SHALL create local account mapping
-- THE system SHALL handle account linking and unlinking procedures
+### Frontend Integration Requirements
+- THE frontend SHALL store JWT tokens securely (localStorage or httpOnly cookies)
+- THE frontend SHALL handle token expiration and refresh automatically
+- WHERE authentication fails, THE frontend SHALL redirect to login page
 
-**Enterprise SSO Integration**:
-- WHERE enterprise customers require, THE system SHALL support SAML 2.0
-- THE system SHALL maintain proper certificate management
-- THE system SHALL handle SSO session synchronization
+### Third-Party Integration
+- WHERE third-party authentication is supported, THE system SHALL implement OAuth 2.0
+- THE system SHALL map third-party identities to internal user accounts
+- WHERE social login is used, THE system SHALL collect necessary permissions
 
-### 10.2 Multi-Factor Authentication
+## Performance Requirements
 
-**MFA Implementation**:
-- FOR admin accounts, THE system SHALL require multi-factor authentication
-- THE system SHALL support TOTP (Time-based One-Time Password)
-- THE system SHALL provide backup codes for recovery scenarios
-- THE system SHALL allow MFA device management
+### Authentication Performance
+- THE login process SHALL complete within 2 seconds under normal load
+- THE token validation SHALL add less than 100ms to API response time
+- THE system SHALL support concurrent authentication of 1000 users per second
 
-**MFA Flow**:
-```mermaid
-graph TD
-    A["User Login"] --> B["Validate Password"]
-    B --> C{"MFA Required?"}
-    C -->|"No"| D["Grant Access"]
-    C -->|"Yes"| E["Prompt for MFA Code"]
-    E --> F{"Validate MFA Code"}
-    F -->|"Valid"| D
-    F -->|"Invalid"| G["Show Error Message"]
-    G --> E
-```
+### Session Management Performance
+- THE session creation SHALL complete within 500ms
+- THE token refresh SHALL complete within 200ms
+- THE system SHALL maintain session state with minimal performance impact
 
-## 11. Performance and Scalability Requirements
+## Compliance Requirements
 
-### 11.1 Authentication Performance
+### Security Standards
+- THE system SHALL comply with OWASP authentication security guidelines
+- THE system SHALL implement PCI DSS requirements for payment-related authentication
+- WHERE personal data is processed, THE system SHALL comply with GDPR
 
-**Response Time Targets**:
-- User authentication: < 500ms response time
-- Token validation: < 100ms processing time
-- Session creation: < 200ms complete workflow
-- Password verification: < 50ms using optimized bcrypt
+### Audit Requirements
+- THE system SHALL log all authentication events
+- THE system SHALL maintain audit trails for 7 years
+- WHERE regulatory compliance is required, THE system SHALL provide audit reports
 
-**Concurrency Support**:
-- THE system SHALL support 10,000 concurrent authentication requests
-- THE system SHALL handle 100 new registrations per minute
-- THE system SHALL process 1,000 password reset requests hourly
+## Business Process Requirements
 
-### 11.2 Scalability Architecture
+### Customer Registration Process
+WHEN a customer initiates registration, THE system SHALL:
+1. Collect email address and validate format
+2. Check email uniqueness against existing accounts
+3. Send verification email with secure token
+4. Upon verification, create user account with customer role
+5. Send welcome email with platform introduction
 
-**Horizontal Scaling**:
-- THE authentication service SHALL support stateless horizontal scaling
-- THE system SHALL use distributed session storage
-- THE system SHALL implement connection pooling for database access
+### Seller Onboarding Process
+WHEN a seller applies for registration, THE system SHALL:
+1. Collect business information and documentation
+2. Verify business legitimacy through validation process
+3. Approve seller account after business verification
+4. Provide seller dashboard access and onboarding resources
+5. Enable product listing capabilities upon approval
 
-**Caching Strategy**:
-- THE system SHALL cache frequently accessed user data
-- THE system SHALL implement token blacklisting for security
-- THE system SHALL use Redis for session storage and caching
+### Admin Account Creation Process
+WHEN creating administrative accounts, THE system SHALL:
+1. Require approval from existing super-admin
+2. Implement strict security vetting process
+3. Assign appropriate permission levels based on responsibilities
+4. Provide comprehensive security training
+5. Enable audit logging for all administrative actions
 
-## 12. Compliance and Regulatory Requirements
+### Multi-Factor Authentication Implementation
+WHERE enhanced security is required, THE system SHALL:
+1. Support SMS-based verification codes
+2. Implement authenticator app integration
+3. Provide backup recovery codes
+4. Allow user-configurable security preferences
+5. Log all MFA attempts for security monitoring
 
-### 12.1 Data Privacy Compliance
+## Authentication Enhancement Features
 
-**GDPR Requirements**:
-- THE system SHALL provide right to erasure functionality
-- WHEN accounts deleted, THE system SHALL anonymize personal data
-- THE system SHALL maintain data processing records
-- THE system SHALL obtain explicit consent for data collection
+### Session Security Enhancements
+- THE system SHALL detect suspicious login patterns and trigger additional verification
+- WHERE login occurs from new device or location, THE system SHALL notify user
+- THE system SHALL provide session management dashboard for users to monitor active sessions
+- WHERE session hijacking is suspected, THE system SHALL allow users to terminate all sessions
 
-**Regional Compliance**:
-- THE system SHALL adapt to regional data protection laws
-- THE system SHALL support data localization requirements
-- THE system SHALL provide compliance reporting capabilities
+### Password Security Features
+- THE system SHALL implement password strength meter during registration
+- THE system SHALL provide password health monitoring and expiration reminders
+- WHERE weak passwords are detected, THE system SHALL require password updates
+- THE system SHALL support password managers through secure integration
 
-### 12.2 Security Standards Compliance
-
-**Industry Standards**:
-- THE system SHALL comply with OWASP authentication guidelines
-- THE system SHALL implement secure password storage practices
-- THE system SHALL follow principle of least privilege for permissions
-
-**Audit Requirements**:
-- THE system SHALL maintain comprehensive audit trails
-- THE system SHALL support security incident investigation
-- THE system SHALL provide compliance reporting tools
+### Account Security Monitoring
+- THE system SHALL monitor for compromised credentials through breach databases
+- WHERE account security risks are detected, THE system SHALL require password reset
+- THE system SHALL provide security notifications for suspicious activities
+- Users SHALL receive regular security summary reports
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

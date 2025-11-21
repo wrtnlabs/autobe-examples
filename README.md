@@ -7,13 +7,13 @@ AI Model | Success | Score | FCSR | Status
 [`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 4 | 100 | 92% | 🟢
 [`openai/gpt-4.1`](#openaigpt-41) | 4 | 100 | 89% | 🟢
 [`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 4 | 100 | 85% | 🟢
+[`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 3 | 95 | 87% | 🟢
+[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 1 | 92.5 | 72% | 🟡
+[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 2 | 90 | 76% | 🟡
 [`openai/gpt-5.1`](#openaigpt-51) | 2 | 90 | 85% | 🟡
-[`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 2 | 77.5 | 82% | 🟡
-[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 1 | 75 | 67% | 🟡
 [`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 1 | 72.5 | 40% | 🟡
-[`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 2 | 65 | 85% | 🟡
-[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 1 | 55 | 59% | 🟡
-[`mistralai/codestral-2508`](#mistralaicodestral-2508) | 1 | 47.5 | 94% | 🟡
+[`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 1 | 57.5 | 51% | 🟡
+[`mistralai/codestral-2508`](#mistralaicodestral-2508) | 1 | 47.5 | 95% | 🟡
 [`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 1 | 47.5 | 96% | 🟡
 [`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 0 | 45 | 77% | 🟡
 [`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 1 | 40 | 95% | 🟡
@@ -259,6 +259,237 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Realize | `functions`: 211 | 17.84M | 38m 53s | 96%
 
 
+## `deepseek/deepseek-v3.1-terminus-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./deepseek/deepseek-v3.1-terminus-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./deepseek/deepseek-v3.1-terminus-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+[`shopping`](./deepseek/deepseek-v3.1-terminus-exacto/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `deepseek/deepseek-v3.1-terminus-exacto` - `todo`
+
+- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/)
+- Score: 100
+- Elapsed Time: 1h 43m 22s
+- Token Usage: 28.47M
+- Function Calling Success Rate: 84.32%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 11 | 668.8K | 4m 37s | 100%
+🟢 Prisma | `namespaces`: 3, `models`: 7 | 296.4K | 2m 50s | 100%
+🟢 Interface | `operations`: 31, `schemas`: 39 | 15.53M | 32m 32s | 80%
+🟢 Test | `functions`: 76 | 9.69M | 45m 5s | 75%
+🟢 Realize | `functions`: 31 | 2.28M | 18m 16s | 97%
+
+
+### `deepseek/deepseek-v3.1-terminus-exacto` - `bbs`
+
+- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/bbs`](./deepseek/deepseek-v3.1-terminus-exacto/bbs/)
+- Score: 100
+- Elapsed Time: 5h 59m 41s
+- Token Usage: 92.74M
+- Function Calling Success Rate: 84.73%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 11 | 698.4K | 12m 18s | 100%
+🟢 Prisma | `namespaces`: 8, `models`: 24 | 759.7K | 15m 25s | 100%
+🟢 Interface | `operations`: 121, `schemas`: 160 | 57.20M | 1h 29m 54s | 78%
+🟢 Test | `functions`: 141 | 23.15M | 2h 52m 10s | 81%
+🟢 Realize | `functions`: 119 | 10.93M | 1h 9m 53s | 100%
+
+
+### `deepseek/deepseek-v3.1-terminus-exacto` - `reddit`
+
+- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/reddit`](./deepseek/deepseek-v3.1-terminus-exacto/reddit/)
+- Score: 80
+- Elapsed Time: 4h 10m 8s
+- Token Usage: 188.04M
+- Function Calling Success Rate: 85.81%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 7 | 494.4K | 7m 56s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 84 | 1.07M | 19m 58s | 92%
+🟢 Interface | `operations`: 265, `schemas`: 213 | 119.19M | 1h 29m 54s | 78%
+🟢 Test | `functions`: 510 | 67.28M | 2h 12m 18s | 99%
+⚪ Realize |  |  |  | 
+
+
+### `deepseek/deepseek-v3.1-terminus-exacto` - `shopping`
+
+- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/shopping`](./deepseek/deepseek-v3.1-terminus-exacto/shopping/)
+- Score: 100
+- Elapsed Time: 5h 3m 26s
+- Token Usage: 161.81M
+- Function Calling Success Rate: 92.03%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 10 | 467.6K | 6m 33s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 59 | 1.23M | 19m 45s | 84%
+🟢 Interface | `operations`: 160, `schemas`: 243 | 93.46M | 1h 32m 14s | 86%
+🟢 Test | `functions`: 356 | 48.59M | 1h 40m 8s | 99%
+🟢 Realize | `functions`: 158 | 18.06M | 1h 24m 45s | 98%
+
+
+## `qwen/qwen3-next-80b-a3b-instruct`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `todo`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
+- Score: 100
+- Elapsed Time: 1h 40m 15s
+- Token Usage: 22.47M
+- Function Calling Success Rate: 71.63%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 10 | 620.9K | 2m 58s | 89%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 311.8K | 58s | 100%
+🟢 Interface | `operations`: 13, `schemas`: 17 | 8.87M | 1h 12m 4s | 54%
+🟢 Test | `functions`: 58 | 10.27M | 12m 3s | 76%
+🟢 Realize | `functions`: 13 | 2.40M | 12m 9s | 84%
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/)
+- Score: 90
+- Elapsed Time: 2h 19m 33s
+- Token Usage: 70.10M
+- Function Calling Success Rate: 71.87%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 262.4K | 1m 56s | 100%
+🟢 Prisma | `namespaces`: 6, `models`: 20 | 623.1K | 7m 33s | 100%
+🟢 Interface | `operations`: 44, `schemas`: 45 | 29.60M | 41m 37s | 58%
+🟢 Test | `functions`: 80 | 26.11M | 42m 3s | 61%
+🔴 Realize | `functions`: 44, `errors`: 1 | 13.50M | 46m 22s | 91%
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `reddit`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/)
+- Score: 90
+- Elapsed Time: 3h 23m 37s
+- Token Usage: 96.51M
+- Function Calling Success Rate: 77.68%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 11 | 539.9K | 5m 12s | 96%
+🟢 Prisma | `namespaces`: 10, `models`: 39 | 1.42M | 7m 57s | 77%
+🟢 Interface | `operations`: 68, `schemas`: 75 | 40.18M | 1h 10m 27s | 68%
+🟢 Test | `functions`: 68 | 28.38M | 20m 28s | 77%
+🔴 Realize | `functions`: 68, `errors`: 1 | 25.98M | 1h 39m 31s | 84%
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `shopping`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/)
+- Score: 90
+- Elapsed Time: 5h 58m 36s
+- Token Usage: 375.19M
+- Function Calling Success Rate: 71.90%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 11 | 801.8K | 8m 16s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 47 | 1.67M | 7m 56s | 84%
+🟢 Interface | `operations`: 172, `schemas`: 171 | 112.28M | 1h 36m 18s | 61%
+🟢 Test | `functions`: 360 | 184.90M | 2h 7m 26s | 69%
+🔴 Realize | `functions`: 172, `errors`: 4 | 75.54M | 1h 58m 38s | 81%
+
+
+## `moonshotai/kimi-k2-0905-exacto`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./moonshotai/kimi-k2-0905-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+[`shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+
+### `moonshotai/kimi-k2-0905-exacto` - `todo`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/todo`](./moonshotai/kimi-k2-0905-exacto/todo/)
+- Score: 100
+- Elapsed Time: 1h 59m 51s
+- Token Usage: 38.48M
+- Function Calling Success Rate: 73.77%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 8 | 383.2K | 3m 55s | 100%
+🟢 Prisma | `namespaces`: 3, `models`: 3 | 324.6K | 2m 7s | 100%
+🟢 Interface | `operations`: 24, `schemas`: 38 | 22.38M | 1h 27m 37s | 55%
+🟢 Test | `functions`: 94 | 14.12M | 21m 5s | 94%
+🟢 Realize | `functions`: 24 | 1.27M | 5m 4s | 98%
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `bbs`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/)
+- Score: 100
+- Elapsed Time: 4h 1m 32s
+- Token Usage: 117.34M
+- Function Calling Success Rate: 84.23%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 5 | 223.4K | 10m 2s | 100%
+🟢 Prisma | `namespaces`: 6, `models`: 16 | 614.8K | 10m 25s | 94%
+🟢 Interface | `operations`: 94, `schemas`: 118 | 51.79M | 1h 6m 42s | 79%
+🟢 Test | `functions`: 253 | 43.61M | 41m 58s | 89%
+🟢 Realize | `functions`: 94 | 21.10M | 1h 52m 22s | 84%
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `reddit`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/)
+- Score: 80
+- Elapsed Time: 2h 29m 4s
+- Token Usage: 95.68M
+- Function Calling Success Rate: 83.80%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 15 | 1.08M | 12m 53s | 100%
+🟢 Prisma | `namespaces`: 8, `models`: 41 | 1.08M | 23m 42s | 91%
+🟢 Interface | `operations`: 85, `schemas`: 92 | 51.73M | 1h 16m 54s | 77%
+🟢 Test | `functions`: 240 | 41.78M | 35m 33s | 91%
+⚪ Realize |  |  |  | 
+
+
+### `moonshotai/kimi-k2-0905-exacto` - `shopping`
+
+- Source Code: [`moonshotai/kimi-k2-0905-exacto/shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/)
+- Score: 80
+- Elapsed Time: 8h 0m 52s
+- Token Usage: 413.49M
+- Function Calling Success Rate: 72.38%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 12 | 566.6K | 7m 45s | 100%
+🟢 Prisma | `namespaces`: 12, `models`: 57 | 3.08M | 24m 48s | 62%
+🟢 Interface | `operations`: 178, `schemas`: 271 | 192.71M | 3h 35m 18s | 52%
+🟢 Test | `functions`: 381 | 217.14M | 3h 52m 58s | 92%
+⚪ Realize |  |  |  | 
+
+
 ## `openai/gpt-5.1`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -333,160 +564,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Prisma | `namespaces`: 11, `models`: 125 | 2.28M | 10m 31s | 80%
 🟢 Interface | `operations`: 659, `schemas`: 889 | 360.35M | 1h 26m 12s | 79%
 🟢 Test | `functions`: 2051 | 383.46M | 6h 13m 7s | 93%
-⚪ Realize |  |  |  | 
-
-
-## `moonshotai/kimi-k2-0905-exacto`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./moonshotai/kimi-k2-0905-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
-[`shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-
-### `moonshotai/kimi-k2-0905-exacto` - `todo`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/todo`](./moonshotai/kimi-k2-0905-exacto/todo/)
-- Score: 100
-- Elapsed Time: 1h 59m 51s
-- Token Usage: 38.48M
-- Function Calling Success Rate: 73.77%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 8 | 383.2K | 3m 55s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 3 | 324.6K | 2m 7s | 100%
-🟢 Interface | `operations`: 24, `schemas`: 38 | 22.38M | 1h 27m 37s | 55%
-🟢 Test | `functions`: 94 | 14.12M | 21m 5s | 94%
-🟢 Realize | `functions`: 24 | 1.27M | 5m 4s | 98%
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `bbs`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/bbs`](./moonshotai/kimi-k2-0905-exacto/bbs/)
-- Score: 100
-- Elapsed Time: 4h 1m 32s
-- Token Usage: 117.34M
-- Function Calling Success Rate: 84.23%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 5 | 223.4K | 10m 2s | 100%
-🟢 Prisma | `namespaces`: 6, `models`: 16 | 614.8K | 10m 25s | 94%
-🟢 Interface | `operations`: 94, `schemas`: 118 | 51.79M | 1h 6m 42s | 79%
-🟢 Test | `functions`: 253 | 43.61M | 41m 58s | 89%
-🟢 Realize | `functions`: 94 | 21.10M | 1h 52m 22s | 84%
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `reddit`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/reddit`](./moonshotai/kimi-k2-0905-exacto/reddit/)
-- Score: 80
-- Elapsed Time: 2h 29m 4s
-- Token Usage: 95.68M
-- Function Calling Success Rate: 83.80%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 15 | 1.08M | 12m 53s | 100%
-🟢 Prisma | `namespaces`: 8, `models`: 41 | 1.08M | 23m 42s | 91%
-🟢 Interface | `operations`: 85, `schemas`: 92 | 51.73M | 1h 16m 54s | 77%
-🟢 Test | `functions`: 240 | 41.78M | 35m 33s | 91%
-⚪ Realize |  |  |  | 
-
-
-### `moonshotai/kimi-k2-0905-exacto` - `shopping`
-
-- Source Code: [`moonshotai/kimi-k2-0905-exacto/shopping`](./moonshotai/kimi-k2-0905-exacto/shopping/)
-- Score: 30
-- Elapsed Time: 24m 57s
-- Token Usage: 2.93M
-- Function Calling Success Rate: 78.13%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 12 | 808.1K | 10m 17s | 96%
-🟢 Prisma | `namespaces`: 10, `models`: 46 | 2.12M | 14m 40s | 65%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-## `qwen/qwen3-next-80b-a3b-instruct`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
-[`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `todo`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
-- Score: 100
-- Elapsed Time: 1h 40m 15s
-- Token Usage: 22.47M
-- Function Calling Success Rate: 71.63%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 10 | 620.9K | 2m 58s | 89%
-🟢 Prisma | `namespaces`: 2, `models`: 3 | 311.8K | 58s | 100%
-🟢 Interface | `operations`: 13, `schemas`: 17 | 8.87M | 1h 12m 4s | 54%
-🟢 Test | `functions`: 58 | 10.27M | 12m 3s | 76%
-🟢 Realize | `functions`: 13 | 2.40M | 12m 9s | 84%
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/)
-- Score: 90
-- Elapsed Time: 2h 19m 33s
-- Token Usage: 70.10M
-- Function Calling Success Rate: 71.87%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 262.4K | 1m 56s | 100%
-🟢 Prisma | `namespaces`: 6, `models`: 20 | 623.1K | 7m 33s | 100%
-🟢 Interface | `operations`: 44, `schemas`: 45 | 29.60M | 41m 37s | 58%
-🟢 Test | `functions`: 80 | 26.11M | 42m 3s | 61%
-🔴 Realize | `functions`: 44, `errors`: 1 | 13.50M | 46m 22s | 91%
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `reddit`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/)
-- Score: 80
-- Elapsed Time: 2h 43m 40s
-- Token Usage: 112.60M
-- Function Calling Success Rate: 63.05%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 11 | 766.0K | 4m 19s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 66 | 1.97M | 21m 5s | 80%
-🟢 Interface | `operations`: 99, `schemas`: 91 | 62.34M | 1h 47m 32s | 54%
-🟢 Test | `functions`: 156 | 47.52M | 30m 42s | 73%
-⚪ Realize |  |  |  | 
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `shopping`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/)
-- Score: 30
-- Elapsed Time: 4m 25s
-- Token Usage: 1.91M
-- Function Calling Success Rate: 95.92%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 715.5K | 1m 32s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 56 | 1.20M | 2m 52s | 92%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
 
 
@@ -567,83 +644,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Realize |  |  |  | 
 
 
-## `deepseek/deepseek-v3.1-terminus-exacto`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`bbs`](./deepseek/deepseek-v3.1-terminus-exacto/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./deepseek/deepseek-v3.1-terminus-exacto/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-[`shopping`](./deepseek/deepseek-v3.1-terminus-exacto/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-
-### `deepseek/deepseek-v3.1-terminus-exacto` - `todo`
-
-- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/)
-- Score: 100
-- Elapsed Time: 1h 43m 22s
-- Token Usage: 28.47M
-- Function Calling Success Rate: 84.32%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 11 | 668.8K | 4m 37s | 100%
-🟢 Prisma | `namespaces`: 3, `models`: 7 | 296.4K | 2m 50s | 100%
-🟢 Interface | `operations`: 31, `schemas`: 39 | 15.53M | 32m 32s | 80%
-🟢 Test | `functions`: 76 | 9.69M | 45m 5s | 75%
-🟢 Realize | `functions`: 31 | 2.28M | 18m 16s | 97%
-
-
-### `deepseek/deepseek-v3.1-terminus-exacto` - `bbs`
-
-- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/bbs`](./deepseek/deepseek-v3.1-terminus-exacto/bbs/)
-- Score: 100
-- Elapsed Time: 5h 59m 41s
-- Token Usage: 92.74M
-- Function Calling Success Rate: 84.73%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 698.4K | 12m 18s | 100%
-🟢 Prisma | `namespaces`: 8, `models`: 24 | 759.7K | 15m 25s | 100%
-🟢 Interface | `operations`: 121, `schemas`: 160 | 57.20M | 1h 29m 54s | 78%
-🟢 Test | `functions`: 141 | 23.15M | 2h 52m 10s | 81%
-🟢 Realize | `functions`: 119 | 10.93M | 1h 9m 53s | 100%
-
-
-### `deepseek/deepseek-v3.1-terminus-exacto` - `reddit`
-
-- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/reddit`](./deepseek/deepseek-v3.1-terminus-exacto/reddit/)
-- Score: 30
-- Elapsed Time: 20m 3s
-- Token Usage: 1.94M
-- Function Calling Success Rate: 95.92%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 11 | 660.8K | 6m 43s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 52 | 1.28M | 13m 19s | 92%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-### `deepseek/deepseek-v3.1-terminus-exacto` - `shopping`
-
-- Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/shopping`](./deepseek/deepseek-v3.1-terminus-exacto/shopping/)
-- Score: 30
-- Elapsed Time: 21m 45s
-- Token Usage: 2.02M
-- Function Calling Success Rate: 95.92%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 12 | 759.5K | 6m 17s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 58 | 1.26M | 15m 28s | 91%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
 ## `qwen/qwen3-coder-exacto`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -651,23 +651,23 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`todo`](./qwen/qwen3-coder-exacto/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`bbs`](./qwen/qwen3-coder-exacto/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./qwen/qwen3-coder-exacto/reddit/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+[`shopping`](./qwen/qwen3-coder-exacto/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 
 ### `qwen/qwen3-coder-exacto` - `todo`
 
 - Source Code: [`qwen/qwen3-coder-exacto/todo`](./qwen/qwen3-coder-exacto/todo/)
 - Score: 100
-- Elapsed Time: 1h 15m 34s
-- Token Usage: 8.56M
-- Function Calling Success Rate: 92.06%
+- Elapsed Time: 56m 20s
+- Token Usage: 34.13M
+- Function Calling Success Rate: 36.42%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 11 | 406.7K | 4m 12s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 3 | 157.3K | 5m 24s | 100%
-🟢 Interface | `operations`: 14, `schemas`: 18 | 4.62M | 27m 45s | 85%
-🟢 Test | `functions`: 20 | 2.12M | 15m 51s | 100%
-🟢 Realize | `functions`: 14 | 1.25M | 22m 19s | 93%
+🟢 Analyze | `actors`: 1, `documents`: 11 | 1.89M | 9m 50s | 82%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 756.7K | 3m 13s | 50%
+🟢 Interface | `operations`: 13, `schemas`: 11 | 11.01M | 15m 35s | 56%
+🟢 Test | `functions`: 4 | 14.08M | 9m 20s | 18%
+🟢 Realize | `functions`: 13 | 6.40M | 18m 19s | 18%
 
 
 ### `qwen/qwen3-coder-exacto` - `bbs`
@@ -704,6 +704,23 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🔴 Realize | `functions`: 72, `errors`: 1 | 22.68M | 1h 3m 59s | 53%
 
 
+### `qwen/qwen3-coder-exacto` - `shopping`
+
+- Source Code: [`qwen/qwen3-coder-exacto/shopping`](./qwen/qwen3-coder-exacto/shopping/)
+- Score: 10
+- Elapsed Time: 10m 20s
+- Token Usage: 3.21M
+- Function Calling Success Rate: 90.32%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 3.21M | 10m 20s | 90%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
 ## `mistralai/codestral-2508`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -734,14 +751,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`mistralai/codestral-2508/bbs`](./mistralai/codestral-2508/bbs/)
 - Score: 30
-- Elapsed Time: 2m 49s
-- Token Usage: 522.8K
-- Function Calling Success Rate: 100.00%
+- Elapsed Time: 3m 10s
+- Token Usage: 548.8K
+- Function Calling Success Rate: 104.76%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 4 | 162.7K | 1m 13s | 100%
-🟢 Prisma | `namespaces`: 5, `models`: 17 | 360.1K | 1m 36s | 100%
+🟢 Analyze | `actors`: 3, `documents`: 4 | 184.8K | 1m 21s | 111%
+🟢 Prisma | `namespaces`: 5, `models`: 20 | 364.0K | 1m 49s | 100%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
@@ -751,14 +768,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`mistralai/codestral-2508/reddit`](./mistralai/codestral-2508/reddit/)
 - Score: 30
-- Elapsed Time: 33m 25s
-- Token Usage: 1.25M
-- Function Calling Success Rate: 100.00%
+- Elapsed Time: 10m 0s
+- Token Usage: 707.4K
+- Function Calling Success Rate: 104.17%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 10 | 474.2K | 31m 25s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 24 | 777.9K | 2m 0s | 100%
+🟢 Analyze | `actors`: 3, `documents`: 4 | 197.6K | 1m 15s | 111%
+🟢 Prisma | `namespaces`: 6, `models`: 16 | 509.7K | 8m 44s | 100%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
@@ -768,14 +785,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`mistralai/codestral-2508/shopping`](./mistralai/codestral-2508/shopping/)
 - Score: 30
-- Elapsed Time: 34m 8s
-- Token Usage: 1.54M
-- Function Calling Success Rate: 97.83%
+- Elapsed Time: 18m 9s
+- Token Usage: 1.44M
+- Function Calling Success Rate: 102.33%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 11 | 562.1K | 32m 11s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 31 | 974.7K | 1m 56s | 95%
+🟢 Analyze | `actors`: 3, `documents`: 10 | 470.8K | 8m 51s | 104%
+🟢 Prisma | `namespaces`: 10, `models`: 33 | 965.1K | 9m 18s | 100%
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 

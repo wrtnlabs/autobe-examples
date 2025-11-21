@@ -10,8 +10,6 @@ import { IShoppingMallSaleQuestion } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/sales/:saleCode/questions/:questionId")
 export class ShoppingmallAdminSalesQuestionsController {
   /**
-   * Delete a customer question from a product sale listing.
-   *
    * Permanently remove a customer question from a specific product sale listing
    * in the shopping marketplace.
    *

@@ -17,9 +17,6 @@ import { IPageITodoAppTodo } from "../../../../api/structures/IPageITodoAppTodo"
 @Controller("/todoApp/memberUser/todos")
 export class TodoappMemberuserTodosController {
   /**
-   * Create a new todo_app_todos record representing a member user's personal
-   * todo item.
-   *
    * Create a new todo item owned by the authenticated member user based on the
    * todo_app_todos Prisma model.
    *
@@ -76,9 +73,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Search and retrieve a paginated list of todo_app_todos records as todo
-   * summaries.
-   *
    * Retrieve a paginated and filterable list of todo items from the
    * `todo_app_todos` table.
    *
@@ -132,9 +126,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Retrieve the detailed ITodoAppTodo record for a single todo_app_todos entry
-   * by todoId.
-   *
    * Retrieve a single todo item from the `todo_app_todos` table by its unique
    * identifier.
    *
@@ -186,9 +177,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Update an existing todo_app_todos record for a member user's personal todo
-   * item.
-   *
    * Update an existing todo item identified by its unique identifier in the
    * todo_app_todos table.
    *
@@ -249,9 +237,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Permanently delete a todo item from the todo_app_todos table by its
-   * identifier.
-   *
    * Delete a specific todo item from the `todo_app_todos` table using its
    * unique identifier.
    *
@@ -309,9 +294,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Mark a todo item in the todo_app_todos table as completed and return the
-   * updated entity.
-   *
    * Mark a specific todo item in the `todo_app_todos` table as completed and
    * update its completion-related metadata.
    *
@@ -370,10 +352,6 @@ export class TodoappMemberuserTodosController {
   }
 
   /**
-   * Reopen a todo in the todo_app_todos table by transitioning it from
-   * completed or logically deleted back to active using the
-   * /todos/{todoId}/reopen action.
-   *
    * Reopen an existing personal todo item recorded in the `todo_app_todos`
    * table so that it transitions from a completed or logically deleted state
    * back to an active state and becomes visible again in the owning member

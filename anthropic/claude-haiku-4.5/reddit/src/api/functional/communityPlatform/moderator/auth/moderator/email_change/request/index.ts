@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../../../../../structures/ICommunityPlatformModerator";
 
 /**
- * Request email address change for moderator account with verification email.
- *
  * Initiate a moderator email address change by submitting the current password
  * for verification and the desired new email address. This operation generates
  * a secure email change token and sends a verification email to the new

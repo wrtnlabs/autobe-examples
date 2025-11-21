@@ -11,9 +11,6 @@ import { IDiscussionBoardPostLike } from "../../../../../api/structures/IDiscuss
 @Controller("/discussionBoard/moderator/posts/:postId/likes")
 export class DiscussionboardModeratorPostsLikesController {
   /**
-   * Search and retrieve paginated like records for a specific discussion board
-   * post.
-   *
    * This operation provides comprehensive search capabilities for analyzing
    * post appreciation metrics. It allows filtering like records by member, date
    * ranges, and other criteria to measure content popularity and user

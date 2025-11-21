@@ -7,9 +7,6 @@ import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/admin/categories")
 export class ShoppingmallAdminCategoriesController {
   /**
-   * Create a new category record in the `shopping_mall_categories` table for
-   * the shoppingMall catalog taxonomy.
-   *
    * Create a new category record in the global product category taxonomy
    * stored in the `shopping_mall_categories` table.
    *
@@ -71,9 +68,6 @@ export class ShoppingmallAdminCategoriesController {
 
   /**
    * Update an existing category record in the `shopping_mall_categories`
-   * table using its `categoryId` identifier.
-   *
-   * Update an existing category record in the `shopping_mall_categories`
    * table identified by its unique `categoryId` value.
    *
    * This operation uses the `categoryId` path parameter to resolve a specific
@@ -134,9 +128,6 @@ export class ShoppingmallAdminCategoriesController {
   }
 
   /**
-   * Permanently delete a category from the shopping_mall_categories table by
-   * its identifier.
-   *
    * Delete a single category record from the `shopping_mall_categories` table
    * by its unique identifier.
    *

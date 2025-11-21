@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformDiscoveryItem } from "../../../../../structures/ICommunityPlatformDiscoveryItem";
 
 /**
- * Create a new discovery item (community_platform_discovery_items).
- *
  * Create a new discovery item backed by the community_platform_discovery_items
  * table.
  *
@@ -126,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Update a single community_platform_discovery_items record identified by
- * discoveryItemId.
- *
  * Update an existing discovery item record in the discovery inventory of the
  * community platform.
  *
@@ -269,9 +264,6 @@ export namespace update {
 }
 
 /**
- * Logically delete a community_platform_discovery_items record by setting its
- * deleted_at timestamp.
- *
  * Logically remove an existing discovery candidate from the platform's
  * discovery inventory by setting its soft deletion timestamp.
  *

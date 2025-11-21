@@ -8,9 +8,6 @@ import { ICommunityPlatformSearchIndex } from "../../../api/structures/ICommunit
 @Controller("/communityPlatform/search")
 export class CommunityplatformSearchController {
   /**
-   * Search posts and comments across the community platform with advanced
-   * filtering and relevance ranking.
-   *
    * Perform a comprehensive full-text search across all posts and comments in
    * the community platform. This operation implements the core content
    * discovery mechanism allowing users to find relevant discussions and

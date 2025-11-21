@@ -1,0 +1,11 @@
+export * as sales from "./sales/index";
+export * as carts from "./carts/index";
+export * as orders from "./orders/index";
+export * as coins from "./coins/index";
+export * as inquiries from "./inquiries/index";
+export * as articles from "./articles/index";
+export * as reviews from "./reviews/index";
+export * as wishlists from "./wishlists/index";
+export * as favorites from "./favorites/index";
+export * as userPreferences from "./userPreferences/index";
+export * as search from "./search/index";

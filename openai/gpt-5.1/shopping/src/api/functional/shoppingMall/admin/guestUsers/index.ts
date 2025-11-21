@@ -10,9 +10,6 @@ export * as accountRiskFlags from "./accountRiskFlags/index";
 export * as actorSecurityEvents from "./actorSecurityEvents/index";
 
 /**
- * Search and retrieve paginated guest user accounts from the
- * shopping_mall_guestusers table for admin use.
- *
  * Search and retrieve a filtered, paginated list of guest user accounts from
  * the `shopping_mall_guestusers` table for administrative oversight,
  * governance, and risk operations.
@@ -141,9 +138,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a specific guest user row in
- * shopping_mall_guestusers by its identifier.
- *
  * Retrieve detailed information for a single guest user from the
  * `shopping_mall_guestusers` table, identified by the `{guestUserId}` path
  * parameter, for administrative review and governance.
@@ -258,9 +252,6 @@ export namespace at {
 }
 
 /**
- * Delete a guest user record from the `shopping_mall_guestusers` table by its
- * unique identifier.
- *
  * Delete a specific guest user record from the `shopping_mall_guestusers` table
  * using its unique identifier.
  *

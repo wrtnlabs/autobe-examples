@@ -11,8 +11,6 @@ import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrde
 @Controller("/shoppingMall/customer/orders")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Create a new order record in shopping_mall_orders.
-   *
    * Create a new shopping mall order on the platform.
    *
    * This operation enables customers (or system actors on their behalf) to
@@ -61,8 +59,6 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Update an order in shopping_mall_orders by order_number.
-   *
    * Update the details of an existing shopping mall order identified by its
    * business-unique order_number.
    *

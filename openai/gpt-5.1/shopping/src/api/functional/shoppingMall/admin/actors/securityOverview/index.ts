@@ -5,10 +5,6 @@ import typia from "typia";
 import { IShoppingMallActorSecurityOverview } from "../../../../../structures/IShoppingMallActorSecurityOverview";
 
 /**
- * Provide an aggregated security overview for actors using security‑event
- * Prisma tables such as shopping_mall_actor_security_events and its linkage
- * tables.
- *
  * Get a consolidated security overview for actors on the shoppingMall platform.
  *
  * This endpoint surfaces a summary of security‑related information for

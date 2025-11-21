@@ -8,8 +8,6 @@ import { IPageITodoListUser } from "../../../../structures/IPageITodoListUser";
 export * as sessions from "./sessions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of users.
- *
  * Retrieve a filtered and paginated list of users from the system. This
  * operation provides advanced search capabilities for finding users based on
  * multiple criteria including partial name matching, email domain filtering,
@@ -109,8 +107,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single user by ID.
- *
  * Retrieve detailed information about a specific user identified by their
  * unique user ID. This operation returns the user's profile data, related
  * entities, and other relevant information as defined in the Prisma schema.
@@ -196,8 +192,6 @@ export namespace at {
 }
 
 /**
- * Update user information.
- *
  * This operation updates the details of an existing user identified by their
  * user ID. It requires appropriate authorization and follows the IUser.IUpdate
  * schema for the request body. The user ID is a path parameter that must be

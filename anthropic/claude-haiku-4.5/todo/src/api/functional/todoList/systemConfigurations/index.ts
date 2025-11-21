@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListSystemConfig } from "../../../structures/ITodoListSystemConfig";
 
 /**
- * Retrieve a specific system configuration entry by configuration key.
- *
  * Fetch a single system configuration entry from the todo_list_system_config
  * table using the unique config_key identifier. This operation enables clients
  * to query specific configuration values needed for runtime operation, such as

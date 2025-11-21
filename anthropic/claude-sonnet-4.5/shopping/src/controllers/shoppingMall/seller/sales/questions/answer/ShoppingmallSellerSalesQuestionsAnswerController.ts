@@ -12,8 +12,6 @@ import { IShoppingMallSaleQuestionAnswer } from "../../../../../../api/structure
 @Controller("/shoppingMall/seller/sales/:saleCode/questions/:questionId/answer")
 export class ShoppingmallSellerSalesQuestionsAnswerController {
   /**
-   * Create a seller's answer to a customer product question.
-   *
    * Create a new answer from the seller in response to a customer's question
    * about a product sale. This operation enables sellers to provide detailed
    * responses to potential buyers' inquiries, helping customers make informed
@@ -70,8 +68,6 @@ export class ShoppingmallSellerSalesQuestionsAnswerController {
   }
 
   /**
-   * Update a seller's answer to a customer product question.
-   *
    * Update an existing answer from the seller in response to a customer's
    * question about a product sale. This operation enables sellers to modify
    * their responses to provide better information, correct errors, or add
@@ -126,8 +122,6 @@ export class ShoppingmallSellerSalesQuestionsAnswerController {
   }
 
   /**
-   * Delete a seller's answer to a product question.
-   *
    * Remove a seller's response to a customer question about a product sale
    * listing.
    *

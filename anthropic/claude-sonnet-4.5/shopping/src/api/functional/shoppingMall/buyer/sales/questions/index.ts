@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleQuestion } from "../../../../../structures/IShoppingMallSaleQuestion";
 
 /**
- * Submit a new question about a specific product sale.
- *
  * Create a new customer question (inquiry) for a specific product sale in the
  * shopping marketplace. This operation enables authenticated buyers to ask
  * sellers questions about products they are considering purchasing,
@@ -127,8 +125,6 @@ export namespace postBySalecode {
 }
 
 /**
- * Submit a new question about a specific product sale.
- *
  * Create a new customer question (inquiry) for a specific product sale in the
  * shopping marketplace. This operation enables authenticated buyers to ask
  * sellers questions about products they are considering purchasing,
@@ -250,8 +246,6 @@ export namespace postByShoppingmallsalecode {
 }
 
 /**
- * Delete a customer question from a product sale listing.
- *
  * Permanently remove a customer question from a specific product sale listing
  * in the shopping marketplace.
  *

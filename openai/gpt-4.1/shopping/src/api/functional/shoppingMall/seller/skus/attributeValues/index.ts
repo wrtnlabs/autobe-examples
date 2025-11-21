@@ -7,9 +7,6 @@ import { IShoppingMallProductAttributeValue } from "../../../../../structures/IS
 import { IPageIShoppingMallProductAttributeValue } from "../../../../../structures/IPageIShoppingMallProductAttributeValue";
 
 /**
- * Create a new product SKU attribute value mapping (table:
- * shopping_mall_product_attribute_values).
- *
  * Assign a new attribute and value (e.g., a new color, size, or option) to a
  * specific product SKU variant within the catalog.
  *
@@ -117,9 +114,6 @@ export namespace create {
 }
 
 /**
- * Paginated search for all attribute values attached to a single SKU
- * (shopping_mall_product_attribute_values).
- *
  * Search and list all attribute values that are associated with a particular
  * SKU variant in the product catalog.
  *
@@ -226,9 +220,6 @@ export namespace index {
 }
 
 /**
- * Update attribute value for a SKU in shopping_mall_product_attribute_values
- * table.
- *
  * Update an attribute value associated with a specific product SKU in the
  * e-commerce catalog. This operation is essential for managing product
  * variants, supporting accurate filtering, search, and display for customers.
@@ -354,9 +345,6 @@ export namespace update {
 }
 
 /**
- * Delete an attribute value mapping from a SKU in
- * shopping_mall_product_attribute_values table.
- *
  * Remove an attribute value mapping from a SKU in the product catalog. Deleting
  * this mapping updates the product variant configuration and may impact
  * customer-facing selection options and filter logic.

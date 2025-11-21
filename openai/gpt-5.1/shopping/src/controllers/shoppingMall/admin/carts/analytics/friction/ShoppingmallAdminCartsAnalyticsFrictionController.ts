@@ -7,9 +7,6 @@ import { IShoppingMallCartFrictionAnalytics } from "../../../../../../api/struct
 @Controller("/shoppingMall/admin/carts/analytics/friction")
 export class ShoppingmallAdminCartsAnalyticsFrictionController {
   /**
-   * Retrieve aggregated friction analytics derived from shopping_mall_carts
-   * and related cart tables.
-   *
    * Retrieve detailed friction analytics for shopping cart behavior on the
    * ShoppingMall platform.
    *

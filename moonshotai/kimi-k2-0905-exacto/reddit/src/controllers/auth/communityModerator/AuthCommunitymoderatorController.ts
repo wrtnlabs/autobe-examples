@@ -8,8 +8,6 @@ import { IRefreshToken } from "../../../api/structures/IRefreshToken";
 @Controller("/auth/communityModerator")
 export class AuthCommunitymoderatorController {
   /**
-   * Register a new community moderator account and issue initial tokens.
-   *
    * Create a new community moderator account with initial JWT token issuance.
    * This operation enables community moderator registration by collecting
    * email and password information. The system validates email uniqueness and
@@ -38,8 +36,6 @@ export class AuthCommunitymoderatorController {
   }
 
   /**
-   * Authenticate community moderator and issue access tokens.
-   *
    * Authenticate community moderator with email and password credentials.
    * This operation validates the provided email address against registered
    * community moderators and verifies the password hash matches the stored
@@ -66,8 +62,6 @@ export class AuthCommunitymoderatorController {
   }
 
   /**
-   * Refresh JWT access tokens for community moderators.
-   *
    * Refresh JWT access tokens using valid refresh tokens for community
    * moderators. This operation enables persistent authentication sessions by
    * allowing community moderators to obtain new access tokens without

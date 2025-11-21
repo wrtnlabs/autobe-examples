@@ -8,9 +8,6 @@ import { IShoppingMallAdminAuditLog } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/adminAuditLogs")
 export class ShoppingmallAdminAdminauditlogsController {
   /**
-   * Search admin audit logs from the shopping_mall_admin_audit_logs table
-   * with pagination and filters.
-   *
    * Search and retrieve a filtered, paginated list of admin audit log entries
    * from the `shopping_mall_admin_audit_logs` table.
    *
@@ -54,9 +51,6 @@ export class ShoppingmallAdminAdminauditlogsController {
   }
 
   /**
-   * Get a single admin audit log record from the
-   * shopping_mall_admin_audit_logs table by its ID.
-   *
    * Retrieve the full details of a single admin audit log entry from the
    * `shopping_mall_admin_audit_logs` table by its unique identifier.
    *

@@ -11,8 +11,6 @@ import { ITodoListTask } from "../../../../api/structures/ITodoListTask";
 @Controller("/todoList/user/tasks")
 export class TodolistUserTasksController {
   /**
-   * Create a new task.
-   *
    * This operation creates a new task in the todo list system. It requires
    * details such as task title, description, due date, and priority. The task
    * is associated with the authenticated user who initiates the creation. The
@@ -43,8 +41,6 @@ export class TodolistUserTasksController {
   }
 
   /**
-   * Update an existing task.
-   *
    * This operation updates an existing task identified by its unique task ID.
    * It allows users to modify various task attributes and is typically used to
    * mark tasks as completed or to update task details. The operation checks for

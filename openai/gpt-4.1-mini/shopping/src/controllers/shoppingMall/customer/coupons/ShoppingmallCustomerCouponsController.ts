@@ -12,8 +12,6 @@ import { IShoppingMallCoupon } from "../../../../api/structures/IShoppingMallCou
 @Controller("/shoppingMall/customer/coupons")
 export class ShoppingmallCustomerCouponsController {
   /**
-   * Retrieve a paginated and filtered list of coupons.
-   *
    * Retrieve and search through the list of shopping mall coupons using
    * advanced filtering, searching, and pagination parameters.
    *
@@ -56,8 +54,6 @@ export class ShoppingmallCustomerCouponsController {
   }
 
   /**
-   * Retrieve detailed coupon information by code.
-   *
    * Fetch detailed information about a specific coupon identified by its unique
    * coupon code.
    *

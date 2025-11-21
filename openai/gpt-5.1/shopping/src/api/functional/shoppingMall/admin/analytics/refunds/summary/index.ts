@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAnalyticsRefundSummary } from "../../../../../../structures/IShoppingMallAnalyticsRefundSummary";
 
 /**
- * Retrieve an aggregated refund and post-payment adjustment summary derived
- * from ShoppingMall refund- and dispute-related tables.
- *
  * Retrieve a comprehensive analytical summary of refunds and related
  * post-payment adjustments on the ShoppingMall platform for a specified period
  * and filter set.

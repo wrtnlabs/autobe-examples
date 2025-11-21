@@ -15,9 +15,6 @@ import { IPageIShoppingMallEscalationQueue } from "../../../../api/structures/IP
 @Controller("/shoppingMall/admin/escalationQueues")
 export class ShoppingmallAdminEscalationqueuesController {
   /**
-   * Create a new escalation queue record in the shopping_mall_escalation_queues
-   * table.
-   *
    * Create a new escalation queue record within the shopping mall escalation
    * management system, providing necessary contextual information for business
    * dispute handling or workflow escalation.
@@ -63,9 +60,6 @@ export class ShoppingmallAdminEscalationqueuesController {
   }
 
   /**
-   * Search and retrieve a paginated list of escalation queues
-   * (shopping_mall_escalation_queues).
-   *
    * Retrieve all business escalation queue events requiring attention, review,
    * or resolution from the platform's escalation/dispute management system.
    * This operation is designed for admins and operational staff to monitor,
@@ -113,9 +107,6 @@ export class ShoppingmallAdminEscalationqueuesController {
   }
 
   /**
-   * Get full detail of specific escalation queue entry
-   * (shopping_mall_escalation_queues) by ID.
-   *
    * Retrieve all recorded information for a single escalation/dispute case by
    * its unique identifier. This operation allows staff, admin users, or
    * compliance managers to fully review an ongoing or resolved escalation
@@ -159,9 +150,6 @@ export class ShoppingmallAdminEscalationqueuesController {
   }
 
   /**
-   * Update an existing escalation queue in the shopping_mall_escalation_queues
-   * table.
-   *
    * Update an existing escalation queue entity identified by its unique UUID.
    * This is utilized by workflow participants—typically admins, or automated
    * compliance managers—to track progress, reassign responsibility, update
@@ -209,9 +197,6 @@ export class ShoppingmallAdminEscalationqueuesController {
   }
 
   /**
-   * Permanently erase an escalation queue record from
-   * shopping_mall_escalation_queues table.
-   *
    * Permanently remove an escalation event or dispute queue entry from the
    * platform records.
    *

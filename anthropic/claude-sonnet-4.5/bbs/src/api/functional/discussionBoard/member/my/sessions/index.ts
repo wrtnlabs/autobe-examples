@@ -7,9 +7,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardMemberSession } from "../../../../../structures/IPageIDiscussionBoardMemberSession";
 
 /**
- * Retrieve paginated list of authentication sessions for the authenticated
- * member.
- *
  * Retrieve a filtered and paginated list of authentication sessions for the
  * currently authenticated member from the discussion board platform.
  *

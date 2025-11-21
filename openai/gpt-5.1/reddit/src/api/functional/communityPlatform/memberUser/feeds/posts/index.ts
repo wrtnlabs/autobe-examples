@@ -7,9 +7,6 @@ import { ICommunityPlatformFeedPost } from "../../../../../structures/ICommunity
 import { IPageICommunityPlatformFeedPost } from "../../../../../structures/IPageICommunityPlatformFeedPost";
 
 /**
- * Retrieve a personalized paginated feed of posts based on member subscriptions
- * and preferences.
- *
  * Retrieve a personalized, paginated feed of posts for the current viewer,
  * supporting advanced filtering, sorting, and feed modes.
  *

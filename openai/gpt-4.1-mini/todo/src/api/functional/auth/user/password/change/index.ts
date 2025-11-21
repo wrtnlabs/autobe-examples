@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListTodoListUser } from "../../../../../structures/ITodoListTodoListUser";
 
 /**
- * Change user password in todo_list_users table.
- *
  * Allows a registered user to securely change their password providing current
  * and new password data. This operation utilizes fields defined in the
  * 'todo_list_users' schema to perform validation and update.

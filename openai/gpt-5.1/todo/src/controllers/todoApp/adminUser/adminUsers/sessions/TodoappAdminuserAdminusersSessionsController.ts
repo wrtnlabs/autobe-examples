@@ -13,8 +13,6 @@ import { ITodoAppAdminUserSession } from "../../../../../api/structures/ITodoApp
 @Controller("/todoApp/adminUser/adminUsers/:adminUserId/sessions")
 export class TodoappAdminuserAdminusersSessionsController {
   /**
-   * Search and paginate todo_app_adminuser_sessions for a specific admin user.
-   *
    * Retrieve a paginated and filtered list of authentication sessions for a
    * specific administrative user of the todoApp backend.
    *
@@ -89,9 +87,6 @@ export class TodoappAdminuserAdminusersSessionsController {
   }
 
   /**
-   * Get detailed information from todo_app_adminuser_sessions for a specific
-   * admin user session.
-   *
    * Retrieve full details for a specific authentication session belonging to an
    * administrative user of the todoApp backend.
    *
@@ -153,9 +148,6 @@ export class TodoappAdminuserAdminusersSessionsController {
   }
 
   /**
-   * Delete a specific admin session row from todo_app_adminuser_sessions for a
-   * given admin user.
-   *
    * Erase a specific administrative session record for a given admin user,
    * using the underlying todo_app_adminuser_sessions and todo_app_adminusers
    * tables as the source of truth.

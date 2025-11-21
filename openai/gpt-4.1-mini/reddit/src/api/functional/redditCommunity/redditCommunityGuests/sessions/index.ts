@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityGuestSession } from "../../../../structures/IRedditCommunityGuestSession";
 
 /**
- * Retrieve a specific redditCommunity guest session by ID.
- *
  * This operation fetches detailed session information for a guest user
  * identified by redditCommunityGuestId and session ID.
  *
@@ -103,8 +101,6 @@ export namespace at {
 }
 
 /**
- * Update a guest user's session by guest ID and session ID.
- *
  * Update an existing guest user session which tracks connection information and
  * session lifecycle.
  *
@@ -218,8 +214,6 @@ export namespace update {
 }
 
 /**
- * Delete a guest user's session by guest ID and session ID.
- *
  * Delete an existing guest user session to permanently terminate the session
  * and release associated resources.
  *
@@ -316,8 +310,6 @@ export namespace erase {
 }
 
 /**
- * Create a new redditCommunity guest session.
- *
  * This operation allows creation of a new guest session for a guest user
  * identified by redditCommunityGuestId.
  *

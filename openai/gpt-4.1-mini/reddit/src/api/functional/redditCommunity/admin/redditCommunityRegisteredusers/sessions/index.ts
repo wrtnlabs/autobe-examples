@@ -7,8 +7,6 @@ import { IRedditCommunityRegistereduserSession } from "../../../../../structures
 import { IPageIRedditCommunityRegistereduserSession } from "../../../../../structures/IPageIRedditCommunityRegistereduserSession";
 
 /**
- * Search login sessions of a registered user.
- *
  * Retrieve a paginated, filtered list of login sessions belonging to the
  * specified user.
  *

@@ -7,9 +7,6 @@ import typia from "typia";
 )
 export class ShoppingmallAdminSkusAttributevaluesController {
   /**
-   * Delete a specific `shopping_mall_sku_attribute_values` association for a
-   * given SKU.
-   *
    * Erase a specific attribute value association from a given SKU using the
    * `shopping_mall_sku_attribute_values` table as the underlying data
    * source.

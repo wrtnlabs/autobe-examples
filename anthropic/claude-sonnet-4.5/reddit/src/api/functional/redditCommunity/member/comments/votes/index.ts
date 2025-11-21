@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommentVote } from "../../../../../structures/IRedditCommunityCommentVote";
 
 /**
- * Retrieve the authenticated member's vote on a comment.
- *
  * Retrieve the current authenticated member's vote record for a specific
  * comment. This operation allows the platform to display whether the member has
  * upvoted, downvoted, or not voted on a particular comment.
@@ -104,8 +102,6 @@ export namespace at {
 }
 
 /**
- * Cast or update a vote on a comment.
- *
  * Cast a vote (upvote or downvote) on a specific comment in the community
  * platform. This operation allows authenticated members to express their
  * opinion on comment content by voting.
@@ -212,8 +208,6 @@ export namespace create {
 }
 
 /**
- * Remove a member's vote from a comment.
- *
  * Delete a member's existing vote (upvote or downvote) on a specific comment in
  * the Reddit-style community platform. This operation completely removes the
  * vote record from the system, effectively neutralizing the member's previous

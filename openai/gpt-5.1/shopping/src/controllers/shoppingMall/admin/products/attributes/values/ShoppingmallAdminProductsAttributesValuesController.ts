@@ -10,9 +10,6 @@ import { IShoppingMallProductAttributeValue } from "../../../../../../api/struct
 )
 export class ShoppingmallAdminProductsAttributesValuesController {
   /**
-   * Search and retrieve a paginated list of product attribute values for a
-   * given product attribute (shopping_mall_product_attribute_values).
-   *
    * Retrieve a filtered and paginated collection of attribute values for a
    * specific product attribute associated with a given product.
    *
@@ -87,9 +84,6 @@ export class ShoppingmallAdminProductsAttributesValuesController {
   }
 
   /**
-   * Retrieve a single product attribute value detail record for a given
-   * product attribute (shopping_mall_product_attribute_values).
-   *
    * Retrieve the full detail of a single product attribute value for a given
    * product and product attribute.
    *
@@ -155,9 +149,6 @@ export class ShoppingmallAdminProductsAttributesValuesController {
   }
 
   /**
-   * Delete a specific shopping_mall_product_attribute_values row for a
-   * product attribute of a product.
-   *
    * Delete a single product attribute value belonging to a specific product
    * attribute of a product in the catalog.
    *

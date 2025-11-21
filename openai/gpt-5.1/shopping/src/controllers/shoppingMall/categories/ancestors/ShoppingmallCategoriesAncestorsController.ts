@@ -7,9 +7,6 @@ import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/categories/:categoryId/ancestors")
 export class ShoppingmallCategoriesAncestorsController {
   /**
-   * Get ordered ancestor categories for a category from
-   * shopping_mall_categories.
-   *
    * Retrieve all ancestor categories of a given category, ordered from the
    * highest-level root down to the category’s immediate parent, based on the
    * shopping_mall_categories taxonomy.

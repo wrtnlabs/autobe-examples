@@ -5,8 +5,6 @@ import typia from "typia";
 import { ITodoListUser } from "../../../../../../structures/ITodoListUser";
 
 /**
- * Verify the validity of an authenticated user's JWT token.
- *
  * This operation validates the authenticity and current state of a user's JWT
  * authentication token. It performs comprehensive verification including token
  * signature validation, expiration time check, revocation status against the

@@ -8,8 +8,6 @@ import { IPageIShoppingMallOrderPayment } from "../../../../../api/structures/IP
 @Controller("/shoppingMall/customer/orders/:orderId/payments")
 export class ShoppingmallCustomerOrdersPaymentsController {
   /**
-   * Create a new `shopping_mall_order_payments` record for a given order.
-   *
    * Create a new logical payment for an existing order identified by its
    * `orderId` path parameter.
    *
@@ -97,9 +95,6 @@ export class ShoppingmallCustomerOrdersPaymentsController {
   }
 
   /**
-   * List and search payments for a specific order from the
-   * shopping_mall_order_payments table.
-   *
    * Retrieve a filtered and paginated list of logical payments for a specific
    * order from the `shopping_mall_order_payments` table.
    *
@@ -168,9 +163,6 @@ export class ShoppingmallCustomerOrdersPaymentsController {
   }
 
   /**
-   * Retrieve a specific `shopping_mall_order_payments` record for an order by
-   * sequence.
-   *
    * Retrieve detailed information about a single logical payment for a given
    * order, identified by an order-level payment sequence.
    *

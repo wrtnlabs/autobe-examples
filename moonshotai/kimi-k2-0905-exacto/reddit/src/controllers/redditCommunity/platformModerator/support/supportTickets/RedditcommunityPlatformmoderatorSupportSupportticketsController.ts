@@ -9,8 +9,6 @@ import { IRedditCommunitySupportTicket } from "../../../../../api/structures/IRe
 )
 export class RedditcommunityPlatformmoderatorSupportSupportticketsController {
   /**
-   * Retrieve detailed support ticket information by ID.
-   *
    * Retrieve detailed information about a specific support ticket by its
    * unique identifier. This operation provides comprehensive access to all
    * ticket details including the main issue description, category
@@ -44,8 +42,6 @@ export class RedditcommunityPlatformmoderatorSupportSupportticketsController {
   }
 
   /**
-   * Update an existing support ticket with new information or status changes.
-   *
    * Update an existing support ticket with new information, status changes,
    * or resolution details. This operation enables platform moderators to
    * manage the complete ticket lifecycle including updating problem

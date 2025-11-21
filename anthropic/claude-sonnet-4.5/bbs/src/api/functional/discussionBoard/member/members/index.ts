@@ -7,8 +7,6 @@ import { IDiscussionBoardMember } from "../../../../structures/IDiscussionBoardM
 export * as sessions from "./sessions/index";
 
 /**
- * Update member account profile information.
- *
  * Update profile information for an existing member account in the discussion
  * board system.
  *
@@ -124,8 +122,6 @@ export namespace update {
 }
 
 /**
- * Delete member account from the discussion board.
- *
  * Mark a member account as deleted in the discussion board system through soft
  * deletion mechanism.
  *

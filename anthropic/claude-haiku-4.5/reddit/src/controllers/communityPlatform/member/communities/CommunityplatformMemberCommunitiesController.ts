@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/member/communities")
 export class CommunityplatformMemberCommunitiesController {
   /**
-   * Create a new community on the platform.
-   *
    * Creates a new community entity on the platform, allowing authenticated
    * members to establish discussion spaces around shared interests. The
    * authenticated member becomes the community creator with full
@@ -68,8 +66,6 @@ export class CommunityplatformMemberCommunitiesController {
   }
 
   /**
-   * Update community settings and configuration.
-   *
    * Update an existing community's metadata, visibility, and moderation
    * settings. This operation allows community creators and senior moderators
    * to modify community properties including display name, description,
@@ -130,8 +126,6 @@ export class CommunityplatformMemberCommunitiesController {
   }
 
   /**
-   * Delete or archive a community.
-   *
    * Remove a community from active use through deletion. For community
    * creators, this initiates a soft-delete with a 30-day grace period
    * allowing recovery of the deleted community and all associated content

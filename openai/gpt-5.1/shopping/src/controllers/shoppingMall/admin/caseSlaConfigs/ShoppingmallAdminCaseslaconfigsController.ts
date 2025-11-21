@@ -8,9 +8,6 @@ import { IPageIShoppingMallCaseSlaConfig } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/admin/caseSlaConfigs")
 export class ShoppingmallAdminCaseslaconfigsController {
   /**
-   * Create a new ShoppingMall case SLA configuration record in
-   * shopping_mall_case_sla_configs.
-   *
    * Create a new case SLA configuration record for the ShoppingMall platform.
    *
    * This operation enables administrative users responsible for governance,
@@ -70,9 +67,6 @@ export class ShoppingmallAdminCaseslaconfigsController {
   }
 
   /**
-   * Search and retrieve paginated SLA configuration summaries from the
-   * shopping_mall_case_sla_configs table.
-   *
    * Search and retrieve a filtered, paginated list of case SLA configuration
    * records defined in the shopping_mall_case_sla_configs table.
    *
@@ -119,9 +113,6 @@ export class ShoppingmallAdminCaseslaconfigsController {
   }
 
   /**
-   * Retrieve a single case SLA configuration record from the
-   * shopping_mall_case_sla_configs table by its unique identifier.
-   *
    * Retrieve the complete details of a single case SLA configuration record
    * stored in the shopping_mall_case_sla_configs table, identified by its
    * unique identifier.
@@ -167,9 +158,6 @@ export class ShoppingmallAdminCaseslaconfigsController {
   }
 
   /**
-   * Update an existing ShoppingMall case SLA configuration in
-   * shopping_mall_case_sla_configs.
-   *
    * Update an existing case SLA configuration in the
    * shopping_mall_case_sla_configs table.
    *
@@ -222,9 +210,6 @@ export class ShoppingmallAdminCaseslaconfigsController {
   }
 
   /**
-   * Delete a case SLA configuration from shopping_mall_case_sla_configs by
-   * its identifier.
-   *
    * Erase an existing case SLA configuration record from the
    * shopping_mall_case_sla_configs table by its unique identifier.
    *

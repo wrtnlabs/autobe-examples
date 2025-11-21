@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicBoardAttachment } from "../../../../structures/IEconomicBoardAttachment";
 
 /**
- * Retrieve metadata for a specific attachment linked to a published post.
- *
  * Retrieve metadata for a specific file attachment associated with a discussion
  * post.
  *

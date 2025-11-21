@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityPostVote } from "../../../../../structures/IRedditCommunityPostVote";
 
 /**
- * Retrieve the authenticated member's current vote on a specific post.
- *
  * Retrieve the authenticated member's current vote status for a specific post
  * in the Reddit-style community platform.
  *
@@ -105,8 +103,6 @@ export namespace at {
 }
 
 /**
- * Create or update a vote on a post.
- *
  * Create a new vote or update an existing vote on a post, allowing members to
  * upvote or downvote content.
  *
@@ -225,8 +221,6 @@ export namespace create {
 }
 
 /**
- * Remove the authenticated member's vote from a specific post.
- *
  * Remove the authenticated member's existing vote (upvote or downvote) from a
  * specific post in the Reddit-style community platform.
  *

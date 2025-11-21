@@ -8,9 +8,6 @@ import { ICommunityPlatformSearchIndex } from "../../../../api/structures/ICommu
 @Controller("/communityPlatform/search/global")
 export class CommunityplatformSearchGlobalController {
   /**
-   * Perform a global multi-entity search using aggregated data from
-   * `community_platform_search_indexes` and core content tables.
-   *
    * Execute a global search across multiple community platform entities such
    * as communities, posts, comments, and user profiles, returning a unified
    * paginated list of search results.

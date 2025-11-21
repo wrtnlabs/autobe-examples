@@ -9,9 +9,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../../../api/struct
 )
 export class CommunityplatformAdministratorAuthAdministratorEmail_verifySendController {
   /**
-   * Send email verification message to administrator's registered email
-   * address.
-   *
    * Initiates the email verification process for platform administrators by
    * sending a verification token to their registered email address. This
    * operation is essential for account security and ensures administrators

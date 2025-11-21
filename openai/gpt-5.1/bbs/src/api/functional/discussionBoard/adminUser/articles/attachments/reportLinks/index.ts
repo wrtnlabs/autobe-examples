@@ -7,9 +7,6 @@ import { IDiscussionBoardReport } from "../../../../../../structures/IDiscussion
 import { IPageIDiscussionBoardReport } from "../../../../../../structures/IPageIDiscussionBoardReport";
 
 /**
- * Search and paginate reports (discussion_board_reports) associated with a
- * specific article attachment via link records.
- *
  * Retrieve a filtered and paginated collection of report records targeting a
  * specific attachment on an article, enabling moderators to review how that
  * attachment has been reported.

@@ -7,8 +7,6 @@ import { IEconomicDiscussionArticle } from "../../../../../structures/IEconomicD
 import { IPageIEconomicDiscussionArticle } from "../../../../../structures/IPageIEconomicDiscussionArticle";
 
 /**
- * Search and filter articles within a specific discussion category.
- *
  * Perform advanced search queries across economic and political discussion
  * articles filtered by category code. This operation enables users to find
  * relevant content within specific topic areas using text-based searches across

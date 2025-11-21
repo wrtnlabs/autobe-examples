@@ -3,8 +3,6 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
 /**
- * Terminate all active administrator sessions across all devices.
- *
  * This operation enables platform administrators to log out from all active
  * sessions simultaneously, invalidating all refresh tokens and forcing
  * re-authentication across all connected devices and locations. This is a

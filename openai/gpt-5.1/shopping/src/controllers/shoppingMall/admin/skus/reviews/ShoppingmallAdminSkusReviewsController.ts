@@ -5,9 +5,6 @@ import typia from "typia";
 @Controller("/shoppingMall/admin/skus/:skuId/reviews/:reviewId")
 export class ShoppingmallAdminSkusReviewsController {
   /**
-   * Permanently delete a specific review from shopping_mall_reviews for a
-   * given SKU.
-   *
    * Delete a specific review record that belongs to a particular SKU in the
    * shoppingMall platform.
    *

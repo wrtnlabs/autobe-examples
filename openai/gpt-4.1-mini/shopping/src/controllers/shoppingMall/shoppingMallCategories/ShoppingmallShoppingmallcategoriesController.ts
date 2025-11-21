@@ -11,8 +11,6 @@ import { IShoppingMallShoppingMallCategory } from "../../../api/structures/IShop
 @Controller("/shoppingMall/shoppingMallCategories")
 export class ShoppingmallShoppingmallcategoriesController {
   /**
-   * Search and retrieve shopping mall categories with filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of shopping mall product categories.
    *
    * This operation supports advanced search and filtering capabilities
@@ -48,9 +46,6 @@ export class ShoppingmallShoppingmallcategoriesController {
   }
 
   /**
-   * Get detailed information about a single shopping mall category by its
-   * unique name.
-   *
    * Retrieve detailed information about a specific product category in the
    * shopping mall by categoryName.
    *

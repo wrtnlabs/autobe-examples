@@ -12,8 +12,6 @@ import { IEconomicDiscussionMember } from "../../../../api/structures/IEconomicD
 @Controller("/economicDiscussion/moderator/members")
 export class EconomicdiscussionModeratorMembersController {
   /**
-   * Search and filter registered community members with advanced criteria.
-   *
    * Search and retrieve filtered lists of Economic Discussion community members
    * with support for complex search criteria, sorting, and pagination. This
    * operation enables administrators and moderators to discover members based
@@ -56,8 +54,6 @@ export class EconomicdiscussionModeratorMembersController {
   }
 
   /**
-   * Permanently delete a member account.
-   *
    * This operation permanently removes a member account from the economic
    * discussion board system. It completely deletes the member's profile,
    * authentication credentials, and associated session data from the database.

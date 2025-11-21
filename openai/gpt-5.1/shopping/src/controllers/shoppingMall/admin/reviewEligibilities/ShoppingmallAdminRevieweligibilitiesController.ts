@@ -7,9 +7,6 @@ import { IShoppingMallReviewEligibility } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/reviewEligibilities/:eligibilityId")
 export class ShoppingmallAdminRevieweligibilitiesController {
   /**
-   * Retrieve a single review eligibility
-   * (`shopping_mall_review_eligibilities`) record by its identifier.
-   *
    * Retrieve a single review eligibility record from the
    * `shopping_mall_review_eligibilities` table using its unique identifier.
    *
@@ -64,9 +61,6 @@ export class ShoppingmallAdminRevieweligibilitiesController {
   }
 
   /**
-   * Update an existing review eligibility
-   * (`shopping_mall_review_eligibilities`) record by its identifier.
-   *
    * Update an existing review eligibility record stored in the
    * `shopping_mall_review_eligibilities` table.
    *

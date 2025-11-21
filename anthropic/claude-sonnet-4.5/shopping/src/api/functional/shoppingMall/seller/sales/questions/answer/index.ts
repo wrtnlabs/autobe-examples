@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleQuestionAnswer } from "../../../../../../structures/IShoppingMallSaleQuestionAnswer";
 
 /**
- * Create a seller's answer to a customer product question.
- *
  * Create a new answer from the seller in response to a customer's question
  * about a product sale. This operation enables sellers to provide detailed
  * responses to potential buyers' inquiries, helping customers make informed
@@ -119,8 +117,6 @@ export namespace create {
 }
 
 /**
- * Update a seller's answer to a customer product question.
- *
  * Update an existing answer from the seller in response to a customer's
  * question about a product sale. This operation enables sellers to modify their
  * responses to provide better information, correct errors, or add additional
@@ -232,8 +228,6 @@ export namespace update {
 }
 
 /**
- * Delete a seller's answer to a product question.
- *
  * Remove a seller's response to a customer question about a product sale
  * listing.
  *

@@ -8,9 +8,6 @@ import { IShoppingMallPolicyOverride } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/adminSearch/policyOverrides")
 export class ShoppingmallAdminAdminsearchPolicyoverridesController {
   /**
-   * Search and list policy override records from the
-   * shopping_mall_policy_overrides table for admin users.
-   *
    * Retrieve a filtered and paginated list of policy override records for
    * governance and risk administration.
    *

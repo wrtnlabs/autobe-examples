@@ -7,8 +7,6 @@ import { ICommunityPlatformDiscoveryItem } from "../../../../../api/structures/I
 @Controller("/communityPlatform/adminUser/discovery/items")
 export class CommunityplatformAdminuserDiscoveryItemsController {
   /**
-   * Create a new discovery item (community_platform_discovery_items).
-   *
    * Create a new discovery item backed by the
    * community_platform_discovery_items table.
    *
@@ -60,9 +58,6 @@ export class CommunityplatformAdminuserDiscoveryItemsController {
   }
 
   /**
-   * Update a single community_platform_discovery_items record identified by
-   * discoveryItemId.
-   *
    * Update an existing discovery item record in the discovery inventory of
    * the community platform.
    *
@@ -132,9 +127,6 @@ export class CommunityplatformAdminuserDiscoveryItemsController {
   }
 
   /**
-   * Logically delete a community_platform_discovery_items record by setting
-   * its deleted_at timestamp.
-   *
    * Logically remove an existing discovery candidate from the platform's
    * discovery inventory by setting its soft deletion timestamp.
    *

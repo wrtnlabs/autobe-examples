@@ -10,9 +10,6 @@ import { IShoppingMallCategory } from "../../../api/structures/IShoppingMallCate
 @Controller("/shoppingMall/mallCategories")
 export class ShoppingmallMallcategoriesController {
   /**
-   * Search and list product categories (shopping_mall_categories) with
-   * filtering, sorting, and pagination.
-   *
    * Retrieve a paginated and filtered list of product categories and their
    * metadata for navigation, display, and management purposes.
    *
@@ -48,9 +45,6 @@ export class ShoppingmallMallcategoriesController {
   }
 
   /**
-   * Retrieve a single shopping mall category by its unique name from
-   * shopping_mall_categories table.
-   *
    * Retrieve the detailed information of a shopping mall category by its unique
    * name.
    *

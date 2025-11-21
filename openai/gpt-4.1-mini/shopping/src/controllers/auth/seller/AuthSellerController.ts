@@ -12,8 +12,6 @@ import { IShoppingMallSeller } from "../../../api/structures/IShoppingMallSeller
 @Controller("/auth/seller")
 export class AuthSellerController {
   /**
-   * Create a new seller account (join) using shopping_mall_sellers schema.
-   *
    * This operation registers a new seller user, creating a persistent account
    * in the system. It utilizes the shopping_mall_sellers table fields to
    * validate registration inputs and ensure data integrity. Upon successful
@@ -59,9 +57,6 @@ export class AuthSellerController {
   }
 
   /**
-   * Authenticate seller user and issue JWT tokens (login) using
-   * shopping_mall_sellers schema.
-   *
    * This operation authenticates a seller user by verifying login credentials
    * against the shopping_mall_sellers schema fields. It returns authorized JWT
    * tokens upon success, enabling secure access to protected resources.
@@ -103,8 +98,6 @@ export class AuthSellerController {
   }
 
   /**
-   * Refresh JWT tokens for seller user using shopping_mall_sellers schema.
-   *
    * This operation refreshes JWT access tokens for the seller user using a
    * valid refresh token to maintain session continuity and security. It ensures
    * refreshed tokens reflect the current seller authorization status as stored

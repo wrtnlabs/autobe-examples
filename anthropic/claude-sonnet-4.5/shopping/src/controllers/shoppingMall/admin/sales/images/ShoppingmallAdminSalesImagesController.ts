@@ -12,8 +12,6 @@ import { IPageIShoppingMallSaleImage } from "../../../../../api/structures/IPage
 @Controller("/shoppingMall/admin/sales/:saleCode/images")
 export class ShoppingmallAdminSalesImagesController {
   /**
-   * Upload and create a new product image for a specific sale listing.
-   *
    * Create a new product image record associated with a specific sale listing
    * in the shopping marketplace. This operation allows authenticated sellers to
    * add visual assets to their product listings, which are essential for
@@ -75,9 +73,6 @@ export class ShoppingmallAdminSalesImagesController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of product images for a
-   * specific sale.
-   *
    * Retrieve a filtered and paginated list of product images associated with a
    * specific sale listing in the shopping marketplace. This operation provides
    * advanced search capabilities for finding images based on various criteria

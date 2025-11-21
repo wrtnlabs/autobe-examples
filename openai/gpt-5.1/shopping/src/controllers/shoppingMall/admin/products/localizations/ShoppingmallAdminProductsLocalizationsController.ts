@@ -8,9 +8,6 @@ import { IShoppingMallProductLocalization } from "../../../../../api/structures/
 @Controller("/shoppingMall/admin/products/:productId/localizations")
 export class ShoppingmallAdminProductsLocalizationsController {
   /**
-   * Search and retrieve a paginated list of
-   * shopping_mall_product_localizations for a specific product.
-   *
    * Retrieve a filtered, paginated list of localization records for a
    * specific product from the shopping_mall_product_localizations table.
    *
@@ -70,9 +67,6 @@ export class ShoppingmallAdminProductsLocalizationsController {
   }
 
   /**
-   * Retrieve a single shopping_mall_product_localizations record for a given
-   * product by its localization ID.
-   *
    * Retrieve detailed information for a specific product localization record
    * from the shopping_mall_product_localizations table, scoped by its parent
    * product.
@@ -140,9 +134,6 @@ export class ShoppingmallAdminProductsLocalizationsController {
   }
 
   /**
-   * Delete a product localization record from the
-   * shopping_mall_product_localizations table for a specific product.
-   *
    * Delete a specific product localization record for a given product from
    * the shoppingMall catalog.
    *

@@ -4,8 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a reddit community by its unique name.
- *
  * Permanently delete the specified community identified by its unique name from
  * the redditCommunity platform.
  *

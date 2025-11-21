@@ -7,9 +7,6 @@ import { IDiscussionBoardSection } from "../../../../structures/IDiscussionBoard
 import { IPageIDiscussionBoardSection } from "../../../../structures/IPageIDiscussionBoardSection";
 
 /**
- * Search and retrieve filtered sections within a specific discussion board
- * channel.
- *
  * This operation provides comprehensive search capabilities for retrieving
  * discussion board sections organized within a specific channel. Users can
  * filter sections by various criteria including status, creation date ranges,
@@ -118,8 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific discussion board section within a channel.
- *
  * This GET operation allows users to retrieve detailed information about a
  * specific discussion board section within a channel. The operation uses the
  * channel name and section name as path parameters to uniquely identify the

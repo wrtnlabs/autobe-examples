@@ -7,9 +7,6 @@ import { IShoppingMallSkuRatingAggregate } from "../../../../api/structures/ISho
 @Controller("/shoppingMall/skus/:skuId/ratingAggregates")
 export class ShoppingmallSkusRatingaggregatesController {
   /**
-   * Get rating aggregate metrics for a specific SKU from
-   * shopping_mall_sku_rating_aggregates.
-   *
    * Retrieve the rating aggregate metrics for a specific SKU using its unique
    * identifier.
    *

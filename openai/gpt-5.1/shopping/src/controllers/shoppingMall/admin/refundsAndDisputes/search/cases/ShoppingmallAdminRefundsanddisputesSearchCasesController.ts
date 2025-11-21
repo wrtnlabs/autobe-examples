@@ -8,10 +8,6 @@ import { IShoppingMallRefundsAndDisputesCaseSearch } from "../../../../../../api
 @Controller("/shoppingMall/admin/refundsAndDisputes/search/cases")
 export class ShoppingmallAdminRefundsanddisputesSearchCasesController {
   /**
-   * Search refund, cancellation, and dispute cases across
-   * shopping_mall_cancellation_requests, shopping_mall_refund_requests, and
-   * shopping_mall_disputes with rich filters and pagination.
-   *
    * Search and list refund, cancellation, and dispute cases in a unified way
    * for administrative review and operations.
    *

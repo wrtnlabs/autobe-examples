@@ -10,8 +10,6 @@ import { IDiscussionBoardModerationStatisticsByType } from "../../../../../../ap
 @Controller("/discussionBoard/moderator/statistics/moderation/actionsByType")
 export class DiscussionboardModeratorStatisticsModerationActionsbytypeController {
   /**
-   * Retrieve moderation action statistics grouped by action type.
-   *
    * Retrieve aggregated statistics showing the distribution and volume of
    * moderation actions grouped by action type (article_edited, article_deleted,
    * attachment_removed, account_suspended, account_banned, account_restored).

@@ -8,8 +8,6 @@ import { IPageIRedditCommunityComment } from "../../../../structures/IPageIReddi
 export * as replies from "./replies/index";
 
 /**
- * Retrieve a filtered and paginated list of comments for a specific post.
- *
  * Retrieve a comprehensive list of comments associated with a specific post
  * with advanced filtering, sorting, and pagination capabilities. This operation
  * provides users with the ability to view all discussion threads and replies
@@ -126,8 +124,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific comment from a post by its identifier.
- *
  * Retrieve detailed information about a specific comment within a post. This
  * operation returns the complete comment entity including its content, author
  * details, creation and edit timestamps, vote scores (upvotes and downvotes),

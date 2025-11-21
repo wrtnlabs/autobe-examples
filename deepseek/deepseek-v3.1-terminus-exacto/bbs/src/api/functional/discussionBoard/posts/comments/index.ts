@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardComment } from "../../../../structures/IDiscussionBoardComment";
 
 /**
- * Retrieve a specific comment from a discussion board post by its unique
- * identifier.
- *
  * This operation retrieves detailed information about a specific comment within
  * a discussion board post. The operation requires both the post identifier and
  * comment identifier to ensure the comment belongs to the correct post

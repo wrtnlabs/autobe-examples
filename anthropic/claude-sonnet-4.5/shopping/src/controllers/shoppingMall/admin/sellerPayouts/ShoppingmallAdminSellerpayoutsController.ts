@@ -14,8 +14,6 @@ import { IPageIShoppingMallSellerPayout } from "../../../../api/structures/IPage
 @Controller("/shoppingMall/admin/sellerPayouts")
 export class ShoppingmallAdminSellerpayoutsController {
   /**
-   * Create a new seller payout transaction for earnings settlement.
-   *
    * Create a new seller payout transaction to settle accumulated earnings for a
    * seller account. This operation initiates the payout process by creating a
    * payout record that represents the transfer of seller earnings from the
@@ -64,9 +62,6 @@ export class ShoppingmallAdminSellerpayoutsController {
   }
 
   /**
-   * Retrieve paginated list of seller payout records for earnings settlement
-   * tracking.
-   *
    * Retrieve a filtered and paginated list of seller payout records from the
    * shopping mall platform. This operation provides advanced search
    * capabilities for finding seller payouts based on multiple criteria
@@ -124,8 +119,6 @@ export class ShoppingmallAdminSellerpayoutsController {
   }
 
   /**
-   * Retrieve detailed information for a specific seller payout transaction.
-   *
    * Retrieve comprehensive details about a specific seller payout transaction
    * from the shopping mall platform. This operation provides complete
    * information about a payout including the payout amount, current status,
@@ -170,8 +163,6 @@ export class ShoppingmallAdminSellerpayoutsController {
   }
 
   /**
-   * Update an existing seller payout record.
-   *
    * Update the details of an existing seller payout transaction in the
    * platform. This operation allows administrators to modify payout information
    * including payment status updates, transaction reference updates, and payout

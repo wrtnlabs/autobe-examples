@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunitySettings } from "../../../../../structures/ICommunityPlatformCommunitySettings";
 
 /**
- * Update settings for a given community (community_platform_community_settings
- * table).
- *
  * Update the configuration details and settings for a target community using
  * its unique URL slug identifier.
  *

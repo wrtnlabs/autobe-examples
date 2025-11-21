@@ -9,8 +9,6 @@ import { IDiscussionBoardAccountRestriction } from "../../../../../api/structure
 )
 export class DiscussionboardModeratorContributorsLift_restrictionController {
   /**
-   * Manually lift an active account restriction from a contributor.
-   *
    * Lift an active account restriction that was previously imposed on a
    * discussion board contributor account.
    *

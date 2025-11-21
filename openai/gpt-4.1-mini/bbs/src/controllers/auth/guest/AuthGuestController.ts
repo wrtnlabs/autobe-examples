@@ -11,9 +11,6 @@ import { IDiscussionBoardGuest } from "../../../api/structures/IDiscussionBoardG
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Create a temporary guest account and issue access tokens (no authentication
-   * required).
-   *
    * This operation enables unauthenticated users (guest actor) to register
    * temporary guest accounts. It creates basic records in the guest data table
    * and issues short-lived JWT tokens to allow read-only access to public
@@ -61,8 +58,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh the access tokens using a valid refresh token for guests.
-   *
    * This operation enables token renewal for temporary guest accounts. The
    * client must provide a valid refresh token obtained from a prior join or
    * refresh operation. Upon validation, new JWT access and refresh tokens are

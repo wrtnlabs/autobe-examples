@@ -7,8 +7,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../api/structures/I
 @Controller("/communityPlatform/auth/administrator/password-change")
 export class CommunityplatformAuthAdministratorPassword_changeController {
   /**
-   * Change password for an authenticated platform administrator.
-   *
    * Update the password for an authenticated platform administrator who
    * remembers their current credentials. This operation requires the
    * administrator to provide their current password for verification, plus a

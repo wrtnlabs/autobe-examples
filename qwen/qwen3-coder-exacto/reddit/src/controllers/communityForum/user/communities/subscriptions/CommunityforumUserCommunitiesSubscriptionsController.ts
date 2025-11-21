@@ -11,8 +11,6 @@ import { ICommunityForumCommunitySubscription } from "../../../../../api/structu
 @Controller("/communityForum/user/communities/:communitySlug/subscriptions")
 export class CommunityforumUserCommunitiesSubscriptionsController {
   /**
-   * Subscribe to a community.
-   *
    * Subscribe the authenticated user to a specific community.
    *
    * This endpoint allows users to subscribe to communities they're interested
@@ -62,8 +60,6 @@ export class CommunityforumUserCommunitiesSubscriptionsController {
   }
 
   /**
-   * Unsubscribe from a community.
-   *
    * Unsubscribe the authenticated user from a specific community.
    *
    * This endpoint allows users to unsubscribe from communities they're no

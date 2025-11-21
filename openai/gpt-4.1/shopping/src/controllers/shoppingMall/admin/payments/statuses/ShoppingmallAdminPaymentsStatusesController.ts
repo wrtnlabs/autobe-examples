@@ -12,9 +12,6 @@ import { IShoppingMallPaymentStatus } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/payments/:paymentId/statuses")
 export class ShoppingmallAdminPaymentsStatusesController {
   /**
-   * Search and retrieve a payment's status transition history from
-   * shopping_mall_payment_statuses.
-   *
    * Retrieve the status history for a payment managed by the platform.
    *
    * This PATCH operation allows authorized admin actors to search and filter
@@ -62,9 +59,6 @@ export class ShoppingmallAdminPaymentsStatusesController {
   }
 
   /**
-   * Retrieve details of a single payment status event from
-   * shopping_mall_payment_statuses.
-   *
    * Retrieve a specific payment status transition event for a payment on the
    * shopping mall platform.
    *

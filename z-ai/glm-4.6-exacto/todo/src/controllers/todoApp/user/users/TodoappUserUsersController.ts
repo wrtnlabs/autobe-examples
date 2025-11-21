@@ -11,8 +11,6 @@ import { ITodoAppUser } from "../../../../api/structures/ITodoAppUser";
 @Controller("/todoApp/user/users/:userId")
 export class TodoappUserUsersController {
   /**
-   * Update a registered user's profile in the todo_app_users table.
-   *
    * Update an existing user's account details securely.
    *
    * This endpoint enables individual users to modify their personal account
@@ -61,8 +59,6 @@ export class TodoappUserUsersController {
   }
 
   /**
-   * Soft delete a registered user (mark deleted_at) in todo_app_users table.
-   *
    * Delete a user account in a secure and compliant manner by marking the
    * account with a deletion timestamp rather than physical removal.
    *

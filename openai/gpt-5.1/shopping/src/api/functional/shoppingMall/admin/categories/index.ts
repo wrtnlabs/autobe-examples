@@ -7,9 +7,6 @@ import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCateg
 export * as localizations from "./localizations/index";
 
 /**
- * Create a new category record in the `shopping_mall_categories` table for the
- * shoppingMall catalog taxonomy.
- *
  * Create a new category record in the global product category taxonomy stored
  * in the `shopping_mall_categories` table.
  *
@@ -135,9 +132,6 @@ export namespace create {
 }
 
 /**
- * Update an existing category record in the `shopping_mall_categories` table
- * using its `categoryId` identifier.
- *
  * Update an existing category record in the `shopping_mall_categories` table
  * identified by its unique `categoryId` value.
  *
@@ -271,9 +265,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a category from the shopping_mall_categories table by its
- * identifier.
- *
  * Delete a single category record from the `shopping_mall_categories` table by
  * its unique identifier.
  *

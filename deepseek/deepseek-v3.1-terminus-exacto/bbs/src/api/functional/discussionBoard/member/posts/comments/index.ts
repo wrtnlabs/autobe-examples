@@ -7,8 +7,6 @@ import { IDiscussionBoardComment } from "../../../../../structures/IDiscussionBo
 import { IPageIDiscussionBoardComment } from "../../../../../structures/IPageIDiscussionBoardComment";
 
 /**
- * Create a new comment on a discussion board post.
- *
  * This operation allows authenticated users to create new comments on
  * discussion board posts. The operation requires a valid post identifier and
  * comment creation data including content and optional parent comment reference
@@ -123,8 +121,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve comments for a specific discussion board post.
- *
  * This operation provides advanced search and filtering capabilities for
  * comments associated with a specific discussion board post. It allows users to
  * retrieve comments with various filtering options, pagination controls, and
@@ -236,8 +232,6 @@ export namespace index {
 }
 
 /**
- * Update an existing comment on a discussion board post.
- *
  * This operation allows authenticated members to update the content of their
  * comments on discussion board posts. The system validates that the comment
  * exists, belongs to the specified post, and that the requesting member is the
@@ -349,8 +343,6 @@ export namespace update {
 }
 
 /**
- * Delete a comment from a discussion board post.
- *
  * This operation performs a soft deletion of a comment on a discussion board
  * post by setting the deleted_at timestamp. The comment remains in the database
  * but is marked as deleted and hidden from normal view. Only the comment author

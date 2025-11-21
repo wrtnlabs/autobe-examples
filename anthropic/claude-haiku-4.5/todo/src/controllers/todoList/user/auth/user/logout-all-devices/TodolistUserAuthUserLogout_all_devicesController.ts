@@ -10,8 +10,6 @@ import { ITodoListLogoutResponse } from "../../../../../../api/structures/ITodoL
 @Controller("/todoList/user/auth/user/logout-all-devices")
 export class TodolistUserAuthUserLogout_all_devicesController {
   /**
-   * Log out current user from all devices.
-   *
    * Terminate all of the current user's active sessions across all devices and
    * invalidate all associated JWT tokens.
    *

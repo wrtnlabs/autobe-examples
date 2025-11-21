@@ -7,8 +7,6 @@ import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussi
 @Controller("/discussionBoard/contributor/articles/:articleId/comments")
 export class DiscussionboardContributorArticlesCommentsController {
   /**
-   * Create a new comment on a discussion board article.
-   *
    * Create a new comment on a published discussion board article, enabling
    * contributors to participate in discussions. This operation accepts
    * comment content and optional image attachments, validates the article
@@ -58,8 +56,6 @@ export class DiscussionboardContributorArticlesCommentsController {
   }
 
   /**
-   * Update an existing comment on a discussion board article.
-   *
    * This operation allows a contributor to update their own comment or a
    * moderator to edit any comment for compliance purposes. When a contributor
    * submits a PUT request with updated comment content, the system validates
@@ -112,8 +108,6 @@ export class DiscussionboardContributorArticlesCommentsController {
   }
 
   /**
-   * Delete a comment from a discussion board article using soft deletion.
-   *
    * This operation removes a comment from public view by marking it as
    * deleted, implementing soft deletion to preserve the audit trail and
    * discussion thread coherence. When a contributor deletes their own

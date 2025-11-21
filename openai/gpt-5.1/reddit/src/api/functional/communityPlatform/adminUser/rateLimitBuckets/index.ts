@@ -7,10 +7,6 @@ import { ICommunityPlatformRateLimitBucket } from "../../../../structures/ICommu
 import { IPageICommunityPlatformRateLimitBucket } from "../../../../structures/IPageICommunityPlatformRateLimitBucket";
 
 /**
- * Create a new rate limit bucket record in the
- * community_platform_rate_limit_buckets table for administrative control of
- * rate limiting.
- *
  * Create a new rate limit bucket entry in the community platform's rate
  * limiting subsystem.
  *
@@ -123,9 +119,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate over `community_platform_rate_limit_buckets` entries for
- * administrative inspection.
- *
  * Search and page through rate limit bucket state for the community platform.
  *
  * This operation works with the `community_platform_rate_limit_buckets` table,
@@ -252,9 +245,6 @@ export namespace index {
 }
 
 /**
- * Get a single rate limit bucket record from the
- * community_platform_rate_limit_buckets table by its identifier.
- *
  * Retrieve the full detail of a specific rate limit bucket identified by its
  * unique bucket identifier.
  *
@@ -370,9 +360,6 @@ export namespace at {
 }
 
 /**
- * Update a rate limit bucket in the community_platform_rate_limit_buckets table
- * by its id.
- *
  * Update an existing rate limit bucket record in the community platform rate
  * limiter subsystem.
  *
@@ -505,9 +492,6 @@ export namespace update {
 }
 
 /**
- * Delete a rate limit bucket record from the
- * community_platform_rate_limit_buckets table by its id.
- *
  * Erase a rate limit bucket entry from the community platform rate limiting
  * store so that it is no longer used for abuse prevention decisions.
  *

@@ -10,9 +10,6 @@ import { ITodoListUser } from "../../../api/structures/ITodoListUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Registers a new user account in the user table and issues initial
-   * authentication tokens.
-   *
    * This operation registers a new user (member) account and provides the
    * initial authentication tokens in accordance with the user table's business
    * meaning. The endpoint validates all required registration fields as
@@ -56,9 +53,6 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticates a registered user from the user table and returns
-   * authentication tokens.
-   *
    * This endpoint authenticates a member-user (user) using credentials defined
    * in the user schema (e.g., email/username and password), with password
    * verification matching secure practices. Requests failing credential
@@ -98,9 +92,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refreshes authentication tokens for a user in the user table using a valid
-   * refresh token.
-   *
    * Enables token refresh for an authenticated user, provided a valid refresh
    * token is supplied. Security policies regarding token expiration, session
    * invalidation, and rotation are enforced as specified in requirements and

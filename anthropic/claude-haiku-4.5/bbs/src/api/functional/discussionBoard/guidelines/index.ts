@@ -7,9 +7,6 @@ import { IPageIDiscussionBoardContentGuideline } from "../../../structures/IPage
 import { IDiscussionBoardContentGuideline } from "../../../structures/IDiscussionBoardContentGuideline";
 
 /**
- * Retrieve a paginated list of active content guidelines defining community
- * standards.
- *
  * Retrieve a comprehensive, paginated list of all active content guidelines
  * that define the platform's community moderation standards and policies.
  *
@@ -89,9 +86,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific content guideline with complete policy details and
- * examples.
- *
  * Retrieve the complete details of a specific content guideline identified by
  * its unique identifier.
  *

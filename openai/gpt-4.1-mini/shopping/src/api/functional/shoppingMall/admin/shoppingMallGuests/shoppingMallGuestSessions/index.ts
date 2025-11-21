@@ -7,8 +7,6 @@ import { IShoppingMallGuestSession } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallGuestSession } from "../../../../../structures/IPageIShoppingMallGuestSession";
 
 /**
- * Retrieve paginated list of guest sessions for a specific guest user.
- *
  * This operation enables retrieval of a filtered and paginated list of shopping
  * mall guest sessions tied to a particular guest user.
  *
@@ -121,8 +119,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific guest session by ID.
- *
  * This operation provides detailed retrieval of a specific shopping mall guest
  * session.
  *
@@ -227,8 +223,6 @@ export namespace at {
 }
 
 /**
- * Delete a specific guest session by ID.
- *
  * Delete a single guest session identified by its unique session ID for the
  * specified guest. This operation allows the system to remove stale or
  * terminated guest sessions.

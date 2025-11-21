@@ -8,8 +8,6 @@ import { IRedditCommunityModeratorKarma } from "../../../../api/structures/IRedd
 @Controller("/redditCommunity/moderators/:username/karma")
 export class RedditcommunityModeratorsKarmaController {
   /**
-   * Retrieve karma statistics for a specific moderator.
-   *
    * Retrieve the comprehensive karma statistics for a specific moderator
    * identified by their unique username. This operation returns aggregated
    * karma metrics that reflect the moderator's standing and reputation within

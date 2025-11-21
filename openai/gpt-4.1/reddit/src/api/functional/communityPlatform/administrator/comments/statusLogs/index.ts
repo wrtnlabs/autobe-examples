@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentStatusLog } from "../../../../../structures/IC
 import { IPageICommunityPlatformCommentStatusLog } from "../../../../../structures/IPageICommunityPlatformCommentStatusLog";
 
 /**
- * List all status log entries for a given comment from the
- * community_platform_comment_status_logs table.
- *
  * Retrieve a filtered and paginated list of status logs that represent all
  * moderation and lifecycle state transitions for a specific comment. This
  * operation enables users, moderators, or administrators to examine the entire
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Get detail for a single comment status log entry
- * (community_platform_comment_status_logs table).
- *
  * Fetch the details of a single status log entry for a comment, identified by
  * its unique statusLogId. The entry provides comprehensive information on the
  * moderation or status change event, including the action initiator, resulting

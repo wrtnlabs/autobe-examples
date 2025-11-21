@@ -10,9 +10,6 @@ import { IDiscussionBoardReportOfArticle } from "../../../../../api/structures/I
 @Controller("/discussionBoard/adminUser/reports/:reportId/article")
 export class DiscussionboardAdminuserReportsArticleController {
   /**
-   * Get a single article-targeting report from discussion_board_reports with
-   * its article link from discussion_board_report_of_articles.
-   *
    * Retrieve detailed information for a single discussion board report that
    * targets an article, combining the core report record from
    * discussion_board_reports with its article association from

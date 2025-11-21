@@ -7,9 +7,6 @@ import { ICommunityPlatformComment } from "../../../../api/structures/ICommunity
 @Controller("/communityPlatform/member/comments")
 export class CommunityplatformMemberCommentsController {
   /**
-   * Create a new comment on a post or existing comment in the community
-   * platform.
-   *
    * Create a new user-generated comment in the community_platform_comments
    * table. This operation enables members to contribute to discussions by
    * posting comments on posts or replying to existing comments with nested
@@ -70,8 +67,6 @@ export class CommunityplatformMemberCommentsController {
   }
 
   /**
-   * Update an existing comment with new content or status changes.
-   *
    * Update a specific community platform comment identified by commentId.
    * This operation modifies the comment content, status, or metadata in the
    * community_platform_comments table. Regular members can only edit their
@@ -126,8 +121,6 @@ export class CommunityplatformMemberCommentsController {
   }
 
   /**
-   * Delete a community platform comment by ID.
-   *
    * Delete a specific comment from the community platform, marking it as
    * deleted in the database while preserving the record for audit purposes
    * and thread structure integrity.

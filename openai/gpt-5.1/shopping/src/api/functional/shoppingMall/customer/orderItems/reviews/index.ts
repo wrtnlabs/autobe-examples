@@ -7,9 +7,6 @@ import { IPageIShoppingMallReview } from "../../../../../structures/IPageIShoppi
 import { IShoppingMallReview } from "../../../../../structures/IShoppingMallReview";
 
 /**
- * List reviews from shopping_mall_reviews for a specific
- * shopping_mall_order_items row.
- *
  * Retrieve all product reviews that have been written for a specific order line
  * item.
  *
@@ -130,9 +127,6 @@ export namespace index {
 }
 
 /**
- * Create a new shopping_mall_reviews row for a given shopping_mall_order_items
- * row.
- *
  * Create a new customer review for a product based on a specific order item.
  *
  * This operation writes into the shopping_mall_reviews table, which stores

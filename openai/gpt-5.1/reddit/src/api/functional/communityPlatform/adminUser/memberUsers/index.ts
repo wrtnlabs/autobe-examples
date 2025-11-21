@@ -9,9 +9,6 @@ export * as sessions from "./sessions/index";
 export * as accountRestrictions from "./accountRestrictions/index";
 
 /**
- * Search and paginate memberUser accounts from the
- * community_platform_memberusers table for administrators.
- *
  * Retrieve a filtered and paginated list of member user accounts from the
  * community platform for administrative oversight and moderation.
  *
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Get a single memberUser account by username from the
- * community_platform_memberusers table for admin inspection.
- *
  * Retrieve detailed information about a single member user account identified
  * by its globally unique username.
  *

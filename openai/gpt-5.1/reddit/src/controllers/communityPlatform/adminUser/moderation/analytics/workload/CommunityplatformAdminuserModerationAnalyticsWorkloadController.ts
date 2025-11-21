@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAnalyticsWorkload } from "../../../../../..
 @Controller("/communityPlatform/adminUser/moderation/analytics/workload")
 export class CommunityplatformAdminuserModerationAnalyticsWorkloadController {
   /**
-   * Retrieve aggregated moderation workload analytics composed from
-   * moderation case and report tables.
-   *
    * Retrieve aggregated moderation workload analytics across reports and
    * moderation cases for the community platform.
    *

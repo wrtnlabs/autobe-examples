@@ -8,9 +8,6 @@ import { ICommunityPlatformFeedPost } from "../../../../../api/structures/ICommu
 @Controller("/communityPlatform/memberUser/feeds/posts")
 export class CommunityplatformMemberuserFeedsPostsController {
   /**
-   * Retrieve a personalized paginated feed of posts based on member
-   * subscriptions and preferences.
-   *
    * Retrieve a personalized, paginated feed of posts for the current viewer,
    * supporting advanced filtering, sorting, and feed modes.
    *

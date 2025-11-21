@@ -13,8 +13,6 @@ import { IRedditCommunityCommentVote } from "../../../../../../../api/structures
 )
 export class RedditcommunityModeratorRedditcommunityPostsCommentsCommentvotesController {
   /**
-   * Retrieve paginated comment votes for a specific comment.
-   *
    * Retrieve a filtered and paginated list of votes cast on a comment within a
    * Reddit community post.
    *

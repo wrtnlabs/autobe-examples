@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionCategory } from "../../../../structures/IEconomicDiscussionCategory";
 
 /**
- * Create a new discussion category for organizing economic and political
- * articles.
- *
  * Creates a new category for organizing discussion articles within the economic
  * and political discourse platform. This operation enables administrators to
  * expand the taxonomy system by adding new topical areas for content
@@ -107,8 +104,6 @@ export namespace create {
 }
 
 /**
- * Update an existing discussion category's properties and configuration.
- *
  * Updates the properties of an existing discussion category within the economic
  * and political discourse platform. This operation enables administrators to
  * modify category metadata while maintaining the integrity of associated
@@ -214,8 +209,6 @@ export namespace update {
 }
 
 /**
- * Delete a discussion category using soft deletion.
- *
  * Permanently deactivate a discussion category by marking it as deleted. This
  * operation logically removes categories from active use while preserving all
  * historical data and relationships.

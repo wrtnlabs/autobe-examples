@@ -8,9 +8,6 @@ import { IPageIShoppingMallSellerPayoutBatch } from "../../../../structures/IPag
 export * as items from "./items/index";
 
 /**
- * Create a new payout batch in the shopping_mall_seller_payout_batches table
- * for seller settlements.
- *
  * Create a new payout batch record in the shopping_mall_seller_payout_batches
  * table to group seller earnings for settlement.
  *
@@ -136,9 +133,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of seller payout batches from the
- * shopping_mall_seller_payout_batches table.
- *
  * Search and list seller payout batches with pagination and filtering
  * capabilities.
  *
@@ -261,9 +255,6 @@ export namespace index {
 }
 
 /**
- * Get payout batch details from shopping_mall_seller_payout_batches by unique
- * batchCode.
- *
  * Retrieve a specific payout batch from the shopping_mall_seller_payout_batches
  * table using its unique batchCode.
  *
@@ -379,9 +370,6 @@ export namespace at {
 }
 
 /**
- * Update an existing seller payout batch record in the
- * shopping_mall_seller_payout_batches table using its batchCode.
- *
  * Update an existing seller payout batch identified by its business `batchCode`
  * on the `shopping_mall_seller_payout_batches` table.
  *
@@ -529,9 +517,6 @@ export namespace update {
 }
 
 /**
- * Delete a seller payout batch record from the
- * shopping_mall_seller_payout_batches table by its batchCode.
- *
  * Delete an existing seller payout batch identified by its business `batchCode`
  * from the `shopping_mall_seller_payout_batches` table when allowed by business
  * rules.

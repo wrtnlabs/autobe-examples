@@ -12,9 +12,6 @@ import { ICommunityPlatformUser } from "../../../api/structures/ICommunityPlatfo
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Registers a new user in the community_platform_users table and issues
-   * authentication tokens.
-   *
    * This endpoint enables new user creation by accepting an email and password,
    * which are validated and stored in the community_platform_users table as a
    * new record. Email uniqueness is strictly enforced at the database level.
@@ -64,9 +61,6 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticates a user with email and password using the
-   * community_platform_users table and issues tokens.
-   *
    * This operation validates a user's submitted email and password against the
    * records in the community_platform_users table. If credentials match,
    * account is active, and not soft deleted, a JWT authentication token pair is
@@ -107,9 +101,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refreshes authentication tokens for user accounts in the
-   * community_platform_users table upon valid refresh token submission.
-   *
    * Upon valid refresh token submission, this operation generates new JWT
    * tokens that extend the user's authenticated session without asking for
    * password again. The endpoint consults the community_platform_users table to

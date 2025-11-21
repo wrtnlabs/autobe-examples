@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaByUserStatistics } from "../../../../../../struc
 import { IPageICommunityPlatformKarmaByUserStatistics } from "../../../../../../structures/IPageICommunityPlatformKarmaByUserStatistics";
 
 /**
- * Retrieve paginated user-level karma analytics derived from
- * community_platform_user_karmas.
- *
  * Retrieve aggregated karma statistics grouped by user, returning a paginated
  * and filterable analytical view based primarily on the
  * `community_platform_user_karmas` Prisma table and secondarily on the

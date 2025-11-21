@@ -10,8 +10,6 @@ import { ITodoListAdmin } from "../../../api/structures/ITodoListAdmin";
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new administrator account in todo_list_admins table.
-   *
    * Creates a new administrator account with elevated system privileges for
    * managing users and performing administrative operations. This endpoint
    * processes admin registration requests by validating the provided email and
@@ -70,8 +68,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate administrator and issue JWT tokens for admin access.
-   *
    * Authenticates an administrator using email and password credentials,
    * validating them against the securely hashed password stored in the
    * todo_list_admins table. This endpoint processes admin login requests by
@@ -136,8 +132,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh admin JWT access token using valid refresh token.
-   *
    * Renews the JWT access token for an authenticated administrator using a
    * valid refresh token, enabling continuous administrative access without
    * requiring the admin to re-enter their password. This endpoint processes

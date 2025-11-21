@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerator } from "../../../../../../structures/IDiscussionBoardModerator";
 
 /**
- * Verify moderator email address using verification token.
- *
  * Confirms moderator email verification by validating the verification token
  * and updating the email_verified status.
  *

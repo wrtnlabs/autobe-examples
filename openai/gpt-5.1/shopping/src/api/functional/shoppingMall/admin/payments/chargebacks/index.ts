@@ -7,9 +7,6 @@ import { IShoppingMallPaymentChargeback } from "../../../../../structures/IShopp
 import { IPageIShoppingMallPaymentChargeback } from "../../../../../structures/IPageIShoppingMallPaymentChargeback";
 
 /**
- * Create a shopping_mall_payment_chargebacks entry for a specific order
- * payment.
- *
  * Create a new chargeback record for a specific order payment in the
  * shoppingMall platform.
  *
@@ -151,9 +148,6 @@ export namespace create {
 }
 
 /**
- * Search and list chargebacks in shopping_mall_payment_chargebacks for a
- * specific order payment.
- *
  * Retrieve a filtered and paginated list of chargeback records associated with
  * a specific order payment.
  *
@@ -298,9 +292,6 @@ export namespace index {
 }
 
 /**
- * Get a specific payment chargeback (shopping_mall_payment_chargebacks) by
- * payment and chargeback identifiers.
- *
  * Retrieve a single chargeback record associated with a particular order
  * payment, exposing full details needed for financial reconciliation and
  * dispute handling.
@@ -443,9 +434,6 @@ export namespace at {
 }
 
 /**
- * Update a specific payment chargeback (shopping_mall_payment_chargebacks)
- * associated with a given order payment.
- *
  * Modify the mutable details of a specific chargeback associated with a given
  * order payment, such as status transitions, internal categorization, and
  * administrative notes.
@@ -602,9 +590,6 @@ export namespace update {
 }
 
 /**
- * Delete a chargeback record in shopping_mall_payment_chargebacks for a
- * specific order payment.
- *
  * Delete a specific chargeback entry for a given order payment.
  *
  * This operation removes a single chargeback record from the

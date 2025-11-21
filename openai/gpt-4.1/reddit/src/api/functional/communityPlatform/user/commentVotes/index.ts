@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommentVote } from "../../../../structures/ICommunityPlatformCommentVote";
 
 /**
- * Create a new comment vote in community_platform_comment_votes (upvote or
- * downvote).
- *
  * Create a new vote (upvote or downvote) for a specific comment by an
  * authenticated user.
  *
@@ -106,8 +103,6 @@ export namespace create {
 }
 
 /**
- * Update a comment vote entry in the community_platform_comment_votes table.
- *
  * Update the properties of an existing comment vote, such as changing the vote
  * type from upvote to downvote or vice versa. This operation allows users to
  * reverse their previous voting decision, updating the stored vote in the
@@ -217,9 +212,6 @@ export namespace update {
 }
 
 /**
- * Erase (soft delete) a comment vote in the community_platform_comment_votes
- * table.
- *
  * Erase (soft delete) a comment vote record. This disables the vote by setting
  * the deleted_at timestamp, ensuring the user's vote no longer affects comment
  * ranking, karma, or sorting. The erased record is retained for auditing

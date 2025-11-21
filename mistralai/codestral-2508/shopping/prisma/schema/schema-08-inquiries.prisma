@@ -1,10 +1,9 @@
-/// Customer inquiries about products or services. Stores questions or
-/// concerns from customers seeking assistance or information. Each inquiry
-/// is associated with a specific customer and can be linked to a product or
-/// service for context. Inquiries can have multiple responses from customer
-/// support or sellers. The inquiry content includes title and body fields
-/// for structured communication. Soft deletion is supported to maintain
-/// audit trails while allowing content moderation.
+/// Customer inquiries about products or services. Stores customer questions
+/// and requests for assistance. Each inquiry is associated with a specific
+/// customer and session, and may have multiple responses from
+/// administrators. Inquiries can be marked with a status to track their
+/// resolution process. Soft deletion is supported to maintain audit trails
+/// while allowing content moderation.
 ///
 /// @namespace Inquiries
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -18,7 +17,7 @@ model shopping_mall_inquiries {
   /// Customer who created the inquiry. {@link shopping_mall_customers.id}
   shopping_mall_customer_id String
   
-  /// Customer session during inquiry creation. {@link
+  /// Session during which the inquiry was created. {@link
   /// shopping_mall_customer_sessions.id}
   shopping_mall_customer_session_id String
   
@@ -28,20 +27,23 @@ model shopping_mall_inquiries {
   /// Detailed content of the inquiry.
   body String
   
+  /// Current status of the inquiry (e.g., 'pending', 'resolved').
+  status String
+  
   /// Timestamp when the inquiry was created.
   created_at DateTime
   
   /// Timestamp when the inquiry was last updated.
   updated_at DateTime
   
-  /// Timestamp when the inquiry was soft-deleted.
+  /// Timestamp when the inquiry was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  session shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
   
   shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
   
@@ -51,13 +53,12 @@ model shopping_mall_inquiries {
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inquiries_shopping_mall_customer_id_crea_28c75a10")
 }
 
-/// Responses to customer inquiries. Stores replies from customer support or
-/// sellers to address customer concerns or questions. Each response is
-/// associated with a specific inquiry and can be linked to a seller or
-/// administrator for accountability. Responses can include attachments or
-/// references to other resources. The response content includes title and
-/// body fields for structured communication. Soft deletion is supported to
-/// maintain audit trails while allowing content moderation.
+/// Responses to customer inquiries. Stores administrator replies to customer
+/// inquiries. Each response is associated with a specific inquiry and
+/// administrator, and may include additional context or solutions. Responses
+/// can be marked with a status to track their resolution process. Soft
+/// deletion is supported to maintain audit trails while allowing content
+/// moderation.
 ///
 /// @namespace Inquiries
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -71,18 +72,19 @@ model shopping_mall_inquiry_responses {
   /// Inquiry to which this response belongs. {@link shopping_mall_inquiries.id}
   shopping_mall_inquiry_id String
   
-  /// Seller who provided the response. {@link shopping_mall_sellers.id}
-  shopping_mall_seller_id String
+  /// Administrator who created the response. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
   
-  /// Seller session during response creation. {@link
-  /// shopping_mall_seller_sessions.id}
-  shopping_mall_seller_session_id String
+  /// Session during which the response was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
   
-  /// Title of the response.
-  title String
-  
-  /// Detailed content of the response.
+  /// Content of the response.
   body String
+  
+  /// Current status of the response (e.g., 'pending', 'resolved').
+  status String
   
   /// Timestamp when the response was created.
   created_at DateTime
@@ -90,20 +92,70 @@ model shopping_mall_inquiry_responses {
   /// Timestamp when the response was last updated.
   updated_at DateTime
   
-  /// Timestamp when the response was soft-deleted.
+  /// Timestamp when the response was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  session shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_seller_id])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_session_id], map: "shopping_mall_inquiry_responses_shopping_mall_seller_s_fb5f3741")
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_inquiry_responses_shopping_mall_administ_4a324825")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_inquiry_responses_shopping_mall_administ_2ad350bc")
   
   // spellchecker: ignore-next-line
   @@index([shopping_mall_inquiry_id, created_at], map: "shopping_mall_inquiry_responses_shopping_mall_inquiry__c18d4a78")
+}
+
+/// Frequently Asked Questions and Answers. Stores common questions and their
+/// answers to provide quick reference for customers. Each FAQ is associated
+/// with a specific administrator and session, and may be updated or deleted
+/// as needed. Soft deletion is supported to maintain audit trails while
+/// allowing content moderation.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_faqs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who created the FAQ. {@link shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Session during which the FAQ was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// The frequently asked question.
+  question String
+  
+  /// The answer to the frequently asked question.
+  answer String
+  
+  /// Timestamp when the FAQ was created.
+  created_at DateTime
+  
+  /// Timestamp when the FAQ was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the FAQ was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  session shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_administrator_id])
+  @@index([shopping_mall_administrator_session_id])
+  
+  @@index([created_at])
 }

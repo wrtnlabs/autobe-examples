@@ -8,9 +8,6 @@ import { IShoppingMallShipmentSearch } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/customer/search/shipments")
 export class ShoppingmallCustomerSearchShipmentsController {
   /**
-   * Search shipments using complex filters and pagination based on
-   * shopping_mall_shipments and related tables.
-   *
    * Execute an advanced search over shipment records from the
    * shipment-related Prisma models to retrieve a paginated list of shipments
    * that match complex business filters.

@@ -8,10 +8,6 @@ export * as rules from "./rules/index";
 export * as memberships from "./memberships/index";
 
 /**
- * Create a new community_platform_communities record using
- * ICommunityPlatformCommunity.ICreate and return it as
- * ICommunityPlatformCommunity.
- *
  * Create a new community record in the community_platform_communities table
  * using client-supplied attributes.
  *

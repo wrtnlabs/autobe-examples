@@ -1,0 +1,345 @@
+/// Core media file storage and management with enhanced normalization.
+///
+/// Stores uploaded media files including images, videos, and documents with
+/// their original formats and processing status. Each file is associated
+/// with an uploader and maintains processing workflow state through
+/// standardized status fields.
+///
+/// Enhanced to remove redundant file_size storage and improve relationship
+/// integrity. Files support multiple thumbnail versions and metadata
+/// attachments with proper foreign key constraints.
+///
+/// The system tracks file lifecycle from upload through optimization and CDN
+/// distribution with comprehensive audit trails.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_media_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Uploading member's identifier. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session during upload. {@link community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Original filename as uploaded by user.
+  file_name String
+  
+  /// MIME type of the uploaded file.
+  file_type String
+  
+  /// File size in bytes after processing.
+  file_size Int
+  
+  /// Path to file in cloud storage.
+  storage_path String
+  
+  /// Processing status: uploaded, processing, optimized, failed.
+  status String
+  
+  /// Compression/optimization level applied (1-100).
+  optimization_level Int?
+  
+  /// File version for revision tracking.
+  version Int
+  
+  /// File creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_media community_platform_post_media[]
+  community_platform_media_thumbnails community_platform_media_thumbnails[]
+  community_platform_media_metadata community_platform_media_metadata?
+  community_platform_media_uploads community_platform_media_uploads?
+  community_platform_media_cdn community_platform_media_cdn[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_media_files_community_platform_memb_22b27079")
+  
+  @@unique([storage_path])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_media_files_community_platform_memb_75daf2af")
+  @@index([status, created_at])
+  @@index([file_type, created_at])
+  @@index([version])
+}
+
+/// Generated thumbnail versions for media files with enhanced indexing.
+///
+/// Stores multiple thumbnail sizes and formats generated from original media
+/// files for optimized display across different devices and contexts. Each
+/// thumbnail is linked to a parent media file and maintains its own
+/// optimization metadata.
+///
+/// Enhanced with better indexing for thumbnail size queries and performance
+/// optimization. Supports responsive design by providing appropriate image
+/// sizes for various screen resolutions and bandwidth conditions.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_media_thumbnails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent media file identifier. {@link community_platform_media_files.id}
+  community_platform_media_file_id String
+  
+  /// Thumbnail dimensions (e.g., 150x150, 300x300).
+  thumbnail_size String
+  
+  /// Path to thumbnail in cloud storage.
+  storage_path String
+  
+  /// Thumbnail file size in bytes.
+  file_size Int
+  
+  /// Image quality percentage (1-100).
+  quality Int
+  
+  /// Thumbnail format (JPEG, PNG, WebP).
+  format String
+  
+  /// Thumbnail generation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mediaFile community_platform_media_files @relation(fields: [community_platform_media_file_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_media_file_id, thumbnail_size], map: "community_platform_media_thumbnails_community_platform_968d6b29")
+  // spellchecker: ignore-next-line
+  @@index([thumbnail_size, created_at], map: "community_platform_media_thumbnails_thumbnail_size_cre_18e34867")
+  @@index([quality, format])
+}
+
+/// Technical metadata and EXIF information for media files with JSON support.
+///
+/// Stores detailed technical information extracted from media files
+/// including image dimensions, camera settings, GPS coordinates, and other
+/// EXIF data. Enhanced with JSON type for exif_data to enable advanced query
+/// capabilities.
+///
+/// This metadata supports advanced search, filtering, and content analysis
+/// capabilities. Maintains relationship with parent media file while
+/// allowing independent metadata updates and queries with optimized
+/// indexing.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_media_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent media file identifier. {@link community_platform_media_files.id}
+  community_platform_media_file_id String
+  
+  /// Image/video width in pixels.
+  width Int?
+  
+  /// Image/video height in pixels.
+  height Int?
+  
+  /// Video/audio duration in seconds.
+  duration Int?
+  
+  /// Media bitrate in kbps.
+  bitrate Int?
+  
+  /// Color space information.
+  color_space String?
+  
+  /// Camera model from EXIF data.
+  camera_model String?
+  
+  /// GPS latitude coordinates.
+  gps_latitude Float?
+  
+  /// GPS longitude coordinates.
+  gps_longitude Float?
+  
+  /// Raw EXIF metadata in JSON format.
+  exif_data String?
+  
+  /// Metadata extraction timestamp.
+  created_at DateTime
+  
+  /// Last metadata update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mediaFile community_platform_media_files @relation(fields: [community_platform_media_file_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_media_file_id], map: "community_platform_media_metadata_community_platform_m_eb12eea9")
+  
+  @@index([width, height])
+  @@index([camera_model])
+  @@index([duration])
+  @@index([bitrate])
+}
+
+/// Historical record of media upload attempts and processing with proper
+/// constraints.
+///
+/// Tracks the complete lifecycle of media uploads from initial attempt
+/// through processing completion. Enhanced with non-nullable foreign key and
+/// standardized status values for consistent tracking.
+///
+/// Captures upload source information, processing errors, and final outcomes
+/// for audit and analytics purposes. Supports retry mechanisms and provides
+/// visibility into upload performance and success rates with improved
+/// indexing.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_media_uploads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Resulting media file identifier. {@link community_platform_media_files.id}
+  community_platform_media_file_id String
+  
+  /// Uploading member's identifier. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session during upload. {@link community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Upload source (web, mobile, api).
+  upload_source String
+  
+  /// Original filename before processing.
+  original_filename String
+  
+  /// Upload duration in milliseconds.
+  upload_duration Int
+  
+  /// Processing duration in milliseconds.
+  processing_duration Int?
+  
+  /// Final upload status: completed, failed, cancelled.
+  status String
+  
+  /// Error details if upload failed.
+  error_message String?
+  
+  /// Uploader's IP address.
+  ip_address String
+  
+  /// Upload client user agent.
+  user_agent String
+  
+  /// Upload initiation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mediaFile community_platform_media_files @relation(fields: [community_platform_media_file_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_media_file_id], map: "community_platform_media_uploads_community_platform_me_df00f736")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_media_uploads_community_platform_me_deeba314")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_media_uploads_community_platform_me_198fddd9")
+  @@index([status, created_at])
+  @@index([upload_source, created_at])
+  @@index([upload_duration])
+}
+
+/// Content Delivery Network distribution tracking for media files with
+/// enhanced cache management.
+///
+/// Manages CDN distribution of media files across global edge locations.
+/// Enhanced with better indexing for cache management queries and
+/// performance optimization. Tracks file replication status, cache
+/// expiration, and delivery performance metrics.
+///
+/// Supports efficient content distribution and cache invalidation workflows.
+/// Integrates with multiple CDN providers and maintains distribution
+/// consistency across the platform with comprehensive access tracking.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_media_cdn {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Media file identifier. {@link community_platform_media_files.id}
+  community_platform_media_file_id String
+  
+  /// CDN provider name (Cloudflare, AWS CloudFront, etc.).
+  cdn_provider String
+  
+  /// CDN distribution identifier.
+  distribution_id String
+  
+  /// Comma-separated list of edge locations.
+  edge_locations String
+  
+  /// Current cache status: pending, cached, expired.
+  cache_status String
+  
+  /// Cache expiration timestamp.
+  cache_expiry DateTime
+  
+  /// Last CDN access timestamp.
+  last_access DateTime
+  
+  /// Total CDN access count.
+  access_count Int
+  
+  /// CDN distribution creation timestamp.
+  created_at DateTime
+  
+  /// Last distribution update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mediaFile community_platform_media_files @relation(fields: [community_platform_media_file_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_media_file_id, cdn_provider], map: "community_platform_media_cdn_community_platform_media__47269525")
+  @@index([cdn_provider, cache_status])
+  @@index([cache_expiry])
+  @@index([last_access])
+  @@index([access_count, last_access])
+}

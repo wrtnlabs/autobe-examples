@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallRevenueStatistics } from "../../../../../structures/IShoppingMallRevenueStatistics";
 
 /**
- * Retrieve aggregated revenue statistics and financial metrics for the
- * platform.
- *
  * Retrieve comprehensive revenue statistics and financial analytics for the
  * shopping mall platform. This operation provides aggregated financial metrics
  * computed from order transactions, payment records, platform commissions,

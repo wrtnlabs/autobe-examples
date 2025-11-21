@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardPasswordReset } from "../../../../structures/IDiscussionBoardPasswordReset";
 
 /**
- * Retrieve a specific password reset request by ID (token excluded for
- * security).
- *
  * Retrieve detailed information about a password reset request identified by
  * its unique ID from the discussion_board_password_resets table.
  *

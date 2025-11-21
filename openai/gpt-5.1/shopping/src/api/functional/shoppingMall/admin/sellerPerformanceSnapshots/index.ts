@@ -7,9 +7,6 @@ import { IShoppingMallSellerPerformanceSnapshot } from "../../../../structures/I
 import { IPageIShoppingMallSellerPerformanceSnapshot } from "../../../../structures/IPageIShoppingMallSellerPerformanceSnapshot";
 
 /**
- * Search and paginate seller performance snapshot records from the
- * shopping_mall_seller_performance_snapshots table.
- *
  * Retrieve a filtered, paginated collection of seller performance snapshots for
  * analytical and monitoring purposes.
  *
@@ -144,9 +141,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single seller performance snapshot from the
- * shopping_mall_seller_performance_snapshots table by ID.
- *
  * Retrieve full details of a single seller performance snapshot record by its
  * unique identifier.
  *

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewEligibility } from "../../../../structures/IShoppingMallReviewEligibility";
 
 /**
- * Retrieve a single review eligibility (`shopping_mall_review_eligibilities`)
- * record by its identifier.
- *
  * Retrieve a single review eligibility record from the
  * `shopping_mall_review_eligibilities` table using its unique identifier.
  *
@@ -124,9 +121,6 @@ export namespace at {
 }
 
 /**
- * Update an existing review eligibility (`shopping_mall_review_eligibilities`)
- * record by its identifier.
- *
  * Update an existing review eligibility record stored in the
  * `shopping_mall_review_eligibilities` table.
  *

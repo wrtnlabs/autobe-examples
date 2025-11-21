@@ -7,8 +7,6 @@ import { IShoppingMallReview } from "../../../../../structures/IShoppingMallRevi
 import { IPageIShoppingMallReview } from "../../../../../structures/IPageIShoppingMallReview";
 
 /**
- * Create a new review row in shopping_mall_reviews for the specified customer.
- *
  * Create a new review for a product or SKU authored by the specified customer.
  *
  * This operation allows an authenticated customer to submit a product review
@@ -152,9 +150,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of shopping_mall_reviews authored by a
- * specific customer.
- *
  * Retrieve a paginated list of product reviews authored by a specific customer,
  * with advanced filtering and sorting options.
  *
@@ -292,9 +287,6 @@ export namespace index {
 }
 
 /**
- * Get a detailed review row from shopping_mall_reviews for a specific customer
- * by reviewId.
- *
  * Retrieve a single review authored by a specific customer using the customer
  * and review identifiers.
  *
@@ -420,9 +412,6 @@ export namespace at {
 }
 
 /**
- * Update a specific customer review record in the `shopping_mall_reviews`
- * table.
- *
  * Update a specific product review written by a customer, using the underlying
  * `shopping_mall_reviews` Prisma model as the source of truth.
  *
@@ -568,9 +557,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific customer review record from the `shopping_mall_reviews`
- * table.
- *
  * Delete a specific product review belonging to a customer from the
  * `shopping_mall_reviews` Prisma model.
  *

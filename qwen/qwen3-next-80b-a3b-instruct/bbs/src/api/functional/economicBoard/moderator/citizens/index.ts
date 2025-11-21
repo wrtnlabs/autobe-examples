@@ -7,8 +7,6 @@ import { IEconomicBoardCitizen } from "../../../../structures/IEconomicBoardCiti
 import { IPageIEconomicBoardCitizen } from "../../../../structures/IPageIEconomicBoardCitizen";
 
 /**
- * Search and retrieve a filtered, paginated list of economic board citizens.
- *
  * Retrieve a filtered and paginated list of economic board citizens from the
  * system. This operation provides advanced search capabilities for finding
  * citizens based on multiple criteria including partial email matching, account
@@ -113,8 +111,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific economic board citizen by identifier.
- *
  * Retrieve detailed information about a specific economic board citizen by
  * their unique identifier.
  *

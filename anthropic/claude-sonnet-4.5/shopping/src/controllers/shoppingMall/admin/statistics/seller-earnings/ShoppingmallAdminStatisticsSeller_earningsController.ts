@@ -10,9 +10,6 @@ import { IShoppingMallSellerEarningsStatistics } from "../../../../../api/struct
 @Controller("/shoppingMall/admin/statistics/seller-earnings")
 export class ShoppingmallAdminStatisticsSeller_earningsController {
   /**
-   * Retrieve aggregated seller earnings statistics with filtering and
-   * time-based aggregation.
-   *
    * Retrieve comprehensive statistical analysis of seller earnings across the
    * shopping mall platform. This operation provides aggregated financial
    * metrics that help administrators and analysts understand seller revenue

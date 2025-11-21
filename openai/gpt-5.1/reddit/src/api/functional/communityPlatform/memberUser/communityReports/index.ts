@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityReport } from "../../../../structures/ICommunityPlatformCommunityReport";
 
 /**
- * Create a new community report record in the
- * community_platform_community_reports table.
- *
  * Create a new community-level report entry in the
  * `community_platform_community_reports` table based on information submitted
  * by an authenticated member user.

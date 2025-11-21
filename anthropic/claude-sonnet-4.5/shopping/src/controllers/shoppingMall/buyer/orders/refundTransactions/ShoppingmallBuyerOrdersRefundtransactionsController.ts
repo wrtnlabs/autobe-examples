@@ -11,8 +11,6 @@ import { IShoppingMallRefundTransaction } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/buyer/orders/:orderId/refundTransactions")
 export class ShoppingmallBuyerOrdersRefundtransactionsController {
   /**
-   * Retrieve paginated list of refund transactions for a specific order.
-   *
    * Retrieve a filtered and paginated list of refund transactions for a
    * specific order in the shopping mall system. This operation provides
    * comprehensive search capabilities for finding refund transactions based on

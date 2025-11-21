@@ -7,9 +7,6 @@ import { IShoppingMallProductCategory } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallProductCategory } from "../../../../../structures/IPageIShoppingMallProductCategory";
 
 /**
- * List and search categories associated with a given product via the
- * shopping_mall_product_categories table.
- *
  * Retrieve a paginated, searchable list of categories linked to a specific
  * product in the shoppingMall catalog.
  *

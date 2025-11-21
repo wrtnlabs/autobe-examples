@@ -7,9 +7,6 @@ import { IDiscussionBoardPostLike } from "../../../../../structures/IDiscussionB
 import { IPageIDiscussionBoardPostLike } from "../../../../../structures/IPageIDiscussionBoardPostLike";
 
 /**
- * Search and retrieve paginated like records for a specific discussion board
- * post.
- *
  * This operation provides comprehensive search capabilities for analyzing post
  * appreciation metrics. It allows filtering like records by member, date
  * ranges, and other criteria to measure content popularity and user engagement

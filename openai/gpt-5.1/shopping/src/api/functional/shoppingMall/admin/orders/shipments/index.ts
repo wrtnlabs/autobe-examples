@@ -7,9 +7,6 @@ import { IShoppingMallShipment } from "../../../../../structures/IShoppingMallSh
 import { IPageIShoppingMallShipment } from "../../../../../structures/IPageIShoppingMallShipment";
 
 /**
- * Create a new `shopping_mall_shipments` record for an order identified by
- * `orderCode`.
- *
  * Create a new shipment entity associated with an existing order identified by
  * its business `orderCode`.
  *
@@ -145,9 +142,6 @@ export namespace create {
 }
 
 /**
- * List and search shipments in the `shopping_mall_shipments` table for a given
- * orderCode with pagination for admins.
- *
  * Retrieve a filtered, paginated list of shipments belonging to a specific
  * order from the `shopping_mall_shipments` table for administrative oversight.
  *
@@ -281,9 +275,6 @@ export namespace index {
 }
 
 /**
- * Get a single `shopping_mall_shipments` record for an order by `orderCode` and
- * `shipmentCode`.
- *
  * Retrieve detailed information for a single shipment associated with a
  * specific order, identified by the combination of `orderCode` and
  * `shipmentCode`.

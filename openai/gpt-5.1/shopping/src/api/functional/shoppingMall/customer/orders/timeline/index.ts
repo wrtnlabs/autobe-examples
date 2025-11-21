@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderTimeline } from "../../../../../structures/IShoppingMallOrderTimeline";
 
 /**
- * Get a composed lifecycle timeline for a ShoppingMall order from
- * shopping_mall_orders and related history tables.
- *
  * Retrieve a unified, chronological business timeline for a specific order
  * identified by its business order code.
  *

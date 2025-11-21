@@ -7,8 +7,6 @@ import { IEconomicDiscussionSearch } from "../../../../../structures/IEconomicDi
 import { IPageIEconomicDiscussionSearchQuery } from "../../../../../structures/IPageIEconomicDiscussionSearchQuery";
 
 /**
- * Perform global search across all content types.
- *
  * Search across all economic and political discussion content including
  * articles, categories, and related metadata. This operation provides a unified
  * search experience that helps users discover relevant discussions and topics

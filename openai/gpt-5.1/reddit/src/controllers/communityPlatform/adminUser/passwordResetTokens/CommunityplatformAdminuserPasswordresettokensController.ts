@@ -8,10 +8,6 @@ import { IPageICommunityPlatformPasswordResetToken } from "../../../../api/struc
 @Controller("/communityPlatform/adminUser/passwordResetTokens")
 export class CommunityplatformAdminuserPasswordresettokensController {
   /**
-   * Create a new password reset token record in the
-   * community_platform_password_reset_tokens table for a specific account and
-   * purpose.
-   *
    * Create a new password reset or account recovery token entry in the
    * `community_platform_password_reset_tokens` table, representing a single
    * short-lived token associated with a specific account and business
@@ -73,9 +69,6 @@ export class CommunityplatformAdminuserPasswordresettokensController {
   }
 
   /**
-   * Search `community_platform_password_reset_tokens` records and return a
-   * paginated summary list for administrative use.
-   *
    * Retrieve a paginated, filterable list of password reset and account
    * recovery token records from the
    * `community_platform_password_reset_tokens` table for administrative
@@ -126,10 +119,6 @@ export class CommunityplatformAdminuserPasswordresettokensController {
   }
 
   /**
-   * Retrieve a single password reset token record from the
-   * community_platform_password_reset_tokens table by ID for administrative
-   * inspection.
-   *
    * Get detailed information about a single password reset or account
    * recovery token stored in the `community_platform_password_reset_tokens`
    * table using its unique primary key identifier.
@@ -190,9 +179,6 @@ export class CommunityplatformAdminuserPasswordresettokensController {
   }
 
   /**
-   * Permanently erase a password reset token record from
-   * community_platform_password_reset_tokens by UUID ID.
-   *
    * Erase a specific password reset or account recovery token record from the
    * community_platform_password_reset_tokens Prisma table using its UUID
    * identifier.

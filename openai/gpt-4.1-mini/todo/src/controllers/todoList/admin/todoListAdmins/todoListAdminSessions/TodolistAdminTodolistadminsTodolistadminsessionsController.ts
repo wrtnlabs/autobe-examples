@@ -17,8 +17,6 @@ import { IPageITodoListAdminSession } from "../../../../../api/structures/IPageI
 )
 export class TodolistAdminTodolistadminsTodolistadminsessionsController {
   /**
-   * Create a new Todo List admin session.
-   *
    * Create a new admin session record representing a login session for the
    * specified Todo List administrator.
    *
@@ -66,8 +64,6 @@ export class TodolistAdminTodolistadminsTodolistadminsessionsController {
   }
 
   /**
-   * List paginated admin sessions for a specific admin.
-   *
    * Retrieve a paginated list of admin sessions for a specific Todo List
    * administrator. This operation allows filtering and sorting sessions based
    * on creation time and their expiration status.
@@ -115,8 +111,6 @@ export class TodolistAdminTodolistadminsTodolistadminsessionsController {
   }
 
   /**
-   * Get detailed admin session by session ID.
-   *
    * Retrieve detailed information about a specific Todo List admin session by
    * its unique session ID.
    *
@@ -161,8 +155,6 @@ export class TodolistAdminTodolistadminsTodolistadminsessionsController {
   }
 
   /**
-   * Update an existing Todo List admin session.
-   *
    * Update details of an existing admin session record identified by session ID
    * and associated admin ID.
    *
@@ -213,8 +205,6 @@ export class TodolistAdminTodolistadminsTodolistadminsessionsController {
   }
 
   /**
-   * Delete a specific admin session by ID.
-   *
    * Permanently removes the admin session identified by the specified session
    * ID from the system. This endpoint is restricted to administrators with
    * appropriate permissions to ensure security.

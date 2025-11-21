@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationAction } from "../../../../structures/IDiscus
 import { IPageIDiscussionBoardModerationAction } from "../../../../structures/IPageIDiscussionBoardModerationAction";
 
 /**
- * Create a new moderation action record.
- *
  * This operation allows authorized moderators to create new moderation action
  * records in the discussion board system. Each moderation action represents an
  * official decision made by a moderator regarding reported content, including
@@ -106,8 +104,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of moderation actions.
- *
  * This operation provides comprehensive search functionality for moderation
  * actions recorded in the discussion board system. It supports advanced
  * filtering options including action type (content_removal, user_warning,
@@ -209,8 +205,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific moderation action by its unique identifier.
- *
  * This operation fetches a detailed moderation action record from the
  * discussion board moderation system. It provides comprehensive information
  * about a specific moderation action including the action type, detailed
@@ -303,8 +297,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation action record.
- *
  * This operation allows authorized moderators to update moderation action
  * records after they have been created. Moderation actions can be modified to
  * adjust details, escalation levels, or durations based on new information or
@@ -406,8 +398,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a moderation action record.
- *
  * This operation performs a hard deletion of moderation action records,
  * permanently removing them from the database. This operation is intended for
  * administrative cleanup purposes only and should be used sparingly.

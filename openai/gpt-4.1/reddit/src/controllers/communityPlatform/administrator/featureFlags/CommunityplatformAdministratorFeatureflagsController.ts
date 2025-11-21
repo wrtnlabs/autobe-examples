@@ -15,9 +15,6 @@ import { IPageICommunityPlatformFeatureFlag } from "../../../../api/structures/I
 @Controller("/communityPlatform/administrator/featureFlags")
 export class CommunityplatformAdministratorFeatureflagsController {
   /**
-   * Create/register a new feature flag in the community_platform_feature_flags
-   * table for progressive delivery and experimentation.
-   *
    * Create a new platform feature flag to enable progressive feature delivery,
    * experimentation, or controlled rollout across the community platform. This
    * endpoint lets trusted actors such as system administrators, SREs, or DevOps
@@ -62,9 +59,6 @@ export class CommunityplatformAdministratorFeatureflagsController {
   }
 
   /**
-   * Search and list community_platform_feature_flags with filtering,
-   * pagination, and summary information.
-   *
    * Search and retrieve a paginated list of platform feature flags, filtering
    * by status, type, and other criteria for operational insight or management
    * purposes.
@@ -104,9 +98,6 @@ export class CommunityplatformAdministratorFeatureflagsController {
   }
 
   /**
-   * Retrieve a single platform feature flag from the
-   * community_platform_feature_flags table by unique flag key.
-   *
    * Retrieve a specific platform feature flag by its unique key. This API
    * operation provides detailed information on platform feature flags, which
    * are used for live experimentation, phased feature rollouts, and conditional
@@ -156,9 +147,6 @@ export class CommunityplatformAdministratorFeatureflagsController {
   }
 
   /**
-   * Update platform feature flag properties in the
-   * community_platform_feature_flags table.
-   *
    * This operation enables the modification of any property of a platform
    * feature flag, including its type, status, and description. Administrators
    * can use this operation to reconfigure how features are exposed, experiment
@@ -209,9 +197,6 @@ export class CommunityplatformAdministratorFeatureflagsController {
   }
 
   /**
-   * Soft-delete a feature flag in the community_platform_feature_flags table by
-   * marking it as deleted.
-   *
    * This operation allows an administrator to logically remove a platform
    * feature flag from active use. The flag is marked as deleted by updating its
    * 'deleted_at' field with the current timestamp, in accordance with system

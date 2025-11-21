@@ -7,9 +7,6 @@ import { IShoppingMallProductTag } from "../../../../structures/IShoppingMallPro
 import { IPageIShoppingMallProductTag } from "../../../../structures/IPageIShoppingMallProductTag";
 
 /**
- * Create a new tag record in the shopping_mall_product_tags table for the
- * ShoppingMall catalog.
- *
  * Create a new product tag in the ShoppingMall catalog by inserting a row into
  * the shopping_mall_product_tags table.
  *
@@ -123,9 +120,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of product tags from
- * shopping_mall_product_tags.
- *
  * Search and list product tags with flexible filtering and pagination
  * capabilities.
  *
@@ -236,9 +230,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single product tag from
- * shopping_mall_product_tags.
- *
  * Retrieve the full detail of a single product tag identified by its unique ID.
  *
  * This endpoint looks up a single record from the `shopping_mall_product_tags`
@@ -342,9 +333,6 @@ export namespace at {
 }
 
 /**
- * Update an existing tag record in the shopping_mall_product_tags table
- * identified by productTagId.
- *
  * Update an existing product tag in the ShoppingMall catalog by modifying its
  * row in the shopping_mall_product_tags table.
  *
@@ -469,9 +457,6 @@ export namespace update {
 }
 
 /**
- * Erase a product tag record from the shopping_mall_product_tags master tag
- * table by its unique identifier.
- *
  * Delete a single product tag from the shopping_mall_product_tags master tag
  * catalog by its unique identifier.
  *

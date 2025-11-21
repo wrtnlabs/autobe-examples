@@ -1,21 +1,14 @@
-/// Primary customer identity and authentication entity.
+/// Primary customer identity record for the shoppingMall platform.
 ///
-/// Stores core identity information for customers who interact with the
-/// shopping mall platform. This entity represents a registered user who can
-/// browse products, create wishlists, add items to cart, and place orders.
-/// Customers must authenticate with email and password to access protected
-/// features.
+/// Stores core authentication and identification information for customers
+/// who browse and purchase products. Each customer may have multiple active
+/// sessions across different devices.
 ///
-/// Relationships:
-/// - Each customer can have multiple sessions documented in
-/// shopping_mall_customer_sessions
-/// - Each customer can have multiple carts in shopping_mall_carts
-/// - Each customer can have multiple wishlists in shopping_mall_wishlists
-/// - Each customer can have multiple orders in shopping_mall_orders
-/// - Each customer can have multiple reviews in shopping_mall_product_reviews
+/// Relates to shopping_mall_customer_sessions for session management and to
+/// shopping_mall_orders for order history.
 ///
-/// Soft deletion is supported to maintain audit compliance while allowing
-/// account deactivation.
+/// Customers are created during registration and require email verification
+/// before full access. May be suspended by admin but cannot be deleted.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -26,71 +19,76 @@ model shopping_mall_customers {
   /// Primary Key.
   id String @id
   
-  /// Unique email address used for authentication and communication. Required
-  /// for login.
+  /// Customer's verified email address used for authentication and
+  /// notifications. Must be unique across all actors.
   email String
   
-  /// BCrypt-hashed password for authentication. Never stored in plaintext.
+  /// BCrypt-hashed password for authentication. Never stored in plain text.
   /// Required for login functionality.
   password_hash String
   
-  /// Customer's first name for personalization and communication.
+  /// Customer's first/legal name as provided during registration.
   first_name String
   
-  /// Customer's last name for personalization and communication.
+  /// Customer's last/legal name as provided during registration.
   last_name String
   
-  /// Timestamp when the customer account was created.
+  /// Current account status. Valid values: 'active', 'suspended',
+  /// 'pending_verification'. Determines access to platform features.
+  status String
+  
+  /// Timestamp when the customer account was created. Used for audit trails
+  /// and onboarding analytics.
   created_at DateTime
   
-  /// Timestamp when the customer account was last updated.
+  /// Timestamp when the customer profile was last modified. Updated on
+  /// property changes or password reset.
   updated_at DateTime
   
-  /// Timestamp when the customer account was soft-deleted, or null if active.
-  /// Used for compliance and reversibility.
+  /// Soft-delete flag for account deactivation. When null, account is active;
+  /// when set, account is disabled but retained for compliance.
   deleted_at DateTime?
-  
-  /// Indicates whether the customer has verified their email address. Required
-  /// to access shopping and order functions.
-  is_verified Boolean
   
   //----
   // RELATIONS
   //----
   shopping_mall_customer_sessions shopping_mall_customer_sessions[]
-  shopping_mall_product_reviews_queue shopping_mall_product_reviews_queue[]
-  shopping_mall_carts shopping_mall_carts?
-  shopping_mall_wishlists shopping_mall_wishlists?
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
   shopping_mall_orders shopping_mall_orders[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_review_reports shopping_mall_review_reports[]
-  shopping_mall_seller_applications shopping_mall_seller_applications[]
-  shopping_mall_seller_profiles shopping_mall_seller_profiles?
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_reactions shopping_mall_review_reactions?
+  shopping_mall_coupon_redemptions shopping_mall_coupon_redemptions[]
+  shopping_mall_loyalty_points shopping_mall_loyalty_points?
+  shopping_mall_loyalty_point_transactions shopping_mall_loyalty_point_transactions[]
+  shopping_mall_notification_queue shopping_mall_notification_queue[]
+  shopping_mall_notification_deliveries shopping_mall_notification_deliveries[]
+  shopping_mall_notification_preferences shopping_mall_notification_preferences[]
+  shopping_mall_audit_logs shopping_mall_audit_logs[]
+  shopping_mall_access_logs shopping_mall_access_logs[]
+  shopping_mall_data_change_logs shopping_mall_data_change_logs[]
   
   @@unique([email])
+  @@index([status])
   @@index([created_at])
-  @@index([is_verified, deleted_at])
 }
 
-/// Customer authentication session tracking table.
+/// Session record for authenticated customer interactions with the
+/// shoppingMall platform.
 ///
-/// Tracks active and expired sessions for customer authentication. Each
-/// customer can have multiple concurrent sessions across devices. Sessions
-/// are used to maintain authenticated state across requests and track login
-/// activity for security auditing.
+/// Each session represents a single active login instance for a customer
+/// across a specific device and network connection. Sessions are ephemeral
+/// and managed by the authentication system.
 ///
-/// This table follows the mandatory session pattern: no additional fields
-/// allowed beyond specification.
+/// Maintains connection context for customer interactions including IP
+/// address, href, and referrer. Used for security monitoring and session
+/// management.
 ///
-/// Relationships:
-/// - Each session belongs to exactly one customer via
-/// shopping_mall_customers.id
-/// - Each session has a single customer context for identity linkage
+/// Relates to shopping_mall_customers via customer_id foreign key.
 ///
-/// Session lives from creation to expiration or manual logout.
-///
-/// This table is not independently managed by users but is maintained by the
-/// authentication system.
+/// Follows strict session table pattern: {actor_base}_sessions with
+/// mandatory fields and index structure.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -101,23 +99,28 @@ model shopping_mall_customer_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the customer who owns this session. {@link
+  /// Referenced customer account for this session. {@link
   /// shopping_mall_customers.id}.
   shopping_mall_customer_id String
   
-  /// IP address from which the session was created.
+  /// IP address from which the session was initiated. Used for security
+  /// monitoring and geolocation.
   ip String
   
-  /// Full URL of the page from which the login request originated.
+  /// Full URL of the application accessed during this session. Used for user
+  /// journey analysis.
   href String
   
-  /// Source URL that referred the user to the login page.
+  /// Source URL that led the user to the platform. Used for marketing
+  /// attribution and traffic analysis.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session was established. Used for session duration
+  /// calculation and audit trails.
   created_at DateTime
   
-  /// Timestamp when the session expires; null if still active.
+  /// Timestamp when this session will expire or was terminated. If null,
+  /// session is still active.
   expired_at DateTime?
   
   //----
@@ -125,29 +128,22 @@ model shopping_mall_customer_sessions {
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
-  @@index([expired_at])
 }
 
-/// Primary seller identity and business authentication entity.
+/// Primary seller identity record for businesses selling on the shoppingMall
+/// platform.
 ///
-/// Represents a business or individual who lists and sells products on the
-/// shopping mall platform. Sellers must complete an approval process before
-/// being granted selling privileges.
+/// Stores core authentication and identification information for business
+/// sellers who list and manage products for sale. Each seller may have
+/// multiple active sessions across different devices.
 ///
-/// Relationships:
-/// - Each seller can have multiple sessions in shopping_mall_seller_sessions
-/// - Each seller can have multiple products in shopping_mall_products
-/// - Each seller can have multiple product reviews in
-/// shopping_mall_product_reviews
-/// - Each seller can have multiple orders in shopping_mall_orders
-/// - Each seller can have multiple payouts in shopping_mall_seller_payouts
+/// Relates to shopping_mall_seller_sessions for session management and to
+/// shopping_mall_products for product listings.
 ///
-/// Soft deletion is supported, and status tracking manages the onboarding
-/// workflow (pending, approved, rejected, suspended).
+/// Sellers are created during registration and require document verification
+/// before active status. May be suspended by admin but cannot be deleted.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -158,64 +154,75 @@ model shopping_mall_sellers {
   /// Primary Key.
   id String @id
   
-  /// Unique business email address used for authentication and communication.
+  /// Seller's verified business email address used for authentication and
+  /// notifications. Must be unique across all actors.
   email String
   
-  /// BCrypt-hashed password for authentication. Never stored in plaintext.
+  /// BCrypt-hashed password for authentication. Never stored in plain text.
+  /// Required for login functionality.
   password_hash String
   
-  /// Legal name of the business or seller.
+  /// Legal business name as registered with government authorities. Displayed
+  /// to customers on product listings.
   business_name String
   
-  /// Timestamp when the seller account was created.
-  created_at DateTime
+  /// Physical business address for tax and regulatory purposes. Not displayed
+  /// to customers.
+  business_address String
   
-  /// Timestamp when the seller account was last updated.
-  updated_at DateTime
+  /// Official tax identification number issued by government authority. Used
+  /// for financial compliance.
+  tax_id String
   
-  /// Timestamp when the seller account was soft-deleted, or null if active.
-  deleted_at DateTime?
-  
-  /// Status of the seller account: 'pending_approval', 'approved', 'rejected',
-  /// 'suspended'. Controls access to selling features.
+  /// Current account status. Valid values: 'active', 'suspended',
+  /// 'pending_verification', 'rejected'. Determines ability to list products
+  /// and receive payments.
   status String
   
-  /// Indicates whether seller has completed bank account setup and
-  /// verification. Required before listing products.
-  is_onboarded Boolean
+  /// Timestamp when the seller account was created. Used for audit trails and
+  /// onboarding analytics.
+  created_at DateTime
+  
+  /// Timestamp when the seller profile or business information was last
+  /// modified.
+  updated_at DateTime
+  
+  /// Soft-delete flag for account deactivation. When null, account is active;
+  /// when set, account is disabled but retained for compliance.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   shopping_mall_seller_sessions shopping_mall_seller_sessions[]
   shopping_mall_products shopping_mall_products[]
-  shopping_mall_inventory shopping_mall_inventory[]
-  shopping_mall_inventory_audit shopping_mall_inventory_audit[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_inventory_units shopping_mall_inventory_units[]
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
   shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
   
   @@unique([email])
   @@unique([business_name])
-  @@index([created_at])
+  @@unique([tax_id])
   @@index([status])
-  @@index([is_onboarded])
+  @@index([created_at])
 }
 
-/// Seller authentication session tracking table.
+/// Session record for authenticated seller interactions with the
+/// shoppingMall platform.
 ///
-/// Tracks active and expired sessions for seller authentication. Each seller
-/// can have multiple concurrent sessions across devices for managing their
-/// storefront.
+/// Each session represents a single active login instance for a seller
+/// across a specific device and network connection. Sessions are ephemeral
+/// and managed by the authentication system.
 ///
-/// This table follows the mandatory session pattern: no additional fields
-/// allowed beyond specification.
+/// Maintains connection context for seller interactions including IP
+/// address, href, and referrer. Used for security monitoring and session
+/// management.
 ///
-/// Relationships:
-/// - Each session belongs to exactly one seller via shopping_mall_sellers.id
+/// Relates to shopping_mall_sellers via seller_id foreign key.
 ///
-/// Session lives from creation to expiration or manual logout.
-///
-/// This table is not independently managed by users but is maintained by the
-/// authentication system.
+/// Follows strict session table pattern: {actor_base}_sessions with
+/// mandatory fields and index structure.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -226,23 +233,28 @@ model shopping_mall_seller_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the seller who owns this session. {@link
+  /// Referenced seller account for this session. {@link
   /// shopping_mall_sellers.id}.
   shopping_mall_seller_id String
   
-  /// IP address from which the session was created.
+  /// IP address from which the session was initiated. Used for security
+  /// monitoring and geolocation.
   ip String
   
-  /// Full URL of the page from which the login request originated.
+  /// Full URL of the application accessed during this session. Used for user
+  /// journey analysis.
   href String
   
-  /// Source URL that referred the user to the login page.
+  /// Source URL that led the user to the platform. Used for marketing
+  /// attribution and traffic analysis.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session was established. Used for session duration
+  /// calculation and audit trails.
   created_at DateTime
   
-  /// Timestamp when the session expires; null if still active.
+  /// Timestamp when this session will expire or was terminated. If null,
+  /// session is still active.
   expired_at DateTime?
   
   //----
@@ -252,139 +264,131 @@ model shopping_mall_seller_sessions {
   
   // spellchecker: ignore-next-line
   @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
-  @@index([expired_at])
 }
 
-/// Primary administrative identity entity with elevated permissions.
+/// Primary admin identity record for platform administrators managing the
+/// shoppingMall platform.
 ///
-/// Represents platform administrators with system-wide management
-/// permissions including user management, product moderation, seller
-/// approval, and refund handling. These accounts require enhanced security
-/// controls including 2FA and audit logging.
+/// Stores core authentication and identification information for platform
+/// operators with elevated privileges to manage users, content, and system
+/// settings.
 ///
-/// Relationships:
-/// - Each admin can have multiple sessions in
-/// shopping_mall_administrator_sessions
-/// - Each admin can perform multiple actions logged in
-/// shopping_mall_admin_actions
-/// - Each admin can resolve disputes logged in
-/// shopping_mall_admin_dispute_resolutions
+/// Admins manage customer and seller accounts, moderate reviews,
+/// approve/reject products, access financial reports, and perform
+/// system-level actions.
 ///
-/// Soft deletion is supported to maintain audit trail while allowing account
-/// deactivation.
+/// Relates to shopping_mall_admin_sessions for session management.
+///
+/// Admins are manually created through internal processes. Cannot register
+/// via public interface. Always requires MFA and strict access controls.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_administrators {
+model shopping_mall_admins {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique administration email address used for authentication and
-  /// communication.
+  /// Admin's verified email address used for authentication and notifications.
+  /// Must be unique across all actors.
   email String
   
-  /// BCrypt-hashed password for authentication. Never stored in plaintext.
+  /// BCrypt-hashed password for authentication. Never stored in plain text.
+  /// Required for login functionality.
   password_hash String
   
-  /// Administrator's first name for identification and communication.
+  /// Admin's first/legal name as provided during onboarding.
   first_name String
   
-  /// Administrator's last name for identification and communication.
+  /// Admin's last/legal name as provided during onboarding.
   last_name String
   
-  /// Timestamp when the admin account was created.
-  created_at DateTime
-  
-  /// Timestamp when the admin account was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the admin account was soft-deleted, or null if active.
-  deleted_at DateTime?
-  
-  /// Status of the admin account: 'active', 'suspended', 'disabled'. Controls
-  /// system access.
+  /// Current account status. Valid values: 'active', 'suspended',
+  /// 'pending_verification'. Determines access to admin interfaces.
   status String
   
-  /// Indicates whether two-factor authentication is enabled for this admin
-  /// account, mandatory for security.
-  is_2fa_enabled Boolean
+  /// Timestamp when the admin account was created. Used for audit trails and
+  /// access control history.
+  created_at DateTime
+  
+  /// Timestamp when the admin profile was last modified. Updated on property
+  /// changes or password reset.
+  updated_at DateTime
+  
+  /// Soft-delete flag for account deactivation. When null, account is active;
+  /// when set, account is disabled but retained for compliance.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_system_logs shopping_mall_system_logs[]
-  shopping_mall_administrator_sessions shopping_mall_administrator_sessions[]
-  shopping_mall_inventory_audit shopping_mall_inventory_audit[]
+  shopping_mall_admin_sessions shopping_mall_admin_sessions[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_reviews shopping_mall_reviews[]
   shopping_mall_review_moderation_logs shopping_mall_review_moderation_logs[]
-  shopping_mall_admin_actions shopping_mall_admin_actions[]
-  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
-  shopping_mall_admin_dispute_resolutions shopping_mall_admin_dispute_resolutions[]
-  shopping_mall_admin_permissions shopping_mall_admin_permissions[]
-  shopping_mall_admin_settings_of_proposed_by_admin_id shopping_mall_admin_settings[] @relation("shopping_mall_admin_settings_of_proposed_by_admin_id")
-  shopping_mall_admin_settings_of_approved_by_admin_id shopping_mall_admin_settings[] @relation("shopping_mall_admin_settings_of_approved_by_admin_id")
-  shopping_mall_admin_system_notifications shopping_mall_admin_system_notifications[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_promotional_campaigns shopping_mall_promotional_campaigns[]
   
   @@unique([email])
-  @@index([created_at])
   @@index([status])
-  @@index([is_2fa_enabled])
+  @@index([created_at])
 }
 
-/// Administrator authentication session tracking table.
+/// Session record for authenticated admin interactions with the shoppingMall
+/// platform.
 ///
-/// Tracks active and expired sessions for admin authentication. Admins
-/// require higher security standards and can have multiple concurrent
-/// sessions for system management.
+/// Each session represents a single active login instance for an admin
+/// across a specific device and network connection. Sessions are ephemeral
+/// and managed by the authentication system.
 ///
-/// This table follows the mandatory session pattern: no additional fields
-/// allowed beyond specification.
+/// Maintains connection context for admin interactions including IP address,
+/// href, and referrer. Used for security monitoring and audit trails.
 ///
-/// Relationships:
-/// - Each session belongs to exactly one admin via
-/// shopping_mall_administrators.id
+/// Relates to shopping_mall_admins via admin_id foreign key.
 ///
-/// Session lives from creation to expiration or manual logout.
-///
-/// This table is not independently managed by users but is maintained by the
-/// authentication system.
+/// Follows strict session table pattern: {actor_base}_sessions with
+/// mandatory fields and index structure.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_administrator_sessions {
+model shopping_mall_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the administrator who owns this session. {@link
-  /// shopping_mall_administrators.id}.
-  shopping_mall_administrator_id String
+  /// Referenced admin account for this session. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String
   
-  /// IP address from which the session was created.
+  /// IP address from which the session was initiated. Used for security
+  /// monitoring and geolocation.
   ip String
   
-  /// Full URL of the page from which the login request originated.
+  /// Full URL of the application accessed during this session. Used for user
+  /// journey analysis.
   href String
   
-  /// Source URL that referred the user to the login page.
+  /// Source URL that led the user to the platform. Used for marketing
+  /// attribution and traffic analysis.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session was established. Used for session duration
+  /// calculation and audit trails.
   created_at DateTime
   
-  /// Timestamp when the session expires; null if still active.
+  /// Timestamp when this session will expire or was terminated. If null,
+  /// session is still active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_sessions_shopping_mall_adm_2e7e19a2")
-  @@index([expired_at])
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_sessions_shopping_mall_admin_id_cr_39834090")
 }

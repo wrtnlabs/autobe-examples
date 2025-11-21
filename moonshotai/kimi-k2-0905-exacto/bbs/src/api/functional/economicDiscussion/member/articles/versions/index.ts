@@ -7,8 +7,6 @@ import { IEconomicDiscussionArticleVersion } from "../../../../../structures/IEc
 import { IPageIEconomicDiscussionArticleVersion } from "../../../../../structures/IPageIEconomicDiscussionArticleVersion";
 
 /**
- * Retrieve paginated version history for an article.
- *
  * Get a paginated list of article version snapshots for a specific article,
  * providing complete edit history tracking. This operation retrieves all
  * historical versions of an article, showing how content has evolved over
@@ -109,8 +107,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific article version snapshot.
- *
  * Get detailed information about a specific version of an article, including
  * the complete content snapshot as it existed at that specific version
  * timestamp. This operation provides access to historical article data,

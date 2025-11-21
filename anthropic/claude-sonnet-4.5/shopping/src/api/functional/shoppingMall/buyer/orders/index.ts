@@ -12,8 +12,6 @@ export * as paymentTransactions from "./paymentTransactions/index";
 export * as refundTransactions from "./refundTransactions/index";
 
 /**
- * Create a new order from shopping cart items with payment processing.
- *
  * Create a new order by processing selected items from the authenticated
  * buyer's shopping cart, validating inventory availability, calculating totals,
  * processing payment, and reserving inventory for fulfillment. This operation
@@ -130,8 +128,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of orders.
- *
  * Retrieve a comprehensive, filtered, and paginated list of orders from the
  * marketplace. This operation provides advanced search capabilities for finding
  * orders based on multiple criteria including order number, status, creation
@@ -250,8 +246,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific order.
- *
  * Retrieve comprehensive details of a specific order identified by its unique
  * order ID. This operation provides complete order information including buyer
  * information, current order status, payment details, shipping address,
@@ -350,8 +344,6 @@ export namespace at {
 }
 
 /**
- * Update an existing order's information.
- *
  * Update an existing order in the shopping mall platform with modified
  * information. This operation allows buyers to update certain aspects of their
  * orders, typically before the order has been processed or shipped by sellers.
@@ -457,8 +449,6 @@ export namespace update {
 }
 
 /**
- * Soft delete an order from the system.
- *
  * Mark an order record as deleted in the shopping mall platform by setting the
  * deleted_at timestamp. This operation uses soft deletion to preserve the order
  * record for historical, legal, and compliance purposes while hiding it from

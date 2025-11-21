@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberSession } from "../../../../../structures/IDiscussionBoardMemberSession";
 
 /**
- * Terminate a specific member authentication session.
- *
  * Remove a specific active authentication session for a member, logging them
  * out from the associated device or browser.
  *

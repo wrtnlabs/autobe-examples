@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityJoinRequest } from "../../../../../structures/ICommunityPlatformCommunityJoinRequest";
 
 /**
- * Create a join request for a restricted community in
- * community_platform_community_join_requests.
- *
  * Submit a request to join a private or invite-only community.
  *
  * This endpoint enables users to send a join request to communities that
@@ -129,9 +126,6 @@ export namespace create {
 }
 
 /**
- * Soft-delete a specific community join request
- * (community_platform_community_join_requests).
- *
  * Delete (soft) a specific community join request by its unique ID within a
  * defined community.
  *

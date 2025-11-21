@@ -8,8 +8,6 @@ import { IPageIRedditCommunityRegisteredUser } from "../../../../structures/IPag
 export * as sessions from "./sessions/index";
 
 /**
- * Search and list registered users with advanced filtering and pagination.
- *
  * Retrieve a filtered and paginated list of registered users in the
  * redditCommunity system. This endpoint allows clients to search for registered
  * users based on multiple criteria such as username, email, registration date,
@@ -106,8 +104,6 @@ export namespace index {
 }
 
 /**
- * Get details of a registered user by ID.
- *
  * Retrieve detailed information about a registered user by their unique
  * identifier.
  *
@@ -195,8 +191,6 @@ export namespace at {
 }
 
 /**
- * Delete a registered user account by ID.
- *
  * Permanently deletes the specified registered user account from the system.
  *
  * This operation allows authorized administrators or system operators to remove

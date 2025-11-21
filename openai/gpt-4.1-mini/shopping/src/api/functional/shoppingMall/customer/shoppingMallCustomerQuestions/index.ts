@@ -7,8 +7,6 @@ import { IShoppingMallCustomerQuestion } from "../../../../structures/IShoppingM
 export * as shoppingMallQuestionAnswers from "./shoppingMallQuestionAnswers/index";
 
 /**
- * Create a new customer question in the shopping mall.
- *
  * Create a new customer question record linked to a customer and their active
  * session.
  *
@@ -104,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Update an existing customer question.
- *
  * Update the title and body of a customer question identified by its unique
  * question ID.
  *
@@ -204,8 +200,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a shopping mall customer question by ID.
- *
  * Permanently remove a specific shopping mall customer question identified by
  * its unique ID.
  *

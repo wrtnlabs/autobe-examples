@@ -7,8 +7,6 @@ import { IRedditCommunityAdminSession } from "../../../../../structures/IRedditC
 import { IPageIRedditCommunityAdminSession } from "../../../../../structures/IPageIRedditCommunityAdminSession";
 
 /**
- * Create a new admin session for a given administrator.
- *
  * Create a new session record for a Reddit Community Administrator.
  *
  * This endpoint accepts connection context including IP address, referrer, and
@@ -111,8 +109,6 @@ export namespace create {
 }
 
 /**
- * Search sessions for a reddit community administrator.
- *
  * Retrieve a filtered and paginated list of admin sessions for a specific
  * reddit community administrator.
  *
@@ -220,8 +216,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed admin session info for given admin and session IDs.
- *
  * Retrieve detailed information about a specific Reddit Community
  * Administrator's session.
  *
@@ -321,8 +315,6 @@ export namespace at {
 }
 
 /**
- * Update Reddit community admin session details.
- *
  * Update an existing admin session identified by the composite keys
  * redditCommunityAdminId and session id. This operation modifies session
  * details such as IP address, connection URL, referrer, and expiration time. It
@@ -437,8 +429,6 @@ export namespace update {
 }
 
 /**
- * Delete a Reddit community admin session.
- *
  * Delete an existing admin session identified by the composite keys
  * redditCommunityAdminId and session id. This operation permanently removes the
  * session record from the database, terminating the admin's active session.

@@ -10,8 +10,6 @@ import { ITodoListAdmin } from "../../../../../../api/structures/ITodoListAdmin"
 @Controller("/todoList/admin/admins/me/password")
 export class TodolistAdminAdminsMePasswordController {
   /**
-   * Update the authenticated administrator's password.
-   *
    * Update the password for the currently authenticated administrator account.
    * This operation allows admins to change their own password as a self-service
    * security management feature.

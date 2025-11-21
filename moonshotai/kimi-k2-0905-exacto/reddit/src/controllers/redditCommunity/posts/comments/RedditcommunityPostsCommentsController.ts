@@ -8,8 +8,6 @@ import { IRedditCommunityComment } from "../../../../api/structures/IRedditCommu
 @Controller("/redditCommunity/posts/:postId/comments")
 export class RedditcommunityPostsCommentsController {
   /**
-   * Retrieve paginated comments for a specific post with advanced filtering.
-   *
    * Retrieve a filtered, paginated list of comments for a specific post in
    * the reddit community platform. This operation supports advanced comment
    * browsing with thread-based organization and user-specific features.

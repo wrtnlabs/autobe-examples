@@ -11,8 +11,6 @@ import { IPageIShoppingMallProduct } from "../../../api/structures/IPageIShoppin
 @Controller("/shoppingMall/products")
 export class ShoppingmallProductsController {
   /**
-   * Create a new Shopping Mall Product in the catalog.
-   *
    * Create a new product entry in the shopping mall's catalog.
    *
    * The API accepts data for a new product, including its name, business
@@ -50,9 +48,6 @@ export class ShoppingmallProductsController {
   }
 
   /**
-   * Search and retrieve paginated product summaries from the
-   * shopping_mall_products table.
-   *
    * List and search products in the shopping mall catalog using complex query,
    * filtering, and pagination.
    *
@@ -93,8 +88,6 @@ export class ShoppingmallProductsController {
   }
 
   /**
-   * Get detailed information for a single Shopping Mall Product.
-   *
    * Retrieve the complete product details for the specified product.
    *
    * This API is used to access all business and presentation data of a single

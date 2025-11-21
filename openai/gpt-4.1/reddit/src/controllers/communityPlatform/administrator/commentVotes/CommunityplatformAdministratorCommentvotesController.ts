@@ -10,9 +10,6 @@ import { ICommunityPlatformCommentVote } from "../../../../api/structures/ICommu
 @Controller("/communityPlatform/administrator/commentVotes/:commentVoteId")
 export class CommunityplatformAdministratorCommentvotesController {
   /**
-   * Get full details of a specific comment vote by ID from
-   * community_platform_comment_votes.
-   *
    * Retrieve the detailed voting record for a single comment vote using its
    * unique identifier.
    *

@@ -5,9 +5,6 @@ import typia, { tags } from "typia";
 @Controller("/communityPlatform/adminUser/posts/:postId/comments/:commentId")
 export class CommunityplatformAdminuserPostsCommentsController {
   /**
-   * Permanently delete a specific comment from the
-   * community_platform_comments table for a given post.
-   *
    * Erase a specific comment row from the community_platform_comments table
    * for a given post.
    *

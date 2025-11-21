@@ -9,9 +9,6 @@ export * as items from "./items/index";
 export * as mergeEvents from "./mergeEvents/index";
 
 /**
- * Create a new customer-owned wishlist backed by the shopping_mall_wishlists
- * table.
- *
  * Create a new wishlist for the authenticated customer in the shopping mall
  * system.
  *
@@ -137,9 +134,6 @@ export namespace create {
 }
 
 /**
- * Search and list wishlists from the shopping_mall_wishlists table in a
- * paginated way.
- *
  * Search and retrieve a paginated list of wishlist headers stored in the
  * `shopping_mall_wishlists` table.
  *
@@ -262,9 +256,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single wishlist from the
- * shopping_mall_wishlists table by ID for the authenticated customer.
- *
  * Retrieve full details of a single wishlist stored in the
  * `shopping_mall_wishlists` table by its identifier for the authenticated
  * customer.
@@ -371,9 +362,6 @@ export namespace at {
 }
 
 /**
- * Update an existing wishlist resource in the shopping_mall_wishlists table
- * using its wishlistId.
- *
  * Update an existing customer-owned wishlist identified by its wishlistId.
  *
  * This operation targets a specific wishlist resource that corresponds
@@ -505,9 +493,6 @@ export namespace update {
 }
 
 /**
- * Delete a wishlist record from the shopping_mall_wishlists table by its
- * identifier.
- *
  * Delete a single wishlist entity from the system along with its associated
  * items when applicable.
  *
@@ -618,9 +603,6 @@ export namespace erase {
 }
 
 /**
- * Move an item from a shopping_mall_wishlists record into the customer’s active
- * cart, updating both wishlist and cart aggregates.
- *
  * Move a specific item from a customer’s wishlist into their active shopping
  * cart while enforcing wishlist and cart invariants.
  *
@@ -769,9 +751,6 @@ export namespace moveItemToCart {
 }
 
 /**
- * Copy an item from a shopping_mall_wishlists record into the customer’s active
- * cart without removing it from the wishlist.
- *
  * Copy a specific item from a customer’s wishlist into their active shopping
  * cart while keeping the original wishlist entry intact.
  *

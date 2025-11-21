@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportOfArticle } from "../../../../../structures/IDiscussionBoardReportOfArticle";
 
 /**
- * Get a single article-targeting report from discussion_board_reports with its
- * article link from discussion_board_report_of_articles.
- *
  * Retrieve detailed information for a single discussion board report that
  * targets an article, combining the core report record from
  * discussion_board_reports with its article association from

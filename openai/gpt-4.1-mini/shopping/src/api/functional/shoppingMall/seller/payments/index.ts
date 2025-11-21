@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallPayment } from "../../../../structures/IShoppingMallPayment";
 
 /**
- * Create a new payment record for an order.
- *
  * Create a new payment in the shopping mall payment system.
  *
  * This API enables authorized users such as admins or sellers to record a
@@ -111,8 +109,6 @@ export namespace create {
 }
 
 /**
- * Update an existing payment record.
- *
  * Update payment details for an existing payment record in the shopping mall
  * payment system.
  *

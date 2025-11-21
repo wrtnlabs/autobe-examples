@@ -7,9 +7,6 @@ import { IDiscussionBoardArticleComment } from "../../../structures/IDiscussionB
 import { IPageIDiscussionBoardArticleComment } from "../../../structures/IPageIDiscussionBoardArticleComment";
 
 /**
- * Search and paginate comments on discussion articles
- * (discussion_board_comments table).
- *
  * Search and retrieve comments posted on articles in the discussion board.
  *
  * This operation enables users to search for comments by keywords, authors,
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single discussion board comment by its unique ID from
- * discussion_board_comments.
- *
  * Retrieve a single comment's detailed information using the unique comment
  * identifier.
  *

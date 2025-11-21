@@ -9,8 +9,6 @@ import { ICommunityForumCommunityGroupMembership } from "../../../../api/structu
 @Controller("/communityForum/communities/:communitySlug/memberships")
 export class CommunityforumCommunitiesMembershipsController {
   /**
-   * Search and retrieve community memberships.
-   *
    * Retrieve a filtered and paginated list of memberships for a specific
    * community, identified by its URL-friendly slug. This operation provides
    * search capabilities for finding community members based on their membership

@@ -13,8 +13,6 @@ import { IRedditCommunityGuestSession } from "../../../../api/structures/IReddit
 )
 export class RedditcommunityRedditcommunityguestsSessionsController {
   /**
-   * Retrieve a specific redditCommunity guest session by ID.
-   *
    * This operation fetches detailed session information for a guest user
    * identified by redditCommunityGuestId and session ID.
    *
@@ -55,8 +53,6 @@ export class RedditcommunityRedditcommunityguestsSessionsController {
   }
 
   /**
-   * Update a guest user's session by guest ID and session ID.
-   *
    * Update an existing guest user session which tracks connection information
    * and session lifecycle.
    *
@@ -106,8 +102,6 @@ export class RedditcommunityRedditcommunityguestsSessionsController {
   }
 
   /**
-   * Delete a guest user's session by guest ID and session ID.
-   *
    * Delete an existing guest user session to permanently terminate the session
    * and release associated resources.
    *
@@ -148,8 +142,6 @@ export class RedditcommunityRedditcommunityguestsSessionsController {
   }
 
   /**
-   * Create a new redditCommunity guest session.
-   *
    * This operation allows creation of a new guest session for a guest user
    * identified by redditCommunityGuestId.
    *

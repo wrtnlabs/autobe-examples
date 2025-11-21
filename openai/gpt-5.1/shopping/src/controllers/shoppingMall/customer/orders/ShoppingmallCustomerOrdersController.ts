@@ -7,9 +7,6 @@ import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrde
 @Controller("/shoppingMall/customer/orders")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Create a new shopping_mall_orders record representing a confirmed
-   * customer order.
-   *
    * Create a new customer order record in the shopping_mall_orders table
    * based on the customer’s confirmed cart and checkout selections.
    *
@@ -68,9 +65,6 @@ export class ShoppingmallCustomerOrdersController {
   }
 
   /**
-   * Update an existing shopping_mall_orders record identified by its business
-   * orderCode.
-   *
    * Update mutable fields of an existing order in the shopping_mall_orders
    * table using its business orderCode as the identifier.
    *

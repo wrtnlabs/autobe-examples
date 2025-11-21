@@ -7,9 +7,6 @@ import { IShoppingMallSellerSession } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallSellerSession } from "../../../../../structures/IPageIShoppingMallSellerSession";
 
 /**
- * List all seller session records for a given seller
- * (shopping_mall_seller_sessions).
- *
  * Retrieve a paginated, filterable list of session records belonging to a
  * specific seller account.
  *
@@ -118,9 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a specific seller session
- * (shopping_mall_seller_sessions).
- *
  * Retrieve the complete details for a specific authenticated session record for
  * a given seller.
  *
@@ -226,9 +220,6 @@ export namespace at {
 }
 
 /**
- * Remove a specific seller dashboard session (shopping_mall_seller_sessions
- * table) by session ID.
- *
  * Remove a seller's dashboard/session record, ending the session and revoking
  * associated access tokens immediately.
  *

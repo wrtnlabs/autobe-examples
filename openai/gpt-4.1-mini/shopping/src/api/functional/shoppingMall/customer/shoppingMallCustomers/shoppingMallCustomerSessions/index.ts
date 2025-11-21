@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCustomerSession } from "../../../../../structures/IShoppingMallCustomerSession";
 
 /**
- * Create a new shopping mall customer session.
- *
  * Create a new session record for a specific shopping mall customer to manage
  * active login sessions.
  *
@@ -116,8 +114,6 @@ export namespace create {
 }
 
 /**
- * Update an existing shopping mall customer session.
- *
  * Update details of an existing session record for a specific shopping mall
  * customer.
  *
@@ -235,8 +231,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific shopping mall customer session.
- *
  * Delete a particular authenticated session record of a shopping mall customer
  * user.
  *

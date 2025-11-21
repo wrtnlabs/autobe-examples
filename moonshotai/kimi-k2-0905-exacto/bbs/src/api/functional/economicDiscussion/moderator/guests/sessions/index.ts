@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a guest session record permanently.
- *
  * Permanently removes a guest session record from the system. This operation is
  * typically called when a guest's session expires or when system cleanup
  * processes run to maintain database hygiene. Guest sessions track browsing

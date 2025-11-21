@@ -7,8 +7,6 @@ import { IPageICommunityPlatformModeratorSession } from "../../../../../../api/s
 @Controller("/communityPlatform/moderator/auth/moderator/sessions")
 export class CommunityplatformModeratorAuthModeratorSessionsController {
   /**
-   * Retrieve all active sessions for the authenticated moderator.
-   *
    * Fetch a list of all active sessions for the currently authenticated
    * moderator account. This operation provides visibility into all devices
    * and locations where the moderator is currently logged in, enabling
@@ -35,8 +33,6 @@ export class CommunityplatformModeratorAuthModeratorSessionsController {
   }
 
   /**
-   * Terminate a specific moderator session by session ID.
-   *
    * This operation allows an authenticated moderator to terminate a specific
    * session identified by its unique session ID. The targeted session becomes
    * immediately invalid, preventing further API requests from that session.

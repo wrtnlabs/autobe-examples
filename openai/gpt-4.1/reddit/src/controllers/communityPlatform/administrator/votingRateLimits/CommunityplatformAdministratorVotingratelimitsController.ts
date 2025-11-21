@@ -12,9 +12,6 @@ import { ICommunityPlatformVotingRateLimit } from "../../../../api/structures/IC
 @Controller("/communityPlatform/administrator/votingRateLimits")
 export class CommunityplatformAdministratorVotingratelimitsController {
   /**
-   * Paginated search for voting rate limits tracked in
-   * community_platform_voting_rate_limits table.
-   *
    * Lists and searches community platform voting rate limit events and cooldown
    * records in a paginated form.
    *
@@ -59,9 +56,6 @@ export class CommunityplatformAdministratorVotingratelimitsController {
   }
 
   /**
-   * Fetch single voting rate limit/cooldown record from
-   * community_platform_voting_rate_limits table.
-   *
    * Retrieves comprehensive details of a single community platform voting rate
    * limit or cooldown event, as tracked in the
    * community_platform_voting_rate_limits table.

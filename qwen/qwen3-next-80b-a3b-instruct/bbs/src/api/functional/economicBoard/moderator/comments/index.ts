@@ -4,8 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Permanently delete a comment from the system.
- *
  * Permanently remove a specific comment from the system. This operation
  * performs a hard delete of a comment identified by its unique commentId,
  * removing the record entirely from the database with no possibility of

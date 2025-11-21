@@ -7,9 +7,6 @@ import { ICommunityPlatformUserProfile } from "../../../../api/structures/ICommu
 @Controller("/communityPlatform/memberUser/profiles/:handle")
 export class CommunityplatformMemberuserProfilesController {
   /**
-   * Update a community_platform_user_profiles record identified by its unique
-   * handle.
-   *
    * Update public-facing profile information stored in the
    * community_platform_user_profiles table for a given user profile
    * identified by its unique handle. This operation is designed for profile
@@ -64,9 +61,6 @@ export class CommunityplatformMemberuserProfilesController {
   }
 
   /**
-   * Erase a member user's public profile from the
-   * community_platform_user_profiles table using its unique handle.
-   *
    * Delete the public profile record for a specific member user identified by
    * a globally unique handle in the `community_platform_user_profiles`
    * table.

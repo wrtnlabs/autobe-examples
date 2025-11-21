@@ -7,8 +7,6 @@ import { IEconomicDiscussionComment } from "../../../../structures/IEconomicDisc
 import { IPageIEconomicDiscussionComment } from "../../../../structures/IPageIEconomicDiscussionComment";
 
 /**
- * Search and retrieve filtered, paginated list of discussion comments.
- *
  * Retrieve a filtered and paginated list of comments posted on economic
  * discussion articles. This operation enables comprehensive filtering across
  * comment content, associated articles, comment authors, moderation status, and

@@ -7,9 +7,6 @@ import { IPageIShoppingMallCategory } from "../../../../api/structures/IPageISho
 @Controller("/shoppingMall/categories/:categoryId/descendants")
 export class ShoppingmallCategoriesDescendantsController {
   /**
-   * Get all descendant shopping_mall_categories for a given category using
-   * the shopping_mall_category_closures hierarchy.
-   *
    * Retrieve the full list of descendant categories for a specific category
    * based on the precomputed hierarchy stored in
    * shopping_mall_category_closures.

@@ -11,8 +11,6 @@ import { IShoppingMallPaymentTransaction } from "../../../../../api/structures/I
 @Controller("/shoppingMall/seller/orders/:orderId/paymentTransactions")
 export class ShoppingmallSellerOrdersPaymenttransactionsController {
   /**
-   * Search and retrieve filtered payment transactions for a specific order.
-   *
    * Retrieve a filtered and paginated list of payment transactions associated
    * with a specific order in the shopping mall system. This operation provides
    * advanced search capabilities for finding payment transactions based on

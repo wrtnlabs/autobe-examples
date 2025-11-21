@@ -7,9 +7,6 @@ import { IShoppingMallReviewReport } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/customer/reviews/:reviewId/reports")
 export class ShoppingmallCustomerReviewsReportsController {
   /**
-   * Create a new shopping_mall_review_reports entry for a given
-   * shopping_mall_reviews record.
-   *
    * Create a new report against a specific review to flag potentially
    * problematic content.
    *

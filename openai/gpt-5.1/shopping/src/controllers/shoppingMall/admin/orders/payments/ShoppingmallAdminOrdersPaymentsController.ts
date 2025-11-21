@@ -8,9 +8,6 @@ import { IShoppingMallOrderPayment } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/orders/:orderId/payments")
 export class ShoppingmallAdminOrdersPaymentsController {
   /**
-   * List and search payments for a specific order from the
-   * shopping_mall_order_payments table.
-   *
    * Retrieve a filtered and paginated list of logical payments for a specific
    * order from the `shopping_mall_order_payments` table.
    *
@@ -79,9 +76,6 @@ export class ShoppingmallAdminOrdersPaymentsController {
   }
 
   /**
-   * Update a logical order payment in shopping_mall_order_payments for a
-   * given order and payment_sequence.
-   *
    * Update an existing order payment record associated with a customer order
    * in the shopping mall payment subsystem.
    *
@@ -156,9 +150,6 @@ export class ShoppingmallAdminOrdersPaymentsController {
   }
 
   /**
-   * Erase a logical order payment in shopping_mall_order_payments identified
-   * by order and payment_sequence.
-   *
    * Erase a logical order payment associated with a specific order and
    * sequence in the shopping mall payment subsystem.
    *

@@ -9,9 +9,6 @@ import { IDiscussionBoardAdminUserLogin } from "../../../structures/IDiscussionB
 import { IDiscussionBoardAdminUserRefresh } from "../../../structures/IDiscussionBoardAdminUserRefresh";
 
 /**
- * Register a new administrative user in discussion_board_adminusers and issue
- * initial adminUser JWT tokens.
- *
  * This operation registers a new administrative user account for the
  * discussionBoard service by creating a record in the
  * `discussion_board_adminusers` table and then issuing initial authentication
@@ -155,9 +152,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an administrator in discussion_board_adminusers and issue new
- * adminUser JWT tokens.
- *
  * This operation performs login for an existing administrative account of the
  * `adminUser` actor by validating credentials against the
  * `discussion_board_adminusers` table and then issuing fresh JWT tokens.
@@ -293,9 +287,6 @@ export namespace login {
 }
 
 /**
- * Refresh adminUser JWT tokens using a valid refresh token while validating
- * discussion_board_adminusers and discussion_board_adminuser_sessions state.
- *
  * This operation renews JWT tokens for an administrative user who is already
  * recognized as an `adminUser` actor, using a valid refresh token rather than
  * credentials. It is designed to extend authenticated admin sessions while

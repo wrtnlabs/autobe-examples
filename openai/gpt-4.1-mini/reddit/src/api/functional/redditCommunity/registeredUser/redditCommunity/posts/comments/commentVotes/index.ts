@@ -7,8 +7,6 @@ import { IRedditCommunityCommentVote } from "../../../../../../../structures/IRe
 import { IPageIRedditCommunityCommentVote } from "../../../../../../../structures/IPageIRedditCommunityCommentVote";
 
 /**
- * Create a new comment vote.
- *
  * Create a new vote cast by a registered user on a comment in a Reddit
  * Community post.
  *
@@ -114,8 +112,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated comment votes for a specific comment.
- *
  * Retrieve a filtered and paginated list of votes cast on a comment within a
  * Reddit community post.
  *
@@ -219,8 +215,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific comment vote by ID.
- *
  * Retrieve information about a specific vote cast by a registered user on a
  * comment within a Reddit Community post.
  *
@@ -323,8 +317,6 @@ export namespace at {
 }
 
 /**
- * Update a specific comment vote on a Reddit community post.
- *
  * Update the vote type for a registered user's vote on a specific comment under
  * a post in the Reddit community.
  *
@@ -437,8 +429,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific comment vote on a Reddit community post.
- *
  * Permanently remove a registered user's vote on a specific comment under a
  * post in the Reddit community.
  *

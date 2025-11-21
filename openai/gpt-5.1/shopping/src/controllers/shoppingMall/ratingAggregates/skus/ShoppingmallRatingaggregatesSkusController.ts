@@ -8,9 +8,6 @@ import { IShoppingMallSkuRatingAggregate } from "../../../../api/structures/ISho
 @Controller("/shoppingMall/ratingAggregates/skus")
 export class ShoppingmallRatingaggregatesSkusController {
   /**
-   * Search paginated SKU rating aggregates from the
-   * shopping_mall_sku_rating_aggregates table.
-   *
    * Search and retrieve SKU rating aggregate records from the
    * `shopping_mall_sku_rating_aggregates` table with advanced filtering and
    * pagination.

@@ -10,8 +10,6 @@ import { IRedditCommunityCommunityModerator } from "../../../api/structures/IRed
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register a new moderator account and receive authentication tokens.
-   *
    * Creates a new moderator account and issues initial JWT authentication
    * tokens.
    *
@@ -62,8 +60,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator credentials and receive JWT tokens.
-   *
    * Authenticates a moderator and issues JWT access tokens.
    *
    * This endpoint handles the login process for existing moderators. The
@@ -115,8 +111,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh JWT access tokens using a valid refresh token.
-   *
    * Refreshes JWT access tokens using a valid refresh token.
    *
    * This endpoint implements the token refresh mechanism for moderators,

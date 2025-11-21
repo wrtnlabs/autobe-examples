@@ -7,8 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../../api/structures/IC
 @Controller("/communityPlatform/member/auth/member/email-change/confirm")
 export class CommunityplatformMemberAuthMemberEmail_changeConfirmController {
   /**
-   * Confirm email address change for authenticated member by verifying token.
-   *
    * Completes the email address change process for an authenticated member by
    * validating the verification token. This operation must be called after
    * the member receives and clicks the verification link in their email.

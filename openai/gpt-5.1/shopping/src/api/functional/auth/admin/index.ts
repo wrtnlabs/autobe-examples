@@ -9,9 +9,6 @@ import { IShoppingMallAdminLogin } from "../../../structures/IShoppingMallAdminL
 import { IShoppingMallAdminRefresh } from "../../../structures/IShoppingMallAdminRefresh";
 
 /**
- * Register a new administrator in shopping_mall_admins and return initial JWT
- * authorization payload.
- *
  * This operation registers a new platform administrator by inserting a record
  * into the shopping_mall_admins table and issuing initial JWT credentials
  * described by the IShoppingMallAdmin.IAuthorized response type.
@@ -150,9 +147,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing administrator from shopping_mall_admins and issue
- * JWT tokens with a recorded session in shopping_mall_admin_sessions.
- *
  * This operation logs an administrator into the system by validating
  * credentials against the shopping_mall_admins table and recording an
  * authenticated session in shopping_mall_admin_sessions.
@@ -288,9 +282,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for an administrator based on valid
- * shopping_mall_admin_sessions and shopping_mall_admins state.
- *
  * This operation refreshes JWT credentials for an administrator by validating a
  * refresh token against session and account state stored in
  * shopping_mall_admin_sessions and shopping_mall_admins.

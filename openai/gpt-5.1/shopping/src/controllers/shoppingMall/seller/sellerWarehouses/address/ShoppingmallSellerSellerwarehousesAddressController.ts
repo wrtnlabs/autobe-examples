@@ -7,9 +7,6 @@ import { IShoppingMallSellerWarehouseAddress } from "../../../../../api/structur
 @Controller("/shoppingMall/seller/sellerWarehouses/:warehouseId/address")
 export class ShoppingmallSellerSellerwarehousesAddressController {
   /**
-   * Get the address record for a seller warehouse from
-   * shopping_mall_seller_warehouse_addresses by warehouse id.
-   *
    * Retrieve the postal and contact address attached to a specific seller
    * warehouse using its warehouse identifier.
    *
@@ -67,9 +64,6 @@ export class ShoppingmallSellerSellerwarehousesAddressController {
   }
 
   /**
-   * Create a new seller warehouse address row in
-   * shopping_mall_seller_warehouse_addresses linked to a specific warehouse.
-   *
    * Create a new address for a seller warehouse identified by its
    * warehouseId.
    *
@@ -137,9 +131,6 @@ export class ShoppingmallSellerSellerwarehousesAddressController {
   }
 
   /**
-   * Update an existing seller warehouse address row in
-   * shopping_mall_seller_warehouse_addresses for a specific warehouse.
-   *
    * Update the address information for a seller warehouse identified by
    * warehouseId.
    *
@@ -205,9 +196,6 @@ export class ShoppingmallSellerSellerwarehousesAddressController {
   }
 
   /**
-   * Delete the seller warehouse address record associated with a warehouseId
-   * from shopping_mall_seller_warehouse_addresses.
-   *
    * Delete the stored address for a specific seller warehouse, identified by
    * its warehouse identifier, from the seller warehouse address table.
    *

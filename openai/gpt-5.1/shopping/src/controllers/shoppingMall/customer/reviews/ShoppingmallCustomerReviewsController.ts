@@ -7,9 +7,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/customer/reviews")
 export class ShoppingmallCustomerReviewsController {
   /**
-   * Create a new review in the shopping_mall_reviews table for an
-   * authenticated customer.
-   *
    * Create a new customer-written product review record within the shopping
    * mall review system, backed by the `shopping_mall_reviews` Prisma model.
    *
@@ -69,9 +66,6 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Update an existing review record in the shopping_mall_reviews table
-   * identified by reviewId.
-   *
    * Update an existing customer-written review stored in the
    * `shopping_mall_reviews` model by targeting it through the `reviewId` path
    * parameter.
@@ -130,9 +124,6 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Delete a single review record from the shopping_mall_reviews table by its
-   * identifier.
-   *
    * Permanently delete a single review resource from the
    * `shopping_mall_reviews` table using its unique identifier.
    *

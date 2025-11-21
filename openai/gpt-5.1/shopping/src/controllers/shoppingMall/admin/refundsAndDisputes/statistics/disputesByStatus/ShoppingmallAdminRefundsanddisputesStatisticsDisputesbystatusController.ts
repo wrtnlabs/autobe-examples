@@ -9,9 +9,6 @@ import { IShoppingMallDisputesByStatusStatistics } from "../../../../../../api/s
 )
 export class ShoppingmallAdminRefundsanddisputesStatisticsDisputesbystatusController {
   /**
-   * Get aggregated dispute statistics grouped by status derived from
-   * dispute-related Prisma tables.
-   *
    * Retrieve aggregated dispute statistics grouped by dispute status across
    * the shoppingMall platform.
    *

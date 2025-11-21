@@ -11,8 +11,6 @@ import { IEconomicBoardComment } from "../../../../api/structures/IEconomicBoard
 @Controller("/economicBoard/posts/:postId/comments")
 export class EconomicboardPostsCommentsController {
   /**
-   * Retrieve paginated comments for a specific discussion post.
-   *
    * Retrieve a paginated list of published comments associated with the
    * specified post. Returns only comments with status 'published' that belong
    * to a post with status 'published'. Uses index on (post_id, created_at) for
@@ -63,8 +61,6 @@ export class EconomicboardPostsCommentsController {
   }
 
   /**
-   * Get list of comments for a specific post.
-   *
    * Retrieve a paginated list of comments for a specific economic board post.
    *
    * This operation fetches all comments associated with a given post ID,
@@ -116,8 +112,6 @@ export class EconomicboardPostsCommentsController {
   }
 
   /**
-   * Get a specific comment by ID.
-   *
    * Retrieve detailed information about a specific comment by its unique
    * identifier.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallAdminActionLog } from "../../../../structures/IShoppingMal
 import { IPageIShoppingMallAdminActionLog } from "../../../../structures/IPageIShoppingMallAdminActionLog";
 
 /**
- * Search and retrieve a filtered, paginated list of admin action logs
- * (shopping_mall_admin_action_logs table).
- *
  * Retrieve a filtered, paginated list of administrative action logs capturing
  * all privileged operations performed by platform admins. This operation
  * enables administrators and compliance auditors to review system changes, user
@@ -109,9 +106,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific admin action log entry
- * (shopping_mall_admin_action_logs table) by its unique identifier.
- *
  * Fetch the detailed record of a single admin action log by unique identifier.
  * Provides complete audit information such as actor, action type, timestamp,
  * and context references, as well as any notes or additional structured data

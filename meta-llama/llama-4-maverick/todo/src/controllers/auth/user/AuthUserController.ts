@@ -9,8 +9,6 @@ import { ITodoListUser } from "../../../api/structures/ITodoListUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Registers a new user account.
-   *
    * Creates a new user account with the provided credentials. This operation
    * validates the input data, checks for uniqueness of username and email, and
    * securely stores the user information in the database. The user is issued a

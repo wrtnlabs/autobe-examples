@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityRegistereduserSession } from "../../../../../structures/IRedditCommunityRegistereduserSession";
 
 /**
- * Retrieve a registered user's session details by IDs.
- *
  * Retrieve details of a specific login session for a registered user in the
  * redditCommunity platform.
  *
@@ -105,8 +103,6 @@ export namespace at {
 }
 
 /**
- * Update a registered user session information.
- *
  * Update the properties of a registered user session including IP address,
  * session URLs, and expiry date.
  *
@@ -213,8 +209,6 @@ export namespace update {
 }
 
 /**
- * Delete a registered user session.
- *
  * Permanently removes a registered user session identified by the session ID
  * and registered user ID.
  *
@@ -306,8 +300,6 @@ export namespace erase {
 }
 
 /**
- * Create a new session for a registered user.
- *
  * Create a new session record representing a user login session for a
  * registered user in the redditCommunity platform.
  *

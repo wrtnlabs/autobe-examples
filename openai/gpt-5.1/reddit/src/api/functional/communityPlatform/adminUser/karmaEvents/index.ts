@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaEvent } from "../../../../structures/ICommunityP
 import { IPageICommunityPlatformKarmaEvent } from "../../../../structures/IPageICommunityPlatformKarmaEvent";
 
 /**
- * Search paginated karma event history records from
- * `community_platform_karma_events`.
- *
  * Search and retrieve a paginated list of karma events from the
  * `community_platform_karma_events` table according to flexible filtering and
  * sorting criteria.
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Get a single karma event row from the community_platform_karma_events table
- * by ID.
- *
  * Retrieve detailed information about a single karma event from the
  * community_platform_karma_events table by its unique identifier.
  *

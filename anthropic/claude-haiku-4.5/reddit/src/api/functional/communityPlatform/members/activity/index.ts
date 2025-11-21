@@ -7,9 +7,6 @@ import { ICommunityPlatformMemberActivity } from "../../../../structures/ICommun
 import { IPageICommunityPlatformMemberActivity } from "../../../../structures/IPageICommunityPlatformMemberActivity";
 
 /**
- * Search and retrieve a paginated list of member activities (posts and
- * comments).
- *
  * Retrieve a filtered and paginated list of member activities from the
  * community platform. This operation returns recent posts and comments created
  * by a specific member with denormalized engagement metrics including vote
@@ -128,9 +125,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific member activity (post or
- * comment).
- *
  * Retrieve complete information for a single member activity by ID. This
  * operation returns a specific post or comment created by the member with full
  * engagement metrics and denormalized metadata. The activity record includes

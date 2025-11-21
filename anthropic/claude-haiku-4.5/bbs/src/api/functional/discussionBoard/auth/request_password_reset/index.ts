@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardPasswordResetRequest } from "../../../../structures/IDiscussionBoardPasswordResetRequest";
 
 /**
- * Request a password reset token for a contributor account via email.
- *
  * Initiate a password reset request by providing the email address associated
  * with a contributor account. This operation validates that the email address
  * exists in the system and generates a secure, time-limited token for password

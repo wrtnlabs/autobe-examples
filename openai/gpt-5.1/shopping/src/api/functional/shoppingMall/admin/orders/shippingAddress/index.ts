@@ -4,9 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Remove the shipping address snapshot for an order in the
- * shopping_mall_shipping_addresses table.
- *
  * Delete the shipping address snapshot associated with a specific order
  * identified by its business order code.
  *

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityMember } from "../../../structures/IRedditCommunityMember";
 
 /**
- * Register a new member account with email, nickname, and password.
- *
  * This endpoint enables new users to register as members of the Reddit
  * Community platform. Members represent authenticated users with full platform
  * privileges including community participation, content creation, voting,
@@ -124,8 +122,6 @@ export namespace join {
 }
 
 /**
- * Authenticate members using email and password credentials.
- *
  * This endpoint enables existing members to authenticate using their registered
  * email address and password. The login operation validates credentials against
  * the member account and issues secure JWT tokens for maintaining authenticated
@@ -237,8 +233,6 @@ export namespace login {
 }
 
 /**
- * Refresh member access tokens using valid refresh tokens.
- *
  * This endpoint enables members to refresh expired access tokens using their
  * valid refresh tokens, maintaining continuous authenticated sessions without
  * requiring repeated login credentials. The refresh operation validates the

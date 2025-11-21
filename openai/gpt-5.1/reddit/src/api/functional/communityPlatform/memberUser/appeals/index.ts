@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAppeal } from "../../../../structures/ICommunityPlatformAppeal";
 
 /**
- * Create a new appeal record in the community_platform_appeals table.
- *
  * Create a new appeal in the community platform for an existing moderation
  * action.
  *

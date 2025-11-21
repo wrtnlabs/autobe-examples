@@ -12,9 +12,6 @@ import { ITodoAppTodo } from "../../../../api/structures/ITodoAppTodo";
 @Controller("/todoApp/admin/todos")
 export class TodoappAdminTodosController {
   /**
-   * Search and retrieve a filtered, paginated list of todo items
-   * (todo_app_todos).
-   *
    * Retrieve a filtered and paginated list of todo items from the application.
    * This operation provides advanced search capabilities, including partial
    * matching of titles or descriptions, deadline-based filtering, completion
@@ -59,9 +56,6 @@ export class TodoappAdminTodosController {
   }
 
   /**
-   * Retrieve detailed information of a specific todo item (todo_app_todos) by
-   * todoId.
-   *
    * Fetch the full details of a single todo task identified by its unique
    * todoId UUID. The returned data includes all fields of the todo item, such
    * as title, content or description, completion state, due date, and

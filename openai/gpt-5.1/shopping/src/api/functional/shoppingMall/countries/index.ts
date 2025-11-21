@@ -8,9 +8,6 @@ import { IPageIShoppingMallCountry } from "../../../structures/IPageIShoppingMal
 export * as regions from "./regions/index";
 
 /**
- * Search and retrieve a paginated list of countries from
- * shopping_mall_countries.
- *
  * Search and list countries from the `shopping_mall_countries` master table
  * using rich filter criteria and pagination.
  *
@@ -127,9 +124,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single country record from shopping_mall_countries by its unique
- * country code.
- *
  * Retrieve a single country master record from the shopping_mall_countries
  * table using its globally unique country code.
  *

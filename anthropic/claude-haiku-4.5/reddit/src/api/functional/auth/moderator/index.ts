@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../structures/ICommunityPlatformModerator";
 
 /**
- * Register a new moderator account with initial authentication tokens.
- *
  * Create a new moderator account in the system, establishing the foundation for
  * community management operations. This operation initializes a moderator's
  * authentication credentials and issues initial JWT tokens (access token and
@@ -118,8 +116,6 @@ export namespace join {
 }
 
 /**
- * Authenticate a moderator account and issue access tokens.
- *
  * Authenticate an existing moderator account using provided credentials
  * (email/username and password), validating the moderator's identity and
  * authorizing access to community management operations. This operation
@@ -232,8 +228,6 @@ export namespace login {
 }
 
 /**
- * Refresh moderator access tokens using a valid refresh token.
- *
  * Issue a new access token for a moderator using a valid refresh token,
  * enabling continued API access without requiring password re-authentication.
  * This operation validates the refresh token's integrity and expiration status,

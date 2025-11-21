@@ -8,9 +8,6 @@ import { ICommunityPlatformDiscoveryItem } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/discovery/items")
 export class CommunityplatformDiscoveryItemsController {
   /**
-   * Search and paginate discovery feed items from the
-   * community_platform_discovery_items table.
-   *
    * Retrieve a filtered and paginated list of discovery items representing
    * promoted or recommended content from the
    * `community_platform_discovery_items` table.
@@ -58,9 +55,6 @@ export class CommunityplatformDiscoveryItemsController {
   }
 
   /**
-   * Get a single discovery item (community_platform_discovery_items) by its
-   * identifier.
-   *
    * Retrieve the full detail of a single discovery item from the
    * community_platform_discovery_items table using its unique identifier.
    *

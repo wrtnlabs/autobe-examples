@@ -12,9 +12,6 @@ import { ITodoListAdmin } from "../../../../api/structures/ITodoListAdmin";
 @Controller("/todoList/admin/admins/:adminId")
 export class TodolistAdminAdminsController {
   /**
-   * Retrieve detailed information about a specific administrator
-   * (todo_list_admins table).
-   *
    * Retrieve full administrator account information for a given admin in the
    * system. This endpoint is intended for privileged administrative access and
    * allows system operators to inspect the profile, permissions, and status of
@@ -56,8 +53,6 @@ export class TodolistAdminAdminsController {
   }
 
   /**
-   * Update an administrator account (todo_list_admins table).
-   *
    * Update the information of an existing administrator account in the Todo
    * List platform. This endpoint is reserved for "admin" actors who have the
    * authority to change admin-related fields such as email address, display
@@ -101,8 +96,6 @@ export class TodolistAdminAdminsController {
   }
 
   /**
-   * Soft-delete (erase) an administrative account using todo_list_admins table.
-   *
    * Erase an administrative account by setting its deleted_at timestamp. This
    * action performs a soft deletion; the admin cannot access or operate the
    * system following revocation, though audit and compliance information is

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardAttachment } from "../../../../../structures/IDiscussionBoardAttachment";
 
 /**
- * Create a new attachment in discussion_board_attachments for a specific
- * article.
- *
  * Register a new file attachment under a specific discussion article by
  * inserting a row into discussion_board_attachments.
  *
@@ -149,9 +146,6 @@ export namespace create {
 }
 
 /**
- * Update a discussion_board_attachments record for a specific
- * discussion_board_articles parent article.
- *
  * Update metadata and moderation-related properties of a single attachment
  * associated with a discussion article.
  *
@@ -305,9 +299,6 @@ export namespace update {
 }
 
 /**
- * Delete a discussion_board_attachments record under a specific
- * discussion_board_articles parent article.
- *
  * Delete an attachment that belongs to a specific discussion article so that it
  * is no longer treated as an active file in the discussion board.
  *

@@ -7,10 +7,6 @@ import typia, { tags } from "typia";
 )
 export class ShoppingmallAdminCancellationrequestsItemsController {
   /**
-   * Delete a single item entry from the
-   * shopping_mall_cancellation_request_items table for a given cancellation
-   * request.
-   *
    * Delete a specific cancellation request item belonging to a particular
    * cancellation request.
    *

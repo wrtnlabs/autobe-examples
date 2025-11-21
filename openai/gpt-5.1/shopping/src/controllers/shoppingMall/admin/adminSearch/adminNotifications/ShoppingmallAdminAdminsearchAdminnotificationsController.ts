@@ -8,9 +8,6 @@ import { IShoppingMallAdminNotification } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/adminSearch/adminNotifications")
 export class ShoppingmallAdminAdminsearchAdminnotificationsController {
   /**
-   * Search admin notifications stored in the
-   * shopping_mall_admin_notifications table with filtering and pagination.
-   *
    * Search and retrieve a filtered, paginated list of admin notifications
    * stored in the `shopping_mall_admin_notifications` table.
    *

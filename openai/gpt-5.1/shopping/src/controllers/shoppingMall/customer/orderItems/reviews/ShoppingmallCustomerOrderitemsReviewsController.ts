@@ -8,9 +8,6 @@ import { IShoppingMallReview } from "../../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/customer/orderItems/:orderItemId/reviews")
 export class ShoppingmallCustomerOrderitemsReviewsController {
   /**
-   * List reviews from shopping_mall_reviews for a specific
-   * shopping_mall_order_items row.
-   *
    * Retrieve all product reviews that have been written for a specific order
    * line item.
    *
@@ -69,9 +66,6 @@ export class ShoppingmallCustomerOrderitemsReviewsController {
   }
 
   /**
-   * Create a new shopping_mall_reviews row for a given
-   * shopping_mall_order_items row.
-   *
    * Create a new customer review for a product based on a specific order
    * item.
    *

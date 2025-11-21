@@ -12,8 +12,6 @@ import { IRedditCommunityPost } from "../../../../api/structures/IRedditCommunit
 @Controller("/redditCommunity/member/posts")
 export class RedditcommunityMemberPostsController {
   /**
-   * Create a new post in a community.
-   *
    * Create a new post within a community with support for text, link, or image
    * content types.
    *
@@ -66,8 +64,6 @@ export class RedditcommunityMemberPostsController {
   }
 
   /**
-   * Update an existing post's content and metadata.
-   *
    * Update the content and metadata of an existing post within a community.
    * This operation allows the post author to modify the title and content of
    * their post.
@@ -119,8 +115,6 @@ export class RedditcommunityMemberPostsController {
   }
 
   /**
-   * Remove a post from public view (soft delete).
-   *
    * Remove a post from public view within the community by marking it as
    * deleted. This operation allows post authors to delete their own posts.
    *

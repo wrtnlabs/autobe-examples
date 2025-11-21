@@ -7,9 +7,6 @@ import { IShoppingMallProductImage } from "../../../../structures/IShoppingMallP
 import { IPageIShoppingMallProductImage } from "../../../../structures/IPageIShoppingMallProductImage";
 
 /**
- * Create a new product image (`shopping_mall_product_images`) for a given
- * product.
- *
  * Create a new product image associated with the specified product in the
  * shoppingMall catalog.
  *
@@ -138,9 +135,6 @@ export namespace create {
 }
 
 /**
- * List and search images for a product using shopping_mall_product_images as
- * subsidiary to shopping_mall_products.
- *
  * Retrieve a paginated list of image records associated with a specific
  * product, leveraging subsidiary image tables related to the
  * shopping_mall_products model.
@@ -259,9 +253,6 @@ export namespace index {
 }
 
 /**
- * Get a single product image (`shopping_mall_product_images`) for a given
- * product.
- *
  * Retrieve detailed information for a single product image that belongs to a
  * specific product in the shoppingMall catalog.
  *

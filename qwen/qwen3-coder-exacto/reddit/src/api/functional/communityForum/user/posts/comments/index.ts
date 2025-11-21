@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumPostComment } from "../../../../../structures/ICommunityForumPostComment";
 
 /**
- * Add a new comment to a forum post.
- *
  * Create a new comment on a specific forum post.
  *
  * This operation enables authenticated users to contribute to discussions by

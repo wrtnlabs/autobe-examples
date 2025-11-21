@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuestUser } from "../../../structures/IDiscussionBoardGuestUser";
 
 /**
- * Register or materialize a guest placeholder account in
- * discussion_board_guestusers and issue JWT tokens for guestUser.
- *
  * This API operation registers or materializes a guest user placeholder account
  * in the discussion board system based on the Prisma table
  * discussion_board_guestusers.
@@ -141,9 +138,6 @@ export namespace join {
 }
 
 /**
- * Refresh JWT tokens for an existing guestUser session backed by
- * discussion_board_guestusers.
- *
  * This API operation refreshes JWT tokens for a guestUser actor that is backed
  * by a record in the discussion_board_guestusers table.
  *

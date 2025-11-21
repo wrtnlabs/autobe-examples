@@ -8,9 +8,6 @@ import { IPageICommunityPlatformAccountRestriction } from "../../../../api/struc
 @Controller("/communityPlatform/adminUser/accountRestrictions")
 export class CommunityplatformAdminuserAccountrestrictionsController {
   /**
-   * Create a new account restriction episode in the
-   * community_platform_account_restrictions table.
-   *
    * Register a new account restriction episode in the community platform,
    * storing its shared business attributes in the
    * `community_platform_account_restrictions` table.
@@ -65,9 +62,6 @@ export class CommunityplatformAdminuserAccountrestrictionsController {
   }
 
   /**
-   * Search and retrieve a paginated list of account restrictions from the
-   * community_platform_account_restrictions table.
-   *
    * Retrieve a filtered and paginated list of account restriction episodes
    * from the `community_platform_account_restrictions` table for
    * administrative review and moderation workflows.
@@ -130,9 +124,6 @@ export class CommunityplatformAdminuserAccountrestrictionsController {
   }
 
   /**
-   * Retrieve a specific account restriction from the
-   * community_platform_account_restrictions table by its unique identifier.
-   *
    * Retrieve detailed information about a single account restriction episode
    * identified by its unique restriction identifier.
    *
@@ -183,9 +174,6 @@ export class CommunityplatformAdminuserAccountrestrictionsController {
   }
 
   /**
-   * Update an existing account restriction episode in the
-   * community_platform_account_restrictions table.
-   *
    * Modify an existing account restriction episode in the community platform,
    * updating its shared attributes in the
    * `community_platform_account_restrictions` table.
@@ -248,9 +236,6 @@ export class CommunityplatformAdminuserAccountrestrictionsController {
   }
 
   /**
-   * Permanently delete an account restriction from the
-   * community_platform_account_restrictions table by ID.
-   *
    * Delete an existing account restriction from the
    * `community_platform_account_restrictions` table by its unique
    * identifier.

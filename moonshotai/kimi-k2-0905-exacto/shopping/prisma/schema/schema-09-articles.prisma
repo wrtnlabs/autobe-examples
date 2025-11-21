@@ -1,0 +1,367 @@
+/// Platform articles and blog content with comprehensive publishing workflow
+/// support and content management capabilities.
+///
+/// The article system serves as the primary content management foundation
+/// for the platform, supporting blog posts, editorial content, and
+/// user-generated articles. Each article maintains complete publishing
+/// workflow states, SEO optimization metadata, and full content revision
+/// history through integrated snapshot architecture.
+///
+/// Articles support multi-format content including rich text, embedded
+/// media, and dynamic components while maintaining editorial standards
+/// through moderation workflows. The system provides comprehensive content
+/// analytics, engagement tracking, and optimization tools for publishers and
+/// administrators. Articles facilitate content syndication across
+/// marketplace channels with automated categorization and dynamic
+/// publication controls.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Publication channel for article visibility. {@link
+  /// shopping_mall_channels.id}
+  shopping_channel_id String?
+  
+  /// Content section for categorization. {@link shopping_mall_sections.id}
+  shopping_section_id String?
+  
+  /// Channel category for refined targeting. {@link
+  /// shopping_mall_channel_categories.id}
+  shopping_channel_category_id String?
+  
+  /// Unique article identifier for business purposes
+  code String
+  
+  /// Article headline optimized for readability and SEO
+  title String
+  
+  /// Optional subheading providing additional context
+  subtitle String?
+  
+  /// Main article content with rich text formatting support
+  body String
+  
+  /// Brief excerpt for preview and search result display
+  summary String
+  
+  /// Featured image URL for social sharing and promotion
+  thumbnail String?
+  
+  /// SEO title optimized for search engine visibility
+  meta_title String
+  
+  /// SEO description for search result snippets
+  meta_description String
+  
+  /// SEO keywords for search relevance optimization
+  meta_keywords String?
+  
+  /// Publishing workflow state with enum values: draft,published,archived
+  status String
+  
+  /// Publication date when article becomes publicly visible
+  published_at DateTime?
+  
+  /// Featured article designation for homepage display
+  featured Boolean
+  
+  /// Whether comments are enabled for reader engagement
+  commentable Boolean
+  
+  /// Creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections? @relation(fields: [shopping_section_id], references: [id], onDelete: Cascade)
+  channelCategory shopping_mall_channel_categories? @relation(fields: [shopping_channel_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_article_comments shopping_mall_article_comments[]
+  shopping_mall_article_tags shopping_mall_article_tags[]
+  
+  @@index([shopping_channel_id])
+  @@index([shopping_section_id])
+  @@index([shopping_channel_category_id])
+  
+  @@unique([code])
+  @@index([status, published_at])
+  @@index([created_at])
+}
+
+/// Hierarchical article categorization system enabling organized content
+/// structure and enhanced content discoverability across the platform.
+///
+/// Article categories provide the primary navigation and organizational
+/// framework for platform content, supporting hierarchical nesting,
+/// cross-category relationships, and dynamic categorization rules. The
+/// system enables both automatic categorization based on content analysis
+/// and manual categorization for precise content organization.
+///
+/// Categories support SEO optimization through structured URL hierarchies,
+/// metadata inheritance, and content aggregation while providing
+/// comprehensive analytics for content performance tracking across different
+/// category segments. Categories require independent management for channel
+/// configuration, cross-platform organization, and dynamic content curation
+/// workflows.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_article_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. {@link
+  /// shopping_mall_article_categories.id}
+  parent_id String?
+  
+  /// Unique category identifier in URL-friendly format
+  code String
+  
+  /// Category display name for navigation and organization
+  name String
+  
+  /// Comprehensive category description with SEO optimization
+  description String
+  
+  /// Ownership type indicating who created this category (channel_admin,
+  /// system, content_manager)
+  actor_type String
+  
+  /// Nesting depth level for category hierarchy management
+  level Int
+  
+  /// Display ordering for consistent navigation presentation
+  sequence Int
+  
+  /// Category visibility status for platform navigation
+  visible Boolean
+  
+  /// Featured category status for homepage promotion
+  featured Boolean
+  
+  /// SEO-friendly page title for category optimization
+  meta_title String
+  
+  /// SEO description for search result enhancement
+  meta_description String
+  
+  /// SEO keywords for discoverability improvement
+  meta_keywords String?
+  
+  /// Article count statistics for category performance tracking
+  article_count Int
+  
+  /// Category creation timestamp
+  created_at DateTime
+  
+  /// Category modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_article_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_article_categories[] @relation("recursive")
+  
+  @@unique([code])
+  @@index([parent_id])
+  @@index([actor_type])
+  @@index([visible])
+  @@index([sequence])
+}
+
+/// Article comment system enabling reader engagement, discussion
+/// facilitation, and community building around platform content through
+/// structured conversation management.
+///
+/// The comment system provides comprehensive engagement capabilities
+/// including threaded discussion support, comment rating mechanisms,
+/// moderation workflows, and author response tools. Comments support rich
+/// text formatting, media embedding, and reputation-based visibility
+/// controls to foster high-quality community discourse while maintaining
+/// civil discussion standards.
+///
+/// Comments require independent management capabilities for cross-article
+/// search functionality, moderation workflows, and community engagement
+/// analytics while providing authors with robust response and moderation
+/// tools for maintaining productive discussion environments.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article for comment threading. {@link shopping_mall_articles.id}
+  shopping_mall_article_id String
+  
+  /// Parent comment for nested thread replies. {@link
+  /// shopping_mall_article_comments.id}
+  parent_id String?
+  
+  /// Customer author of the comment. {@link shopping_mall_customer.id}
+  shopping_customer_id String?
+  
+  /// Session context for the comment creation. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_customer_session_id String?
+  
+  /// Seller author of the comment. {@link shopping_mall_seller.id}
+  shopping_seller_id String?
+  
+  /// Session context for seller comment creation. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_seller_session_id String?
+  
+  /// Admin author of the comment. {@link shopping_mall_admin.id}
+  shopping_admin_id String?
+  
+  /// Session context for admin comment creation. {@link
+  /// shopping_mall_admin_sessions.id}
+  shopping_admin_session_id String?
+  
+  /// Comment content with support for rich text formatting
+  body String
+  
+  /// Comment relevance rating for community moderation
+  rating Int
+  
+  /// Comment engagement metrics for popularity ranking
+  like_count Int
+  
+  /// Negative engagement tracking for content quality
+  dislike_count Int
+  
+  /// Comment creation timestamp
+  created_at DateTime
+  
+  /// Comment modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article shopping_mall_articles @relation(fields: [shopping_mall_article_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_article_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_customer_session_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions? @relation(fields: [shopping_seller_session_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin? @relation(fields: [shopping_admin_id], references: [id], onDelete: Cascade)
+  adminSession shopping_mall_admin_sessions? @relation(fields: [shopping_admin_session_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_article_comments[] @relation("recursive")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_customer_session_id], map: "shopping_mall_article_comments_shopping_customer_sessi_5ccfd9c8")
+  @@index([shopping_seller_id])
+  @@index([shopping_seller_session_id])
+  @@index([shopping_admin_id])
+  @@index([shopping_admin_session_id])
+  
+  @@index([shopping_mall_article_id])
+  @@index([parent_id])
+  @@index([shopping_customer_id])
+  @@index([created_at])
+  @@index([rating])
+}
+
+/// Article tag management system enabling flexible content categorization
+/// and cross-content relationship building for enhanced content discovery
+/// and organization.
+///
+/// Article tags provide granular content organization beyond hierarchical
+/// categories, supporting dynamic association linking, trending topic
+/// identification, and SEO optimization through semantic relationship
+/// building. The system enables both automated tag generation based on
+/// content analysis and manual tag application for precise content
+/// classification.
+///
+/// Tags support content discovery optimization, readership targeting, and
+/// engagement analysis while providing flexible categorization that adapts
+/// to changing content themes and reader interests across the platform's
+/// publication ecosystem.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated article for tag relationship. {@link shopping_mall_articles.id}
+  shopping_mall_article_id String
+  
+  /// Channel context for tag organization. {@link shopping_mall_channels.id}
+  shopping_channel_id String?
+  
+  /// Unique tag identifier for system reference
+  code String
+  
+  /// Tag display name for user interface and navigation
+  name String
+  
+  /// Tag description explaining usage and scope
+  description String
+  
+  /// Display color for visual categorization and highlighting
+  color String?
+  
+  /// Display ordering for consistent tag presentation
+  sequence Int
+  
+  /// Tag visibility for public display and content organization
+  visible Boolean
+  
+  /// Tag creation timestamp
+  created_at DateTime
+  
+  /// Tag modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article shopping_mall_articles @relation(fields: [shopping_mall_article_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels? @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_article_id])
+  
+  @@unique([code])
+  @@unique([shopping_channel_id, code])
+  @@index([shopping_channel_id])
+  @@index([visible])
+  @@index([sequence])
+}

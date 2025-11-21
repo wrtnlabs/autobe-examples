@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderTracking } from "../../../../../structures/IShoppingMallOrderTracking";
 
 /**
- * Get logistics-focused tracking information for a ShoppingMall order using
- * shopping_mall_shipments and related tables.
- *
  * Retrieve the shipping and delivery tracking information for a specific order,
  * identified by its business order code, focusing on shipment and
  * carrier-related events.

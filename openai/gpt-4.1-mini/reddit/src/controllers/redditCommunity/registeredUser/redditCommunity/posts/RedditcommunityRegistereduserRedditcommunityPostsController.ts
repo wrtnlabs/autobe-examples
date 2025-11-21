@@ -15,8 +15,6 @@ import { IPageIRedditCommunityPost } from "../../../../../api/structures/IPageIR
 @Controller("/redditCommunity/registeredUser/redditCommunity/posts")
 export class RedditcommunityRegistereduserRedditcommunityPostsController {
   /**
-   * Create a new post in redditCommunity.
-   *
    * Create a new post in a specified community authored by a registered user.
    *
    * This operation supports creating posts with different content types,
@@ -55,8 +53,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsController {
   }
 
   /**
-   * Retrieve a filtered, paginated list of reddit community posts.
-   *
    * Retrieve a filtered and paginated list of Reddit community posts. This
    * operation supports complex queries allowing clients to filter by post type
    * (text, link, image), title keywords, associated community, and author.
@@ -94,8 +90,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsController {
   }
 
   /**
-   * Retrieve a single reddit community post by ID.
-   *
    * Retrieve detailed information of a specific Reddit community post
    * identified by its postId. This operation fetches the full post information
    * including its type, title, body content (if text), link URL (if link),
@@ -131,8 +125,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsController {
   }
 
   /**
-   * Update an existing post in redditCommunity.
-   *
    * Update post content and metadata by post ID.
    *
    * This operation allows modifying the post's title, body, link URL, or image
@@ -172,8 +164,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsController {
   }
 
   /**
-   * Permanently delete a post by its ID from reddit community.
-   *
    * Permanently deletes the specified post from the redditCommunity platform.
    *
    * This operation requires the unique identifier of the post to delete it

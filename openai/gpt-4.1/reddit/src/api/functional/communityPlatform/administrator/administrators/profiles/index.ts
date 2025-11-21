@@ -7,9 +7,6 @@ import { ICommunityPlatformAdministratorProfile } from "../../../../../structure
 import { IPageICommunityPlatformAdministratorProfile } from "../../../../../structures/IPageICommunityPlatformAdministratorProfile";
 
 /**
- * Search and retrieve a paginated, filtered list of administrator profiles from
- * the community_platform_administrator_profiles table.
- *
  * Search, filter, and retrieve a paginated list of administrator profiles
  * managed within the platform. This operation offers advanced query and
  * filtering options to help administrators discover other administrators,
@@ -125,10 +122,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the platform administrator profile
- * (community_platform_administrator_profiles) for a specified administrator and
- * profile ID.
- *
  * Retrieve the full administrator profile for a specific platform administrator
  * account.
  *
@@ -238,9 +231,6 @@ export namespace at {
 }
 
 /**
- * Update the administrator profile (community_platform_administrator_profiles)
- * for a specified administrator/profile ID pair.
- *
  * Update the administrator profile for an existing administrator account. This
  * endpoint allows the platform to modify profile fields defined in the
  * community_platform_administrator_profiles Prisma schema, including changing
@@ -364,9 +354,6 @@ export namespace update {
 }
 
 /**
- * Deletes an administrator profile via soft-delete (sets deleted_at) in
- * community_platform_administrator_profiles.
- *
  * Delete the profile information of a system administrator on the platform by
  * marking the profile entity as deleted, supporting reversible removal
  * practices (soft delete).

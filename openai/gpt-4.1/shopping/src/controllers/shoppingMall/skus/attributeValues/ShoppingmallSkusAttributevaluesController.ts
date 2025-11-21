@@ -8,9 +8,6 @@ import { IShoppingMallProductAttributeValue } from "../../../../api/structures/I
 @Controller("/shoppingMall/skus/:skuId/attributeValues/:attributeValueId")
 export class ShoppingmallSkusAttributevaluesController {
   /**
-   * Get a specific product SKU attribute value mapping (table:
-   * shopping_mall_product_attribute_values).
-   *
    * Retrieve details for a specific attribute value assigned to a product SKU
    * within the catalog.
    *

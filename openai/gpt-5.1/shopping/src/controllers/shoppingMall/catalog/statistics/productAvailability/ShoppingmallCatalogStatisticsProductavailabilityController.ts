@@ -7,9 +7,6 @@ import { IShoppingMallProductAvailabilityStatistics } from "../../../../../api/s
 @Controller("/shoppingMall/catalog/statistics/productAvailability")
 export class ShoppingmallCatalogStatisticsProductavailabilityController {
   /**
-   * Get aggregated product availability statistics for the ShoppingMall
-   * catalog.
-   *
    * Retrieve aggregated statistics describing product availability across the
    * ShoppingMall catalog.
    *

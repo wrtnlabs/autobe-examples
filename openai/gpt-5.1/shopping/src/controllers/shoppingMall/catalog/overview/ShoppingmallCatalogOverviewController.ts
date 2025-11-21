@@ -7,9 +7,6 @@ import { IShoppingMallCatalogOverview } from "../../../../api/structures/IShoppi
 @Controller("/shoppingMall/catalog/overview")
 export class ShoppingmallCatalogOverviewController {
   /**
-   * Get an aggregated ShoppingMall catalog overview derived from
-   * catalog-related tables.
-   *
    * Retrieve a high-level overview of the ShoppingMall catalog as a single
    * aggregated resource.
    *

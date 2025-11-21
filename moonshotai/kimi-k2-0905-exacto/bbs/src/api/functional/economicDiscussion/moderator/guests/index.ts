@@ -7,8 +7,6 @@ import { IEconomicDiscussionGuest } from "../../../../structures/IEconomicDiscus
 export * as sessions from "./sessions/index";
 
 /**
- * Get detailed information about a specific guest user session.
- *
  * Retrieve detailed information about a specific guest user session in the
  * Economic Discussion Board platform. This operation provides comprehensive
  * access to guest user data stored in the economic_discussion_guests table,

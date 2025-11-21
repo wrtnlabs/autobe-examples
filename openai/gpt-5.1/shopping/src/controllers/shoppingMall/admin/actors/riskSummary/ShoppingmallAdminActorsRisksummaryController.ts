@@ -7,10 +7,6 @@ import { IShoppingMallActorRiskSummary } from "../../../../../api/structures/ISh
 @Controller("/shoppingMall/admin/actors/riskSummary")
 export class ShoppingmallAdminActorsRisksummaryController {
   /**
-   * Retrieve a consolidated risk summary for actors using risk‑related Prisma
-   * tables such as shopping_mall_account_risk_flags and
-   * shopping_mall_risk_cases.
-   *
    * Retrieve a high‑level risk summary view for actors on the shoppingMall
    * platform.
    *

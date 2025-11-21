@@ -8,9 +8,6 @@ import { ICommunityPlatformAppeal } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/adminUser/appeals")
 export class CommunityplatformAdminuserAppealsController {
   /**
-   * Search and retrieve a paginated list of appeals from the
-   * community_platform_appeals table.
-   *
    * Retrieve a filtered and paginated list of appeal records from the
    * `community_platform_appeals` table for administrative review.
    *
@@ -69,9 +66,6 @@ export class CommunityplatformAdminuserAppealsController {
   }
 
   /**
-   * Get detailed information for a single appeal from the
-   * community_platform_appeals table by its identifier.
-   *
    * Fetch the full details of a single appeal record from the
    * `community_platform_appeals` table using its unique identifier.
    *
@@ -128,8 +122,6 @@ export class CommunityplatformAdminuserAppealsController {
   }
 
   /**
-   * Update an existing appeal record in the community_platform_appeals table.
-   *
    * Update the status or details of an existing appeal in the community
    * platform.
    *
@@ -195,9 +187,6 @@ export class CommunityplatformAdminuserAppealsController {
   }
 
   /**
-   * Delete a specific appeal record from the community_platform_appeals table
-   * by appealId.
-   *
    * Delete a specific appeal record identified by its unique appealId from
    * the community_platform_appeals table.
    *

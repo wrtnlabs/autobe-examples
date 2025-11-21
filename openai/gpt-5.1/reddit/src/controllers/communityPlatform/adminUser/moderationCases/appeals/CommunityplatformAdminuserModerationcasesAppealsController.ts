@@ -8,9 +8,6 @@ import { ICommunityPlatformAppeal } from "../../../../../api/structures/ICommuni
 @Controller("/communityPlatform/adminUser/moderationCases/:caseKey/appeals")
 export class CommunityplatformAdminuserModerationcasesAppealsController {
   /**
-   * Search and retrieve a paginated list of appeals from the
-   * community_platform_appeals table for a specific moderation case.
-   *
    * Retrieve a filtered, paginated list of appeals that belong to a single
    * moderation case referenced by its business key.
    *

@@ -12,8 +12,6 @@ import { ICommunityForumCommunityGroup } from "../../../../api/structures/ICommu
 @Controller("/communityForum/user/communities")
 export class CommunityforumUserCommunitiesController {
   /**
-   * Create a new community forum.
-   *
    * Create a new community in the community forum platform.
    *
    * This operation allows authenticated users to establish new communities with
@@ -67,8 +65,6 @@ export class CommunityforumUserCommunitiesController {
   }
 
   /**
-   * Update community information.
-   *
    * Update an existing community's information including title, description,
    * rules, and privacy settings. This operation allows community creators or
    * administrators to modify community details.
@@ -117,8 +113,6 @@ export class CommunityforumUserCommunitiesController {
   }
 
   /**
-   * Delete a community.
-   *
    * Permanently delete a community from the platform. This operation performs a
    * hard delete, completely removing the community record from the database.
    *

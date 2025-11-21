@@ -12,9 +12,6 @@ import { ICommunityPlatformModeratorSession } from "../../../../../api/structure
 @Controller("/communityPlatform/administrator/moderators/:moderatorId/sessions")
 export class CommunityplatformAdministratorModeratorsSessionsController {
   /**
-   * List and search authentication sessions of a specific moderator using
-   * community_platform_moderator_sessions.
-   *
    * Retrieve a filtered, paginated list of authentication sessions for a
    * specific moderator within the platform, providing session metadata and
    * activity history.
@@ -65,9 +62,6 @@ export class CommunityplatformAdministratorModeratorsSessionsController {
   }
 
   /**
-   * Retrieve session details for a specific moderator session from
-   * community_platform_moderator_sessions.
-   *
    * Retrieve a single moderator session by session ID for a given moderator.
    * This endpoint allows system administrators to access comprehensive audit
    * information on moderator activity. The response provides session origin IP,

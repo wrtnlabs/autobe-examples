@@ -10,8 +10,6 @@ import { IRedditCommunityReport } from "../../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/member/comments/:commentId/reports")
 export class RedditcommunityMemberCommentsReportsController {
   /**
-   * Report a comment for violating community guidelines or rules.
-   *
    * Submit a report for a specific comment that violates community standards,
    * guidelines, or rules. This operation enables members to flag inappropriate
    * content for moderator review.

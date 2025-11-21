@@ -11,8 +11,6 @@ import { ITodoListGuest } from "../../../api/structures/ITodoListGuest";
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Create a new guest account temporarily with minimal permissions.
-   *
    * This operation enables unauthenticated users to register temporary guest
    * accounts. It creates a limited-access guest record in the database,
    * providing minimal permissions suitable for public resource viewing. The
@@ -48,8 +46,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh guest access token using a valid refresh token.
-   *
    * This operation allows guest users to renew their JWT access tokens by
    * providing a valid refresh token. It maintains session continuity for
    * temporary guest accounts with limited permissions. The underlying database

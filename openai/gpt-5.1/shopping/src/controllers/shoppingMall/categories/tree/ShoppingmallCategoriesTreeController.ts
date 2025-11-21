@@ -7,9 +7,6 @@ import { IShoppingMallCategoryTree } from "../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/categories/tree")
 export class ShoppingmallCategoriesTreeController {
   /**
-   * Get the full hierarchical category tree derived from
-   * shopping_mall_categories for catalog navigation.
-   *
    * Retrieve the full product category tree for the shopping mall catalog as
    * a hierarchical structure derived from the `shopping_mall_categories`
    * Prisma model and its associated hierarchy representation.

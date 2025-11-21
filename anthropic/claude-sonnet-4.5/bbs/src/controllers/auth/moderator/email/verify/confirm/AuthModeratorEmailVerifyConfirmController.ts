@@ -10,8 +10,6 @@ import { IDiscussionBoardModerator } from "../../../../../../api/structures/IDis
 @Controller("/auth/moderator/email/verify/confirm")
 export class AuthModeratorEmailVerifyConfirmController {
   /**
-   * Verify moderator email address using verification token.
-   *
    * Confirms moderator email verification by validating the verification token
    * and updating the email_verified status.
    *

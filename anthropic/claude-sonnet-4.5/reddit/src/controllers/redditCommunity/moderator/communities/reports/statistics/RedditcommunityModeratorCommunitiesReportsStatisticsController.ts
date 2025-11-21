@@ -12,8 +12,6 @@ import { IRedditCommunityReportStatistics } from "../../../../../../api/structur
 )
 export class RedditcommunityModeratorCommunitiesReportsStatisticsController {
   /**
-   * Retrieve aggregated report statistics for a specific community.
-   *
    * Retrieve comprehensive statistical data about content reports within a
    * specific community. This operation provides moderators with analytical
    * insights into reporting patterns, violation categories, resolution rates,

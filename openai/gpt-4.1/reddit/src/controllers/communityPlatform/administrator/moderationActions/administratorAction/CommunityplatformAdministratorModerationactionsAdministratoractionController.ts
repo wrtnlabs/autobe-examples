@@ -15,9 +15,6 @@ import { ICommunityPlatformModerationActionOfAdministrator } from "../../../../.
 )
 export class CommunityplatformAdministratorModerationactionsAdministratoractionController {
   /**
-   * Get administrator action for a moderation action
-   * (community_platform_moderation_action_of_administrators).
-   *
    * Fetch the administrator-actor details of a moderation action, including
    * optional rationale, acting administrator identity, session information, and
    * the timestamp of the administrative intervention. This endpoint supports
@@ -63,9 +60,6 @@ export class CommunityplatformAdministratorModerationactionsAdministratoractionC
   }
 
   /**
-   * Create a new administrator action record for a moderation action
-   * (community_platform_moderation_action_of_administrators).
-   *
    * Create a new administrator action record associated with a specific
    * moderation action.
    *
@@ -123,9 +117,6 @@ export class CommunityplatformAdministratorModerationactionsAdministratoractionC
   }
 
   /**
-   * Update administrator action record for a moderation action
-   * (community_platform_moderation_action_of_administrators).
-   *
    * Update an existing administrator action record for a given moderation
    * action.
    *
@@ -177,9 +168,6 @@ export class CommunityplatformAdministratorModerationactionsAdministratoractionC
   }
 
   /**
-   * Delete a CommunityPlatformModerationActionOfAdministrator record by
-   * moderation action ID.
-   *
    * Delete an administrator-specific moderation action record from the system
    * based on its association with a central moderation action.
    *

@@ -8,9 +8,6 @@ import { IPageICommunityPlatformReport } from "../../../../structures/IPageIComm
 export * as decision from "./decision/index";
 
 /**
- * Search and retrieve a filtered, paginated list of community content violation
- * reports.
- *
  * Retrieve a filtered and paginated list of content violation reports from the
  * community platform. This operation provides advanced search capabilities for
  * finding reports based on multiple criteria including violation category
@@ -121,8 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific moderation report.
- *
  * Retrieve complete details of a specific community platform moderation report
  * identified by its unique identifier. This operation allows moderators and
  * administrators to view comprehensive information about reported content
@@ -224,8 +219,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation report with new information or decisions.
- *
  * Update an existing community platform moderation report identified by its
  * unique identifier. This operation allows authorized moderation personnel to
  * modify report details throughout the moderation lifecycle, including updating

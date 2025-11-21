@@ -10,9 +10,6 @@ import { ITodoAppAdmin } from "../../../api/structures/ITodoAppAdmin";
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new administrator in the todo_app_admins table and issue a new
-   * login session.
-   *
    * This endpoint supports secure administrative onboarding by registering a
    * new admin record in the todo_app_admins Prisma table.
    *
@@ -61,9 +58,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate an admin in todo_app_admins table and issue access and refresh
-   * tokens.
-   *
    * This endpoint allows administrative users to sign in securely by validating
    * their email and password credentials against the todo_app_admins Prisma
    * table.
@@ -114,8 +108,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Renew access and refresh tokens for authenticated admin in todo_app_admins.
-   *
    * This endpoint allows an authenticated admin to renew their session using a
    * valid refresh token. It revalidates the token against admin record status
    * in todo_app_admins, including deleted_at and security flags, and generates

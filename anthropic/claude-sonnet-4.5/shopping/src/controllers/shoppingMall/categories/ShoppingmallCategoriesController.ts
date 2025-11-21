@@ -11,8 +11,6 @@ import { IShoppingMallCategory } from "../../../api/structures/IShoppingMallCate
 @Controller("/shoppingMall/categories")
 export class ShoppingmallCategoriesController {
   /**
-   * Search and retrieve a filtered, paginated list of product categories.
-   *
    * Retrieve a comprehensive list of product categories from the shopping mall
    * marketplace with advanced filtering, searching, and hierarchical navigation
    * capabilities. This operation provides access to the complete category
@@ -63,8 +61,6 @@ export class ShoppingmallCategoriesController {
   }
 
   /**
-   * Retrieve detailed information for a specific product category by its code.
-   *
    * Retrieve comprehensive details for a single product category identified by
    * its unique category code. This operation provides access to the complete
    * category information including name, description, hierarchical position,
@@ -107,8 +103,6 @@ export class ShoppingmallCategoriesController {
   }
 
   /**
-   * Retrieve detailed information for a specific product category by its slug.
-   *
    * Retrieve comprehensive details for a single product category identified by
    * its unique category slug. This operation provides access to the complete
    * category information including name, description, hierarchical position,

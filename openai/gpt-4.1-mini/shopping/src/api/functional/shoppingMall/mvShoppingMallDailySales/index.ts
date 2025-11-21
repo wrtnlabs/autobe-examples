@@ -7,8 +7,6 @@ import { IShoppingMallMvShoppingMallDailySale } from "../../../structures/IShopp
 import { IPageIShoppingMallMvShoppingMallDailySale } from "../../../structures/IPageIShoppingMallMvShoppingMallDailySale";
 
 /**
- * Retrieve paginated daily sales summaries of the shopping mall.
- *
  * Retrieve a filtered and paginated list of daily sales summary records from
  * the mv_shopping_mall_daily_sales materialized view.
  *
@@ -107,8 +105,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single daily sales summary record by unique ID.
- *
  * Retrieve detailed information about a specific daily sales summary by unique
  * identifier.
  *

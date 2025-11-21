@@ -1,0 +1,334 @@
+/// Daily aggregated analytics data capturing platform performance metrics,
+/// seller activity, and customer behavior patterns for comprehensive
+/// business intelligence reporting and performance monitoring.
+///
+/// Stores comprehensive daily statistics including transaction volumes,
+/// revenue metrics, user engagement data, and platform performance
+/// indicators to enable data-driven decision making across the marketplace
+/// ecosystem. Each daily snapshot preserves complete performance context for
+/// historical trend analysis and operational optimization.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_analytics_daily {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Date for which analytics are recorded.
+  date DateTime
+  
+  /// Total gross revenue for the day including all transactions across the
+  /// platform.
+  total_revenue Float
+  
+  /// Total number of orders placed during the day.
+  total_orders Int
+  
+  /// Total number of payment transactions processed.
+  total_transactions Int
+  
+  /// Number of active customers who performed at least one action during the
+  /// day.
+  total_customers Int
+  
+  /// Number of active sellers who had at least one transaction or update
+  /// during the day.
+  total_sellers Int
+  
+  /// Total number of individual products sold across all orders.
+  total_products_sold Int
+  
+  /// Average order value calculated as total revenue divided by total orders.
+  avg_order_value Float
+  
+  /// Overall platform conversion rate from visits to completed orders for the
+  /// day.
+  conversion_rate Float
+  
+  /// The product category with the highest sales volume for the day.
+  top_selling_category String?
+  
+  /// Hour of the day (0-23) with the highest transaction volume.
+  peak_hour Int
+  
+  /// Percentage of single-page visits without meaningful engagement.
+  bounce_rate Float
+  
+  /// Average session duration in seconds across all platform visitors.
+  session_duration_avg Int
+  
+  /// Timestamp when this daily snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([date])
+  @@index([total_revenue])
+  @@index([created_at])
+  @@index([conversion_rate])
+}
+
+/// Monthly aggregated analytics providing longer-term trend analysis and
+/// strategic performance metrics for quarterly planning and annual business
+/// reviews.
+///
+/// Captures comprehensive monthly statistics including revenue totals, order
+/// volumes, user acquisition metrics, and seasonal performance patterns to
+/// support executive decision making and strategic planning initiatives.
+/// Monthly snapshots enable year-over-year comparisons and quarterly
+/// performance assessment across all platform business segments.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_analytics_monthly {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Calendar month and year in YYYY-MM format for monthly analytics tracking.
+  month_year String
+  
+  /// Total gross revenue for the month across all sellers and transactions.
+  total_revenue Float
+  
+  /// Total number of orders placed during the month.
+  total_orders Int
+  
+  /// Number of new customer registrations during the month.
+  new_customers Int
+  
+  /// Number of new seller registrations approved during the month.
+  new_sellers Int
+  
+  /// Percentage of orders that resulted in returns or refunds during the month.
+  return_rate Float
+  
+  /// Percentage of customers from previous month who made purchases in the
+  /// current month.
+  customer_retention_rate Float
+  
+  /// Percentage of active sellers from previous month who maintained activity
+  /// in current month.
+  seller_retention_rate Float
+  
+  /// JSON array of fastest-growing product categories with growth percentages.
+  category_growth String?
+  
+  /// JSON object with regional performance metrics and geographic insights.
+  regional_performance String?
+  
+  /// Adjusted metrics accounting for seasonal fluctuations and holidays.
+  seasonal_adjustment Float
+  
+  /// Timestamp when this monthly snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([month_year])
+  @@index([total_revenue])
+  @@index([created_at])
+  @@index([customer_retention_rate])
+  @@index([seller_retention_rate])
+}
+
+/// Search analytics tracking comprehensive user search behavior including
+/// query patterns, result engagement, and conversion pathways to optimize
+/// site search functionality and product discovery experiences.
+///
+/// Documents complete search interaction patterns including query terms,
+/// result selection behaviors, refinement actions, and ultimate conversion
+/// outcomes to identify search optimization opportunities and measure search
+/// algorithm effectiveness. The analytics capture both successful searches
+/// leading to purchases and unsuccessful searches indicating content gaps or
+/// discoverability issues.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_search_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer's {@link shopping_mall_customer.id} who performed the
+  /// search, if available.
+  customer_id String?
+  
+  /// The user's {@link shopping_mall_customer_sessions.id} for session-based
+  /// tracking of search patterns.
+  session_id String?
+  
+  /// The original search query entered by the user with exact spelling and
+  /// terms preserved.
+  search_query String
+  
+  /// Number of search results returned to the user for the given query.
+  search_result_count Int
+  
+  /// Number of search results the user actually viewed or engaged with.
+  results_viewed Int
+  
+  /// Percentage of search results that received user clicks or interactions.
+  click_through_rate Float
+  
+  /// Percentage of searches that resulted in completed purchases or other
+  /// desired actions.
+  conversion_rate Float
+  
+  /// Type of search performed (text, category, filter, autocomplete).
+  search_type String
+  
+  /// JSON array of filters and refinements applied during the search process.
+  search_filters_used String?
+  
+  /// Time in seconds from search initiation to final search result interaction
+  /// or abandonment.
+  search_duration_seconds Int
+  
+  /// When the search was initiated for chronological analysis of search
+  /// patterns.
+  search_timestamp DateTime
+  
+  /// Platform location where search was performed (homepage, category page,
+  /// product page, etc.).
+  search_location String
+  
+  /// Device category used for search (desktop, mobile, tablet).
+  device_type String
+  
+  /// Whether the search returned relevant results that led to user engagement.
+  search_successful Boolean
+  
+  /// Timestamp when search analytics record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  session shopping_mall_customer_sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id])
+  @@index([session_id])
+  
+  @@index([search_timestamp])
+  // spellchecker: ignore-next-line
+  @@index([search_query, search_timestamp], map: "shopping_mall_search_analytics_search_query_search_tim_750d9f5b")
+  @@index([search_successful])
+}
+
+/// Conversion analytics tracking complete user journey from initial site
+/// entry through successful transaction completion to identify optimization
+/// opportunities and measure marketing effectiveness.
+///
+/// Captures comprehensive conversion funnel data including entry points,
+/// navigation patterns, engagement metrics, and successful transaction
+/// completion to analyze the effectiveness of different traffic sources,
+/// page layouts, and promotional campaigns in driving customer conversions.
+/// The analytics focus on identifying barriers to conversion and measuring
+/// the impact of platform optimizations on business outcomes.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_conversion_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer's {@link shopping_mall_customer.id} who completed the
+  /// conversion process.
+  customer_id String?
+  
+  /// The user's {@link shopping_mall_customer_sessions.id} for session-based
+  /// tracking of conversion pathways.
+  session_id String?
+  
+  /// The successful {@link shopping_mall_orders.id} that represents the
+  /// completed conversion.
+  order_id String?
+  
+  /// Traffic source that brought the user to the platform (organic, paid,
+  /// social, email, direct).
+  entry_source String
+  
+  /// First page the user landed on when entering the platform.
+  landing_page String
+  
+  /// Type of conversion completed (purchase, registration, subscription, etc.).
+  conversion_type String
+  
+  /// Monetary value of the conversion for revenue calculation and ROI analysis.
+  conversion_value Float
+  
+  /// Total time from initial entry to successful conversion completion in
+  /// minutes.
+  journey_duration_minutes Int
+  
+  /// Number of unique pages viewed during the conversion journey.
+  pages_viewed_count Int
+  
+  /// String array of all pages and actions in the conversion journey sequence.
+  conversion_funnel_steps String
+  
+  /// Array of points where user showed hesitation or exited the funnel
+  /// temporarily.
+  abandonment_points String?
+  
+  /// JSON object detailing promotions, coupons, or discounts that influenced
+  /// the conversion.
+  promotions_impact String?
+  
+  /// Device category used throughout the conversion process (mobile, desktop,
+  /// tablet).
+  device_journey String
+  
+  /// When the successful conversion was completed for chronological analysis.
+  conversion_timestamp DateTime
+  
+  /// Calculated cost to acquire this customer through the specific conversion
+  /// pathway.
+  customer_acquisition_cost Float?
+  
+  /// Projected lifetime value of the customer based on conversion
+  /// characteristics.
+  lifetime_value_estimate Float?
+  
+  /// Quality score for this conversion based on completeness, engagement, and
+  /// value.
+  conversion_scoring Int
+  
+  /// Specific marketing campaign or traffic source identifier that influenced
+  /// conversion.
+  traffic_campaign String?
+  
+  /// Timestamp when conversion analytics record was created for downstream
+  /// processing.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  session shopping_mall_customer_sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id])
+  @@index([session_id])
+  @@index([order_id])
+  
+  @@index([conversion_timestamp])
+  @@index([entry_source])
+  @@index([conversion_type])
+  @@index([conversion_scoring])
+}

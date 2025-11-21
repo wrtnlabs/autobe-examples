@@ -7,8 +7,6 @@ import { IDiscussionBoardUserSuspension } from "../../../../../api/structures/ID
 @Controller("/discussionBoard/moderator/contributors/:contributorId/suspend")
 export class DiscussionboardModeratorContributorsSuspendController {
   /**
-   * Suspend or restrict a contributor account for policy violations.
-   *
    * Create a new account suspension or posting restriction on a contributor
    * account as an enforcement action for policy violations. This operation
    * records the suspension in the discussion_board_user_suspensions table,

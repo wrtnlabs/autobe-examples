@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumPostComment } from "../../../../../structures/ICommunityForumPostComment";
 
 /**
- * Create a new reply to a community forum comment.
- *
  * Create a new reply to an existing forum comment, contributing to threaded
  * discussions.
  *

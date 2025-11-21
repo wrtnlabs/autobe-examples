@@ -12,9 +12,6 @@ import { IRedditCommunityModerator } from "../../../api/structures/IRedditCommun
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register new moderator account, store email and hashed password in
-   * reddit_community_moderators table.
-   *
    * This join endpoint allows new moderators to register by providing their
    * unique email address and a password. It creates a new record in the
    * `reddit_community_moderators` database table, storing the password securely
@@ -60,8 +57,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator and issue JWT token.
-   *
    * This login API authenticates moderators using their registered email and
    * password. It verifies credentials against the `password_hash` stored in the
    * `reddit_community_moderators` table and validates the account status
@@ -104,8 +99,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh JWT access token for moderator.
-   *
    * The refresh endpoint allows moderators to renew their JWT access tokens
    * using a valid refresh token. It checks the moderator's account status from
    * the `reddit_community_moderators` table and issues a new access token if

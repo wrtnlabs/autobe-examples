@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationLog } from "../../../../structures/IDiscussio
 import { IPageIDiscussionBoardModerationLog } from "../../../../structures/IPageIDiscussionBoardModerationLog";
 
 /**
- * Retrieve paginated audit trail of moderator actions with advanced filtering.
- *
  * Retrieve a filtered and paginated list of moderation log entries documenting
  * all moderator actions taken on the discussion board platform. This operation
  * provides comprehensive audit trail access for accountability, transparency,
@@ -125,8 +123,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific moderation log entry.
- *
  * Retrieve comprehensive details about a single moderation action recorded in
  * the discussion board's audit trail. This operation accesses the
  * discussion_board_moderation_logs table to return complete information about

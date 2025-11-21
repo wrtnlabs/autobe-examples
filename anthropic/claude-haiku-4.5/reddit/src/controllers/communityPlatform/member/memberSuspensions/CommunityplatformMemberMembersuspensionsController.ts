@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberSuspension } from "../../../../api/structures/I
 @Controller("/communityPlatform/member/memberSuspensions/:suspensionId")
 export class CommunityplatformMemberMembersuspensionsController {
   /**
-   * Retrieve detailed member suspension information by suspension ID.
-   *
    * Retrieve comprehensive details about a specific member suspension record
    * from the database. This operation returns the complete suspension record
    * including the suspension reason, suspension start time, expiration time,

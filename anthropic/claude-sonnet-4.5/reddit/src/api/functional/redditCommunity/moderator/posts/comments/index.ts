@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Permanently delete a specific comment from a post.
- *
  * Permanently remove a comment from a post in the community platform. This
  * operation performs a hard deletion that completely removes the comment record
  * from the database, making it unrecoverable.

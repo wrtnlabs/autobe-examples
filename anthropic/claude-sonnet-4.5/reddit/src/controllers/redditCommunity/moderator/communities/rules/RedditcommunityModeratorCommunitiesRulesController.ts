@@ -12,8 +12,6 @@ import { IRedditCommunityCommunityRule } from "../../../../../api/structures/IRe
 @Controller("/redditCommunity/moderator/communities/:communityName/rules")
 export class RedditcommunityModeratorCommunitiesRulesController {
   /**
-   * Create a new community rule for a specific community.
-   *
    * Create a new rule to define acceptable behavior and content standards
    * within a community. This operation allows authenticated community
    * moderators to establish rules that guide member conduct and content
@@ -67,8 +65,6 @@ export class RedditcommunityModeratorCommunitiesRulesController {
   }
 
   /**
-   * Update an existing community rule.
-   *
    * Update the details of a specific community rule including its title,
    * description, and display order. This operation enables community moderators
    * to refine and maintain their community guidelines as the community
@@ -122,8 +118,6 @@ export class RedditcommunityModeratorCommunitiesRulesController {
   }
 
   /**
-   * Delete a community rule.
-   *
    * Permanently remove a specific rule from a community's ruleset. This
    * operation enables moderators to eliminate outdated, redundant, or
    * no-longer-applicable rules from their community guidelines.

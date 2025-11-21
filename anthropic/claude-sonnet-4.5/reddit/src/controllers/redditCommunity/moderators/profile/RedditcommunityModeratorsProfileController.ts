@@ -8,8 +8,6 @@ import { IRedditCommunityCommunityModerator } from "../../../../api/structures/I
 @Controller("/redditCommunity/moderators/:username/profile")
 export class RedditcommunityModeratorsProfileController {
   /**
-   * Retrieve detailed profile information for a specific moderator.
-   *
    * Retrieve comprehensive profile information for a specific moderator
    * identified by their unique username. This operation provides access to
    * moderator account details, their moderation activity statistics, and the

@@ -11,8 +11,6 @@ import { IRedditCommunityCommunitySubscription } from "../../../../../api/struct
 @Controller("/redditCommunity/member/members/:username/subscriptions")
 export class RedditcommunityMemberMembersSubscriptionsController {
   /**
-   * Retrieve paginated list of communities a member is subscribed to.
-   *
    * Retrieve a filtered and paginated list of communities that a specific
    * member has subscribed to on the platform. This operation allows users to
    * view their own subscriptions or enables moderators and administrators to

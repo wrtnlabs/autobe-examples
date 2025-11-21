@@ -8,8 +8,6 @@ import { IPageIDiscussionBoardArticle } from "../../../structures/IPageIDiscussi
 export * as attachments from "./attachments/index";
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board articles.
- *
  * Retrieve a filtered and paginated list of discussion articles from the
  * platform with advanced search capabilities for discovering economic and
  * political discussions. This operation provides comprehensive querying
@@ -134,8 +132,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific discussion board article by its unique identifier.
- *
  * Retrieves the complete details of a single discussion board article
  * identified by the articleId path parameter. This operation returns the full
  * article content including the title, body text with rich formatting, category

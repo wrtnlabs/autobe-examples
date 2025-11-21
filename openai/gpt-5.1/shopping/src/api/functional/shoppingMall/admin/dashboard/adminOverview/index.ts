@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallAdminOverviewDashboard } from "../../../../../structures/IShoppingMallAdminOverviewDashboard";
 
 /**
- * Get an aggregated admin overview dashboard combining multiple shoppingMall
- * KPI snapshot tables.
- *
  * Retrieve a high-level administrative overview dashboard for the shoppingMall
  * platform, aggregating metrics from multiple snapshot and operational tables
  * into a single response for admin users.

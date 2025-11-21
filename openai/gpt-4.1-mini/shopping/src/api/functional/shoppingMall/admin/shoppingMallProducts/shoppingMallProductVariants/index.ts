@@ -4,8 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a product variant SKU by skuCode under a product.
- *
  * Delete a specific product variant SKU from the shopping mall product catalog.
  *
  * This operation deletes the SKU identified by skuCode under the product

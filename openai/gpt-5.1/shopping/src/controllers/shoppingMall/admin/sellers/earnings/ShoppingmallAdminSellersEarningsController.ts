@@ -7,9 +7,6 @@ import { IShoppingMallSellerEarning } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/sellers/:sellerId/earnings")
 export class ShoppingmallAdminSellersEarningsController {
   /**
-   * Create a new earning entry for a seller in the
-   * shopping_mall_seller_earnings table.
-   *
    * Create a new earnings record for a specific seller in the ShoppingMall
    * platform.
    *
@@ -76,9 +73,6 @@ export class ShoppingmallAdminSellersEarningsController {
   }
 
   /**
-   * Update an existing earning entry for a seller in the
-   * shopping_mall_seller_earnings table.
-   *
    * Update an existing seller earning record for a specific seller in the
    * ShoppingMall platform.
    *
@@ -146,9 +140,6 @@ export class ShoppingmallAdminSellersEarningsController {
   }
 
   /**
-   * Permanently delete a specific seller earning from the
-   * shopping_mall_seller_earnings table for a given seller.
-   *
    * Remove a specific seller earning record associated with a given seller
    * from the `shopping_mall_seller_earnings` table.
    *

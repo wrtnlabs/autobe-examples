@@ -7,8 +7,6 @@ import { IShoppingMallSku } from "../../../../../structures/IShoppingMallSku";
 import { IPageIShoppingMallSku } from "../../../../../structures/IPageIShoppingMallSku";
 
 /**
- * Create a new SKU (shopping_mall_skus) under the specified product.
- *
  * Create a new SKU for the specified product in the catalog.
  *
  * This operation writes to the shopping_mall_skus Prisma table, which models
@@ -139,9 +137,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate SKUs for a specific product using the shopping_mall_skus
- * table.
- *
  * Retrieve a filtered, paginated list of SKUs for a specific product from the
  * shopping_mall_skus table.
  *
@@ -278,8 +273,6 @@ export namespace index {
 }
 
 /**
- * Update a SKU variant in the shopping_mall_skus table for a given product.
- *
  * Update an existing SKU variant for a specific product in the shoppingMall
  * catalog.
  *
@@ -424,8 +417,6 @@ export namespace update {
 }
 
 /**
- * Delete a SKU variant from the shopping_mall_skus table for a given product.
- *
  * Delete an existing SKU variant for a specific product from the shoppingMall
  * catalog.
  *

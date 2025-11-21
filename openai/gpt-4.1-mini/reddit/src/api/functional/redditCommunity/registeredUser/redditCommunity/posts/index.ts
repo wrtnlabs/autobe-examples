@@ -9,8 +9,6 @@ export * as comments from "./comments/index";
 export * as postVotes from "./postVotes/index";
 
 /**
- * Create a new post in redditCommunity.
- *
  * Create a new post in a specified community authored by a registered user.
  *
  * This operation supports creating posts with different content types,
@@ -108,8 +106,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered, paginated list of reddit community posts.
- *
  * Retrieve a filtered and paginated list of Reddit community posts. This
  * operation supports complex queries allowing clients to filter by post type
  * (text, link, image), title keywords, associated community, and author.
@@ -204,8 +200,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single reddit community post by ID.
- *
  * Retrieve detailed information of a specific Reddit community post identified
  * by its postId. This operation fetches the full post information including its
  * type, title, body content (if text), link URL (if link), image URL (if
@@ -292,8 +286,6 @@ export namespace at {
 }
 
 /**
- * Update an existing post in redditCommunity.
- *
  * Update post content and metadata by post ID.
  *
  * This operation allows modifying the post's title, body, link URL, or image
@@ -390,8 +382,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a post by its ID from reddit community.
- *
  * Permanently deletes the specified post from the redditCommunity platform.
  *
  * This operation requires the unique identifier of the post to delete it

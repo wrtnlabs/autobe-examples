@@ -8,9 +8,6 @@ import { UserPayload } from "../../../../../decorators/payload/UserPayload";
 @Controller("/todoList/user/users/:userId/sessions/:sessionId")
 export class TodolistUserUsersSessionsController {
   /**
-   * Permanently erase a session by ID for a user from the
-   * todo_list_user_sessions table.
-   *
    * Permanently erase a user session from the Todo List application's audit
    * trail.
    *

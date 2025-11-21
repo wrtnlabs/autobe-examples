@@ -7,9 +7,6 @@ import { ITodoListUserSession } from "../../../../../../structures/ITodoListUser
 import { IPageITodoListUserSession } from "../../../../../../structures/IPageITodoListUserSession";
 
 /**
- * Retrieve a paginated list of the authenticated user's own session records
- * (todo_list_user_sessions).
- *
  * Fetch a paginated/searchable list of all login and authentication sessions
  * for the currently logged-in user, as stored in the todo_list_user_sessions
  * table.
@@ -116,8 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details about a login session (todo_list_user_sessions).
- *
  * Retrieve details about a specific login session for the currently
  * authenticated user.
  *
@@ -223,8 +218,6 @@ export namespace at {
 }
 
 /**
- * Revoke and expire an authentication session (todo_list_user_sessions).
- *
  * Delete a specific authentication session for the current user, revoking
  * access for the identified browser or device.
  *

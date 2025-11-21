@@ -9,9 +9,6 @@ import { ICommunityPlatformAdminUserLogin } from "../../../structures/ICommunity
 import { ICommunityPlatformAdminUserRefresh } from "../../../structures/ICommunityPlatformAdminUserRefresh";
 
 /**
- * Register a new adminUser account in community_platform_adminusers and return
- * an authorized admin JWT context.
- *
  * This operation registers a new administrative account in the community
  * platform by creating a row in the `community_platform_adminusers` table that
  * represents an `adminUser` actor. According to the Prisma schema description,
@@ -162,9 +159,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing adminUser using community_platform_adminusers and
- * return an authorized JWT context.
- *
  * This operation authenticates an existing administrative account by validating
  * supplied credentials against the `community_platform_adminusers` table and
  * issuing JWT tokens for the `adminUser` actor. According to the schema
@@ -317,9 +311,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for an existing adminUser by validating a refresh token
- * against community_platform_adminusers state.
- *
  * This operation renews JWT tokens for an already authenticated `adminUser` by
  * validating a refresh token and checking the current state of the
  * corresponding record in the `community_platform_adminusers` table. Rather

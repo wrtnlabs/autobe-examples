@@ -1,361 +1,269 @@
-# User Actors and Authentication Requirements for Community Platform
+# User Actors and Authentication System Specification
 
-## Executive Summary
+## Authentication System Overview
 
-This document defines the complete user authentication and authorization framework for the Reddit-like community platform. It establishes the foundation for secure user management, access control, and permission hierarchies that will govern all platform interactions. The authentication system must support four distinct user actors with graduated permission levels, ensuring appropriate access controls while maintaining platform security and user privacy.
+This document defines the complete authentication and authorization framework for the Reddit-like community platform. The system provides secure user authentication, role-based access control, and comprehensive permission management for all platform features.
 
-### Platform Authentication Vision
-The authentication system provides a seamless, secure experience that balances user convenience with robust security measures. Users can easily register, authenticate, and manage their accounts while the platform maintains strict security standards and compliance with global privacy regulations.
+### Core Authentication Architecture
+The platform implements a JWT-based authentication system with four distinct user actors, each with specific permissions and capabilities. The system ensures secure access to community features while maintaining user privacy and platform integrity.
 
-## User Actor Definitions
+## User Actor Definitions and Hierarchy
 
-### Guest (Unauthenticated Users)
-
-**Description**: Users who access the platform without authentication. These users can browse public content but have limited interaction capabilities.
-
-**Core Capabilities**:
-- Browse public communities and content
-- View posts, comments, and voting statistics
-- Access community information and descriptions
-- View user profiles (public information only)
-- Register for a new account
-- Login to existing account
-
-**Authentication Status**: No authentication required
-
-**Business Rules**:
-- WHEN guests browse public content, THE system SHALL display content without requiring authentication
-- WHERE guests attempt authenticated actions, THE system SHALL prompt for registration or login
-- IF guests register successfully, THE system SHALL transition them to Member status
-
-### Member (Authenticated Users)
-
-**Description**: Registered users who have completed the authentication process. Members form the core user base and have full interaction capabilities within platform guidelines.
-
-**Core Capabilities**:
-- Create and manage posts in communities
-- Comment on posts with nested replies
-- Upvote/downvote posts and comments
-- Subscribe to communities
-- Manage personal profile and settings
-- Participate in karma system
-- Report inappropriate content
-- Create and manage their own communities (subreddits)
-
-**Authentication Status**: Valid authentication token required
-
-**Business Rules**:
-- WHEN members create content, THE system SHALL validate content against community rules
-- WHERE members exceed posting limits, THE system SHALL enforce rate limiting
-- IF members violate platform rules, THE system SHALL apply appropriate penalties
-
-### Moderator (Community Administrators)
-
-**Description**: Users with elevated permissions for specific communities. Moderators are responsible for content quality, community guidelines enforcement, and user management within their assigned communities.
-
-**Core Capabilities**:
-- All Member capabilities PLUS:
-- Moderate content within assigned communities
-- Remove posts and comments
-- Ban users from communities
-- Manage community settings and rules
-- Handle content reports
-- Appoint additional moderators
-- Pin important posts
-- Manage community flair and tags
-
-**Authentication Status**: Valid authentication token with moderator permissions
-
-**Business Rules**:
-- WHEN moderators take action, THE system SHALL log all moderation activities
-- WHERE moderation decisions are disputed, THE system SHALL provide appeal process
-- IF moderators abuse their powers, THE system SHALL allow community member reporting
-
-### Admin (System Administrators)
-
-**Description**: Users with system-wide administrative privileges. Admins have ultimate control over platform operations, user management, and system configuration.
-
-**Core Capabilities**:
-- All Moderator capabilities PLUS:
-- Manage all users and communities
-- System-wide content moderation
-- Platform configuration and settings
-- Analytics and reporting access
-- User account management (suspension, deletion)
-- Emergency system operations
-- Data export and management
-
-**Authentication Status**: Valid authentication token with admin permissions
-
-**Business Rules**:
-- WHEN admins perform system operations, THE system SHALL maintain audit trails
-- WHERE admin actions affect users, THE system SHALL provide clear communication
-- IF emergency actions are required, THE system SHALL allow expedited procedures
-
-## Authentication System Requirements
-
-### Registration Process
-
-**WHEN** a guest attempts to register, **THE system SHALL** provide a registration form with the following requirements:
-- Email address validation (unique, valid format)
-- Username requirements (3-20 characters, alphanumeric)
-- Password requirements (minimum 8 characters, complexity rules)
-- Terms of service acceptance
-- Email verification process
-
-**WHEN** registration form is submitted, **THE system SHALL**:
-- Validate all input fields according to business rules
-- Check for duplicate email and username
-- Create user account in pending verification state
-- Send verification email with secure token
-- Log registration attempt
-
-**WHEN** email verification link is clicked, **THE system SHALL**:
-- Validate verification token
-- Activate user account
-- Redirect to login page with success message
-- Log verification completion
-
-### Login Process
-
-**WHEN** a user attempts to login, **THE system SHALL**:
-- Accept email/username and password
-- Validate credentials against stored hash
-- Check account status (active, suspended, banned)
-- Generate JWT access token with user claims
-- Generate secure refresh token
-- Update last login timestamp
-- Log successful login attempt
-
-**JWT Token Requirements**:
-- Access token expiration: 30 minutes
-- Refresh token expiration: 30 days
-- Token payload must include:
-  - userId (unique identifier)
-  - username (display name)
-  - email (verified email address)
-  - roles (array of user roles)
-  - permissions (array of specific permissions)
-  - communityModerator (array of moderated community IDs)
-  - iat (issued at timestamp)
-  - exp (expiration timestamp)
-
-### Session Management
-
-**WHEN** an access token expires, **THE system SHALL**:
-- Accept valid refresh token
-- Validate refresh token against stored hash
-- Issue new access token
-- Maintain user session continuity
-- Log token refresh activity
-
-**WHEN** a user logs out, **THE system SHALL**:
-- Invalidate current access token
-- Optionally invalidate refresh token
-- Clear session data
-- Log logout activity
-
-### Password Management
-
-**WHEN** a user requests password reset, **THE system SHALL**:
-- Validate email address exists in system
-- Generate secure reset token (expires in 1 hour)
-- Send password reset email
-- Log reset request
-
-**WHEN** password reset form is submitted, **THE system SHALL**:
-- Validate reset token
-- Enforce new password complexity rules
-- Update password hash
-- Invalidate all existing sessions
-- Send confirmation email
-- Log password change
-
-## Permission Hierarchy and Capabilities
-
-### Actor Capabilities Matrix
-
-| Action | Guest | Member | Moderator | Admin |
-|--------|-------|--------|-----------|-------|
-| Browse public content | ✅ | ✅ | ✅ | ✅ |
-| View user profiles | ✅ | ✅ | ✅ | ✅ |
-| Register account | ✅ | ❌ | ❌ | ❌ |
-| Login to account | ✅ | ❌ | ❌ | ❌ |
-| Create posts | ❌ | ✅ | ✅ | ✅ |
-| Comment on posts | ❌ | ✅ | ✅ | ✅ |
-| Upvote/downvote | ❌ | ✅ | ✅ | ✅ |
-| Subscribe to communities | ❌ | ✅ | ✅ | ✅ |
-| Create communities | ❌ | ✅ | ✅ | ✅ |
-| Moderate content | ❌ | ❌ | ✅* | ✅ |
-| Manage community settings | ❌ | ❌ | ✅* | ✅ |
-| Ban users from community | ❌ | ❌ | ✅* | ✅ |
-| System-wide user management | ❌ | ❌ | ❌ | ✅ |
-| Platform configuration | ❌ | ❌ | ❌ | ✅ |
-
-*Moderator permissions apply only to assigned communities
-
-### Permission Inheritance
-
-The permission hierarchy follows a strict inheritance model:
-
+### Actor Hierarchy Structure
 ```mermaid
-graph TB
-    A["Guest<br/>Limited Access"] --> B["Member<br/>Full User Rights"]
-    B --> C["Moderator<br/>Community Management"]
-    C --> D["Admin<br/>System Administration"]
-    
-    style A fill:#e1f5fe
-    style B fill:#c8e6c9
-    style C fill:#fff3e0
-    style D fill:#ffcdd2
+graph LR
+  A["Guest"] --> B["Member"] --> C["Moderator"] --> D["Admin"]
 ```
 
-### Community-Specific Permissions
+### Guest User
+**Description**: Unauthenticated users who can browse public content without creating an account.
 
-**WHEN** a user creates a community, **THE system SHALL**:
-- Grant creator moderator permissions for that community
-- Allow creator to appoint additional moderators
-- Track community ownership and moderation history
+**Permissions**:
+- View public posts and comments
+- Browse community listings
+- Access public community information
+- Search platform content
+- View user profiles (public information only)
 
-**WHEN** a moderator is appointed, **THE system SHALL**:
-- Add community ID to user's moderator array
-- Update JWT token claims (if token refresh required)
-- Notify user of new moderation responsibilities
+**Restrictions**:
+- Cannot create posts or comments
+- Cannot vote on content
+- Cannot subscribe to communities
+- Cannot access member-only features
+- Cannot send messages or interact with users
 
-## Security and Privacy Requirements
+### Member User
+**Description**: Registered users who actively participate in community discussions and content creation.
+
+**Permissions**:
+- Create and manage posts in subscribed communities
+- Submit and edit comments
+- Upvote/downvote posts and comments
+- Subscribe to communities
+- Manage personal profile and preferences
+- Send and receive private messages
+- Save posts for later viewing
+- Report inappropriate content
+
+**Authentication Requirements**:
+- Email verification required for full access
+- Password complexity enforcement
+- Session management with automatic logout
+
+### Moderator User
+**Description**: Community moderators responsible for maintaining community standards and content quality.
+
+**Permissions**:
+- All Member permissions
+- Remove posts and comments in moderated communities
+- Ban users from specific communities
+- Approve/remove reported content
+- Manage community settings and rules
+- Pin important posts in communities
+- Access moderation logs and analytics
+
+**Authentication Requirements**:
+- Additional moderator verification
+- Enhanced security logging
+- Two-factor authentication recommended
+
+### Admin User
+**Description**: System administrators with full platform access and management capabilities.
+
+**Permissions**:
+- All Moderator permissions
+- Manage all users and communities
+- Access system-wide analytics and logs
+- Configure platform settings
+- Manage payment and subscription systems
+- Handle escalated moderation cases
+- Perform system maintenance operations
+
+**Authentication Requirements**:
+- Mandatory two-factor authentication
+- Session timeout after 15 minutes of inactivity
+- Comprehensive audit logging
+
+## Authentication Flow Requirements
+
+### User Registration Process
+```mermaid
+graph LR
+  A["User Enters Registration Info"] --> B["Validate Input Data"]
+  B --> C{"Input Valid?"}
+  C -->|"No"| D["Show Validation Errors"]
+  C -->|"Yes"| E["Create User Account"]
+  E --> F["Send Verification Email"]
+  F --> G["Account in Pending State"]
+  G --> H["User Verifies Email"]
+  H --> I["Account Activated"]
+```
+
+**Registration Requirements**:
+- WHEN a user submits registration information, THE system SHALL validate email format and password strength
+- THE system SHALL require unique email addresses for each account
+- IF email verification fails, THEN THE system SHALL allow resending verification emails
+- WHERE email verification is pending, THE user SHALL have limited platform access
+
+### User Login Process
+```mermaid
+graph LR
+  A["User Enters Credentials"] --> B["Validate Input Format"]
+  B --> C{"Format Valid?"}
+  C -->|"No"| D["Show Format Error"]
+  C -->|"Yes"| E["Verify Credentials"]
+  E --> F{"Credentials Valid?"}
+  F -->|"No"| G["Show Authentication Error"]
+  F -->|"Yes"| H["Generate JWT Tokens"]
+  H --> I["Establish User Session"]
+  I --> J["Redirect to Dashboard"]
+```
+
+**Login Requirements**:
+- WHEN a user attempts to log in, THE system SHALL validate credentials within 2 seconds
+- IF login attempts exceed 5 failures, THEN THE system SHALL temporarily lock the account
+- THE system SHALL maintain user sessions securely with automatic timeout after 30 days of inactivity
+
+### Password Management
+**Password Reset Flow**:
+- WHEN a user requests password reset, THE system SHALL send reset instructions to verified email
+- THE password reset link SHALL expire after 1 hour
+- WHERE password is reset, THE system SHALL invalidate all existing sessions
+
+**Password Requirements**:
+- THE system SHALL enforce minimum password length of 8 characters
+- THE system SHALL require at least one uppercase letter, one lowercase letter, and one number
+- THE system SHALL prevent password reuse for the last 5 passwords
+
+## JWT Token Management Specification
+
+### Token Structure
+**Access Token Payload**:
+```json
+{
+  "userId": "uuid-string",
+  "email": "user@example.com",
+  "role": "member|moderator|admin",
+  "permissions": ["post:create", "comment:vote", "community:subscribe"],
+  "communities": ["community-id-1", "community-id-2"],
+  "iat": 1234567890,
+  "exp": 1234567890
+}
+```
+
+**Refresh Token Requirements**:
+- THE refresh token SHALL be stored securely with HTTP-only cookies
+- THE refresh token SHALL expire after 30 days
+- WHEN refreshing access tokens, THE system SHALL validate refresh token integrity
+
+### Token Security
+- THE system SHALL use strong cryptographic algorithms for token generation
+- THE JWT secret key SHALL be securely managed and rotated periodically
+- THE system SHALL implement token revocation for compromised accounts
+- WHERE tokens are compromised, THE system SHALL immediately invalidate all user sessions
+
+## Permission Matrix and Access Control
+
+### Comprehensive Permission Matrix
+| Action | Guest | Member | Moderator | Admin |
+|--------|-------|--------|-----------|-------|
+| View Public Posts | ✅ | ✅ | ✅ | ✅ |
+| View Public Comments | ✅ | ✅ | ✅ | ✅ |
+| Browse Communities | ✅ | ✅ | ✅ | ✅ |
+| Search Content | ✅ | ✅ | ✅ | ✅ |
+| Create Posts | ❌ | ✅ | ✅ | ✅ |
+| Edit Own Posts | ❌ | ✅ | ✅ | ✅ |
+| Delete Own Posts | ❌ | ✅ | ✅ | ✅ |
+| Create Comments | ❌ | ✅ | ✅ | ✅ |
+| Edit Own Comments | ❌ | ✅ | ✅ | ✅ |
+| Delete Own Comments | ❌ | ✅ | ✅ | ✅ |
+| Upvote/Downvote | ❌ | ✅ | ✅ | ✅ |
+| Subscribe to Communities | ❌ | ✅ | ✅ | ✅ |
+| Report Content | ❌ | ✅ | ✅ | ✅ |
+| Remove Posts (Moderated) | ❌ | ❌ | ✅ | ✅ |
+| Remove Comments (Moderated) | ❌ | ❌ | ✅ | ✅ |
+| Ban Users from Community | ❌ | ❌ | ✅ | ✅ |
+| Manage Community Settings | ❌ | ❌ | ✅ | ✅ |
+| Manage All Users | ❌ | ❌ | ❌ | ✅ |
+| Manage All Communities | ❌ | ❌ | ❌ | ✅ |
+| System Configuration | ❌ | ❌ | ❌ | ✅ |
+
+### Access Control Rules
+- WHILE a user is authenticated as Member, THE system SHALL grant access to content creation features
+- WHEN a Moderator accesses moderation tools, THE system SHALL verify community assignment
+- IF an Admin performs system operations, THEN THE system SHALL log all actions for audit purposes
+- WHERE content moderation occurs, THE system SHALL notify affected users of actions taken
+
+## Security Requirements and Best Practices
 
 ### Authentication Security
+- THE system SHALL implement rate limiting on authentication endpoints
+- THE system SHALL use HTTPS for all authentication communications
+- THE system SHALL store passwords using bcrypt with appropriate salt rounds
+- WHERE sensitive operations occur, THE system SHALL require re-authentication
 
-**THE authentication system SHALL**:
-- Use industry-standard password hashing (bcrypt with appropriate work factor)
-- Implement rate limiting on login attempts (max 5 attempts per 15 minutes)
-- Enforce secure password policies (minimum 8 characters, mixed characters)
-- Use HTTPS for all authentication communications
-- Implement CSRF protection for authentication forms
-- Store refresh tokens securely (hashed in database)
+### Session Management
+- THE access token SHALL expire after 15 minutes of inactivity
+- THE system SHALL provide secure token refresh mechanisms
+- WHEN users log out, THE system SHALL invalidate both access and refresh tokens
+- THE system SHALL maintain session activity logs for security monitoring
 
-### Session Security
+### Threat Protection
+- THE system SHALL detect and prevent brute force attacks
+- THE system SHALL implement CSRF protection for all state-changing operations
+- WHERE suspicious activity is detected, THE system SHALL trigger security alerts
+- THE system SHALL provide account recovery mechanisms for compromised accounts
 
-**WHEN** handling user sessions, **THE system SHALL**:
-- Validate JWT signatures for all authenticated requests
-- Implement token revocation for suspicious activity
-- Monitor for abnormal session patterns
-- Provide session timeout warnings
-- Support manual session revocation from user settings
+## Error Handling and Recovery Scenarios
 
-### Privacy Requirements
+### Authentication Error Scenarios
+**Invalid Credentials**:
+- WHEN authentication fails due to invalid credentials, THE system SHALL return HTTP 401 with error code "AUTH_INVALID_CREDENTIALS"
+- THE error message SHALL not specify whether email or password was incorrect
 
-**THE system SHALL** protect user privacy by:
-- Not exposing email addresses in public APIs
-- Allowing users to control profile visibility
-- Providing data export capabilities
-- Implementing proper data retention policies
-- Complying with relevant privacy regulations (GDPR, CCPA)
+**Account Locked**:
+- IF an account is temporarily locked, THEN THE system SHALL return HTTP 423 with error code "ACCOUNT_LOCKED"
+- THE response SHALL include lock duration and unlock time
 
-### Data Protection
+**Token Expired**:
+- WHEN an access token expires, THE system SHALL return HTTP 401 with error code "TOKEN_EXPIRED"
+- THE client SHALL automatically attempt token refresh
 
-**WHEN** storing user data, **THE system SHALL**:
-- Encrypt sensitive personal information
-- Implement proper access controls for user data
-- Maintain audit logs for sensitive operations
-- Provide data deletion capabilities for account closure
+### Recovery Processes
+**Password Reset**:
+- WHEN a user forgets their password, THE system SHALL provide secure password reset functionality
+- THE password reset process SHALL require email verification
+- WHERE password is successfully reset, THE system SHALL notify the user via email
+
+**Account Recovery**:
+- IF an account is compromised, THEN THE system SHALL provide account recovery procedures
+- THE recovery process SHALL include identity verification steps
+- WHERE recovery is complete, THE system SHALL secure the account with new credentials
+
+### Security Incident Response
+- WHEN security incidents are detected, THE system SHALL immediately log the event
+- THE system SHALL notify administrators of critical security events
+- WHERE necessary, THE system SHALL temporarily suspend affected accounts
 
 ## Implementation Guidelines
 
-### Authentication Flow
+### Development Priorities
+1. Implement core authentication flows (registration, login, logout)
+2. Develop JWT token management system
+3. Create permission validation middleware
+4. Implement security features and threat protection
+5. Develop comprehensive error handling
 
-```mermaid
-graph LR
-    A["Guest<br/>Access"] --> B{"Register or Login?"}
-    B -->|"Register"| C["Email Verification"]
-    B -->|"Login"| D["Credential Validation"]
-    C --> E["Account Activation"]
-    D --> E
-    E --> F["Member<br/>Access"]
-    F --> G{"Moderator<br/>or Admin?"}
-    G -->|"Yes"| H["Elevated<br/>Permissions"]
-    G -->|"No"| I["Standard<br/>Member Access"]
-    
-    style A fill:#e1f5fe
-    style F fill:#c8e6c9
-    style H fill:#fff3e0
-```
+### Testing Requirements
+- ALL authentication endpoints SHALL undergo security penetration testing
+- THE permission system SHALL be tested for all user actor combinations
+- Error handling scenarios SHALL be validated for proper user experience
+- Performance testing SHALL verify authentication response times under load
 
-### Token Management Strategy
+### Monitoring and Analytics
+- THE system SHALL track authentication success/failure rates
+- Security events SHALL be monitored in real-time
+- User session analytics SHALL inform platform improvements
+- Authentication performance metrics SHALL be collected and analyzed
 
-**Access Token Storage**:
-- Recommended: HTTP-only cookies for enhanced security
-- Alternative: localStorage with CSRF protection
-- Must include secure flag and same-site restrictions
-
-**Refresh Token Strategy**:
-- Store hashed refresh tokens in database
-- Implement automatic token rotation
-- Support token revocation for security incidents
-
-### Error Handling
-
-**WHEN** authentication fails, **THE system SHALL** provide appropriate error responses:
-- Invalid credentials: Generic error message (no specific details)
-- Account locked: Clear explanation and unlock procedure
-- Token expired: Redirect to refresh flow
-- Permission denied: Specific authorization error
-
-### Performance Requirements
-
-**THE authentication system SHALL**:
-- Respond to login requests within 2 seconds under normal load
-- Support concurrent authentication for 10,000+ users
-- Maintain session state efficiently across server instances
-- Scale horizontally to handle peak traffic
-
-## Compliance and Standards
-
-### Regulatory Compliance
-
-**THE system SHALL** comply with:
-- GDPR requirements for EU users
-- CCPA requirements for California users
-- COPPA requirements for under-13 users
-- Industry-standard security practices
-
-### Technical Standards
-
-**THE system SHALL** implement:
-- OWASP security guidelines
-- Industry-standard JWT implementation
-- Secure password storage practices
-- Regular security audits and penetration testing
-
-## Integration Requirements
-
-### User Profile Integration
-**WHEN** authentication succeeds, **THE system SHALL** seamlessly integrate with user profile systems to display appropriate user information and permissions.
-
-### Community System Integration
-**WHERE** community-specific permissions are required, **THE system SHALL** validate user permissions against community membership and moderator status.
-
-### Content Moderation Integration
-**WHEN** content moderation actions occur, **THE system SHALL** verify user authentication and authorization levels before allowing moderation actions.
-
-## Error Handling Scenarios
-
-### Account Recovery
-**IF** a user loses access to their account, **THEN THE system SHALL** provide secure account recovery options including email verification and security questions.
-
-### Suspicious Activity Detection
-**WHEN** unusual login patterns are detected, **THE system SHALL** implement additional verification steps and notify users of potential security issues.
-
-### System Maintenance
-**WHILE** authentication systems undergo maintenance, **THE system SHALL** provide clear communication to users and maintain service availability where possible.
-
-## Success Metrics
-
-The authentication system shall be considered successful when:
-- 99.9% of login attempts succeed within 2 seconds
-- Account registration completion rate exceeds 95%
-- Password reset success rate exceeds 90%
-- Security incident rate remains below 0.01%
-- User satisfaction with authentication process exceeds 4.5/5.0
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+This specification provides the complete foundation for implementing a secure, scalable authentication system that supports the Reddit-like community platform's user hierarchy and permission structure. All requirements are written in natural language using EARS format where applicable to ensure clear understanding by backend developers.

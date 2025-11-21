@@ -61,8 +61,6 @@ export class TodoappUserConfigurationsSnapshotsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of configuration snapshots.
-   *
    * Retrieve a filtered and paginated list of configuration snapshots for a
    * specific configuration. This operation provides advanced search
    * capabilities for finding historical configuration states based on various

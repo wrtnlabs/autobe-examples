@@ -7,9 +7,6 @@ import { IShoppingMallCustomerProfile } from "../../../../../api/structures/ISho
 @Controller("/shoppingMall/customer/customers/:customerId/profile")
 export class ShoppingmallCustomerCustomersProfileController {
   /**
-   * Get profile information for a customer from
-   * shopping_mall_customer_profiles.
-   *
    * Retrieve the extended profile information for a single customer based on
    * their unique customer identifier.
    *
@@ -65,9 +62,6 @@ export class ShoppingmallCustomerCustomersProfileController {
   }
 
   /**
-   * Update profile information for a customer in
-   * shopping_mall_customer_profiles.
-   *
    * Update the extended profile information for a specific customer using
    * their unique customer identifier and a structured profile update
    * payload.

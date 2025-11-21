@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleCategory } from "../../../../structures/IDiscussionBoardArticleCategory";
 
 /**
- * Create a new discussion-board article category record in
- * `discussion_board_article_categories`.
- *
  * Create a new article category in the economic and political discussion board
  * using the `discussion_board_article_categories` Prisma model.
  *
@@ -124,9 +121,6 @@ export namespace create {
 }
 
 /**
- * Update a discussion board article category in the
- * `discussion_board_article_categories` table using its unique code.
- *
  * Update an existing article category in the discussion board’s master data
  * using its business `code` as the stable identifier.
  *
@@ -276,9 +270,6 @@ export namespace update {
 }
 
 /**
- * Delete or retire a discussion board article category in the
- * `discussion_board_article_categories` table by its unique code.
- *
  * Remove an article category from the discussion board’s master data using its
  * business `code` as identifier.
  *

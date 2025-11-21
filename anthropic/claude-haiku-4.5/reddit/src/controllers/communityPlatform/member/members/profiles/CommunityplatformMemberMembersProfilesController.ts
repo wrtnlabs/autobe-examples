@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberProfile } from "../../../../../api/structures/I
 @Controller("/communityPlatform/member/members/:memberId/profiles")
 export class CommunityplatformMemberMembersProfilesController {
   /**
-   * Update a member's profile information.
-   *
    * Update the profile information for a community member. This operation
    * allows members to customize their public identity on the platform by
    * modifying display name, biography, profile image, geographic location,

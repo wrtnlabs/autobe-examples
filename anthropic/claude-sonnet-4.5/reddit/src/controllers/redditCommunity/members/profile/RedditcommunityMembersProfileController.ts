@@ -8,8 +8,6 @@ import { IRedditCommunityGuest } from "../../../../api/structures/IRedditCommuni
 @Controller("/redditCommunity/members/:username/profile")
 export class RedditcommunityMembersProfileController {
   /**
-   * Retrieve public profile information for a specific member.
-   *
    * Fetch comprehensive public profile information for a member account
    * identified by their unique username. This operation returns detailed member
    * information suitable for displaying on a user profile page.

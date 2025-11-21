@@ -8,9 +8,6 @@ import { IShoppingMallAccountRiskFlag } from "../../../../../api/structures/ISho
 @Controller("/shoppingMall/admin/guestUsers/:guestUserId/accountRiskFlags")
 export class ShoppingmallAdminGuestusersAccountriskflagsController {
   /**
-   * Search paginated account risk flags for a specific guest user using
-   * `shopping_mall_account_risk_flags`.
-   *
    * Retrieve a paginated, filterable list of risk flag records associated
    * with a specific guest user in the shoppingMall platform.
    *

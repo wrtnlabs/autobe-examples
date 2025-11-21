@@ -1,8 +1,16 @@
-/// Coupon information for sales promotions. Coupons are issued by sellers
-/// and can be used by customers to receive discounts on purchases. Each
-/// coupon has a unique code, discount amount, and expiration date. Coupons
-/// can be applied to specific products or the entire order. The coupon's
-/// status indicates whether it is active, expired, or used up.
+/// Coupon information for discounts and promotions.
+///
+/// Stores discount codes, their types, values, and validity periods. Each
+/// coupon
+/// is associated with a specific channel and can be used by customers to
+/// generate discounts on orders. Coupons have different types (percentage,
+/// fixed
+/// amount) and can be limited by usage counts or expiration dates.
+///
+/// Coupons are created by administrators and can be applied to specific
+/// products or the entire order. The coupon status tracks whether it's active,
+/// expired, or suspended. Soft deletion is supported to maintain audit trails
+/// while allowing content moderation.
 ///
 /// @namespace Coupons
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -13,47 +21,65 @@ model shopping_mall_coupons {
   /// Primary Key.
   id String @id
   
-  /// Seller who issued the coupon. {@link shopping_mall_sellers.id}
-  shopping_seller_id String
+  /// Belonged channel's {@link shopping_mall_channels.id}.
+  shopping_mall_channel_id String
   
-  /// Unique code for the coupon.
+  /// Unique coupon code for redemption.
   code String
   
-  /// Discount amount provided by the coupon.
-  discount_amount Float
+  /// Type of discount (percentage, fixed amount).
+  type String
   
-  /// Expiration date of the coupon.
-  expiration_date DateTime
+  /// Discount value (percentage or fixed amount).
+  value Float
   
-  /// Status of the coupon (active, expired, used_up).
+  /// Minimum order amount required to use the coupon.
+  min_order_amount Float?
+  
+  /// Maximum discount amount that can be applied.
+  max_discount_amount Float?
+  
+  /// Maximum number of times the coupon can be used.
+  usage_limit Int?
+  
+  /// Start date when the coupon becomes valid.
+  start_date DateTime
+  
+  /// End date when the coupon expires.
+  end_date DateTime
+  
+  /// Current status of the coupon (active, expired, suspended).
   status String
   
-  /// Creation timestamp of the coupon.
+  /// Timestamp when the coupon was created.
   created_at DateTime
   
-  /// Last update timestamp of the coupon.
+  /// Timestamp when the coupon was last updated.
   updated_at DateTime
   
-  /// Deletion timestamp of the coupon.
+  /// Timestamp when the coupon was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
   
   shopping_mall_coupon_usages shopping_mall_coupon_usages[]
   
   @@unique([code])
-  @@index([shopping_seller_id])
-  @@index([status])
-  @@index([expiration_date])
+  @@index([shopping_mall_channel_id, status])
+  @@index([start_date, end_date])
 }
 
-/// Coupon usage information for tracking coupon usage by customers. Each
-/// coupon usage record includes the customer who used the coupon, the order
-/// in which it was used, and the discount amount applied. The usage record
-/// also includes timestamps for creation and deletion.
+/// Coupon usage records for tracking discount applications.
+///
+/// Stores information about when and how coupons were applied to orders. Each
+/// usage record links a specific coupon to an order and tracks the discount
+/// amount applied. Usage records help monitor coupon effectiveness and
+/// prevent abuse. The status field indicates whether the usage was valid or
+/// invalid (e.g., expired, already used). Soft deletion is supported to
+/// maintain audit trails while allowing content moderation.
 ///
 /// @namespace Coupons
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -64,32 +90,36 @@ model shopping_mall_coupon_usages {
   /// Primary Key.
   id String @id
   
-  /// Coupon used by the customer. {@link shopping_mall_coupons.id}
+  /// Belonged coupon's {@link shopping_mall_coupons.id}.
   shopping_mall_coupon_id String
   
-  /// Customer who used the coupon. {@link shopping_mall_customers.id}
-  shopping_customer_id String
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
   
-  /// Order in which the coupon was used. {@link shopping_mall_orders.id}
-  shopping_order_id String
-  
-  /// Discount amount applied by the coupon.
+  /// Amount of discount applied to the order.
   discount_amount Float
   
-  /// Creation timestamp of the coupon usage record.
+  /// Status of the coupon usage (valid, invalid, expired).
+  status String
+  
+  /// Timestamp when the coupon was applied to the order.
   created_at DateTime
   
-  /// Deletion timestamp of the coupon usage record.
+  /// Timestamp when the coupon usage was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the coupon usage was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   coupon shopping_mall_coupons @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  order shopping_mall_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_coupon_id])
-  @@index([shopping_customer_id])
-  @@index([shopping_order_id])
+  @@index([shopping_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_coupon_id, shopping_mall_order_id], map: "shopping_mall_coupon_usages_shopping_mall_coupon_id_sh_ffa5134b")
+  @@index([status])
 }

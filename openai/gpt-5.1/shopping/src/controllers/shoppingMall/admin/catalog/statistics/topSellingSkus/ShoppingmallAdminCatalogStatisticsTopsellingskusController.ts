@@ -7,9 +7,6 @@ import { IShoppingMallCatalogTopSellingSkuStatistics } from "../../../../../../a
 @Controller("/shoppingMall/admin/catalog/statistics/topSellingSkus")
 export class ShoppingmallAdminCatalogStatisticsTopsellingskusController {
   /**
-   * Retrieve top-selling SKU statistics derived from order and SKU tables in
-   * the shoppingMall schema.
-   *
    * Retrieve aggregated statistics describing the top-selling SKUs on the
    * shoppingMall platform over a specified analysis window.
    *

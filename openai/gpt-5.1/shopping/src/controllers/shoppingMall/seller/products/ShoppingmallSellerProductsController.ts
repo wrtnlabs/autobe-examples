@@ -7,9 +7,6 @@ import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallPr
 @Controller("/shoppingMall/seller/products")
 export class ShoppingmallSellerProductsController {
   /**
-   * Create a ShoppingMall product row in the shopping_mall_products table for
-   * a seller.
-   *
    * Create a new ShoppingMall product record using data mapped to the
    * shopping_mall_products Prisma model.
    *
@@ -55,9 +52,6 @@ export class ShoppingmallSellerProductsController {
   }
 
   /**
-   * Update an existing ShoppingMall product row in the shopping_mall_products
-   * table by productId via the seller path.
-   *
    * Update an existing ShoppingMall product record in the
    * shopping_mall_products table identified by productId via the
    * seller-oriented API path.

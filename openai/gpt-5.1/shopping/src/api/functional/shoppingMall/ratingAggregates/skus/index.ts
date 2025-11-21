@@ -7,9 +7,6 @@ import { IShoppingMallSkuRatingAggregate } from "../../../../structures/IShoppin
 import { IPageIShoppingMallSkuRatingAggregate } from "../../../../structures/IPageIShoppingMallSkuRatingAggregate";
 
 /**
- * Search paginated SKU rating aggregates from the
- * shopping_mall_sku_rating_aggregates table.
- *
  * Search and retrieve SKU rating aggregate records from the
  * `shopping_mall_sku_rating_aggregates` table with advanced filtering and
  * pagination.

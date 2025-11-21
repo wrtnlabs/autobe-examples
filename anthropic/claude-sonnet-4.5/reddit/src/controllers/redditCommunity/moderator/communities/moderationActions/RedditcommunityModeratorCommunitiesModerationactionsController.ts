@@ -15,8 +15,6 @@ import { IRedditCommunityModerationActionStatistics } from "../../../../../api/s
 )
 export class RedditcommunityModeratorCommunitiesModerationactionsController {
   /**
-   * Search and retrieve moderation actions for a specific community.
-   *
    * Retrieve a comprehensive, filterable list of all moderation actions taken
    * within a specific community. This operation provides powerful search
    * capabilities for community moderators and administrators to review
@@ -73,8 +71,6 @@ export class RedditcommunityModeratorCommunitiesModerationactionsController {
   }
 
   /**
-   * Retrieve computed moderation action statistics for a specific community.
-   *
    * Retrieve comprehensive statistical analytics for all moderation actions
    * performed within a specific community through SQL aggregation of the
    * reddit_community_moderation_actions table. This operation computes

@@ -11,8 +11,6 @@ import { IShoppingMallPlatformCommission } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/sellers/:sellerId/platformCommissions")
 export class ShoppingmallAdminSellersPlatformcommissionsController {
   /**
-   * Search and retrieve platform commission records for a specific seller.
-   *
    * Retrieve a filtered and paginated list of platform commission records for a
    * specific seller in the shopping mall marketplace. This operation provides
    * comprehensive search capabilities for analyzing commission charges, payment

@@ -7,9 +7,6 @@ import { IRedditCommunityAppeal } from "../../../../structures/IRedditCommunityA
 import { IPageIRedditCommunityAppeal } from "../../../../structures/IPageIRedditCommunityAppeal";
 
 /**
- * Search and filter community member appeals with comprehensive moderation
- * tools.
- *
  * Search and filter community member appeals with comprehensive querying
  * capabilities to support moderator workflow. This operation enables efficient
  * review of appeals by status (submitted, under_review, decided, closed),
@@ -114,9 +111,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific member appeal against
- * moderation.
- *
  * Retrieve complete details of a specific member appeal against a moderation
  * action. This operation returns full appeal information including the
  * appellant's detailed rationale, requested remedy type (full_reversal,

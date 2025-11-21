@@ -8,9 +8,6 @@ import { IPageITodoAppAdmin } from "../../../../structures/IPageITodoAppAdmin";
 export * as sessions from "./sessions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of todo_app_admins (admin
- * listing).
- *
  * List all administrator accounts with advanced search, filtering, and
  * pagination for privileged access review.
  *
@@ -108,9 +105,6 @@ export namespace index {
 }
 
 /**
- * Fetch complete detail for a specific administrator account (todo_app_admins
- * table) by ID.
- *
  * Retrieve detailed information for a specific administrator account in the
  * Todo application. The operation is performed by providing the unique
  * administrator ID (UUID) as the path parameter. It returns all persisted data
@@ -207,9 +201,6 @@ export namespace at {
 }
 
 /**
- * Update all updatable fields of a specific administrator account
- * (todo_app_admins table) by ID.
- *
  * Update all applicable fields of an existing administrator account. This
  * operation requires specifying the target admin by UUID ID path parameter and
  * providing the new data in the request body. Updatable fields include email
@@ -323,9 +314,6 @@ export namespace update {
 }
 
 /**
- * Soft-delete (mark as removed) an administrator account using todo_app_admins
- * table.
- *
  * Permanently remove an administrator account from the system using its unique
  * identifier. This operation marks the todo_app_admins record as deleted by
  * updating the deleted_at column, rather than physically removing the row, in

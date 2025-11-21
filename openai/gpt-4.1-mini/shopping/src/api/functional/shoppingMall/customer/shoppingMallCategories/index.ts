@@ -7,8 +7,6 @@ import { IShoppingMallShoppingMallCategory } from "../../../../structures/IShopp
 export * as shoppingMallCategoryHierarchies from "./shoppingMallCategoryHierarchies/index";
 
 /**
- * Create a new shopping mall product category.
- *
  * Create a new product category in the shopping mall.
  *
  * This operation allows authenticated users to add new categories to organize

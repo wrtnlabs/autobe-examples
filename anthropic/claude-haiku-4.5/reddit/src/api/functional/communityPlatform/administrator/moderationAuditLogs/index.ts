@@ -7,8 +7,6 @@ import { ICommunityPlatformModerationAuditLog } from "../../../../structures/ICo
 import { IPageICommunityPlatformModerationAuditLog } from "../../../../structures/IPageICommunityPlatformModerationAuditLog";
 
 /**
- * Search and retrieve a filtered, paginated list of moderation audit logs.
- *
  * Retrieve a filtered and paginated list of moderation audit logs from the
  * community platform's immutable audit trail. This operation provides
  * comprehensive search capabilities for finding moderation actions based on
@@ -120,8 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific moderation audit log entry.
- *
  * Retrieve comprehensive details about a specific moderation audit log entry
  * using its unique identifier. This operation returns the complete immutable
  * audit trail record for a single moderation action, enabling investigation of

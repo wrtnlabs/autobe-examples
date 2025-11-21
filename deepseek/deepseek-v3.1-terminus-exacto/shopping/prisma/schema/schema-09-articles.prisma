@@ -1,0 +1,495 @@
+/// Core articles and blog posts for the shopping mall content management
+/// system with proper polymorphic ownership.
+///
+/// Stores comprehensive articles including blog posts, announcements, and
+/// informational content that supports the platform's community features.
+/// Each article maintains version history through snapshots and supports
+/// rich content formatting.
+///
+/// Articles can be created by different actor types (customers, sellers,
+/// administrators) using the actor_type field for quick filtering and
+/// subtype tables for detailed actor relationships. The system tracks
+/// publication status, view counts, and engagement metrics for content
+/// optimization.
+///
+/// Articles undergo moderation workflows before publication and support
+/// featured positioning and comment controls.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content channel where this article is published. {@link
+  /// shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Section within the channel for content organization. {@link
+  /// shopping_mall_sections.id}
+  shopping_mall_section_id String?
+  
+  /// Type of actor who created the article: customer, seller, administrator.
+  /// Used for quick filtering and polymorphic ownership pattern.
+  actor_type String
+  
+  /// Article title that appears in listings and search results.
+  title String
+  
+  /// Optional subtitle providing additional context for the article.
+  subtitle String?
+  
+  /// Full article content with rich text formatting support.
+  content String
+  
+  /// Brief summary or excerpt for article previews.
+  summary String?
+  
+  /// Publication status: draft, pending_review, published, archived.
+  status String
+  
+  /// Business workflow status for moderation and approval processes.
+  business_status String
+  
+  /// Total number of views for tracking article popularity.
+  view_count Int
+  
+  /// Number of likes received for engagement tracking.
+  like_count Int
+  
+  /// Number of times the article has been shared.
+  share_count Int
+  
+  /// Indicates if the article is featured in prominent positions.
+  featured Boolean
+  
+  /// Controls whether comments are allowed on this article.
+  allow_comments Boolean
+  
+  /// Timestamp when the article was published to the public.
+  published_at DateTime?
+  
+  /// Timestamp when the article was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft deleted for moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections? @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_article_comments shopping_mall_article_comments[]
+  
+  @@index([shopping_mall_section_id])
+  
+  @@unique([shopping_mall_channel_id, title])
+  @@index([actor_type])
+  @@index([status])
+  @@index([published_at])
+  @@index([featured])
+  @@index([created_at])
+}
+
+/// User comments on shopping mall articles for community engagement with
+/// proper actor attribution.
+///
+/// Stores comments made by users on articles, supporting threaded
+/// discussions and moderation workflows. Comments require independent
+/// management for cross-article search, user activity tracking, and content
+/// moderation.
+///
+/// Each comment is associated with an article and maintains its own
+/// lifecycle independent of the parent article. The system supports comment
+/// threading, moderation, and engagement metrics with proper actor tracking
+/// through the actor_type field.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article that this comment belongs to. {@link shopping_mall_articles.id}
+  shopping_mall_article_id String
+  
+  /// Parent comment for threaded discussions. {@link
+  /// shopping_mall_article_comments.id}
+  parent_id String?
+  
+  /// Type of actor who created the comment: customer, seller, administrator.
+  /// Used for quick filtering and polymorphic ownership pattern.
+  actor_type String
+  
+  /// Comment text content with support for basic formatting.
+  content String
+  
+  /// Comment status: pending, approved, rejected, flagged.
+  status String
+  
+  /// Number of likes received for comment engagement.
+  like_count Int
+  
+  /// Number of times this comment has been reported.
+  report_count Int
+  
+  /// Nesting depth for threaded comment organization.
+  depth Int
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article shopping_mall_articles @relation(fields: [shopping_mall_article_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_article_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_article_comments[] @relation("recursive")
+  
+  @@index([shopping_mall_article_id])
+  @@index([actor_type])
+  @@index([status])
+  @@index([parent_id])
+  @@index([created_at])
+}
+
+/// Main review entities for product and service evaluations.
+///
+/// Stores the core review content that can be created by different actor
+/// types (customers, sellers). Uses polymorphic ownership pattern with
+/// actor_type field for quick filtering and subtype tables for
+/// actor-specific relationships.
+///
+/// Reviews support rating systems, moderation workflows, and engagement
+/// features. Each review maintains its lifecycle independent of the reviewed
+/// entity.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Seller being reviewed. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Type of actor who created the review: customer, seller.
+  actor_type String
+  
+  /// Review title summarizing the evaluation.
+  title String
+  
+  /// Detailed review content with experience description.
+  content String
+  
+  /// Overall rating score from 1.0 to 5.0.
+  overall_rating Float
+  
+  /// Review status: pending, approved, rejected, flagged.
+  status String
+  
+  /// Number of users who found this review helpful.
+  helpful_count Int
+  
+  /// Number of times this review has been reported.
+  report_count Int
+  
+  /// Indicates if the reviewer made a verified purchase.
+  verified_purchase Boolean
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_of_customers shopping_mall_review_of_customers?
+  shopping_mall_review_of_sellers shopping_mall_review_of_sellers?
+  shopping_mall_review_ratings shopping_mall_review_ratings[]
+  
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([actor_type, shopping_mall_product_id])
+  @@unique([actor_type, shopping_mall_seller_id])
+  @@index([actor_type])
+  @@index([status])
+  @@index([overall_rating])
+  @@index([created_at])
+}
+
+/// Customer-specific review relationships and metadata.
+///
+/// Stores the customer-specific context for reviews created by customers.
+/// Each record establishes a 1:1 relationship with the main review entity
+/// and contains customer-specific session information.
+///
+/// This subtype pattern ensures proper referential integrity and allows for
+/// customer-specific review features and analytics.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main review entity. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Customer who created the review. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when the review was created. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when the customer review relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_review_of_customers_shopping_mall_custom_ac97672b")
+  
+  @@unique([shopping_mall_review_id])
+  @@index([shopping_mall_customer_id])
+  @@index([created_at])
+}
+
+/// Seller-specific review relationships and metadata.
+///
+/// Stores the seller-specific context for reviews created by sellers. Each
+/// record establishes a 1:1 relationship with the main review entity and
+/// contains seller-specific session information.
+///
+/// This subtype pattern ensures proper referential integrity and allows for
+/// seller-specific review features and analytics.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main review entity. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Seller who created the review. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when the review was created. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when the seller review relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_review_of_sellers_shopping_mall_seller_s_f1bd5b1f")
+  
+  @@unique([shopping_mall_review_id])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+}
+
+/// Detailed rating breakdowns for comprehensive review evaluations.
+///
+/// Stores individual rating components that make up the overall review
+/// score. Each rating record belongs to a specific review and provides
+/// detailed evaluation across multiple dimensions.
+///
+/// Ratings support detailed product or service evaluation with specific
+/// criteria scoring, enabling comprehensive analysis of review quality and
+/// specific area performance. As subsidiary entities, ratings are managed
+/// through parent review operations.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent review that this rating belongs to. {@link
+  /// shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Type of rating: quality, value, service, delivery, etc.
+  rating_type String
+  
+  /// Rating score from 1.0 to 5.0 for this specific dimension.
+  score Float
+  
+  /// Weight factor for calculating overall rating importance.
+  weight Float
+  
+  /// Timestamp when the rating was created.
+  created_at DateTime
+  
+  /// Timestamp when the rating was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_rating_of_customers shopping_mall_review_rating_of_customers?
+  shopping_mall_review_rating_of_sellers shopping_mall_review_rating_of_sellers?
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, rating_type], map: "shopping_mall_review_ratings_shopping_mall_review_id_r_1bf6f5d8")
+  @@index([rating_type])
+  @@index([score])
+  @@index([created_at])
+}
+
+/// Customer-specific rating relationships and context.
+///
+/// Stores the customer-specific context for ratings created by customers.
+/// Each record establishes the relationship between a customer and a
+/// specific rating dimension within a review.
+///
+/// This subtype pattern ensures proper tracking of which customer provided
+/// which specific ratings within a review.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_rating_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Rating entity being assigned. {@link shopping_mall_review_ratings.id}
+  shopping_mall_review_rating_id String
+  
+  /// Customer who provided this specific rating. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when the rating was provided. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when the customer rating relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reviewRating shopping_mall_review_ratings @relation(fields: [shopping_mall_review_rating_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_review_rating_of_customers_shopping_mall_256dccdc")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_rating_id], map: "shopping_mall_review_rating_of_customers_shopping_mall_a4a3e664")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_review_rating_of_customers_shopping_mall_2110b1c2")
+  @@index([created_at])
+}
+
+/// Seller-specific rating relationships and context.
+///
+/// Stores the seller-specific context for ratings created by sellers. Each
+/// record establishes the relationship between a seller and a specific
+/// rating dimension within a review.
+///
+/// This subtype pattern ensures proper tracking of which seller provided
+/// which specific ratings within a review.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_rating_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Rating entity being assigned. {@link shopping_mall_review_ratings.id}
+  shopping_mall_review_rating_id String
+  
+  /// Seller who provided this specific rating. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when the rating was provided. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when the seller rating relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reviewRating shopping_mall_review_ratings @relation(fields: [shopping_mall_review_rating_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_review_rating_of_sellers_shopping_mall_s_d98335fe")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_rating_id], map: "shopping_mall_review_rating_of_sellers_shopping_mall_r_05704373")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_review_rating_of_sellers_shopping_mall_s_5f15cef1")
+  @@index([created_at])
+}

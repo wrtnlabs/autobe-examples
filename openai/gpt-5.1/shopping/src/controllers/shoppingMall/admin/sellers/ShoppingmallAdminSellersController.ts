@@ -8,9 +8,6 @@ import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSel
 @Controller("/shoppingMall/admin/sellers")
 export class ShoppingmallAdminSellersController {
   /**
-   * Search and retrieve a paginated list of shopping_mall_sellers accounts
-   * for administrative management.
-   *
    * Retrieve a filtered, paginated list of seller accounts registered on the
    * shoppingMall platform.
    *
@@ -65,9 +62,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Get detailed information for a single seller from the
-   * shopping_mall_sellers table by sellerId.
-   *
    * Retrieve detailed information for a single seller account identified by
    * its unique seller identifier.
    *
@@ -117,9 +111,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Update an existing seller in the shopping_mall_sellers table using its
-   * sellerId identifier.
-   *
    * Update an existing seller record in the shopping_mall_sellers table using
    * the sellerId path parameter as the primary key.
    *
@@ -172,9 +163,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Delete an existing seller from the shopping_mall_sellers table by its
-   * sellerId identifier.
-   *
    * Permanently delete a seller record from the shopping_mall_sellers table
    * using the sellerId path parameter as the primary key.
    *

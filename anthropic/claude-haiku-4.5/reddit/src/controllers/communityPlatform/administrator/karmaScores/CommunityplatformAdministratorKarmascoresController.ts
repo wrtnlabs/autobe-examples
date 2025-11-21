@@ -8,9 +8,6 @@ import { ICommunityPlatformKarmaScore } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/administrator/karmaScores")
 export class CommunityplatformAdministratorKarmascoresController {
   /**
-   * Search and retrieve paginated list of all member karma scores with
-   * filtering and sorting options.
-   *
    * Retrieve a paginated and filtered list of all member karma scores from
    * the community_platform_karma_scores table. This operation enables
    * administrators to analyze member reputation metrics, sort by total karma

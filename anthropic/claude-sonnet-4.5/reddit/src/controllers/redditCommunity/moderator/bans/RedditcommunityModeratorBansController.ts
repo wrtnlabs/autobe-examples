@@ -14,8 +14,6 @@ import { IRedditCommunityBan } from "../../../../api/structures/IRedditCommunity
 @Controller("/redditCommunity/moderator/bans")
 export class RedditcommunityModeratorBansController {
   /**
-   * Search and retrieve a filtered, paginated list of community bans.
-   *
    * Retrieve a comprehensive, filtered list of community bans from across the
    * platform with advanced search and pagination capabilities. This operation
    * provides powerful query capabilities for finding bans based on multiple
@@ -69,8 +67,6 @@ export class RedditcommunityModeratorBansController {
   }
 
   /**
-   * Retrieve detailed information about a specific community ban.
-   *
    * Retrieve complete details of a community ban including the banned member
    * information, the moderator who issued the ban, the community where the ban
    * applies, the reason for the ban, duration details, and current appeal
@@ -114,8 +110,6 @@ export class RedditcommunityModeratorBansController {
   }
 
   /**
-   * Update an existing community ban's details or status.
-   *
    * Modify the details of an existing community ban including the ban reason,
    * duration, or status. This operation enables moderators to adjust ban
    * parameters after the initial ban was issued, such as extending a temporary

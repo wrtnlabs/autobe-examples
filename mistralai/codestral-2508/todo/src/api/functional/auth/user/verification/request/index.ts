@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../../../structures/ITodoListUser";
 
 /**
- * Sends account verification email to a newly registered user
- * (todo_list_users).
- *
  * This endpoint initiates an email verification workflow for new registrations
  * or when the user requires a new verification email (for example, expiry or
  * missed original message). Uses the 'email' field within the 'todo_list_users'

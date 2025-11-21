@@ -12,9 +12,6 @@ import { ITodoAppUser } from "../../../../api/structures/ITodoAppUser";
 @Controller("/todoApp/admin/users")
 export class TodoappAdminUsersController {
   /**
-   * Paginated search and retrieval of user accounts for admin oversight
-   * (todo_app_users).
-   *
    * Retrieve a paginated and filterable list of user accounts for
    * administrative purposes.
    *
@@ -61,9 +58,6 @@ export class TodoappAdminUsersController {
   }
 
   /**
-   * Retrieve detailed information for a user account by userId
-   * (todo_app_users).
-   *
    * Fetch complete details for a specific user account by its unique identifier
    * for administrative purposes.
    *

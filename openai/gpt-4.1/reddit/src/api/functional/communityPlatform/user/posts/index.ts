@@ -7,8 +7,6 @@ import { ICommunityPlatformPost } from "../../../../structures/ICommunityPlatfor
 export * as attachments from "./attachments/index";
 
 /**
- * Create a new community platform post (community_platform_posts table).
- *
  * Create a new post for a community on the platform.
  *
  * This endpoint supports submission of text, link, or image posts and captures
@@ -115,9 +113,6 @@ export namespace create {
 }
 
 /**
- * Update an existing community platform post (community_platform_posts table)
- * by postId.
- *
  * Update an existing post by its unique identifier (UUID) as recorded in the
  * community_platform_posts table.
  *
@@ -230,9 +225,6 @@ export namespace update {
 }
 
 /**
- * Permanently mark a community platform post as deleted in the
- * 'community_platform_posts' table by setting 'deleted_at'.
- *
  * This API operation provides the mechanism to remove an individual community
  * platform post from active view. Upon request, the service locates the post by
  * its unique identifier and sets its 'deleted_at' field to the current

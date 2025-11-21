@@ -7,9 +7,6 @@ import { IShoppingMallPaymentStatus } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallPaymentStatus } from "../../../../../structures/IPageIShoppingMallPaymentStatus";
 
 /**
- * Search and retrieve a payment's status transition history from
- * shopping_mall_payment_statuses.
- *
  * Retrieve the status history for a payment managed by the platform.
  *
  * This PATCH operation allows authorized admin actors to search and filter the
@@ -120,9 +117,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a single payment status event from
- * shopping_mall_payment_statuses.
- *
  * Retrieve a specific payment status transition event for a payment on the
  * shopping mall platform.
  *

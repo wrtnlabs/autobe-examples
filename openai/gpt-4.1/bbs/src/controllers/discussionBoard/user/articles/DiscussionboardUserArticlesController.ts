@@ -12,8 +12,6 @@ import { IDiscussionBoardArticle } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/user/articles")
 export class DiscussionboardUserArticlesController {
   /**
-   * Create a new discussion board article (discussion_board_articles).
-   *
    * Create a new article in the discussion board system with user-provided
    * title and content, linked to the authenticated user's account.
    *
@@ -60,8 +58,6 @@ export class DiscussionboardUserArticlesController {
   }
 
   /**
-   * Update an existing article in the discussion_board_articles table by ID.
-   *
    * This API endpoint allows for the full editing of a discussion article
    * already present in the platform discussion board.
    *
@@ -109,9 +105,6 @@ export class DiscussionboardUserArticlesController {
   }
 
   /**
-   * Permanently delete an article from the discussion_board_articles table by
-   * ID.
-   *
    * This endpoint allows the authorized user to delete a discussion article
    * from the board. Deletion is absolute; once deleted, the record is removed
    * from the database and cannot be restored, following the hard-delete policy

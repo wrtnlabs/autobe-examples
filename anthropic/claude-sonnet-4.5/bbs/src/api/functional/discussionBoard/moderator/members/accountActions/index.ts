@@ -7,9 +7,6 @@ import { IDiscussionBoardAccountAction } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardAccountAction } from "../../../../../structures/IPageIDiscussionBoardAccountAction";
 
 /**
- * Search and retrieve paginated account moderation actions for a specific
- * member.
- *
  * Retrieve a filtered and paginated list of all account-level moderation
  * actions (suspensions and bans) applied to a specific member account. This
  * operation provides comprehensive access to the member's disciplinary history
@@ -131,9 +128,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the currently active account suspension or ban for a specific
- * member.
- *
  * Retrieve the currently active account-level moderation action (suspension or
  * ban) applied to a specific member, if one exists. This operation provides
  * quick access to determine whether a member is currently under enforcement

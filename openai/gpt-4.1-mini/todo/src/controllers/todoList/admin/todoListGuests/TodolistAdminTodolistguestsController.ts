@@ -11,8 +11,6 @@ import { ITodoListGuest } from "../../../../api/structures/ITodoListGuest";
 @Controller("/todoList/admin/todoListGuests")
 export class TodolistAdminTodolistguestsController {
   /**
-   * Search and retrieve a filtered, paginated list of guest visitors.
-   *
    * Retrieve a filtered and paginated list of guest visitors to the Todo List
    * application.
    *

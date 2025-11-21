@@ -7,8 +7,6 @@ import { IShoppingMallCoupon } from "../../../../structures/IShoppingMallCoupon"
 import { IPageIShoppingMallCoupon } from "../../../../structures/IPageIShoppingMallCoupon";
 
 /**
- * Retrieve a paginated and filtered list of coupons.
- *
  * Retrieve and search through the list of shopping mall coupons using advanced
  * filtering, searching, and pagination parameters.
  *
@@ -106,8 +104,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed coupon information by code.
- *
  * Fetch detailed information about a specific coupon identified by its unique
  * coupon code.
  *

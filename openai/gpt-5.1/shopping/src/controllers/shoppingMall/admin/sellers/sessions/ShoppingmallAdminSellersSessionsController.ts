@@ -8,9 +8,6 @@ import { IShoppingMallSellerSession } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/sellers/:sellerId/sessions")
 export class ShoppingmallAdminSellersSessionsController {
   /**
-   * List authentication sessions for a seller from the
-   * shopping_mall_seller_sessions table.
-   *
    * Retrieve a paginated and filterable list of seller authentication
    * sessions for a specific seller.
    *
@@ -98,9 +95,6 @@ export class ShoppingmallAdminSellersSessionsController {
   }
 
   /**
-   * Get detailed information for a single seller session from the
-   * shopping_mall_seller_sessions table.
-   *
    * Retrieve detailed metadata for a specific seller authentication session
    * using seller and session identifiers.
    *
@@ -180,9 +174,6 @@ export class ShoppingmallAdminSellersSessionsController {
   }
 
   /**
-   * Erase a specific seller session record in the
-   * shopping_mall_seller_sessions table for security administration.
-   *
    * Delete a specific seller session record for administrative security
    * control.
    *

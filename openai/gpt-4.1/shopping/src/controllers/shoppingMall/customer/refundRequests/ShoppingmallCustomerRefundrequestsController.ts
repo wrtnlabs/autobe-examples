@@ -11,9 +11,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/customer/refundRequests")
 export class ShoppingmallCustomerRefundrequestsController {
   /**
-   * Retrieve full detail of a specific refund request
-   * (shopping_mall_refund_requests).
-   *
    * Retrieve the full detail for a single refund request in the shopping mall.
    * This endpoint provides all information filed by the customer for this
    * request, including the refund reason, status (such as pending, approved,
@@ -59,9 +56,6 @@ export class ShoppingmallCustomerRefundrequestsController {
   }
 
   /**
-   * Create a new refund request in the shopping mall
-   * (shopping_mall_refund_requests table).
-   *
    * Submit a new refund request for an eligible order or order item. The
    * customer must provide the order reference, reason for the request, and the
    * requested refund amount. The seller and customer references link the refund

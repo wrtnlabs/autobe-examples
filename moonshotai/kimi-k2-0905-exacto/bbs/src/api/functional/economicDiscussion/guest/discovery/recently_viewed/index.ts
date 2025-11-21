@@ -7,8 +7,6 @@ import { IEconomicDiscussionRecentlyViewed } from "../../../../../structures/IEc
 import { IPageIEconomicDiscussionArticle } from "../../../../../structures/IPageIEconomicDiscussionArticle";
 
 /**
- * Retrieve recently viewed articles for content discovery and user navigation.
- *
  * This operation returns articles that the current user has recently viewed on
  * the economic discussion board platform. It provides personalized content
  * discovery based on the user's recent browsing activity, helping them quickly

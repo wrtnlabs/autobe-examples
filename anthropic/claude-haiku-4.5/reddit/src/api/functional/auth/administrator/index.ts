@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Create a new platform administrator account and issue initial JWT tokens.
- *
  * Administrator registration endpoint enables creation of new platform
  * administrator accounts with full system-wide management capabilities.
  * Administrators created through this endpoint receive initial access tokens
@@ -125,8 +123,6 @@ export namespace join {
 }
 
 /**
- * Authenticate administrator account and issue JWT tokens.
- *
  * Administrator login endpoint authenticates administrator credentials and
  * issues JWT tokens for platform management sessions. When an administrator
  * provides valid email and password credentials, this operation validates them
@@ -247,8 +243,6 @@ export namespace login {
 }
 
 /**
- * Refresh administrator access token using valid refresh token.
- *
  * Administrator token refresh endpoint enables administrators to obtain new
  * access tokens when their current tokens expire, maintaining continuous
  * authenticated sessions for platform management operations. When an

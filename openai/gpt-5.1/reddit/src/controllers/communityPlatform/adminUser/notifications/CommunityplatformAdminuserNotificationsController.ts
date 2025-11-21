@@ -7,9 +7,6 @@ import { ICommunityPlatformNotification } from "../../../../api/structures/IComm
 @Controller("/communityPlatform/adminUser/notifications")
 export class CommunityplatformAdminuserNotificationsController {
   /**
-   * Create a new notification row in the community_platform_notifications
-   * table for a member user.
-   *
    * Create a new notification entry in the community_platform_notifications
    * table for a specified member user.
    *

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumCommunityModerator } from "../../../../structures/ICommunityForumCommunityModerator";
 
 /**
- * Get specific community moderator information.
- *
  * Retrieve information about a specific community moderator.
  *
  * This endpoint returns detailed information about a user's moderator status

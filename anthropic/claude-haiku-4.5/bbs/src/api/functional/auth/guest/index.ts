@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Register a new guest user account for temporary access to the discussion
- * board.
- *
  * This endpoint allows unauthenticated visitors to create a temporary guest
  * account for browsing published articles and reading comments on the
  * discussion board without requiring email verification or user credentials.
@@ -129,8 +126,6 @@ export namespace join {
 }
 
 /**
- * Renew guest user access tokens using a valid refresh token.
- *
  * This endpoint allows guest users to obtain new access tokens by presenting a
  * valid refresh token, extending their session without requiring
  * re-registration.

@@ -13,8 +13,6 @@ import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/customer/orders/:orderId/orderItems")
 export class ShoppingmallCustomerOrdersOrderitemsController {
   /**
-   * Retrieve a specific order item from a customer order.
-   *
    * Retrieve detailed information for a specific order item belonging to a
    * given order identified by orderId and orderItemId.
    *
@@ -61,8 +59,6 @@ export class ShoppingmallCustomerOrdersOrderitemsController {
   }
 
   /**
-   * Update a specific order item within an order.
-   *
    * Update an existing order item within a customer's order.
    *
    * This operation allows an authenticated customer to modify details of a
@@ -108,8 +104,6 @@ export class ShoppingmallCustomerOrdersOrderitemsController {
   }
 
   /**
-   * Delete a specific order item within an order.
-   *
    * Permanently delete an order item from a customer's order.
    *
    * This operation permanently removes an order item record, identified by the
@@ -152,8 +146,6 @@ export class ShoppingmallCustomerOrdersOrderitemsController {
   }
 
   /**
-   * Create a new order item within a customer order.
-   *
    * Create a new order item within an existing order specified by orderId.
    *
    * The request body must provide details including product variant ID,

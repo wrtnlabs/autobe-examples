@@ -11,8 +11,6 @@ import { IShoppingMallPayment } from "../../../../api/structures/IShoppingMallPa
 @Controller("/shoppingMall/seller/payments")
 export class ShoppingmallSellerPaymentsController {
   /**
-   * Create a new payment record for an order.
-   *
    * Create a new payment in the shopping mall payment system.
    *
    * This API enables authorized users such as admins or sellers to record a
@@ -59,8 +57,6 @@ export class ShoppingmallSellerPaymentsController {
   }
 
   /**
-   * Update an existing payment record.
-   *
    * Update payment details for an existing payment record in the shopping mall
    * payment system.
    *

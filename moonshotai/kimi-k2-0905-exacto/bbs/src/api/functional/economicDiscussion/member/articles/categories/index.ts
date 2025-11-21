@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionArticle } from "../../../../../structures/IEconomicDiscussionArticle";
 
 /**
- * Update article category assignments.
- *
  * Update the category assignments for a specific discussion article. This
  * operation enables dynamic content organization by allowing articles to be
  * tagged with multiple relevant categories.
@@ -114,8 +112,6 @@ export namespace updateCategories {
 }
 
 /**
- * Assign a category to an article for topic classification.
- *
  * Associate an economic and political discussion article with a specific
  * category to improve content organization and discoverability. This operation
  * creates a many-to-many relationship between articles and categories, allowing
@@ -211,8 +207,6 @@ export namespace attachCategory {
 }
 
 /**
- * Remove a category from an article.
- *
  * Disassociate an economic and political discussion article from a specific
  * category to update its classification and organization within the platform.
  * This operation removes a tagging relationship while ensuring the article

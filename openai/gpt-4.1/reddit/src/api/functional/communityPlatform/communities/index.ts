@@ -10,9 +10,6 @@ export * as rules from "./rules/index";
 export * as moderators from "./moderators/index";
 
 /**
- * Paginated search and listing of communities (subreddits) from
- * community_platform_communities.
- *
  * Fetches a paginated, filtered list of community entities (subreddits)
  * available on the platform. Users can search or browse communities based on
  * criteria such as name, display title, visibility type (public, private,
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information of a community entity by its unique URL slug
- * (community_platform_communities).
- *
  * Retrieve the details of a specific user-created community using its unique
  * community URL slug. This endpoint returns the complete set of community
  * attributes, such as the display title, description, visibility

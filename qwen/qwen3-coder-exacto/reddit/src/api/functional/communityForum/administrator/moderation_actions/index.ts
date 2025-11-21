@@ -7,9 +7,6 @@ import { ICommunityForumCommunityModerationAction } from "../../../../structures
 import { IPageICommunityForumCommunityModerationAction } from "../../../../structures/IPageICommunityForumCommunityModerationAction";
 
 /**
- * Search and retrieve a filtered, paginated list of community forum moderation
- * actions.
- *
  * Retrieve a filtered and paginated list of community forum moderation actions
  * from the system. This operation provides advanced search capabilities for
  * finding moderation actions based on multiple criteria including moderator ID,
@@ -117,8 +114,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information about a specific moderation action by its ID.
- *
  * Retrieve detailed information about a specific moderation action taken in the
  * community forum.
  *
@@ -219,8 +214,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation action record with new information.
- *
  * Update an existing moderation action record in the community forum.
  *
  * This endpoint allows authorized users to modify details of a previously
@@ -340,8 +333,6 @@ export namespace update {
 }
 
 /**
- * Delete a moderation action by ID.
- *
  * Permanently remove a moderation action record from the system.
  *
  * This endpoint allows authorized administrators or moderators to delete a

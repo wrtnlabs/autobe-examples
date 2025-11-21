@@ -5,9 +5,6 @@ import typia from "typia";
 import { IPageIShoppingMallShippingPerformanceByDay } from "../../../../../structures/IPageIShoppingMallShippingPerformanceByDay";
 
 /**
- * Retrieve daily shipping and delivery performance statistics from
- * shopping_mall_shipping_performance_stats snapshot data.
- *
  * Retrieve aggregated shipping and delivery performance metrics per day for
  * each shipping method on the shoppingMall platform.
  *

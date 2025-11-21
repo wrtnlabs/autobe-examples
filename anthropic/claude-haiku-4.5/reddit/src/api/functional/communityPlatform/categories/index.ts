@@ -7,8 +7,6 @@ import { ICommunityPlatformCategory } from "../../../structures/ICommunityPlatfo
 import { IPageICommunityPlatformCategory } from "../../../structures/IPageICommunityPlatformCategory";
 
 /**
- * Search and retrieve a paginated list of platform content categories.
- *
  * Retrieve a filtered, paginated list of platform content categories with
  * search and sorting capabilities.
  *
@@ -130,8 +128,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific community content category by ID.
- *
  * Retrieve detailed information about a specific content category using its
  * unique UUID identifier. This endpoint returns the complete category object
  * including the display name, URL-safe slug, description, optional icon URL,

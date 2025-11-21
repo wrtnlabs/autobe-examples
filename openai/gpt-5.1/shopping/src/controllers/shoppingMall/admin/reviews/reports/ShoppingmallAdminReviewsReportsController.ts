@@ -8,9 +8,6 @@ import { IShoppingMallReviewReport } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/reviews/:reviewId/reports")
 export class ShoppingmallAdminReviewsReportsController {
   /**
-   * Search and list shopping_mall_review_reports for a specific
-   * shopping_mall_reviews record.
-   *
    * Retrieve a paginated list of reports that have been filed against a
    * single review in the shopping mall platform.
    *
@@ -71,9 +68,6 @@ export class ShoppingmallAdminReviewsReportsController {
   }
 
   /**
-   * Get a specific review report row from shopping_mall_review_reports for a
-   * given review.
-   *
    * Retrieve a single review report that has been submitted against a
    * customer review within the shopping mall platform.
    *
@@ -137,9 +131,6 @@ export class ShoppingmallAdminReviewsReportsController {
   }
 
   /**
-   * Update an existing review report in shopping_mall_review_reports for a
-   * specific review.
-   *
    * Update a review report associated with a specific customer review to
    * reflect new moderation decisions or metadata.
    *
@@ -208,9 +199,6 @@ export class ShoppingmallAdminReviewsReportsController {
   }
 
   /**
-   * Erase a specific report row from the shopping_mall_review_reports table
-   * for a given review.
-   *
    * Delete a specific review report record associated with a customer-written
    * product review.
    *

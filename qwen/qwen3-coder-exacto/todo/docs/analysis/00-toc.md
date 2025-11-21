@@ -1,99 +1,184 @@
-# Todo List Application Requirements Analysis
+# Todo List Application - Requirements Analysis Report
 
-## 1. Service Purpose and Vision
-The Todo List application provides users with a simple and efficient way to manage their personal tasks. The foundational principle of this application is minimalism: the system delivers only the core capabilities required to create, view, update, and delete todo items. The objective is to offer a distraction-free experience focusing solely on personal task management, without extra features such as labels, reminders, collaboration, or complex user roles. The app is intended for individual users who want a fast, reliable way to track and organize their own todos.
+## 1. Project Overview
 
----
+### Core Purpose
+THE Todo List application SHALL provide authenticated users with a simple digital platform for creating, managing, and tracking personal task items with minimal complexity.
 
-## 2. User Actors and Roles
-- **User**: A registered individual who can perform actions only on their own todos. No administrative, guest, or external roles are provided in this minimal implementation.
+### Service Scope
+THE Todo List application SHALL focus exclusively on individual task management for authenticated users, without project management, team collaboration, or advanced organizational features.
 
----
+### Key Characteristics
+- Single-user focused task management
+- Minimal feature set to reduce complexity
+- Instant synchronization of task status changes
+- Simple and intuitive user experience
+- Secure authentication for personal data protection
 
-## 3. Functional Requirements (EARS Format)
+## 2. User Actors
 
-- WHEN a user is authenticated, THE system SHALL allow the user to create a new todo item specifying at least a title and optionally a description.
+### Primary User Actor
+- **Name**: User
+- **Type**: Authenticated Member
+- **Description**: An authenticated individual who can create, view, update, and delete their own todo items. Has standard access to personal todo management features.
 
-- WHEN a user is authenticated, THE system SHALL allow the user to view a list of all their own todo items, including status (complete/incomplete), creation date, and description.
+### Authentication Requirements
+THE user registration system SHALL allow new users to create accounts with email and password credentials.
+THE system SHALL validate email format during registration.
+THE system SHALL enforce password strength requirements (minimum 8 characters with alphanumeric characters).
 
-- WHEN a user is authenticated, THE system SHALL allow the user to update any existing todo item that they own, including setting the title, description, and completion status.
+THE system SHALL authenticate users using email and password credentials.
+THE system SHALL provide secure session management after successful login.
+THE system SHALL display appropriate error messages for invalid login attempts.
 
-- WHEN a user is authenticated, THE system SHALL allow the user to delete any of their own todo items.
+### Authorization Model
+THE authorization model SHALL restrict users to managing only their own todo items.
+THE system SHALL deny access to other users' todo data.
+THE system SHALL provide appropriate error handling when access to unauthorized resources is attempted.
 
-- WHEN a user attempts to access a todo that does not exist or is not owned by the user, THE system SHALL return a permission error that does not leak existence or content of other users’ todos.
+## 3. Functional Requirements
 
-- WHEN a user sends a malformed request (e.g., missing required fields), THE system SHALL respond with a clear, actionable validation error message.
+### Task Creation
+WHEN a user submits a new task, THE system SHALL validate that the task title is not empty and SHALL create a new task with the following properties:
+- Title: Required string (1-255 characters)
+- Description: Optional string (0-1000 characters)
+- Completion Status: Default to "pending"
+- Creation Timestamp: System-generated timestamp at creation time
 
----
+WHEN a user attempts to create a task with an empty title, THE system SHALL reject the request and return an appropriate error message.
 
-## 4. Authentication and Permissions
+### Task Viewing
+THE system SHALL display a user's todo items in a list format, ordered by creation date with newest items appearing first.
 
-- **Authentication**: Users must register an account with a unique identifier (username or email and password). Successful registration creates a new user account. 
-- **Login and Logout**: Users log in to access their todos. Active sessions must be established and securely managed. Logout ends the session.
-- **Access Control**: Each user can only access, modify, or delete todos that they created. There is no functionality for users to view or act on others’ todos. Unauthorized access attempts must result in a standard error response without revealing details about other users.
+THE system SHALL allow users to view all their tasks regardless of completion status.
 
----
+### Task Modification
+WHEN a user updates an existing task, THE system SHALL validate that the user is the owner of the task and SHALL update the task with the provided information:
+- Title: Required string (1-255 characters)
+- Description: Optional string (0-1000 characters)
+- Last Modified Timestamp: System-generated timestamp at update time
 
-## 5. Non-functional Requirements
+WHEN a user attempts to modify a task they do not own, THE system SHALL deny access and return an appropriate error message.
 
-- **Performance**: The application SHALL return a response for all core operations (create, read, update, delete) within two seconds under typical conditions.
-- **Reliability**: The application SHALL maintain at least 99% uptime under normal operation.
-- **Security**: All authentication operations SHALL use secure session/token mechanisms. User passwords SHALL be securely hashed and never stored in plain text.
-- **Privacy**: User data SHALL never be shared or exposed to other users.
+### Task Deletion
+WHEN a user deletes a task, THE system SHALL validate that the user is the owner of the task and SHALL permanently remove the task from the system.
 
----
+WHEN a user attempts to delete a task they do not own, THE system SHALL deny access and return an appropriate error message.
 
-## 6. Error Scenarios
+### Task Status Management
+THE system SHALL maintain a binary completion status for each task with values "pending" or "completed".
 
-- **Invalid Credentials**: WHEN a user enters incorrect login credentials, THE system SHALL present an error message indicating authentication failure without specifying which part was incorrect.
-- **Resource Not Found**: WHEN a user attempts to access a todo by an invalid or non-existent identifier, THE system SHALL respond with a not-found error message.
-- **Permission Denied**: WHEN a user tries to access or modify another user’s todo item, THE system SHALL respond with a standard denial message.
-- **Validation Error**: WHEN required fields are missing or input is invalid, THE system SHALL describe the issue and the field(s) affected in the error response.
-- **Session Expired**: WHEN a user’s session is expired or invalid, THE system SHALL require the user to re-authenticate.
+WHEN a user marks a task as completed, THE system SHALL validate that the user is the owner of the task and SHALL update the task status to "completed" with a completion timestamp.
 
----
+WHEN a user marks a completed task as pending, THE system SHALL validate that the user is the owner of the task and SHALL update the task status to "pending" and clear the completion timestamp.
 
-## 7. Business Rules and Constraints
+THE system SHALL allow users to filter their tasks by completion status:
+- View all tasks
+- View only pending tasks
+- View only completed tasks
 
-- Each todo item SHALL have at minimum a non-empty title owned by a single user.
-- Each user SHALL only be able to register one account per unique identifier (username/email).
-- Todo descriptions are optional and limited to 500 characters.
-- Only two valid todo states exist: complete, or incomplete. No partial or other statuses are supported.
-- Duplicate todo titles are permitted per user.
-- Todos are always private to the user; sharing is not supported.
+## 4. Business Process Flows
 
----
-
-## 8. Out-of-Scope Features
-
-The following common Todo application features are explicitly out of scope and SHALL NOT be implemented in this minimal version:
-- Task sharing or collaboration between users
-- Task categorization/tagging/labeling
-- Reminders, scheduling, or recurring tasks
-- Attachments or file uploads
-- Multi-role support (e.g., admin, observer)
-- Any web, mobile, or user interface specification (scope is backend only)
-- Third-party integrations or API webhooks
-- Data import/export
-
----
-
-## 9. Minimal User Flow Diagram
-
+### Task Creation Flow
 ```mermaid
-flowchart TD
-    L["Login"] --> H["View Todo List"]
-    H --> C["Create Todo"]
-    H --> V["View/Edit Todo"]
-    V --> U["Update Todo"]
-    V --> D["Delete Todo"]
-    C --> H
-    U --> H
-    D --> H
+graph LR
+  A["User Accesses Todo List"] --> B["View Task Creation Form"]
+  B --> C["Submit Task Data"]
+  C --> D["Validate Input"]
+  D --> E["Valid"]
+  D --> F["Invalid"]
+  E --> G["Create Task in Database"]
+  G --> H["Display Updated Task List"]
+  F --> I["Show Validation Errors"]
 ```
 
----
+### Task Completion Flow
+```mermaid
+graph LR
+  A["User Views Task List"] --> B["Select Task"]
+  B --> C["Mark as Complete"]
+  C --> D["Send Request"]
+  D --> E["Validate Ownership"]
+  E --> F["Valid"]
+  E --> G["Invalid"]
+  F --> H["Update Task Status"]
+  H --> I["Update UI to Show Completed Status"]
+  G --> J["Show Error Message"]
+```
 
-## 10. Implementation Considerations
+### Task Modification Flow
+```mermaid
+graph LR
+  A["User Views Task List"] --> B["Select Task"]
+  B --> C["Edit Task"]
+  C --> D["Modify Fields"]
+  D --> E["Submit Changes"]
+  E --> F["Send Request"]
+  F --> G["Validate Ownership"]
+  G --> H["Valid"]
+  G --> I["Invalid"]
+  H --> J["Update Task Data"]
+  J --> K["Display Updated Task"]
+  I --> L["Show Error Message"]
+```
 
-This requirements definition is intended to be exhaustive for the purposes of building a production-ready backend for a minimal Todo List application. Any business or backend logic not covered in the above sections is considered out of scope and must not be developed until specifically required and documented in a future requirements version.
+### Task Deletion Flow
+```mermaid
+graph LR
+  A["User Views Task List"] --> B["Select Task"]
+  B --> C["Delete Task"]
+  C --> D["Confirm Deletion"]
+  D --> E["Send Delete Request"]
+  E --> F["Validate Ownership"]
+  F --> G["Valid"]
+  F --> H["Invalid"]
+  G --> I["Remove Task"]
+  I --> J["Update Task List UI"]
+  H --> K["Show Error Message"]
+```
+
+## 5. User Permissions Matrix
+
+| Feature | Description | User |
+|---------|-------------|------|
+| Create Tasks | Ability to add new todo items to their list | ✅ |
+| View Tasks | Ability to see their todo items | ✅ |
+| Edit Tasks | Ability to modify their existing todo items | ✅ |
+| Delete Tasks | Ability to remove their todo items | ✅ |
+| Mark Complete | Ability to change task status to completed | ✅ |
+| Mark Pending | Ability to change task status back to pending | ✅ |
+
+## 6. System Constraints
+
+### Data Constraints
+- Maximum title length: 255 characters
+- Maximum description length: 1000 characters
+- Tasks are associated with a single user
+- Tasks have a binary completion status (pending/completed)
+
+### Technical Constraints
+- All operations must be performed through authenticated sessions
+- No batch operations are required in this minimal implementation
+- No task sharing or collaboration features are required
+- No deadline or scheduling features are required
+
+## 7. Feature Prioritization
+
+### Essential Features (Must Have)
+1. Create tasks with title and optional description
+2. View list of personal tasks
+3. Mark tasks as completed
+4. Mark tasks as pending
+5. Edit task details
+6. Delete tasks
+7. User authentication and authorization
+
+### Future Enhancements (Not in Scope)
+1. Task categorization or tagging
+2. Due dates or scheduling
+3. Task prioritization
+4. Task sharing or collaboration
+5. Rich text descriptions
+6. Task reminders or notifications
+
+This requirements analysis report provides a complete specification for a minimal Todo list application with essential features. All requirements are written in EARS format for clarity and testability, ensuring that developers can implement the system according to these specifications.

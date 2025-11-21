@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberProfile } from "../../../../../structures/ICommunityPlatformMemberProfile";
 
 /**
- * Update a member's profile information.
- *
  * Update the profile information for a community member. This operation allows
  * members to customize their public identity on the platform by modifying
  * display name, biography, profile image, geographic location, personal website

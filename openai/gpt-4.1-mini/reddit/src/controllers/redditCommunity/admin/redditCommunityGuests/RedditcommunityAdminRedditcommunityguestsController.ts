@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/redditCommunity/admin/redditCommunityGuests/:id")
 export class RedditcommunityAdminRedditcommunityguestsController {
   /**
-   * Delete a Reddit community guest by ID.
-   *
    * This API endpoint permanently deletes a Reddit community guest from the
    * system.
    *

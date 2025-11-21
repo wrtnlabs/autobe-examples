@@ -8,9 +8,6 @@ import { IPageIShoppingMallBusinessPolicy } from "../../../../api/structures/IPa
 @Controller("/shoppingMall/admin/businessPolicies")
 export class ShoppingmallAdminBusinesspoliciesController {
   /**
-   * Create a new business policy in the shopping_mall_business_policies table
-   * for the ShoppingMall platform.
-   *
    * Register a new logical business policy definition in the ShoppingMall
    * governance subsystem.
    *
@@ -66,9 +63,6 @@ export class ShoppingmallAdminBusinesspoliciesController {
   }
 
   /**
-   * Search and paginate business policy definitions from the
-   * shopping_mall_business_policies table.
-   *
    * Search and retrieve a filtered, paginated list of business policies
    * defined in the `shopping_mall_business_policies` table.
    *
@@ -137,9 +131,6 @@ export class ShoppingmallAdminBusinesspoliciesController {
   }
 
   /**
-   * Retrieve a specific business policy from shopping_mall_business_policies
-   * by its unique policy code.
-   *
    * Retrieve the complete details of a single business policy from the
    * `shopping_mall_business_policies` table using its business identifier
    * code.
@@ -198,9 +189,6 @@ export class ShoppingmallAdminBusinesspoliciesController {
   }
 
   /**
-   * Update an existing business policy in the shopping_mall_business_policies
-   * table identified by its policyCode.
-   *
    * Modify an existing logical business policy definition identified by its
    * policy code.
    *
@@ -260,9 +248,6 @@ export class ShoppingmallAdminBusinesspoliciesController {
   }
 
   /**
-   * Permanently delete a business policy record from the
-   * shopping_mall_business_policies table using its policy code.
-   *
    * Delete an existing business policy identified by its unique policy code
    * from the shopping_mall_business_policies table.
    *

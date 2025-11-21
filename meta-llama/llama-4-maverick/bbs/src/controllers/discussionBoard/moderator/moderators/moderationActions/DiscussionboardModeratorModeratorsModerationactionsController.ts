@@ -13,8 +13,6 @@ import { IDiscussionBoardModerationAction } from "../../../../../api/structures/
 )
 export class DiscussionboardModeratorModeratorsModerationactionsController {
   /**
-   * Search moderation actions by moderator ID with pagination.
-   *
    * Retrieve a filtered and paginated list of moderation actions performed by a
    * specific moderator. This operation provides advanced search capabilities
    * for finding moderation actions based on multiple criteria. It supports

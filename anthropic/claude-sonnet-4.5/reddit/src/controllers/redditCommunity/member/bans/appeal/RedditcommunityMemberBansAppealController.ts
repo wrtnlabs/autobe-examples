@@ -10,8 +10,6 @@ import { IRedditCommunityBanAppeal } from "../../../../../api/structures/IReddit
 @Controller("/redditCommunity/member/bans/:banId/appeal")
 export class RedditcommunityMemberBansAppealController {
   /**
-   * Submit an appeal against a community ban.
-   *
    * Allow a banned member to submit an appeal challenging their community ban.
    * This operation creates a new ban appeal record in the system, providing the
    * banned user with a formal mechanism to contest their ban and request review

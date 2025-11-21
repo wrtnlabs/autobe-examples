@@ -17,8 +17,6 @@ import { IPageIRedditCommunityModeratorSession } from "../../../../../api/struct
 )
 export class RedditcommunityModeratorRedditcommunitymoderatorsSessionsController {
   /**
-   * Create a new moderator session record for the given moderator.
-   *
    * Create a new session for a reddit community moderator.
    *
    * This API allows authenticated moderators or admins to log new session
@@ -69,8 +67,6 @@ export class RedditcommunityModeratorRedditcommunitymoderatorsSessionsController
   }
 
   /**
-   * List paginated sessions of a reddit community moderator.
-   *
    * Retrieve a filtered and paginated list of session records for a given
    * reddit community moderator.
    *
@@ -121,9 +117,6 @@ export class RedditcommunityModeratorRedditcommunitymoderatorsSessionsController
   }
 
   /**
-   * Retrieve a specific moderator session record by moderator ID and session
-   * ID.
-   *
    * Retrieve detailed information about a specific moderator session.
    *
    * This operation allows authorized moderators or admins to get full details
@@ -170,8 +163,6 @@ export class RedditcommunityModeratorRedditcommunitymoderatorsSessionsController
   }
 
   /**
-   * Update a reddit community moderator session.
-   *
    * Update the attributes of an existing reddit community moderator session
    * record.
    *
@@ -222,8 +213,6 @@ export class RedditcommunityModeratorRedditcommunitymoderatorsSessionsController
   }
 
   /**
-   * Delete a reddit community moderator session.
-   *
    * Permanently remove a reddit community moderator session record from the
    * database.
    *

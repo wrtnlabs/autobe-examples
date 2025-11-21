@@ -10,9 +10,6 @@ import { IPageICommunityPlatformAccountRestriction } from "../../../../../api/st
 )
 export class CommunityplatformAdminuserAdminusersAccountrestrictionsController {
   /**
-   * Create a community_platform_account_restrictions record and link it to an
-   * adminUser using the admin-user linkage table.
-   *
    * Create a new account restriction episode that applies to a specific
    * adminUser account by inserting into
    * community_platform_account_restrictions and linking it via the admin-user
@@ -96,9 +93,6 @@ export class CommunityplatformAdminuserAdminusersAccountrestrictionsController {
   }
 
   /**
-   * Search and list community_platform_account_restrictions affecting a
-   * specific adminUser via username.
-   *
    * Retrieve a filtered and paginated list of account restriction episodes
    * associated with a specific adminUser account, leveraging the
    * community_platform_account_restrictions table together with its
@@ -177,9 +171,6 @@ export class CommunityplatformAdminuserAdminusersAccountrestrictionsController {
   }
 
   /**
-   * Get a single `community_platform_account_restrictions` record for an
-   * admin user by restriction ID.
-   *
    * Retrieve detailed information about a single account restriction episode
    * that has been applied to a specific admin user account.
    *
@@ -249,9 +240,6 @@ export class CommunityplatformAdminuserAdminusersAccountrestrictionsController {
   }
 
   /**
-   * Update a `community_platform_account_restrictions` record for an admin
-   * user by restriction ID.
-   *
    * Update the details of an existing account restriction episode associated
    * with a specific admin user account.
    *
@@ -331,9 +319,6 @@ export class CommunityplatformAdminuserAdminusersAccountrestrictionsController {
   }
 
   /**
-   * Deactivate a `community_platform_account_restrictions` record for a
-   * specific adminUser identified by username and restriction ID.
-   *
    * Remove the effect of a previously created restriction episode on an
    * administrative account by deactivating a record in the
    * `community_platform_account_restrictions` table.

@@ -7,9 +7,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../../api/structure
 @Controller("/communityPlatform/auth/administrator/password-reset/confirm")
 export class CommunityplatformAuthAdministratorPassword_resetConfirmController {
   /**
-   * Confirm and complete a platform administrator password reset using a
-   * reset token.
-   *
    * Complete a password reset request for a platform administrator account.
    * This operation validates the provided reset token against the
    * administrator's account, verifies token expiration status, and applies

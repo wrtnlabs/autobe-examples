@@ -12,8 +12,6 @@ import { ITodoListTodoListUser } from "../../../api/structures/ITodoListTodoList
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Create new user account and issue initial JWT tokens (todo_list_users).
-   *
    * This API operation enables registered users to create new accounts in the
    * todo list system. It utilizes the 'todo_list_users' table for storing and
    * validating user credentials securely. Upon successful registration, an
@@ -57,8 +55,6 @@ export class AuthUserController {
   }
 
   /**
-   * User login and JWT token issuance (todo_list_users).
-   *
    * This operation authenticates existing registered users by verifying
    * credentials stored in 'todo_list_users'. On success, it issues JWT access
    * tokens for authorized resource access.
@@ -98,8 +94,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refresh JWT access token for registered user (todo_list_users).
-   *
    * This operation allows registered users to refresh their JWT access tokens
    * by submitting valid refresh tokens mapped to 'todo_list_users'. It issues
    * new tokens extending authenticated session duration.

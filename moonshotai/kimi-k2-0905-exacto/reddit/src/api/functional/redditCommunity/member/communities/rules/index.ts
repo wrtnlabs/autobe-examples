@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunityRule } from "../../../../../structures/IRedditCommunityCommunityRule";
 
 /**
- * Retrieve a specific community rule with detailed information.
- *
  * Retrieve detailed information about a specific community rule including its
  * display order, title, description, and violation consequences. This operation
  * enables community moderators and members to review individual rules and their

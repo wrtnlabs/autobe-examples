@@ -11,9 +11,6 @@ import { IShoppingMallProductSku } from "../../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/products/:productId/skus")
 export class ShoppingmallAdminProductsSkusController {
   /**
-   * Search and retrieve paginated SKUs for a product from
-   * shopping_mall_product_skus.
-   *
    * Retrieve a list of SKUs for a given product with advanced filtering and
    * pagination.
    *

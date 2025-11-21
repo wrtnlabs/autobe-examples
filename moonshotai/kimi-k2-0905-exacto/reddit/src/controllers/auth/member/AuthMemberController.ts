@@ -7,8 +7,6 @@ import { IRedditCommunityMember } from "../../../api/structures/IRedditCommunity
 @Controller("/auth/member")
 export class AuthMemberController {
   /**
-   * Register a new member account with email, nickname, and password.
-   *
    * This endpoint enables new users to register as members of the Reddit
    * Community platform. Members represent authenticated users with full
    * platform privileges including community participation, content creation,
@@ -57,8 +55,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Authenticate members using email and password credentials.
-   *
    * This endpoint enables existing members to authenticate using their
    * registered email address and password. The login operation validates
    * credentials against the member account and issues secure JWT tokens for
@@ -102,8 +98,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Refresh member access tokens using valid refresh tokens.
-   *
    * This endpoint enables members to refresh expired access tokens using
    * their valid refresh tokens, maintaining continuous authenticated sessions
    * without requiring repeated login credentials. The refresh operation

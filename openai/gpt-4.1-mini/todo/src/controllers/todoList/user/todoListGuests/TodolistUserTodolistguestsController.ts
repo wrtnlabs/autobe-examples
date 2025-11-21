@@ -11,8 +11,6 @@ import { ITodoListGuest } from "../../../../api/structures/ITodoListGuest";
 @Controller("/todoList/user/todoListGuests/:id")
 export class TodolistUserTodolistguestsController {
   /**
-   * Update a specific Todo List guest by ID.
-   *
    * Update a specific guest's information in the Todo List guest tracking
    * system.
    *
@@ -53,8 +51,6 @@ export class TodolistUserTodolistguestsController {
   }
 
   /**
-   * Delete a specific Todo List guest by ID.
-   *
    * Delete a guest record permanently from the system.
    *
    * This operation is used for removing guest visitor records that are no

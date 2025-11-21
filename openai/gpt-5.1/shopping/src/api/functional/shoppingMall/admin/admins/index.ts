@@ -11,9 +11,6 @@ export * as accountRiskFlags from "./accountRiskFlags/index";
 export * as actorSecurityEvents from "./actorSecurityEvents/index";
 
 /**
- * List and search administrator accounts from the shopping_mall_admins table
- * with pagination and filters.
- *
  * Search and retrieve a paginated list of administrator accounts from the
  * shoppingMall platform for governance and operations.
  *
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Get a single admin account from the `shopping_mall_admins` table by its
- * identifier.
- *
  * Retrieve detailed information for a specific admin account from the
  * shoppingMall platform.
  *
@@ -259,9 +253,6 @@ export namespace at {
 }
 
 /**
- * Update an admin account in the `shopping_mall_admins` table identified by
- * `adminId`.
- *
  * Update an existing admin account in the shoppingMall platform by its
  * identifier.
  *
@@ -394,9 +385,6 @@ export namespace update {
 }
 
 /**
- * Erase an administrator account from the shopping_mall_admins table by its
- * identifier.
- *
  * Erase an existing administrator account record from the
  * `shopping_mall_admins` table in the shoppingMall platform.
  *

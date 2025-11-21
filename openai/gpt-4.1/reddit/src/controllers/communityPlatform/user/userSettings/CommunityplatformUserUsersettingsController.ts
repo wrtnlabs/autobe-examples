@@ -13,9 +13,6 @@ import { ICommunityPlatformUserSettings } from "../../../../api/structures/IComm
 @Controller("/communityPlatform/user/userSettings")
 export class CommunityplatformUserUsersettingsController {
   /**
-   * Retrieve detailed user settings by unique settings ID from the
-   * community_platform_user_settings table.
-   *
    * Fetch a complete user settings object for a specific user settings record,
    * as identified by the unique userSettingsId in the path. This operation
    * allows the retrieval of all stored user experience preferences such as
@@ -59,9 +56,6 @@ export class CommunityplatformUserUsersettingsController {
   }
 
   /**
-   * Update a specific user settings record in the
-   * community_platform_user_settings table.
-   *
    * Update the experience and interface preferences for a specific user by
    * modifying their community platform user settings record.
    *
@@ -111,9 +105,6 @@ export class CommunityplatformUserUsersettingsController {
   }
 
   /**
-   * Soft-delete a user settings record in the community_platform_user_settings
-   * table by setting the deleted_at timestamp.
-   *
    * Delete (soft-delete) a specific user's editable settings for community
    * platform experience personalization.
    *
@@ -154,9 +145,6 @@ export class CommunityplatformUserUsersettingsController {
   }
 
   /**
-   * Create a new community platform user settings record with experience
-   * preferences and feature toggles.
-   *
    * Create a new user settings entity for a specified community platform user.
    * This operation establishes all primary user experience preferences and
    * switches for the account, such as the preferred UI language, theme, post

@@ -8,9 +8,6 @@ import { IEconomicDiscussionPopularTags } from "../../../../api/structures/IEcon
 @Controller("/economicDiscussion/discovery/popular-tags")
 export class EconomicdiscussionDiscoveryPopular_tagsController {
   /**
-   * Retrieve popular tags from economic discussion articles for topic
-   * discovery.
-   *
    * This operation returns a collection of the most popular tags used in
    * economic and political discussion articles. Popular tags are determined by
    * frequency of usage across published articles, providing users with insights

@@ -8,9 +8,6 @@ import { ITodoListUser } from "../../../../../api/structures/ITodoListUser";
 @Controller("/auth/user/password/reset-confirm")
 export class AuthUserPasswordReset_confirmController {
   /**
-   * Complete password reset by validating token and updating password_hash in
-   * the todo_list_users table.
-   *
    * This endpoint completes the password reset process when users have received
    * and used their password reset link. The operation receives a reset token
    * and new password, then validates the token against the

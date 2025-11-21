@@ -11,9 +11,6 @@ import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussi
 @Controller("/discussionBoard/adminUser/articles/:articleId/comments")
 export class DiscussionboardAdminuserArticlesCommentsController {
   /**
-   * Create a new discussion_board_comments record attached to a specific
-   * article.
-   *
    * Create a new comment on a specific discussion board article identified by
    * its article ID.
    *
@@ -101,9 +98,6 @@ export class DiscussionboardAdminuserArticlesCommentsController {
   }
 
   /**
-   * Update an existing discussion_board_comments record for a given article and
-   * comment pair.
-   *
    * Update an existing comment that belongs to a specific discussion board
    * article.
    *

@@ -11,8 +11,6 @@ import { IDiscussionBoardMember } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/member/members/:username")
 export class DiscussionboardMemberMembersController {
   /**
-   * Update member profile information by username.
-   *
    * Update an existing member's profile information using their unique username
    * identifier. This operation allows authenticated members to modify their
    * personal details such as display name, biography, and other profile
@@ -60,8 +58,6 @@ export class DiscussionboardMemberMembersController {
   }
 
   /**
-   * Soft delete member account by username.
-   *
    * Perform a soft deletion of a member account using their unique username
    * identifier. This operation marks the member account as deleted by setting
    * the deleted_at timestamp while preserving all account data for potential

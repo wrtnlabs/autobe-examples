@@ -10,9 +10,6 @@ import { IDiscussionBoardChannel } from "../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/channels")
 export class DiscussionboardChannelsController {
   /**
-   * Search and retrieve a filtered, paginated list of discussion board
-   * channels.
-   *
    * Retrieve a filtered and paginated list of discussion board channels from
    * the system. This operation provides advanced search capabilities for
    * finding channels based on multiple criteria including partial name

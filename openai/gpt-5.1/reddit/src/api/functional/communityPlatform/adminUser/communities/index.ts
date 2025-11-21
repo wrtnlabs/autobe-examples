@@ -10,9 +10,6 @@ export * as statusHistories from "./statusHistories/index";
 export * as subscribers from "./subscribers/index";
 
 /**
- * Update an existing community_platform_communities record identified by its
- * communitySlug.
- *
  * Update an existing community identified by its slug, modifying configurable
  * attributes while preserving its identity and relationships.
  *
@@ -151,9 +148,6 @@ export namespace update {
 }
 
 /**
- * Delete an existing community_platform_communities record identified by its
- * communitySlug.
- *
  * Permanently remove an existing community identified by its slug, according to
  * the constraints and relationships defined for
  * community_platform_communities.

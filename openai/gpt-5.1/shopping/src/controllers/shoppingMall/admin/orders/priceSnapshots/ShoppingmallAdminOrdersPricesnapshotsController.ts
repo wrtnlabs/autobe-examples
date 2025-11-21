@@ -7,9 +7,6 @@ import { IShoppingMallOrderPriceSnapshot } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/orders/:orderCode/priceSnapshots")
 export class ShoppingmallAdminOrdersPricesnapshotsController {
   /**
-   * Retrieve a single shopping_mall_order_price_snapshots record for a given
-   * order and snapshot identifier.
-   *
    * Retrieve a specific price snapshot associated with an order using the
    * order’s business-facing code and the unique identifier of the snapshot.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminOrdersPricesnapshotsController {
   }
 
   /**
-   * Update a specific order price snapshot record
-   * (`shopping_mall_order_price_snapshots`) for a given order.
-   *
    * Update an existing order price snapshot record associated with a specific
    * order in the shopping mall platform.
    *
@@ -151,9 +145,6 @@ export class ShoppingmallAdminOrdersPricesnapshotsController {
   }
 
   /**
-   * Delete a specific order price snapshot record
-   * (`shopping_mall_order_price_snapshots`) for a given order.
-   *
    * Delete a specific order price snapshot record that belongs to a given
    * order in the shopping mall platform.
    *
@@ -207,9 +198,6 @@ export class ShoppingmallAdminOrdersPricesnapshotsController {
   }
 
   /**
-   * Create a new shopping_mall_order_price_snapshots record associated with a
-   * specific order identified by orderCode.
-   *
    * Create a new price snapshot for the specified order, capturing the full
    * monetary breakdown and contextual information at a particular point in
    * time.

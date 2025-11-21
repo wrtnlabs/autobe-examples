@@ -8,9 +8,6 @@ import { IDiscussionBoardComment } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/articles/:articleId/comments")
 export class DiscussionboardArticlesCommentsController {
   /**
-   * Search and retrieve a paginated list of comments on a discussion board
-   * article.
-   *
    * Retrieve a filtered and paginated list of comments posted on a specific
    * article, enabling users to browse discussions and moderate content. This
    * operation queries the discussion_board_comments table filtered by the
@@ -66,8 +63,6 @@ export class DiscussionboardArticlesCommentsController {
   }
 
   /**
-   * Retrieve a specific comment from a discussion board article.
-   *
    * Retrieve detailed information about a specific comment on a discussion
    * board article. This operation returns the complete comment record
    * including the comment text, author information, creation and modification

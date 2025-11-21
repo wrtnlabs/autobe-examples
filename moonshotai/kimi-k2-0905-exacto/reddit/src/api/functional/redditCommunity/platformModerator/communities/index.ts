@@ -5,8 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as rules from "./rules/index";
 
 /**
- * Permanently delete a community and all associated data.
- *
  * Permanently delete a community from the reddit platform. This operation
  * removes the community and all its associated data from the system, including
  * community rules, member relationships, subscriptions, and all content

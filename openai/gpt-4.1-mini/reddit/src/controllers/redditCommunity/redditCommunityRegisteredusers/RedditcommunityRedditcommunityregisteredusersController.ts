@@ -8,8 +8,6 @@ import { IRedditCommunityRegisteredUser } from "../../../api/structures/IRedditC
 @Controller("/redditCommunity/redditCommunityRegisteredusers")
 export class RedditcommunityRedditcommunityregisteredusersController {
   /**
-   * Register a new redditCommunity user account.
-   *
    * Create a new registered user account on the redditCommunity platform.
    *
    * This operation accepts user registration details including email and hashed

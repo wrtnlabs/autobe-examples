@@ -9,9 +9,6 @@ import { ITodoAppGuestUser } from "../../../api/structures/ITodoAppGuestUser";
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Register a new todo_app_guestusers guestUser concept and issue initial
-   * ITodoAppGuestUser.IAuthorized tokens.
-   *
    * This operation registers a new guest user concept in the
    * todo_app_guestusers table and issues initial authorization tokens for the
    * guestUser actor. The underlying Prisma table todo_app_guestusers is
@@ -89,9 +86,6 @@ export class AuthGuestuserController {
   }
 
   /**
-   * Refresh guestUser authorization tokens based on a valid refresh token,
-   * returning ITodoAppGuestUser.IAuthorized.
-   *
    * This operation refreshes authorization tokens for the guestUser actor by
    * validating an incoming refresh token and issuing a new
    * ITodoAppGuestUser.IAuthorized structure. The underlying guest concept is

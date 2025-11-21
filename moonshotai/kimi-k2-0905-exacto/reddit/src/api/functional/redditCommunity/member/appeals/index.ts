@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityAppeal } from "../../../../structures/IRedditCommunityAppeal";
 
 /**
- * Submit a new appeal against a moderation action.
- *
  * Create a new appeal against a moderation action within a community. This
  * operation enables users to formally challenge moderation decisions they
  * believe were unfair, incorrect, or applied inappropriately.
@@ -109,8 +107,6 @@ export namespace create {
 }
 
 /**
- * Update an existing community appeal before review begins.
- *
  * Update an existing community appeal before it enters formal review. This
  * operation enables users to refine their appeal submissions with additional
  * evidence, clarification, or improved documentation.
@@ -218,8 +214,6 @@ export namespace update {
 }
 
 /**
- * Delete a user appeal against moderation actions and decisions.
- *
  * Permanently remove a user appeal against moderation actions.
  *
  * This operation deletes appeal records from the appeals system, effectively

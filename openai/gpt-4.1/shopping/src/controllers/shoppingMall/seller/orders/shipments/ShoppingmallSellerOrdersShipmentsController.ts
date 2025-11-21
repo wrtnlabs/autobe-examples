@@ -14,9 +14,6 @@ import { IPageIShoppingMallOrderShipment } from "../../../../../api/structures/I
 @Controller("/shoppingMall/seller/orders/:orderNumber/shipments")
 export class ShoppingmallSellerOrdersShipmentsController {
   /**
-   * Create a new shipment record for a specific shopping mall order
-   * (shopping_mall_order_shipments).
-   *
    * Create a new shipment event under the context of an existing order, as
    * identified by the globally unique business order number present in the path
    * parameter. Each shipment entry includes information such as the shipping
@@ -70,9 +67,6 @@ export class ShoppingmallSellerOrdersShipmentsController {
   }
 
   /**
-   * Search and retrieve a paginated list of shopping mall order shipments for a
-   * given order (shopping_mall_order_shipments).
-   *
    * Return a paginated, filterable list of all shipment (fulfillment batch)
    * entities associated with a single shopping mall order. Each shipment record
    * tracks detailed shipping, carrier, and status information relevant to one
@@ -119,9 +113,6 @@ export class ShoppingmallSellerOrdersShipmentsController {
   }
 
   /**
-   * Retrieve detail of a single order shipment for a particular order
-   * (shopping_mall_order_shipments).
-   *
    * Fetch the comprehensive detail of a specific shipment (fulfillment batch),
    * using both the parent order's platform-unique order number and shipment's
    * unique identifier. This information includes all pertinent shipment fields
@@ -170,9 +161,6 @@ export class ShoppingmallSellerOrdersShipmentsController {
   }
 
   /**
-   * Update a shipment associated with a given shopping mall order
-   * (shopping_mall_order_shipments).
-   *
    * Update a shipment record for a specific order, identified by its globally
    * unique order number and the shipment's unique ID. This operation allows
    * authorized actors to modify details such as shipment status, associated

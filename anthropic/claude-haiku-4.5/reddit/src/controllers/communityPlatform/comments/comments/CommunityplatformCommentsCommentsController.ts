@@ -8,9 +8,6 @@ import { ICommunityPlatformComment } from "../../../../api/structures/ICommunity
 @Controller("/communityPlatform/comments/:commentId/comments")
 export class CommunityplatformCommentsCommentsController {
   /**
-   * Search and retrieve nested comments (replies) to a specific comment with
-   * pagination and filtering.
-   *
    * Retrieve a paginated, filtered list of comments that are direct replies
    * to a specific parent comment, supporting advanced search and sorting
    * capabilities. This operation fetches all nested comments where the

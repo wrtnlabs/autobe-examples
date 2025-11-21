@@ -7,9 +7,6 @@ import { ICommunityPlatformUserKarma } from "../../../../structures/ICommunityPl
 import { IPageICommunityPlatformUserKarma } from "../../../../structures/IPageICommunityPlatformUserKarma";
 
 /**
- * Search and retrieve a paginated list of `community_platform_user_karmas`
- * aggregate records.
- *
  * Retrieve a filtered and paginated list of user karma aggregate records for
  * administrative analysis.
  *
@@ -124,9 +121,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single `community_platform_user_karmas` record by its unique
- * identifier.
- *
  * Retrieve a specific user karma aggregate record by its unique identifier for
  * administrator review.
  *
@@ -238,8 +232,6 @@ export namespace at {
 }
 
 /**
- * Update a user karma aggregate record in community_platform_user_karmas.
- *
  * Update a specific aggregated user karma record in the community platform.
  *
  * This operation allows an authorized administrative actor to modify an
@@ -370,8 +362,6 @@ export namespace update {
 }
 
 /**
- * Delete a user karma aggregate record from community_platform_user_karmas.
- *
  * Delete a specific aggregated user karma record from the platform.
  *
  * This operation removes one row from the community_platform_user_karmas table

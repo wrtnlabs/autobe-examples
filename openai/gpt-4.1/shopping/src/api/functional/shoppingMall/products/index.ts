@@ -9,8 +9,6 @@ export * as skus from "./skus/index";
 export * as images from "./images/index";
 
 /**
- * Create a new Shopping Mall Product in the catalog.
- *
  * Create a new product entry in the shopping mall's catalog.
  *
  * The API accepts data for a new product, including its name, business
@@ -108,9 +106,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated product summaries from the
- * shopping_mall_products table.
- *
  * List and search products in the shopping mall catalog using complex query,
  * filtering, and pagination.
  *
@@ -212,8 +207,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single Shopping Mall Product.
- *
  * Retrieve the complete product details for the specified product.
  *
  * This API is used to access all business and presentation data of a single

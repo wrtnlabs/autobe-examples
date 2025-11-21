@@ -8,9 +8,6 @@ import { IPageICommunityPlatformComment } from "../../../structures/IPageICommun
 export * as comments from "./comments/index";
 
 /**
- * Search and retrieve a filtered, paginated list of community platform
- * comments.
- *
  * Retrieve a comprehensive, filtered list of comments with advanced search and
  * pagination capabilities. This operation queries the
  * community_platform_comments table to find comments matching specified
@@ -128,8 +125,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific comment from the community platform by ID.
- *
  * Retrieve a single community platform comment with all associated metadata and
  * vote information. This operation fetches the comment record identified by the
  * provided commentId from the community_platform_comments table, including the

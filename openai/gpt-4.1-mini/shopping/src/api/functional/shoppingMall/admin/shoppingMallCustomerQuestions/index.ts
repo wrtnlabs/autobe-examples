@@ -7,8 +7,6 @@ import { IShoppingMallCustomerQuestion } from "../../../../structures/IShoppingM
 import { IPageIShoppingMallCustomerQuestion } from "../../../../structures/IPageIShoppingMallCustomerQuestion";
 
 /**
- * Retrieve paginated list of shopping mall customer questions.
- *
  * Retrieve a filtered and paginated list of shopping mall customer questions
  * from the system. This operation supports advanced searching based on question
  * title, body content, customer identity, and session IDs.
@@ -105,8 +103,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed shopping mall customer question by ID.
- *
  * Retrieve detailed information of a specific shopping mall customer question
  * using its unique identifier. This operation returns all properties of the
  * question, including title and body content, linked customer and session

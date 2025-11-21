@@ -7,8 +7,6 @@ import { ICommunityPlatformGlobalConstraint } from "../../../../structures/IComm
 import { IPageICommunityPlatformGlobalConstraint } from "../../../../structures/IPageICommunityPlatformGlobalConstraint";
 
 /**
- * Create a new global constraint record in the constraint registry table.
- *
  * Create a new global constraint entry in the platform-wide global constraint
  * registry.
  *
@@ -108,9 +106,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of
- * community_platform_global_constraints.
- *
  * Fetches a filtered, paginated list of global system constraints from the
  * community_platform_global_constraints table. Advanced search options include
  * filtering by constraint key, type (limit, enum, regex, etc.), and full-text
@@ -205,9 +200,6 @@ export namespace index {
 }
 
 /**
- * Update or create a global constraint by its unique constraint key
- * (community_platform_global_constraints).
- *
  * Update or create a global constraint entry given a unique constraint key.
  *
  * This operation is reserved for platform administrators and allows them to
@@ -322,9 +314,6 @@ export namespace update {
 }
 
 /**
- * Delete a global constraint by its unique constraint key
- * (community_platform_global_constraints).
- *
  * Delete a global constraint entry by its unique constraint key.
  *
  * Only administrators may perform this operation because changes affect global

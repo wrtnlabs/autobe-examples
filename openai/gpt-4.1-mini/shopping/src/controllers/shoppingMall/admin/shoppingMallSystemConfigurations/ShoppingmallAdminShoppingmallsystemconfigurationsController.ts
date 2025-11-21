@@ -15,8 +15,6 @@ import { IPageIShoppingMallSystemConfiguration } from "../../../../api/structure
 @Controller("/shoppingMall/admin/shoppingMallSystemConfigurations")
 export class ShoppingmallAdminShoppingmallsystemconfigurationsController {
   /**
-   * Create a new shopping mall system configuration parameter.
-   *
    * Create a new system configuration record for the shopping mall platform.
    *
    * This operation allows authorized administrators to add a new configuration
@@ -58,8 +56,6 @@ export class ShoppingmallAdminShoppingmallsystemconfigurationsController {
   }
 
   /**
-   * Retrieve paginated list of shopping mall system configurations.
-   *
    * Retrieve a filtered and paginated list of shopping mall system
    * configurations from the database.
    *
@@ -96,8 +92,6 @@ export class ShoppingmallAdminShoppingmallsystemconfigurationsController {
   }
 
   /**
-   * Retrieve details of a specific shopping mall system configuration.
-   *
    * Retrieve detailed information about a specific shopping mall system
    * configuration identified by its unique ID.
    *
@@ -136,8 +130,6 @@ export class ShoppingmallAdminShoppingmallsystemconfigurationsController {
   }
 
   /**
-   * Update shopping mall system configuration parameter.
-   *
    * Update an existing system configuration identified by its UUID.
    *
    * Authorized administrators can modify the value and description of the
@@ -183,8 +175,6 @@ export class ShoppingmallAdminShoppingmallsystemconfigurationsController {
   }
 
   /**
-   * Delete a shopping mall system configuration entry by ID.
-   *
    * Permanently deletes a shopping mall system configuration entry.
    *
    * This operation allows authorized administrators to delete system

@@ -8,9 +8,6 @@ import { ICommunityPlatformPost } from "../../../api/structures/ICommunityPlatfo
 @Controller("/communityPlatform/posts")
 export class CommunityplatformPostsController {
   /**
-   * Search and retrieve a filtered, paginated list of community platform
-   * posts.
-   *
    * Retrieve a filtered and paginated list of community platform posts from
    * the system. This operation provides advanced search capabilities for
    * finding posts based on multiple criteria including community ID, post
@@ -54,8 +51,6 @@ export class CommunityplatformPostsController {
   }
 
   /**
-   * Retrieve detailed information about a specific community post.
-   *
    * Retrieve comprehensive details of a community platform post by its unique
    * identifier. This operation returns the complete post entity including
    * title, content (text, link metadata, or image information depending on

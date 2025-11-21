@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/todoList/admin/users/:userId")
 export class TodolistAdminUsersController {
   /**
-   * Soft-deletes a user account in the todo_list_users table by userId.
-   *
    * Soft delete an existing user by userId. This operation sets the user's
    * deleted_at field, making the account inaccessible to both the user and any
    * other actors in the system from that moment onward.

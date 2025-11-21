@@ -7,9 +7,6 @@ import { IShoppingMallAdminRoleAssignment } from "../../../../../structures/ISho
 import { IPageIShoppingMallAdminRoleAssignment } from "../../../../../structures/IPageIShoppingMallAdminRoleAssignment";
 
 /**
- * Create a new admin role assignment (shopping_mall_admin_role_assignments)
- * under a specific admin role identified by code.
- *
  * Create a new admin role assignment for a specific administrative role
  * identified by its business code.
  *
@@ -160,9 +157,6 @@ export namespace create {
 }
 
 /**
- * Index shopping_mall_admin_role_assignments for a given admin role, returning
- * a paginated list of matching assignments.
- *
  * Retrieve a filtered, paginated list of admin-role assignment records
  * associated with a specific administrative role identified by its business
  * code.

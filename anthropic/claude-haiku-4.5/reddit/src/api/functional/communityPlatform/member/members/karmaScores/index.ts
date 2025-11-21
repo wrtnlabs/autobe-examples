@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformKarmaScore } from "../../../../../structures/ICommunityPlatformKarmaScore";
 
 /**
- * Retrieve detailed karma score information for a specific member.
- *
  * Retrieve the complete karma score record for a specific member identified by
  * their memberId. This operation provides a detailed view of the member's
  * reputation metrics including post_karma (votes earned on posts),

@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallGeographyStatistics } from "../../../../../structures/IShoppingMallGeographyStatistics";
 
 /**
- * Get aggregated geographic performance and revenue statistics grouped by
- * country and region for the shoppingMall platform.
- *
  * Retrieve aggregated geographic statistics for orders, revenue, and
  * operational performance across different countries and regions in the
  * shoppingMall platform.

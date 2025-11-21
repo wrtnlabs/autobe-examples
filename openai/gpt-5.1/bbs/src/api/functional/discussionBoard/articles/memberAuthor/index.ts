@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleOfMemberusersMemberAuthor } from "../../../../structures/IDiscussionBoardArticleOfMemberusersMemberAuthor";
 
 /**
- * Get the member user author linked via discussion_board_article_of_memberusers
- * for the specified article.
- *
  * Retrieve information about the member user who authored a particular
  * discussion board article.
  *

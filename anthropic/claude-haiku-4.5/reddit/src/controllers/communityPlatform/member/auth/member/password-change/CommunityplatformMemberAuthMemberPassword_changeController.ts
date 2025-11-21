@@ -7,9 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../api/structures/IComm
 @Controller("/communityPlatform/member/auth/member/password-change")
 export class CommunityplatformMemberAuthMemberPassword_changeController {
   /**
-   * Change password for an authenticated member by providing current and new
-   * password.
-   *
    * Allow an authenticated member to change their password while logged in
    * and actively authenticated. This operation provides the primary password
    * change mechanism for members who know their current password and want to

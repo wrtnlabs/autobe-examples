@@ -8,9 +8,6 @@ import { ICommunityPlatformPostVoteSummary } from "../../../../../api/structures
 @Controller("/communityPlatform/memberUser/posts/:postId/votes")
 export class CommunityplatformMemberuserPostsVotesController {
   /**
-   * Create or update the current member user's vote on a post in
-   * community_platform_post_votes.
-   *
    * Create or update the authenticated member user's vote on a specific post.
    *
    * This endpoint writes to the community_platform_post_votes Prisma table,
@@ -64,9 +61,6 @@ export class CommunityplatformMemberuserPostsVotesController {
   }
 
   /**
-   * Retrieve aggregated voting state and counts for a post from
-   * community_platform_post_votes.
-   *
    * Retrieve the current voting state and aggregated vote metrics for a
    * specific post.
    *
@@ -112,8 +106,6 @@ export class CommunityplatformMemberuserPostsVotesController {
   }
 
   /**
-   * Update a community_platform_post_votes row for a given post and voteId.
-   *
    * Update the direction and other mutable properties of an existing vote
    * that a member user has cast on a post.
    *
@@ -186,8 +178,6 @@ export class CommunityplatformMemberuserPostsVotesController {
   }
 
   /**
-   * Delete a community_platform_post_votes row for a given post and voteId.
-   *
    * Remove an existing vote that a member user has cast on a post, returning
    * the system to a state where the user has no vote recorded for that
    * content.

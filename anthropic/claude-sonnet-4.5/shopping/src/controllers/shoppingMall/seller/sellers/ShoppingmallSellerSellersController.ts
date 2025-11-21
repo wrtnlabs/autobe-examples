@@ -11,8 +11,6 @@ import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSel
 @Controller("/shoppingMall/seller/sellers/:sellerId")
 export class ShoppingmallSellerSellersController {
   /**
-   * Update seller account information and profile settings.
-   *
    * Update the authenticated seller's account information including profile
    * details, business information, and account settings. This operation allows
    * sellers to modify their marketplace presence and ensure their account
@@ -62,8 +60,6 @@ export class ShoppingmallSellerSellersController {
   }
 
   /**
-   * Soft delete seller account by marking as deleted.
-   *
    * Deactivate the authenticated seller's account from the shopping mall
    * marketplace by setting the deleted_at timestamp. This operation implements
    * a soft delete pattern, preserving the seller account data for audit and

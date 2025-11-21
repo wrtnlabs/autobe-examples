@@ -8,9 +8,6 @@ import { IPageIShoppingMallActorSecurityEvent } from "../../../../api/structures
 @Controller("/shoppingMall/admin/actorSecurityEvents")
 export class ShoppingmallAdminActorsecurityeventsController {
   /**
-   * Create a new actor security event record in the
-   * shopping_mall_actor_security_events table.
-   *
    * Create a new actor security event entry within the shoppingMall platform.
    *
    * This operation operates over the `shopping_mall_actor_security_events`
@@ -66,9 +63,6 @@ export class ShoppingmallAdminActorsecurityeventsController {
   }
 
   /**
-   * Search paginated actor security events using
-   * `shopping_mall_actor_security_events` as the primary source.
-   *
    * Retrieve a paginated, filterable list of actor security events recorded
    * across the entire shoppingMall platform for all supported actor types.
    *
@@ -125,9 +119,6 @@ export class ShoppingmallAdminActorsecurityeventsController {
   }
 
   /**
-   * Get a single actor security event record from the
-   * shopping_mall_actor_security_events table by its identifier.
-   *
    * Retrieve detailed information about a single actor security event from
    * the shoppingMall platform.
    *
@@ -189,9 +180,6 @@ export class ShoppingmallAdminActorsecurityeventsController {
   }
 
   /**
-   * Erase a specific actor security event record from
-   * shopping_mall_actor_security_events by securityEventId.
-   *
    * Erase a specific actor security event from the
    * shopping_mall_actor_security_events table.
    *

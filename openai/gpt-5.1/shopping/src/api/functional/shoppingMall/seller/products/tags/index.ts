@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductTagLink } from "../../../../../structures/IShoppingMallProductTagLink";
 
 /**
- * Create a new product–tag association row in shopping_mall_product_tag_links.
- *
  * Create a new association between a product and a tag by inserting into the
  * shopping_mall_product_tag_links table.
  *
@@ -126,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Remove a tag association for a product by deleting a
- * `shopping_mall_product_tag_links` record.
- *
  * Remove an existing tag link from a specific product by deleting the
  * corresponding record in the `shopping_mall_product_tag_links` table.
  *

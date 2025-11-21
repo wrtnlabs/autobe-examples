@@ -7,9 +7,6 @@ import { ICommunityPlatformComment } from "../../../../structures/ICommunityPlat
 import { IPageICommunityPlatformComment } from "../../../../structures/IPageICommunityPlatformComment";
 
 /**
- * Search and retrieve paginated comments on a post with advanced filtering and
- * sorting.
- *
  * Retrieve a filtered, paginated list of comments and nested replies on a
  * specific post, with support for multiple sorting algorithms and search
  * criteria.

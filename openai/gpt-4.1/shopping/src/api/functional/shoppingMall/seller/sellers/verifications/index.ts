@@ -7,9 +7,6 @@ import { IShoppingMallSellerVerification } from "../../../../../structures/IShop
 import { IPageIShoppingMallSellerVerification } from "../../../../../structures/IPageIShoppingMallSellerVerification";
 
 /**
- * Search and list all seller verification records for a seller
- * (shopping_mall_seller_verifications).
- *
  * Retrieve a paginated, filtered list of business verification records
  * associated with a seller.
  *
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific seller verification record from
- * shopping_mall_seller_verifications.
- *
  * Retrieve detailed information for a specific seller verification record
  * associated with a given seller.
  *

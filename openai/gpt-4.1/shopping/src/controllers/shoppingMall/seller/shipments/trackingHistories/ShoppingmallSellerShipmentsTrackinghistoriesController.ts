@@ -13,9 +13,6 @@ import { IPageIShoppingMallShipmentTrackingHistory } from "../../../../../api/st
 @Controller("/shoppingMall/seller/shipments/:shipmentId/trackingHistories")
 export class ShoppingmallSellerShipmentsTrackinghistoriesController {
   /**
-   * Create a new shipment tracking history event beneath
-   * shopping_mall_shipments.
-   *
    * Append a new shipment tracking event to a specific existing shipment for
    * complete carrier/logistics event journaling.
    *
@@ -66,9 +63,6 @@ export class ShoppingmallSellerShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Retrieve paginated tracking history events for a specific shipment from
-   * shopping_mall_shipment_tracking_histories.
-   *
    * This endpoint returns the list of tracking status history events for a
    * given shipment. It provides all carrier or warehouse updates from dispatch
    * through delivery, showing detailed status codes, event times, locations,
@@ -117,9 +111,6 @@ export class ShoppingmallSellerShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Retrieve a specific shipment tracking event detail from
-   * shopping_mall_shipment_tracking_histories.
-   *
    * Fetch a detailed tracking event update for a specific shipment in the order
    * fulfillment system.
    *

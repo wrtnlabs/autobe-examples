@@ -8,9 +8,6 @@ import { IPageIShoppingMallRefundRequestReason } from "../../../../api/structure
 @Controller("/shoppingMall/admin/refundRequestReasons")
 export class ShoppingmallAdminRefundrequestreasonsController {
   /**
-   * Create a new refund request reason record in
-   * `shopping_mall_refund_request_reasons`.
-   *
    * Create a new standardized refund request reason in the
    * `shopping_mall_refund_request_reasons` table, enabling governance and
    * operations teams to expand the catalog of selectable reasons that appear
@@ -53,9 +50,6 @@ export class ShoppingmallAdminRefundrequestreasonsController {
   }
 
   /**
-   * Search refund request reasons list from
-   * shopping_mall_refund_request_reasons with pagination and filters.
-   *
    * Retrieve a paginated list of refund request reasons based on flexible
    * search and filtering criteria.
    *
@@ -105,9 +99,6 @@ export class ShoppingmallAdminRefundrequestreasonsController {
   }
 
   /**
-   * Get a single refund request reason from
-   * `shopping_mall_refund_request_reasons` by its reasonCode.
-   *
    * Retrieve detailed information about a single refund request reason record
    * from the `shopping_mall_refund_request_reasons` table by its unique
    * `reasonCode`.
@@ -157,9 +148,6 @@ export class ShoppingmallAdminRefundrequestreasonsController {
   }
 
   /**
-   * Update an existing refund request reason in the
-   * shopping_mall_refund_request_reasons table by its business reason code.
-   *
    * Update an existing refund request reason identified by its unique reason
    * code within the shopping mall platform.
    *
@@ -239,9 +227,6 @@ export class ShoppingmallAdminRefundrequestreasonsController {
   }
 
   /**
-   * Delete a refund request reason from the
-   * shopping_mall_refund_request_reasons table by its business reason code.
-   *
    * Delete an existing refund request reason identified by its unique
    * business reason code from the `shopping_mall_refund_request_reasons`
    * catalog.

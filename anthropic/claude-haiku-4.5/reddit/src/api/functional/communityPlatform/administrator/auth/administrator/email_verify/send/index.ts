@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../../../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Send email verification message to administrator's registered email address.
- *
  * Initiates the email verification process for platform administrators by
  * sending a verification token to their registered email address. This
  * operation is essential for account security and ensures administrators can

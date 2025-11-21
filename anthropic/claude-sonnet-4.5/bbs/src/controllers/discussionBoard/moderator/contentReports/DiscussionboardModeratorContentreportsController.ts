@@ -14,8 +14,6 @@ import { IDiscussionBoardContentReport } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/moderator/contentReports")
 export class DiscussionboardModeratorContentreportsController {
   /**
-   * Search and retrieve filtered content reports for moderation review.
-   *
    * Retrieves a paginated list of content reports submitted by members, with
    * advanced filtering and search capabilities for efficient moderation
    * workflow management.
@@ -79,8 +77,6 @@ export class DiscussionboardModeratorContentreportsController {
   }
 
   /**
-   * Retrieve detailed information about a specific content report by ID.
-   *
    * Retrieve detailed information about a specific content report submitted by
    * a member flagging an article for policy violations.
    *
@@ -129,8 +125,6 @@ export class DiscussionboardModeratorContentreportsController {
   }
 
   /**
-   * Update content report resolution status and moderator decision.
-   *
    * Updates an existing content report with moderator resolution details after
    * reviewing the reported article. This operation allows moderators to mark
    * reports as resolved by updating the status field to indicate their decision
@@ -187,8 +181,6 @@ export class DiscussionboardModeratorContentreportsController {
   }
 
   /**
-   * Permanently remove a content report from the moderation system.
-   *
    * Permanently removes a content report from the discussion board moderation
    * system. This operation completely deletes the report record from the
    * database, removing it from the moderation queue and all audit trails.

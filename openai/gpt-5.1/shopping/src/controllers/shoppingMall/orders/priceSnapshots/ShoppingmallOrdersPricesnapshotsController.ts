@@ -8,9 +8,6 @@ import { IShoppingMallOrderPriceSnapshot } from "../../../../api/structures/ISho
 @Controller("/shoppingMall/orders/:orderCode/priceSnapshots")
 export class ShoppingmallOrdersPricesnapshotsController {
   /**
-   * List price snapshot records for an order from
-   * shopping_mall_order_price_snapshots.
-   *
    * Search and retrieve a paginated list of price snapshot records for a
    * specific order.
    *

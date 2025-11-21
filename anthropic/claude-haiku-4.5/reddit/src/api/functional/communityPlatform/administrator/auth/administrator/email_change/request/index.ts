@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../../../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Request email address change for authenticated administrator account.
- *
  * Initiates an email address change request for an authenticated platform
  * administrator. This operation validates the new email address format, checks
  * for uniqueness across all administrator accounts, and generates a

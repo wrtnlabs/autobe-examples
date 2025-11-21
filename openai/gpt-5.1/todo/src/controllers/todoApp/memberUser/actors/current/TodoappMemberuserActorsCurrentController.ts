@@ -10,9 +10,6 @@ import { ITodoAppActorCurrent } from "../../../../../api/structures/ITodoAppActo
 @Controller("/todoApp/memberUser/actors/current")
 export class TodoappMemberuserActorsCurrentController {
   /**
-   * Get the currently authenticated actor’s unified representation, not bound
-   * to a single Prisma table.
-   *
    * Retrieve a representation of the actor that is currently authenticated in
    * the todoApp service, aggregating identity and role information from the
    * active security context rather than a single Prisma table.

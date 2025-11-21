@@ -111,8 +111,6 @@ export namespace create {
 }
 
 /**
- * Update an existing economic/political discussion article.
- *
  * Update an economic or political discussion article with new title and
  * content. This operation allows article authors to refine their analysis,
  * correct factual information, or improve discussion quality while maintaining
@@ -222,8 +220,6 @@ export namespace update {
 }
 
 /**
- * Delete an economic/political discussion article.
- *
  * Remove an economic or political discussion article from the system. Article
  * authors can delete their own content within the designated editing window, or
  * moderators can remove content that violates community guidelines. The

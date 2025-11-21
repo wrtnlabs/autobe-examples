@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunityRule } from "../../../../../structures/ICommunityPlatformCommunityRule";
 
 /**
- * Create a new community rule for moderation and content governance.
- *
  * This operation enables authorized moderators to establish and define
  * community rules that set standards for acceptable behavior and content. Rule
  * creation is a privileged operation restricted to the community creator and
@@ -127,8 +125,6 @@ export namespace create {
 }
 
 /**
- * Delete a specific community rule from the rule set.
- *
  * Delete a community rule by its ID from the specified community. This
  * operation permanently removes the rule from the community's rule set, which
  * is immediately reflected in the community page where rules are displayed to

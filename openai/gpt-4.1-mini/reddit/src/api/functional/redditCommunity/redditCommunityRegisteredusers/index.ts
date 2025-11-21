@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityRegisteredUser } from "../../../structures/IRedditCommunityRegisteredUser";
 
 /**
- * Register a new redditCommunity user account.
- *
  * Create a new registered user account on the redditCommunity platform.
  *
  * This operation accepts user registration details including email and hashed

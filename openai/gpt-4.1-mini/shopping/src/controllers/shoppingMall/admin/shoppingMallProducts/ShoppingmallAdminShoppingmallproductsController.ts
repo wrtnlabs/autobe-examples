@@ -11,8 +11,6 @@ import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallPr
 @Controller("/shoppingMall/admin/shoppingMallProducts/:productCode")
 export class ShoppingmallAdminShoppingmallproductsController {
   /**
-   * Update existing shopping mall product by productCode.
-   *
    * Update a shopping mall product's details including title, description,
    * brand, and category association.
    *
@@ -59,8 +57,6 @@ export class ShoppingmallAdminShoppingmallproductsController {
   }
 
   /**
-   * Delete a shopping mall product by productCode.
-   *
    * Permanently delete a shopping mall product using the unique productCode
    * path parameter.
    *

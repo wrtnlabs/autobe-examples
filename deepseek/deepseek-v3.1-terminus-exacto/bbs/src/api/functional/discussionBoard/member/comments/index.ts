@@ -9,8 +9,6 @@ export * as attachments from "./attachments/index";
 export * as likes from "./likes/index";
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board comments.
- *
  * This operation provides comprehensive search capabilities for discussion
  * board comments with support for pagination, filtering, and sorting. Users can
  * search comments based on content text, author information, parent post
@@ -110,8 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific discussion board comment by ID.
- *
  * This operation fetches a single comment from the discussion board comments
  * table using its unique identifier. The comment is retrieved with all its
  * details including the content text, current status, thread nesting level,
@@ -203,8 +199,6 @@ export namespace at {
 }
 
 /**
- * Update an existing discussion board comment.
- *
  * This operation enables authenticated users to modify the content of an
  * existing comment while maintaining the comment's structural relationships and
  * metadata. The operation performs comprehensive validation to ensure the
@@ -307,8 +301,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a discussion board comment and its attachments.
- *
  * This operation permanently removes a discussion board comment from the
  * system, including all associated file attachments. The deletion is
  * irreversible and cannot be recovered.

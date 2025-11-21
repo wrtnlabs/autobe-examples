@@ -1,20 +1,18 @@
-/// Platform channels representing distinct communication or content streams
-/// within the community platform.
+/// Platform-wide communication channels for organizing communities and content.
 ///
-/// Channels serve as organizational units that group communities, content,
-/// and users based on specific themes, languages, or geographic regions.
-/// Each channel can have its own moderation policies, content guidelines,
-/// and user base while sharing the core platform infrastructure.
+/// Represents distinct communication pathways within the platform where
+/// communities can be grouped and content organized. Channels serve as
+/// top-level containers that help categorize communities by broad topics or
+/// themes.
 ///
-/// Channels support platform segmentation for internationalization,
-/// specialized content areas, or different user demographics. They provide
-/// the foundation for community organization and content discovery across
-/// the platform.
+/// Each channel can contain multiple sections and categories, providing
+/// hierarchical organization. Channels are managed by platform
+/// administrators and serve as the primary navigation structure for users
+/// browsing communities.
 ///
-/// This entity requires comprehensive API operations including creation,
-/// listing, updating channel properties, and managing channel-specific
-/// settings. Users and administrators need to browse channels, filter by
-/// language/region, and manage channel membership.
+/// **CRITICAL MODIFICATION**: Added created_by and updated_by fields to
+/// track which administrator created and modified each channel, enhancing
+/// audit trail capabilities.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -25,62 +23,78 @@ model community_platform_channels {
   /// Primary Key.
   id String @id
   
-  /// Unique channel name identifier used for URL routing and system references.
+  /// Administrator who created this channel. {@link
+  /// community_platform_admins.id}
+  created_by_id String
+  
+  /// Administrator who last updated this channel. {@link
+  /// community_platform_admins.id}
+  updated_by_id String?
+  
+  /// Unique name identifier for the channel used in URLs and display.
   name String
   
-  /// Human-readable channel name displayed to users in interface elements.
+  /// Human-readable display name for the channel shown to users.
   display_name String
   
-  /// Detailed description explaining the channel's purpose, scope, and target
-  /// audience.
-  description String?
+  /// Detailed description explaining the channel's purpose and content focus.
+  description String
   
-  /// Primary language for the channel content using ISO 639-1 format (e.g.,
-  /// 'en', 'es', 'fr').
-  language_code String?
+  /// URL to the channel's icon image for visual representation.
+  icon_url String?
   
-  /// Geographic region focus using ISO 3166-1 alpha-2 format (e.g., 'US',
-  /// 'EU', 'GB').
-  region_code String?
+  /// URL to the channel's banner image for header display.
+  banner_url String?
   
-  /// Indicates whether the channel is currently active and accepting new
-  /// content.
+  /// Numerical order for sorting channels in navigation menus.
+  sort_order Int
+  
+  /// Whether the channel is currently active and visible to users.
   is_active Boolean
   
-  /// Specifies if content in this channel requires pre-approval by moderators.
-  requires_moderation Boolean
+  /// Current workflow status of the channel (draft, active, archived,
+  /// suspended).
+  status String
   
-  /// Timestamp when the channel was first created in the system.
+  /// Timestamp when the channel was created.
   created_at DateTime
   
-  /// Timestamp of the last modification to channel settings or properties.
+  /// Timestamp when the channel was last updated.
   updated_at DateTime
   
-  /// Timestamp when the channel was soft-deleted for recovery purposes.
+  /// Timestamp when the channel was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
+  createdBy community_platform_admins @relation("community_platform_channels_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy community_platform_admins? @relation("community_platform_channels_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
+  
   community_platform_sections community_platform_sections[]
   
   @@unique([name])
-  @@index([language_code, region_code])
-  @@index([is_active, created_at])
+  @@index([sort_order])
+  @@index([is_active])
+  @@index([created_at])
+  @@index([status])
+  @@index([created_by_id])
+  @@index([updated_by_id])
 }
 
-/// Organizational sections within channels for categorizing communities and
-/// content.
+/// Organizational sections within channels for grouping related communities.
 ///
-/// Sections provide hierarchical organization within channels, allowing for
-/// logical grouping of communities by topic, content type, or user interest.
-/// They enable better content discovery and navigation while maintaining
-/// channel-level consistency.
+/// Sections provide secondary level organization within channels, allowing
+/// for more granular categorization of communities. Each section belongs to
+/// a specific channel and contains communities that share common themes or
+/// topics.
 ///
-/// Each section can have customized display properties, moderation rules,
-/// and content guidelines. Sections support the platform's content
-/// organization strategy and help users find relevant communities more
-/// efficiently.
+/// Sections help users discover related communities and provide additional
+/// navigation hierarchy beyond the channel level.
+///
+/// **CRITICAL MODIFICATION**: Enhanced relationship integrity by adding
+/// proper cascade constraints and audit trail fields with administrator
+/// tracking.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,63 +105,160 @@ model community_platform_sections {
   /// Primary Key.
   id String @id
   
-  /// Parent channel containing this section. {@link
+  /// Parent channel that contains this section. {@link
   /// community_platform_channels.id}
   community_platform_channel_id String
   
-  /// Unique section name within the parent channel for system identification.
+  /// Administrator who created this section. {@link
+  /// community_platform_admins.id}
+  created_by_id String
+  
+  /// Administrator who last updated this section. {@link
+  /// community_platform_admins.id}
+  updated_by_id String?
+  
+  /// Unique name identifier for the section within its parent channel.
   name String
   
-  /// Human-readable section name displayed in navigation and content
-  /// organization.
+  /// Human-readable display name for the section shown to users.
   display_name String
   
-  /// Detailed explanation of the section's purpose and content focus area.
-  description String?
+  /// Detailed description explaining the section's purpose and community focus.
+  description String
   
-  /// Numerical order for section display within channel navigation and
-  /// listings.
-  display_order Int
+  /// URL to the section's icon image for visual representation.
+  icon_url String?
   
-  /// Indicates if this section is the default landing section for the channel.
-  is_default Boolean
+  /// Numerical order for sorting sections within their parent channel.
+  sort_order Int
   
-  /// Specifies if communities in this section require moderator approval to
-  /// join.
-  requires_approval Boolean
+  /// Whether the section is currently active and visible to users.
+  is_active Boolean
   
-  /// Timestamp when the section was created within the channel.
+  /// Current workflow status of the section (draft, active, archived,
+  /// suspended).
+  status String
+  
+  /// Timestamp when the section was created.
   created_at DateTime
   
-  /// Timestamp of the last modification to section properties or settings.
+  /// Timestamp when the section was last updated.
   updated_at DateTime
   
-  /// Timestamp when the section was soft-deleted for potential recovery.
+  /// Timestamp when the section was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   channel community_platform_channels @relation(fields: [community_platform_channel_id], references: [id], onDelete: Cascade)
+  createdBy community_platform_admins @relation("community_platform_sections_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy community_platform_admins? @relation("community_platform_sections_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
   @@unique([community_platform_channel_id, name], map: "community_platform_sections_community_platform_channel_37416096")
   // spellchecker: ignore-next-line
-  @@index([community_platform_channel_id, display_order], map: "community_platform_sections_community_platform_channel_81b3ed6b")
-  @@index([is_default, created_at])
+  @@index([community_platform_channel_id, sort_order], map: "community_platform_sections_community_platform_channel_84a4a6f6")
+  @@index([is_active])
+  @@index([created_at])
+  @@index([status])
+  @@index([created_by_id])
+  @@index([updated_by_id])
+}
+
+/// Content categorization system for organizing posts and communities by topic.
+///
+/// Categories provide thematic organization for content across the platform.
+/// They can be applied to communities, posts, or other content types to
+/// facilitate discovery and filtering.
+///
+/// Categories are managed at the platform level and can be assigned to
+/// multiple entities, providing consistent tagging and classification
+/// system-wide.
+///
+/// **CRITICAL MODIFICATION**: Added administrator tracking and workflow
+/// status fields to support proper category lifecycle management and
+/// approval workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who created this category. {@link
+  /// community_platform_admins.id}
+  created_by_id String
+  
+  /// Administrator who last updated this category. {@link
+  /// community_platform_admins.id}
+  updated_by_id String?
+  
+  /// Unique name identifier for the category used in URLs and filtering.
+  name String
+  
+  /// Human-readable display name for the category shown to users.
+  display_name String
+  
+  /// Detailed description explaining the category's purpose and content scope.
+  description String
+  
+  /// URL to the category's icon image for visual representation.
+  icon_url String?
+  
+  /// Hex color code for visual identification of the category.
+  color_hex String?
+  
+  /// Numerical order for sorting categories in selection menus.
+  sort_order Int
+  
+  /// Whether the category is currently active and available for use.
+  is_active Boolean
+  
+  /// Current workflow status of the category (draft, active, archived,
+  /// suspended).
+  status String
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdBy community_platform_admins @relation("community_platform_categories_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy community_platform_admins? @relation("community_platform_categories_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
+  
+  @@unique([name])
+  @@index([sort_order])
+  @@index([is_active])
+  @@index([created_at])
+  @@index([status])
+  @@index([created_by_id])
+  @@index([updated_by_id])
 }
 
 /// Platform-wide configuration settings and system parameters.
 ///
-/// This table stores all configurable platform settings that control system
-/// behavior, feature flags, and operational parameters. Configuration values
-/// can be adjusted without code changes, enabling dynamic platform
-/// management.
+/// Stores global platform settings, feature flags, and configuration values
+/// that control platform behavior. These settings are managed by
+/// administrators and affect the entire platform operation.
 ///
-/// Settings include performance parameters, feature toggles, content
-/// policies, and system limits. The configuration system supports different
-/// environments (production, staging, development) and allows for gradual
-/// feature rollouts.
+/// Configuration values can include system limits, feature enablement,
+/// default behaviors, and platform-wide policies that govern user
+/// interactions and content management.
+///
+/// **CRITICAL MODIFICATION**: Added comprehensive validation fields and
+/// enhanced data type handling with proper constraints for configuration
+/// values.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -158,47 +269,68 @@ model community_platform_configurations {
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key used to identify and retrieve the setting value.
-  config_key String
+  /// Administrator who created this configuration. {@link
+  /// community_platform_admins.id}
+  created_by_id String
   
-  /// Configuration value stored as string with type interpretation by
-  /// consuming systems.
-  config_value String
+  /// Administrator who last updated this configuration. {@link
+  /// community_platform_admins.id}
+  updated_by_id String?
   
-  /// Data type of the configuration value (string, integer, boolean, json,
-  /// array).
+  /// Unique configuration key identifier used to retrieve the setting value.
+  key String
+  
+  /// Configuration value stored as string (may represent various data types).
+  value String
+  
+  /// Data type of the configuration value (string, number, boolean, json).
   data_type String
   
-  /// Detailed explanation of the configuration setting's purpose and usage
-  /// guidelines.
+  /// Detailed description explaining the configuration setting's purpose and
+  /// usage.
   description String
   
-  /// Target environment for this configuration (production, staging,
-  /// development, all).
-  environment String
+  /// Grouping category for organizing related configuration settings.
+  category String
   
-  /// Indicates if the configuration value contains sensitive information
-  /// requiring protection.
+  /// Whether the configuration value contains sensitive information that
+  /// requires protection.
   is_sensitive Boolean
   
-  /// Configuration version number for tracking changes and supporting
-  /// rollbacks.
-  version Int
+  /// Whether administrators can modify this configuration setting.
+  is_editable Boolean
   
-  /// Timestamp when the configuration setting was first created.
+  /// Default value used when no custom value is set.
+  default_value String?
+  
+  /// Minimum allowed value for numeric configurations.
+  min_value String?
+  
+  /// Maximum allowed value for numeric configurations.
+  max_value String?
+  
+  /// Regular expression pattern for validating configuration values.
+  validation_regex String?
+  
+  /// Timestamp when the configuration was created.
   created_at DateTime
   
-  /// Timestamp of the last modification to the configuration value or metadata.
+  /// Timestamp when the configuration was last updated.
   updated_at DateTime
   
-  /// Timestamp when the configuration was soft-deleted while preserving
-  /// history.
+  /// Timestamp when the configuration was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([config_key, environment])
-  @@index([environment, data_type])
-  @@index([is_sensitive, created_at])
+  createdBy community_platform_admins @relation("community_platform_configurations_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy community_platform_admins? @relation("community_platform_configurations_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
+  
+  @@unique([key])
+  @@index([category])
+  @@index([data_type])
+  @@index([created_at])
+  @@index([created_by_id])
+  @@index([updated_by_id])
 }

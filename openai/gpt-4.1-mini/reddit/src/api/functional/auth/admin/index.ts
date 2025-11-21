@@ -7,8 +7,6 @@ import { IRedditCommunityAdmin } from "../../../structures/IRedditCommunityAdmin
 import { IRefreshTokenRequest } from "../../../structures/IRefreshTokenRequest";
 
 /**
- * Register a new admin account and issue JWT tokens (reddit_community_admins).
- *
  * This operation allows system administrators to register new admin accounts
  * within the redditCommunity platform. It creates an admin user record in the
  * 'reddit_community_admins' table, initializing authentication credentials and
@@ -115,8 +113,6 @@ export namespace join {
 }
 
 /**
- * Authenticate admin user and issue JWT tokens (reddit_community_admins).
- *
  * This operation allows system administrators to authenticate by providing
  * valid credentials. It verifies the username/email and password against
  * records in the 'reddit_community_admins' table. Upon successful validation,
@@ -220,8 +216,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for admin user (reddit_community_admins).
- *
  * This endpoint facilitates JWT token renewal for system administrators. It
  * accepts a valid refresh token and, upon validation, issues new access and
  * refresh tokens to extend session duration.

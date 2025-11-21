@@ -7,9 +7,6 @@ import { IShoppingMallDispute } from "../../../../api/structures/IShoppingMallDi
 @Controller("/shoppingMall/customer/disputes")
 export class ShoppingmallCustomerDisputesController {
   /**
-   * Create a new dispute record in the shopping_mall_disputes table for the
-   * ShoppingMall platform.
-   *
    * Create a new dispute case in the ShoppingMall dispute management
    * subsystem.
    *
@@ -71,9 +68,6 @@ export class ShoppingmallCustomerDisputesController {
   }
 
   /**
-   * Update an existing shopping_mall_disputes record using its disputeCode
-   * business identifier.
-   *
    * Update an existing dispute identified by disputeCode in the
    * shopping_mall_disputes table.
    *

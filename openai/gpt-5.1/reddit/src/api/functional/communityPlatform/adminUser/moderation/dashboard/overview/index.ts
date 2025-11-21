@@ -5,9 +5,6 @@ import typia from "typia";
 import { ICommunityPlatformModerationDashboard } from "../../../../../../structures/ICommunityPlatformModerationDashboard";
 
 /**
- * Get an aggregated moderation dashboard overview derived from multiple
- * community_platform_* moderation tables.
- *
  * Retrieve a consolidated moderation dashboard overview containing aggregated
  * counts, status distributions, and recent activity metrics across the
  * platform's moderation and reporting subsystems.

@@ -7,49 +7,52 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoListUserListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUserListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserRefresh(props: {
-  body: ITodoListUser.IRefresh;
-}): Promise<ITodoListUser.IAuthorized> {
-  let decoded: { id: string; session_id: string; type: "user" };
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as { id: string; session_id: string; type: "user" };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  if (decoded.type !== "user") {
-    throw new HttpException("Invalid token type", 403);
-  }
+  user: UserPayload;
+}): Promise<ITodoListUserListUser.IAuthorized> {
+  // Get the user and session information from the payload
+  const { id, session_id } = props.user;
+
+  // Validate session exists and is active
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
-      id: decoded.session_id,
-      todo_list_user_id: decoded.id,
+      id: session_id,
+      todo_list_user_id: id,
     },
-    include: { user: true },
+    include: {
+      user: true,
+    },
   });
+
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
+  } else if (session.user.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
-  const user = session.user;
-  if (!user) {
-    throw new HttpException("Account associated with session not found", 404);
-  }
+
+  // Generate new access and refresh tokens with same session ID
   const now = Date.now();
-  const accessExpires = new Date(now + 60 * 60 * 1000);
-  const refreshExpires = new Date(now + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiresTimestamp = now + 60 * 60 * 1000; // 1 hour
+  const refreshExpiresTimestamp = now + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(accessExpiresTimestamp),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(refreshExpiresTimestamp),
+  );
+
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: new Date(now).toISOString(),
+        type: "user",
+        id: id,
+        session_id: session_id,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -59,11 +62,11 @@ export async function postAuthUserRefresh(props: {
     ),
     refresh: jwt.sign(
       {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
+        type: "user",
+        id: id,
+        session_id: session_id,
         tokenType: "refresh",
-        created_at: new Date(now).toISOString(),
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -71,18 +74,24 @@ export async function postAuthUserRefresh(props: {
         issuer: "autobe",
       },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
+
+  // Update session expiration time
   await MyGlobal.prisma.todo_list_user_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    where: {
+      id: session_id,
+    },
+    data: {
+      expired_at: new Date(refreshExpiresTimestamp),
+    },
   });
+
+  // Return authorized user information with new tokens
   return {
-    id: user.id,
-    email: user.email,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    token,
+    id: session.user.id,
+    email: session.user.email,
+    token: token,
   };
 }

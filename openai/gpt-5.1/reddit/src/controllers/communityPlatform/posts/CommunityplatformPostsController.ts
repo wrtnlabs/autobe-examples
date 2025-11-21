@@ -8,9 +8,6 @@ import { ICommunityPlatformPost } from "../../../api/structures/ICommunityPlatfo
 @Controller("/communityPlatform/posts")
 export class CommunityplatformPostsController {
   /**
-   * Search and retrieve a paginated list of posts from the
-   * community_platform_posts table.
-   *
    * Retrieve a filtered and paginated list of posts from the community
    * platform.
    *
@@ -71,9 +68,6 @@ export class CommunityplatformPostsController {
   }
 
   /**
-   * Retrieve a single post from the community_platform_posts table by its
-   * identifier.
-   *
    * Retrieve a single post record from the `community_platform_posts` model
    * by its unique identifier.
    *

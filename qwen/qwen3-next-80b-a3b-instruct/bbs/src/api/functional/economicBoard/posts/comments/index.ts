@@ -7,8 +7,6 @@ import { IPageIEconomicBoardComment } from "../../../../structures/IPageIEconomi
 import { IEconomicBoardComment } from "../../../../structures/IEconomicBoardComment";
 
 /**
- * Retrieve paginated comments for a specific discussion post.
- *
  * Retrieve a paginated list of published comments associated with the specified
  * post. Returns only comments with status 'published' that belong to a post
  * with status 'published'. Uses index on (post_id, created_at) for
@@ -117,8 +115,6 @@ export namespace getByPostid {
 }
 
 /**
- * Get list of comments for a specific post.
- *
  * Retrieve a paginated list of comments for a specific economic board post.
  *
  * This operation fetches all comments associated with a given post ID,
@@ -231,8 +227,6 @@ export namespace patchByPostid {
 }
 
 /**
- * Get a specific comment by ID.
- *
  * Retrieve detailed information about a specific comment by its unique
  * identifier.
  *

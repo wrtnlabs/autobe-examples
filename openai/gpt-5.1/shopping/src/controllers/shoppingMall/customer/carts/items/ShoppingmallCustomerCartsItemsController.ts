@@ -8,9 +8,6 @@ import { IPageIShoppingMallCartItem } from "../../../../../api/structures/IPageI
 @Controller("/shoppingMall/customer/carts/:cartId/items")
 export class ShoppingmallCustomerCartsItemsController {
   /**
-   * Create a new shopping_mall_cart_items entry (cart item) for the specified
-   * cart.
-   *
    * Add a new item to the specified shopping cart and return the created cart
    * item.
    *
@@ -66,9 +63,6 @@ export class ShoppingmallCustomerCartsItemsController {
   }
 
   /**
-   * List and search cart line items from the `shopping_mall_cart_items` table
-   * for a specific cart.
-   *
    * Search and retrieve a paginated list of cart line items from the
    * `shopping_mall_cart_items` table for a specific cart.
    *
@@ -128,9 +122,6 @@ export class ShoppingmallCustomerCartsItemsController {
   }
 
   /**
-   * Retrieve a single shopping_mall_cart_items entry (cart item) by cart and
-   * cart item identifiers.
-   *
    * Retrieve the detailed information of a specific cart item belonging to a
    * particular cart.
    *
@@ -186,9 +177,6 @@ export class ShoppingmallCustomerCartsItemsController {
   }
 
   /**
-   * Update a cart item record in the `shopping_mall_cart_items` table for a
-   * specific cart.
-   *
    * Update a specific shopping cart item within a given cart based on the
    * `shopping_mall_cart_items` Prisma model.
    *
@@ -259,9 +247,6 @@ export class ShoppingmallCustomerCartsItemsController {
   }
 
   /**
-   * Delete a cart item record from the `shopping_mall_cart_items` table for a
-   * specific cart.
-   *
    * Delete a specific shopping cart item from a given cart, based on the
    * `shopping_mall_cart_items` Prisma model.
    *

@@ -12,9 +12,6 @@ import { ICommunityPlatformPostStatusLog } from "../../../../../api/structures/I
 @Controller("/communityPlatform/administrator/posts/:postId/statusLogs")
 export class CommunityplatformAdministratorPostsStatuslogsController {
   /**
-   * Search and list status logs of a community platform post from
-   * community_platform_post_status_logs.
-   *
    * Retrieve a paginated list of all status change and moderation log entries
    * for a single post, providing a complete audit history of that post's
    * lifecycle events.
@@ -63,9 +60,6 @@ export class CommunityplatformAdministratorPostsStatuslogsController {
   }
 
   /**
-   * Retrieve detail for a single post status log entry from
-   * community_platform_post_status_logs.
-   *
    * Fetch the complete record for a specific post status change event, enabling
    * thorough audit and moderation review of all the details for that log
    * entry.

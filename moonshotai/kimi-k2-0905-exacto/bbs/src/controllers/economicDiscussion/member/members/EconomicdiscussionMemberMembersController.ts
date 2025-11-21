@@ -11,8 +11,6 @@ import { IEconomicDiscussionMember } from "../../../../api/structures/IEconomicD
 @Controller("/economicDiscussion/member/members/:memberId")
 export class EconomicdiscussionMemberMembersController {
   /**
-   * Get member profile with detailed account and participation information.
-   *
    * Retrieve comprehensive member profile information including username, email
    * verification status, account creation date, reputation score, and member
    * account status. This operation provides essential member data for profile
@@ -54,8 +52,6 @@ export class EconomicdiscussionMemberMembersController {
   }
 
   /**
-   * Update member profile information.
-   *
    * Allow authenticated members to update their profile information including
    * username, email preferences, and other account details within the defined
    * editing windows and permission constraints specified for the economic

@@ -7,8 +7,6 @@ import { ICommunityForumCommunityPost } from "../../../../structures/ICommunityF
 import { IPageICommunityForumCommunityPost } from "../../../../structures/IPageICommunityForumCommunityPost";
 
 /**
- * Search and retrieve posts within a specific community.
- *
  * Retrieve a filtered and paginated list of posts within a specific community,
  * identified by its URL-friendly slug. This operation provides comprehensive
  * search capabilities for finding posts based on various criteria including

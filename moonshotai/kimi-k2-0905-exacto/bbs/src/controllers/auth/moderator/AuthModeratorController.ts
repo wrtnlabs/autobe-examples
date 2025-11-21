@@ -10,8 +10,6 @@ import { IEconomicDiscussionModerator } from "../../../api/structures/IEconomicD
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register new moderator account.
-   *
    * Enables creation of new community moderator accounts with elevated
    * permissions for content management.
    *
@@ -57,8 +55,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator and issue tokens.
-   *
    * Validates moderator credentials for secure administrative access to the
    * Economic Discussion platform.
    *
@@ -104,8 +100,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh moderator access tokens.
-   *
    * Extends moderator sessions by exchanging refresh tokens for new access
    * tokens without requiring repeated credential entry.
    *

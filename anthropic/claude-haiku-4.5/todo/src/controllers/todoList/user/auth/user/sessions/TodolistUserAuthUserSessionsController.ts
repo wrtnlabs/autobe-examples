@@ -12,9 +12,6 @@ import { ITodoListSession } from "../../../../../../api/structures/ITodoListSess
 @Controller("/todoList/user/auth/user/sessions")
 export class TodolistUserAuthUserSessionsController {
   /**
-   * Search and retrieve a filtered, paginated list of user authentication
-   * sessions.
-   *
    * Retrieve a comprehensive list of all authentication sessions belonging to
    * the authenticated user. This operation provides visibility into all devices
    * and browsers from which the user is currently logged in or has recently
@@ -61,8 +58,6 @@ export class TodolistUserAuthUserSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific user authentication session.
-   *
    * Fetch complete details about a single authentication session identified by
    * session ID. This operation provides comprehensive session information
    * including device context (IP address and user agent), session timing

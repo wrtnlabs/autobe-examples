@@ -5,8 +5,6 @@ import typia from "typia";
 import { IDiscussionBoardModerationDashboard } from "../../../../../structures/IDiscussionBoardModerationDashboard";
 
 /**
- * Retrieve comprehensive moderation dashboard with aggregated statistics.
- *
  * This operation delivers a complete moderation dashboard containing key
  * metrics and statistics essential for effective content moderation management.
  * It aggregates data from multiple sources including content reports,

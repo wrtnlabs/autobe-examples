@@ -7,9 +7,6 @@ import { IRedditCommunityGuest } from "../../../../structures/IRedditCommunityGu
 import { IPageIRedditCommunityGuest } from "../../../../structures/IPageIRedditCommunityGuest";
 
 /**
- * Retrieve paginated activity history (posts and comments) for a specific
- * member.
- *
  * Retrieve a comprehensive, paginated list of all content activity created by a
  * specific community member. This operation provides a unified chronological
  * view of both posts and comments authored by the member, supporting complex

@@ -9,9 +9,6 @@ export * as sessions from "./sessions/index";
 export * as tasks from "./tasks/index";
 
 /**
- * Search and filter user accounts with self-service account management
- * capabilities.
- *
  * Search and filter user accounts within the authenticated user's scope in the
  * Todo application system. This operation enables comprehensive user account
  * management through complex filtering criteria including email patterns,
@@ -120,9 +117,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed user account information for self-service profile
- * management.
- *
  * Retrieve comprehensive user account details for authenticated self-service
  * and profile management. This operation provides detailed user profile
  * information including account creation history, authentication status, and
@@ -226,8 +220,6 @@ export namespace at {
 }
 
 /**
- * Update user account information.
- *
  * Update existing user account details in the Todo application system. This
  * operation allows users to modify their profile information including display
  * name and email address. The system automatically updates the updated_at
@@ -338,8 +330,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete user account.
- *
  * Remove user account and all associated data from the Todo application system.
  * This operation performs permanent soft deletion of the user account by
  * setting the deleted_at timestamp, which marks the account as inactive while

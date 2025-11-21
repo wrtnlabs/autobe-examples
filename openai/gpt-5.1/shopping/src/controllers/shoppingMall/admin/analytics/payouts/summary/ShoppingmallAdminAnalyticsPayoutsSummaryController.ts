@@ -7,9 +7,6 @@ import { IShoppingMallPayoutAnalytics } from "../../../../../../api/structures/I
 @Controller("/shoppingMall/admin/analytics/payouts/summary")
 export class ShoppingmallAdminAnalyticsPayoutsSummaryController {
   /**
-   * Provide an aggregated analytics summary of seller payouts based on
-   * shopping_mall_seller_earnings and related payout tables.
-   *
    * Retrieve an aggregated analytics summary of seller payouts across the
    * shopping mall platform.
    *

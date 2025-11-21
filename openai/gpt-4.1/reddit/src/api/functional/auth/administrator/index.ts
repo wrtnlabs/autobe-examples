@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Create a new administrator account in the administrator table and return
- * initial JWT tokens.
- *
  * This operation enables the creation of a new system administrator account. It
  * references the administrator table in the Prisma schema, ensuring that all
  * required identity and authentication fields—such as email, username, and
@@ -125,9 +122,6 @@ export namespace join {
 }
 
 /**
- * Authenticate administrator credentials from the administrator table and issue
- * JWT tokens.
- *
  * This endpoint authenticates a system administrator by verifying credential
  * fields defined in the Prisma administrator schema, typically including
  * password and email or username as listed in the schema documentation.
@@ -241,9 +235,6 @@ export namespace login {
 }
 
 /**
- * Refresh administrator JWT tokens as allowed by the administrator schema and
- * session state.
- *
  * This operation renews JWT access and refresh tokens for an administrator, as
  * defined by the administrator Prisma schema and documented business rules. The
  * endpoint expects a valid refresh token, which it verifies against

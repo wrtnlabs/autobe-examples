@@ -7,9 +7,6 @@ import { ICommunityPlatformTopPostRanking } from "../../../structures/ICommunity
 import { IPageICommunityPlatformTopPostRanking } from "../../../structures/IPageICommunityPlatformTopPostRanking";
 
 /**
- * Search and retrieve paginated top-ranked community posts from
- * mv_community_platform_top_post_rankings.
- *
  * Retrieve a set of top-ranked community posts for customizable time intervals,
  * optimized for rapid delivery of popular content to end-users.
  *
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the rank and metadata for a specific post in a given interval from
- * mv_community_platform_top_post_rankings.
- *
  * Fetch the top-ranking details for a specific post and interval, showing its
  * rank, score, and metadata within the platform's cached top post rankings.
  *

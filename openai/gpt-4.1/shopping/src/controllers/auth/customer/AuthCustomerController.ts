@@ -10,9 +10,6 @@ import { IShoppingMallCustomer } from "../../../api/structures/IShoppingMallCust
 @Controller("/auth/customer")
 export class AuthCustomerController {
   /**
-   * Registers a new customer by creating a member account in
-   * shopping_mall_customers and returning JWT tokens.
-   *
    * This operation registers a new customer account based on user-supplied
    * credentials, storing key identity fields in the shopping_mall_customers
    * table. Email uniqueness is enforced per schema constraints. Successful
@@ -64,9 +61,6 @@ export class AuthCustomerController {
   }
 
   /**
-   * Authenticates customer credentials against shopping_mall_customers and
-   * returns a new JWT token set.
-   *
    * This operation enables customer login via email and password
    * authentication, referencing required fields in the shopping_mall_customers
    * schema. Provided credentials are verified; correct input issues fresh JWT
@@ -116,9 +110,6 @@ export class AuthCustomerController {
   }
 
   /**
-   * Refreshes a customer's JWT tokens upon receipt of valid refresh token,
-   * using shopping_mall_customer_sessions.
-   *
    * This operation allows a customer to refresh JWT access and refresh tokens,
    * using the session tracking and token rotation logic keyed to
    * shopping_mall_customer_sessions. A valid refresh token must be provided,

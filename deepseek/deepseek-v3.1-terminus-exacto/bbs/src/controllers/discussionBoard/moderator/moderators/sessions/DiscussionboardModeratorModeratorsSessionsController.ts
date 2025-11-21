@@ -14,9 +14,6 @@ import { IDiscussionBoardModeratorSession } from "../../../../../api/structures/
 @Controller("/discussionBoard/moderator/moderators/:username/sessions")
 export class DiscussionboardModeratorModeratorsSessionsController {
   /**
-   * Search and retrieve a filtered, paginated list of moderator authentication
-   * sessions.
-   *
    * Retrieve a filtered and paginated list of moderator authentication sessions
    * from the system. This operation provides advanced search capabilities for
    * finding moderator sessions based on multiple criteria including IP address
@@ -67,9 +64,6 @@ export class DiscussionboardModeratorModeratorsSessionsController {
   }
 
   /**
-   * Retrieve detailed information for a specific moderator authentication
-   * session.
-   *
    * Retrieve detailed information about a specific moderator authentication
    * session identified by its unique session ID. This operation provides
    * complete session details including connection context such as IP address,
@@ -121,8 +115,6 @@ export class DiscussionboardModeratorModeratorsSessionsController {
   }
 
   /**
-   * Update an existing moderator session.
-   *
    * This operation allows administrators to update properties of a moderator
    * session identified by the moderator's username and session ID. The session
    * must belong to the specified moderator and can be modified to change
@@ -177,8 +169,6 @@ export class DiscussionboardModeratorModeratorsSessionsController {
   }
 
   /**
-   * Permanently delete a moderator session.
-   *
    * This operation allows administrators to permanently remove a moderator
    * session identified by the moderator's username and session ID. The session
    * record is completely deleted from the database and cannot be recovered.

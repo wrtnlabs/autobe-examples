@@ -7,9 +7,6 @@ import { ICommunityPlatformControversialPostRanking } from "../../../structures/
 import { IPageICommunityPlatformControversialPostRanking } from "../../../structures/IPageICommunityPlatformControversialPostRanking";
 
 /**
- * Retrieve a paginated and filtered list of controversial post rankings
- * (mv_community_platform_controversial_post_rankings).
- *
  * This endpoint returns a paginated collection of controversial posts
  * identified by the platform's controversy algorithm. Each entry includes the
  * post being ranked, its controversy score, assigned rank, interval bucket
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single controversial post ranking by post ID and interval
- * (mv_community_platform_controversial_post_rankings).
- *
  * This endpoint returns the controversy ranking details for a single post
  * within a specified interval (such as day, week, or month). It uses the
  * composite unique constraint of (postId, interval) to uniquely identify and

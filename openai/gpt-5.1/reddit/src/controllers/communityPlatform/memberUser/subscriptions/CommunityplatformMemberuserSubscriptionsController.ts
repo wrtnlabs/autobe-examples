@@ -8,9 +8,6 @@ import { IPageICommunityPlatformCommunitySubscription } from "../../../../api/st
 @Controller("/communityPlatform/memberUser/subscriptions")
 export class CommunityplatformMemberuserSubscriptionsController {
   /**
-   * Create a new community_platform_community_subscriptions record for a
-   * member user subscribing to a community.
-   *
    * Create a new community subscription entry in the
    * community_platform_community_subscriptions table for the authenticated
    * member user.
@@ -67,9 +64,6 @@ export class CommunityplatformMemberuserSubscriptionsController {
   }
 
   /**
-   * Search and retrieve paginated community subscription summaries based on
-   * `community_platform_community_subscriptions`.
-   *
    * Search and retrieve community subscription records using flexible filters
    * backed by the `community_platform_community_subscriptions` table and
    * related community and membership models.
@@ -116,9 +110,6 @@ export class CommunityplatformMemberuserSubscriptionsController {
   }
 
   /**
-   * Get a single community_platform_community_subscriptions record by
-   * subscriptionId.
-   *
    * Retrieve detailed information about a single community subscription from
    * the community_platform_community_subscriptions table by its unique
    * identifier.
@@ -172,9 +163,6 @@ export class CommunityplatformMemberuserSubscriptionsController {
   }
 
   /**
-   * Update a community platform subscription record in the
-   * community_platform_community_subscriptions table by subscriptionId.
-   *
    * Update a single community subscription record for the community platform,
    * using its unique subscription identifier as the primary lookup key.
    *
@@ -243,9 +231,6 @@ export class CommunityplatformMemberuserSubscriptionsController {
   }
 
   /**
-   * Delete a community platform subscription record from the
-   * community_platform_community_subscriptions table by subscriptionId.
-   *
    * Delete a single community subscription record in the community platform,
    * effectively unsubscribing the associated member user from the target
    * community.

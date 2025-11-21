@@ -1,0 +1,59 @@
+/// Junction table managing the many-to-many relationship between citizens
+/// and communities for content personalization.
+///
+/// Tracks which citizens subscribe to which communities, enabling
+/// personalized content feeds based on subscription preferences. Each
+/// subscription represents a user's active interest in receiving posts from
+/// a specific community.
+///
+/// Subscriptions are soft-deleted when users unsubscribe, preserving audit
+/// trails of historical community interest while removing current access.
+/// The system prevents duplicate subscriptions through a composite unique
+/// constraint on citizen_id and community_id.
+///
+/// Subscribers receive community updates and can access community-specific
+/// features. Subscription status is managed solely through the deletion
+/// timestamp - no separate status field is needed, following soft-delete
+/// architecture patterns.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Citizen who has subscribed to the community. {@link
+  /// community_bbs_citizen.id}.
+  community_bbs_citizen_id String
+  
+  /// Community that the citizen is subscribed to. {@link
+  /// community_bbs_communities.id}.
+  community_bbs_communities_id String
+  
+  /// Timestamp when the subscription was created. Indicates when the citizen
+  /// began following this community.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated. Usually coincides with
+  /// creation time unless the subscription is reactivated after deletion.
+  updated_at DateTime
+  
+  /// Soft delete timestamp tracking when a citizen unsubscribed from the
+  /// community. If null, the subscription is active. Used for audit trails and
+  /// historical analysis of community interest.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen @relation(fields: [community_bbs_citizen_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities @relation(fields: [community_bbs_communities_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_bbs_citizen_id, community_bbs_communities_id], map: "community_bbs_subscriptions_community_bbs_citizen_id_c_cff562ba")
+  @@index([community_bbs_communities_id])
+  @@index([community_bbs_citizen_id])
+}

@@ -8,9 +8,6 @@ import { ICommunityPlatformPostReport } from "../../../../../../api/structures/I
 @Controller("/communityPlatform/adminUser/moderation/search/reports")
 export class CommunityplatformAdminuserModerationSearchReportsController {
   /**
-   * Search moderation reports across report tables
-   * (community_platform_*_reports) with filtering and pagination.
-   *
    * Search and retrieve a filtered, paginated list of moderation reports
    * across all reportable entities in the community platform.
    *

@@ -8,9 +8,6 @@ import { IRedditCommunityModerationQueue } from "../../../../api/structures/IRed
 @Controller("/redditCommunity/platformModerator/moderationQueue")
 export class RedditcommunityPlatformmoderatorModerationqueueController {
   /**
-   * Retrieve a paginated list of moderation queue entries with advanced
-   * filtering options.
-   *
    * This operation provides a comprehensive moderation queue management
    * system for reviewing and processing reported content across the platform.
    * The moderation queue serves as the central intake system for all reports
@@ -51,8 +48,6 @@ export class RedditcommunityPlatformmoderatorModerationqueueController {
   }
 
   /**
-   * Retrieve detailed moderation queue entry information.
-   *
    * This operation retrieves comprehensive details about a specific
    * moderation queue entry from the system. The moderation queue serves as
    * the central hub for processing user-generated reports about content that
@@ -88,8 +83,6 @@ export class RedditcommunityPlatformmoderatorModerationqueueController {
   }
 
   /**
-   * Update moderation queue entry with moderation decisions.
-   *
    * This operation allows authorized moderators to update moderation queue
    * entries with their decisions and actions regarding reported content. When
    * a content report enters the moderation queue, moderators use this

@@ -7,9 +7,6 @@ import { IShoppingMallSkuInventoryState } from "../../../../structures/IShopping
 import { IPageIShoppingMallSkuInventoryState } from "../../../../structures/IPageIShoppingMallSkuInventoryState";
 
 /**
- * Create a new inventory state row in the shopping_mall_sku_inventory_states
- * table.
- *
  * Create a new SKU inventory state record in the
  * shopping_mall_sku_inventory_states table used by SKUs to describe their
  * inventory semantics.
@@ -131,9 +128,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of SKU inventory state definitions from
- * shopping_mall_sku_inventory_states.
- *
  * Retrieve a filtered, sorted, and paginated list of SKU inventory state
  * definitions from the `shopping_mall_sku_inventory_states` table.
  *
@@ -254,9 +248,6 @@ export namespace index {
 }
 
 /**
- * Get a single SKU inventory state definition from
- * shopping_mall_sku_inventory_states by its identifier.
- *
  * Retrieve the full configuration details of a single SKU inventory state from
  * the `shopping_mall_sku_inventory_states` table by its unique identifier.
  *
@@ -368,9 +359,6 @@ export namespace at {
 }
 
 /**
- * Update an existing inventory state row in the
- * shopping_mall_sku_inventory_states table by UUID id.
- *
  * Update an existing SKU inventory state stored in the
  * shopping_mall_sku_inventory_states table using its UUID identifier.
  *
@@ -500,9 +488,6 @@ export namespace update {
 }
 
 /**
- * Erase a SKU inventory state configuration from the
- * shopping_mall_sku_inventory_states table.
- *
  * Delete a specific SKU inventory state record from the
  * `shopping_mall_sku_inventory_states` reference table.
  *

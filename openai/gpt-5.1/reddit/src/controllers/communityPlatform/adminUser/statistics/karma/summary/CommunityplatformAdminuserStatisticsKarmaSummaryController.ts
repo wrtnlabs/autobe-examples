@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaSummaryStatistics } from "../../../../../../api/
 @Controller("/communityPlatform/adminUser/statistics/karma/summary")
 export class CommunityplatformAdminuserStatisticsKarmaSummaryController {
   /**
-   * Get aggregated karma statistics computed from the
-   * community_platform_user_karmas table.
-   *
    * Return an aggregated summary of user karma across the platform, derived
    * from the community_platform_user_karmas table.
    *

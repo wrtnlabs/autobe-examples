@@ -9,9 +9,6 @@ export * as sessions from "./sessions/index";
 export * as accountRestrictions from "./accountRestrictions/index";
 
 /**
- * Search and paginate through admin user accounts in the
- * community_platform_adminusers table.
- *
  * Retrieve a filtered, sorted, and paginated list of administrative user
  * accounts from the `community_platform_adminusers` table for internal platform
  * management purposes.
@@ -134,8 +131,6 @@ export namespace index {
 }
 
 /**
- * Get a single admin user from community_platform_adminusers by username.
- *
  * Retrieve detailed information for a single platform administrator account
  * identified by username.
  *
@@ -241,8 +236,6 @@ export namespace at {
 }
 
 /**
- * Update an admin user in community_platform_adminusers identified by username.
- *
  * Update mutable attributes of a platform administrator account identified by
  * username.
  *
@@ -367,9 +360,6 @@ export namespace update {
 }
 
 /**
- * Erase an admin user record in the community_platform_adminusers table by
- * username.
- *
  * Erase an existing admin user account identified by username from the
  * community platform.
  *

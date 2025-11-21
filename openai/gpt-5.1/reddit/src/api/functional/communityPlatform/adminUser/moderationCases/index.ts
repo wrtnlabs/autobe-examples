@@ -11,9 +11,6 @@ export * as appeals from "./appeals/index";
 export * as statistics from "./statistics/index";
 
 /**
- * Create a new moderation case row in community_platform_moderation_cases with
- * the provided case_key, title, description, status, and priority.
- *
  * Open a new moderation case in the community_platform_moderation_cases table
  * to group related reports and enforcement context under a single unit of
  * work.
@@ -138,9 +135,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filterable list of moderation cases from the
- * community_platform_moderation_cases table.
- *
  * Retrieve a paginated list of moderation cases from the
  * `community_platform_moderation_cases` table with rich filtering and sorting
  * options for administrative review.
@@ -273,9 +267,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single moderation case from community_platform_moderation_cases by
- * its unique case_key identifier.
- *
  * Retrieve detailed information about a single moderation case from the
  * community_platform_moderation_cases table identified by its business-level
  * case_key value.
@@ -398,9 +389,6 @@ export namespace at {
 }
 
 /**
- * Update a moderation case in the community_platform_moderation_cases table by
- * caseKey.
- *
  * Update an existing moderation case in the community platform by its unique
  * case key.
  *
@@ -547,9 +535,6 @@ export namespace update {
 }
 
 /**
- * Delete a moderation case record from the community_platform_moderation_cases
- * table by caseKey.
- *
  * Delete an existing moderation case from the community platform by its unique
  * case key.
  *

@@ -14,8 +14,6 @@ import { IShoppingMallPoint } from "../../../../api/structures/IShoppingMallPoin
 @Controller("/shoppingMall/admin/points")
 export class ShoppingmallAdminPointsController {
   /**
-   * Search customer point balances in the shopping mall.
-   *
    * Retrieve a paginated list of shopping mall customer points based on complex
    * search parameters. This operation allows clients to filter by customer,
    * point balance ranges, date ranges, and sort results as needed.
@@ -53,8 +51,6 @@ export class ShoppingmallAdminPointsController {
   }
 
   /**
-   * Update a customer loyalty point record by ID.
-   *
    * Update an existing customer point record identified by its unique ID.
    *
    * This operation allows the authorized user to modify fields such as the
@@ -100,8 +96,6 @@ export class ShoppingmallAdminPointsController {
   }
 
   /**
-   * Delete a customer loyalty point record by ID.
-   *
    * Deletes a loyalty point record identified by its unique ID. This operation
    * performs a hard deletion, permanently removing the record from the
    * database.

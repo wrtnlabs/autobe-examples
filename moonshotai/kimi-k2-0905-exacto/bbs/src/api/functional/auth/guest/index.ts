@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionGuest } from "../../../structures/IEconomicDiscussionGuest";
 
 /**
- * Create guest user account for anonymous browsing.
- *
  * Creates a new guest user account for browsing the Economic Discussion Board
  * system. Guest users have read-only access to articles, comments, and file
  * attachments but cannot create content or post comments.
@@ -109,8 +107,6 @@ export namespace join {
 }
 
 /**
- * Refresh guest user access token.
- *
  * Refreshes the guest user access token for continued browsing access to the
  * Economic Discussion Board system. This operation maintains the guest user's
  * temporary session without requiring re-authentication or registration.

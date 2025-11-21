@@ -10,9 +10,6 @@ import { ICommunityPlatformModerationCase } from "../../../../../api/structures/
 )
 export class CommunityplatformAdminuserModerationcasesModerationactionsController {
   /**
-   * Search and paginate moderation actions linked to a moderation case
-   * (`community_platform_moderation_cases`).
-   *
    * Retrieve a filtered, paginated list of moderation actions associated with
    * a specific moderation case identified by its `caseKey`.
    *

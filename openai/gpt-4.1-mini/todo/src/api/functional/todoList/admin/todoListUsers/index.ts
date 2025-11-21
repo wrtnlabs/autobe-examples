@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a registered todo list user by ID.
- *
  * Permanently delete a registered user by their unique identifier from the todo
  * list system.
  *

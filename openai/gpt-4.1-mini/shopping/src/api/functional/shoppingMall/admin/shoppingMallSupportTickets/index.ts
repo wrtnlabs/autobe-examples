@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a shopping mall support ticket.
- *
  * Deletes the support ticket identified by the provided
  * shoppingMallSupportTicketId.
  *

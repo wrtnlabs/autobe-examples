@@ -8,8 +8,6 @@ import { IPageITodoListAdmin } from "../../../../structures/IPageITodoListAdmin"
 export * as todoListAdminSessions from "./todoListAdminSessions/index";
 
 /**
- * Retrieve a filtered and paginated list of Todo List administrators.
- *
  * Retrieve a paginated list of administrators in the Todo List application.
  * This operation supports advanced filtering options based on the admin's
  * email, creation date, and update timestamps, allowing administrators to
@@ -105,8 +103,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information of a Todo List administrator by ID.
- *
  * Retrieve detailed information of a single administrator by their unique UUID
  * identifier from the todo_list_admins table.
  *
@@ -191,8 +187,6 @@ export namespace at {
 }
 
 /**
- * Update an existing TodoListAdmin by id.
- *
  * Update an existing administrator's account in the Todo List system.
  *
  * This operation requires the admin's unique UUID 'id' as a path parameter. The
@@ -289,8 +283,6 @@ export namespace update {
 }
 
 /**
- * Delete a TodoListAdmin by id.
- *
  * Permanently remove an administrator account from the Todo List system.
  *
  * This operation requires the admin's unique UUID 'id' as a path parameter. It

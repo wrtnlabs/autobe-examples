@@ -8,9 +8,6 @@ import { IShoppingMallAdminAuditLog } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/adminSearch/auditLogs")
 export class ShoppingmallAdminAdminsearchAuditlogsController {
   /**
-   * Search admin audit log snapshots from the shopping_mall_admin_audit_logs
-   * table for administrative oversight.
-   *
    * Search and retrieve a filtered, paginated list of admin audit log entries
    * from the `shopping_mall_admin_audit_logs` snapshot table.
    *

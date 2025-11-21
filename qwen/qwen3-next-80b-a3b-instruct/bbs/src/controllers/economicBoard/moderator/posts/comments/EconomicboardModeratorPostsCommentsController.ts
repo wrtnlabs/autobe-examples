@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../../decorators/payload/ModeratorPay
 @Controller("/economicBoard/moderator/posts/:postId/comments/:commentId")
 export class EconomicboardModeratorPostsCommentsController {
   /**
-   * Delete a specific comment from a discussion post.
-   *
    * Permanently deletes a specific comment from a discussion post. This
    * operation is irreversible and immediately hides the comment from public
    * view by setting the deleted_at timestamp in the economic_board_comments

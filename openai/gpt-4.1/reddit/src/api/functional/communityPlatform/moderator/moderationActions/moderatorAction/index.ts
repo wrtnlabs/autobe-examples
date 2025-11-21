@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationActionOfModerator } from "../../../../../structures/ICommunityPlatformModerationActionOfModerator";
 
 /**
- * Create a moderator-specific moderation action record
- * (community_platform_moderation_action_of_moderators).
- *
  * Create a new moderator-specific record for a moderation action performed by a
  * community moderator.
  *
@@ -128,9 +125,6 @@ export namespace create {
 }
 
 /**
- * Update moderator-specific moderation action record
- * (community_platform_moderation_action_of_moderators).
- *
  * Update an existing moderator-specific moderation action record associated
  * with a particular moderation action.
  *

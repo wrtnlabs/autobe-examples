@@ -9,9 +9,6 @@ import { IRedditCommunityComment } from "../../../../api/structures/IRedditCommu
 export class RedditcommunityPlatformmoderatorCommentsController {
   /**
    * Search and retrieve paginated community comments with advanced filtering
-   * and moderation support.
-   *
-   * Search and retrieve paginated community comments with advanced filtering
    * capabilities. This operation provides comprehensive search functionality
    * for finding comments based on multiple criteria including post
    * association, author membership, vote statistics, moderation status, and

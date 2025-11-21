@@ -8,9 +8,6 @@ import { IShoppingMallProductAttribute } from "../../../../../api/structures/ISh
 @Controller("/shoppingMall/seller/products/:productId/attributes")
 export class ShoppingmallSellerProductsAttributesController {
   /**
-   * Search product attribute definitions for a product using the
-   * `shopping_mall_product_attributes` table.
-   *
    * List and search attribute definitions for a specific product based on the
    * `shopping_mall_product_attributes` table.
    *
@@ -73,9 +70,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Update a product attribute row in shopping_mall_product_attributes for a
-   * given product.
-   *
    * Update a specific product attribute associated with a given product in
    * the shopping catalog.
    *
@@ -147,9 +141,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Delete a product attribute row in shopping_mall_product_attributes for a
-   * given product.
-   *
    * Delete a specific product attribute associated with a given product from
    * the shopping catalog.
    *

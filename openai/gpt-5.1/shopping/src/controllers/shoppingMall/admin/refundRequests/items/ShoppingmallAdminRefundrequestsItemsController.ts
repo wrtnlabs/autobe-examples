@@ -8,9 +8,6 @@ import { IPageIShoppingMallRefundRequestItem } from "../../../../../api/structur
 @Controller("/shoppingMall/admin/refundRequests/:refundRequestId/items")
 export class ShoppingmallAdminRefundrequestsItemsController {
   /**
-   * Create a new refund request item record in
-   * `shopping_mall_refund_request_items` under a specific refund request.
-   *
    * Create a new line-level refund request item associated with an existing
    * refund request.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminRefundrequestsItemsController {
   }
 
   /**
-   * Search refund request items of `shopping_mall_refund_request_items` for a
-   * specific refund request.
-   *
    * Retrieve a filtered and paginated collection of refund request items that
    * belong to a single refund request in the shopping mall domain.
    *
@@ -142,9 +136,6 @@ export class ShoppingmallAdminRefundrequestsItemsController {
   }
 
   /**
-   * Get a specific refund request item from
-   * `shopping_mall_refund_request_items` for a given refund request.
-   *
    * Retrieve a single detailed refund request item that belongs to a specific
    * refund request in the shopping mall refund subsystem.
    *
@@ -203,9 +194,6 @@ export class ShoppingmallAdminRefundrequestsItemsController {
   }
 
   /**
-   * Update an existing refund request item record in
-   * `shopping_mall_refund_request_items` for a given refund request.
-   *
    * Update an existing refund request item associated with a specific refund
    * request.
    *
@@ -274,9 +262,6 @@ export class ShoppingmallAdminRefundrequestsItemsController {
   }
 
   /**
-   * Delete a specific refund request item record in the
-   * shopping_mall_refund_request_items table.
-   *
    * Delete a single refund request item that belongs to a specific refund
    * request in the shoppingMall platform.
    *

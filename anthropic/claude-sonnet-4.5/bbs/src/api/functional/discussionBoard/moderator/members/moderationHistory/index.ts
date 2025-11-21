@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationLog } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardModerationLog } from "../../../../../structures/IPageIDiscussionBoardModerationLog";
 
 /**
- * Retrieve paginated moderation history for a specific member account.
- *
  * Retrieve a comprehensive, paginated history of all moderation actions taken
  * against a specific member account. This operation provides moderators with
  * complete visibility into a member's enforcement history, including both

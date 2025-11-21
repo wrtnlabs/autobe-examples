@@ -4,26 +4,27 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
-import type { IModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IModerator";
+import type { ICommunityBBSModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBBSModerator";
 
 export async function test_api_moderator_registration_duplicate_email(
   connection: api.IConnection,
 ) {
-  // Step 1: Create a moderator account with test email first to establish duplicate condition
-  const testEmail: string = typia.random<string & tags.Format<"email">>();
-  const firstRegistration: ICommunityPlatformModerator.IAuthorized =
+  // Generate duplicate email for testing
+  const duplicateEmail: string = typia.random<string & tags.Format<"email">>();
+
+  // First registration - should succeed
+  const firstRegistration: ICommunityBBSModerator.IAuthorized =
     await api.functional.auth.moderator.join(connection, {
-      body: testEmail satisfies IModerator.ICreate,
+      body: duplicateEmail satisfies ICommunityBBSModerator.ICreate,
     });
   typia.assert(firstRegistration);
 
-  // Step 2: Perform the duplicate registration attempt
+  // Second registration with same email - should fail with error
   await TestValidator.error(
-    "duplicate email registration should fail with 409 Conflict",
+    "duplicate email registration should be rejected",
     async () => {
       await api.functional.auth.moderator.join(connection, {
-        body: testEmail satisfies IModerator.ICreate,
+        body: duplicateEmail satisfies ICommunityBBSModerator.ICreate,
       });
     },
   );

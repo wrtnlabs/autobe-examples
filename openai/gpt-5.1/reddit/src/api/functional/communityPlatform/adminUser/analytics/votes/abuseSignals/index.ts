@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformVoteAbuseSignalAnalytics } from "../../../../../../structures/ICommunityPlatformVoteAbuseSignalAnalytics";
 
 /**
- * Analyze voting activity to detect potential abuse signals and anomalous
- * patterns using vote-related Prisma models.
- *
  * Analyze voting data across the community platform to identify potential abuse
  * signals and anomalous voting patterns.
  *

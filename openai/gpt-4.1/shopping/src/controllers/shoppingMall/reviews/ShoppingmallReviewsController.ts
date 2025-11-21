@@ -9,8 +9,6 @@ import { IShoppingMallReview } from "../../../api/structures/IShoppingMallReview
 @Controller("/shoppingMall/reviews")
 export class ShoppingmallReviewsController {
   /**
-   * Retrieve the detail for a single shopping_mall_reviews review record by ID.
-   *
    * Retrieve the full details for a specific product review in the system. This
    * endpoint allows clients to fetch all available information about a review
    * by providing the unique identifier (UUID) for that review.
@@ -53,9 +51,6 @@ export class ShoppingmallReviewsController {
   }
 
   /**
-   * Create a new review entry in shopping_mall_reviews for a purchased
-   * product/order item.
-   *
    * Create a new product review for a purchased product SKU via this endpoint.
    * The request must specify the customer, session, product, SKU, related order
    * and order item (to ensure the reviewer actually purchased the product),

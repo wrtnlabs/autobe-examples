@@ -11,8 +11,6 @@ import { IRedditCommunityCommunityModerator } from "../../../../../api/structure
 @Controller("/redditCommunity/moderator/communities/:communityName/moderators")
 export class RedditcommunityModeratorCommunitiesModeratorsController {
   /**
-   * Assign a new moderator to the community.
-   *
    * Assign a new moderator to a specific community, granting them moderation
    * authority and privileges within that community space. This operation
    * creates a new moderator assignment by establishing a relationship between
@@ -69,8 +67,6 @@ export class RedditcommunityModeratorCommunitiesModeratorsController {
   }
 
   /**
-   * Remove a moderator from a community.
-   *
    * Remove moderator authority from a community by deleting the
    * moderator-community relationship.
    *

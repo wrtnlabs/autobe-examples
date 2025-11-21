@@ -8,8 +8,6 @@ import { IPageIDiscussionBoardModerationQueue } from "../../../../structures/IPa
 import { IDiscussionBoardModerationQueues } from "../../../../structures/IDiscussionBoardModerationQueues";
 
 /**
- * Search and retrieve paginated moderation queue entries.
- *
  * This operation provides comprehensive search capabilities for moderation
  * queue management, allowing administrators and moderators to efficiently
  * monitor and manage content moderation workflows.
@@ -113,8 +111,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific moderation queue entry.
- *
  * This operation provides detailed visibility into a specific moderation queue
  * entry, including the complete workflow state, assignment history, and
  * processing timeline.
@@ -209,8 +205,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation queue assignment.
- *
  * This operation allows administrators and moderators to update the assignment
  * details of a moderation queue entry. It supports modifying the assigned
  * moderator, queue position, priority level, and various timestamps related to
@@ -315,8 +309,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a moderation queue entry.
- *
  * This operation allows administrators to remove a moderation queue entry from
  * active moderation workflows by setting the deleted_at timestamp. Unlike hard
  * deletion which permanently removes records, this operation preserves the

@@ -7,9 +7,6 @@ import { IShoppingMallReviewReport } from "../../../../structures/IShoppingMallR
 import { IPageIShoppingMallReviewReport } from "../../../../structures/IPageIShoppingMallReviewReport";
 
 /**
- * Search and paginate review reports from shopping_mall_review_reports for
- * administrative moderation.
- *
  * Search and retrieve a filtered, paginated list of review reports from the
  * shopping_mall_review_reports table for moderation and governance workflows.
  *
@@ -143,9 +140,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single review report from
- * shopping_mall_review_reports.
- *
  * Retrieve full detail of a single review report from the
  * `shopping_mall_review_reports` table using its unique identifier.
  *
@@ -264,9 +258,6 @@ export namespace at {
 }
 
 /**
- * Update a single review report in the shopping_mall_review_reports table by
- * reportId.
- *
  * Update a specific review report record in the shopping_mall_review_reports
  * table by its unique identifier.
  *
@@ -399,9 +390,6 @@ export namespace update {
 }
 
 /**
- * Delete a single review report from the shopping_mall_review_reports table by
- * reportId.
- *
  * Delete a specific review report record from the shopping_mall_review_reports
  * table by its unique identifier.
  *

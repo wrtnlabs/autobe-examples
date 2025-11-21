@@ -11,9 +11,6 @@ import { ICommunityForumCommunityModeratorSession } from "../../../../../api/str
 @Controller("/communityForum/moderator/moderators/:moderatorId/sessions")
 export class CommunityforumModeratorModeratorsSessionsController {
   /**
-   * Retrieve paginated list of sessions for a specific moderator with filtering
-   * capabilities.
-   *
    * Retrieve a filtered and paginated list of authentication sessions
    * associated with a specific moderator account. This operation provides
    * administrators and moderators with audit capabilities to view all session

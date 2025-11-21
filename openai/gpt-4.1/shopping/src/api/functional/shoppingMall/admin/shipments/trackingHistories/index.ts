@@ -7,8 +7,6 @@ import { IShoppingMallShipmentTrackingHistory } from "../../../../../structures/
 import { IPageIShoppingMallShipmentTrackingHistory } from "../../../../../structures/IPageIShoppingMallShipmentTrackingHistory";
 
 /**
- * Create a new shipment tracking history event beneath shopping_mall_shipments.
- *
  * Append a new shipment tracking event to a specific existing shipment for
  * complete carrier/logistics event journaling.
  *
@@ -121,9 +119,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated tracking history events for a specific shipment from
- * shopping_mall_shipment_tracking_histories.
- *
  * This endpoint returns the list of tracking status history events for a given
  * shipment. It provides all carrier or warehouse updates from dispatch through
  * delivery, showing detailed status codes, event times, locations, and tracking
@@ -235,9 +230,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific shipment tracking event detail from
- * shopping_mall_shipment_tracking_histories.
- *
  * Fetch a detailed tracking event update for a specific shipment in the order
  * fulfillment system.
  *
@@ -348,9 +340,6 @@ export namespace at {
 }
 
 /**
- * Update a tracking history record in
- * shopping_mall_shipment_tracking_histories.
- *
  * Update an existing shipment tracking history record.
  *
  * This operation enables authorized users to amend details of a previously
@@ -474,9 +463,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a tracking history record in
- * shopping_mall_shipment_tracking_histories.
- *
  * Delete (erase) an existing shipment tracking history record.
  *
  * This operation enables authorized administrators to irrevocably remove a

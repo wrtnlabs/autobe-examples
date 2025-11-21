@@ -7,9 +7,6 @@ import { IShoppingMallActorSecurityEvent } from "../../../../../structures/IShop
 import { IPageIShoppingMallActorSecurityEvent } from "../../../../../structures/IPageIShoppingMallActorSecurityEvent";
 
 /**
- * Search actor security events for a specific customer in
- * shopping_mall_actor_security_events with pagination and filters.
- *
  * Search and retrieve actor security events for a specific customer from the
  * shopping_mall_actor_security_events table using flexible criteria.
  *

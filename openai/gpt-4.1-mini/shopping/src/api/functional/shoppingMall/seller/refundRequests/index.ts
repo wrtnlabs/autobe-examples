@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallRefundRequest } from "../../../../structures/IShoppingMallRefundRequest";
 
 /**
- * Update a refund request by ID in the shopping mall system.
- *
  * Update details of an existing refund request by specifying its unique
  * identifier.
  *

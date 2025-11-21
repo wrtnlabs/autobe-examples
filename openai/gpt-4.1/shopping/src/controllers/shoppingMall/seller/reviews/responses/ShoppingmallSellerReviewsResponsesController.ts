@@ -12,9 +12,6 @@ import { IShoppingMallReviewResponse } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/seller/reviews/:reviewId/responses")
 export class ShoppingmallSellerReviewsResponsesController {
   /**
-   * Create a seller response for a product review
-   * (shopping_mall_review_responses table).
-   *
    * Create a new response to a customer review, allowing a seller to publicly
    * address and clarify feedback on their product. This fosters dialog and
    * transparency between customers and sellers.
@@ -61,9 +58,6 @@ export class ShoppingmallSellerReviewsResponsesController {
   }
 
   /**
-   * Update a seller response for a product review
-   * (shopping_mall_review_responses table).
-   *
    * Update an existing seller response for a specific product review. This
    * enables the seller to edit their original reply for clarification,
    * correction, or content improvement.
@@ -112,9 +106,6 @@ export class ShoppingmallSellerReviewsResponsesController {
   }
 
   /**
-   * Remove a specific seller's response to a customer review
-   * (shopping_mall_review_responses table).
-   *
    * Delete a specific seller's response to a customer review.
    *
    * This endpoint is used when a seller, or an admin on their behalf, needs to

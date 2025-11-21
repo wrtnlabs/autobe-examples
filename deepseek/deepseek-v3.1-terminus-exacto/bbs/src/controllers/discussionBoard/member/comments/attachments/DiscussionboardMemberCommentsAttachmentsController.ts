@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardCommentAttachment } from "../../../../../api/struc
 @Controller("/discussionBoard/member/comments/:commentId/attachments")
 export class DiscussionboardMemberCommentsAttachmentsController {
   /**
-   * Upload a new file attachment for a comment.
-   *
    * This operation allows authenticated members to upload file attachments to
    * support their discussion board comments. The attachment is associated with
    * a specific comment and undergoes a multi-stage processing workflow
@@ -65,8 +63,6 @@ export class DiscussionboardMemberCommentsAttachmentsController {
   }
 
   /**
-   * Search and retrieve attachments for a specific comment.
-   *
    * This operation provides comprehensive search capabilities for attachments
    * associated with a specific discussion board comment. It supports advanced
    * filtering options including file type categorization, upload status
@@ -116,8 +112,6 @@ export class DiscussionboardMemberCommentsAttachmentsController {
   }
 
   /**
-   * Retrieve metadata for a specific comment attachment.
-   *
    * This operation returns detailed information about a specific file
    * attachment associated with a discussion board comment. The attachment must
    * belong to the specified comment and be in a completed upload status to be
@@ -169,8 +163,6 @@ export class DiscussionboardMemberCommentsAttachmentsController {
   }
 
   /**
-   * Update metadata for a specific comment attachment.
-   *
    * This operation allows authenticated members to update metadata for a file
    * attachment associated with a discussion board comment. Members can modify
    * the attachment description, update upload status, or adjust other metadata
@@ -225,8 +217,6 @@ export class DiscussionboardMemberCommentsAttachmentsController {
   }
 
   /**
-   * Permanently delete a comment attachment.
-   *
    * This operation permanently removes a file attachment from a discussion
    * board comment, including deletion of the database record and associated
    * storage resources. The operation performs hard deletion rather than soft

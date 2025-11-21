@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../structures/ITodoListUser";
 
 /**
- * Registers a new user account in the TodoList application.
- *
  * This operation registers a new user by creating a record in the
  * todo_list_user table. The email field is required and must be unique as
  * defined by the unique index on the todo_list_user table. The password_hash
@@ -123,8 +121,6 @@ export namespace join {
 }
 
 /**
- * Authenticates a user and issues JWT access and refresh tokens.
- *
  * This operation authenticates a user by validating their provided email and
  * password against the stored credentials in the todo_list_user table. The
  * email field is matched against the unique index, and the password_hash field
@@ -238,8 +234,6 @@ export namespace login {
 }
 
 /**
- * Refreshes the user's access token using a valid refresh token.
- *
  * This operation exchanges a valid refresh token for a new access token,
  * allowing users to maintain their session without re-entering their password.
  * The refresh token must have been issued during a previous join or login

@@ -7,9 +7,6 @@ import { ICommunityPlatformAdminuserSession } from "../../../../../structures/IC
 import { IPageICommunityPlatformAdminuserSession } from "../../../../../structures/IPageICommunityPlatformAdminuserSession";
 
 /**
- * Index admin user sessions from the community_platform_adminuser_sessions
- * table by username with pagination and filtering.
- *
  * Retrieve a paginated list of sessions for a specific admin user identified by
  * username.
  *
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific admin user session
- * (`community_platform_adminuser_sessions`).
- *
  * Retrieve a single admin user session record for auditing and security review.
  *
  * This operation exposes a read-only view of a specific session row stored in
@@ -260,9 +254,6 @@ export namespace at {
 }
 
 /**
- * Erase a specific admin user session
- * (`community_platform_adminuser_sessions`).
- *
  * Erase an admin user session record to invalidate an active or historical
  * admin session.
  *

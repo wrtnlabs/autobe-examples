@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderCustomerContact } from "../../../../../structures/IShoppingMallOrderCustomerContact";
 
 /**
- * Create a customer contact snapshot for an order in
- * shopping_mall_order_customer_contacts using order_code.
- *
  * Create a customer contact information snapshot for a specific order
  * referenced by its business order code.
  *
@@ -142,9 +139,6 @@ export namespace create {
 }
 
 /**
- * Update an existing order customer contact snapshot in
- * shopping_mall_order_customer_contacts using order_code.
- *
  * Update the existing customer contact snapshot for a specific order, using the
  * business order code to locate the record.
  *
@@ -272,9 +266,6 @@ export namespace update {
 }
 
 /**
- * Delete the shopping_mall_order_customer_contacts snapshot associated with a
- * specific order identified by orderCode.
- *
  * Erase the stored customer contact snapshot for a given order based on its
  * business order code.
  *

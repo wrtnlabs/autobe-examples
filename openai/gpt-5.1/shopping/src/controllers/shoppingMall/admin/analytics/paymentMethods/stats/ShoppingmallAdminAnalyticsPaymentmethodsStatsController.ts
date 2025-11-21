@@ -8,9 +8,6 @@ import { IShoppingMallPaymentMethodAnalytics } from "../../../../../../api/struc
 @Controller("/shoppingMall/admin/analytics/paymentMethods/stats")
 export class ShoppingmallAdminAnalyticsPaymentmethodsStatsController {
   /**
-   * Search and retrieve aggregated payment method analytics based on
-   * payment-related tables and stats snapshots.
-   *
    * Retrieve aggregated analytical statistics for payment methods across the
    * shoppingMall platform.
    *

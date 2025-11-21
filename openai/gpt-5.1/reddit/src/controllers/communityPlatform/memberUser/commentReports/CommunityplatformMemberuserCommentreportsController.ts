@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentReport } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/memberUser/commentReports")
 export class CommunityplatformMemberuserCommentreportsController {
   /**
-   * Create a new comment report record in the
-   * community_platform_comment_reports table.
-   *
    * Create a new report entry for a specific comment in the community
    * platform.
    *

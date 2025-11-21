@@ -8,8 +8,6 @@ import { IShoppingMallReviewSellerResponse } from "../../../../api/structures/IS
 @Controller("/shoppingMall/reviews/:reviewId/sellerResponse")
 export class ShoppingmallReviewsSellerresponseController {
   /**
-   * Retrieve the seller's response to a specific product review.
-   *
    * Retrieve the seller's response associated with a specific product review
    * from the shopping marketplace. This operation allows users to view how
    * sellers have addressed customer feedback and concerns expressed in product

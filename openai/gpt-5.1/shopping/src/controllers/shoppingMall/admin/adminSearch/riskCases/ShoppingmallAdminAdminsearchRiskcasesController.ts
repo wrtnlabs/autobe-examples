@@ -8,9 +8,6 @@ import { IShoppingMallRiskCase } from "../../../../../api/structures/IShoppingMa
 @Controller("/shoppingMall/admin/adminSearch/riskCases")
 export class ShoppingmallAdminAdminsearchRiskcasesController {
   /**
-   * Search risk cases from the shopping_mall_risk_cases table for governance
-   * and fraud operations.
-   *
    * Search and retrieve a filtered, paginated list of risk cases from the
    * `shopping_mall_risk_cases` primary table for governance and fraud
    * management.

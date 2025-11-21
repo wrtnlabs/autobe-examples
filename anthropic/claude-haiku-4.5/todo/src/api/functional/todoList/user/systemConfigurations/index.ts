@@ -7,9 +7,6 @@ import { ITodoListSystemConfiguration } from "../../../../structures/ITodoListSy
 import { IPageITodoListSystemConfiguration } from "../../../../structures/IPageITodoListSystemConfiguration";
 
 /**
- * Search and retrieve system configuration settings with filtering and
- * pagination.
- *
  * Retrieve system configuration entries from the todo_list_system_config table
  * with advanced filtering, searching, and pagination capabilities. This
  * operation allows querying system-wide settings that control application
@@ -128,8 +125,6 @@ export namespace index {
 }
 
 /**
- * Update an existing system configuration entry by configuration key.
- *
  * Update a system configuration entry by its unique configuration key. This
  * operation allows administrators to modify system-wide settings that control
  * application behavior without requiring database schema changes.
@@ -268,8 +263,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a system configuration entry by configuration key.
- *
  * Permanently delete a system configuration entry by its unique configuration
  * key. This operation removes the configuration completely from the system.
  *

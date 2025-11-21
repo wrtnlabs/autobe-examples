@@ -7,8 +7,6 @@ import { ITodoListAuditLog } from "../../../../structures/ITodoListAuditLog";
 import { IPageITodoListAuditLog } from "../../../../structures/IPageITodoListAuditLog";
 
 /**
- * Search and retrieve paginated audit logs from the todo_list_audit_logs table.
- *
  * Retrieves audit log entries with advanced filtering options for time range,
  * event type, administrator, and target user.
  *
@@ -106,8 +104,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single audit log entry from todo_list_audit_logs by unique ID.
- *
  * Retrieve a single audit log entry from the system's audit log by its unique
  * identifier, supporting administrative forensic review and compliance
  * investigations.

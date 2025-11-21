@@ -7,8 +7,6 @@ import { IDiscussionBoardAccountRestriction } from "../../../../../structures/ID
 import { IPageIDiscussionBoardAccountRestriction } from "../../../../../structures/IPageIDiscussionBoardAccountRestriction";
 
 /**
- * Search and filter account restrictions imposed on contributors.
- *
  * Retrieve a filtered and paginated list of account restrictions from the
  * discussion board moderation system. This operation provides comprehensive
  * search and filtering capabilities for moderators to review all restrictions

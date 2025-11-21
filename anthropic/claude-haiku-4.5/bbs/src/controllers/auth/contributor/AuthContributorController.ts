@@ -7,8 +7,6 @@ import { IDiscussionBoardContributor } from "../../../api/structures/IDiscussion
 @Controller("/auth/contributor")
 export class AuthContributorController {
   /**
-   * Register a new contributor account for the discussion board.
-   *
    * Creates a new contributor account in the discussion board system. This
    * operation registers a contributor with email, username, and password
    * credentials stored securely with bcrypt hashing (minimum 12 salt rounds).
@@ -56,8 +54,6 @@ export class AuthContributorController {
   }
 
   /**
-   * Authenticate a contributor account and obtain JWT tokens.
-   *
    * Authenticates a registered contributor using email (or username) and
    * password credentials. This operation validates that the contributor
    * account exists in the discussion_board_contributors table, verifies the
@@ -109,8 +105,6 @@ export class AuthContributorController {
   }
 
   /**
-   * Refresh contributor JWT tokens using a valid refresh token.
-   *
    * Renews JWT tokens for an authenticated contributor using a valid refresh
    * token. This operation validates the provided refresh token against the
    * contributor's session records in the

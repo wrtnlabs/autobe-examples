@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunityModerator } from "../../../../structures/IRedditCommunityCommunityModerator";
 
 /**
- * Retrieve detailed profile information for a specific moderator.
- *
  * Retrieve comprehensive profile information for a specific moderator
  * identified by their unique username. This operation provides access to
  * moderator account details, their moderation activity statistics, and the

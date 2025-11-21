@@ -14,8 +14,6 @@ import { IShoppingMallCustomerSession } from "../../../../../api/structures/ISho
 )
 export class ShoppingmallCustomerShoppingmallcustomersShoppingmallcustomersessionsController {
   /**
-   * Create a new shopping mall customer session.
-   *
    * Create a new session record for a specific shopping mall customer to manage
    * active login sessions.
    *
@@ -64,8 +62,6 @@ export class ShoppingmallCustomerShoppingmallcustomersShoppingmallcustomersessio
   }
 
   /**
-   * Update an existing shopping mall customer session.
-   *
    * Update details of an existing session record for a specific shopping mall
    * customer.
    *
@@ -117,8 +113,6 @@ export class ShoppingmallCustomerShoppingmallcustomersShoppingmallcustomersessio
   }
 
   /**
-   * Delete a specific shopping mall customer session.
-   *
    * Delete a particular authenticated session record of a shopping mall
    * customer user.
    *

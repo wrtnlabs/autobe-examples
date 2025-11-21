@@ -11,9 +11,6 @@ import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/customer/customers/:customerId")
 export class ShoppingmallCustomerCustomersController {
   /**
-   * Fetch detailed profile for a shopping mall customer
-   * (shopping_mall_customers table).
-   *
    * Retrieve the complete profile information of a customer account identified
    * by their unique ID. This includes name, email, phone number, verification
    * status, and timestamps for creation and last update. All data are sourced
@@ -53,9 +50,6 @@ export class ShoppingmallCustomerCustomersController {
   }
 
   /**
-   * Update an existing customer's profile details (shopping_mall_customers
-   * table).
-   *
    * Update a customer's profile details such as name, phone, and email, while
    * enforcing business constraints from the shopping_mall_customers schema. The
    * operation validates email uniqueness before applying updates and prevents

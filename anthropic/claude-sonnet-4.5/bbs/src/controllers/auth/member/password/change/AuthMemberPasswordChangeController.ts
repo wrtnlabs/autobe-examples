@@ -10,9 +10,6 @@ import { IDiscussionBoardMember } from "../../../../../api/structures/IDiscussio
 @Controller("/auth/member/password/change")
 export class AuthMemberPasswordChangeController {
   /**
-   * Change member password with current password validation in
-   * discussion_board_members table.
-   *
    * Enables authenticated members to change their password as a security
    * maintenance operation, requiring knowledge of the current password to
    * authorize the change. This operation validates the existing password

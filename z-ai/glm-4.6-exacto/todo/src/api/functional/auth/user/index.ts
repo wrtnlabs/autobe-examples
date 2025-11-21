@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppUser } from "../../../structures/ITodoAppUser";
 
 /**
- * Registers a new todo_app_users account using unique email and password hash,
- * issuing JWT tokens upon success.
- *
  * This endpoint allows the creation of a new user account in the todo_app_users
  * table, capturing a unique email and securely hashed password as required by
  * schema definitions.
@@ -124,9 +121,6 @@ export namespace join {
 }
 
 /**
- * Authenticates a member (todo_app_users) and issues JWT tokens upon correct
- * credentials.
- *
  * This endpoint provides login functionality for member users in the
  * todo_app_users table. Users must supply their registered email and password;
  * the submitted password is hashed and compared securely with the stored
@@ -237,9 +231,6 @@ export namespace login {
 }
 
 /**
- * Renews JWT authentication tokens for an existing todo_app_users account using
- * a valid refresh token.
- *
  * This endpoint allows member users to renew (refresh) their JWT authentication
  * tokens, supporting persistent secure access for todo_app_users. The user
  * supplies a valid refresh token (granted during previous login or

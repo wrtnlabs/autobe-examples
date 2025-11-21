@@ -12,8 +12,6 @@ import { IDiscussionBoardReportedContent } from "../../../../api/structures/IDis
 @Controller("/discussionBoard/moderator/reportedContent")
 export class DiscussionboardModeratorReportedcontentController {
   /**
-   * Search reported content with filtering and pagination.
-   *
    * Retrieves a paginated list of reported content from the discussion board,
    * allowing moderators to filter by report status, content type, and other
    * criteria. Supports sorting and pagination parameters.
@@ -42,8 +40,6 @@ export class DiscussionboardModeratorReportedcontentController {
   }
 
   /**
-   * Retrieve a specific reported content item by ID.
-   *
    * This operation allows moderators to retrieve detailed information about a
    * specific reported content item. The reportedContentId path parameter is
    * used to identify the content. The response includes the content details,

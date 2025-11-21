@@ -11,8 +11,6 @@ export * as statusHistories from "./statusHistories/index";
 export * as auditLogs from "./auditLogs/index";
 
 /**
- * Search, filter, and paginate shopping_mall_orders records.
- *
  * Retrieve a filtered and paginated list of all orders submitted on the
  * platform.
  *
@@ -117,8 +115,6 @@ export namespace index {
 }
 
 /**
- * Get the complete shopping_mall_orders record by unique order_number.
- *
  * Fetches the complete details for a specific order identified by its globally
  * unique business order number.
  *
@@ -215,9 +211,6 @@ export namespace at {
 }
 
 /**
- * Soft delete a shopping mall order by its unique business order number
- * (shopping_mall_orders table).
- *
  * Permanently remove a shopping mall order by its unique business order number.
  *
  * This API is designed for use by administrators and auditors. It ensures that

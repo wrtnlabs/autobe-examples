@@ -11,8 +11,6 @@ import { IShoppingMallBuyer } from "../../../../api/structures/IShoppingMallBuye
 @Controller("/shoppingMall/buyer/buyers/:buyerId")
 export class ShoppingmallBuyerBuyersController {
   /**
-   * Retrieve detailed information about a specific buyer account.
-   *
    * Retrieve comprehensive details about a specific buyer account in the
    * shopping mall marketplace. This operation returns the complete buyer
    * profile including personal information, contact details, account status,
@@ -59,8 +57,6 @@ export class ShoppingmallBuyerBuyersController {
   }
 
   /**
-   * Update an existing buyer account's information.
-   *
    * Update the profile information and account details of an existing buyer in
    * the shopping mall marketplace. This operation allows modification of buyer
    * account data including personal information, contact details, and account

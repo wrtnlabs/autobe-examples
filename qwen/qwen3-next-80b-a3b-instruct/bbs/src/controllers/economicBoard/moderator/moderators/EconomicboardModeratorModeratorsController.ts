@@ -12,8 +12,6 @@ import { IPageIEconomicBoardModerator } from "../../../../api/structures/IPageIE
 @Controller("/economicBoard/moderator/moderators")
 export class EconomicboardModeratorModeratorsController {
   /**
-   * Retrieve detailed information about a specific active moderator.
-   *
    * Retrieve the complete profile details of a specific active moderator
    * account from the economic_board_moderators table.
    *
@@ -59,8 +57,6 @@ export class EconomicboardModeratorModeratorsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of active moderators.
-   *
    * Retrieve a filtered and paginated list of active moderator accounts from
    * the economic_board_moderators table.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallSellerPayout } from "../../../../structures/IShoppingMallS
 import { IPageIShoppingMallSellerPayout } from "../../../../structures/IPageIShoppingMallSellerPayout";
 
 /**
- * Retrieve paginated list of seller payout records for earnings settlement
- * tracking.
- *
  * Retrieve a filtered and paginated list of seller payout records from the
  * shopping mall platform. This operation provides advanced search capabilities
  * for finding seller payouts based on multiple criteria including payout
@@ -126,8 +123,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific seller payout transaction.
- *
  * Retrieve comprehensive details about a specific seller payout transaction
  * from the shopping mall platform. This operation provides complete information
  * about a payout including the payout amount, current status, creation and

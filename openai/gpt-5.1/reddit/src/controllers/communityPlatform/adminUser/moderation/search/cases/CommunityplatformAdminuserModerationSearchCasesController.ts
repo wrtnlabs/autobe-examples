@@ -8,9 +8,6 @@ import { ICommunityPlatformModerationCase } from "../../../../../../api/structur
 @Controller("/communityPlatform/adminUser/moderation/search/cases")
 export class CommunityplatformAdminuserModerationSearchCasesController {
   /**
-   * Search moderation cases from community_platform_moderation_cases with
-   * filtering, sorting, and pagination.
-   *
    * Search and retrieve a filtered, paginated list of moderation cases from
    * the community platform.
    *

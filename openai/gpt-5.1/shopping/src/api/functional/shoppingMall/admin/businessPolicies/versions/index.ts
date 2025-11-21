@@ -7,9 +7,6 @@ import { IShoppingMallPolicyVersion } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallPolicyVersion } from "../../../../../structures/IPageIShoppingMallPolicyVersion";
 
 /**
- * Create a new business policy version in shopping_mall_policy_versions under
- * the specified policyCode.
- *
  * Create a new version of an existing business policy identified by policyCode.
  *
  * This operation inserts a row into the shopping_mall_policy_versions table
@@ -138,9 +135,6 @@ export namespace create {
 }
 
 /**
- * List and search versions of a business policy from the
- * shopping_mall_policy_versions table for a given policy code.
- *
  * Retrieve a paginated, filterable list of versions for a specific business
  * policy from the shopping_mall_policy_versions table, identified by the parent
  * policy’s code.
@@ -274,9 +268,6 @@ export namespace index {
 }
 
 /**
- * Get details of a specific policy version from shopping_mall_policy_versions
- * by policyCode and versionCode.
- *
  * Retrieve a single business policy version record by its business-level
  * identifiers policyCode and versionCode.
  *
@@ -412,9 +403,6 @@ export namespace at {
 }
 
 /**
- * Update a specific shopping_mall_policy_versions record identified by
- * policyCode and versionCode.
- *
  * Update an existing business policy version under a specific business policy
  * using the composite key of policyCode and versionCode.
  *
@@ -563,9 +551,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific shopping_mall_policy_versions record identified by
- * policyCode and versionCode.
- *
  * Erase an existing business policy version under a specific business policy
  * using the composite identifier formed by policyCode and versionCode.
  *

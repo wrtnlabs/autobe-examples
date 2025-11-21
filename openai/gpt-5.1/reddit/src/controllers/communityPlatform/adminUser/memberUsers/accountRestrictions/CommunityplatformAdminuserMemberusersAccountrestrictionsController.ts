@@ -10,10 +10,6 @@ import { IPageICommunityPlatformAccountRestriction } from "../../../../../api/st
 )
 export class CommunityplatformAdminuserMemberusersAccountrestrictionsController {
   /**
-   * Create a new account restriction in
-   * community_platform_account_restrictions for a member user identified by
-   * username.
-   *
    * Create a new account restriction episode for a specific member user based
    * on their username, recording enforcement details in the
    * community_platform_account_restrictions table and linking it to the
@@ -78,10 +74,6 @@ export class CommunityplatformAdminuserMemberusersAccountrestrictionsController 
   }
 
   /**
-   * List and search account restrictions from
-   * community_platform_account_restrictions for a given member user by
-   * username.
-   *
    * Retrieve a paginated and filterable list of account restrictions
    * associated with a specific member user account, identified by their
    * username.
@@ -139,10 +131,6 @@ export class CommunityplatformAdminuserMemberusersAccountrestrictionsController 
   }
 
   /**
-   * Retrieve a specific account restriction from
-   * community_platform_account_restrictions for a member user by username and
-   * restriction ID.
-   *
    * Fetch a single account restriction episode for a given member user, using
    * the member user's username and the restriction's unique identifier to
    * locate the correct restriction record in
@@ -194,9 +182,6 @@ export class CommunityplatformAdminuserMemberusersAccountrestrictionsController 
   }
 
   /**
-   * Update a member user account restriction episode in the
-   * community_platform_account_restrictions table.
-   *
    * Update an existing account restriction episode applied to a specific
    * member user identified by username.
    *
@@ -280,9 +265,6 @@ export class CommunityplatformAdminuserMemberusersAccountrestrictionsController 
   }
 
   /**
-   * Delete a member user account restriction episode from the
-   * community_platform_account_restrictions table.
-   *
    * Remove an existing account restriction episode from a specific member
    * user's account on the community platform.
    *

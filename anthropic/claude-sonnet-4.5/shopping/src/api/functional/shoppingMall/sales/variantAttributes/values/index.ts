@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleVariantValue } from "../../../../../structures/IShoppingMallSaleVariantValue";
 
 /**
- * Retrieve detailed information about a specific variant attribute value for a
- * product sale.
- *
  * Retrieve comprehensive details about a specific variant attribute value
  * within a product sale's variant configuration system. This operation provides
  * complete information about one selectable option value (such as a specific

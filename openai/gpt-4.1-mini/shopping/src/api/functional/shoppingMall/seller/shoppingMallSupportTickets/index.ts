@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSupportTicket } from "../../../../structures/IShoppingMallSupportTicket";
 
 /**
- * Create a new shopping mall support ticket.
- *
  * Create a new support ticket for customers or sellers in the ShoppingMall
  * platform.
  *
@@ -102,8 +100,6 @@ export namespace create {
 }
 
 /**
- * Update shopping mall support ticket by ID.
- *
  * Update an existing shopping mall support ticket specified by the ticket ID.
  *
  * This operation allows modification of ticket details including title,

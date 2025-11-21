@@ -8,9 +8,6 @@ import { ICommunityPlatformPostEditHistory } from "../../../../../api/structures
 @Controller("/communityPlatform/memberUser/posts/:postId/editHistories")
 export class CommunityplatformMemberuserPostsEdithistoriesController {
   /**
-   * List edit history snapshots for a specific post from
-   * community_platform_post_edit_histories.
-   *
    * Retrieve a paginated, filterable list of edit history snapshots for a
    * specific post.
    *
@@ -77,9 +74,6 @@ export class CommunityplatformMemberuserPostsEdithistoriesController {
   }
 
   /**
-   * Get a specific post edit history snapshot from
-   * community_platform_post_edit_histories by post and history identifiers.
-   *
    * Fetch a single post edit history snapshot for a specific post, using the
    * parent post identifier and the edit history identifier.
    *

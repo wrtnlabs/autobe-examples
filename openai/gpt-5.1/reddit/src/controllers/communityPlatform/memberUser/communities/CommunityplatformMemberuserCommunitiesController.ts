@@ -7,10 +7,6 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/memberUser/communities")
 export class CommunityplatformMemberuserCommunitiesController {
   /**
-   * Create a new community_platform_communities record using
-   * ICommunityPlatformCommunity.ICreate and return it as
-   * ICommunityPlatformCommunity.
-   *
    * Create a new community record in the community_platform_communities table
    * using client-supplied attributes.
    *

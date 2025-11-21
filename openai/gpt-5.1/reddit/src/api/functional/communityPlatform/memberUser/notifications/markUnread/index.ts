@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformNotification } from "../../../../../structures/ICommunityPlatformNotification";
 
 /**
- * Mark a community_platform_notifications record as unread for the current
- * member user.
- *
  * Mark a single notification from the `community_platform_notifications` table
  * as unread for the authenticated member user.
  *

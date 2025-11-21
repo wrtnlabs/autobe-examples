@@ -7,8 +7,6 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
 export * as shoppingMallCustomerSessions from "./shoppingMallCustomerSessions/index";
 
 /**
- * Retrieve a shopping mall customer by their unique ID.
- *
  * Retrieve detailed information about a specific registered customer in the
  * shopping mall system.
  *
@@ -103,8 +101,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall customer by ID.
- *
  * Update a shopping mall customer record in the system using the provided
  * unique customer ID. This operation replaces the customer's current data with
  * new values as specified in the request body.
@@ -207,8 +203,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall customer by ID.
- *
  * Permanently remove a shopping mall customer record from the system using the
  * unique customer ID in the path parameter.
  *
@@ -299,8 +293,6 @@ export namespace erase {
 }
 
 /**
- * Create a new shopping mall customer.
- *
  * Create a new registered customer in the shopping mall system.
  *
  * This operation accepts necessary customer registration details such as a

@@ -10,8 +10,6 @@ import { IEconomicBoardCitizen } from "../../../api/structures/IEconomicBoardCit
 @Controller("/auth/citizen")
 export class AuthCitizenController {
   /**
-   * Register new citizen account with email and password.
-   *
    * This endpoint allows new users to register as citizens by providing their
    * email and password. Upon successful registration, a new record is created
    * in the economic_board_citizens table with the provided email and a hashed
@@ -59,8 +57,6 @@ export class AuthCitizenController {
   }
 
   /**
-   * Authenticate citizen and return access and refresh tokens.
-   *
    * This endpoint authenticates existing citizens by verifying their email and
    * password against the records in the economic_board_citizens table. The
    * system checks that the provided email exists and that the password_hash
@@ -108,8 +104,6 @@ export class AuthCitizenController {
   }
 
   /**
-   * Refresh citizen access token using valid refresh token.
-   *
    * This endpoint enables citizens to obtain new access tokens using a
    * previously issued refresh token, extending their authenticated session
    * without requiring password re-entry.

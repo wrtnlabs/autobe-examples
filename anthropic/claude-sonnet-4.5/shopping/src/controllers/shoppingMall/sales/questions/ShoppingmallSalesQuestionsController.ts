@@ -14,9 +14,6 @@ import { IShoppingMallSaleQuestion } from "../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/sales")
 export class ShoppingmallSalesQuestionsController {
   /**
-   * Search and retrieve filtered list of questions about a specific product
-   * sale.
-   *
    * Retrieve a paginated list of customer questions (inquiries) submitted for a
    * specific product sale in the shopping marketplace. This operation allows
    * buyers to browse existing questions and answers to gain additional product
@@ -67,9 +64,6 @@ export class ShoppingmallSalesQuestionsController {
   }
 
   /**
-   * Search and retrieve filtered list of questions about a specific product
-   * sale.
-   *
    * Retrieve a paginated list of customer questions (inquiries) submitted for a
    * specific product sale in the shopping marketplace. This operation allows
    * buyers to browse existing questions and answers to gain additional product
@@ -120,8 +114,6 @@ export class ShoppingmallSalesQuestionsController {
   }
 
   /**
-   * Retrieve a specific product question with answer details.
-   *
    * Retrieve detailed information about a specific customer question submitted
    * for a product sale. This operation returns the complete question context
    * including the buyer who asked the question, the question content,
@@ -171,8 +163,6 @@ export class ShoppingmallSalesQuestionsController {
   }
 
   /**
-   * Delete a customer question from a product sale listing.
-   *
    * Permanently remove a customer question from a specific product sale listing
    * in the shopping marketplace.
    *

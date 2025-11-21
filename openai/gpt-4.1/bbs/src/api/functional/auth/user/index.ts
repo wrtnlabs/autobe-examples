@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardUser } from "../../../structures/IDiscussionBoardUser";
 
 /**
- * Registers a new user in the discussion_board_users table and issues JWT
- * tokens upon success (join operation for user).
- *
  * This endpoint allows new users to register an account on the discussion board
  * platform. It creates a new entry in the discussion_board_users table,
  * leveraging only the fields that are actually present in the schema, such as
@@ -132,9 +129,6 @@ export namespace join {
 }
 
 /**
- * Authenticates user with credentials present in discussion_board_users and
- * issues JWT tokens (login operation for user).
- *
  * This endpoint provides login functionality for registered users of the
  * discussion board system. It uses only actual credential fields defined in the
  * discussion_board_users table, which may include `username`, `email`, and/or
@@ -252,9 +246,6 @@ export namespace login {
 }
 
 /**
- * Refreshes JWT tokens for valid user session, based on schema-confirmed
- * session management (refresh operation for user).
- *
  * This endpoint processes refresh token requests for persistent JWT-based
  * sessions. By submitting a valid refresh token (provided at registration or
  * login), the user receives a new set of access and refresh tokens, extending

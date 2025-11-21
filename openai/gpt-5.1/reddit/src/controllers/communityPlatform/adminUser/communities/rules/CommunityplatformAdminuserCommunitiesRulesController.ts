@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../../api/structures/I
 @Controller("/communityPlatform/adminUser/communities/:communitySlug/rules")
 export class CommunityplatformAdminuserCommunitiesRulesController {
   /**
-   * Search and retrieve a paginated list of rules for a specific community
-   * from `community_platform_community_rules`.
-   *
    * Retrieve a filtered and paginated list of rules configured for a specific
    * community identified by its slug.
    *
@@ -65,9 +62,6 @@ export class CommunityplatformAdminuserCommunitiesRulesController {
   }
 
   /**
-   * Retrieve the detailed definition of a specific community rule from
-   * `community_platform_community_rules`.
-   *
    * Retrieve detailed information about a single rule belonging to a specific
    * community identified by its slug.
    *
@@ -117,9 +111,6 @@ export class CommunityplatformAdminuserCommunitiesRulesController {
   }
 
   /**
-   * Delete a specific rule from community_platform_community_rules for a
-   * given community.
-   *
    * Remove a specific community rule from the community platform for a given
    * community.
    *

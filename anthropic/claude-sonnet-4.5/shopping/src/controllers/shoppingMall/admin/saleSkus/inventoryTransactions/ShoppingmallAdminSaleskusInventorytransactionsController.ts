@@ -11,9 +11,6 @@ import { IShoppingMallInventoryTransaction } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/saleSkus/:saleSkuId/inventoryTransactions")
 export class ShoppingmallAdminSaleskusInventorytransactionsController {
   /**
-   * Retrieve paginated inventory transaction history for a specific product
-   * SKU.
-   *
    * Retrieve a filtered and paginated list of inventory transactions for a
    * specific product SKU variant. This operation provides a complete audit
    * trail of all inventory quantity changes and movements, essential for

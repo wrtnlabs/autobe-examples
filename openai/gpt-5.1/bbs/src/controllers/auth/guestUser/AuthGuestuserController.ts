@@ -11,9 +11,6 @@ import { IDiscussionBoardGuestUser } from "../../../api/structures/IDiscussionBo
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Register or materialize a guest placeholder account in
-   * discussion_board_guestusers and issue JWT tokens for guestUser.
-   *
    * This API operation registers or materializes a guest user placeholder
    * account in the discussion board system based on the Prisma table
    * discussion_board_guestusers.
@@ -85,9 +82,6 @@ export class AuthGuestuserController {
   }
 
   /**
-   * Refresh JWT tokens for an existing guestUser session backed by
-   * discussion_board_guestusers.
-   *
    * This API operation refreshes JWT tokens for a guestUser actor that is
    * backed by a record in the discussion_board_guestusers table.
    *

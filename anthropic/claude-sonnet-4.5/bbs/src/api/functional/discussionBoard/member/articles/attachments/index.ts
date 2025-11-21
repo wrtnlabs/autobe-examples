@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleAttachment } from "../../../../../structures/IDiscussionBoardArticleAttachment";
 
 /**
- * Create a new attachment for a discussion board article.
- *
  * Upload and attach a new image or document file to an existing discussion
  * board article. This operation allows authenticated members to add supporting
  * materials, visual evidence, charts, documents, and reference materials to
@@ -120,8 +118,6 @@ export namespace create {
 }
 
 /**
- * Remove a specific attachment from a discussion board article.
- *
  * Permanently removes an attachment (image or document file) from a discussion
  * board article, deleting both the database record and the physical file from
  * storage.

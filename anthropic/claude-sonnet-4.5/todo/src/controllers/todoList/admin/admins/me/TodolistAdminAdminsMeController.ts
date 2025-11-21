@@ -11,8 +11,6 @@ import { ITodoListAdmin } from "../../../../../api/structures/ITodoListAdmin";
 @Controller("/todoList/admin/admins/me")
 export class TodolistAdminAdminsMeController {
   /**
-   * Retrieve authenticated administrator's own profile information.
-   *
    * Retrieve the currently authenticated administrator's profile information
    * including account details and metadata.
    *
@@ -58,8 +56,6 @@ export class TodolistAdminAdminsMeController {
   }
 
   /**
-   * Update authenticated administrator's own account information.
-   *
    * Update the currently authenticated administrator's account information,
    * primarily for changing account password through secure verification.
    *

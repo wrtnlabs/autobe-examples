@@ -7,9 +7,6 @@ import { ICommunityPlatformVotingAbuseFlag } from "../../../../structures/ICommu
 import { IPageICommunityPlatformVotingAbuseFlag } from "../../../../structures/IPageICommunityPlatformVotingAbuseFlag";
 
 /**
- * Search and retrieve platform voting abuse flag records
- * (community_platform_voting_abuse_flags table).
- *
  * Retrieve a paginated and filtered list of voting abuse flags present in the
  * platform. This operation helps surface occurrences where users or IPs have
  * been tagged for suspicious or abusive voting behavior, such as vote
@@ -113,9 +110,6 @@ export namespace index {
 }
 
 /**
- * Get details of a single platform voting abuse flag
- * (community_platform_voting_abuse_flags table) by ID.
- *
  * Retrieve full details for a single voting abuse flag record using its unique
  * identifier. This operation exposes all available schema fields for the
  * specified flag, including flagged user (if any), IP address, type of abuse

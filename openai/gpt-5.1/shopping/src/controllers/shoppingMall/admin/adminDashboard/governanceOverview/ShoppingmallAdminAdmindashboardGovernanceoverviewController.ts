@@ -7,9 +7,6 @@ import { IShoppingMallAdminGovernanceOverview } from "../../../../../api/structu
 @Controller("/shoppingMall/admin/adminDashboard/governanceOverview")
 export class ShoppingmallAdminAdmindashboardGovernanceoverviewController {
   /**
-   * Provide an aggregated governance overview dashboard for admins using
-   * shopping_mall_* governance and KPI snapshot tables.
-   *
    * Retrieve a comprehensive governance overview dashboard for shoppingMall
    * administrators.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallOrderPriceSnapshot } from "../../../../structures/IShoppin
 import { IPageIShoppingMallOrderPriceSnapshot } from "../../../../structures/IPageIShoppingMallOrderPriceSnapshot";
 
 /**
- * List price snapshot records for an order from
- * shopping_mall_order_price_snapshots.
- *
  * Search and retrieve a paginated list of price snapshot records for a specific
  * order.
  *

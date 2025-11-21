@@ -7,8 +7,6 @@ import { ITodoListTask } from "../../../structures/ITodoListTask";
 import { IPageITodoListTask } from "../../../structures/IPageITodoListTask";
 
 /**
- * Search and retrieve tasks with filtering and pagination.
- *
  * This operation provides advanced search capabilities for tasks, allowing
  * users to filter by multiple criteria, sort results, and paginate through
  * large datasets. It supports complex queries and returns a paginated list of
@@ -93,8 +91,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific task by ID.
- *
  * This operation fetches a single task identified by its unique task ID. It
  * returns comprehensive details about the task, including its current status,
  * description, and any relevant metadata. This is useful for viewing task
@@ -173,8 +169,6 @@ export namespace at {
 }
 
 /**
- * Delete a specific task by ID.
- *
  * Deletes a task identified by the taskId path parameter. This operation
  * permanently removes the task from the database. The taskId must be a valid
  * UUID corresponding to an existing task. Upon successful deletion, the

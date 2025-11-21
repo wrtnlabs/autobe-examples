@@ -7,8 +7,6 @@ import { ITodoListUserSession } from "../../../../../structures/ITodoListUserSes
 import { IPageITodoListUserSession } from "../../../../../structures/IPageITodoListUserSession";
 
 /**
- * Create a new Todo List user session record.
- *
  * Create a new session record for a registered Todo List user.
  *
  * This API accepts connection metadata such as IP address, session entry URL,
@@ -110,8 +108,6 @@ export namespace create {
 }
 
 /**
- * Search and list user sessions for a specific todo list user.
- *
  * Retrieve a filtered and paginated list of todo list user sessions associated
  * with a specific user.
  *
@@ -224,9 +220,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed Todo List user session information by user ID and session
- * ID.
- *
  * Retrieve detailed information about a specified session belonging to a
  * registered Todo List user.
  *
@@ -321,8 +314,6 @@ export namespace at {
 }
 
 /**
- * Update a todoListUserSession for a specific todoListUser.
- *
  * Update a specific todoListUserSession for the given todoListUser.
  *
  * This operation allows an authenticated user to update the properties of a
@@ -433,8 +424,6 @@ export namespace update {
 }
 
 /**
- * Delete a todoListUserSession for a specific todoListUser.
- *
  * Delete a specific todoListUserSession for the given todoListUser.
  *
  * This operation enables an authenticated user to permanently remove a session

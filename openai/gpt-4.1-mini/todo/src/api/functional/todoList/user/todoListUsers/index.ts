@@ -8,8 +8,6 @@ import { IPageITodoListTodoListUser } from "../../../../structures/IPageITodoLis
 export * as todoListUserSessions from "./todoListUserSessions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of todo list users.
- *
  * Retrieve a filtered and paginated list of registered users within the Todo
  * List application.
  *
@@ -108,8 +106,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a registered Todo List user by ID.
- *
  * Retrieve detailed information of a registered Todo List user by their unique
  * UUID identifier.
  *
@@ -198,8 +194,6 @@ export namespace at {
 }
 
 /**
- * Update an existing Todo List user by ID.
- *
  * Update the attributes of a registered Todo List user using their unique UUID.
  *
  * This operation allows modification of user profile data including email and

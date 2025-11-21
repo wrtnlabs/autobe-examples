@@ -13,8 +13,6 @@ import { ITodoAppSession } from "../../../../../api/structures/ITodoAppSession";
 @Controller("/todoApp/user/users/:userId/sessions")
 export class TodoappUserUsersSessionsController {
   /**
-   * Search and filter user sessions with advanced query capabilities.
-   *
    * Retrieve a filtered and paginated list of user sessions with comprehensive
    * search capabilities designed for personal session management and security
    * awareness. This operation enables users to query their own sessions across
@@ -68,8 +66,6 @@ export class TodoappUserUsersSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific user session.
-   *
    * Obtain comprehensive session details for personal security management and
    * device oversight. This operation provides detailed access to individual
    * session records within the user's own context for device management and
@@ -122,8 +118,6 @@ export class TodoappUserUsersSessionsController {
   }
 
   /**
-   * Permanently invalidate and delete a user authentication session.
-   *
    * This operation allows authenticated users to terminate a specific
    * authentication session by permanently deleting the session record from the
    * system. Users can end sessions for devices they no longer use or as part of

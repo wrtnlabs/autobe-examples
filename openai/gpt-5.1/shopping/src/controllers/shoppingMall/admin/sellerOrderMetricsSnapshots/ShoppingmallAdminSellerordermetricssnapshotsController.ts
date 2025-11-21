@@ -8,9 +8,6 @@ import { IShoppingMallSellerOrderMetricsSnapshot } from "../../../../api/structu
 @Controller("/shoppingMall/admin/sellerOrderMetricsSnapshots")
 export class ShoppingmallAdminSellerordermetricssnapshotsController {
   /**
-   * Search and retrieve paginated seller order metrics snapshots from
-   * `shopping_mall_seller_order_metrics_snapshots`.
-   *
    * Retrieve a paginated and filtered list of seller order metrics snapshot
    * records from the `shopping_mall_seller_order_metrics_snapshots` table.
    *
@@ -70,9 +67,6 @@ export class ShoppingmallAdminSellerordermetricssnapshotsController {
   }
 
   /**
-   * Retrieve a single seller order metrics snapshot from
-   * `shopping_mall_seller_order_metrics_snapshots` by ID.
-   *
    * Retrieve a detailed seller order metrics snapshot record from the
    * `shopping_mall_seller_order_metrics_snapshots` table by its unique
    * identifier.

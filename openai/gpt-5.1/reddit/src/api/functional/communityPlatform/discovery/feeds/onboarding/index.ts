@@ -7,9 +7,6 @@ import { ICommunityPlatformDiscoveryFeedOnboarding } from "../../../../../struct
 import { IPageICommunityPlatformDiscoveryItem } from "../../../../../structures/IPageICommunityPlatformDiscoveryItem";
 
 /**
- * Retrieve a paginated onboarding discovery feed based on
- * `community_platform_discovery_items`.
- *
  * Retrieve a ranked, paginated list of discovery feed items optimized for user
  * onboarding, using data stored in the `community_platform_discovery_items`
  * table.

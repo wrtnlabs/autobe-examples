@@ -8,10 +8,6 @@ import { IShoppingMallCatalogSearchIndexEntry } from "../../../../../api/structu
 @Controller("/shoppingMall/admin/catalogSearch/indexEntries")
 export class ShoppingmallAdminCatalogsearchIndexentriesController {
   /**
-   * List and filter catalog search index entries from the
-   * shopping_mall_catalog_search_index_entries table for administrative
-   * analysis.
-   *
    * Retrieve a filtered and paginated list of catalog search index entries
    * stored in the shopping_mall_catalog_search_index_entries table for
    * internal analysis and operational tooling.
@@ -66,9 +62,6 @@ export class ShoppingmallAdminCatalogsearchIndexentriesController {
   }
 
   /**
-   * Get a single catalog search index entry from
-   * shopping_mall_catalog_search_index_entries by its identifier.
-   *
    * Retrieve detailed information for a single catalog search index entry
    * identified by `catalogSearchIndexEntryId` from the underlying
    * `shopping_mall_catalog_search_index_entries` Prisma model.

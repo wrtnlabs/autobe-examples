@@ -8,9 +8,6 @@ import { IDiscussionBoardArticleOfMemberusersMemberAuthor } from "../../../../ap
 @Controller("/discussionBoard/articles/:articleId/memberAuthor")
 export class DiscussionboardArticlesMemberauthorController {
   /**
-   * Get the member user author linked via
-   * discussion_board_article_of_memberusers for the specified article.
-   *
    * Retrieve information about the member user who authored a particular
    * discussion board article.
    *

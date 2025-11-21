@@ -7,8 +7,6 @@ import { IShoppingMallSaleVariantValue } from "../../../../../../structures/ISho
 import { IPageIShoppingMallSaleVariantValue } from "../../../../../../structures/IPageIShoppingMallSaleVariantValue";
 
 /**
- * Create a new variant attribute value for a sale variant attribute.
- *
  * Create a new variant attribute value for a specific variant attribute within
  * a product sale listing. This operation allows sellers to add additional
  * options to their product variant configurations, expanding the available SKU
@@ -143,9 +141,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve variant attribute values for a specific sale variant
- * attribute.
- *
  * Retrieve a filtered and paginated list of variant attribute values for a
  * specific variant attribute within a product sale listing. This operation
  * provides search capabilities for finding variant values based on criteria
@@ -270,8 +265,6 @@ export namespace index {
 }
 
 /**
- * Update an existing variant attribute value for a product sale.
- *
  * Update the properties of an existing variant attribute value within a product
  * sale's variant configuration system. This operation allows sellers to modify
  * value display information, change the sort order for option presentation,
@@ -401,8 +394,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific variant attribute value from a product sale.
- *
  * Remove a specific value option from a variant attribute in a product sale's
  * configuration. This operation allows sellers to manage their product variant
  * options by removing individual values that are no longer offered or

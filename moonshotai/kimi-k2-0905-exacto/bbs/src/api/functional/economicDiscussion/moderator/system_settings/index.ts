@@ -7,8 +7,6 @@ import { IEconomicDiscussionSystemSetting } from "../../../../structures/IEconom
 import { IPageIEconomicDiscussionSystemSetting } from "../../../../structures/IPageIEconomicDiscussionSystemSetting";
 
 /**
- * Create a new system configuration setting.
- *
  * Create a new system-wide configuration setting that controls platform
  * behavior and policies. This operation allows administrators to define
  * configuration parameters with proper validation, display information, and
@@ -110,9 +108,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated system settings with advanced filtering
- * capabilities for administrative configuration management.
- *
  * Search and retrieve system configuration settings with comprehensive
  * filtering, sorting, and pagination capabilities.
  *
@@ -217,9 +212,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed system configuration setting information by unique code
- * identifier.
- *
  * Retrieve comprehensive details for a specific system configuration parameter
  * using its unique setting code identifier.
  *
@@ -318,8 +310,6 @@ export namespace at {
 }
 
 /**
- * Update system configuration setting.
- *
  * Update an existing system configuration setting identified by its unique
  * code. This operation allows administrators to modify setting values while
  * preserving all metadata including display information, categorization, and
@@ -426,8 +416,6 @@ export namespace update {
 }
 
 /**
- * Delete a system configuration setting by its unique key code.
- *
  * Delete a specific system-wide configuration setting from the Economic
  * Discussion Board platform using its unique key code. This operation removes
  * configuration parameters that control various aspects of the discussion

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumCommunityPostVote } from "../../../../../structures/ICommunityForumCommunityPostVote";
 
 /**
- * Create or update a user's vote on a specific forum post.
- *
  * Creates a new vote (upvote or downvote) on a forum post by an authenticated
  * user. This endpoint handles the core voting functionality of the community
  * platform, allowing users to express their approval or disapproval of
@@ -113,8 +111,6 @@ export namespace create {
 }
 
 /**
- * Remove a user's vote from a specific forum post.
- *
  * Removes an existing vote from a forum post by an authenticated user. This
  * endpoint allows users to retract their previously cast votes, providing
  * flexibility in community engagement and enabling correction of accidental

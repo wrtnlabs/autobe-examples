@@ -13,8 +13,6 @@ import { ICommon } from "../../../api/structures/ICommon";
 @Controller("/auth/member")
 export class AuthMemberController {
   /**
-   * Register a new discussion board member account.
-   *
    * This `join` operation enables new discussion board members to register by
    * providing their email, password, and nickname. It writes to the
    * discussion_board_member table fields email, password_hash, nickname,
@@ -49,8 +47,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Authenticate member credentials and issue tokens.
-   *
    * This `login` operation allows registered discussion board members to
    * authenticate with their email and password. It verifies credentials against
    * the stored password_hash in the discussion_board_member table. Successful
@@ -83,8 +79,6 @@ export class AuthMemberController {
   }
 
   /**
-   * Refresh JWT access tokens for members.
-   *
    * This `refresh` operation enables authenticated discussion board members to
    * renew their JWT access tokens using a valid refresh token. It ensures
    * continuous access without requiring re-login. The operation verifies the

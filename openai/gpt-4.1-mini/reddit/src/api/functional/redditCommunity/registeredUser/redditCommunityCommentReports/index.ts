@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommentReport } from "../../../../structures/IRedditCommunityCommentReport";
 
 /**
- * Submit a new comment report.
- *
  * Create a new comment report entry within the RedditCommunity platform. This
  * operation allows users, moderators, or admins to flag problematic comments
  * with reasons and supporting information.

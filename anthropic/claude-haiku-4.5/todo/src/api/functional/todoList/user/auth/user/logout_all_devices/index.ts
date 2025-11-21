@@ -5,8 +5,6 @@ import typia from "typia";
 import { ITodoListLogoutResponse } from "../../../../../../structures/ITodoListLogoutResponse";
 
 /**
- * Log out current user from all devices.
- *
  * Terminate all of the current user's active sessions across all devices and
  * invalidate all associated JWT tokens.
  *

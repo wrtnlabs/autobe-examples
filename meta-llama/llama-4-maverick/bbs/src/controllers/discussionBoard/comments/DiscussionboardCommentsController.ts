@@ -9,8 +9,6 @@ import { IDiscussionBoardComment } from "../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/comments")
 export class DiscussionboardCommentsController {
   /**
-   * Search for comments with various criteria.
-   *
    * This operation allows users to search for comments using multiple criteria
    * such as content, author, date range, and more. It supports advanced
    * features like pagination and sorting to efficiently retrieve large

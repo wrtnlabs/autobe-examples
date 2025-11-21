@@ -1,0 +1,438 @@
+/// Main entity for customer support inquiries submitted to the shopping mall
+/// platform.
+///
+/// Represents the core inquiry record that contains the customer's question
+/// or issue. Each inquiry can receive multiple responses from support staff
+/// and follows a specific workflow from submission to resolution. The
+/// inquiry maintains general information about the issue while specific
+/// actor details are handled through subtype tables.
+///
+/// Inquiries support various types including product questions, order
+/// issues, account problems, and general platform feedback. The system
+/// tracks inquiry status, priority, and resolution progress through the
+/// lifecycle.
+///
+/// **CRITICAL CHANGE**: Removed actor_type field as polymorphic ownership is
+/// now properly handled through subtype tables.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Brief summary of the inquiry issue or question. Provides quick context
+  /// for support staff when reviewing the inquiry list.
+  title String
+  
+  /// Detailed description of the inquiry including specific questions, issues,
+  /// or requests for assistance.
+  body String
+  
+  /// Category of inquiry such as product_question, order_issue,
+  /// account_problem, technical_support, or general_feedback.
+  inquiry_type String
+  
+  /// Urgency level of the inquiry (low, medium, high, critical). Determines
+  /// response time expectations and routing.
+  priority String
+  
+  /// Current workflow state of the inquiry (open, in_progress,
+  /// awaiting_response, resolved, closed).
+  status String
+  
+  /// Timestamp when the inquiry was initially submitted to the support system.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the inquiry record.
+  updated_at DateTime
+  
+  /// Timestamp when the inquiry was soft deleted for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_inquiry_of_customers shopping_mall_inquiry_of_customers?
+  shopping_mall_inquiry_of_sellers shopping_mall_inquiry_of_sellers?
+  shopping_mall_inquiry_of_administrators shopping_mall_inquiry_of_administrators?
+  shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
+  shopping_mall_support_tickets shopping_mall_support_tickets?
+  
+  @@index([status, priority])
+  @@index([inquiry_type, created_at])
+  @@index([created_at])
+}
+
+/// Customer-specific context for shopping mall inquiries.
+///
+/// Tracks which specific customer created each inquiry along with their
+/// session context. This subtype table enables proper polymorphic ownership
+/// where inquiries can be created by different actor types while maintaining
+/// referential integrity.
+///
+/// Each record links an inquiry to a specific customer and their active
+/// session, providing complete audit trail of inquiry creation. The system
+/// can efficiently filter inquiries by customer or track customer support
+/// history.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main inquiry entity. {@link shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String
+  
+  /// Customer who created the inquiry. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when inquiry was created. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when the customer-specific inquiry context was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inquiry_id], map: "shopping_mall_inquiry_of_customers_shopping_mall_inqui_7f1d0602")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_inquiry_of_customers_shopping_mall_custo_1f524473")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inquiry_of_customers_shopping_mall_custo_02f10393")
+}
+
+/// Seller-specific context for shopping mall inquiries.
+///
+/// Tracks which specific seller created each inquiry along with their
+/// session context. This subtype table enables proper polymorphic ownership
+/// where inquiries can be created by different actor types while maintaining
+/// referential integrity.
+///
+/// Each record links an inquiry to a specific seller and their active
+/// session, providing complete audit trail of inquiry creation. The system
+/// can efficiently filter inquiries by seller or track seller support
+/// interactions.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main inquiry entity. {@link shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String
+  
+  /// Seller who created the inquiry. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when inquiry was created. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when the seller-specific inquiry context was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_inquiry_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_inquiry_of_sellers_shopping_mall_seller__825065d2")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_inquiry_of_sellers_shopping_mall_seller__6ee5ded2")
+}
+
+/// Administrator-specific context for shopping mall inquiries.
+///
+/// Tracks which specific administrator created each inquiry along with their
+/// session context. This subtype table enables proper polymorphic ownership
+/// where inquiries can be created by different actor types while maintaining
+/// referential integrity.
+///
+/// Each record links an inquiry to a specific administrator and their active
+/// session, providing complete audit trail of inquiry creation. The system
+/// can efficiently filter inquiries by administrator or track administrative
+/// support actions.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main inquiry entity. {@link shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String
+  
+  /// Administrator who created the inquiry. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session when inquiry was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Timestamp when the administrator-specific inquiry context was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  administratorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inquiry_id], map: "shopping_mall_inquiry_of_administrators_shopping_mall__ae97ca1b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_inquiry_of_administrators_shopping_mall__c9853e64")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_inquiry_of_administrators_shopping_mall__83835ab6")
+}
+
+/// Support responses to customer inquiries.
+///
+/// Contains the detailed responses provided by support staff to address
+/// customer inquiries. Each response is linked to a specific inquiry and
+/// includes the response content, responder information, and response
+/// metadata.
+///
+/// **ENHANCEMENT**: Extended to support responses from both administrators
+/// and sellers, providing greater platform flexibility for multi-actor
+/// support systems.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inquiry being responded to. {@link shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String
+  
+  /// Administrator providing the response. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String?
+  
+  /// Administrator session when the response was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String?
+  
+  /// Seller providing the response. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Seller session when the response was created. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String?
+  
+  /// Detailed content of the support response including answers, solutions, or
+  /// follow-up questions.
+  response_body String
+  
+  /// Type of response such as answer, solution, question, or escalation.
+  response_type String
+  
+  /// Whether the response is internal notes or visible to the inquiry creator.
+  is_internal Boolean
+  
+  /// Timestamp when the response was submitted by support staff.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the response content.
+  updated_at DateTime
+  
+  /// Timestamp when the response was soft deleted for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  administratorSession shopping_mall_administrator_sessions? @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions? @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_inquiry_responses_shopping_mall_administ_4a324825")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_inquiry_responses_shopping_mall_administ_2ad350bc")
+  @@index([shopping_mall_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_inquiry_responses_shopping_mall_seller_s_fb5f3741")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inquiry_id, created_at], map: "shopping_mall_inquiry_responses_shopping_mall_inquiry__c18d4a78")
+  @@index([created_at])
+}
+
+/// Formal support tickets for tracking complex customer issues.
+///
+/// Represents structured support cases that require extended tracking,
+/// multiple interactions, and formal resolution processes. Tickets are
+/// typically created for complex issues that cannot be resolved through
+/// simple inquiry responses.
+///
+/// Support tickets include comprehensive tracking of issue details, assigned
+/// support agents, SLA compliance, and resolution documentation. The system
+/// manages ticket priority, categorization, and workflow states throughout
+/// the support lifecycle.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_tickets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original inquiry that escalated to a support ticket. {@link
+  /// shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String?
+  
+  /// Support agent assigned to the ticket. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String?
+  
+  /// Unique ticket identifier for customer reference and support tracking.
+  ticket_number String
+  
+  /// Brief summary of the ticket issue or problem description.
+  title String
+  
+  /// Detailed description of the issue including symptoms, steps to reproduce,
+  /// and impact assessment.
+  description String
+  
+  /// Ticket categorization such as technical_issue, billing_problem, or
+  /// account_security.
+  category String
+  
+  /// Urgency level (low, medium, high, critical) determining response and
+  /// resolution timelines.
+  priority String
+  
+  /// Current workflow state (new, open, in_progress, resolved, closed).
+  status String
+  
+  /// Target resolution deadline based on service level agreements.
+  sla_deadline DateTime?
+  
+  /// Documentation of the solution applied to resolve the ticket.
+  resolution_notes String?
+  
+  /// Timestamp when the support ticket was created.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the ticket record.
+  updated_at DateTime
+  
+  /// Timestamp when the ticket was marked as resolved.
+  resolved_at DateTime?
+  
+  /// Timestamp when the ticket was formally closed after resolution
+  /// verification.
+  closed_at DateTime?
+  
+  /// Timestamp when the ticket was soft deleted for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries? @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  assignedAdministrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_ticket_status_history shopping_mall_ticket_status_history[]
+  
+  @@unique([shopping_mall_inquiry_id])
+  
+  @@unique([ticket_number])
+  @@index([status, priority])
+  @@index([category, created_at])
+  @@index([sla_deadline])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, status], map: "shopping_mall_support_tickets_shopping_mall_administra_67d51e38")
+}
+
+/// Historical tracking of support ticket status changes.
+///
+/// Maintains a complete audit trail of all status transitions for support
+/// tickets. Each record captures the previous status, new status, change
+/// reason, and the administrator who made the change.
+///
+/// This historical data enables tracking of ticket lifecycle, response time
+/// analysis, and compliance reporting. The system preserves the complete
+/// history of ticket state changes for transparency and audit purposes.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_ticket_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Support ticket whose status is being tracked. {@link
+  /// shopping_mall_support_tickets.id}
+  shopping_mall_support_ticket_id String
+  
+  /// Administrator who changed the ticket status. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String?
+  
+  /// Status value before the change occurred.
+  previous_status String
+  
+  /// Status value after the change was applied.
+  new_status String
+  
+  /// Explanation or justification for the status change.
+  change_reason String?
+  
+  /// Timestamp when the status change was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  supportTicket shopping_mall_support_tickets @relation(fields: [shopping_mall_support_ticket_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_support_ticket_id, created_at], map: "shopping_mall_ticket_status_history_shopping_mall_supp_4e771fdc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_ticket_status_history_shopping_mall_admi_841a35b7")
+}

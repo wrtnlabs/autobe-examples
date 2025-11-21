@@ -7,9 +7,6 @@ import { ICommunityPlatformAccountRestriction } from "../../../../../structures/
 import { IPageICommunityPlatformAccountRestriction } from "../../../../../structures/IPageICommunityPlatformAccountRestriction";
 
 /**
- * Create a community_platform_account_restrictions record and link it to an
- * adminUser using the admin-user linkage table.
- *
  * Create a new account restriction episode that applies to a specific adminUser
  * account by inserting into community_platform_account_restrictions and linking
  * it via the admin-user linkage table.
@@ -163,9 +160,6 @@ export namespace create {
 }
 
 /**
- * Search and list community_platform_account_restrictions affecting a specific
- * adminUser via username.
- *
  * Retrieve a filtered and paginated list of account restriction episodes
  * associated with a specific adminUser account, leveraging the
  * community_platform_account_restrictions table together with its admin-user
@@ -320,9 +314,6 @@ export namespace index {
 }
 
 /**
- * Get a single `community_platform_account_restrictions` record for an admin
- * user by restriction ID.
- *
  * Retrieve detailed information about a single account restriction episode that
  * has been applied to a specific admin user account.
  *
@@ -463,9 +454,6 @@ export namespace at {
 }
 
 /**
- * Update a `community_platform_account_restrictions` record for an admin user
- * by restriction ID.
- *
  * Update the details of an existing account restriction episode associated with
  * a specific admin user account.
  *
@@ -625,9 +613,6 @@ export namespace update {
 }
 
 /**
- * Deactivate a `community_platform_account_restrictions` record for a specific
- * adminUser identified by username and restriction ID.
- *
  * Remove the effect of a previously created restriction episode on an
  * administrative account by deactivating a record in the
  * `community_platform_account_restrictions` table.

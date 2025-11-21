@@ -10,9 +10,6 @@ import { ITodoListUser } from "../../../api/structures/ITodoListUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Register a new user account with email and password for the todo_list_users
-   * table.
-   *
    * Creates a new user account in the Todo list application by registering with
    * email and password credentials.
    *
@@ -63,8 +60,6 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticate user with email and password for the todo_list_users table.
-   *
    * Authenticates an existing user by validating their email and password
    * credentials against the todo_list_users table.
    *
@@ -117,8 +112,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refresh JWT access tokens using a valid refresh token for user sessions.
-   *
    * Refreshes JWT access tokens using a valid refresh token to extend the
    * user's authenticated session.
    *

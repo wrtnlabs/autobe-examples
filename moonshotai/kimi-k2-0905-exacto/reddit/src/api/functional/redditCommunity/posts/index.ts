@@ -8,8 +8,6 @@ import { IPageIRedditCommunityPost } from "../../../structures/IPageIRedditCommu
 export * as comments from "./comments/index";
 
 /**
- * Search and filter posts across communities with advanced criteria.
- *
  * This operation enables comprehensive post discovery and filtering across the
  * platform with support for multiple search criteria and sorting options. Users
  * can filter posts by community, post type, voting patterns, engagement
@@ -116,8 +114,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific Reddit community post.
- *
  * Retrieve comprehensive details about a specific Reddit community post by its
  * unique identifier. This operation returns the complete post data including
  * title, content, author information, community details, voting statistics, and

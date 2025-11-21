@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/shoppingMall/admin/sales/:saleCode")
 export class ShoppingmallAdminSalesController {
   /**
-   * Permanently delete a product sale listing and all associated data.
-   *
    * Permanently delete a product sale listing from the shopping marketplace
    * system. This operation removes the sale record identified by its unique
    * business code from the database.

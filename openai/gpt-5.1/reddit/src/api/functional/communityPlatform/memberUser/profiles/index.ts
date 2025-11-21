@@ -7,9 +7,6 @@ import { ICommunityPlatformUserProfile } from "../../../../structures/ICommunity
 export * as settings from "./settings/index";
 
 /**
- * Update a community_platform_user_profiles record identified by its unique
- * handle.
- *
  * Update public-facing profile information stored in the
  * community_platform_user_profiles table for a given user profile identified by
  * its unique handle. This operation is designed for profile editing experiences
@@ -135,9 +132,6 @@ export namespace update {
 }
 
 /**
- * Erase a member user's public profile from the
- * community_platform_user_profiles table using its unique handle.
- *
  * Delete the public profile record for a specific member user identified by a
  * globally unique handle in the `community_platform_user_profiles` table.
  *

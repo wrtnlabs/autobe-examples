@@ -13,8 +13,6 @@ import { IPageIDiscussionBoardConfiguration } from "../../../../api/structures/I
 @Controller("/discussionBoard/moderator/configurations")
 export class DiscussionboardModeratorConfigurationsController {
   /**
-   * Create a new configuration setting for the discussion board platform.
-   *
    * This operation allows authorized administrators to create new configuration
    * settings for the discussion board platform. Configuration settings control
    * various aspects of system behavior including moderation policies,
@@ -60,9 +58,6 @@ export class DiscussionboardModeratorConfigurationsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of discussion board
-   * configuration settings.
-   *
    * This operation provides search capabilities for system configuration
    * settings used by the discussion board platform. Administrators can filter
    * configurations by key patterns, value content, configuration type (boolean,
@@ -99,8 +94,6 @@ export class DiscussionboardModeratorConfigurationsController {
   }
 
   /**
-   * Update an existing discussion board configuration setting.
-   *
    * Update the value and metadata of a specific configuration setting in the
    * discussion board system.
    *
@@ -148,8 +141,6 @@ export class DiscussionboardModeratorConfigurationsController {
   }
 
   /**
-   * Permanently delete a discussion board configuration setting.
-   *
    * Remove a specific configuration setting from the discussion board system.
    *
    * This operation allows authorized moderators to delete configuration

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallPlatformCommissions } from "../../../../../structures/IShoppingMallPlatformCommissions";
 
 /**
- * Retrieve all platform commission records for a specific order.
- *
  * Retrieve a collection of platform commission records associated with a
  * specific order in the marketplace system. This operation provides access to
  * all commission entries related to a single order, enabling administrators to

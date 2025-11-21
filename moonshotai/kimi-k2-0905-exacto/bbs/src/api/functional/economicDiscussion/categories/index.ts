@@ -7,8 +7,6 @@ import { IEconomicDiscussionCategory } from "../../../structures/IEconomicDiscus
 import { IPageIEconomicDiscussionCategory } from "../../../structures/IPageIEconomicDiscussionCategory";
 
 /**
- * Search and retrieve paginated list of discussion categories.
- *
  * Retrieve a filtered and paginated list of discussion board categories with
  * support for advanced search criteria. This operation enables users to
  * discover relevant discussion topics by filtering based on category names,
@@ -107,8 +105,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information about a discussion category.
- *
  * Retrieve comprehensive details for a specific discussion board category
  * identified by its unique code. This operation provides complete category
  * information including title, description, creation timestamp, last activity,

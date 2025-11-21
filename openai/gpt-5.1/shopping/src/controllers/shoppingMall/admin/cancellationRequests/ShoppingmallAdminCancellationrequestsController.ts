@@ -8,9 +8,6 @@ import { IShoppingMallCancellationRequest } from "../../../../api/structures/ISh
 @Controller("/shoppingMall/admin/cancellationRequests")
 export class ShoppingmallAdminCancellationrequestsController {
   /**
-   * Search and list cancellation requests from the
-   * shopping_mall_cancellation_requests table with filtering and pagination.
-   *
    * Search and retrieve a filtered, paginated list of cancellation requests
    * recorded in the shopping mall platform.
    *
@@ -65,9 +62,6 @@ export class ShoppingmallAdminCancellationrequestsController {
   }
 
   /**
-   * Retrieve a single cancellation request record from the
-   * shopping_mall_cancellation_requests table by its identifier.
-   *
    * Retrieve a single cancellation request record by its unique identifier
    * from the `shopping_mall_cancellation_requests` table.
    *
@@ -118,9 +112,6 @@ export class ShoppingmallAdminCancellationrequestsController {
   }
 
   /**
-   * Update a shopping_mall_cancellation_requests record representing a
-   * cancellation request.
-   *
    * Update an existing cancellation request in the shopping mall platform.
    *
    * This operation targets the shopping_mall_cancellation_requests table,
@@ -175,9 +166,6 @@ export class ShoppingmallAdminCancellationrequestsController {
   }
 
   /**
-   * Erase a shopping_mall_cancellation_requests record representing a
-   * cancellation request.
-   *
    * Permanently remove an existing cancellation request from the
    * shopping_mall_cancellation_requests table.
    *

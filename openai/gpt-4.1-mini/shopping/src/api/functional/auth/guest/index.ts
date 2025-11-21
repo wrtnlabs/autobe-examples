@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallGuest } from "../../../structures/IShoppingMallGuest";
 
 /**
- * Register a temporary guest account and issue authorization tokens.
- *
  * Enables unauthenticated users (guest) to register temporary guest accounts.
  * The operation uses the 'shopping_mall_guests' Prisma table for storing guest
  * user records with minimal required fields. Upon successful registration, the
@@ -115,8 +113,6 @@ export namespace join {
 }
 
 /**
- * Refresh temporary authorization tokens for guest users.
- *
  * Allows guest users to obtain new JWT authorization tokens by submitting valid
  * refresh tokens. Validates refresh tokens against the
  * 'shopping_mall_guest_sessions' table to ensure session validity.

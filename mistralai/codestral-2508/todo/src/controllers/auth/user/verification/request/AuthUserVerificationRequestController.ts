@@ -8,9 +8,6 @@ import { ITodoListUser } from "../../../../../api/structures/ITodoListUser";
 @Controller("/auth/user/verification/request")
 export class AuthUserVerificationRequestController {
   /**
-   * Sends account verification email to a newly registered user
-   * (todo_list_users).
-   *
    * This endpoint initiates an email verification workflow for new
    * registrations or when the user requires a new verification email (for
    * example, expiry or missed original message). Uses the 'email' field within

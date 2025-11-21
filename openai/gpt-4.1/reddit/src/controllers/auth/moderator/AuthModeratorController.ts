@@ -12,10 +12,6 @@ import { ICommunityPlatformModerator } from "../../../api/structures/ICommunityP
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Moderators join the platform by registering a new account in
-   * 'community_platform_moderators' table and receive an authorized JWT
-   * session.
-   *
    * The primary function of this endpoint is to allow new moderators to
    * register an account within the platform, targeting the
    * 'community_platform_moderators' table as the underlying storage for
@@ -72,9 +68,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator by verifying credentials in
-   * 'community_platform_moderators' and issue JWT for session.
-   *
    * This endpoint provides login/authentication for existing moderators,
    * targeting the 'community_platform_moderators' table for credential lookup
    * and session management. It requires valid credentials according to security
@@ -128,9 +121,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh the authenticated session for moderator by rotating JWT tokens
-   * using a valid refresh token and session record.
-   *
    * The primary function of this endpoint is to allow authenticated moderators
    * to maintain their session without re-entering credentials, provided a valid
    * refresh token is supplied. The endpoint operates on the

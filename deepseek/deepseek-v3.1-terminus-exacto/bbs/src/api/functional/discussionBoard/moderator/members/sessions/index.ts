@@ -7,9 +7,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardMemberSession } from "../../../../../structures/IPageIDiscussionBoardMemberSession";
 
 /**
- * Search and retrieve a filtered, paginated list of member authentication
- * sessions.
- *
  * Retrieve a filtered and paginated list of authentication sessions for a
  * specific member user identified by their username. This operation provides
  * advanced search capabilities for finding session records based on multiple
@@ -118,8 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific member authentication session.
- *
  * Retrieve comprehensive details about a specific authentication session for a
  * member user. This operation provides complete session information including
  * connection context, IP address, access URLs, session timestamps, and

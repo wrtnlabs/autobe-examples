@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderStatusAnalytics } from "../../../../../structures/IShoppingMallOrderStatusAnalytics";
 
 /**
- * Provide aggregated analytics of order statuses based on shopping_mall_orders
- * and related snapshot tables.
- *
  * Retrieve aggregated analytics about order statuses across the marketplace or
  * for specific segments, using data primarily from the shopping_mall_orders and
  * optionally shopping_mall_order_daily_stats tables.

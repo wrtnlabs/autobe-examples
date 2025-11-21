@@ -7,9 +7,6 @@ import { ITodoAppAdminSession } from "../../../../../structures/ITodoAppAdminSes
 import { IPageITodoAppAdminSession } from "../../../../../structures/IPageITodoAppAdminSession";
 
 /**
- * Search and retrieve all admin session records for a specified administrator
- * from todo_app_admin_sessions table.
- *
  * Retrieve the list of authentication and usage sessions associated with a
  * target administrator. The PATCH method allows complex querying of the
  * todo_app_admin_sessions table, filtering session records by administrator,
@@ -118,9 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific administrator session by session ID from
- * todo_app_admin_sessions.
- *
  * Fetch a specific administrator session record from the system, allowing
  * privileged users to view all the recorded properties related to a given
  * session, including login metadata, IP context, timestamps, and navigation
@@ -225,9 +219,6 @@ export namespace at {
 }
 
 /**
- * Permanently delete a specific administrator session from
- * todo_app_admin_sessions.
- *
  * Erase a specific administrator session, ensuring permanent removal from the
  * system database. This operation directly deletes the session identified by
  * the provided `sessionId` within the scope of the given admin. Actions are

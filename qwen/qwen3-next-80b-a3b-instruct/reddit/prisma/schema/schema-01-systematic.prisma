@@ -1,398 +1,212 @@
-/// Global portal settings that define the behavior and appearance of the
-/// CommunityPlatform user interface.
+/// Core system configuration settings that control platform-wide behavior
+/// and operational parameters.
 ///
-/// Contains configuration constants and display options that affect the
-/// entire platform. These settings control UI elements like theme colors,
-/// footer text, website title, and other global presentation parameters.
-/// Changes to these settings affect all users across all communities.
-///
-/// This table is managed exclusively by administrators through secure
-/// administrative interfaces and is referenced by the frontend application
-/// to render consistent branding and behavior throughout the platform.
+/// This table stores critical system-level configuration values that apply
+/// across all communities and user interactions. Contains administrative
+/// controls for default behavior, rate limiting thresholds, and
+/// platform-wide settings managed by system administrators.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_portal_settings {
+model community_bbs_system_config {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The title displayed in the browser tab and website header. Must not
-  /// exceed 100 characters.
-  website_title String
-  
-  /// Text displayed in the banner on the homepage. Supports HTML formatting
-  /// for styling.
-  homepage_banner_text String?
-  
-  /// Text displayed in the site footer. Typically includes copyright
-  /// information and links to terms of service.
-  footer_text String
-  
-  /// Primary color hex code used for buttons, links, and highlights (e.g.,
-  /// #2563EB). Must be a valid CSS hex color.
-  theme_color_primary String
-  
-  /// Secondary color hex code used for accents and secondary buttons (e.g.,
-  /// #1d4ed8). Must be a valid CSS hex color.
-  theme_color_secondary String
-  
-  /// Default sorting method for feed view: 'new', 'hot', 'top', or
-  /// 'controversial'. Defines the initial sort order when users visit the
-  /// homepage.
-  default_post_sort String
-  
-  /// Whether unauthenticated guests can view posts and communities without
-  /// logging in. If false, users must log in to access any content.
-  enable_guest_browsing Boolean
-  
-  /// Maximum allowed character count for text posts. Must be between 1 and
-  /// 10000. Provides an upper limit to post content length.
-  max_post_length Int
-  
-  /// Maximum allowed character count for comments. Must be between 1 and 500.
-  /// Prevents excessively long comments.
-  max_comment_length Int
-  
-  /// Maximum allowed file size for image uploads in megabytes. Must be between
-  /// 1 and 20. Controls storage costs and bandwidth usage.
-  max_image_size_mb Int
-  
-  /// Timestamp when this configuration record was created in the system.
+  /// Timestamp when this system configuration was created.
   created_at DateTime
   
-  /// Timestamp when this configuration record was last modified.
+  /// Timestamp when this system configuration was last updated.
   updated_at DateTime
-  
-  /// Timestamp when this configuration record was logically deleted. Null
-  /// indicates active configuration. Used for audit trails.
-  deleted_at DateTime?
 }
 
-/// Core system configuration parameters that define platform-wide
-/// operational behavior and technical settings.
+/// Platform-wide configuration settings that define operational parameters
+/// for the entire communityBBS system.
 ///
-/// Contains critical runtime configuration that governs how the platform
-/// functions, including moderation rules, rate limits, storage
-/// configurations, and performance tuning. Unlike portal_settings which are
-/// UI-focused, this table holds infrastructure-level configuration that
-/// affects system behavior.
-///
-/// All changes to this table require administrative access and should be
-/// carefully documented due to their global impact on platform functionality
-/// and user experience.
+/// Manages global configuration for platform features including posting
+/// limits, user permissions, system notifications, and default behavior for
+/// all communities. These settings override any community-specific
+/// configurations and are managed by system administrators.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_config {
+model community_bbs_platform_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Maximum number of consecutive failed login attempts before account
-  /// lockout. Default value is 5. Prevents brute force attacks.
-  max_login_attempts Int
-  
-  /// Duration (in minutes) that an account remains locked after exceeding
-  /// max_login_attempts. Default value is 30. Controls security response time.
-  lockout_duration_minutes Int
-  
-  /// Duration (in minutes) that a JWT access token remains valid before
-  /// requiring refresh. Default value is 15. Balances security and user
-  /// experience.
-  access_token_expiration_minutes Int
-  
-  /// Duration (in days) that a JWT refresh token remains valid before
-  /// requiring re-authentication. Default value is 30. Manages long-term
-  /// session persistence.
-  refresh_token_expiration_days Int
-  
-  /// Maximum number of posts a member can create per hour. Default value is
-  /// 50. Prevents spam flooding.
-  max_post_rate_per_hour Int
-  
-  /// Maximum number of comments a member can create per hour. Default value is
-  /// 100. Prevents spam flooding.
-  max_comment_rate_per_hour Int
-  
-  /// Maximum number of votes a member can cast per hour. Default value is 300.
-  /// Prevents vote manipulation.
-  max_vote_rate_per_hour Int
-  
-  /// Maximum number of reports a member can submit per hour. Default value is
-  /// 50. Prevents abuse of reporting system.
-  max_report_rate_per_hour Int
-  
-  /// Maximum number of community subscriptions a member can make per hour.
-  /// Default value is 20. Prevents spam subscriptions.
-  max_subscription_rate_per_hour Int
-  
-  /// Number of days to retain audit logs before purging. Default value is 2555
-  /// (7 years). Complies with data retention laws.
-  audit_log_retention_days Int
-  
-  /// Number of months of inactivity before a community is automatically
-  /// archived. Default value is 12. Manages system storage and performance.
-  max_archive_inactivity_months Int
-  
-  /// Number of reports a post or comment needs to trigger automatic moderation
-  /// review. Default value is 3. Balances workload between users and
-  /// moderators.
-  moderation_report_threshold Int
-  
-  /// Number of reports that triggers automatic removal of a post. Default
-  /// value is 10. Prevents toxic content proliferation.
-  post_rejection_threshold Int
-  
-  /// Number of reports that triggers automatic removal of a comment. Default
-  /// value is 15. Balances freedom of expression with content safety.
-  comment_rejection_threshold Int
-  
-  /// Karma threshold below which users are suspended from posting. Default
-  /// value is -500. Prevents necromancy and trolling behaviour.
-  death_karma_threshold Int
-  
-  /// Timestamp when this configuration record was created in the system.
+  /// Timestamp when this platform setting was created.
   created_at DateTime
   
-  /// Timestamp when this configuration record was last modified.
+  /// Timestamp when this platform setting was last updated.
   updated_at DateTime
-  
-  /// Timestamp when this configuration record was logically deleted. Null
-  /// indicates active configuration. Used for audit trails.
-  deleted_at DateTime?
 }
 
-/// Record of IP addresses that have been suspended from accessing the
-/// CommunityPlatform due to violations of terms of service.
+/// System-defined categories for organizing and classifying user-generated
+/// content.
 ///
-/// This table maintains a list of IP addresses that have been flagged for
-/// abusive behavior, such as spamming, distributed denial-of-service
-/// attacks, or coordinated vote manipulation. Suspended IPs are blocked from
-/// performing any action on the platform.
-///
-/// The system uses this table to enforce IP-based bans at the network layer,
-/// preventing bypass of user account suspensions through account farming or
-/// proxy usage. Suspensions are temporary and automatically expire after a
-/// configurable duration.
-///
-/// This table plays a critical role in platform security and is referenced
-/// by the authentication and rate-limiting systems to enforce global bans.
+/// Provides a standardized taxonomy for categorizing posts and other content
+/// types across the platform. Used for content filtering, moderation, and
+/// recommendation systems. Each category represents a broad theme for
+/// community discussion (e.g., "Technology", "Community News", "Events").
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_suspended_ips {
+model community_bbs_content_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The IP address that has been suspended, stored in standard IPv4 or IPv6
-  /// format (e.g., '192.168.1.1' or
-  /// '2001:0db8:85a3:0000:0000:8a2e:0370:7334'). Must be unique.
-  ip_address String
+  /// Human-readable name of the content category.
+  name String
   
-  /// The ID of the administrator who initiated this suspension. References
-  /// community_platform_admin.id. Provides accountability for bans.
-  suspended_by_admin_id String
+  /// Detailed description explaining the purpose and scope of this category.
+  description String?
   
-  /// The reason for this suspension (e.g., 'spamming', 'DDoS attack', 'virtual
-  /// account farming'). Must be less than 255 characters.
-  reason String
-  
-  /// Timestamp when this IP address was suspended. Indicates when the ban
-  /// became active.
-  suspended_at DateTime
-  
-  /// Timestamp when this suspension will automatically expire and be lifted.
-  /// Null indicates permanent suspension.
-  expires_at DateTime?
-  
-  /// Indicates whether this suspension is currently active. May be false if
-  /// suspension has expired or been manually lifted.
-  is_active Boolean
-  
-  /// Timestamp when this record was created in the system.
+  /// Timestamp when this content category was created.
   created_at DateTime
   
-  /// Timestamp when this record was last modified.
+  /// Timestamp when this content category was last updated.
   updated_at DateTime
-  
-  /// Timestamp when this suspension was lifted and the record logically
-  /// deleted. Null indicates active suspension. Used for audit trails.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([ip_address])
-  @@index([is_active, expires_at])
+  community_bbs_communities community_bbs_communities[]
+  
+  @@unique([name])
 }
 
-/// Configuration for analytics collection and tracking behavior in the
-/// CommunityPlatform system.
+/// System-defined badge types that recognize user achievements and
+/// contributions within the community.
 ///
-/// Defines which user behaviors are tracked, what level of anonymity is
-/// maintained, and how analytics data is processed. This configuration
-/// controls the data collection pipeline for business intelligence and
-/// system monitoring.
-///
-/// The platform prioritizes user privacy, so this table ensures that
-/// analytics instrumentation follows strict privacy principles, anonymizing
-/// user data before transmission and never collecting personally
-/// identifiable information.
-///
-/// Administrators adjust these settings to balance business insight needs
-/// with user privacy expectations.
+/// Provides a standardized set of achievement badges that can be awarded to
+/// citizens based on their activity and contributions. Each badge type
+/// represents a specific milestone or behavior (e.g., "First Post", "Trusted
+/// Contributor", "Moderator") and is displayed on user profiles.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_analytics_config {
+model community_bbs_badge_types {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Whether to track when users view individual posts. Enables analytics on
-  /// content popularity and engagement patterns.
-  enable_post_view_tracking Boolean
+  /// Human-readable name of the badge type.
+  name String
   
-  /// Whether to track when users upvote or downvote content. Essential for
-  /// understanding community sentiment and moderation effectiveness.
-  enable_vote_tracking Boolean
+  /// Detailed explanation of the criteria for earning this badge.
+  description String?
   
-  /// Whether to track when users create comments. Provides insight into
-  /// conversation depth and community interaction levels.
-  enable_comment_creation_tracking Boolean
+  /// Optional reference to icon asset for this badge type.
+  icon String?
   
-  /// Whether to track when users subscribe to or unsubscribe from communities.
-  /// Essential for understanding community growth and audience segmentation.
-  enable_subscription_tracking Boolean
-  
-  /// Whether to track when users report content. Critical for identifying
-  /// emerging moderation issues and user community standards.
-  enable_report_tracking Boolean
-  
-  /// Whether to send only aggregated statistical data to analytics services
-  /// instead of individual event data. When true, ensures greater user privacy
-  /// and compliance.
-  aggregate_analytics_only Boolean
-  
-  /// Number of analytics events to batch before transmission to reduce server
-  /// load. Default value is 100. Balances real-time data needs with system
-  /// performance.
-  event_batch_size Int
-  
-  /// Maximum time interval (in seconds) between analytics event batches,
-  /// regardless of size. Default value is 30. Ensures timely data
-  /// transmission.
-  event_batch_interval_seconds Int
-  
-  /// Whether to hash user IDs before sending to the analytics platform. When
-  /// true, users are tracked by pseudonymous identifiers, never their actual
-  /// IDs.
-  hash_user_identifiers Boolean
-  
-  /// Whether to hash IP addresses before sending to the analytics platform.
-  /// When true, geographic and network patterns are analyzed without exposing
-  /// user locations.
-  hash_ip_addresses Boolean
-  
-  /// The identifier of the analytics service provider being used (e.g.,
-  /// 'amplitude', 'mixpanel', 'plausible'). Controls configuration parameters
-  /// for the connected service.
-  analytics_provider String
-  
-  /// Timestamp when this configuration record was created in the system.
+  /// Timestamp when this badge type was created.
   created_at DateTime
   
-  /// Timestamp when this configuration record was last modified.
+  /// Timestamp when this badge type was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration record was logically deleted. Null
-  /// indicates active configuration. Used for audit trails.
-  deleted_at DateTime?
+  //----
+  // RELATIONS
+  //----
+  community_bbs_user_badges community_bbs_user_badges[]
+  
+  @@unique([name])
 }
 
-/// Platform-wide moderation rules and content policies that apply to all
-/// communities and users across the CommunityPlatform.
+/// System-defined reasons for reporting content, standardizing user feedback
+/// on inappropriate material.
 ///
-/// Contains the foundational content moderation guidelines that every
-/// community and user must follow. This includes prohibited content types,
-/// definition of harassment, acceptable use policies, and automated flagging
-/// criteria.
-///
-/// These rules serve as the baseline for automated moderation systems and
-/// provide consistency in enforcement across all communities. Communities
-/// can have additional specific rules, but they cannot be less restrictive
-/// than these global standards.
-///
-/// The rules in this table are referenced by AI moderation tools, reporter
-/// systems, and human moderators to ensure uniform enforcement of platform
-/// policy.
+/// Provides a comprehensive but standardized set of reasons users can select
+/// when reporting content violations. This ensures consistent categorization
+/// of reported content by moderators and enables effective content
+/// moderation patterns across the platform.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_global_moderation_rules {
+model community_bbs_report_reasons {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// List of prohibited content categories as comma-separated strings (e.g.,
-  /// 'child_exploitation, harassment, threats, hate_speech, misinformation').
-  /// Categories must be from a predefined system list.
-  prohibited_content_types String
+  /// Human-readable name of the report reason.
+  name String
   
-  /// Detailed definition of what constitutes harassment on the platform,
-  /// including examples of behavior that is considered abusive, threatening,
-  /// or intimidation-based.
-  harassment_definition String
+  /// Detailed explanation of what constitutes a violation of this category.
+  description String?
   
-  /// Complete acceptable use policy outlining expected user behavior,
-  /// prohibited activities, and consequences for violations. Includes
-  /// guidelines around impersonation, spam, and coordinated manipulation.
-  acceptable_use_policy String
+  /// Severity level designation for this reason (e.g., low, medium, high).
+  severity_level String
   
-  /// Rules for detecting fraudulent behavior including vote manipulation, fake
-  /// accounts, shell communities, and coordinated inauthentic activity.
-  fraud_detection_rules String
-  
-  /// List of keywords and phrases that automatically trigger content filtering
-  /// for suspected policy violations. Each keyword should be separated by a
-  /// comma. Examples include slurs, threats, and code words for illegal
-  /// activity.
-  automated_filtering_keywords String
-  
-  /// Number of false reports (reports on approved content) that triggers a
-  /// penalty for a user. Default value is 5. Prevents abuse of reporting
-  /// system.
-  false_report_penalty_threshold Int
-  
-  /// Number of days a user is penalized after accumulating
-  /// false_report_penalty_threshold false reports. Default value is 7. Deters
-  /// malicious reporting.
-  false_report_penalty_duration_days Int
-  
-  /// Detailed notes on recent changes to the global moderation rules,
-  /// including date, revision number, and summary of modifications. Used for
-  /// audit and legal compliance.
-  rule_revision_notes String
-  
-  /// Timestamp when this configuration record was created in the system.
+  /// Timestamp when this report reason was created.
   created_at DateTime
   
-  /// Timestamp when this configuration record was last modified.
+  /// Timestamp when this report reason was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration record was logically deleted. Null
-  /// indicates active configuration. Used for audit trails.
-  deleted_at DateTime?
+  //----
+  // RELATIONS
+  //----
+  community_bbs_reports community_bbs_reports[]
+  
+  @@unique([name])
+}
+
+/// System-defined content moderation rules that define how the system
+/// automatically handles reported content and user behavior.
+///
+/// Contains the policy rules that govern automated moderation actions
+/// including when to hide content, issue warnings, suspend users, and
+/// escalate to human moderators. These rules are based on thresholds for
+/// reports, user reputation, time-based factors, and spam patterns across
+/// the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_content_moderation_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name of this moderation rule.
+  name String
+  
+  /// Detailed explanation of this rule's purpose and trigger conditions.
+  description String?
+  
+  /// Type of trigger for this rule (e.g., report_count, reputation_threshold,
+  /// spam_pattern).
+  trigger_type String
+  
+  /// Threshold value that triggers this rule (e.g., 5 reports, reputation
+  /// below 0).
+  trigger_value Int
+  
+  /// Action to perform when rule is triggered (e.g., hide, warn, suspend,
+  /// delete).
+  action String
+  
+  /// Timestamp when this moderation rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderation rule was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
 }

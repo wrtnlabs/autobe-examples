@@ -7,8 +7,6 @@ import { IRedditCommunityCommunity } from "../../../structures/IRedditCommunityC
 export * as rules from "./rules/index";
 
 /**
- * Get detailed information about a specific community.
- *
  * Retrieve detailed information about a specific community using its unique
  * name identifier. This operation returns comprehensive community data
  * including identification details, descriptive information, configuration

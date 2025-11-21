@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCartCheckoutPreview } from "../../../../../structures/IShoppingMallCartCheckoutPreview";
 
 /**
- * Generate a ShoppingMall checkout preview for a specific cart using current
- * pricing, shipping, and payment configurations.
- *
  * Generate a detailed checkout preview for a specific cart, composing pricing
  * and eligibility information from shopping_mall_carts,
  * shopping_mall_cart_items, and related payment, shipping, and policy

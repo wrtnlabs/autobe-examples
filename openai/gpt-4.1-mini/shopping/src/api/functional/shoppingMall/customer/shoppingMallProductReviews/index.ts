@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductReview } from "../../../../structures/IShoppingMallProductReview";
 
 /**
- * Create a new shopping mall product review.
- *
  * Creates a new product review submitted by an authenticated customer in the
  * shopping mall platform.
  *
@@ -104,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Update an existing shopping mall product review.
- *
  * Updates a product review entry based on the unique review identifier provided
  * in the path.
  *

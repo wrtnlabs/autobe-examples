@@ -12,8 +12,6 @@ import { IDiscussionBoardArticleComment } from "../../../../api/structures/IDisc
 @Controller("/discussionBoard/user/comments")
 export class DiscussionboardUserCommentsController {
   /**
-   * Create a new discussion board comment in discussion_board_comments.
-   *
    * Create a new comment on a discussion board article.
    *
    * This operation enables an authenticated user to submit a comment beneath a
@@ -59,9 +57,6 @@ export class DiscussionboardUserCommentsController {
   }
 
   /**
-   * Update the text content of a discussion board comment
-   * (discussion_board_comments table).
-   *
    * Update an existing discussion board comment's content based on the provided
    * comment identifier.
    *
@@ -112,9 +107,6 @@ export class DiscussionboardUserCommentsController {
   }
 
   /**
-   * Soft-delete a discussion board comment (discussion_board_comments table) by
-   * marking as deleted.
-   *
    * Soft-delete a comment from the discussion board by marking its record as
    * deleted. The operation targets a specific comment using the provided
    * identifier and is accessible only to the comment's author or an authorized

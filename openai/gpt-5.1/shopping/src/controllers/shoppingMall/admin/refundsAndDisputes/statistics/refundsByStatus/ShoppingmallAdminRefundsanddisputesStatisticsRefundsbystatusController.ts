@@ -7,9 +7,6 @@ import { IShoppingMallRefundsByStatusStatistics } from "../../../../../../api/st
 @Controller("/shoppingMall/admin/refundsAndDisputes/statistics/refundsByStatus")
 export class ShoppingmallAdminRefundsanddisputesStatisticsRefundsbystatusController {
   /**
-   * Get aggregated refund statistics grouped by status derived from
-   * refund-related Prisma tables.
-   *
    * Retrieve aggregated refund statistics grouped by refund status across the
    * shoppingMall platform.
    *

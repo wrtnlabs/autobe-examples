@@ -12,8 +12,6 @@ import { IShoppingMallRefundTransaction } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/refundTransactions")
 export class ShoppingmallAdminRefundtransactionsController {
   /**
-   * Search and retrieve a filtered, paginated list of refund transactions.
-   *
    * Retrieve a comprehensive, filtered list of refund transactions with
    * advanced search and pagination capabilities. This operation enables
    * administrators to search through all refund payment processing records in
@@ -65,8 +63,6 @@ export class ShoppingmallAdminRefundtransactionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific refund transaction.
-   *
    * Retrieve complete details of a single refund transaction identified by its
    * unique transaction ID. This operation provides administrators with
    * comprehensive information about a specific refund payment processing

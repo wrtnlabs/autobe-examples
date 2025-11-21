@@ -7,8 +7,6 @@ import { IPageIDiscussionBoardArticleCategory } from "../../../structures/IPageI
 import { IDiscussionBoardArticleCategory } from "../../../structures/IDiscussionBoardArticleCategory";
 
 /**
- * Retrieve a list of all discussion board article categories.
- *
  * Retrieve a paginated list of all active article categories from the
  * discussion board. Categories provide the organizational structure for
  * articles, enabling users to browse content by topic area including economics,
@@ -85,9 +83,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific discussion board article
- * category.
- *
  * Retrieve complete details for a specific article category identified by its
  * unique UUID identifier. This operation returns the full category record
  * including code, display name, description, activity status, and article

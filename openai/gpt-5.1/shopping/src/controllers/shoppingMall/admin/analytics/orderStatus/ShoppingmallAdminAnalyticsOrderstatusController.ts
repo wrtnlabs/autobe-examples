@@ -7,9 +7,6 @@ import { IShoppingMallOrderStatusAnalytics } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/analytics/orderStatus")
 export class ShoppingmallAdminAnalyticsOrderstatusController {
   /**
-   * Provide aggregated analytics of order statuses based on
-   * shopping_mall_orders and related snapshot tables.
-   *
    * Retrieve aggregated analytics about order statuses across the marketplace
    * or for specific segments, using data primarily from the
    * shopping_mall_orders and optionally shopping_mall_order_daily_stats

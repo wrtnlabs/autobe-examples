@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallShippingAddress } from "../../../../structures/IShoppingMallShippingAddress";
 
 /**
- * Retrieve the shopping_mall_shipping_addresses snapshot for an order
- * identified by orderCode.
- *
  * Get the immutable shipping address snapshot for a given order identified by
  * its business orderCode.
  *

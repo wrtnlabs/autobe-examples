@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewImage } from "../../../../../structures/IShoppingMallReviewImage";
 
 /**
- * Upload additional images to an existing product review.
- *
  * Upload additional product images to supplement an existing review with visual
  * evidence. This operation allows verified buyers to add photographic proof of
  * their product experience after initially submitting their review.
@@ -117,8 +115,6 @@ export namespace create {
 }
 
 /**
- * Remove an image from an existing product review.
- *
  * Remove a specific image from a product review. This operation allows verified
  * buyers to delete images they previously uploaded to their reviews, useful for
  * correcting mistakes or removing images that no longer represent their

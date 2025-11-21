@@ -8,9 +8,6 @@ import { ICommunityPlatformUserKarma } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/adminUser/userKarmas")
 export class CommunityplatformAdminuserUserkarmasController {
   /**
-   * Search and retrieve a paginated list of `community_platform_user_karmas`
-   * aggregate records.
-   *
    * Retrieve a filtered and paginated list of user karma aggregate records
    * for administrative analysis.
    *
@@ -60,9 +57,6 @@ export class CommunityplatformAdminuserUserkarmasController {
   }
 
   /**
-   * Retrieve a single `community_platform_user_karmas` record by its unique
-   * identifier.
-   *
    * Retrieve a specific user karma aggregate record by its unique identifier
    * for administrator review.
    *
@@ -112,8 +106,6 @@ export class CommunityplatformAdminuserUserkarmasController {
   }
 
   /**
-   * Update a user karma aggregate record in community_platform_user_karmas.
-   *
    * Update a specific aggregated user karma record in the community platform.
    *
    * This operation allows an authorized administrative actor to modify an
@@ -173,8 +165,6 @@ export class CommunityplatformAdminuserUserkarmasController {
   }
 
   /**
-   * Delete a user karma aggregate record from community_platform_user_karmas.
-   *
    * Delete a specific aggregated user karma record from the platform.
    *
    * This operation removes one row from the community_platform_user_karmas

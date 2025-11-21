@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationLog } from "../../../../structures/IDiscussio
 import { IPageIDiscussionBoardModerationLog } from "../../../../structures/IPageIDiscussionBoardModerationLog";
 
 /**
- * Create a new moderation log entry (discussion_board_moderation_logs).
- *
  * Create a new moderation log entry for an administrative action on the
  * discussion board.
  *
@@ -112,9 +110,6 @@ export namespace create {
 }
 
 /**
- * Search, filter, and paginate discussion board moderation log entries
- * (discussion_board_moderation_logs table).
- *
  * Retrieve a filtered and paginated list of moderation log entries reflecting
  * all administrative moderation actions performed within the discussion board
  * platform.
@@ -215,9 +210,6 @@ export namespace index {
 }
 
 /**
- * Get details for a single moderation log entry by id
- * (discussion_board_moderation_logs table).
- *
  * Retrieve complete details for a specific moderation event as tracked in the
  * discussion board moderation log table.
  *
@@ -311,9 +303,6 @@ export namespace at {
 }
 
 /**
- * Update correctable fields of a specific moderation log
- * (discussion_board_moderation_logs).
- *
  * Modify select fields (such as rationale or outcome) of a previously recorded
  * moderation event in the discussion board logs.
  *
@@ -425,9 +414,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a moderation log entry from
- * discussion_board_moderation_logs.
- *
  * This operation removes a moderation log event entry from the discussion
  * board's moderation log table. The moderation log tracks every administrative
  * event performed on articles, comments, or attachments, maintaining detailed

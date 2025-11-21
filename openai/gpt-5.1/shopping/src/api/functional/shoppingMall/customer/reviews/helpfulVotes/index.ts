@@ -7,9 +7,6 @@ import { IShoppingMallReviewHelpfulVote } from "../../../../../structures/IShopp
 import { IPageIShoppingMallReviewHelpfulVote } from "../../../../../structures/IPageIShoppingMallReviewHelpfulVote";
 
 /**
- * Create a helpful vote record in the shopping_mall_review_helpful_votes table
- * for a given review.
- *
  * Create a new helpful vote entry for a specific product review identified by
  * `reviewId` in the shopping mall platform.
  *
@@ -146,9 +143,6 @@ export namespace create {
 }
 
 /**
- * Search helpful votes for a specific review in the
- * shopping_mall_review_helpful_votes table with filtering and pagination.
- *
  * Retrieve a filtered and paginated list of helpful-vote records for a specific
  * review from the `shopping_mall_review_helpful_votes` table.
  *
@@ -270,9 +264,6 @@ export namespace index {
 }
 
 /**
- * Get a specific helpful vote from the shopping_mall_review_helpful_votes table
- * for a given review.
- *
  * Retrieve a specific helpful vote for a given product review using both the
  * review identifier and the helpful vote identifier.
  *
@@ -391,9 +382,6 @@ export namespace at {
 }
 
 /**
- * Update a helpful vote record for a review in the
- * shopping_mall_review_helpful_votes table.
- *
  * Update an existing helpful vote associated with a specific product review.
  *
  * This operation targets the shopping_mall_review_helpful_votes Prisma model,
@@ -543,9 +531,6 @@ export namespace update {
 }
 
 /**
- * Erase a helpful vote record for a review from the
- * shopping_mall_review_helpful_votes table.
- *
  * Delete an existing helpful vote associated with a specific product review so
  * that it no longer contributes to helpfulness metrics.
  *

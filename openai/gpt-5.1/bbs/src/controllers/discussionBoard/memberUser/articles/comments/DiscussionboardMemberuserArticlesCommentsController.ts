@@ -12,9 +12,6 @@ import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussi
 @Controller("/discussionBoard/memberUser/articles/:articleId/comments")
 export class DiscussionboardMemberuserArticlesCommentsController {
   /**
-   * Create a new discussion_board_comments record attached to a specific
-   * article.
-   *
    * Create a new comment on a specific discussion board article identified by
    * its article ID.
    *
@@ -102,9 +99,6 @@ export class DiscussionboardMemberuserArticlesCommentsController {
   }
 
   /**
-   * Update an existing discussion_board_comments record for a given article and
-   * comment pair.
-   *
    * Update an existing comment that belongs to a specific discussion board
    * article.
    *
@@ -190,9 +184,6 @@ export class DiscussionboardMemberuserArticlesCommentsController {
   }
 
   /**
-   * Delete a specific comment from the discussion_board_comments table for a
-   * given article.
-   *
    * Delete a specific comment associated with a discussion board article by its
    * comment identifier within the context of its parent article.
    *

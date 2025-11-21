@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentReport } from "../../../../../../structures/IC
 import { IPageICommunityPlatformCommentReport } from "../../../../../../structures/IPageICommunityPlatformCommentReport";
 
 /**
- * Search and retrieve a paginated queue of comment report records from
- * community_platform_comment_reports for moderation review.
- *
  * Retrieve a filtered, paginated queue of comment-level moderation reports that
  * require human review or historical inspection.
  *

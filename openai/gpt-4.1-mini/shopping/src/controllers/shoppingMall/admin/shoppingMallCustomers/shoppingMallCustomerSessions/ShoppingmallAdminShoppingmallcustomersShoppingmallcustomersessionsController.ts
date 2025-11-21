@@ -14,8 +14,6 @@ import { IShoppingMallCustomerSession } from "../../../../../api/structures/ISho
 )
 export class ShoppingmallAdminShoppingmallcustomersShoppingmallcustomersessionsController {
   /**
-   * Retrieve paginated list of sessions for a shopping mall customer.
-   *
    * Retrieve a paginated list of active or expired shopping mall customer
    * sessions for a given customer.
    *
@@ -63,8 +61,6 @@ export class ShoppingmallAdminShoppingmallcustomersShoppingmallcustomersessionsC
   }
 
   /**
-   * Get details of a specific shopping mall customer session.
-   *
    * Retrieve detailed information about a specified customer session owned by
    * the shopping mall customer.
    *

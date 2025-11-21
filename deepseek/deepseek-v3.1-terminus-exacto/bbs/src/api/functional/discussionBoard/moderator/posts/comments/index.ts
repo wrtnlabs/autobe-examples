@@ -7,8 +7,6 @@ import { IDiscussionBoardComment } from "../../../../../structures/IDiscussionBo
 import { IPageIDiscussionBoardComment } from "../../../../../structures/IPageIDiscussionBoardComment";
 
 /**
- * Search and retrieve comments for a specific discussion board post.
- *
  * This operation provides advanced search and filtering capabilities for
  * comments associated with a specific discussion board post. It allows users to
  * retrieve comments with various filtering options, pagination controls, and

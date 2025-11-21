@@ -14,8 +14,6 @@ import { ICommunityForumCommunityReport } from "../../../../api/structures/IComm
 @Controller("/communityForum/moderator/reports")
 export class CommunityforumModeratorReportsController {
   /**
-   * Get paginated list of user content reports with filtering.
-   *
    * Retrieve a paginated list of content reports filed by users on the
    * platform. This endpoint serves the moderation system by providing access to
    * reported content for review and action. The response includes comprehensive
@@ -57,8 +55,6 @@ export class CommunityforumModeratorReportsController {
   }
 
   /**
-   * Retrieve a specific report by its ID.
-   *
    * Retrieve detailed information about a specific report using its unique
    * identifier. This endpoint provides moderators and administrators with
    * access to all relevant information about a report, including what content
@@ -100,8 +96,6 @@ export class CommunityforumModeratorReportsController {
   }
 
   /**
-   * Update an existing content report with new information or status changes.
-   *
    * Update an existing content report in the community forum platform. This
    * operation allows moderators to modify report details such as status,
    * categorization, or add additional context before resolving the report.
@@ -151,8 +145,6 @@ export class CommunityforumModeratorReportsController {
   }
 
   /**
-   * Delete a content report that is invalid, duplicate, or no longer relevant.
-   *
    * Permanently delete a content report from the community forum platform. This
    * operation allows moderators or administrators to remove reports that are
    * invalid, duplicate, or no longer relevant.

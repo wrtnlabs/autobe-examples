@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../decorators/payload/ModeratorPayloa
 @Controller("/communityForum/moderator/posts/:postId")
 export class CommunityforumModeratorPostsController {
   /**
-   * Permanently delete a forum post by its unique identifier.
-   *
    * Permanently removes a forum post from the community platform. This
    * operation performs a hard delete on the community_forum_posts table,
    * completely removing the post record from the database.

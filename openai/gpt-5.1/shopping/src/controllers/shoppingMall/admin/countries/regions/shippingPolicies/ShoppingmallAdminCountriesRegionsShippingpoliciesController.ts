@@ -10,10 +10,6 @@ import { IShoppingMallRegionShippingPolicy } from "../../../../../../api/structu
 )
 export class ShoppingmallAdminCountriesRegionsShippingpoliciesController {
   /**
-   * Search region shipping policies in the
-   * shopping_mall_region_shipping_policies table for a specific country and
-   * region.
-   *
    * Search and retrieve a paginated list of region-specific shipping policies
    * defined in the `shopping_mall_region_shipping_policies` table for a
    * particular country and region.
@@ -89,9 +85,6 @@ export class ShoppingmallAdminCountriesRegionsShippingpoliciesController {
   }
 
   /**
-   * Update a region-level shipping policy record in the
-   * shopping_mall_region_shipping_policies table.
-   *
    * Update an existing region shipping policy for a specific country and
    * region in the shopping mall platform.
    *
@@ -165,9 +158,6 @@ export class ShoppingmallAdminCountriesRegionsShippingpoliciesController {
   }
 
   /**
-   * Delete a region-level shipping policy record from the
-   * shopping_mall_region_shipping_policies table.
-   *
    * Delete a specific region-level shipping policy associated with a country
    * and region from the shopping mall platform.
    *

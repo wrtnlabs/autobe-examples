@@ -9,9 +9,6 @@ export * as sessions from "./sessions/index";
 export * as profiles from "./profiles/index";
 
 /**
- * Search and paginate the list of platform administrator accounts
- * (community_platform_administrators table).
- *
  * Search and retrieve platform administrator accounts with fine-grained
  * filters, pagination, and sorting support. This operation is vital for
  * system-wide administrative oversight, allowing higher-level
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a platform administrator account from the
- * community_platform_administrators table.
- *
  * Retrieve full detail on a specific platform administrator account using its
  * unique identifier.
  *
@@ -206,9 +200,6 @@ export namespace at {
 }
 
 /**
- * Update the information of a platform administrator account in the
- * community_platform_administrators table.
- *
  * Update administrative account properties including email, status,
  * workflow/biz role, or support lifecycle transitions (reversible soft delete)
  * of an admin account identified by its UUID key.
@@ -312,9 +303,6 @@ export namespace update {
 }
 
 /**
- * Permanently deactivate (soft-delete) an administrator in
- * community_platform_administrators by ID.
- *
  * Permanently deactivate an administrator account identified by its unique
  * UUID. This API sets the 'deleted_at' timestamp for the specified
  * administrator in the 'community_platform_administrators' table, in accordance

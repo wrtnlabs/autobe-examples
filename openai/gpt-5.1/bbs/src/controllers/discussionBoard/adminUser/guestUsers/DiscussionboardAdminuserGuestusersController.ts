@@ -14,9 +14,6 @@ import { IDiscussionBoardGuestUser } from "../../../../api/structures/IDiscussio
 @Controller("/discussionBoard/adminUser/guestUsers")
 export class DiscussionboardAdminuserGuestusersController {
   /**
-   * Search and paginate guest user placeholder accounts from the
-   * discussion_board_guestusers table.
-   *
    * Retrieve a filtered and paginated list of guest user placeholder accounts
    * from the discussion_board_guestusers table for administrative review and
    * operations.
@@ -80,8 +77,6 @@ export class DiscussionboardAdminuserGuestusersController {
   }
 
   /**
-   * Get a single guest user placeholder from discussion_board_guestusers by ID.
-   *
    * Retrieve detailed information about a single guest user placeholder account
    * stored in the discussion_board_guestusers table.
    *
@@ -144,8 +139,6 @@ export class DiscussionboardAdminuserGuestusersController {
   }
 
   /**
-   * Update a guest user placeholder in discussion_board_guestusers by ID.
-   *
    * Update attributes of an existing guest user placeholder account in the
    * discussion_board_guestusers table.
    *
@@ -212,9 +205,6 @@ export class DiscussionboardAdminuserGuestusersController {
   }
 
   /**
-   * Permanently delete a guest user placeholder record from the
-   * discussion_board_guestusers table by UUID using a hard delete.
-   *
    * Delete a guest user placeholder account from the
    * `discussion_board_guestusers` table by its UUID identifier using a hard
    * delete behavior.

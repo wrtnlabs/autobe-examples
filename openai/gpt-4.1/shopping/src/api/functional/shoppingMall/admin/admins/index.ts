@@ -8,9 +8,6 @@ import { IPageIShoppingMallAdmin } from "../../../../structures/IPageIShoppingMa
 export * as sessions from "./sessions/index";
 
 /**
- * Search, filter, and paginate records in the shopping_mall_admins table to
- * find administrator accounts.
- *
  * Search and obtain a filtered, paginated list of all administrator accounts
  * registered within the shopping mall platform.
  *
@@ -113,9 +110,6 @@ export namespace index {
 }
 
 /**
- * Get detailed info of shopping_mall_admins administrator account by adminId
- * (UUID).
- *
  * Retrieve the complete record for a specific administrator account by its
  * unique adminId, as stored in the shopping_mall_admins table.
  *
@@ -211,8 +205,6 @@ export namespace at {
 }
 
 /**
- * Update an existing platform administrator account (shopping_mall_admins).
- *
  * Update an administrator's account in the shopping mall platform.
  *
  * This API enables an active administrator to edit another administrator's
@@ -317,8 +309,6 @@ export namespace update {
 }
 
 /**
- * Permanently remove an administrator account (shopping_mall_admins table).
- *
  * Remove an administrator account from the platform by administrator ID.
  *
  * The operation targets the admin account identified in the adminId path

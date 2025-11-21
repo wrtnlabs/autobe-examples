@@ -14,8 +14,6 @@ import { IShoppingMallAdmin } from "../../../../api/structures/IShoppingMallAdmi
 @Controller("/shoppingMall/admin/admins")
 export class ShoppingmallAdminAdminsController {
   /**
-   * Search and retrieve a filtered, paginated list of platform administrators.
-   *
    * Retrieve a filtered and paginated list of platform administrator accounts
    * with advanced search capabilities. This operation provides comprehensive
    * querying to find administrators based on multiple criteria including
@@ -62,8 +60,6 @@ export class ShoppingmallAdminAdminsController {
   }
 
   /**
-   * Retrieve detailed information about a specific admin user account.
-   *
    * Retrieve comprehensive details about a specific platform administrator
    * account identified by their unique admin ID. This operation provides access
    * to the admin's complete profile information including personal details,
@@ -110,8 +106,6 @@ export class ShoppingmallAdminAdminsController {
   }
 
   /**
-   * Update an existing admin user account with modified information.
-   *
    * Update the profile and configuration details of an existing platform
    * administrator account identified by their unique admin ID. This operation
    * allows authorized administrators to modify admin account information
@@ -166,8 +160,6 @@ export class ShoppingmallAdminAdminsController {
   }
 
   /**
-   * Permanently delete an administrator account from the platform.
-   *
    * Permanently remove an administrator account from the shopping mall
    * platform. This operation performs a hard deletion, completely removing the
    * admin record from the database along with all associated session records

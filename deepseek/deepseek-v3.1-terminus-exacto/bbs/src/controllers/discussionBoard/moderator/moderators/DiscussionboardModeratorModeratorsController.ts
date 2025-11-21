@@ -14,9 +14,6 @@ import { IDiscussionBoardModerator } from "../../../../api/structures/IDiscussio
 @Controller("/discussionBoard/moderator/moderators")
 export class DiscussionboardModeratorModeratorsController {
   /**
-   * Search and retrieve a filtered, paginated list of discussion board
-   * moderators.
-   *
    * This operation provides comprehensive search functionality for discussion
    * board moderators with advanced filtering options and pagination support.
    * Users can search moderators by username pattern matching, email domain
@@ -62,8 +59,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Retrieve detailed information for a specific discussion board moderator.
-   *
    * This operation retrieves comprehensive profile information for a specific
    * discussion board moderator identified by their unique username. The
    * operation validates that the requested moderator exists and returns
@@ -109,8 +104,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Update an existing moderator's profile information.
-   *
    * This operation allows authorized moderators to modify the profile details
    * of an existing moderator in the discussion board system. The operation
    * requires the moderator's unique username as a path parameter and accepts a
@@ -161,8 +154,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Permanently delete a moderator from the discussion board system.
-   *
    * This operation allows authorized moderators to permanently remove a
    * moderator account from the discussion board system. The operation requires
    * the moderator's unique username as a path parameter and performs a hard

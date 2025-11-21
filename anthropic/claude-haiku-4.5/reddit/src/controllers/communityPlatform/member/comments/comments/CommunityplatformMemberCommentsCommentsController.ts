@@ -7,8 +7,6 @@ import { ICommunityPlatformComment } from "../../../../../api/structures/ICommun
 @Controller("/communityPlatform/member/comments/:commentId/comments")
 export class CommunityplatformMemberCommentsCommentsController {
   /**
-   * Create a nested reply comment on an existing comment.
-   *
    * Create a new nested comment (reply) attached to an existing parent
    * comment within the community platform. This operation enables members to
    * reply to comments and create threaded conversation hierarchies.

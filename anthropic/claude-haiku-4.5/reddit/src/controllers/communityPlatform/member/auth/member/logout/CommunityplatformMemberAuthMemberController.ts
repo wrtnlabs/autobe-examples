@@ -5,8 +5,6 @@ import typia from "typia";
 @Controller("/communityPlatform/member/auth/member/logout")
 export class CommunityplatformMemberAuthMemberController {
   /**
-   * Terminate member session and perform member logout.
-   *
    * Logout a currently authenticated member by terminating their active
    * session. This operation invalidates the member's current session token
    * and sets the session expiration timestamp, preventing any further API

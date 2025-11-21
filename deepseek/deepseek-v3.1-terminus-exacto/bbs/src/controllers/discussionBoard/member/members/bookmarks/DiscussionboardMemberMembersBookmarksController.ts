@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardUserBookmark } from "../../../../../api/structures
 @Controller("/discussionBoard/member/members")
 export class DiscussionboardMemberMembersBookmarksController {
   /**
-   * Create a new bookmark for a discussion board member.
-   *
    * This operation allows authenticated members to bookmark discussion board
    * posts for later reference. When a member wants to save a post for future
    * reading or tracking, they can use this endpoint to create a bookmark
@@ -64,8 +62,6 @@ export class DiscussionboardMemberMembersBookmarksController {
   }
 
   /**
-   * Search and retrieve paginated list of member bookmarks.
-   *
    * This operation provides advanced search capabilities for member bookmarks,
    * allowing users to filter and sort their saved posts based on multiple
    * criteria. The operation supports comprehensive pagination with configurable
@@ -113,8 +109,6 @@ export class DiscussionboardMemberMembersBookmarksController {
   }
 
   /**
-   * Delete a bookmark for a discussion board member.
-   *
    * This operation allows authenticated members to remove bookmarks they have
    * previously created. When a member no longer wishes to track a particular
    * post, they can use this endpoint to delete the bookmark relationship.
@@ -164,8 +158,6 @@ export class DiscussionboardMemberMembersBookmarksController {
   }
 
   /**
-   * Create a new bookmark for a discussion board member.
-   *
    * This operation allows authenticated members to bookmark discussion board
    * posts for later reference. When a member wants to save a post for future
    * reading or tracking, they can use this endpoint to create a bookmark
@@ -213,8 +205,6 @@ export class DiscussionboardMemberMembersBookmarksController {
   }
 
   /**
-   * Delete a bookmark for a discussion board member.
-   *
    * This operation allows authenticated members to remove bookmarks they have
    * previously created. When a member no longer wishes to track a particular
    * post, they can use this endpoint to delete the bookmark relationship.

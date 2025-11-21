@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewHelpfulnessAnalytics } from "../../../../../../structures/IShoppingMallReviewHelpfulnessAnalytics";
 
 /**
- * Compute and return aggregated helpfulness analytics for reviews using
- * shopping_mall_review_helpful_votes and related tables.
- *
  * Retrieve computed analytics about review helpfulness, aggregating helpful
  * vote data to support quality monitoring and ranking use cases.
  *

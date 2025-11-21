@@ -12,8 +12,6 @@ import { IEconomicDiscussionComment } from "../../../../../api/structures/IEcono
 )
 export class EconomicdiscussionModeratorArticlesCommentsController {
   /**
-   * Delete a comment from an economic discussion article.
-   *
    * This operation enables deletion of comments from economic and political
    * discussion articles on the platform. Members can delete their own comments
    * to remove content they no longer wish to share, while moderators have

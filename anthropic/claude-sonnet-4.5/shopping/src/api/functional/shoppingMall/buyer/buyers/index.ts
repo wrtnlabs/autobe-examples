@@ -9,8 +9,6 @@ export * as me from "./me/index";
 export * as reviews from "./reviews/index";
 
 /**
- * Retrieve detailed information about a specific buyer account.
- *
  * Retrieve comprehensive details about a specific buyer account in the shopping
  * mall marketplace. This operation returns the complete buyer profile including
  * personal information, contact details, account status, and registration
@@ -106,8 +104,6 @@ export namespace at {
 }
 
 /**
- * Update an existing buyer account's information.
- *
  * Update the profile information and account details of an existing buyer in
  * the shopping mall marketplace. This operation allows modification of buyer
  * account data including personal information, contact details, and account

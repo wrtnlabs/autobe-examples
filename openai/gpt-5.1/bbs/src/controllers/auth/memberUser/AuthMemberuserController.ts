@@ -13,9 +13,6 @@ import { IDiscussionBoardMemberUserRefresh } from "../../../api/structures/IDisc
 @Controller("/auth/memberUser")
 export class AuthMemberuserController {
   /**
-   * Register a new member user in `discussion_board_memberusers` and return JWT
-   * tokens.
-   *
    * This operation registers a new member user account in the discussionBoard
    * service by inserting a row into the `discussion_board_memberusers` table
    * and then issuing JWT tokens for immediate authenticated use.
@@ -88,9 +85,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Authenticate a member user in `discussion_board_memberusers` using email
-   * and password and return JWT tokens.
-   *
    * This operation authenticates an existing member user by validating their
    * credentials against the `discussion_board_memberusers` table and issues
    * fresh JWT tokens for subsequent API access.
@@ -156,9 +150,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Refresh JWT tokens for a member user associated with
-   * `discussion_board_memberusers` using a valid refresh token.
-   *
    * This operation refreshes JWT tokens for an already authenticated member
    * user of the discussionBoard service, using a previously issued refresh
    * token to avoid repeated credential entry.

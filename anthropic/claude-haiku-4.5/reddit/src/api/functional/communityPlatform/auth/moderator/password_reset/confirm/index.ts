@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../../../../structures/ICommunityPlatformModerator";
 
 /**
- * Confirm password reset for moderator account with new password.
- *
  * Complete the password reset process by submitting the password reset token
  * received via email along with the new password. This operation validates that
  * the reset token exists, belongs to an active moderator account, and has not

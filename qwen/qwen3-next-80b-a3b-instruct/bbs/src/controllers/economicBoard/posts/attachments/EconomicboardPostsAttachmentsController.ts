@@ -8,8 +8,6 @@ import { IEconomicBoardAttachment } from "../../../../api/structures/IEconomicBo
 @Controller("/economicBoard/posts/:postId/attachments/:attachmentId")
 export class EconomicboardPostsAttachmentsController {
   /**
-   * Retrieve metadata for a specific attachment linked to a published post.
-   *
    * Retrieve metadata for a specific file attachment associated with a
    * discussion post.
    *

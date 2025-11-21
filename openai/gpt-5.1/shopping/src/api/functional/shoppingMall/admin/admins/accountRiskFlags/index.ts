@@ -7,9 +7,6 @@ import { IShoppingMallAccountRiskFlag } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallAccountRiskFlag } from "../../../../../structures/IPageIShoppingMallAccountRiskFlag";
 
 /**
- * Search admin-related account risk flags from shopping_mall_account_risk_flags
- * via the admin linkage table.
- *
  * Retrieve a paginated and filtered list of risk flags that are linked to a
  * specific admin account, leveraging the shopping_mall_account_risk_flags table
  * in conjunction with the shopping_mall_account_risk_flags_of_admins linkage

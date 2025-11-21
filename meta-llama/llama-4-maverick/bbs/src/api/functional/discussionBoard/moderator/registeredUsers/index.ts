@@ -7,8 +7,6 @@ import { IDiscussionBoardRegisteredUser } from "../../../../structures/IDiscussi
 import { IPageIDiscussionBoardRegisteredUser } from "../../../../structures/IPageIDiscussionBoardRegisteredUser";
 
 /**
- * Search registered users with pagination and filtering.
- *
  * Retrieve a filtered and paginated list of registered users on the discussion
  * board. This operation supports comprehensive pagination with configurable
  * page sizes and sorting options. It integrates with the RegisteredUsers table
@@ -95,8 +93,6 @@ export namespace index {
 }
 
 /**
- * Update registered user details.
- *
  * This operation updates the information of a registered user identified by
  * their user ID. The request body should contain the updated details.
  *
@@ -184,8 +180,6 @@ export namespace update {
 }
 
 /**
- * Delete a registered user.
- *
  * This operation deletes a registered user identified by their user ID. This
  * action is irreversible and should be used with caution.
  *

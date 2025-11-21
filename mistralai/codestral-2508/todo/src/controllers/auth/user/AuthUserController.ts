@@ -10,9 +10,6 @@ import { ITodoListUser } from "../../../api/structures/ITodoListUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Registers a new user (todo_list_users) and issues a verification
-   * initiation.
-   *
    * This endpoint facilitates secure new user registration by creating a new
    * entry in the 'todo_list_users' schema using the provided email and password
    * (hashed before storage). It enforces unique constraint on the 'email'
@@ -66,9 +63,6 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticates users (todo_list_users) and initiates a new session with JWT
-   * issuance.
-   *
    * The login endpoint authenticates users by validating entered credentials
    * against the 'todo_list_users' schema (fields: 'email', 'password_hash'),
    * securely handling password comparison using cryptographic methods. If
@@ -119,9 +113,6 @@ export class AuthUserController {
   }
 
   /**
-   * Refreshes user session tokens (todo_list_user_sessions) for ongoing
-   * authenticated access.
-   *
    * This endpoint allows users with a valid refresh token to obtain new JWTs,
    * prolonging their authenticated session without logging in again. It
    * cross-verifies session status using the 'todo_list_user_sessions' schema,

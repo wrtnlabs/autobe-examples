@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMember } from "../../../../../structures/IDiscussionBoardMember";
 
 /**
- * Verify member email address using token from
- * discussion_board_email_verifications table.
- *
  * Verifies a member's email address using the unique verification token sent
  * during registration, enabling full content creation privileges on the
  * discussion board platform. This operation validates the token against

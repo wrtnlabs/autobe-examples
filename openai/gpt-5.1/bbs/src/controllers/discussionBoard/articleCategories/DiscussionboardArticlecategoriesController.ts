@@ -10,9 +10,6 @@ import { IDiscussionBoardArticleCategory } from "../../../api/structures/IDiscus
 @Controller("/discussionBoard/articleCategories")
 export class DiscussionboardArticlecategoriesController {
   /**
-   * Retrieve a filtered, paginated list of article categories from the
-   * discussion_board_article_categories table.
-   *
    * Search and retrieve a paginated list of discussion board article categories
    * based on flexible filter and sort criteria.
    *
@@ -70,9 +67,6 @@ export class DiscussionboardArticlecategoriesController {
   }
 
   /**
-   * Get a single discussion-board article category record from
-   * `discussion_board_article_categories` by its unique business code.
-   *
    * Get detailed information for a single discussion-board article category
    * identified by its stable business code.
    *

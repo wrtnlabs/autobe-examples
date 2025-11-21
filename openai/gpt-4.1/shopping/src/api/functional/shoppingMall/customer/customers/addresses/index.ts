@@ -7,9 +7,6 @@ import { IShoppingMallAddress } from "../../../../../structures/IShoppingMallAdd
 import { IPageIShoppingMallAddress } from "../../../../../structures/IPageIShoppingMallAddress";
 
 /**
- * List all addresses belonging to a given customer, paginated and filterable
- * (from shopping_mall_addresses).
- *
  * Retrieve a paginated and filterable list of address records for a specific
  * customer.
  *
@@ -125,9 +122,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific customer address by ID (from
- * shopping_mall_addresses).
- *
  * Retrieve the complete details of a single address by ID for a given customer.
  *
  * Only the account owner (authenticated customer) or an admin is allowed to

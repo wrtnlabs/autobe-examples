@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberWarning } from "../../../../structures/ICommunityPlatformMemberWarning";
 
 /**
- * Retrieve detailed information about a specific member warning record.
- *
  * Fetch a complete member warning record by its unique identifier from the
  * community_platform_member_warnings table.
  *

@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationAction } from "../../../../structures/IDiscus
 import { IPageIDiscussionBoardModerationAction } from "../../../../structures/IPageIDiscussionBoardModerationAction";
 
 /**
- * Search and retrieve a filtered list of moderation actions.
- *
  * Retrieve a paginated list of moderation actions from the system. This
  * operation provides advanced search capabilities for finding moderation
  * actions based on multiple criteria including action type, date range, and
@@ -102,8 +100,6 @@ export namespace search {
 }
 
 /**
- * Retrieve a specific moderation action by ID.
- *
  * Retrieve detailed information about a single moderation action identified by
  * its unique moderationActionId. This operation returns comprehensive details
  * about the moderation action, including the action type, execution date,

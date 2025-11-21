@@ -7,9 +7,6 @@ import { IPageICommunityPlatformTrendingPost } from "../../../../api/structures/
 @Controller("/communityPlatform/trending/posts")
 export class CommunityplatformTrendingPostsController {
   /**
-   * Retrieve trending posts currently gaining community engagement and
-   * momentum.
-   *
    * Retrieve a list of posts currently trending on the platform, representing
    * content that is gaining rapid engagement through votes and comments. This
    * operation serves the content discovery mechanism for users seeking

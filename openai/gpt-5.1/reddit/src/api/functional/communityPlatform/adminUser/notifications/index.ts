@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformNotification } from "../../../../structures/ICommunityPlatformNotification";
 
 /**
- * Create a new notification row in the community_platform_notifications table
- * for a member user.
- *
  * Create a new notification entry in the community_platform_notifications table
  * for a specified member user.
  *

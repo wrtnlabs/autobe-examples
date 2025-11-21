@@ -7,9 +7,6 @@ import { IShoppingMallProductImage } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/seller/products/:productId/images/:productImageId")
 export class ShoppingmallSellerProductsImagesController {
   /**
-   * Update a specific product image record in the
-   * shopping_mall_product_images table for a given product.
-   *
    * Update a single gallery image record associated with a specific product
    * using the subsidiary shopping_mall_product_images table.
    *
@@ -86,9 +83,6 @@ export class ShoppingmallSellerProductsImagesController {
   }
 
   /**
-   * Delete a specific product image record in the
-   * shopping_mall_product_images table for a given product.
-   *
    * Remove a single gallery image associated with a specific product from the
    * subsidiary shopping_mall_product_images table.
    *

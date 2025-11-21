@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCategory";
 
 /**
- * Create a new product category in the marketplace taxonomy.
- *
  * Create a new product category within the shopping mall marketplace's
  * hierarchical category structure. This operation allows platform
  * administrators to expand the product taxonomy by adding new categories that
@@ -121,8 +119,6 @@ export namespace create {
 }
 
 /**
- * Update an existing product category's information.
- *
  * Update the attributes of an existing product category identified by its
  * unique category code. This operation allows administrators to modify category
  * information including name, description, parent category relationships, and
@@ -239,8 +235,6 @@ export namespace putByCategorycode {
 }
 
 /**
- * Update an existing product category's information.
- *
  * Update the attributes of an existing product category identified by its
  * unique category slug. This operation allows administrators to modify category
  * information including name, description, parent category relationships, and
@@ -357,8 +351,6 @@ export namespace putByCategoryslug {
 }
 
 /**
- * Permanently delete a product category from the marketplace catalog.
- *
  * Permanently remove a product category entity from the shopping mall catalog
  * system. This operation performs a hard delete, completely removing the
  * category record from the database rather than marking it as inactive or

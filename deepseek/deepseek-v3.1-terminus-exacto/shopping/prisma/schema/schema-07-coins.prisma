@@ -1,0 +1,736 @@
+/// Main entity for digital currency balances with polymorphic ownership
+/// support.
+///
+/// Tracks coin balances for platform users across multiple actor types
+/// (customers, sellers, administrators). Each record represents a specific
+/// actor's coin account with current balance, total earned, and total spent
+/// metrics.
+///
+/// Uses actor_type field for efficient filtering and supports multiple coin
+/// types with separate balances per actor. Balances are updated through
+/// transaction records to ensure audit trail integrity. Soft deletion allows
+/// for account closure while preserving transaction history.
+///
+/// The main entity contains shared business attributes while subtype
+/// entities handle actor-specific relationships and metadata.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of actor owning the coin account. Valid values: customer, seller,
+  /// administrator.
+  actor_type String
+  
+  /// Current available coin balance. Must be non-negative.
+  balance Int
+  
+  /// Total coins earned through all transactions.
+  total_earned Int
+  
+  /// Total coins spent through all transactions.
+  total_spent Int
+  
+  /// Type of digital currency. Examples: loyalty_points, reward_coins,
+  /// bonus_coins.
+  coin_type String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last balance update timestamp.
+  updated_at DateTime
+  
+  /// Account closure timestamp for soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  shopping_mall_reward_redemptions shopping_mall_reward_redemptions[]
+  shopping_mall_coin_of_customers shopping_mall_coin_of_customers?
+  shopping_mall_coin_of_sellers shopping_mall_coin_of_sellers?
+  shopping_mall_coin_of_administrators shopping_mall_coin_of_administrators?
+  
+  @@unique([actor_type, coin_type])
+  @@index([actor_type])
+  @@index([coin_type])
+  @@index([balance])
+  @@index([created_at])
+}
+
+/// Audit trail for all coin transactions.
+///
+/// Records every coin movement including earning, spending, transfers, and
+/// adjustments. Each transaction represents a complete accounting entry with
+/// debit/credit amounts and business context.
+///
+/// Transactions maintain referential integrity with the coin balance table
+/// and support various transaction types like purchases, rewards, refunds,
+/// and administrative adjustments. The actor_type field enables polymorphic
+/// ownership across different user types.
+///
+/// This main entity contains shared transaction attributes while subtype
+/// entities handle actor-specific context and relationships.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coin account reference. {@link shopping_mall_coins.id}
+  shopping_mall_coins_id String
+  
+  /// Type of actor initiating the transaction. Valid values: customer, seller,
+  /// administrator.
+  actor_type String
+  
+  /// Type of transaction. Examples: purchase, reward, refund, transfer,
+  /// adjustment.
+  transaction_type String
+  
+  /// Transaction amount. Positive for earnings, negative for spending.
+  amount Int
+  
+  /// Coin balance before this transaction.
+  previous_balance Int
+  
+  /// Coin balance after this transaction.
+  new_balance Int
+  
+  /// External reference ID for business context.
+  reference_id String?
+  
+  /// Human-readable transaction description.
+  description String
+  
+  /// Transaction status. Valid values: pending, completed, cancelled, failed.
+  status String
+  
+  /// Transaction creation timestamp.
+  created_at DateTime
+  
+  /// Last status update timestamp.
+  updated_at DateTime
+  
+  /// Transaction deletion timestamp for soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  coins shopping_mall_coins @relation(fields: [shopping_mall_coins_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coin_transaction_of_customers shopping_mall_coin_transaction_of_customers?
+  shopping_mall_coin_transaction_of_sellers shopping_mall_coin_transaction_of_sellers?
+  shopping_mall_coin_transaction_of_administrators shopping_mall_coin_transaction_of_administrators?
+  
+  @@unique([reference_id])
+  @@index([actor_type])
+  @@index([transaction_type])
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_coins_id, created_at], map: "shopping_mall_coin_transactions_shopping_mall_coins_id_acf0d6fa")
+}
+
+/// Customer-specific context for coin transactions.
+///
+/// Provides customer-specific metadata and relationships for transactions
+/// initiated by customers. Each record establishes the connection between a
+/// transaction and the specific customer who initiated it.
+///
+/// Maintains referential integrity with customer tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each
+/// transaction has exactly one customer context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_transaction_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Transaction reference. {@link shopping_mall_coin_transactions.id}
+  shopping_mall_coin_transactions_id String
+  
+  /// Customer account reference. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session reference. {@link shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  transaction shopping_mall_coin_transactions @relation(fields: [shopping_mall_coin_transactions_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_coin_transaction_of_customers_shopping_m_f9cd2be3")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coin_transactions_id], map: "shopping_mall_coin_transaction_of_customers_shopping_m_70fc4046")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_coin_transaction_of_customers_shopping_m_c9928a42")
+  @@index([created_at])
+}
+
+/// Seller-specific context for coin transactions.
+///
+/// Provides seller-specific metadata and relationships for transactions
+/// initiated by sellers. Each record establishes the connection between a
+/// transaction and the specific seller who initiated it.
+///
+/// Maintains referential integrity with seller tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each
+/// transaction has exactly one seller context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_transaction_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Transaction reference. {@link shopping_mall_coin_transactions.id}
+  shopping_mall_coin_transactions_id String
+  
+  /// Seller account reference. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session reference. {@link shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  transaction shopping_mall_coin_transactions @relation(fields: [shopping_mall_coin_transactions_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_coin_transaction_of_sellers_shopping_mal_7c82b3d4")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coin_transactions_id], map: "shopping_mall_coin_transaction_of_sellers_shopping_mal_592d54e6")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_coin_transaction_of_sellers_shopping_mal_65ad10e0")
+  @@index([created_at])
+}
+
+/// Administrator-specific context for coin transactions.
+///
+/// Provides administrator-specific metadata and relationships for
+/// transactions initiated by administrators. Each record establishes the
+/// connection between a transaction and the specific administrator who
+/// initiated it.
+///
+/// Maintains referential integrity with administrator tables and supports
+/// session tracking for audit purposes. The unique constraint ensures each
+/// transaction has exactly one administrator context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_transaction_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Transaction reference. {@link shopping_mall_coin_transactions.id}
+  shopping_mall_coin_transactions_id String
+  
+  /// Administrator account reference. {@link shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session reference. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  transaction shopping_mall_coin_transactions @relation(fields: [shopping_mall_coin_transactions_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  administratorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_coin_transaction_of_administrators_shopp_257c40ab")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coin_transactions_id], map: "shopping_mall_coin_transaction_of_administrators_shopp_a3858eb3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_coin_transaction_of_administrators_shopp_2f056934")
+  @@index([created_at])
+}
+
+/// Reward program definitions and earning rules.
+///
+/// Defines the reward programs available in the platform, including earning
+/// rules, redemption rules, and program validity periods. Each reward
+/// program has specific conditions for earning coins and rules for
+/// redemption.
+///
+/// Supports multiple reward types like purchase-based rewards, referral
+/// bonuses, and promotional rewards. Programs can be targeted to specific
+/// customer segments or available platform-wide.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_rewards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reward program name for display purposes.
+  name String
+  
+  /// Detailed description of the reward program.
+  description String
+  
+  /// Type of reward program. Examples: purchase_based, referral, promotional,
+  /// seasonal.
+  reward_type String
+  
+  /// JSON configuration defining how coins are earned.
+  earning_rules String
+  
+  /// JSON configuration defining how coins can be redeemed.
+  redemption_rules String
+  
+  /// Base coin value for this reward program.
+  coin_value Int
+  
+  /// Minimum purchase amount required to earn rewards.
+  minimum_purchase Int?
+  
+  /// Maximum coins that can be earned per transaction.
+  maximum_coins Int?
+  
+  /// Program start date and time.
+  valid_from DateTime
+  
+  /// Program end date and time.
+  valid_until DateTime?
+  
+  /// Whether the reward program is currently active.
+  is_active Boolean
+  
+  /// Program creation timestamp.
+  created_at DateTime
+  
+  /// Last program update timestamp.
+  updated_at DateTime
+  
+  /// Program deletion timestamp for soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_reward_redemptions shopping_mall_reward_redemptions[]
+  
+  @@unique([name])
+  @@index([reward_type])
+  @@index([valid_from])
+  @@index([valid_until])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Tracking of reward redemption transactions.
+///
+/// Records every instance where platform users redeem their earned coins for
+/// rewards. Each redemption represents a completed transaction where coins
+/// are exchanged for products, discounts, or other benefits.
+///
+/// Maintains complete audit trail including redemption value, status, and
+/// user information. Supports various redemption types like product
+/// discounts, free shipping, or gift cards.
+///
+/// This main entity contains shared redemption attributes while subtype
+/// entities handle actor-specific context and relationships.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reward_redemptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coin account reference. {@link shopping_mall_coins.id}
+  shopping_mall_coins_id String
+  
+  /// Reward program reference. {@link shopping_mall_rewards.id}
+  shopping_mall_rewards_id String
+  
+  /// Type of actor performing the redemption. Valid values: customer, seller,
+  /// administrator.
+  actor_type String
+  
+  /// Type of redemption. Examples: product_discount, free_shipping, gift_card.
+  redemption_type String
+  
+  /// Number of coins redeemed in this transaction.
+  coins_used Int
+  
+  /// Monetary value of the redemption in base currency.
+  redemption_value Int
+  
+  /// JSON containing specific redemption details.
+  redemption_details String
+  
+  /// Redemption status. Valid values: pending, processed, completed, cancelled.
+  status String
+  
+  /// Timestamp when redemption was processed.
+  processed_at DateTime?
+  
+  /// Timestamp when redemption was completed.
+  completed_at DateTime?
+  
+  /// Redemption creation timestamp.
+  created_at DateTime
+  
+  /// Last status update timestamp.
+  updated_at DateTime
+  
+  /// Redemption deletion timestamp for soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  coins shopping_mall_coins @relation(fields: [shopping_mall_coins_id], references: [id], onDelete: Cascade)
+  reward shopping_mall_rewards @relation(fields: [shopping_mall_rewards_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_reward_redemption_of_customers shopping_mall_reward_redemption_of_customers?
+  shopping_mall_reward_redemption_of_sellers shopping_mall_reward_redemption_of_sellers?
+  shopping_mall_reward_redemption_of_administrators shopping_mall_reward_redemption_of_administrators?
+  
+  @@index([shopping_mall_rewards_id])
+  
+  @@index([actor_type])
+  @@index([redemption_type])
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_coins_id, created_at], map: "shopping_mall_reward_redemptions_shopping_mall_coins_i_4fdf113a")
+}
+
+/// Customer-specific context for coin accounts.
+///
+/// Provides customer-specific metadata and relationships for coin accounts
+/// owned by customers. Each record establishes the connection between a coin
+/// account and the specific customer who owns it.
+///
+/// Maintains referential integrity with customer tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each coin
+/// account has exactly one customer owner.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coin account reference. {@link shopping_mall_coins.id}
+  shopping_mall_coins_id String
+  
+  /// Customer account reference. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session reference. {@link shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coins shopping_mall_coins @relation(fields: [shopping_mall_coins_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_coin_of_customers_shopping_mall_customer_6e77db4f")
+  
+  @@unique([shopping_mall_coins_id])
+  @@index([shopping_mall_customer_id])
+  @@index([created_at])
+}
+
+/// Seller-specific context for coin accounts.
+///
+/// Provides seller-specific metadata and relationships for coin accounts
+/// owned by sellers. Each record establishes the connection between a coin
+/// account and the specific seller who owns it.
+///
+/// Maintains referential integrity with seller tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each coin
+/// account has exactly one seller owner.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coin account reference. {@link shopping_mall_coins.id}
+  shopping_mall_coins_id String
+  
+  /// Seller account reference. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session reference. {@link shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coins shopping_mall_coins @relation(fields: [shopping_mall_coins_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_coin_of_sellers_shopping_mall_seller_ses_e049e4f5")
+  
+  @@unique([shopping_mall_coins_id])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+}
+
+/// Administrator-specific context for coin accounts.
+///
+/// Provides administrator-specific metadata and relationships for coin
+/// accounts owned by administrators. Each record establishes the connection
+/// between a coin account and the specific administrator who owns it.
+///
+/// Maintains referential integrity with administrator tables and supports
+/// session tracking for audit purposes. The unique constraint ensures each
+/// coin account has exactly one administrator owner.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coin account reference. {@link shopping_mall_coins.id}
+  shopping_mall_coins_id String
+  
+  /// Administrator account reference. {@link shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session reference. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coins shopping_mall_coins @relation(fields: [shopping_mall_coins_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  administratorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_coin_of_administrators_shopping_mall_adm_fa79af45")
+  
+  @@unique([shopping_mall_coins_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_coin_of_administrators_shopping_mall_adm_0846313c")
+  @@index([created_at])
+}
+
+/// Customer-specific context for reward redemptions.
+///
+/// Provides customer-specific metadata and relationships for redemptions
+/// performed by customers. Each record establishes the connection between a
+/// redemption and the specific customer who performed it.
+///
+/// Maintains referential integrity with customer tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each
+/// redemption has exactly one customer context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reward_redemption_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Redemption reference. {@link shopping_mall_reward_redemptions.id}
+  shopping_mall_reward_redemptions_id String
+  
+  /// Customer account reference. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session reference. {@link shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  redemption shopping_mall_reward_redemptions @relation(fields: [shopping_mall_reward_redemptions_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_reward_redemption_of_customers_shopping__543761c9")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_reward_redemptions_id], map: "shopping_mall_reward_redemption_of_customers_shopping__227380af")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_reward_redemption_of_customers_shopping__84bb8c57")
+  @@index([created_at])
+}
+
+/// Seller-specific context for reward redemptions.
+///
+/// Provides seller-specific metadata and relationships for redemptions
+/// performed by sellers. Each record establishes the connection between a
+/// redemption and the specific seller who performed it.
+///
+/// Maintains referential integrity with seller tables and supports session
+/// tracking for audit purposes. The unique constraint ensures each
+/// redemption has exactly one seller context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reward_redemption_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Redemption reference. {@link shopping_mall_reward_redemptions.id}
+  shopping_mall_reward_redemptions_id String
+  
+  /// Seller account reference. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session reference. {@link shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  redemption shopping_mall_reward_redemptions @relation(fields: [shopping_mall_reward_redemptions_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_reward_redemption_of_sellers_shopping_ma_b13c674b")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_reward_redemptions_id], map: "shopping_mall_reward_redemption_of_sellers_shopping_ma_17525927")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_reward_redemption_of_sellers_shopping_ma_97b3d05c")
+  @@index([created_at])
+}
+
+/// Administrator-specific context for reward redemptions.
+///
+/// Provides administrator-specific metadata and relationships for
+/// redemptions performed by administrators. Each record establishes the
+/// connection between a redemption and the specific administrator who
+/// performed it.
+///
+/// Maintains referential integrity with administrator tables and supports
+/// session tracking for audit purposes. The unique constraint ensures each
+/// redemption has exactly one administrator context.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reward_redemption_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Redemption reference. {@link shopping_mall_reward_redemptions.id}
+  shopping_mall_reward_redemptions_id String
+  
+  /// Administrator account reference. {@link shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session reference. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Relationship creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  redemption shopping_mall_reward_redemptions @relation(fields: [shopping_mall_reward_redemptions_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  administratorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_reward_redemption_of_administrators_shop_44e9d874")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_reward_redemptions_id], map: "shopping_mall_reward_redemption_of_administrators_shop_6601c21e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_reward_redemption_of_administrators_shop_35c2de7f")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "shopping_mall_reward_redemption_of_administrators_crea_a1377817")
+}

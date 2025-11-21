@@ -9,8 +9,6 @@ import { ICommunityForumPostComment } from "../../../../api/structures/ICommunit
 @Controller("/communityForum/users/:username/comments")
 export class CommunityforumUsersCommentsController {
   /**
-   * Retrieve paginated list of comments created by a specific user.
-   *
    * Retrieve a paginated list of comments created by a specific user,
    * identified by their username.
    *

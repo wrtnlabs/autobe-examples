@@ -7,8 +7,6 @@ import { IShoppingMallShippingMethod } from "../../../../structures/IShoppingMal
 import { IPageIShoppingMallShippingMethod } from "../../../../structures/IPageIShoppingMallShippingMethod";
 
 /**
- * Create a new shipping method record in shopping_mall_shipping_methods.
- *
  * Create a new shipping method definition in the shopping_mall_shipping_methods
  * table using structured configuration data supplied by an administrative
  * client.
@@ -130,9 +128,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate shipping methods stored in the
- * shopping_mall_shipping_methods table.
- *
  * Retrieve a paginated, filterable list of shipping method records defined in
  * the `shopping_mall_shipping_methods` Prisma table.
  *
@@ -257,9 +252,6 @@ export namespace index {
 }
 
 /**
- * Update an existing shipping method record in the
- * shopping_mall_shipping_methods table by method code.
- *
  * Update the configuration of an existing shipping method identified by its
  * business-level method code.
  *
@@ -406,9 +398,6 @@ export namespace update {
 }
 
 /**
- * Delete a shipping method configuration from the
- * shopping_mall_shipping_methods table by method code.
- *
  * Permanently remove an existing shipping method configuration identified by
  * its method code.
  *

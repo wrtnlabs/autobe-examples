@@ -7,8 +7,6 @@ import { ICommunityPlatformVote } from "../../../../../api/structures/ICommunity
 @Controller("/communityPlatform/member/posts/:postId/votes")
 export class CommunityplatformMemberPostsVotesController {
   /**
-   * Create a new vote (upvote or downvote) on a specific post.
-   *
    * Create a new vote on a specific post or update an existing vote if the
    * member has already voted. This operation is the primary mechanism for
    * member engagement with post content, allowing members to express approval

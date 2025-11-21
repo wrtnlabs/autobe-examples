@@ -7,9 +7,6 @@ import { ITodoListUserEmailVerification } from "../../../../../../structures/ITo
 import { IPageITodoListUserEmailVerification } from "../../../../../../structures/IPageITodoListUserEmailVerification";
 
 /**
- * List email verification events for current user
- * (todo_list_user_email_verifications).
- *
  * Retrieves a filtered, paginated history of all email verification events for
  * the currently authenticated user.
  *
@@ -112,9 +109,6 @@ export namespace index {
 }
 
 /**
- * Get details for a user's specific email verification event by token
- * (todo_list_user_email_verifications).
- *
  * Fetches full detail about a specific email verification event for the
  * currently authenticated user, identified via the verification token present
  * in the path parameter.

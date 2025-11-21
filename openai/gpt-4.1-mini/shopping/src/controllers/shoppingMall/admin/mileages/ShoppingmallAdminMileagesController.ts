@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/shoppingMall/admin/mileages/:mileageId")
 export class ShoppingmallAdminMileagesController {
   /**
-   * Delete a customer mileage record in the shopping mall.
-   *
    * Permanently deletes a customer mileage record identified by mileageId. This
    * endpoint is intended for administrative or internal use to remove mileage
    * points, for example in case of customer account closure or data

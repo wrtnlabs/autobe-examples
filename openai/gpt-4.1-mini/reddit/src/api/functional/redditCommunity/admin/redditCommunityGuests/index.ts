@@ -5,8 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as sessions from "./sessions/index";
 
 /**
- * Delete a Reddit community guest by ID.
- *
  * This API endpoint permanently deletes a Reddit community guest from the
  * system.
  *

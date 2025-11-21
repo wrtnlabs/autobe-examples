@@ -7,9 +7,6 @@ import { IShoppingMallSaleImage } from "../../../../../structures/IShoppingMallS
 import { IPageIShoppingMallSaleImage } from "../../../../../structures/IPageIShoppingMallSaleImage";
 
 /**
- * Search and retrieve paginated list of product images for a specific sale SKU
- * variant.
- *
  * Retrieve a filtered and paginated list of product images associated with a
  * specific SKU variant within a sale listing. This operation provides advanced
  * search capabilities for finding images that are specifically assigned to or
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific product image for a SKU
- * variant.
- *
  * Retrieve comprehensive details about a specific product image attached to a
  * SKU variant within a sale listing. This operation provides access to
  * individual image metadata including the image URI, display order, creation

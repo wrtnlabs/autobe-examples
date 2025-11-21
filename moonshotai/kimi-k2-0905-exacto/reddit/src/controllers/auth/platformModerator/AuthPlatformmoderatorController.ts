@@ -7,8 +7,6 @@ import { IRedditCommunityPlatformModerator } from "../../../api/structures/IRedd
 @Controller("/auth/platformModerator")
 export class AuthPlatformmoderatorController {
   /**
-   * Create a new platform moderator account.
-   *
    * The platform moderator registration operation creates a new system-wide
    * administrator account with comprehensive platform management authority.
    * This API validates that the provided nickname is unique across the entire
@@ -52,8 +50,6 @@ export class AuthPlatformmoderatorController {
   }
 
   /**
-   * Authenticate platform moderator credentials.
-   *
    * The platform moderator login operation validates administrator
    * credentials against the encrypted password hash stored in the
    * reddit_community_platform_moderators table. The system accepts either
@@ -95,8 +91,6 @@ export class AuthPlatformmoderatorController {
   }
 
   /**
-   * Refresh platform moderator access tokens.
-   *
    * The platform moderator token refresh operation extends administrative
    * sessions by validating refresh token integrity and issuing new access
    * tokens for continued platform management capabilities. This operation

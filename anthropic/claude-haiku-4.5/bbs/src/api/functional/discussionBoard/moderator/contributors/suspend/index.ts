@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardUserSuspension } from "../../../../../structures/IDiscussionBoardUserSuspension";
 
 /**
- * Suspend or restrict a contributor account for policy violations.
- *
  * Create a new account suspension or posting restriction on a contributor
  * account as an enforcement action for policy violations. This operation
  * records the suspension in the discussion_board_user_suspensions table, which

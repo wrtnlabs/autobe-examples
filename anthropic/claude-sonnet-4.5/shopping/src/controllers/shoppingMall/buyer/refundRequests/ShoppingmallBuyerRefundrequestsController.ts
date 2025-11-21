@@ -11,8 +11,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/buyer/refundRequests")
 export class ShoppingmallBuyerRefundrequestsController {
   /**
-   * Retrieve detailed information about a specific refund request.
-   *
    * Retrieve complete details of a specific refund request identified by its
    * unique ID. This operation provides comprehensive information about a
    * buyer's refund request including the associated order, requested refund
@@ -64,8 +62,6 @@ export class ShoppingmallBuyerRefundrequestsController {
   }
 
   /**
-   * Create a new refund request for a delivered order.
-   *
    * Create a new refund request submission for a delivered order that a buyer
    * wishes to return and receive a refund for. This operation allows
    * authenticated buyers to formally request a refund by providing the order

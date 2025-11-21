@@ -4,9 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a specific image associated with a product SKU
- * (shopping_mall_product_images).
- *
  * Removes a single product SKU image from the system by soft-deleting the image
  * record. Upon invocation, the system verifies that the image is associated
  * with both the specified product and SKU, and that the requesting actor is

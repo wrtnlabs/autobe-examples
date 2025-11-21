@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleImage } from "../../../../../../structures/IShoppingMallSaleImage";
 
 /**
- * Upload a new product image for a specific SKU variant of a sale listing.
- *
  * Upload and attach a new product image to a specific SKU variant within a sale
  * listing. This operation enables sellers to add visual content to their
  * product variants, enhancing the buyer's ability to evaluate the product
@@ -133,9 +131,6 @@ export namespace create {
 }
 
 /**
- * Update an existing product image for a specific SKU variant within a sale
- * listing.
- *
  * Update the properties of an existing product image associated with a specific
  * SKU variant in a sale listing. This operation allows sellers to modify image
  * details such as the image URL, display order position, and alternative text
@@ -263,9 +258,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a product image from a specific SKU variant within a sale
- * listing.
- *
  * Permanently remove a product image associated with a specific SKU variant in
  * a sale listing. This operation performs a hard delete, completely removing
  * the image record from the database. The deletion is immediate and cannot be

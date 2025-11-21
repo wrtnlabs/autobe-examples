@@ -7,9 +7,6 @@ import { IShoppingMallSellerEarning } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallSellerEarning } from "../../../../../structures/IPageIShoppingMallSellerEarning";
 
 /**
- * Search and retrieve a paginated list of shopping_mall_seller_earnings records
- * for a specific seller.
- *
  * Retrieve a filtered and paginated list of earnings records for a specific
  * seller using the `shopping_mall_seller_earnings` Prisma model.
  *
@@ -153,9 +150,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single shopping_mall_seller_earnings
- * record for a specific seller.
- *
  * Retrieve full details of a single seller earning record from the
  * `shopping_mall_seller_earnings` table for a specific seller.
  *

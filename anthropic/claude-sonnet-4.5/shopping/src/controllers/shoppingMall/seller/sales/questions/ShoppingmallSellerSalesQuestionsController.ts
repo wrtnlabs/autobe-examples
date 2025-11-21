@@ -11,8 +11,6 @@ import { IShoppingMallSaleQuestionAnswer } from "../../../../../api/structures/I
 @Controller("/shoppingMall/seller/sales/:saleCode/questions/:questionId")
 export class ShoppingmallSellerSalesQuestionsController {
   /**
-   * Answer a customer question about a product sale.
-   *
    * Provide or update an answer to a customer question about a product sale.
    * This operation allows sellers to respond to buyer inquiries, helping
    * customers make informed purchase decisions and demonstrating seller

@@ -7,8 +7,6 @@ import { IShoppingMallSaleSnapshot } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallSaleSnapshot } from "../../../../../structures/IPageIShoppingMallSaleSnapshot";
 
 /**
- * Retrieve paginated historical snapshots of a product sale.
- *
  * Fetch a filtered and paginated list of historical point-in-time snapshots for
  * a specific product sale listing.
  *
@@ -141,8 +139,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific historical snapshot of a product sale.
- *
  * Retrieve a specific point-in-time snapshot of a product sale's historical
  * information from the shopping_mall_sale_snapshots table. This operation
  * provides access to complete product state as it existed at a specific moment,

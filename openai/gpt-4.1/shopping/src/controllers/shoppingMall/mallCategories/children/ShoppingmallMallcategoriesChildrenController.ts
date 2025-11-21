@@ -9,9 +9,6 @@ import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/mallCategories/:name/children")
 export class ShoppingmallMallcategoriesChildrenController {
   /**
-   * List child categories of a specific parent category by unique name
-   * (shopping_mall_categories).
-   *
    * Retrieve a filtered and paginated list of direct child categories under a
    * specific parent category, identified by its unique name.
    *

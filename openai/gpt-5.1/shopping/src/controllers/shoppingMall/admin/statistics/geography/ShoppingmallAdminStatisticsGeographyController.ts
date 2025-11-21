@@ -7,9 +7,6 @@ import { IShoppingMallGeographyStatistics } from "../../../../../api/structures/
 @Controller("/shoppingMall/admin/statistics/geography")
 export class ShoppingmallAdminStatisticsGeographyController {
   /**
-   * Get aggregated geographic performance and revenue statistics grouped by
-   * country and region for the shoppingMall platform.
-   *
    * Retrieve aggregated geographic statistics for orders, revenue, and
    * operational performance across different countries and regions in the
    * shoppingMall platform.

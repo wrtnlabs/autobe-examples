@@ -7,8 +7,6 @@ import { IShoppingMallSaleImage } from "../../../../../structures/IShoppingMallS
 import { IPageIShoppingMallSaleImage } from "../../../../../structures/IPageIShoppingMallSaleImage";
 
 /**
- * Upload and create a new product image for a specific sale listing.
- *
  * Create a new product image record associated with a specific sale listing in
  * the shopping marketplace. This operation allows authenticated sellers to add
  * visual assets to their product listings, which are essential for attracting
@@ -129,9 +127,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of product images for a
- * specific sale.
- *
  * Retrieve a filtered and paginated list of product images associated with a
  * specific sale listing in the shopping marketplace. This operation provides
  * advanced search capabilities for finding images based on various criteria
@@ -252,8 +247,6 @@ export namespace index {
 }
 
 /**
- * Update a specific product sale image's metadata and properties.
- *
  * Update the properties and metadata of a specific product image associated
  * with a sale listing. This operation enables modification of image details
  * such as display order, alternative text, or other configurable attributes
@@ -368,8 +361,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific product image from a sale listing.
- *
  * Remove a specific product image from a sale listing's image gallery. This
  * operation permanently deletes the image record from the
  * shopping_mall_sale_images table, allowing sellers to manage and curate their

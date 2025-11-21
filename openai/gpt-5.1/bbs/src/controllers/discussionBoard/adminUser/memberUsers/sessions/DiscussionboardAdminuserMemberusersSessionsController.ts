@@ -12,9 +12,6 @@ import { IDiscussionBoardMemberuserSession } from "../../../../../api/structures
 @Controller("/discussionBoard/adminUser/memberUsers/:memberUserId/sessions")
 export class DiscussionboardAdminuserMemberusersSessionsController {
   /**
-   * Search and retrieve a paginated list of
-   * discussion_board_memberuser_sessions for a specific member user.
-   *
    * Retrieve a filtered, paginated list of session records belonging to a
    * specific member user from the discussion_board_memberuser_sessions table.
    *
@@ -86,9 +83,6 @@ export class DiscussionboardAdminuserMemberusersSessionsController {
   }
 
   /**
-   * Get a specific member user's session from the
-   * discussion_board_memberuser_sessions table for adminUser inspection.
-   *
    * Retrieve detailed information about a single member user's session from the
    * discussion_board_memberuser_sessions table for administrative review.
    *

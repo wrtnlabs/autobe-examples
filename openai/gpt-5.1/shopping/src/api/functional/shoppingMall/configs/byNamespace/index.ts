@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallConfig } from "../../../../structures/IShoppingMallConfig";
 
 /**
- * Get a configuration from shopping_mall_configs by its namespace key.
- *
  * Retrieve a single configuration object from the `shopping_mall_configs` table
  * identified by its business-level namespace key.
  *

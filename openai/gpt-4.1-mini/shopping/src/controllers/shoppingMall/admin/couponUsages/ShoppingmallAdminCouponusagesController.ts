@@ -15,8 +15,6 @@ import { IPageIShoppingMallCouponUsage } from "../../../../api/structures/IPageI
 @Controller("/shoppingMall/admin/couponUsages")
 export class ShoppingmallAdminCouponusagesController {
   /**
-   * Create a new coupon usage record.
-   *
    * Submit a new coupon usage record to the system.
    *
    * This operation validates the input data, including coupon identification
@@ -54,8 +52,6 @@ export class ShoppingmallAdminCouponusagesController {
   }
 
   /**
-   * Search and retrieve paginated coupon usage records.
-   *
    * Retrieve a filtered and paginated list of coupon usage records from the
    * shopping mall platform.
    *
@@ -97,8 +93,6 @@ export class ShoppingmallAdminCouponusagesController {
   }
 
   /**
-   * Get coupon usage details by couponUsageId.
-   *
    * Retrieve detailed information about a specific coupon usage by its unique
    * identifier.
    *
@@ -136,8 +130,6 @@ export class ShoppingmallAdminCouponusagesController {
   }
 
   /**
-   * Update a coupon usage record by ID.
-   *
    * Update an existing coupon usage record that tracks the redemption of
    * coupons by customers in the shopping mall. The record includes references
    * to the related coupon, customer, and customer session during which the
@@ -181,8 +173,6 @@ export class ShoppingmallAdminCouponusagesController {
   }
 
   /**
-   * Delete a coupon usage record by ID.
-   *
    * Delete an existing coupon usage record to remove its usage history from the
    * system.
    *

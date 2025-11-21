@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportOfAdminusers } from "../../../../../../structures/IDiscussionBoardReportOfAdminusers";
 
 /**
- * Retrieve the admin reporter link for a report from
- * discussion_board_report_of_adminusers.
- *
  * Get the admin user reporter association for a specific report identified by
  * its UUID.
  *

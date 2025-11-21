@@ -11,8 +11,6 @@ import { ITodoAppTask } from "../../../../../api/structures/ITodoAppTask";
 @Controller("/todoApp/user/tasks/bulk")
 export class TodoappUserTasksBulkController {
   /**
-   * Bulk update multiple todo tasks.
-   *
    * Perform bulk updates on multiple todo tasks, applying changes to status,
    * priority, due dates, completion state, or task content across multiple
    * tasks simultaneously. This operation supports scenarios where users need to
@@ -54,8 +52,6 @@ export class TodoappUserTasksBulkController {
   }
 
   /**
-   * Perform bulk operations on multiple tasks simultaneously.
-   *
    * Execute bulk operations on multiple tasks in a single API call for improved
    * efficiency and user experience. This operation enables users to perform
    * common batch actions such as marking several tasks as completed, updating

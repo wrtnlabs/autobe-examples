@@ -7,8 +7,6 @@ import { ICommunityPlatformCommentBookmark } from "../../../../structures/ICommu
 import { IPageICommunityPlatformCommentBookmark } from "../../../../structures/IPageICommunityPlatformCommentBookmark";
 
 /**
- * Create a new comment bookmark (community_platform_comment_bookmarks).
- *
  * Create a new comment bookmark, which enables users to save and quickly access
  * discussions they find important. This operation requires the user to be
  * authenticated and supply both the target comment identifier and the user's
@@ -114,9 +112,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filtered list of comment bookmarks
- * (community_platform_comment_bookmarks).
- *
  * Retrieve a filtered, paginated list of comment bookmarks a user has saved
  * within the platform.
  *
@@ -217,9 +212,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a specific comment bookmark by its ID
- * (community_platform_comment_bookmarks).
- *
  * Get complete details for a specific comment bookmark, using the unique
  * bookmark ID.
  *
@@ -312,9 +304,6 @@ export namespace at {
 }
 
 /**
- * Update an existing comment bookmark (community_platform_comment_bookmarks) by
- * ID.
- *
  * Update a comment bookmark by bookmark ID. This can be used for scenarios such
  * as restoring a previously deleted bookmark (undo), or updating any mutable
  * properties the system allows in the bookmark entity. The request must include
@@ -430,9 +419,6 @@ export namespace update {
 }
 
 /**
- * Erase a comment bookmark by its unique identifier from the
- * community_platform_comment_bookmarks table.
- *
  * Remove a comment bookmark from a user's saved bookmarks by its unique
  * identifier.
  *

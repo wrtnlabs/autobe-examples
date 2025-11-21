@@ -13,9 +13,6 @@ import { IShoppingMallSellerSession } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/sellers/:sellerId/sessions")
 export class ShoppingmallAdminSellersSessionsController {
   /**
-   * Search and retrieve a filtered, paginated list of seller authentication
-   * sessions.
-   *
    * Retrieve a filtered and paginated list of seller authentication sessions
    * from the system. This operation provides advanced search capabilities for
    * finding sessions based on multiple criteria including session creation
@@ -70,9 +67,6 @@ export class ShoppingmallAdminSellersSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific seller authentication
-   * session.
-   *
    * Retrieve complete details of a specific seller authentication session
    * identified by its unique session ID. This operation returns comprehensive
    * session information including creation timestamp, last activity time,
@@ -128,8 +122,6 @@ export class ShoppingmallAdminSellersSessionsController {
   }
 
   /**
-   * Terminate a specific seller authentication session (logout).
-   *
    * Delete an active authentication session for a seller account, effectively
    * logging the seller out from the platform. This operation is used when a
    * seller explicitly logs out or when an admin needs to forcibly terminate a

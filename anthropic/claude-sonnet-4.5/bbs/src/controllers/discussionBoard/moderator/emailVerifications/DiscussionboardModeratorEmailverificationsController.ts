@@ -12,8 +12,6 @@ import { IDiscussionBoardEmailVerification } from "../../../../api/structures/ID
 @Controller("/discussionBoard/moderator/emailVerifications")
 export class DiscussionboardModeratorEmailverificationsController {
   /**
-   * Search and retrieve paginated list of email verification records.
-   *
    * Retrieve a filtered and paginated list of email verification records for
    * monitoring and administration purposes.
    *
@@ -73,8 +71,6 @@ export class DiscussionboardModeratorEmailverificationsController {
   }
 
   /**
-   * Retrieve detailed information about a specific email verification record.
-   *
    * Retrieve complete details of a specific email verification record by its
    * unique identifier.
    *

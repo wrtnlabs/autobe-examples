@@ -8,8 +8,6 @@ import { IPageIDiscussionBoardDiscussionBoardMember } from "../../../../structur
 export * as sessions from "./sessions/index";
 
 /**
- * Search and list discussion board members.
- *
  * Retrieve a paginated list of discussion board members filtered by provided
  * search parameters.
  *
@@ -103,8 +101,6 @@ export namespace index {
 }
 
 /**
- * Get a registered discussion board member by ID.
- *
  * Retrieve details of a registered discussion board member by their unique
  * identifier.
  *

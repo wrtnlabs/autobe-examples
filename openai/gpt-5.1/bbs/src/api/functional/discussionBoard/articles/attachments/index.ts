@@ -7,9 +7,6 @@ import { IDiscussionBoardAttachment } from "../../../../structures/IDiscussionBo
 import { IPageIDiscussionBoardAttachment } from "../../../../structures/IPageIDiscussionBoardAttachment";
 
 /**
- * List attachments for a given article from the discussion_board_attachments
- * table with pagination and filters.
- *
  * Retrieve a filtered, sorted, and paginated list of file attachments belonging
  * to a specific discussion board article.
  *
@@ -133,9 +130,6 @@ export namespace index {
 }
 
 /**
- * Get one attachment from discussion_board_attachments that belongs to a
- * specific article.
- *
  * Fetch detailed metadata for a single file attachment that belongs to a
  * specific discussion article.
  *

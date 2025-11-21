@@ -7,8 +7,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../../api/structure
 @Controller("/communityPlatform/auth/administrator/password-reset/request")
 export class CommunityplatformAuthAdministratorPassword_resetRequestController {
   /**
-   * Request a password reset link for administrator account recovery.
-   *
    * Initiate the administrator password reset workflow by submitting an email
    * address associated with an administrator account. The system verifies the
    * email corresponds to an active administrator account and generates a

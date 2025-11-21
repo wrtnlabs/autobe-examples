@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerator } from "../../../../../structures/IDiscussionBoardModerator";
 
 /**
- * Change moderator password with current password validation.
- *
  * Enables authenticated moderators to change their password by providing their
  * current password and new password.
  *

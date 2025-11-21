@@ -8,8 +8,6 @@ import { IPageIShoppingMallProductCategory } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/products/:productId/categories")
 export class ShoppingmallAdminProductsCategoriesController {
   /**
-   * Create a new `shopping_mall_product_categories` link for a given product.
-   *
    * Create a new product-category association for a specific product in the
    * shoppingMall catalog.
    *
@@ -64,9 +62,6 @@ export class ShoppingmallAdminProductsCategoriesController {
   }
 
   /**
-   * List and search categories associated with a given product via the
-   * shopping_mall_product_categories table.
-   *
    * Retrieve a paginated, searchable list of categories linked to a specific
    * product in the shoppingMall catalog.
    *
@@ -138,9 +133,6 @@ export class ShoppingmallAdminProductsCategoriesController {
   }
 
   /**
-   * Get a specific `shopping_mall_product_categories` link for a given
-   * product.
-   *
    * Retrieve a single product-category link record for a given product in the
    * shoppingMall catalog.
    *
@@ -192,9 +184,6 @@ export class ShoppingmallAdminProductsCategoriesController {
   }
 
   /**
-   * Update a specific product–category link row in the
-   * `shopping_mall_product_categories` table for a given product.
-   *
    * Update an existing product–category link record for a specific product
    * based on the `shopping_mall_product_categories` table.
    *
@@ -266,9 +255,6 @@ export class ShoppingmallAdminProductsCategoriesController {
   }
 
   /**
-   * Delete a specific product–category link row in the
-   * `shopping_mall_product_categories` table for a given product.
-   *
    * Erase a single product–category association row for a given product based
    * on the `shopping_mall_product_categories` table.
    *

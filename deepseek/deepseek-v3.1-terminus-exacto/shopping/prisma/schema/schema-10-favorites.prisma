@@ -1,0 +1,223 @@
+/// User-created wishlists for organizing desired products.
+///
+/// Stores collections of products that customers want to save for future
+/// purchase consideration. Each wishlist represents a curated selection that
+/// supports personal shopping experiences and gift planning.
+///
+/// Wishlists can be shared with others for collaborative shopping or kept
+/// private for personal use. They support features like priority ranking,
+/// notes, and organization across multiple categories.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Wishlist name for identification and organization.
+  name String
+  
+  /// Optional description explaining the wishlist's purpose or theme.
+  description String?
+  
+  /// Whether the wishlist is publicly visible or private.
+  is_public Boolean
+  
+  /// Priority level for sorting and organization (higher numbers indicate
+  /// higher priority).
+  priority Int
+  
+  /// Current status of the wishlist (active, archived, shared).
+  status String
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the wishlist was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id, name])
+  @@index([shopping_mall_customer_id, status])
+  @@index([is_public])
+  @@index([priority])
+  @@index([created_at])
+}
+
+/// Individual products added to customer wishlists.
+///
+/// Represents the many-to-many relationship between wishlists and products.
+/// Each item tracks when a product was added to a wishlist and any
+/// customer-specific notes or preferences.
+///
+/// Supports features like quantity tracking, priority setting, and
+/// organization within wishlists. Items can be moved between wishlists or
+/// removed when purchased.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist containing this item. {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Product added to the wishlist. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Desired quantity of the product.
+  quantity Int
+  
+  /// Priority level within the wishlist for sorting.
+  priority Int
+  
+  /// Customer notes or reminders about this product.
+  notes String?
+  
+  /// Timestamp when the product was added to the wishlist.
+  added_at DateTime
+  
+  /// Timestamp when the wishlist item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the wishlist item was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57096080")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_wishlist_id, priority], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_3e30710a")
+  @@index([shopping_mall_product_id])
+  @@index([added_at])
+}
+
+/// Individual products marked as favorites by customers.
+///
+/// Tracks products that customers have marked as favorites for quick access
+/// and personalized recommendations. Unlike wishlists, favorites represent a
+/// simple bookmarking system without organizational structure.
+///
+/// Supports features like favorite counts, quick access to favorite
+/// products, and integration with recommendation algorithms.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who favorited the product. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Product that was favorited. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Timestamp when the product was marked as favorite.
+  favorited_at DateTime
+  
+  /// Timestamp when the favorite entry was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the favorite was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_favorites_shopping_mall_customer_id_shop_80d7591c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, favorited_at], map: "shopping_mall_favorites_shopping_mall_customer_id_favo_0046d2c0")
+  @@index([shopping_mall_product_id])
+  @@index([favorited_at])
+}
+
+/// Customer preferences for personalization and user experience customization.
+///
+/// Stores various user settings and preferences that affect how the platform
+/// behaves for individual customers. This includes notification preferences,
+/// display settings, and personalization options.
+///
+/// Supports GDPR compliance by allowing customers to control their data and
+/// experience preferences.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer whose preferences are stored. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Type of preference being stored (notification, display, privacy, etc.).
+  preference_type String
+  
+  /// Specific preference identifier.
+  preference_key String
+  
+  /// Value of the preference setting.
+  preference_value String
+  
+  /// Category for organizing related preferences.
+  category String?
+  
+  /// Whether this preference setting is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the preference was created.
+  created_at DateTime
+  
+  /// Timestamp when the preference was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the preference was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, preference_type, preference_key], map: "shopping_mall_user_preferences_shopping_mall_customer__f0a740e7")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, category], map: "shopping_mall_user_preferences_shopping_mall_customer__0f7bb1e6")
+  @@index([preference_type])
+  @@index([is_active])
+  @@index([created_at])
+}

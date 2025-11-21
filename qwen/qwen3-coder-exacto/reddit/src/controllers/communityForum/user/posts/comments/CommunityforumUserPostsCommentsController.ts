@@ -10,8 +10,6 @@ import { ICommunityForumPostComment } from "../../../../../api/structures/ICommu
 @Controller("/communityForum/user/posts/:postId/comments")
 export class CommunityforumUserPostsCommentsController {
   /**
-   * Add a new comment to a forum post.
-   *
    * Create a new comment on a specific forum post.
    *
    * This operation enables authenticated users to contribute to discussions by

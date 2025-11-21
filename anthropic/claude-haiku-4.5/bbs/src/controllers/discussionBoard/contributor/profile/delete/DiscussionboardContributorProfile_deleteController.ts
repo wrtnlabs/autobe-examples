@@ -7,8 +7,6 @@ import { IDiscussionBoardContributor } from "../../../../../api/structures/IDisc
 @Controller("/discussionBoard/contributor/profile/delete")
 export class DiscussionboardContributorProfile_deleteController {
   /**
-   * Soft-delete contributor account.
-   *
    * This endpoint allows authenticated contributors to delete their own
    * account through a soft-delete operation. The account is marked for
    * deletion by setting the deleted_at timestamp to the current time and

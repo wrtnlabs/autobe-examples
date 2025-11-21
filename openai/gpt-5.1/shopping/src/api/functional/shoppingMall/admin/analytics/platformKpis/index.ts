@@ -7,9 +7,6 @@ import { IShoppingMallPlatformKpiSnapshot } from "../../../../../structures/ISho
 import { IPageIShoppingMallPlatformKpiSnapshot } from "../../../../../structures/IPageIShoppingMallPlatformKpiSnapshot";
 
 /**
- * Search aggregated platform-level KPI snapshot records from the
- * shopping_mall_platform_kpi_snapshots snapshot table.
- *
  * Search and retrieve aggregated platform-level KPI snapshot records for the
  * shoppingMall platform.
  *

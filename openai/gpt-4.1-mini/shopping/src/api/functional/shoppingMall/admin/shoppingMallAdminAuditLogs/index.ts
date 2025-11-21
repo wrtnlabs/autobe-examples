@@ -7,8 +7,6 @@ import { IShoppingMallAdminAuditLog } from "../../../../structures/IShoppingMall
 import { IPageIShoppingMallAdminAuditLog } from "../../../../structures/IPageIShoppingMallAdminAuditLog";
 
 /**
- * Search and retrieve admin audit logs with filtering and pagination.
- *
  * Retrieve a filtered and paginated list of administrator audit logs from the
  * shopping mall platform. This operation supports advanced search criteria
  * allowing administrators to filter logs based on action types, timestamps,
@@ -102,8 +100,6 @@ export namespace index {
 }
 
 /**
- * Retrieve specific admin audit log entry by ID.
- *
  * Retrieve detailed information about a single administrator audit log entry
  * identified by its unique UUID from the shopping mall platform. This includes
  * comprehensive immutable audit data such as the action performed, the

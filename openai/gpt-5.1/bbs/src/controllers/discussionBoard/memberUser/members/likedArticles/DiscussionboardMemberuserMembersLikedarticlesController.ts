@@ -11,9 +11,6 @@ import { IDiscussionBoardArticle } from "../../../../../api/structures/IDiscussi
 @Controller("/discussionBoard/memberUser/members/:memberUserId/likedArticles")
 export class DiscussionboardMemberuserMembersLikedarticlesController {
   /**
-   * Search liked articles for a member using discussion_board_article_likes and
-   * discussion_board_articles.
-   *
    * Retrieve a paginated, filterable list of articles that a given member user
    * has liked by querying the discussion_board_article_likes and
    * discussion_board_articles tables.

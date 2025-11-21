@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunityReport } from "../../../../api/structures/IC
 @Controller("/communityPlatform/adminUser/communityReports")
 export class CommunityplatformAdminuserCommunityreportsController {
   /**
-   * List and search community platform community reports from the
-   * community_platform_community_reports table with pagination and filters.
-   *
    * Retrieve a paginated and filterable list of reports that target entire
    * communities, based on the community_platform_community_reports table.
    *
@@ -59,9 +56,6 @@ export class CommunityplatformAdminuserCommunityreportsController {
   }
 
   /**
-   * Retrieve a single community report from the
-   * community_platform_community_reports table by its identifier.
-   *
    * Retrieve the full details of a single community report identified by its
    * unique report identifier.
    *
@@ -120,9 +114,6 @@ export class CommunityplatformAdminuserCommunityreportsController {
   }
 
   /**
-   * Update an existing community report record in the
-   * community_platform_community_reports table.
-   *
    * Update the details and resolution-related fields of a single community
    * report record in the `community_platform_community_reports` table.
    *
@@ -192,9 +183,6 @@ export class CommunityplatformAdminuserCommunityreportsController {
   }
 
   /**
-   * Permanently delete a community report record from the
-   * community_platform_community_reports table.
-   *
    * Permanently delete a single community report record from the
    * `community_platform_community_reports` table by its unique identifier.
    *

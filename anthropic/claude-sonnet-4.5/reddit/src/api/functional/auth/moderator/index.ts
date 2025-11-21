@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunityModerator } from "../../../structures/IRedditCommunityCommunityModerator";
 
 /**
- * Register a new moderator account and receive authentication tokens.
- *
  * Creates a new moderator account and issues initial JWT authentication tokens.
  *
  * This endpoint handles the registration process for new community moderators.
@@ -118,8 +116,6 @@ export namespace join {
 }
 
 /**
- * Authenticate moderator credentials and receive JWT tokens.
- *
  * Authenticates a moderator and issues JWT access tokens.
  *
  * This endpoint handles the login process for existing moderators. The
@@ -229,8 +225,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT access tokens using a valid refresh token.
- *
  * Refreshes JWT access tokens using a valid refresh token.
  *
  * This endpoint implements the token refresh mechanism for moderators, allowing

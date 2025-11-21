@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 @Controller("/todoList/admin/todoListUsers/:id")
 export class TodolistAdminTodolistusersController {
   /**
-   * Delete a registered todo list user by ID.
-   *
    * Permanently delete a registered user by their unique identifier from the
    * todo list system.
    *

@@ -9,8 +9,6 @@ export * as comments from "./comments/index";
 export * as votes from "./votes/index";
 
 /**
- * Create a new post in a community.
- *
  * Create a new user-generated post within a community. This operation allows
  * authenticated members to create new posts in specific communities, choosing
  * from three types: text posts with markdown-formatted content, link posts with
@@ -122,8 +120,6 @@ export namespace create {
 }
 
 /**
- * Update an existing community post's content and metadata.
- *
  * Update an existing community platform post by modifying its content,
  * metadata, or visibility status. This operation allows post creators to modify
  * post details within 24 hours of creation through the community_platform_posts
@@ -245,8 +241,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a post from the community platform.
- *
  * Remove a post and all associated data from the community platform database.
  * This operation performs a hard delete on the target post record from the
  * community_platform_posts table, permanently removing it along with all

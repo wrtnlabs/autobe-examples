@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a specific reddit community post report.
- *
  * This operation permanently deletes a reddit community post report identified
  * by the postReportId path parameter.
  *

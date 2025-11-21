@@ -8,9 +8,6 @@ import { ITodoListUserPasswordReset } from "../../../../api/structures/ITodoList
 @Controller("/auth/user/request-password-reset")
 export class AuthUserRequest_password_resetController {
   /**
-   * Initiates password reset process for user by generating time-limited reset
-   * token (todo_list_user_password_resets).
-   *
    * Initiates a password reset for user accounts. The endpoint accepts an email
    * address and, if the corresponding user is present in 'todo_list_users',
    * generates a unique single-use reset token (persisted in

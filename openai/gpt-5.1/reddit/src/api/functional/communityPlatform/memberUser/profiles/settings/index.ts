@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformUserSettings } from "../../../../../structures/ICommunityPlatformUserSettings";
 
 /**
- * Retrieve the `community_platform_user_settings` record for a user identified
- * by profile handle.
- *
  * Get the per-user settings associated with a member user's profile handle by
  * reading from the `community_platform_user_settings` table through the profile
  * linkage.
@@ -138,9 +135,6 @@ export namespace at {
 }
 
 /**
- * Update community platform user settings in the
- * community_platform_user_settings table for a profile identified by handle.
- *
  * Update the configurable settings for a specific user profile identified by
  * its public handle.
  *

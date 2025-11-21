@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Soft-delete a discussion board user account in the users table.
- *
  * Delete a user account from the discussion board user table by setting the
  * deleted_at field to the current timestamp instead of physical removal.
  *

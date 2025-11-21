@@ -7,9 +7,6 @@ import { ICommunityPlatformPrivacySettings } from "../../../../structures/ICommu
 import { IPageICommunityPlatformPrivacySettings } from "../../../../structures/IPageICommunityPlatformPrivacySettings";
 
 /**
- * Retrieve a paginated, filterable list of user privacy settings
- * (community_platform_privacy_settings table).
- *
  * Provide a paginated, filterable list of privacy settings records for users
  * across the platform, intended for administrative and compliance review or
  * backend dashboards.
@@ -106,8 +103,6 @@ export namespace index {
 }
 
 /**
- * Update privacy settings in the community_platform_privacy_settings table.
- *
  * Update an existing set of privacy preferences for an end user.
  *
  * This operation enables a user or authorized system actor to update privacy
@@ -215,9 +210,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a privacy settings record in the
- * community_platform_privacy_settings table.
- *
  * Permanently mark a user's privacy settings record as deleted, restricting all
  * future access and modification for that user.
  *

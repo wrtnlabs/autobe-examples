@@ -8,9 +8,6 @@ import { IPageIShoppingMallProductTag } from "../../../../api/structures/IPageIS
 @Controller("/shoppingMall/admin/productTags")
 export class ShoppingmallAdminProducttagsController {
   /**
-   * Create a new tag record in the shopping_mall_product_tags table for the
-   * ShoppingMall catalog.
-   *
    * Create a new product tag in the ShoppingMall catalog by inserting a row
    * into the shopping_mall_product_tags table.
    *
@@ -58,9 +55,6 @@ export class ShoppingmallAdminProducttagsController {
   }
 
   /**
-   * Search and retrieve a paginated list of product tags from
-   * shopping_mall_product_tags.
-   *
    * Search and list product tags with flexible filtering and pagination
    * capabilities.
    *
@@ -107,9 +101,6 @@ export class ShoppingmallAdminProducttagsController {
   }
 
   /**
-   * Get detailed information for a single product tag from
-   * shopping_mall_product_tags.
-   *
    * Retrieve the full detail of a single product tag identified by its unique
    * ID.
    *
@@ -151,9 +142,6 @@ export class ShoppingmallAdminProducttagsController {
   }
 
   /**
-   * Update an existing tag record in the shopping_mall_product_tags table
-   * identified by productTagId.
-   *
    * Update an existing product tag in the ShoppingMall catalog by modifying
    * its row in the shopping_mall_product_tags table.
    *
@@ -207,9 +195,6 @@ export class ShoppingmallAdminProducttagsController {
   }
 
   /**
-   * Erase a product tag record from the shopping_mall_product_tags master tag
-   * table by its unique identifier.
-   *
    * Delete a single product tag from the shopping_mall_product_tags master
    * tag catalog by its unique identifier.
    *

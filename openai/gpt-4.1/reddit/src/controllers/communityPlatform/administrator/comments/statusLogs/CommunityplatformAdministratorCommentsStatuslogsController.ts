@@ -12,9 +12,6 @@ import { ICommunityPlatformCommentStatusLog } from "../../../../../api/structure
 @Controller("/communityPlatform/administrator/comments/:commentId/statusLogs")
 export class CommunityplatformAdministratorCommentsStatuslogsController {
   /**
-   * List all status log entries for a given comment from the
-   * community_platform_comment_status_logs table.
-   *
    * Retrieve a filtered and paginated list of status logs that represent all
    * moderation and lifecycle state transitions for a specific comment. This
    * operation enables users, moderators, or administrators to examine the
@@ -65,9 +62,6 @@ export class CommunityplatformAdministratorCommentsStatuslogsController {
   }
 
   /**
-   * Get detail for a single comment status log entry
-   * (community_platform_comment_status_logs table).
-   *
    * Fetch the details of a single status log entry for a comment, identified by
    * its unique statusLogId. The entry provides comprehensive information on the
    * moderation or status change event, including the action initiator,

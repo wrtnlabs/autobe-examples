@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformGuestuser } from "../../../structures/ICommunityPlatformGuestuser";
 
 /**
- * Create a new community_platform_guestusers surrogate record and issue
- * guestUser authorization tokens via a public join endpoint.
- *
  * This operation creates a new surrogate guestUser record in the
  * `community_platform_guestusers` table and returns an authorized context for
  * an unauthenticated visitor. The underlying Prisma model defines `id` as the
@@ -121,9 +118,6 @@ export namespace join {
 }
 
 /**
- * Refresh guestUser authorization tokens for an existing active surrogate
- * record in community_platform_guestusers.
- *
  * This operation refreshes the authorization tokens for a guestUser
  * pseudo-account backed by the `community_platform_guestusers` table. When a
  * client presents a valid refresh token, the system extracts the guestUser `id`

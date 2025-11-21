@@ -12,8 +12,6 @@ import { IShoppingMallSaleSku } from "../../../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/seller/sales/:saleCode/skus")
 export class ShoppingmallSellerSalesSkusController {
   /**
-   * Create a new SKU variant for a specific product sale listing.
-   *
    * Create a new Stock Keeping Unit (SKU) variant for a product sale listing
    * identified by its unique business code. This operation allows sellers to
    * add new product configuration options to their existing sale listings,
@@ -66,8 +64,6 @@ export class ShoppingmallSellerSalesSkusController {
   }
 
   /**
-   * Update an existing SKU variant for a product sale listing.
-   *
    * Update the details of a specific SKU (Stock Keeping Unit) variant within a
    * product sale listing. This operation allows sellers to modify SKU-specific
    * information including pricing, stock levels, variant attribute values, and
@@ -133,8 +129,6 @@ export class ShoppingmallSellerSalesSkusController {
   }
 
   /**
-   * Delete a specific SKU variant from a product sale listing.
-   *
    * Permanently remove a specific SKU (Stock Keeping Unit) variant from a
    * product sale listing. This operation allows sellers to delete SKU variants
    * that are no longer available or offered, completely removing the record

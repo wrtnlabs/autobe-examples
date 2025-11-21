@@ -8,8 +8,6 @@ import { IDiscussionBoardAccountRestriction } from "../../../../../api/structure
 @Controller("/discussionBoard/moderator/moderation/restrictions")
 export class DiscussionboardModeratorModerationRestrictionsController {
   /**
-   * Search and filter account restrictions imposed on contributors.
-   *
    * Retrieve a filtered and paginated list of account restrictions from the
    * discussion board moderation system. This operation provides comprehensive
    * search and filtering capabilities for moderators to review all

@@ -7,8 +7,6 @@ import { IRedditCommunityMemberSession } from "../../../../../structures/IReddit
 import { IPageIRedditCommunityMemberSession } from "../../../../../structures/IPageIRedditCommunityMemberSession";
 
 /**
- * Retrieve paginated list of active sessions for a specific member.
- *
  * Retrieve a filtered and paginated list of authentication sessions belonging
  * to a specific community member identified by their unique username. This
  * operation provides comprehensive session management visibility, allowing
@@ -119,8 +117,6 @@ export namespace index {
 }
 
 /**
- * Revoke and delete a specific member authentication session.
- *
  * Permanently remove a specific authentication session for a community member,
  * effectively logging them out from that particular session. This operation
  * allows members to revoke sessions from specific devices or locations, and

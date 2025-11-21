@@ -8,9 +8,6 @@ import { IDiscussionBoardModeratorAuditLog } from "../../../../../api/structures
 @Controller("/discussionBoard/moderator/moderation/audit-log")
 export class DiscussionboardModeratorModerationAudit_logController {
   /**
-   * Search and retrieve a filtered, paginated list of moderation audit log
-   * entries.
-   *
    * Retrieve a comprehensive, filtered list of moderator audit log entries
    * that track all moderation actions performed on the platform. This
    * operation provides deep visibility into moderation decisions, enabling

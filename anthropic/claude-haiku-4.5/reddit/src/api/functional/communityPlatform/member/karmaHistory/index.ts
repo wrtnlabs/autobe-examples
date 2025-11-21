@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaHistory } from "../../../../structures/ICommunit
 import { IPageICommunityPlatformKarmaHistory } from "../../../../structures/IPageICommunityPlatformKarmaHistory";
 
 /**
- * Search and retrieve a filtered, paginated list of karma history records with
- * advanced filtering options.
- *
  * Retrieve a filtered and paginated list of karma history records from the
  * platform. This operation provides advanced search capabilities for finding
  * karma changes based on multiple criteria including change reason, date

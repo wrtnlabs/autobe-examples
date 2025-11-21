@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductAttributeValue } from "../../../../structures/IShoppingMallProductAttributeValue";
 
 /**
- * Get a specific product SKU attribute value mapping (table:
- * shopping_mall_product_attribute_values).
- *
  * Retrieve details for a specific attribute value assigned to a product SKU
  * within the catalog.
  *

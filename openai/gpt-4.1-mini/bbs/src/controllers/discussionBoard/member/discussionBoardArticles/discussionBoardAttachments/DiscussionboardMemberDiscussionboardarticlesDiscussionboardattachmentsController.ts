@@ -15,8 +15,6 @@ import { IPageIDiscussionBoardAttachment } from "../../../../../api/structures/I
 @Controller("/discussionBoard/member/discussionBoardArticles")
 export class DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachmentsController {
   /**
-   * Create a new attachment for a discussion board article.
-   *
    * Create a new attachment associated with a specific discussion board article
    * identified by the article ID.
    *
@@ -62,8 +60,6 @@ export class DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachme
   }
 
   /**
-   * Update and search attachments of a discussion board article.
-   *
    * Update the collection of attachments (images or files) linked to a specific
    * discussion board article.
    *
@@ -114,8 +110,6 @@ export class DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachme
   }
 
   /**
-   * Retrieve details of a discussion board article attachment.
-   *
    * Retrieve detailed information of a single attachment associated with a
    * specified discussion board article.
    *
@@ -160,8 +154,6 @@ export class DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachme
   }
 
   /**
-   * Update an existing attachment of a discussion board article.
-   *
    * Update the details of an existing attachment identified by attachmentId,
    * belonging to a discussion board article identified by article id.
    *
@@ -209,8 +201,6 @@ export class DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachme
   }
 
   /**
-   * Delete a specific attachment from a discussion board article.
-   *
    * Permanently remove an attachment linked to a discussion board article using
    * the article's unique identifier and the attachment's unique identifier.
    *

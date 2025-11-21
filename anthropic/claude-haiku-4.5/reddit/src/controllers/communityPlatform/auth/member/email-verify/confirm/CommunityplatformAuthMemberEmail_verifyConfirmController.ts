@@ -7,8 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../api/structures/IComm
 @Controller("/communityPlatform/auth/member/email-verify/confirm")
 export class CommunityplatformAuthMemberEmail_verifyConfirmController {
   /**
-   * Confirm email verification with token from verification email link.
-   *
    * Completes the email verification process by validating the verification
    * token provided in the member's email and marking their email address as
    * verified in the system. This operation is critical for account security

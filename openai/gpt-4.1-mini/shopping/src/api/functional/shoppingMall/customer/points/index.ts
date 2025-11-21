@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallPoints } from "../../../../structures/IShoppingMallPoints";
 
 /**
- * Get detailed information of a specific customer loyalty point record.
- *
  * Retrieve the detailed information for a specific customer loyalty point
  * record identified by its unique point ID.
  *
@@ -98,8 +96,6 @@ export namespace at {
 }
 
 /**
- * Create new customer loyalty point record.
- *
  * Create a new loyalty point record associated with a customer.
  *
  * This operation adds a points record reflecting the credited points for the

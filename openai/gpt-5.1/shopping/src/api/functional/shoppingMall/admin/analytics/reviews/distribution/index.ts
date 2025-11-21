@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewRatingDistribution } from "../../../../../../structures/IShoppingMallReviewRatingDistribution";
 
 /**
- * Compute and return rating distribution analytics based on
- * shopping_mall_reviews and related aggregate tables.
- *
  * Retrieve analytical distribution statistics of product review ratings for a
  * specified slice of the shoppingMall catalog.
  *

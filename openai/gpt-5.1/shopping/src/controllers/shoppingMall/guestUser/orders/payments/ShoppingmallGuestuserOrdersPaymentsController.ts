@@ -8,9 +8,6 @@ import { IShoppingMallOrderPayment } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/guestUser/orders/:orderId/payments")
 export class ShoppingmallGuestuserOrdersPaymentsController {
   /**
-   * List and search payments for a specific order from the
-   * shopping_mall_order_payments table.
-   *
    * Retrieve a filtered and paginated list of logical payments for a specific
    * order from the `shopping_mall_order_payments` table.
    *

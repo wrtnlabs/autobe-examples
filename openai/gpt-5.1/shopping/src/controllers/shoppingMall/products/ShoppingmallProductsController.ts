@@ -8,9 +8,6 @@ import { IShoppingMallProduct } from "../../../api/structures/IShoppingMallProdu
 @Controller("/shoppingMall/products")
 export class ShoppingmallProductsController {
   /**
-   * Search and paginate products based on filters using the
-   * shopping_mall_products table.
-   *
    * Search and retrieve a filtered, paginated list of products from the
    * ShoppingMall catalog.
    *
@@ -70,9 +67,6 @@ export class ShoppingmallProductsController {
   }
 
   /**
-   * Retrieve a single product detail from the shopping_mall_products table by
-   * productId.
-   *
    * Retrieve detailed information for a single ShoppingMall product
    * identified by its unique product identifier.
    *

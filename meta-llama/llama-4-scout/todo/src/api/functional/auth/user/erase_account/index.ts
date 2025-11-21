@@ -5,9 +5,6 @@ import typia from "typia";
 import { ITodoListUser } from "../../../../structures/ITodoListUser";
 
 /**
- * Permanently deletes authenticated user's account and related data; removes
- * from todo_list_users and subsidiaries.
- *
  * Irreversible removal endpoint that deletes the authenticated user’s account
  * data from 'todo_list_users' and all dependent relations (todos, sessions,
  * verifications, password resets). Sets 'deleted_at' on the user entity,

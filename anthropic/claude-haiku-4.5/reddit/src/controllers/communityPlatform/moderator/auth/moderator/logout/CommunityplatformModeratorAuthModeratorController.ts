@@ -7,8 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../../api/structures/IC
 @Controller("/communityPlatform/moderator/auth/moderator/logout")
 export class CommunityplatformModeratorAuthModeratorController {
   /**
-   * Logout moderator from current session.
-   *
    * This operation terminates the current active session for the
    * authenticated moderator. When executed, the session token for this
    * specific moderator session is invalidated, requiring the moderator to

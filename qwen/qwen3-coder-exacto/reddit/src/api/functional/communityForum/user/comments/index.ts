@@ -8,8 +8,6 @@ export * as replies from "./replies/index";
 export * as votes from "./votes/index";
 
 /**
- * Update an existing comment by ID.
- *
  * Updates the content of an existing forum comment. This operation allows
  * authenticated users to modify their own comments within the allowed time
  * window (15 minutes after creation). Only the comment body can be updated -
@@ -112,8 +110,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete comment by ID.
- *
  * Permanently deletes a forum comment by completely removing it from the
  * database. This operation allows authenticated users to remove their own
  * comments. The comment is permanently removed from the database, which will

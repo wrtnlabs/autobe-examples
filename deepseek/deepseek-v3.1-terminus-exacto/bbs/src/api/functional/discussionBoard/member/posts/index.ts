@@ -10,8 +10,6 @@ export * as attachments from "./attachments/index";
 export * as likes from "./likes/index";
 
 /**
- * Create a new discussion board post.
- *
  * This operation allows authenticated users to create new discussion posts on
  * the economic/political discussion board. Users can specify a title, content
  * body, and optionally categorize the post within specific channels and
@@ -111,8 +109,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board posts.
- *
  * This operation provides comprehensive search capabilities for discussion
  * board posts with support for pagination, filtering by multiple criteria, and
  * sorting options. Users can search posts by title content, filter by channel,
@@ -214,8 +210,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific discussion board post.
- *
  * This operation retrieves comprehensive details for a single discussion board
  * post identified by its unique UUID. The response includes the complete post
  * information such as title, content body, current status, creation and update
@@ -312,8 +306,6 @@ export namespace at {
 }
 
 /**
- * Update an existing discussion board post.
- *
  * This operation allows authenticated users to update existing discussion posts
  * on the economic/political discussion board. Users can modify the title,
  * content, status, pinning status, locking status, and other attributes of a
@@ -422,8 +414,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a discussion board post.
- *
  * This operation permanently removes a discussion board post from the system.
  * When a post is deleted, all associated comments, attachments, and related
  * data are also removed to maintain database integrity.

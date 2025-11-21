@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationActionOfModerator } from "../../../../../structures/ICommunityPlatformModerationActionOfModerator";
 
 /**
- * Retrieve moderator-specific information for a moderation action from the
- * community_platform_moderation_action_of_moderators table.
- *
  * Retrieve the moderator-specific details for a particular moderation action,
  * using its unique moderationActionId.
  *
@@ -102,9 +99,6 @@ export namespace at {
 }
 
 /**
- * Delete a moderation action of a moderator
- * (community_platform_moderation_action_of_moderators).
- *
  * Delete the moderator-specific action record linked to a higher-level
  * moderation action. This removal is intended for cases where a moderation
  * decision must be rescinded, corrected, or purged due to changes in moderation

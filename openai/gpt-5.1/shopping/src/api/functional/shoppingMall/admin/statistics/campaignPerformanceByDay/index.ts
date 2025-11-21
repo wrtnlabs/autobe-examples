@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallCampaignPerformanceDailyStatistics } from "../../../../../structures/IShoppingMallCampaignPerformanceDailyStatistics";
 
 /**
- * Retrieve daily campaign performance statistics based on
- * shopping_mall_campaign_metrics and related snapshot tables.
- *
  * Fetch day-by-day campaign performance statistics for marketing and pricing
  * campaigns on the shoppingMall platform.
  *

@@ -7,8 +7,6 @@ import { ICommunityPlatformModerationAppeal } from "../../../../structures/IComm
 import { IPageICommunityPlatformModerationAppeal } from "../../../../structures/IPageICommunityPlatformModerationAppeal";
 
 /**
- * Search and retrieve a filtered, paginated list of moderation appeals.
- *
  * Retrieve a searchable, paginated collection of moderation appeals with
  * advanced filtering and sorting capabilities. This operation queries the
  * community_platform_moderation_appeals table to find appeals based on multiple
@@ -116,9 +114,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific moderation appeal with its current status and review
- * outcome.
- *
  * Retrieve detailed information about a specific moderation appeal including
  * submission details, current review status, reviewer assignment, and decision
  * outcome if review is complete.
@@ -226,9 +221,6 @@ export namespace at {
 }
 
 /**
- * Update a moderation appeal record with review decision and outcome
- * information.
- *
  * Update an existing moderation appeal with new information from the appeal
  * review process. This operation allows moderators and administrators to record
  * their review decision, update appeal status, assign reviewer, and document
@@ -353,9 +345,6 @@ export namespace update {
 }
 
 /**
- * Soft-delete a moderation appeal record by marking it as withdrawn or
- * archived.
- *
  * Remove a moderation appeal record from active view using soft-delete
  * mechanism. This operation sets the deleted_at timestamp on the appeal while
  * retaining all data in the database for audit trail and historical reference.

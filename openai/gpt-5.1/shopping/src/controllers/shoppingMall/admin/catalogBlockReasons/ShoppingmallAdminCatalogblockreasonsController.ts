@@ -8,8 +8,6 @@ import { IPageIShoppingMallCatalogBlockReason } from "../../../../api/structures
 @Controller("/shoppingMall/admin/catalogBlockReasons")
 export class ShoppingmallAdminCatalogblockreasonsController {
   /**
-   * Create a new shopping_mall_catalog_block_reasons configuration entry.
-   *
    * Create a new catalog block reason configuration entry in the
    * shopping_mall_catalog_block_reasons table.
    *
@@ -67,9 +65,6 @@ export class ShoppingmallAdminCatalogblockreasonsController {
   }
 
   /**
-   * Search catalog block reasons from shopping_mall_catalog_block_reasons
-   * with filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of catalog block reasons defined
    * in the `shopping_mall_catalog_block_reasons` Prisma model.
    *
@@ -119,9 +114,6 @@ export class ShoppingmallAdminCatalogblockreasonsController {
   }
 
   /**
-   * Get a single shopping_mall_catalog_block_reasons entry by its UUID
-   * identifier.
-   *
    * Retrieve detailed information about a specific catalog block reason from
    * the shopping_mall_catalog_block_reasons table.
    *
@@ -180,9 +172,6 @@ export class ShoppingmallAdminCatalogblockreasonsController {
   }
 
   /**
-   * Update a catalog block reason record in the
-   * shopping_mall_catalog_block_reasons table by identifier.
-   *
    * Update a specific catalog block reason record maintained in the
    * shopping_mall_catalog_block_reasons table.
    *
@@ -251,9 +240,6 @@ export class ShoppingmallAdminCatalogblockreasonsController {
   }
 
   /**
-   * Delete a catalog block reason record from the
-   * shopping_mall_catalog_block_reasons table by identifier.
-   *
    * Erase a specific catalog block reason from the
    * shopping_mall_catalog_block_reasons table using its primary key
    * identifier.

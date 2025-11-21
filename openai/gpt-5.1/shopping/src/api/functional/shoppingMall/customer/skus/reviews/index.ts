@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReview } from "../../../../../structures/IShoppingMallReview";
 
 /**
- * Create a new SKU-scoped review record in shopping_mall_reviews for an
- * eligible customer.
- *
  * Create a new review row in shopping_mall_reviews for a given SKU based on a
  * customer’s purchase and review eligibility.
  *
@@ -137,9 +134,6 @@ export namespace create {
 }
 
 /**
- * Update a shoppingMall review record for a specific SKU in
- * shopping_mall_reviews.
- *
  * Update an existing review for a specific SKU in the shoppingMall marketplace.
  *
  * This operation writes to the `shopping_mall_reviews` Prisma table, which

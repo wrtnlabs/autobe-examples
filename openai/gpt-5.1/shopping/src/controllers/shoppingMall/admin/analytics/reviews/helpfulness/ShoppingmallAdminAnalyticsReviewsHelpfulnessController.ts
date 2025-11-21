@@ -7,9 +7,6 @@ import { IShoppingMallReviewHelpfulnessAnalytics } from "../../../../../../api/s
 @Controller("/shoppingMall/admin/analytics/reviews/helpfulness")
 export class ShoppingmallAdminAnalyticsReviewsHelpfulnessController {
   /**
-   * Compute and return aggregated helpfulness analytics for reviews using
-   * shopping_mall_review_helpful_votes and related tables.
-   *
    * Retrieve computed analytics about review helpfulness, aggregating helpful
    * vote data to support quality monitoring and ranking use cases.
    *

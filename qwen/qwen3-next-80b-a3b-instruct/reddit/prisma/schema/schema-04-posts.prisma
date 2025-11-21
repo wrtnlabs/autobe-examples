@@ -1,363 +1,302 @@
-/// Main post entity containing shared fields for all post types.
+/// User-submitted content including text, links, or images posted to
+/// communities.
 ///
-/// Tracks the core metadata for every post on the platform, regardless of
-/// content type (text, link, or image). This table serves as the
-/// authoritative source for post lifetime events, authorship, community
-/// association, and visibility state. All other post-specific tables
-/// reference this entity.
+/// Represents primary content that citizens create and interact with in
+/// community forums. Posts serve as the foundation for discussion with
+/// comments and votes. Each post belongs to a specific community and is
+/// created by a citizen account.
 ///
-/// The status field determines visibility: 'published' makes the post
-/// publicly visible, 'pending_moderation' hides it from feeds until
-/// approved, 'hidden' indicates removal by moderator or system, and
-/// 'deleted' denotes user-initiated deletion with retained metadata.
+/// Posts support rich content through separate linked entities (images or
+/// links). The status field controls visibility - posts can be published,
+/// pending review, or hidden for moderation. Soft deletion allows moderation
+/// and user-initiated removal while maintaining audit trails. This table
+/// must preserve all raw post data without any calculated fields.
 ///
-/// All posts have a created_at and updated_at timestamp for audit trails.
-/// Soft delete is implemented via deleted_at to preserve historical data
-/// integrity for karma calculations and reporting.
+/// Critical for community engagement - enables sorting by hot, new, top, and
+/// controversial metrics through external computation. The snapshot
+/// mechanism ensures historical preservation when posts are edited or
+/// moderated.
+///
+/// Reference: {@link community_bbs_communities}, {@link
+/// community_bbs_citizen}, {@link community_bbs_post_images}, {@link
+/// community_bbs_post_links}, {@link community_bbs_post_categories}, {@link
+/// community_bbs_post_snapshots}
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_posts {
+model community_bbs_posts {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member who created this post. {@link community_platform_member.id}.
-  member_id String
-  
-  /// The community to which this post belongs. {@link
-  /// community_platform_communities.id}.
+  /// The community this post belongs to. {@link community_bbs_communities.id}.
   community_id String
   
-  /// The title of the post. Must be present and non-empty for visibility.
+  /// The citizen who created this post. {@link community_bbs_citizen.id}.
+  citizen_id String
+  
+  /// The title of the post, limited to 200 characters. Required for post
+  /// creation.
   title String
   
-  /// The visibility state of this post. Valid values: 'published',
-  /// 'pending_moderation', 'hidden', 'deleted'.
+  /// The main content of the post, containing user-submitted text. Can be
+  /// empty if post contains only an image or link.
+  body String?
+  
+  /// Current status of the post: 'published', 'pending', or 'hidden'. Affects
+  /// visibility to users.
   status String
   
-  /// Timestamp when the post was created. Always set to server time in
-  /// Asia/Seoul timezone.
+  /// When the post was originally created by the citizen. Immutable timestamp.
   created_at DateTime
   
-  /// Timestamp when the post was last updated. Updated whenever content,
-  /// visibility, or metadata changes.
+  /// When the post was last updated (e.g., edited).
+  ///
+  /// Modified on any edit within the 24-hour editable window.
   updated_at DateTime
   
-  /// Timestamp when the post was soft-deleted. NULL if the post is active.
-  /// Used to persist post history.
+  /// Timestamp when the post was soft-deleted by the author or moderator.
+  ///
+  /// Null indicates the post is still active.
   deleted_at DateTime?
   
-  /// Cumulative sum of upvotes minus downvotes. Updated atomically on every
-  /// vote. Does NOT use triggers.
-  total_votes Int
-  
-  /// Total number of direct comments and replies to this post.
-  comment_count Int
-  
   //----
   // RELATIONS
   //----
-  author community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  citizen community_bbs_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
   
-  community_platform_post_texts community_platform_post_texts?
-  community_platform_post_links community_platform_post_links?
-  community_platform_post_images community_platform_post_images?
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_post_tags community_platform_post_tags[]
-  community_platform_comments community_platform_comments[]
-  community_platform_post_votes community_platform_post_votes[]
-  community_platform_reports community_platform_reports[]
-  community_platform_post_karma community_platform_post_karma?
+  community_bbs_post_images community_bbs_post_images?
+  community_bbs_post_links community_bbs_post_links?
+  community_bbs_post_categories community_bbs_post_categories[]
+  community_bbs_post_snapshots community_bbs_post_snapshots[]
+  community_bbs_comments community_bbs_comments[]
+  community_bbs_post_votes community_bbs_post_votes[]
+  community_bbs_karma_history community_bbs_karma_history[]
+  community_bbs_reported_posts community_bbs_reported_posts?
   
+  @@unique([community_id, title])
   @@index([community_id, created_at])
-  @@index([member_id, created_at])
-  @@index([status, created_at])
-  @@index([deleted_at, created_at])
-}
-
-/// Stores the text content of text-type posts.
-///
-/// This table contains the full full-length body text of posts that are
-/// created as text content. Each record is linked exactly one-to-one with a
-/// record in community_platform_posts via post_id. This separation ensures
-/// that the primary entity does not contain nullable fields and maintains
-/// strict 3NF.
-///
-/// The text content is stored as plain unstructured text with a
-/// 10,000-character limit as specified in business requirements. No
-/// formatting or markdown is parsed at database level.
-///
-/// This table is managed only through its parent post entity and never
-/// accessed directly by user-facing APIs.
-///
-/// @namespace Posts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_texts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The main post this text content belongs to. {@link
-  /// community_platform_posts.id}.
-  post_id String
-  
-  /// The full text content of the post, up to 10,000 characters. Must not be
-  /// empty.
-  body String
-  
-  /// Timestamp when this text content was created. Always synchronized with
-  /// community_platform_posts.created_at.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  
-  @@unique([post_id])
+  @@index([citizen_id, created_at])
   @@index([created_at])
+  @@index([status])
 }
 
-/// Stores URL information for link-type posts.
+/// Image attachments associated with posts in the community forum.
 ///
-/// This table contains the URL and metadata for posts that are created as
-/// external links. Each record is linked exactly one-to-one with a record in
-/// community_platform_posts via post_id. This ensures that links are stored
-/// separately from text or image posts, maintaining 3NF and performance.
+/// Each post can have zero or one image attachment. Images are stored as
+/// references to external URLs for scalability. This separate table ensures
+/// normalization - an image is not a nullable field in posts but a distinct
+/// entity with its own lifecycle.
 ///
-/// The URL is validated at application level to ensure it begins with
-/// http:// or https://. The title and description are extracted by the
-/// backend from the linked page (optional), but stored here if provided for
-/// better user experience.
+/// Managed entirely through the parent post - users cannot manage images
+/// independently, only through their associated post. Follows 3NF by
+/// isolating image data that depends on the post.
 ///
-/// This table is managed only through its parent post entity and never
-/// accessed directly by user-facing APIs.
+/// Reference: {@link community_bbs_posts}
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_links {
+model community_bbs_post_images {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The main post this link belongs to. {@link community_platform_posts.id}.
+  /// The post this image is attached to. {@link community_bbs_posts.id}.
   post_id String
   
-  /// The external URL for the link post. Must be a valid HTTP or HTTPS address.
+  /// The public URL to the image file. Must be a valid HTTP/HTTPS URI.
   url String
   
-  /// Title of the linked resource, if extracted. May be null if not available.
-  title String?
+  /// The original filename of the image when uploaded.
+  filename String?
   
-  /// Description or summary of the linked resource, if extracted. May be null
-  /// if not available.
-  description String?
+  /// Size of the image file in bytes for storage and bandwidth estimation.
+  size Int
   
-  /// The extracted domain name from the URL (e.g., 'example.com'). Used for
-  /// spam filtering.
-  domain String
+  /// Pixel width of the image.
+  width Int?
   
-  /// Timestamp when this link was added. Always synchronized with
-  /// community_platform_posts.created_at.
+  /// Pixel height of the image.
+  height Int?
+  
+  /// When the image was uploaded and attached to the post.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
   
   @@unique([post_id])
   @@unique([url])
-  @@index([domain, created_at])
-  @@index([created_at])
 }
 
-/// Stores information for image-type posts.
+/// External link attachments associated with posts in the community forum.
 ///
-/// This table contains metadata for image posts, including file paths,
-/// dimensions, and size information. Each image is associated with exactly
-/// one post in community_platform_posts. This separation prevents the main
-/// entity from having nullable fields and allows for scalable image
-/// management.
+/// Each post can have zero or one external link. Links are stored as
+/// distinct entities to maintain normalization and avoid nullable fields in
+/// the main post table. This design allows proper indexing and searching of
+/// link content while keeping the post data clean.
 ///
-/// Image files are stored in external object storage (e.g., Cloudinary).
-/// This table only stores the secure URL and metadata. File uploads are
-/// validated at application layer for size (max 10MB) and format (JPG, PNG,
-/// GIF, WebP).
+/// Managed entirely through the parent post - users cannot manage links
+/// independently. Follows 3NF by isolating link data from post data.
 ///
-/// This table is managed only through its parent post entity and never
-/// accessed directly by user-facing APIs.
+/// Reference: {@link community_bbs_posts}
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_images {
+model community_bbs_post_links {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The main post this image belongs to. {@link community_platform_posts.id}.
+  /// The post this link is attached to. {@link community_bbs_posts.id}.
   post_id String
   
-  /// Secure, time-limited URL to the image file in cloud storage. Generated by
-  /// backend after upload.
-  image_url String
+  /// The full external URL being shared in the post. Must be a valid
+  /// HTTP/HTTPS URI.
+  url String
   
-  /// URL to a 150x150px thumbnail of the image. Auto-generated on upload.
-  thumbnail_url String
+  /// Title of the linked resource, extracted from the linked website's meta
+  /// title tag.
+  title String?
   
-  /// The original filename including extension (e.g., 'photo.png'). Retained
-  /// for reference and archival.
-  original_filename String?
+  /// Description of the linked resource, extracted from the linked website's
+  /// meta description tag.
+  description String?
   
-  /// Width of the original image in pixels.
-  width Int
+  /// The favicon URL for the linked website, for display purposes.
+  favicon_url String?
   
-  /// Height of the original image in pixels.
-  height Int
-  
-  /// File size in kilobytes. Used for storage tracking.
-  file_size_kb Int
-  
-  /// MIME type of the image (e.g., 'image/png', 'image/jpeg').
-  mime_type String
-  
-  /// Timestamp when the image was uploaded. Always synchronized with
-  /// community_platform_posts.created_at.
+  /// When the link was attached to the post.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
   
   @@unique([post_id])
-  @@unique([image_url])
-  @@index([file_size_kb])
-  @@index([width, height])
-  @@index([created_at])
+  @@unique([url])
 }
 
-/// Historical snapshots of post states for audit trails and versioning.
+/// Categorization of posts by topic or category in the community forum.
 ///
-/// This table captures the entire state of a post at the moment it was
-/// edited, moderated, or otherwise altered. Each record represents a
-/// point-in-time copy of the baseline data from community_platform_posts,
-/// community_platform_post_texts, etc., replicated here for historical
-/// integrity.
+/// Supports organization of posts into different categories (e.g., 'Events',
+/// 'Announcements', 'Discussion', 'Help'). Each post can belong to one
+/// category. A separate table is used to avoid embedded arrays or
+/// comma-separated values in a single field, ensuring proper normalization.
 ///
-/// Each snapshot is immutable and append-only. The post_id links to the
-/// current version. The snapshot_at timestamp corresponds to the moment of
-/// snapshot. This design ensures no data loss when users edit posts or
-/// moderators modify visibility.
+/// Managed through the parent post and community - categories are selected
+/// by users when posting and can be configured by community moderators.
 ///
-/// This table enables full history review without incurring joins or complex
-/// queries on the main tables.
-///
-/// This table is managed by the system automatically (via triggers or
-/// service logic) and never exposed directly via user APIs.
+/// Reference: {@link community_bbs_posts}, {@link community_bbs_communities}
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_snapshots {
+model community_bbs_post_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The original post this snapshot represents. {@link
-  /// community_platform_posts.id}.
+  /// The post this category applies to. {@link community_bbs_posts.id}.
   post_id String
   
-  /// The user ID who triggered this snapshot (author or moderator). {@link
-  /// community_platform_member.id}.
-  edited_by_id String?
+  /// The community where this category is defined. {@link
+  /// community_bbs_communities.id}.
+  community_id String
   
-  /// Title of the post at the time of snapshot.
-  title String
+  /// The name of the category, selected from community-predefined options
+  /// (e.g., 'Events', 'Announcements', 'Discussion').
+  category String
   
-  /// Visibility state of the post at the time of snapshot. Valid values:
-  /// 'published', 'pending_moderation', 'hidden', 'deleted'.
-  status String
-  
-  /// Total upvotes minus downvotes at time of snapshot.
-  total_votes Int
-  
-  /// Total number of comments at time of snapshot.
-  comment_count Int
-  
-  /// Timestamp when this snapshot was taken. Always stored in Asia/Seoul
-  /// timezone.
-  snapshot_at DateTime
-  
-  /// Reason for snapshot: 'edit', 'moderation', 'auto', 'delete'.
-  snapshot_reason String
-  
-  //----
-  // RELATIONS
-  //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  editor community_platform_member? @relation(fields: [edited_by_id], references: [id], onDelete: Cascade)
-  
-  @@index([post_id, snapshot_at])
-  @@index([edited_by_id, snapshot_at])
-  // spellchecker: ignore-next-line
-  @@index([snapshot_reason, snapshot_at], map: "community_platform_post_snapshots_snapshot_reason_snap_0aa54bf8")
-}
-
-/// Junction table linking posts to their assigned tags.
-///
-/// This table implements a many-to-many relationship between
-/// community_platform_posts and community_platform_community_tags. Each row
-/// represents the assignment of a specific tag to a specific post.
-///
-/// Enables efficient filtering, searching, and aggregation of posts by tag.
-/// Also allows community tags to be reused across multiple posts.
-///
-/// Each post can have multiple tags. Each tag can be applied to many posts.
-/// Built-in uniqueness constraint prevents identical tag-to-post pair
-/// duplicates.
-///
-/// This table is managed by the system when tags are added/removed from
-/// posts and is never directly altered by API consumers.
-///
-/// @namespace Posts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_tags {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The post that has this tag. {@link community_platform_posts.id}.
-  post_id String
-  
-  /// The community tag assigned to this post. {@link
-  /// community_platform_community_tags.id}.
-  tag_id String
-  
-  /// Timestamp when this tag was applied to the post.
+  /// When the category was assigned to the post.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  tag community_platform_community_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
   
-  @@unique([post_id, tag_id])
-  @@index([post_id])
-  @@index([tag_id])
-  @@index([created_at])
+  @@unique([post_id])
+  @@unique([community_id, category])
+}
+
+/// Historical snapshots of posts for audit trail and versioning purposes.
+///
+/// Captures the precise state of a post at the time it was saved, modified,
+/// or moderated. All fields from the main community_bbs_posts table are
+/// duplicated here to ensure historical data integrity. Read-only snapshots
+/// enable auditing of changes over time.
+///
+/// This snapshot table is critical for compliance and moderation - allows
+/// review of content at the time of reporting or violation. Uses append-only
+/// pattern - snapshots are never modified or deleted, only created when the
+/// original post changes.
+///
+/// Reference: {@link community_bbs_posts}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this snapshot represents. {@link community_bbs_posts.id}.
+  post_id String
+  
+  /// The post's title at the time of this snapshot.
+  title String
+  
+  /// The main content of the post at the time of this snapshot.
+  body String?
+  
+  /// The status of the post at the time of this snapshot: 'published',
+  /// 'pending', or 'hidden'.
+  status String
+  
+  /// Original creation time of the post (copied from community_bbs_posts).
+  created_at DateTime
+  
+  /// Time the post was last updated before this snapshot (copied from
+  /// community_bbs_posts).
+  updated_at DateTime
+  
+  /// Timestamp when the original post was soft-deleted (copied from
+  /// community_bbs_posts). Null if not deleted.
+  deleted_at DateTime?
+  
+  /// When this snapshot was captured (e.g., on edit or moderation action).
+  snapshot_created_at DateTime
+  
+  /// Why this snapshot was created: 'edit', 'moderation', 'report', 'initial'.
+  snapshot_reason String
+  
+  /// The citizen or moderator who triggered this snapshot (if applicable).
+  /// References either community_bbs_citizen or community_bbs_moderator via
+  /// application logic.
+  edited_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id, snapshot_created_at])
+  @@index([post_id, snapshot_reason])
+  @@index([snapshot_created_at])
+  @@index([snapshot_reason])
 }

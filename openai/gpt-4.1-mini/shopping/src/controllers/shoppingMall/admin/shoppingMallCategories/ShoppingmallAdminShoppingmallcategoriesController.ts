@@ -11,8 +11,6 @@ import { IShoppingMallShoppingMallCategory } from "../../../../api/structures/IS
 @Controller("/shoppingMall/admin/shoppingMallCategories/:categoryName")
 export class ShoppingmallAdminShoppingmallcategoriesController {
   /**
-   * Update a shopping mall category by categoryName.
-   *
    * Update the details of a specific shopping mall category using its unique
    * categoryName as identifier.
    *
@@ -60,8 +58,6 @@ export class ShoppingmallAdminShoppingmallcategoriesController {
   }
 
   /**
-   * Delete a shopping mall category by categoryName.
-   *
    * Permanently delete a shopping mall category specified by its unique
    * categoryName.
    *

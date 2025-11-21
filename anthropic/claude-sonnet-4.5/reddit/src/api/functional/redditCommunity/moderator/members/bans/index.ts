@@ -7,8 +7,6 @@ import { IRedditCommunityCommunityBan } from "../../../../../structures/IRedditC
 import { IPageIRedditCommunityCommunityBan } from "../../../../../structures/IPageIRedditCommunityCommunityBan";
 
 /**
- * Retrieve paginated list of community bans for a specific member.
- *
  * Retrieve a filtered and paginated list of all community bans associated with
  * a specific member identified by their username. This operation provides
  * comprehensive search capabilities for reviewing ban records across multiple

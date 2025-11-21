@@ -7,9 +7,6 @@ import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallProductImage } from "../../../../../structures/IPageIShoppingMallProductImage";
 
 /**
- * Create a new shopping mall product image asset for a given product
- * (shopping_mall_product_images).
- *
  * Create a new image/media asset associated with a product, to be used in
  * product galleries and detail views.
  *
@@ -125,9 +122,6 @@ export namespace create {
 }
 
 /**
- * Search and list all images for a given product (shopping_mall_product_images)
- * with pagination and filters.
- *
  * Retrieves a filtered, paginated list of all images attached to a given
  * product. The operation provides search/filter functionality to locate images
  * by position, label, and related fields. Results include image summaries
@@ -235,8 +229,6 @@ export namespace index {
 }
 
 /**
- * Update an image asset for a specific shopping mall product.
- *
  * Update an existing product image associated with the specified product. This
  * operation allows sellers to change media asset attributes such as the CDN
  * URI, accessibility text, display order, or label for business management
@@ -350,8 +342,6 @@ export namespace update {
 }
 
 /**
- * Remove (soft delete) an image from a specific shopping mall product.
- *
  * Remove an image from the specified product, performing a soft deletion by
  * setting the 'deleted_at' timestamp but keeping the record for potential
  * recovery or moderation audit.

@@ -7,9 +7,6 @@ import { ITodoAppGuestUser } from "../../../../structures/ITodoAppGuestUser";
 import { IPageITodoAppGuestUser } from "../../../../structures/IPageITodoAppGuestUser";
 
 /**
- * Search and paginate guest user concept records stored in the
- * todo_app_guestusers table.
- *
  * Retrieve a paginated and optionally filtered list of guest user concept
  * records from the todo_app_guestusers table for administrative monitoring and
  * analysis.
@@ -131,9 +128,6 @@ export namespace index {
 }
 
 /**
- * Get a single guest user concept record from the todo_app_guestusers table by
- * UUID id.
- *
  * Fetch detailed information of a single guest user concept record from the
  * todo_app_guestusers table using its unique identifier.
  *

@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAppeal } from "../../../../api/structures/I
 @Controller("/communityPlatform/administrator/moderationAppeals/:appealId")
 export class CommunityplatformAdministratorModerationappealsController {
   /**
-   * Retrieve a specific moderation appeal with its current status and review
-   * outcome.
-   *
    * Retrieve detailed information about a specific moderation appeal
    * including submission details, current review status, reviewer assignment,
    * and decision outcome if review is complete.

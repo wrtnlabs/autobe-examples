@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberSession } from "../../../../../structures/IDiscussionBoardMemberSession";
 
 /**
- * Create a new session for a discussion board member.
- *
  * Create a new authentication session record for a discussion board member.
  *
  * This operation allows the system to record and track an authentication
@@ -117,8 +115,6 @@ export namespace createSession {
 }
 
 /**
- * Update a session of a discussion board member.
- *
  * Update an existing authentication session record for a discussion board
  * member.
  *

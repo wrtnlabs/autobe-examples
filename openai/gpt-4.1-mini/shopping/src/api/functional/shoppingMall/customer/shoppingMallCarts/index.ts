@@ -8,8 +8,6 @@ import { IPageIShoppingMallCart } from "../../../../structures/IPageIShoppingMal
 export * as shoppingMallCartItems from "./shoppingMallCartItems/index";
 
 /**
- * Create a new shopping mall cart.
- *
  * This operation allows authenticated customers to create a new shopping mall
  * cart, which represents a persistent collection of selected product SKUs
  * intended for purchase.
@@ -107,8 +105,6 @@ export namespace create {
 }
 
 /**
- * List and search shopping mall carts.
- *
  * Retrieve a paginated list of shopping mall carts with advanced filtering,
  * sorting, and pagination capabilities.
  *
@@ -209,8 +205,6 @@ export namespace index {
 }
 
 /**
- * Get details of a shopping mall cart by ID.
- *
  * Retrieve detailed information of a specific shopping mall cart by its unique
  * ID.
  *
@@ -305,8 +299,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall cart.
- *
  * This operation allows authenticated customers to update details of an
  * existing shopping mall cart by specifying its unique identifier.
  *
@@ -409,8 +401,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall cart by ID.
- *
  * Permanently deletes the specified shopping mall cart and all related cart
  * items from the system. This action removes the cart record from the database
  * and cannot be undone.

@@ -15,8 +15,6 @@ import { IDiscussionBoardMemberSessions } from "../../../../../api/structures/ID
 )
 export class DiscussionboardAdminDiscussionboardmembersSessionsController {
   /**
-   * Search and retrieve a paginated list of discussion board member sessions.
-   *
    * Retrieve a filtered and paginated list of active session records for a
    * specific discussion board member.
    *
@@ -69,8 +67,6 @@ export class DiscussionboardAdminDiscussionboardmembersSessionsController {
   }
 
   /**
-   * Retrieve details of a specific discussion board member session.
-   *
    * Retrieve detailed information about a specific session belonging to a
    * discussion board member.
    *
@@ -121,8 +117,6 @@ export class DiscussionboardAdminDiscussionboardmembersSessionsController {
   }
 
   /**
-   * Delete a member's specific session by IDs.
-   *
    * This operation permanently deletes a specific session associated with a
    * registered discussion board member.
    *

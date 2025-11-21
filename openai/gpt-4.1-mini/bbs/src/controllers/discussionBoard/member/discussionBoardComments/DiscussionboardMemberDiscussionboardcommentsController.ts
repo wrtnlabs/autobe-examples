@@ -53,8 +53,6 @@ export class DiscussionboardMemberDiscussionboardcommentsController {
   }
 
   /**
-   * Search and retrieve discussion board comments with filters and pagination.
-   *
    * Retrieve a paginated list of discussion board comments that match the
    * specified search criteria.
    *
@@ -93,8 +91,6 @@ export class DiscussionboardMemberDiscussionboardcommentsController {
   }
 
   /**
-   * Update a user comment on the discussion board.
-   *
    * Update the text content of an existing discussion board comment.
    *
    * This operation allows the author of the comment to change the content of
@@ -143,8 +139,6 @@ export class DiscussionboardMemberDiscussionboardcommentsController {
   }
 
   /**
-   * Delete a user comment from the discussion board.
-   *
    * Permanently remove a discussion board comment identified by its unique ID.
    *
    * This hard delete operation removes the record from the

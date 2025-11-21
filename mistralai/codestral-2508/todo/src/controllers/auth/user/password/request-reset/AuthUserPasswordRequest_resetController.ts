@@ -8,8 +8,6 @@ import { ITodoListUser } from "../../../../../api/structures/ITodoListUser";
 @Controller("/auth/user/password/request-reset")
 export class AuthUserPasswordRequest_resetController {
   /**
-   * Initiates password reset flow for a user (todo_list_users) via email.
-   *
    * This endpoint initiates the password reset workflow for users who forget
    * their credentials. Using the 'todo_list_users' schema, it verifies the
    * provided email against saved user records (field: 'email') before issuing a

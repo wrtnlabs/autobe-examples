@@ -8,9 +8,6 @@ import { IPageIShoppingMallSellerWarehouse } from "../../../../api/structures/IP
 @Controller("/shoppingMall/seller/sellerWarehouses")
 export class ShoppingmallSellerSellerwarehousesController {
   /**
-   * Create a new ShoppingMall seller warehouse record in
-   * shopping_mall_seller_warehouses.
-   *
    * Create a new seller warehouse record in the
    * shopping_mall_seller_warehouses table to represent a physical or logical
    * storage and shipment origin location for a seller.
@@ -79,9 +76,6 @@ export class ShoppingmallSellerSellerwarehousesController {
   }
 
   /**
-   * Search and retrieve a paginated list of seller warehouses from
-   * shopping_mall_seller_warehouses.
-   *
    * Retrieve a filtered, sorted, and paginated list of seller warehouses
    * backed by the shopping_mall_seller_warehouses table.
    *
@@ -130,9 +124,6 @@ export class ShoppingmallSellerSellerwarehousesController {
   }
 
   /**
-   * Retrieve detailed information for a single seller warehouse from
-   * shopping_mall_seller_warehouses.
-   *
    * Retrieve complete details for a single seller warehouse backed by the
    * shopping_mall_seller_warehouses table.
    *
@@ -177,9 +168,6 @@ export class ShoppingmallSellerSellerwarehousesController {
   }
 
   /**
-   * Update an existing ShoppingMall seller warehouse record in
-   * shopping_mall_seller_warehouses by warehouseId.
-   *
    * Update an existing seller warehouse in the
    * shopping_mall_seller_warehouses table using its primary key id as a path
    * parameter.
@@ -243,9 +231,6 @@ export class ShoppingmallSellerSellerwarehousesController {
   }
 
   /**
-   * Erase a seller warehouse record from shopping_mall_seller_warehouses by
-   * its id.
-   *
    * Erase a seller warehouse row from the shopping_mall_seller_warehouses
    * table identified by its id primary key.
    *

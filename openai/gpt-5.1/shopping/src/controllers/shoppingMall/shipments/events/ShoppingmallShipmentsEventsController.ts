@@ -8,9 +8,6 @@ import { IPageIShoppingMallShipmentEvent } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/shipments/:shipmentCode/events")
 export class ShoppingmallShipmentsEventsController {
   /**
-   * Create a new shipment event (shopping_mall_shipment_events) for a
-   * shipment identified by shipmentCode.
-   *
    * Create a new shipment event for a specific shipment and persist it in the
    * shipment event history table.
    *
@@ -69,9 +66,6 @@ export class ShoppingmallShipmentsEventsController {
   }
 
   /**
-   * Search and list shipment events from `shopping_mall_shipment_events` for
-   * a shipment identified by `shipmentCode`.
-   *
    * Retrieve a filtered and paginated list of shipment events for a specific
    * shipment identified by its business-level shipment code.
    *
@@ -144,9 +138,6 @@ export class ShoppingmallShipmentsEventsController {
   }
 
   /**
-   * Get a specific shipment event (shopping_mall_shipment_events) for a
-   * shipment by shipmentCode and eventId.
-   *
    * Retrieve detailed information about a specific shipment event for a given
    * shipment in the shoppingMall platform.
    *

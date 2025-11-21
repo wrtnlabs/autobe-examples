@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMember } from "../../../../../../structures/ICommunityPlatformMember";
 
 /**
- * Request password reset email for member account.
- *
  * Initiate a password reset request for a member account by providing the email
  * address associated with the account. This operation sends a secure password
  * reset link via email that allows the member to establish a new password.

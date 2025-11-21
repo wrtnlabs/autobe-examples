@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallBuyer } from "../../../structures/IShoppingMallBuyer";
 
 /**
- * Register new buyer account and issue initial authentication tokens.
- *
  * Register a new buyer account in the shopping mall platform and receive
  * initial JWT authentication tokens.
  *
@@ -118,8 +116,6 @@ export namespace join {
 }
 
 /**
- * Authenticate buyer credentials and issue authentication tokens.
- *
  * Authenticate an existing buyer account and receive JWT authentication tokens.
  *
  * This endpoint validates buyer credentials and issues fresh authentication
@@ -228,8 +224,6 @@ export namespace login {
 }
 
 /**
- * Refresh buyer access token using a valid refresh token.
- *
  * Refresh buyer authentication tokens using a valid refresh token.
  *
  * This endpoint enables buyers to obtain new access tokens without requiring

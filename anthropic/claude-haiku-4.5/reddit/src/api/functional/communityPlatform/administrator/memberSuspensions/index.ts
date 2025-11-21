@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberSuspension } from "../../../../structures/IComm
 import { IPageICommunityPlatformMemberSuspension } from "../../../../structures/IPageICommunityPlatformMemberSuspension";
 
 /**
- * Create a new member suspension record.
- *
  * Create a new temporary suspension of a member's account access for
  * disciplinary purposes. This operation records suspension details including
  * the affected member, moderation decision trigger, suspension reason,
@@ -123,8 +121,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of member suspensions.
- *
  * Retrieve a filtered and paginated list of member suspensions from the system.
  * This operation provides advanced search capabilities for finding suspensions
  * based on multiple criteria including member identifier, suspension reason,
@@ -232,8 +228,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed member suspension information by suspension ID.
- *
  * Retrieve comprehensive details about a specific member suspension record from
  * the database. This operation returns the complete suspension record including
  * the suspension reason, suspension start time, expiration time, creation
@@ -333,8 +327,6 @@ export namespace at {
 }
 
 /**
- * Update member suspension details including reason and expiration date.
- *
  * Modify an existing member suspension record with updated information. This
  * operation enables moderators and administrators to extend suspension periods,
  * update suspension reasons with additional context, or make other adjustments

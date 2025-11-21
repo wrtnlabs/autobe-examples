@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete a specific community rule from the rule set.
- *
  * Delete a community rule by its ID from the specified community. This
  * operation permanently removes the rule from the community's rule set, which
  * is immediately reflected in the community page where rules are displayed to

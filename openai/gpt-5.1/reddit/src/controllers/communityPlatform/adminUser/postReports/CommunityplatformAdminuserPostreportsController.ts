@@ -8,9 +8,6 @@ import { ICommunityPlatformPostReport } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/adminUser/postReports")
 export class CommunityplatformAdminuserPostreportsController {
   /**
-   * Search community_platform_post_reports to retrieve a paginated list of
-   * post reports for moderation use.
-   *
    * Search and retrieve a paginated list of post-level reports stored in the
    * community_platform_post_reports table for moderation and administrative
    * review.
@@ -68,9 +65,6 @@ export class CommunityplatformAdminuserPostreportsController {
   }
 
   /**
-   * Retrieve a single post report record from community_platform_post_reports
-   * by its identifier.
-   *
    * Get detailed information for a single post report from the community
    * platform.
    *
@@ -137,9 +131,6 @@ export class CommunityplatformAdminuserPostreportsController {
   }
 
   /**
-   * Update an existing post report in the `community_platform_post_reports`
-   * table by its identifier.
-   *
    * Update an existing post-level report in the community moderation system.
    *
    * This operation targets the `community_platform_post_reports` Prisma
@@ -215,9 +206,6 @@ export class CommunityplatformAdminuserPostreportsController {
   }
 
   /**
-   * Permanently delete a post report record from the
-   * `community_platform_post_reports` table by its identifier.
-   *
    * Permanently delete a post-level report by its identifier from the
    * community platform.
    *

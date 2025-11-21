@@ -7,8 +7,6 @@ import { ITodoAppUserSession } from "../../../../../structures/ITodoAppUserSessi
 import { IPageITodoAppUserSession } from "../../../../../structures/IPageITodoAppUserSession";
 
 /**
- * Search and retrieve user sessions filtered by user email.
- *
  * This operation provides comprehensive search capabilities for retrieving user
  * session records associated with a specific user identified by their email
  * address. The search functionality supports filtering by session status,
@@ -112,8 +110,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific user session.
- *
  * This operation provides detailed session information for security auditing
  * and administrative review purposes. It retrieves comprehensive data about a
  * specific user session including connection details, authentication context,
@@ -208,8 +204,6 @@ export namespace at {
 }
 
 /**
- * Delete a specific user session by session ID.
- *
  * This operation permanently removes a user session from the system,
  * invalidating the associated authentication token. The operation requires both
  * the user's email address and the specific session ID to ensure precise
@@ -304,8 +298,6 @@ export namespace eraseByUseremailAndSessionid {
 }
 
 /**
- * Delete a specific user session by session ID.
- *
  * This operation permanently removes a user session from the system,
  * invalidating the associated authentication token. The operation requires both
  * the user's ID (UUID) and the specific session ID to ensure precise targeting

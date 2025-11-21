@@ -1,0 +1,459 @@
+/// Main voting entity that tracks votes cast on various content types across
+/// the platform.
+///
+/// Stores the core voting information including vote direction
+/// (upvote/downvote), content type reference, and actor type classification.
+/// This table serves as the central voting record that links to specific
+/// voter subtypes based on the actor's role.
+///
+/// Votes can be cast on posts, comments, and potentially other content
+/// types. Each vote maintains its own lifecycle with status tracking and
+/// supports soft deletion for audit trail preservation.
+///
+/// The actor_type field enables polymorphic ownership, allowing votes to be
+/// cast by members, moderators, or administrators while maintaining
+/// referential integrity through subtype tables.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being voted on. Null if voting on a comment. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the comment being voted on. Null if voting on a post. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Type of actor who cast the vote. Valid values: 'member', 'moderator',
+  /// 'admin'. Used for routing to appropriate subtype table and quick
+  /// filtering.
+  actor_type String
+  
+  /// Type of content being voted on. Valid values: 'post', 'comment'.
+  /// Determines which foreign key relationship to use.
+  content_type String
+  
+  /// Direction of the vote. Valid values: 'upvote', 'downvote'. Represents the
+  /// user's positive or negative assessment of the content.
+  vote_type String
+  
+  /// Current status of the vote. Valid values: 'active', 'cancelled',
+  /// 'pending'. Tracks the vote lifecycle and validity.
+  status String
+  
+  /// Timestamp when the vote was initially cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted. Null indicates active vote.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_votes_of_members community_platform_votes_of_members?
+  community_platform_votes_of_moderators community_platform_votes_of_moderators?
+  community_platform_votes_of_admins community_platform_votes_of_admins?
+  community_platform_vote_audit_logs community_platform_vote_audit_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, actor_type], map: "community_platform_votes_community_platform_post_id_ac_fb3b6a7f")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id, actor_type], map: "community_platform_votes_community_platform_comment_id_31c09ab1")
+  @@index([actor_type, created_at])
+  @@index([content_type, created_at])
+  @@index([status, created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Subtype entity for votes cast by regular community members.
+///
+/// Stores member-specific voting information including the member reference
+/// and session context. This table maintains the 1:1 relationship with the
+/// main votes table for member-originated votes.
+///
+/// Each record links to a specific community_platform_members entry and
+/// captures the voting session context for audit trail purposes. This
+/// separation ensures proper referential integrity while supporting the
+/// polymorphic voting pattern.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main vote record. {@link community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// Member who cast the vote. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session context when the vote was cast. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Timestamp when the member vote record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_votes_of_members_community_platform_c08b267f")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_id], map: "community_platform_votes_of_members_community_platform_010abe76")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_votes_of_members_community_platform_d3294c3a")
+}
+
+/// Subtype entity for votes cast by community moderators.
+///
+/// Stores moderator-specific voting information including the moderator
+/// reference and session context. This table maintains the 1:1 relationship
+/// with the main votes table for moderator-originated votes.
+///
+/// Each record links to a specific community_platform_moderators entry and
+/// captures the voting session context. This separation ensures proper
+/// referential integrity for moderator voting actions while supporting audit
+/// trail requirements.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main vote record. {@link community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// Moderator who cast the vote. {@link community_platform_moderators.id}
+  community_platform_moderator_id String
+  
+  /// Session context when the vote was cast. {@link
+  /// community_platform_moderator_sessions.id}
+  community_platform_moderator_session_id String
+  
+  /// Timestamp when the moderator vote record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  session community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id], map: "community_platform_votes_of_moderators_community_platf_7361edd9")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_id], map: "community_platform_votes_of_moderators_community_platf_7e7895fa")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_votes_of_moderators_community_platf_65dc0ee4")
+}
+
+/// Subtype entity for votes cast by platform administrators.
+///
+/// Stores admin-specific voting information including the admin reference
+/// and session context. This table maintains the 1:1 relationship with the
+/// main votes table for admin-originated votes.
+///
+/// Each record links to a specific community_platform_admins entry and
+/// captures the voting session context. This separation ensures proper
+/// referential integrity for administrator voting actions while supporting
+/// comprehensive audit trail requirements.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main vote record. {@link community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// Admin who cast the vote. {@link community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Session context when the vote was cast. {@link
+  /// community_platform_admin_sessions.id}
+  community_platform_admin_session_id String
+  
+  /// Timestamp when the admin vote record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  session community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id], map: "community_platform_votes_of_admins_community_platform__9e385fe9")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_id], map: "community_platform_votes_of_admins_community_platform__95dcae9d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_votes_of_admins_community_platform__f1bf0652")
+}
+
+/// Calculated vote scores for content items across the platform.
+///
+/// Stores pre-computed voting scores for posts and comments to enable
+/// efficient ranking and sorting operations. This table serves as a
+/// materialized view-like structure that aggregates voting data for
+/// performance optimization.
+///
+/// Scores are calculated using platform-specific algorithms that consider
+/// vote direction, voter reputation, and temporal factors. The table
+/// supports real-time score updates while maintaining historical score
+/// snapshots for trend analysis.
+///
+/// This denormalized approach allows for fast content ranking without
+/// expensive aggregate queries during high-traffic periods.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the scored post. Null if scoring a comment. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the scored comment. Null if scoring a post. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Type of content being scored. Valid values: 'post', 'comment'. Determines
+  /// which foreign key is active.
+  content_type String
+  
+  /// Aggregate score calculated from upvotes minus downvotes.
+  total_score Int
+  
+  /// Total number of upvotes received.
+  upvote_count Int
+  
+  /// Total number of downvotes received.
+  downvote_count Int
+  
+  /// Algorithmic score indicating how controversial the content is based on
+  /// vote distribution.
+  controversy_score Float
+  
+  /// Time-weighted score for trending content ranking.
+  hot_score Float
+  
+  /// Algorithmic score for 'best' content ranking considering multiple factors.
+  best_score Float
+  
+  /// Timestamp when the score was last calculated.
+  calculated_at DateTime
+  
+  /// Timestamp when the score becomes stale and requires recalculation.
+  score_valid_until DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_vote_scores_community_platform_comm_5336fde5")
+  @@index([total_score, calculated_at])
+  @@index([hot_score, calculated_at])
+  @@index([best_score, calculated_at])
+  @@index([content_type, calculated_at])
+}
+
+/// Rate limiting and voting restriction data for user voting activities.
+///
+/// Tracks voting rate limits and restrictions applied to users to prevent
+/// vote manipulation and abuse. This table implements the platform's
+/// anti-spam mechanisms by recording voting patterns and enforcing limits.
+///
+/// Each record represents a specific voting restriction window (hourly,
+/// daily, etc.) and tracks the number of votes cast within that period. The
+/// system uses this data to enforce fair voting practices across the
+/// platform.
+///
+/// Restrictions can be based on user reputation, content type, or temporary
+/// moderation actions.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member subject to voting limits. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Moderator subject to voting limits. {@link
+  /// community_platform_moderators.id}
+  community_platform_moderator_id String
+  
+  /// Admin subject to voting limits. {@link community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Type of actor being limited. Valid values: 'member', 'moderator',
+  /// 'admin'. Determines which foreign key is active.
+  actor_type String
+  
+  /// Type of voting limit being applied. Valid values: 'hourly', 'daily',
+  /// 'content_type', 'reputation_based'.
+  limit_type String
+  
+  /// Maximum number of votes allowed within the limit period.
+  max_votes Int
+  
+  /// Current number of votes cast within the limit period.
+  current_count Int
+  
+  /// Timestamp when the current limit period began.
+  period_start DateTime
+  
+  /// Timestamp when the current limit period ends.
+  period_end DateTime
+  
+  /// Timestamp when the limit record was created.
+  created_at DateTime
+  
+  /// Timestamp when the limit record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, limit_type, period_start], map: "community_platform_vote_limits_community_platform_memb_a3e781db")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderator_id, limit_type, period_start], map: "community_platform_vote_limits_community_platform_mode_6239d366")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_admin_id, limit_type, period_start], map: "community_platform_vote_limits_community_platform_admi_3eadbd4e")
+  @@index([period_end, limit_type])
+  @@index([actor_type, period_start])
+  @@index([max_votes, current_count])
+}
+
+/// Comprehensive audit trail for all voting-related actions across the
+/// platform.
+///
+/// Records every significant voting event for security, compliance, and
+/// debugging purposes. This table provides complete visibility into voting
+/// activities, including vote casting, modifications, cancellations, and
+/// system interventions.
+///
+/// Each audit entry captures the action type, performer, target content, and
+/// contextual information. The logs support forensic analysis, abuse
+/// detection, and platform integrity monitoring.
+///
+/// Audit records are append-only and maintained for compliance with data
+/// retention policies.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the vote being audited. {@link community_platform_votes.id}
+  community_platform_vote_id String?
+  
+  /// Reference to the post being voted on. {@link community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the comment being voted on. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Type of audit action performed. Valid values: 'vote_cast',
+  /// 'vote_cancelled', 'vote_modified', 'limit_applied', 'score_calculated'.
+  action_type String
+  
+  /// Type of actor performing the action. Valid values: 'member', 'moderator',
+  /// 'admin', 'system'.
+  actor_type String
+  
+  /// Identifier of the actor performing the action (user ID, system process
+  /// name).
+  actor_identifier String
+  
+  /// Type of content involved in the action. Valid values: 'post', 'comment'.
+  content_type String?
+  
+  /// JSON-formatted details about the audit action for forensic analysis.
+  details String?
+  
+  /// IP address from which the action was performed for security tracking.
+  ip_address String?
+  
+  /// User agent string from the client performing the action.
+  user_agent String?
+  
+  /// Timestamp when the audit record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes? @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_vote_audit_logs_community_platform__b58afa25")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_vote_audit_logs_community_platform__1bd8c46f")
+  
+  @@index([action_type, created_at])
+  @@index([actor_type, created_at])
+  @@index([content_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_vote_id, created_at], map: "community_platform_vote_audit_logs_community_platform__98c4a1ae")
+}

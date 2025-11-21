@@ -12,8 +12,6 @@ import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSel
 @Controller("/shoppingMall/admin/sellers")
 export class ShoppingmallAdminSellersController {
   /**
-   * Search and retrieve a filtered, paginated list of marketplace sellers.
-   *
    * Retrieve a comprehensive, filtered and paginated list of seller accounts
    * from the shopping mall marketplace. This operation provides advanced search
    * capabilities for finding sellers based on multiple criteria including
@@ -66,8 +64,6 @@ export class ShoppingmallAdminSellersController {
   }
 
   /**
-   * Retrieve detailed information about a specific seller account.
-   *
    * Retrieve complete detailed information about a specific seller account in
    * the shopping mall marketplace. This operation returns comprehensive seller
    * data including store name, business information, contact details, approval

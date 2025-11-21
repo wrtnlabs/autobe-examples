@@ -8,9 +8,6 @@ import { IPageICommunityPlatformCommunitySubscription } from "../../../../struct
 export * as auditLogs from "./auditLogs/index";
 
 /**
- * Create a new community subscription association in
- * community_platform_community_subscriptions table.
- *
  * Create a new community subscription for a user, associating them as a
  * follower of the target community for personalized content delivery.
  *
@@ -119,9 +116,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filtered list of community subscriptions
- * from community_platform_community_subscriptions.
- *
  * Search through existing community subscription relationships to retrieve
  * results matching arbitrary filters set by clients. This operation provides
  * the core list and search capability for platform features such as user
@@ -225,9 +219,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detail information of a single community subscription from
- * community_platform_community_subscriptions by ID.
- *
  * Retrieve detailed information about a single community subscription,
  * identified by its unique subscription ID.
  *
@@ -324,9 +315,6 @@ export namespace at {
 }
 
 /**
- * Update an existing record in community_platform_community_subscriptions table
- * by subscription ID.
- *
  * Update an existing community subscription record. Common use cases include
  * restoring an unsubscribed (soft-deleted) subscription, updating record
  * timestamps, or modifying updatable metadata attributes per the schema.

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardArticleCategory } from "../../../../structures/IDiscussionBoardArticleCategory";
 
 /**
- * Create a new article category for organizing discussions by topic area.
- *
  * Create a new article category in the discussion board system for organizing
  * articles by topic area. Categories provide the organizational taxonomy that
  * helps users discover relevant economic and political discussions and browse
@@ -122,8 +120,6 @@ export namespace create {
 }
 
 /**
- * Update an existing article category's name, slug, description, or sort order.
- *
  * Update an existing article category identified by its unique UUID in the
  * discussion board system. This operation allows moderators to modify category
  * information to refine the organizational taxonomy, correct category details,
@@ -251,8 +247,6 @@ export namespace update {
 }
 
 /**
- * Remove a discussion article category from the system.
- *
  * Permanently removes a category from the discussion board category taxonomy.
  * This operation is restricted to moderators who manage the organizational
  * structure of article categories.

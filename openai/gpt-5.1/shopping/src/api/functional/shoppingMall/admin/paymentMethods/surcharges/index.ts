@@ -7,9 +7,6 @@ import { IShoppingMallPaymentMethodSurcharge } from "../../../../../structures/I
 import { IPageIShoppingMallPaymentMethodSurcharge } from "../../../../../structures/IPageIShoppingMallPaymentMethodSurcharge";
 
 /**
- * Create a new surcharge for a payment method in
- * `shopping_mall_payment_method_surcharges`.
- *
  * Create a new surcharge configuration for the specified payment method in
  * Prisma model `shopping_mall_payment_method_surcharges`.
  *
@@ -152,9 +149,6 @@ export namespace create {
 }
 
 /**
- * Search and list surcharges for a payment method from
- * `shopping_mall_payment_method_surcharges`.
- *
  * Retrieve a filtered, paginated list of surcharge configurations for a
  * specific payment method using Prisma model
  * `shopping_mall_payment_method_surcharges`.
@@ -301,10 +295,6 @@ export namespace index {
 }
 
 /**
- * Get a specific payment method surcharge from
- * shopping_mall_payment_method_surcharges for a given payment method in
- * shopping_mall_payment_methods.
- *
  * Retrieve detailed configuration of a single payment method surcharge
  * associated with a specific payment method in the shoppingMall platform.
  *
@@ -438,10 +428,6 @@ export namespace at {
 }
 
 /**
- * Update a payment method surcharge record in
- * shopping_mall_payment_method_surcharges for a given payment method in
- * shopping_mall_payment_methods.
- *
  * Update the configuration of a specific payment method surcharge linked to a
  * given payment method in the shoppingMall platform.
  *
@@ -587,9 +573,6 @@ export namespace update {
 }
 
 /**
- * Delete a surcharge from the shopping_mall_payment_method_surcharges table for
- * a specific payment method.
- *
  * Delete a specific payment method surcharge configuration for a given payment
  * method from the shoppingMall configuration store.
  *

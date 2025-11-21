@@ -7,8 +7,6 @@ import { IShoppingMallProductVariant } from "../../../../../structures/IShopping
 import { IPageIShoppingMallProductVariant } from "../../../../../structures/IPageIShoppingMallProductVariant";
 
 /**
- * Search and retrieve paginated list of product variants for a given product.
- *
  * Retrieve a filtered and paginated list of product variants (SKUs) for a given
  * product in the shopping mall system. This operation supports detailed search
  * criteria including color, size, pricing ranges, availability status, and
@@ -117,8 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed product variant information by product code and sku code.
- *
  * Retrieve detailed information about a specific product variant (SKU)
  * identified by its unique skuCode, scoped within its parent product identified
  * by productCode.

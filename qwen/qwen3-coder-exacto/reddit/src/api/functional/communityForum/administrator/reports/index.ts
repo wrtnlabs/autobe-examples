@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityForumCommunityReport } from "../../../../structures/ICommunityForumCommunityReport";
 
 /**
- * Retrieve a specific report by its ID.
- *
  * Retrieve detailed information about a specific report using its unique
  * identifier. This endpoint provides moderators and administrators with access
  * to all relevant information about a report, including what content was

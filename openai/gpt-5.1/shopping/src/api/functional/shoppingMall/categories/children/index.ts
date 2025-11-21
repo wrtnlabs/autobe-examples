@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCategory";
 
 /**
- * List immediate child categories for a parent category from
- * shopping_mall_categories.
- *
  * Retrieve all immediate child categories of a given parent category from the
  * shopping_mall_categories taxonomy.
  *

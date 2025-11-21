@@ -12,8 +12,6 @@ import { IShoppingMallCustomerQuestion } from "../../../../api/structures/IShopp
 @Controller("/shoppingMall/customer/shoppingMallCustomerQuestions")
 export class ShoppingmallCustomerShoppingmallcustomerquestionsController {
   /**
-   * Create a new customer question in the shopping mall.
-   *
    * Create a new customer question record linked to a customer and their active
    * session.
    *
@@ -53,8 +51,6 @@ export class ShoppingmallCustomerShoppingmallcustomerquestionsController {
   }
 
   /**
-   * Update an existing customer question.
-   *
    * Update the title and body of a customer question identified by its unique
    * question ID.
    *
@@ -96,8 +92,6 @@ export class ShoppingmallCustomerShoppingmallcustomerquestionsController {
   }
 
   /**
-   * Permanently delete a shopping mall customer question by ID.
-   *
    * Permanently remove a specific shopping mall customer question identified by
    * its unique ID.
    *

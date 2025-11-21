@@ -7,9 +7,6 @@ import { IShoppingMallOrderStatusHistory } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/orders/:orderCode/statusHistories")
 export class ShoppingmallAdminOrdersStatushistoriesController {
   /**
-   * Create a new ShoppingMall order status history entry for a specific
-   * order.
-   *
    * Create a new status history entry for a given order identified by its
    * business-level `orderCode`.
    *
@@ -64,9 +61,6 @@ export class ShoppingmallAdminOrdersStatushistoriesController {
   }
 
   /**
-   * Update an existing ShoppingMall order status history entry for a specific
-   * order.
-   *
    * Update an existing order status history entry for a given order and
    * history record identifier.
    *
@@ -124,9 +118,6 @@ export class ShoppingmallAdminOrdersStatushistoriesController {
   }
 
   /**
-   * Erase a specific `shopping_mall_order_status_histories` record for an
-   * order identified by `orderCode`.
-   *
    * Delete a specific status history record for a given order using its
    * business code and the history entry identifier.
    *

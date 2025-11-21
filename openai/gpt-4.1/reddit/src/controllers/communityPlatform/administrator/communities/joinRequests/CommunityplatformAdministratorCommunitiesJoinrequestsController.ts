@@ -14,9 +14,6 @@ import { ICommunityPlatformCommunityJoinRequest } from "../../../../../api/struc
 )
 export class CommunityplatformAdministratorCommunitiesJoinrequestsController {
   /**
-   * Search and retrieve a paginated list of join requests for a community
-   * (community_platform_community_join_requests table).
-   *
    * Retrieve a filtered and paginated list of join requests for a specified
    * community.
    *
@@ -71,9 +68,6 @@ export class CommunityplatformAdministratorCommunitiesJoinrequestsController {
   }
 
   /**
-   * Get a single join request by ID for the specified community
-   * (community_platform_community_join_requests table).
-   *
    * Get details about a single join request in a community.
    *
    * This operation is designed to let community moderators and administrators

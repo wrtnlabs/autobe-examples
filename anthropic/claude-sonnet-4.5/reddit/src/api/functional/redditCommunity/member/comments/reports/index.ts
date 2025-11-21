@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityReport } from "../../../../../structures/IRedditCommunityReport";
 
 /**
- * Report a comment for violating community guidelines or rules.
- *
  * Submit a report for a specific comment that violates community standards,
  * guidelines, or rules. This operation enables members to flag inappropriate
  * content for moderator review.

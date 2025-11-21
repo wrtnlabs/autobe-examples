@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberFollower } from "../../../../structures/ICommun
 import { IPageICommunityPlatformMember } from "../../../../structures/IPageICommunityPlatformMember";
 
 /**
- * Retrieve paginated list of members being followed by a specific member.
- *
  * Retrieve a paginated, filtered list of members that are being followed by the
  * specified member. This operation queries the
  * community_platform_member_followers table to find all follow relationships
@@ -127,8 +125,6 @@ export namespace index {
 }
 
 /**
- * Unfollow a member by removing the follow relationship.
- *
  * Remove a follow relationship where the authenticated member (identified by
  * memberId path parameter) unfollows another member (identified by followingId
  * path parameter). This operation permanently removes the record from the

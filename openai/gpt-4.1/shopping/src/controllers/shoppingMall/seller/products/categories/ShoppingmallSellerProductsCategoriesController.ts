@@ -13,9 +13,6 @@ import { IPageIShoppingMallProductsCategory } from "../../../../../api/structure
 @Controller("/shoppingMall/seller/products/:productId/categories")
 export class ShoppingmallSellerProductsCategoriesController {
   /**
-   * Add a new category mapping to a product
-   * (shopping_mall_products_categories).
-   *
    * Assign a new category to a specific product in the shopping mall catalog by
    * adding a category mapping. This operation is used to enhance a product's
    * discoverability by associating it with an additional browsing category,
@@ -63,9 +60,6 @@ export class ShoppingmallSellerProductsCategoriesController {
   }
 
   /**
-   * Retrieve and search product category assignments for a specific product
-   * (shopping_mall_products_categories).
-   *
    * Retrieve a paginated and filterable list of all category assignments that
    * currently apply to a specified product in the shopping mall's product
    * catalog.
@@ -113,9 +107,6 @@ export class ShoppingmallSellerProductsCategoriesController {
   }
 
   /**
-   * Delete a product-category mapping from shopping_mall_products_categories
-   * table by ID.
-   *
    * Remove a specific mapping between a product and a category in the shopping
    * mall catalog.
    *

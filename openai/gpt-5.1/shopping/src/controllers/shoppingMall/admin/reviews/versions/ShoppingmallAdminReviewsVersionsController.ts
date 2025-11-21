@@ -8,9 +8,6 @@ import { IShoppingMallReviewVersion } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/reviews/:reviewId/versions")
 export class ShoppingmallAdminReviewsVersionsController {
   /**
-   * Search and paginate version history of a specific review in the
-   * shopping_mall_review_versions table.
-   *
    * Retrieve a paginated list of historical versions for a single review from
    * the shopping_mall_review_versions snapshot table, filtered and scoped by
    * the reviewId path parameter.
@@ -76,9 +73,6 @@ export class ShoppingmallAdminReviewsVersionsController {
   }
 
   /**
-   * Get a specific historical review version from
-   * shopping_mall_review_versions by reviewId and versionId.
-   *
    * Retrieve a single historical version of a product review for inspection
    * and audit purposes.
    *

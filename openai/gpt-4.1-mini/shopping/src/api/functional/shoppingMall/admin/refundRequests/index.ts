@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallRefundRequest } from "../../../../structures/IShoppingMallRefundRequest";
 
 /**
- * Retrieve detailed refund request by ID.
- *
  * Retrieve a specific refund request by its unique identifier. This endpoint
  * returns all pertinent information about the request including refund amount,
  * reason, current status, when it was requested, and when it was processed if
@@ -100,8 +98,6 @@ export namespace at {
 }
 
 /**
- * Update a refund request by ID in the shopping mall system.
- *
  * Update details of an existing refund request by specifying its unique
  * identifier.
  *
@@ -206,8 +202,6 @@ export namespace update {
 }
 
 /**
- * Delete a refund request by ID in the shopping mall system.
- *
  * Delete a refund request permanently from the system by its unique identifier.
  *
  * This hard delete operation removes the record completely, ensuring no

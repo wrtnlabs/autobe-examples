@@ -7,8 +7,6 @@ import { IEconomicDiscussionMember } from "../../../../structures/IEconomicDiscu
 import { IPageIEconomicDiscussionMember } from "../../../../structures/IPageIEconomicDiscussionMember";
 
 /**
- * Search and filter registered community members with advanced criteria.
- *
  * Search and retrieve filtered lists of Economic Discussion community members
  * with support for complex search criteria, sorting, and pagination. This
  * operation enables administrators and moderators to discover members based on
@@ -108,8 +106,6 @@ export namespace index {
 }
 
 /**
- * Permanently delete a member account.
- *
  * This operation permanently removes a member account from the economic
  * discussion board system. It completely deletes the member's profile,
  * authentication credentials, and associated session data from the database.

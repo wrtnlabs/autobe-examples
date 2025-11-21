@@ -7,8 +7,6 @@ import { ITodoAppConfigurationValue } from "../../../../../structures/ITodoAppCo
 import { IPageITodoAppConfigurationValue } from "../../../../../structures/IPageITodoAppConfigurationValue";
 
 /**
- * Create or update environment-specific configuration value.
- *
  * This operation allows authenticated users to set custom configuration values
  * for specific deployment environments, overriding the default settings defined
  * in the configuration master table.
@@ -115,8 +113,6 @@ export namespace postByConfigkey {
 }
 
 /**
- * Search and retrieve configuration values for a specific configuration.
- *
  * This operation provides advanced search capabilities for finding
  * configuration values associated with a specific configuration definition. It
  * allows filtering by deployment environment, active status, value type, and
@@ -229,8 +225,6 @@ export namespace index {
 }
 
 /**
- * Create or update environment-specific configuration value.
- *
  * This operation allows authenticated users to set custom configuration values
  * for specific deployment environments, overriding the default settings defined
  * in the configuration master table.
@@ -336,9 +330,6 @@ export namespace postByConfigurationid {
 }
 
 /**
- * Update environment-specific configuration value for a given configuration
- * key.
- *
  * Update an existing environment-specific configuration value for a given
  * configuration key and environment. This operation allows modifying the actual
  * configuration value, its type, active status, and effective date range.
@@ -459,9 +450,6 @@ export namespace update {
 }
 
 /**
- * Delete environment-specific configuration value for a given configuration key
- * and environment.
- *
  * Delete an environment-specific configuration value for a given configuration
  * key and deployment environment. This operation performs a soft delete by
  * setting the deleted_at timestamp, allowing for potential recovery of the

@@ -7,9 +7,6 @@ import { IShoppingMallCartItem } from "../../../../../structures/IShoppingMallCa
 import { IPageIShoppingMallCartItem } from "../../../../../structures/IPageIShoppingMallCartItem";
 
 /**
- * Create a new cart item (SKU) in the shopping_mall_cart_items table for a
- * specified cart.
- *
  * Add a new SKU to the customer's shopping cart, specifying both the target SKU
  * and desired quantity.
  *
@@ -119,9 +116,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate items in a specific shopping cart
- * (shopping_mall_cart_items).
- *
  * Retrieve a filtered, paginated list of items for a given shopping cart.
  *
  * This operation is designed for the shopping_mall_cart_items subsidiary table,
@@ -230,9 +224,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single cart item from the shopping_mall_cart_items table by cart
- * and item ID.
- *
  * Retrieve a single item from a customer's shopping cart by its unique ID.
  *
  * This operation ensures users can view specific items within their own cart by
@@ -335,9 +326,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping cart item (shopping_mall_cart_items) by itemId
- * within a specific cart.
- *
  * Update the details of a specific item in a customer's shopping cart
  * identified by its itemId. This operation enables modification of key cart
  * item properties, primarily the desired quantity, while ensuring inventory
@@ -450,9 +438,6 @@ export namespace update {
 }
 
 /**
- * Remove an item from a shopping cart (shopping_mall_cart_items) by itemId
- * within a specified cart.
- *
  * Remove a specific item from a customer's shopping cart by its itemId. This
  * operation is used when a user decides to no longer purchase a specific SKU in
  * their cart, immediately and permanently removing the item record from both

@@ -10,8 +10,6 @@ import { IRedditCommunityCommunity } from "../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/redditCommunity/communities")
 export class RedditcommunityRedditcommunityCommunitiesController {
   /**
-   * Search and retrieve a filtered, paginated list of communities.
-   *
    * Retrieve a list of communities within the redditCommunity platform,
    * supporting advanced filtering, sorting, and pagination.
    *
@@ -48,8 +46,6 @@ export class RedditcommunityRedditcommunityCommunitiesController {
   }
 
   /**
-   * Retrieve detailed information about a specific community by name.
-   *
    * Get detailed information of a community identified by its unique name
    * within the redditCommunity platform.
    *

@@ -11,9 +11,6 @@ import { IRedditCommunityReport } from "../../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/moderator/communities/:communityName/reports")
 export class RedditcommunityModeratorCommunitiesReportsController {
   /**
-   * Search and retrieve filtered, paginated list of community content violation
-   * reports.
-   *
    * Retrieve a filtered and paginated list of content violation reports for a
    * specific community.
    *

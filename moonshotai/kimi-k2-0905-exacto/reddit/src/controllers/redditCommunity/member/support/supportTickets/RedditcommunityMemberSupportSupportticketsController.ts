@@ -7,8 +7,6 @@ import { IRedditCommunitySupportTicket } from "../../../../../api/structures/IRe
 @Controller("/redditCommunity/member/support/supportTickets")
 export class RedditcommunityMemberSupportSupportticketsController {
   /**
-   * Create a new support ticket for platform assistance.
-   *
    * Create a new support ticket to request assistance with platform issues.
    * This operation enables users to submit detailed support requests covering
    * various categories including technical problems, content issues, account

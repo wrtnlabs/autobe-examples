@@ -7,9 +7,6 @@ import { ICommunityPlatformPostAnalytics } from "../../../../../structures/IComm
 import { IPageICommunityPlatformPostAnalytics } from "../../../../../structures/IPageICommunityPlatformPostAnalytics";
 
 /**
- * Retrieve paginated analytics for posts based on community_platform_posts and
- * related vote data.
- *
  * Retrieve a filtered, paginated list of post analytics records computed from
  * the community_platform_posts table and its related vote and karma data.
  *

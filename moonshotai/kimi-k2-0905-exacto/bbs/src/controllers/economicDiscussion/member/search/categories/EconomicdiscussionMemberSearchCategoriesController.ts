@@ -11,8 +11,6 @@ import { IEconomicDiscussionArticle } from "../../../../../api/structures/IEcono
 @Controller("/economicDiscussion/member/search/categories/:categoryCode")
 export class EconomicdiscussionMemberSearchCategoriesController {
   /**
-   * Search and filter articles within a specific discussion category.
-   *
    * Perform advanced search queries across economic and political discussion
    * articles filtered by category code. This operation enables users to find
    * relevant content within specific topic areas using text-based searches

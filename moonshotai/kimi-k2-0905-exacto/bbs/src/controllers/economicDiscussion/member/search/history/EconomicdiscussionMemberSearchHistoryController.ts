@@ -11,9 +11,6 @@ import { IPageIEconomicDiscussionSearchHistory } from "../../../../../api/struct
 @Controller("/economicDiscussion/member/search/history")
 export class EconomicdiscussionMemberSearchHistoryController {
   /**
-   * Retrieve authenticated member's personal search history from economic
-   * discussion board.
-   *
    * Retrieves the authenticated member's personal search history from the
    * Economic Discussion Board platform. This operation returns a
    * chronologically ordered list of all searches performed by the currently
@@ -53,9 +50,6 @@ export class EconomicdiscussionMemberSearchHistoryController {
   }
 
   /**
-   * Delete authenticated member's search history entries from economic
-   * discussion board.
-   *
    * Permanently removes search history entries for authenticated members of the
    * Economic Discussion Board platform. Members can delete individual search
    * entries or clear their entire search history to maintain privacy control

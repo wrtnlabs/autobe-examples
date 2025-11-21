@@ -13,8 +13,6 @@ import { IDiscussionBoardGuest } from "../../../../api/structures/IDiscussionBoa
 @Controller("/discussionBoard/admin/discussionBoardGuests")
 export class DiscussionboardAdminDiscussionboardguestsController {
   /**
-   * Search and list discussion board guests with filters and pagination.
-   *
    * Retrieve a paginated, filtered, and optionally sorted list of discussion
    * board guests.
    *
@@ -56,8 +54,6 @@ export class DiscussionboardAdminDiscussionboardguestsController {
   }
 
   /**
-   * Retrieve discussion board guest details by ID.
-   *
    * Retrieve detailed information of a discussion board guest by their unique
    * identifier.
    *
@@ -96,8 +92,6 @@ export class DiscussionboardAdminDiscussionboardguestsController {
   }
 
   /**
-   * Delete a discussion board guest by ID.
-   *
    * Delete a specific discussion board guest by their unique identifier.
    *
    * This operation is intended for administrative use to remove guest accounts

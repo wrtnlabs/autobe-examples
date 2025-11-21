@@ -12,9 +12,6 @@ export * as actorSecurityEvents from "./actorSecurityEvents/index";
 export * as earnings from "./earnings/index";
 
 /**
- * Search and retrieve a paginated list of shopping_mall_sellers accounts for
- * administrative management.
- *
  * Retrieve a filtered, paginated list of seller accounts registered on the
  * shoppingMall platform.
  *
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single seller from the shopping_mall_sellers
- * table by sellerId.
- *
  * Retrieve detailed information for a single seller account identified by its
  * unique seller identifier.
  *
@@ -248,9 +242,6 @@ export namespace at {
 }
 
 /**
- * Update an existing seller in the shopping_mall_sellers table using its
- * sellerId identifier.
- *
  * Update an existing seller record in the shopping_mall_sellers table using the
  * sellerId path parameter as the primary key.
  *
@@ -374,9 +365,6 @@ export namespace update {
 }
 
 /**
- * Delete an existing seller from the shopping_mall_sellers table by its
- * sellerId identifier.
- *
  * Permanently delete a seller record from the shopping_mall_sellers table using
  * the sellerId path parameter as the primary key.
  *

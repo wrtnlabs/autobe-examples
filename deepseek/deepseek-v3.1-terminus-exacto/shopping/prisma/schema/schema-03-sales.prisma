@@ -1,0 +1,435 @@
+/// Hierarchical product category system for organizing products in the
+/// shopping mall.
+///
+/// Provides a structured categorization system with parent-child
+/// relationships for flexible product organization. Categories can be nested
+/// to create multi-level hierarchies for better product discovery and
+/// navigation.
+///
+/// Each category includes metadata for display purposes and can be managed
+/// independently by administrators. Categories support soft deletion to
+/// maintain referential integrity while allowing content moderation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference for hierarchical structure. {@link
+  /// shopping_mall_categories.id}.
+  parent_id String?
+  
+  /// Category name displayed to users.
+  name String
+  
+  /// Detailed description explaining the category purpose and contents.
+  description String?
+  
+  /// Sorting order for category display in listings.
+  display_order Int
+  
+  /// Whether the category is visible and available for product assignment.
+  active Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  
+  @@unique([name])
+  @@index([parent_id, display_order])
+  @@index([active, display_order])
+}
+
+/// Core product catalog containing all items available for sale in the
+/// shopping mall.
+///
+/// Stores comprehensive product information including pricing, inventory,
+/// and categorization details. Products are created by sellers and managed
+/// through the seller dashboard with administrative oversight.
+///
+/// Products support multiple variants, attributes, and images to provide
+/// rich product experiences. Inventory tracking ensures accurate stock
+/// management and prevents overselling.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary category assignment for product organization. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// Seller who owns and manages this product. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Product name displayed to customers.
+  name String
+  
+  /// Detailed product description with features and specifications.
+  description String
+  
+  /// Stock Keeping Unit identifier unique per seller.
+  sku String
+  
+  /// Current selling price of the product.
+  price Float
+  
+  /// Original price for comparison (strikethrough pricing).
+  compare_price Float?
+  
+  /// Cost price for margin calculation.
+  cost_price Float?
+  
+  /// Current available inventory quantity.
+  stock_quantity Int
+  
+  /// Product status: draft, active, inactive, archived.
+  status String
+  
+  /// Product condition: new, used, refurbished.
+  condition String
+  
+  /// Product weight for shipping calculations.
+  weight Float?
+  
+  /// Product dimensions (LxWxH) for shipping.
+  dimensions String?
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the product was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_attributes shopping_mall_product_attributes[]
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  
+  @@unique([shopping_mall_seller_id, sku])
+  @@index([shopping_mall_category_id, status])
+  @@index([status, created_at])
+  @@index([price])
+  @@index([stock_quantity])
+}
+
+/// Product-specific attributes and specifications for detailed product
+/// information.
+///
+/// Stores attribute values that define product characteristics like size,
+/// color, material, and technical specifications. Attributes are associated
+/// with products to provide comprehensive product details.
+///
+/// Supports flexible attribute management with key-value pairs that can be
+/// customized per product category. Used for filtering, search optimization,
+/// and product comparison features.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that owns these attributes. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Name of the attribute (e.g., Color, Size, Material).
+  attribute_name String
+  
+  /// Value of the attribute (e.g., Red, Large, Cotton).
+  attribute_value String
+  
+  /// Sorting order for attribute display on product pages.
+  display_order Int
+  
+  /// Timestamp when the attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the attribute was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, attribute_name], map: "shopping_mall_product_attributes_shopping_mall_product_fd79683f")
+  // spellchecker: ignore-next-line
+  @@index([attribute_name, attribute_value], map: "shopping_mall_product_attributes_attribute_name_attrib_9fcc9d80")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, display_order], map: "shopping_mall_product_attributes_shopping_mall_product_d1fcc32e")
+}
+
+/// Product variations with different attributes like size, color, or style
+/// options.
+///
+/// Manages product variants that share the same base product but have
+/// different attribute combinations. Each variant can have unique pricing,
+/// inventory, and SKU information.
+///
+/// Supports complex product configurations where customers can select from
+/// multiple options. Variants are essential for products with multiple
+/// options like clothing sizes or electronics models.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product that this variant belongs to. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Descriptive name for the variant (e.g., Large Blue Shirt).
+  variant_name String
+  
+  /// Unique SKU for this specific variant.
+  sku String
+  
+  /// Variant-specific price (overrides product price if different).
+  price Float?
+  
+  /// Inventory quantity specific to this variant.
+  stock_quantity Int
+  
+  /// JSON string containing variant attribute combinations.
+  attributes String
+  
+  /// Whether this variant is available for purchase.
+  active Boolean
+  
+  /// Timestamp when the variant was created.
+  created_at DateTime
+  
+  /// Timestamp when the variant was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the variant was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([shopping_mall_product_id, sku])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, active], map: "shopping_mall_product_variants_shopping_mall_product_i_3af18701")
+  @@index([stock_quantity])
+}
+
+/// Product image gallery storing multiple images for each product.
+///
+/// Manages product visuals including main images, thumbnails, and additional
+/// gallery images. Supports multiple image formats and sizes for optimal
+/// display across different devices.
+///
+/// Images are organized with display order for proper gallery sequencing.
+/// Main images are prioritized for product listings while additional images
+/// provide comprehensive product views.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that owns these images. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URL pointing to the stored product image.
+  image_url String
+  
+  /// Alternative text for accessibility and SEO purposes.
+  alt_text String?
+  
+  /// Whether this is the main product image for listings.
+  is_primary Boolean
+  
+  /// Sorting order for image display in product galleries.
+  display_order Int
+  
+  /// Timestamp when the image was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the image was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__1e493e13")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, is_primary], map: "shopping_mall_product_images_shopping_mall_product_id__36ad223d")
+}
+
+/// Sales transactions representing completed purchases in the shopping mall.
+///
+/// Records finalized sales with complete transaction details including
+/// pricing, quantities, and customer information. Sales are created when
+/// orders are successfully paid and processed.
+///
+/// Each sale links to the original order for tracking purposes and includes
+/// financial details for accounting and reporting. Sales data is used for
+/// analytics, seller payouts, and business intelligence.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original order that generated this sale. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who made the purchase. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Seller who received the sale. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Total sale amount including taxes and shipping.
+  sale_amount Float
+  
+  /// Total number of items sold in this transaction.
+  item_count Int
+  
+  /// Current status of the sale: completed, refunded, disputed.
+  sale_status String
+  
+  /// Platform commission percentage applied to this sale.
+  commission_rate Float
+  
+  /// Final amount after commission and fees for seller payout.
+  net_amount Float
+  
+  /// Timestamp when the sale was finalized.
+  sale_date DateTime
+  
+  /// Timestamp when the sale record was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the sale was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sale_snapshots shopping_mall_sale_snapshots[]
+  
+  @@unique([shopping_mall_order_id])
+  @@index([shopping_mall_customer_id, sale_date])
+  @@index([shopping_mall_seller_id, sale_date])
+  @@index([sale_status, sale_date])
+  @@index([sale_amount])
+}
+
+/// Historical snapshots of sales data for audit trails and reporting.
+///
+/// Captures point-in-time state of sales transactions for historical
+/// accuracy and compliance. Snapshots preserve sales data as it existed at
+/// the time of transaction, protecting against later modifications.
+///
+/// Used for financial reporting, audit trails, and historical analysis. Each
+/// snapshot represents the complete state of a sale at a specific moment,
+/// including all financial details and status information.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original sale that this snapshot captures. {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// JSON representation of complete sale state at snapshot time.
+  sale_data String
+  
+  /// Reason for creating this snapshot: audit, refund, status_change.
+  snapshot_reason String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, created_at], map: "shopping_mall_sale_snapshots_shopping_mall_sale_id_cre_36e298a1")
+  @@index([snapshot_reason, created_at])
+}

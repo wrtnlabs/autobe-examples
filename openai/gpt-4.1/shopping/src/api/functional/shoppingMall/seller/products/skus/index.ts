@@ -8,8 +8,6 @@ import { IPageIShoppingMallProductSku } from "../../../../../structures/IPageISh
 export * as images from "./images/index";
 
 /**
- * Create a new SKU (shopping_mall_product_skus) for a specific parent product.
- *
  * Create a new SKU variant for a specific product in the catalog. The API
  * requires a valid productId in the path to scope the SKU under the correct
  * parent product, as well as a request body containing all required SKU
@@ -121,9 +119,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated SKUs for a product from
- * shopping_mall_product_skus.
- *
  * Retrieve a list of SKUs for a given product with advanced filtering and
  * pagination.
  *
@@ -232,9 +227,6 @@ export namespace index {
 }
 
 /**
- * Update an existing SKU variant for a specific shopping mall product
- * (shopping_mall_product_skus table).
- *
  * Update an individual SKU (Stock Keeping Unit) variant for a given product in
  * the shopping mall catalog.
  *
@@ -358,9 +350,6 @@ export namespace update {
 }
 
 /**
- * Archive (soft delete) a SKU variant for a shopping mall product via setting
- * deleted_at (shopping_mall_product_skus table).
- *
  * Soft delete a SKU variant associated with a given shopping mall product.
  * Rather than permanently removing SKU records from the database, this
  * operation sets the 'deleted_at' field, marking the SKU as archived. This

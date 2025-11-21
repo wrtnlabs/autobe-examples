@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IMvTodoAppActiveConfiguration } from "../../../../structures/IMvTodoAppActiveConfiguration";
 
 /**
- * Retrieve active configuration value for specific environment.
- *
  * This operation retrieves the currently active configuration value for a
  * specified deployment environment by querying the materialized view
  * mv_todo_app_active_configurations. The view combines configuration

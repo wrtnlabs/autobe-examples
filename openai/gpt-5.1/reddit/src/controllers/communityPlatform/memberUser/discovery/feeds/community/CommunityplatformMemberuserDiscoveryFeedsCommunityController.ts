@@ -10,9 +10,6 @@ import { ICommunityPlatformDiscoveryCommunityFeed } from "../../../../../../api/
 )
 export class CommunityplatformMemberuserDiscoveryFeedsCommunityController {
   /**
-   * Retrieve a community-scoped discovery feed from community_platform_posts
-   * for a specific community.
-   *
    * Retrieve a ranked, paginated discovery feed for a specific community,
    * using community_platform_posts and related engagement signals to order
    * content.

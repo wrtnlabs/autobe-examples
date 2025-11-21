@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSellerProfile } from "../../../../../structures/IShoppingMallSellerProfile";
 
 /**
- * Get the ShoppingMall seller profile associated with a specific seller
- * account.
- *
  * Retrieve the detailed profile record for a specific seller in the
  * ShoppingMall platform.
  *
@@ -123,8 +120,6 @@ export namespace at {
 }
 
 /**
- * Update the ShoppingMall seller profile for a specific seller account.
- *
  * Update the extended profile record for a specific seller in the ShoppingMall
  * platform.
  *

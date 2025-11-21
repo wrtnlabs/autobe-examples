@@ -15,9 +15,6 @@ import { IPageICommunityPlatformRankingEventLog } from "../../../../api/structur
 @Controller("/communityPlatform/administrator/rankingEventLogs")
 export class CommunityplatformAdministratorRankingeventlogsController {
   /**
-   * Create a new platform ranking event log
-   * (community_platform_ranking_event_logs).
-   *
    * Create a new ranking event log entry in the platform event logs, recording
    * information about a content ranking workflow such as calculations,
    * anomalies, or system audits for feed/ranking jobs.
@@ -60,9 +57,6 @@ export class CommunityplatformAdministratorRankingeventlogsController {
   }
 
   /**
-   * Search and retrieve filtered, paginated event logs for ranking algorithm
-   * jobs from community_platform_ranking_event_logs.
-   *
    * Fetch a filtered, paginated list of ranking algorithm event logs for audit,
    * debugging, and operational monitoring. This PATCH operation accepts complex
    * search parameters including event type, interval, run status, date/time
@@ -113,9 +107,6 @@ export class CommunityplatformAdministratorRankingeventlogsController {
   }
 
   /**
-   * Get a specific platform ranking algorithm event log
-   * (community_platform_ranking_event_logs).
-   *
    * Retrieve a specific ranking event log entry by its unique identifier (UUID)
    * from the system event log records for content ranking algorithms.
    *
@@ -156,9 +147,6 @@ export class CommunityplatformAdministratorRankingeventlogsController {
   }
 
   /**
-   * Update an existing ranking event log entry record in the
-   * community_platform_ranking_event_logs table.
-   *
    * Update an existing community ranking event log entry with corrections or
    * new details. This operation lets privileged actors amend previously
    * recorded ranking events, correcting event type, timeframe, status (such as
@@ -209,9 +197,6 @@ export class CommunityplatformAdministratorRankingeventlogsController {
   }
 
   /**
-   * Permanently delete a ranking event log entry from the
-   * community_platform_ranking_event_logs table.
-   *
    * Permanently remove a community platform ranking event log record from the
    * database. This operation is restricted to platform administrators and
    * executes a hard delete, ensuring the removed entry is no longer visible or

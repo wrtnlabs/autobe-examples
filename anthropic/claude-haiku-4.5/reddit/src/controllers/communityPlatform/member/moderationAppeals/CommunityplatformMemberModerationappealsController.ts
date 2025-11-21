@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAppeal } from "../../../../api/structures/I
 @Controller("/communityPlatform/member/moderationAppeals")
 export class CommunityplatformMemberModerationappealsController {
   /**
-   * Submit a new moderation appeal requesting reconsideration of a moderation
-   * decision.
-   *
    * Create a new moderation appeal when a member disagrees with a moderation
    * action and requests independent review. This operation records the
    * member's appeal explanation, any supporting evidence, and routes the
@@ -57,9 +54,6 @@ export class CommunityplatformMemberModerationappealsController {
   }
 
   /**
-   * Retrieve a specific moderation appeal with its current status and review
-   * outcome.
-   *
    * Retrieve detailed information about a specific moderation appeal
    * including submission details, current review status, reviewer assignment,
    * and decision outcome if review is complete.

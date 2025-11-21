@@ -16,8 +16,6 @@ import { IRedditCommunityComments } from "../../../../../../api/structures/IRedd
 )
 export class RedditcommunityRegistereduserRedditcommunityPostsCommentsController {
   /**
-   * Retrieve a specific comment for a RedditCommunity post by ID.
-   *
    * Retrieve detailed information for a specific comment within a
    * RedditCommunity post. This operation requires both the postId and commentId
    * to target the precise comment resource.
@@ -64,8 +62,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsCommentsController
   }
 
   /**
-   * Update a specific comment on a post in redditCommunity.
-   *
    * Update an existing comment on a redditCommunity post by its unique
    * identifier.
    *
@@ -116,8 +112,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsCommentsController
   }
 
   /**
-   * Delete a specific comment on a post in redditCommunity.
-   *
    * Delete a comment from a redditCommunity post by its unique identifier.
    *
    * This operation performs a hard delete, permanently removing the comment
@@ -164,8 +158,6 @@ export class RedditcommunityRegistereduserRedditcommunityPostsCommentsController
   }
 
   /**
-   * Create a new comment on a RedditCommunity post.
-   *
    * Allows an authenticated user to add a comment to a RedditCommunity post.
    * The comment may be a new top-level comment or a nested reply by specifying
    * a parent comment ID.

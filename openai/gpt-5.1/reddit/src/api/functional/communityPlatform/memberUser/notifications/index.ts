@@ -9,9 +9,6 @@ export * as markRead from "./markRead/index";
 export * as markUnread from "./markUnread/index";
 
 /**
- * Search notifications in the community_platform_notifications table for the
- * current member user.
- *
  * Retrieve a filtered, paginated list of notifications from the
  * `community_platform_notifications` table for the authenticated member user.
  *
@@ -125,9 +122,6 @@ export namespace index {
 }
 
 /**
- * Get a single notification record from the community_platform_notifications
- * table by its identifier.
- *
  * Retrieve the detailed information of a single notification from the
  * community_platform_notifications table by its identifier.
  *
@@ -247,9 +241,6 @@ export namespace at {
 }
 
 /**
- * Update an existing notification in the community_platform_notifications
- * table.
- *
  * Update a single notification resource in the community platform, focusing on
  * mutable fields such as read status or dismissal state.
  *
@@ -393,8 +384,6 @@ export namespace update {
 }
 
 /**
- * Erase a notification record from the community_platform_notifications table.
- *
  * Erase a single notification record from the community platform’s notification
  * store by its identifier.
  *
@@ -512,9 +501,6 @@ export namespace erase {
 }
 
 /**
- * Mark all unread `community_platform_notifications` records for the current
- * member user as read.
- *
  * Mark all unread notifications for the authenticated member user as read in
  * the `community_platform_notifications` table.
  *

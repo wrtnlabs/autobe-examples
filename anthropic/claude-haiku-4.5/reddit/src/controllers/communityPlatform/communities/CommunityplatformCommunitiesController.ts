@@ -8,8 +8,6 @@ import { ICommunityPlatformCommunity } from "../../../api/structures/ICommunityP
 @Controller("/communityPlatform/communities")
 export class CommunityplatformCommunitiesController {
   /**
-   * Search and retrieve a filtered, paginated list of public communities.
-   *
    * This operation provides advanced community discovery functionality,
    * enabling users to search for and explore communities based on multiple
    * filtering criteria including category classification, visibility status,
@@ -70,8 +68,6 @@ export class CommunityplatformCommunitiesController {
   }
 
   /**
-   * Retrieve detailed information about a specific community.
-   *
    * Retrieves comprehensive information about a specific community, enabling
    * users to view community metadata, configuration, and statistics. This
    * operation accesses the community_platform_communities table containing

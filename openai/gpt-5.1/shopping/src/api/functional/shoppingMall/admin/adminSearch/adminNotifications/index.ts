@@ -7,9 +7,6 @@ import { IShoppingMallAdminNotification } from "../../../../../structures/IShopp
 import { IPageIShoppingMallAdminNotification } from "../../../../../structures/IPageIShoppingMallAdminNotification";
 
 /**
- * Search admin notifications stored in the shopping_mall_admin_notifications
- * table with filtering and pagination.
- *
  * Search and retrieve a filtered, paginated list of admin notifications stored
  * in the `shopping_mall_admin_notifications` table.
  *

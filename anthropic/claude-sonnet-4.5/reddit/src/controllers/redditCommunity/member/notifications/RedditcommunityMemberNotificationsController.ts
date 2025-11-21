@@ -14,8 +14,6 @@ import { IRedditCommunityNotification } from "../../../../api/structures/IReddit
 @Controller("/redditCommunity/member/notifications")
 export class RedditcommunityMemberNotificationsController {
   /**
-   * Search and retrieve a filtered, paginated list of user notifications.
-   *
    * Retrieve a filtered and paginated list of notifications for the
    * authenticated user. This operation provides advanced search capabilities
    * for finding notifications based on multiple criteria including notification
@@ -66,8 +64,6 @@ export class RedditcommunityMemberNotificationsController {
   }
 
   /**
-   * Retrieve detailed information for a specific notification by ID.
-   *
    * Retrieve complete details for a specific notification identified by its
    * unique notification ID. This operation returns comprehensive notification
    * information including the notification type, recipient details, related
@@ -114,8 +110,6 @@ export class RedditcommunityMemberNotificationsController {
   }
 
   /**
-   * Update notification read status.
-   *
    * Update the read status of a specific notification for the authenticated
    * user.
    *
@@ -168,8 +162,6 @@ export class RedditcommunityMemberNotificationsController {
   }
 
   /**
-   * Delete a notification.
-   *
    * Permanently remove a notification from the user's notification list.
    *
    * This operation enables users to clean up their notification inbox by

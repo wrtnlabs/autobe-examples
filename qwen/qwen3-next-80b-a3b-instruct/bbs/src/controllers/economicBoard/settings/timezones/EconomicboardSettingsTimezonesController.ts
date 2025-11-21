@@ -10,8 +10,6 @@ import { IEconomicBoardTimezoneSetting } from "../../../../api/structures/IEcono
 @Controller("/economicBoard/settings/timezones")
 export class EconomicboardSettingsTimezonesController {
   /**
-   * Retrieve list of all supported timezone settings.
-   *
    * Retrieve a comprehensive list of all supported timezone settings that the
    * economic board platform uses for user-facing timestamp display.
    *
@@ -46,8 +44,6 @@ export class EconomicboardSettingsTimezonesController {
   }
 
   /**
-   * Retrieve a specific timezone setting by its code.
-   *
    * Retrieve detailed information about a specific timezone setting using its
    * short platform identifier code (e.g., "KST", "EST").
    *

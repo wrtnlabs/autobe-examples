@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../../../../structures/ITodoListUser";
 
 /**
- * Update authenticated user's password.
- *
  * Change the password for the currently authenticated user account. This
  * operation provides secure password management capabilities allowing users to
  * update their credentials for security maintenance.

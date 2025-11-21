@@ -15,8 +15,6 @@ import { IPageIEconomicDiscussionMemberSession } from "../../../../../api/struct
 @Controller("/economicDiscussion/member/members/:memberId/sessions")
 export class EconomicdiscussionMemberMembersSessionsController {
   /**
-   * Create new member authentication session during login.
-   *
    * This operation creates a new session entry in the system when a member
    * successfully authenticates. It is typically called after login validation
    * and generates the authentication tokens and session tracking data needed
@@ -69,8 +67,6 @@ export class EconomicdiscussionMemberMembersSessionsController {
   }
 
   /**
-   * Search and retrieve member sessions with filtering.
-   *
    * This operation provides comprehensive session retrieval for a specific
    * member account, allowing the member themselves to review their login
    * history, session details, and security audit information for account
@@ -122,8 +118,6 @@ export class EconomicdiscussionMemberMembersSessionsController {
   }
 
   /**
-   * Retrieve member session details for authentication verification.
-   *
    * This operation fetches detailed information about a specific member session
    * using the member ID and session ID from the path. It is designed to help
    * clients verify current authentication status and retrieve session metadata
@@ -167,8 +161,6 @@ export class EconomicdiscussionMemberMembersSessionsController {
   }
 
   /**
-   * Update member authentication session with new metadata.
-   *
    * Update an existing member authentication session with new session metadata.
    * This operation allows refreshing session information including IP address
    * for security tracking, referrer information for analytics, and expiration
@@ -217,8 +209,6 @@ export class EconomicdiscussionMemberMembersSessionsController {
   }
 
   /**
-   * Delete member session to log out user.
-   *
    * Permanently delete a member authentication session to log out the user and
    * invalidate their session tokens. This operation provides secure session
    * termination by removing the session record from the database.

@@ -5,8 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as orderItems from "./orderItems/index";
 
 /**
- * Delete a shopping mall order by its identifier.
- *
  * Permanently removes a shopping mall customer order from the system.
  *
  * This operation allows authorized users to erase an order record identified by

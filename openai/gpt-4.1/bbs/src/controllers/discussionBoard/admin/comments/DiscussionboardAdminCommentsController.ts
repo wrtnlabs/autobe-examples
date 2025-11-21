@@ -11,9 +11,6 @@ import { IDiscussionBoardArticleComment } from "../../../../api/structures/IDisc
 @Controller("/discussionBoard/admin/comments/:commentId")
 export class DiscussionboardAdminCommentsController {
   /**
-   * Update the text content of a discussion board comment
-   * (discussion_board_comments table).
-   *
    * Update an existing discussion board comment's content based on the provided
    * comment identifier.
    *
@@ -64,9 +61,6 @@ export class DiscussionboardAdminCommentsController {
   }
 
   /**
-   * Soft-delete a discussion board comment (discussion_board_comments table) by
-   * marking as deleted.
-   *
    * Soft-delete a comment from the discussion board by marking its record as
    * deleted. The operation targets a specific comment using the provided
    * identifier and is accessible only to the comment's author or an authorized

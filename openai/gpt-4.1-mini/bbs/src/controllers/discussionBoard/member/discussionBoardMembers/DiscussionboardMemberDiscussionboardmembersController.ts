@@ -13,8 +13,6 @@ import { IDiscussionBoardDiscussionBoardMember } from "../../../../api/structure
 )
 export class DiscussionboardMemberDiscussionboardmembersController {
   /**
-   * Update a discussion board member's information.
-   *
    * Update an existing discussion board member's details including email,
    * nickname, and password.
    *
@@ -59,8 +57,6 @@ export class DiscussionboardMemberDiscussionboardmembersController {
   }
 
   /**
-   * Delete a discussion board member.
-   *
    * Permanently remove a discussion board member from the system.
    *
    * This hard delete operation cannot be undone and will completely erase

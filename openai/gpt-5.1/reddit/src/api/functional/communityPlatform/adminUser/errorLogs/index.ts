@@ -8,9 +8,6 @@ import { IPageICommunityPlatformErrorLog } from "../../../../structures/IPageICo
 export * as overview from "./overview/index";
 
 /**
- * Search and paginate system-generated error logs from the
- * community_platform_error_logs table for admin observability.
- *
  * Retrieve a filtered, sorted, and paginated list of error log entries from the
  * `community_platform_error_logs` table for operational monitoring and
  * debugging.
@@ -147,9 +144,6 @@ export namespace index {
 }
 
 /**
- * Get full details of a specific error log entry from the
- * community_platform_error_logs table by its unique identifier.
- *
  * Retrieve the complete details of a single error log entry from the
  * `community_platform_error_logs` table using its unique identifier.
  *

@@ -7,9 +7,6 @@ import { IShoppingMallPaymentMethodAnalytics } from "../../../../../../structure
 import { IPageIShoppingMallPaymentMethodAnalytics } from "../../../../../../structures/IPageIShoppingMallPaymentMethodAnalytics";
 
 /**
- * Search and retrieve aggregated payment method analytics based on
- * payment-related tables and stats snapshots.
- *
  * Retrieve aggregated analytical statistics for payment methods across the
  * shoppingMall platform.
  *

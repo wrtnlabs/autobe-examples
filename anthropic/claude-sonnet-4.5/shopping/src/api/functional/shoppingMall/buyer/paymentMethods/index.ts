@@ -7,8 +7,6 @@ import { IShoppingMallPaymentMethod } from "../../../../structures/IShoppingMall
 import { IPageIShoppingMallPaymentMethod } from "../../../../structures/IPageIShoppingMallPaymentMethod";
 
 /**
- * Register a new payment method for the authenticated buyer.
- *
  * Register a new payment method to the authenticated buyer's account for use in
  * future transactions. This operation enables buyers to save their preferred
  * payment methods including credit cards, debit cards, or other supported
@@ -120,8 +118,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of buyer payment methods.
- *
  * Retrieve a filtered and paginated list of saved payment methods for
  * authenticated buyers from the system. This operation provides advanced search
  * capabilities for finding payment methods based on multiple criteria including
@@ -230,8 +226,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information of a specific payment method by ID.
- *
  * Retrieve complete details of a specific saved payment method identified by
  * its unique payment method ID. This operation provides comprehensive
  * information about the payment method including payment type (credit card,
@@ -334,8 +328,6 @@ export namespace at {
 }
 
 /**
- * Update an existing payment method for the authenticated buyer.
- *
  * Update the details of an existing payment method in the authenticated buyer's
  * account. This operation enables buyers to modify payment method information
  * such as billing_name, billing_postal_code, or is_default status without
@@ -455,8 +447,6 @@ export namespace update {
 }
 
 /**
- * Delete a saved payment method from buyer's account.
- *
  * Permanently remove a specific payment method from the authenticated buyer's
  * saved payment methods in the shopping mall platform.
  *
@@ -555,8 +545,6 @@ export namespace erase {
 }
 
 /**
- * Set a payment method as the default for checkout.
- *
  * Mark a specific saved payment method as the default payment method for the
  * authenticated buyer's future checkout transactions.
  *

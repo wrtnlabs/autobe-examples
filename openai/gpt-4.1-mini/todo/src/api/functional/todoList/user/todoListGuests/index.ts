@@ -7,8 +7,6 @@ import { ITodoListGuest } from "../../../../structures/ITodoListGuest";
 export * as todoListGuestSessions from "./todoListGuestSessions/index";
 
 /**
- * Update a specific Todo List guest by ID.
- *
  * Update a specific guest's information in the Todo List guest tracking system.
  *
  * This operation allows modifications to existing guest records identified by
@@ -104,8 +102,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific Todo List guest by ID.
- *
  * Delete a guest record permanently from the system.
  *
  * This operation is used for removing guest visitor records that are no longer

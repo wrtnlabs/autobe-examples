@@ -10,8 +10,6 @@ import { IRedditCommunityPost } from "../../../api/structures/IRedditCommunityPo
 @Controller("/redditCommunity/posts")
 export class RedditcommunityPostsController {
   /**
-   * Search and retrieve a filtered, paginated list of posts across communities.
-   *
    * Retrieve a filtered and paginated list of posts from the Reddit-like
    * community platform. This operation provides comprehensive search and
    * filtering capabilities for discovering posts across all communities or
@@ -62,8 +60,6 @@ export class RedditcommunityPostsController {
   }
 
   /**
-   * Retrieve detailed information about a specific post.
-   *
    * Retrieve complete details of a single post identified by its unique post
    * ID.
    *

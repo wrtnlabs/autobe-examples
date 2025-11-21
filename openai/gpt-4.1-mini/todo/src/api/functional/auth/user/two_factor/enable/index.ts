@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListTodoListUser } from "../../../../../structures/ITodoListTodoListUser";
 
 /**
- * Enable two-factor authentication for user account.
- *
  * Allows users to enable two-factor authentication for their accounts using
  * fields and tokens defined in the 'todo_list_users' table.
  *

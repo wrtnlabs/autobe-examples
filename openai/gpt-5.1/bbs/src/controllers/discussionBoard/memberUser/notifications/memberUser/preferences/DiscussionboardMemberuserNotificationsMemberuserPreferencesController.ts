@@ -11,9 +11,6 @@ import { IDiscussionBoardMemberuserNotificationPreference } from "../../../../..
 @Controller("/discussionBoard/memberUser/notifications/memberUser/preferences")
 export class DiscussionboardMemberuserNotificationsMemberuserPreferencesController {
   /**
-   * Get notification preferences for the current member user from
-   * discussion_board_memberuser_notification_preferences.
-   *
    * Get the notification preference settings for the currently authenticated
    * member user.
    *
@@ -71,9 +68,6 @@ export class DiscussionboardMemberuserNotificationsMemberuserPreferencesControll
   }
 
   /**
-   * Update notification preferences for the current member user in
-   * discussion_board_memberuser_notification_preferences.
-   *
    * Change the notification preference settings for the currently authenticated
    * member user.
    *

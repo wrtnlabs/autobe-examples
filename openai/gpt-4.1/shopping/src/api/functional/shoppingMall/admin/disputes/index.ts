@@ -9,9 +9,6 @@ export * as histories from "./histories/index";
 export * as messages from "./messages/index";
 
 /**
- * Create a new dispute record in the shopping_mall_disputes table for
- * refund/order or platform escalation cases.
- *
  * Create a new dispute case linked to customer, seller, and optionally an admin
  * actor in the shopping mall platform.
  *
@@ -114,9 +111,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filterable list of disputes from
- * shopping_mall_disputes.
- *
  * Retrieve a filtered and paginated list of platform dispute cases from the
  * shopping_mall_disputes table. This operation provides administrative and
  * operational staff with advanced search capabilities to find disputes based on
@@ -217,8 +211,6 @@ export namespace index {
 }
 
 /**
- * Get full details for a specific dispute from shopping_mall_disputes.
- *
  * Fetch detailed information for a specific dispute case using its disputeId.
  * The operation exposes all available context, including the origin of the
  * dispute (such as the associated refund request if any), the roles of involved
@@ -315,9 +307,6 @@ export namespace at {
 }
 
 /**
- * Update an existing dispute's details in the shopping_mall_disputes table by
- * disputeId.
- *
  * Update details, status, or resolution notes of an existing shopping mall
  * dispute by specifying the dispute's ID and the new data.
  *
@@ -422,9 +411,6 @@ export namespace update {
 }
 
 /**
- * Delete (soft-delete) a dispute record by disputeId (shopping_mall_disputes
- * table).
- *
  * Permanently deletes a dispute from the shopping mall platform using its
  * unique identifier.
  *

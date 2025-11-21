@@ -14,8 +14,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/refundRequests")
 export class ShoppingmallAdminRefundrequestsController {
   /**
-   * Search and retrieve a filtered, paginated list of refund requests.
-   *
    * Retrieve a comprehensive list of refund requests with advanced filtering,
    * searching, sorting, and pagination capabilities.
    *
@@ -72,8 +70,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific refund request.
-   *
    * Retrieve complete details of a specific refund request identified by its
    * unique ID. This operation provides comprehensive information about a
    * buyer's refund request including the associated order, requested refund
@@ -125,8 +121,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Update refund request status and admin review details.
-   *
    * Update the status and administrative review information for a specific
    * refund request in the shopping mall platform. This operation is exclusively
    * available to platform administrators who are responsible for reviewing and
@@ -180,8 +174,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Delete a refund request record from the system.
-   *
    * Permanently remove a specific refund request record from the shopping mall
    * platform. This operation is exclusively available to platform
    * administrators and should be used cautiously as it performs a hard delete

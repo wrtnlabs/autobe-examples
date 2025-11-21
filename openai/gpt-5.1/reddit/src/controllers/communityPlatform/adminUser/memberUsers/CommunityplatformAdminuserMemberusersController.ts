@@ -8,9 +8,6 @@ import { ICommunityPlatformMemberuser } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/adminUser/memberUsers")
 export class CommunityplatformAdminuserMemberusersController {
   /**
-   * Search and paginate memberUser accounts from the
-   * community_platform_memberusers table for administrators.
-   *
    * Retrieve a filtered and paginated list of member user accounts from the
    * community platform for administrative oversight and moderation.
    *
@@ -70,9 +67,6 @@ export class CommunityplatformAdminuserMemberusersController {
   }
 
   /**
-   * Get a single memberUser account by username from the
-   * community_platform_memberusers table for admin inspection.
-   *
    * Retrieve detailed information about a single member user account
    * identified by its globally unique username.
    *

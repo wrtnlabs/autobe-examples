@@ -7,8 +7,6 @@ import { IDiscussionBoardUserBookmark } from "../../../../../structures/IDiscuss
 import { IPageIDiscussionBoardUserBookmark } from "../../../../../structures/IPageIDiscussionBoardUserBookmark";
 
 /**
- * Create a new bookmark for a discussion board member.
- *
  * This operation allows authenticated members to bookmark discussion board
  * posts for later reference. When a member wants to save a post for future
  * reading or tracking, they can use this endpoint to create a bookmark
@@ -113,8 +111,6 @@ export namespace postByUsername {
 }
 
 /**
- * Search and retrieve paginated list of member bookmarks.
- *
  * This operation provides advanced search capabilities for member bookmarks,
  * allowing users to filter and sort their saved posts based on multiple
  * criteria. The operation supports comprehensive pagination with configurable
@@ -219,8 +215,6 @@ export namespace index {
 }
 
 /**
- * Delete a bookmark for a discussion board member.
- *
  * This operation allows authenticated members to remove bookmarks they have
  * previously created. When a member no longer wishes to track a particular
  * post, they can use this endpoint to delete the bookmark relationship.
@@ -319,8 +313,6 @@ export namespace eraseByUsernameAndBookmarkid {
 }
 
 /**
- * Create a new bookmark for a discussion board member.
- *
  * This operation allows authenticated members to bookmark discussion board
  * posts for later reference. When a member wants to save a post for future
  * reading or tracking, they can use this endpoint to create a bookmark
@@ -425,8 +417,6 @@ export namespace postByMemberid {
 }
 
 /**
- * Delete a bookmark for a discussion board member.
- *
  * This operation allows authenticated members to remove bookmarks they have
  * previously created. When a member no longer wishes to track a particular
  * post, they can use this endpoint to delete the bookmark relationship.

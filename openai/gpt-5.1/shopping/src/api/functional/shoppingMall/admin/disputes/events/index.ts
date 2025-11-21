@@ -7,9 +7,6 @@ import { IShoppingMallDisputeEvent } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallDisputeEvent } from "../../../../../structures/IPageIShoppingMallDisputeEvent";
 
 /**
- * Create a new dispute event in the shopping_mall_dispute_events table for a
- * given dispute.
- *
  * Create a new timeline event for an existing dispute identified by its
  * business dispute code.
  *
@@ -150,9 +147,6 @@ export namespace create {
 }
 
 /**
- * Search dispute events for a specific dispute (shopping_mall_dispute_events)
- * with pagination and filters.
- *
  * Retrieve a filtered, paginated list of dispute events associated with a
  * single dispute identified by its business dispute code.
  *
@@ -294,9 +288,6 @@ export namespace index {
 }
 
 /**
- * Get a single dispute event detail (shopping_mall_dispute_events) for a given
- * dispute.
- *
  * Retrieve the full details of a single dispute event belonging to a specific
  * dispute, identified by dispute code and event identifier.
  *
@@ -430,9 +421,6 @@ export namespace at {
 }
 
 /**
- * Update a dispute event in the shopping_mall_dispute_events table for a given
- * dispute.
- *
  * Update an existing dispute event record belonging to a dispute identified by
  * its business code.
  *
@@ -579,9 +567,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific dispute event record in the shopping_mall_dispute_events
- * table for a given dispute.
- *
  * Erase a specific dispute event from the dispute timeline for a given dispute,
  * identified by its business-level dispute code and the event's unique
  * identifier.

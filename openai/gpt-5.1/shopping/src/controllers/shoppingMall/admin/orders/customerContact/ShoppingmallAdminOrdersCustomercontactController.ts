@@ -7,9 +7,6 @@ import { IShoppingMallOrderCustomerContact } from "../../../../../api/structures
 @Controller("/shoppingMall/admin/orders/:orderCode/customerContact")
 export class ShoppingmallAdminOrdersCustomercontactController {
   /**
-   * Create a customer contact snapshot for an order in
-   * shopping_mall_order_customer_contacts using order_code.
-   *
    * Create a customer contact information snapshot for a specific order
    * referenced by its business order code.
    *
@@ -73,9 +70,6 @@ export class ShoppingmallAdminOrdersCustomercontactController {
   }
 
   /**
-   * Update an existing order customer contact snapshot in
-   * shopping_mall_order_customer_contacts using order_code.
-   *
    * Update the existing customer contact snapshot for a specific order, using
    * the business order code to locate the record.
    *
@@ -132,9 +126,6 @@ export class ShoppingmallAdminOrdersCustomercontactController {
   }
 
   /**
-   * Delete the shopping_mall_order_customer_contacts snapshot associated with
-   * a specific order identified by orderCode.
-   *
    * Erase the stored customer contact snapshot for a given order based on its
    * business order code.
    *

@@ -15,8 +15,6 @@ import { IPageITodoListTodo } from "../../../../api/structures/IPageITodoListTod
 @Controller("/todoList/user/todos")
 export class TodolistUserTodosController {
   /**
-   * Create a new todo item in the todo_list_todos table.
-   *
    * Create a new todo item for the authenticated user based on strict business
    * rules.
    *
@@ -61,9 +59,6 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Search and retrieve a paginated list of todo items for the authenticated
-   * user.
-   *
    * Retrieve a filtered and paginated list of todo items belonging to the
    * authenticated user. This operation provides advanced capabilities for
    * searching todo items based on various fields such as their completion
@@ -104,8 +99,6 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Retrieve a specific todo item's details by its unique identifier.
-   *
    * Retrieve the full detail of a specific todo item belonging to the
    * authenticated user. This operation returns all of the todo's properties,
    * providing comprehensive data for client applications that display, edit, or
@@ -142,8 +135,6 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Update attributes of an existing todo item in the todo_list_todos table.
-   *
    * Update an existing todo item, enforcing all business and field-level
    * validation rules.
    *
@@ -192,9 +183,6 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Delete a specific todo item by ID, using soft deletion logic in the
-   * todo_list_todos table.
-   *
    * Deletes a single todo item belonging to the authenticated user, or any user
    * if performed by an admin.
    *

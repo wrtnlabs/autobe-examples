@@ -1,349 +1,550 @@
-/// Marketplace channels representing different geographic markets, partner
-/// platforms, or specialized market segments within the e-commerce mall
-/// platform.
+/// Marketplace channel configurations defining different selling
+/// environments or regional marketplaces within the platform.
 ///
-/// Channels enable sellers to organize their presence across different
-/// marketplaces while maintaining centralized management through the
-/// platform.
+/// Channels represent distinct marketplace environments that can have
+/// different configurations, policies, and categorization systems. Examples
+/// include country-specific marketplaces, premium seller channels, or
+/// specialized product verticals. Each channel operates with independent
+/// rules and can target specific customer segments.
+///
+/// Channels serve as the primary organizational structure for seller
+/// onboarding, product categorization, and customer experience
+/// customization. They enable multi-marketplace operations while maintaining
+/// centralized platform management and unified customer accounts across all
+/// channels.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_channels {
+model shopping_mall_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique channel identifier used for API references and configuration
-  /// settings.
+  /// Unique channel identifier used for system references and external
+  /// integrations.
+  ///
+  /// Must be URL-safe and follow platform naming conventions for consistency
+  /// across the system.
   code String
   
-  /// Display name of the marketplace channel (e.g., "North American Market",
-  /// "European Premium", "Fashion Outlet").
+  /// Human-readable channel name for display and user interface purposes.
+  ///
+  /// Represents the channel identity to customers, sellers, and administrators
+  /// with clear descriptive value.
   name String
   
-  /// Detailed description of the channel's target market, requirements, and
-  /// value proposition.
+  /// Detailed explanation of channel purpose, target audience, and specific
+  /// policies.
+  ///
+  /// Provides comprehensive information about channel characteristics and
+  /// operational requirements.
   description String?
   
-  /// Primary currency used for transactions in this channel (e.g., USD, EUR,
-  /// GBP).
-  currency String
-  
-  /// Primary country or region this channel serves following ISO 3166 country
-  /// codes.
-  country String
-  
-  /// Primary language used for customer-facing content in this channel.
-  language String
-  
-  /// Business hours for customer service and operations in this channel,
-  /// formatted as time ranges.
-  operating_hours String?
-  
-  /// Primary customer service email address for this channel.
-  email_contact String
-  
-  /// Current operational status of the channel (active, maintenance,
-  /// discontinued).
-  status String
-  
-  /// Numerical order for sorting channels in user interfaces and
-  /// administrative dashboards.
-  sort_order Int
-  
-  /// Whether this channel is currently available for seller registration and
-  /// customer use.
+  /// Active status determining whether the channel is operational and
+  /// accepting new sellers.
+  ///
+  /// Enables channel lifecycle management and temporary suspension of
+  /// marketplace operations.
   is_active Boolean
   
-  /// Timestamp when the marketplace channel was established.
+  /// Primary currency used for all transactions within this channel.
+  ///
+  /// Standard currency code following ISO 4217 format for consistent financial
+  /// operations.
+  currency_code String
+  
+  /// Primary language for channel interface and communications.
+  ///
+  /// Supports localized marketplace experiences with language-specific content
+  /// and support capabilities.
+  language String
+  
+  /// Default timezone for channel scheduling and time-sensitive operations.
+  ///
+  /// Enables appropriate regional time handling for customer support and
+  /// seller management.
+  time_zone String?
+  
+  /// Standard commission percentage charged to sellers for channel usage.
+  ///
+  /// Commission rate applied to completed transactions as platform revenue,
+  /// supporting business model sustainability.
+  commission_rate Float
+  
+  /// Record creation timestamp for audit tracking and system administration.
+  ///
+  /// Establishes foundation for business analytics and operational monitoring
+  /// across all channels.
   created_at DateTime
   
-  /// Timestamp when the channel configuration was last modified.
+  /// Record modification timestamp for change tracking and data integrity.
+  ///
+  /// Enables monitoring of channel configuration changes and administrative
+  /// activities.
   updated_at DateTime
-  
-  /// Timestamp when the channel was soft deleted or discontinued.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  ecommerce_mall_sections ecommerce_mall_sections[]
+  shopping_mall_sections shopping_mall_sections[]
+  shopping_mall_channel_categories shopping_mall_channel_categories[]
+  shopping_mall_configurations shopping_mall_configurations[]
+  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_article_tags shopping_mall_article_tags[]
+  shopping_mall_warehouses shopping_mall_warehouses[]
   
   @@unique([code])
   @@unique([name])
   @@index([is_active])
-  @@index([status])
-  @@index([country])
-  @@index([sort_order])
+  @@index([currency_code])
+  @@index([commission_rate])
 }
 
-/// Platform sections that organize content and seller presence within
-/// marketplace channels.
+/// Platform section definitions organizing content hierarchy and navigation
+/// structure within channels.
 ///
-/// Sections provide categorized browsing experiences and enable targeted
-/// marketing strategies across different product categories and customer
-/// segments within each channel.
+/// Sections provide logical content organization across the marketplace,
+/// enabling structured browsing and content management. They represent major
+/// content areas such as product categories, seller verticals, promotional
+/// zones, or functional pages that guide user navigation and content
+/// discovery.
+///
+/// Sections serve as the primary organizational framework for frontend
+/// navigation, content management workflows, and administrative oversight.
+/// They enable consistent user experience design while providing flexibility
+/// for channel-specific customization and targeted content delivery.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_sections {
+model shopping_mall_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel where this section belongs to. {@link ecommerce_mall_channels}
-  ecommerce_mall_channel_id String
+  /// Reference to the channel containing this section. {@link
+  /// shopping_mall_channels.id}
+  channel_id String
   
-  /// Unique identifier for the section within the channel.
+  /// Unique section identifier used for system references and navigation URLs.
+  ///
+  /// Must follow consistent naming patterns for predictable routing and
+  /// administrative identification.
   code String
   
-  /// Display name for platform section (e.g., Fashion, Electronics, Home &
-  /// Garden).
+  /// Human-readable section name for navigation menus and administrative
+  /// interfaces.
+  ///
+  /// Provides clear identification and intuitive content organization for
+  /// platform users.
   name String
   
-  /// Detailed description of the section's scope and target customer base.
+  /// Comprehensive explanation of section purpose and intended content
+  /// organization.
+  ///
+  /// Details section scope and functional boundaries to guide content
+  /// management decisions.
   description String?
   
-  /// Section categorization type (product_category, featured, promotional,
-  /// seasonal).
-  type String
+  /// Section category indicating functional purpose and content management
+  /// requirements.
+  ///
+  /// Distinguishes between different section types such as product categories,
+  /// promotional areas, or informational pages.
+  section_type String
   
-  /// Hierarchical level within channel organization system.
-  level Int
+  /// Numeric sequence determining section order in navigation and listing
+  /// interfaces.
+  ///
+  /// Enables prioritized organization of content sections based on business
+  /// importance and user frequency.
+  display_order Int
   
-  /// Display order priority for section positioning in interfaces.
-  sort_order Int
-  
-  /// Whether this section is prominently displayed in channel navigation.
-  is_featured Boolean
-  
-  /// Access control for section visibility (public, channel_only, private).
-  visibility String
-  
-  /// When the section was established within the channel.
-  created_at DateTime
-  
-  /// Most recent modification timestamp for section configuration.
-  updated_at DateTime
-  
-  /// Timestamp for soft deletion or section deactivation.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  channel ecommerce_mall_channels @relation(fields: [ecommerce_mall_channel_id], references: [id], onDelete: Cascade)
-  
-  ecommerce_mall_categories ecommerce_mall_categories[]
-  
-  @@unique([code, ecommerce_mall_channel_id])
-  @@index([ecommerce_mall_channel_id])
-  @@index([type])
-  @@index([is_featured])
-  @@index([visibility])
-  @@index([level, sort_order])
-}
-
-/// System-wide configuration settings that control platform behavior,
-/// feature flags, and operational parameters.
-///
-/// Configurations provide a centralized mechanism for platform
-/// administrators to manage system-wide settings without requiring code
-/// deployments or infrastructure changes.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration identifier used to lookup and reference settings
-  /// (e.g., payment.gateway.timeout, email.notification.template).
-  configuration_key String
-  
-  /// Serialized configuration data stored as string supporting JSON,
-  /// encrypted, or plain text values for various configuration types.
-  configuration_value String
-  
-  /// Data type classification for the configuration value (string, number,
-  /// boolean, json, encrypted).
-  configuration_type String
-  
-  /// Configuration category for organization and management (payment, email,
-  /// security, performance, marketing).
-  category String
-  
-  /// Human-readable description explaining the purpose and impact of this
-  /// configuration setting.
-  description String
-  
-  /// Environment scope for configuration application (development, staging,
-  /// production, all).
-  environment String
-  
-  /// Configuration scope level (global, channel, seller, customer).
-  scope String
-  
-  /// Whether the configuration contains sensitive information requiring
-  /// encryption.
-  is_encrypted Boolean
-  
-  /// Whether sellers or channels can override this configuration for specific
-  /// cases.
-  is_overridable Boolean
-  
-  /// JSON schema or validation rules for ensuring configuration values meet
-  /// business requirements.
-  validation_rules String?
-  
-  /// Identifier of administrator who established this configuration entry.
-  created_by String
-  
-  /// When this configuration was initially established.
-  created_at DateTime
-  
-  /// Most recent timestamp for configuration modification.
-  updated_at DateTime
-  
-  /// Optional expiration date for temporary or seasonal configuration settings.
-  active_until DateTime?
-  
-  /// Timestamp for configuration soft deletion for audit trail purposes.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([configuration_key, environment])
-  @@index([configuration_type])
-  @@index([category])
-  @@index([environment])
-  @@index([scope])
-  @@index([is_encrypted])
-  @@index([created_by])
-}
-
-/// Product category taxonomy providing hierarchical classification system
-/// for organizing products across all marketplace channels and sections.
-///
-/// Categories enable consistent product discovery across multiple sellers
-/// while supporting SEO optimization and marketing campaign targeting
-/// through standardized classification systems.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to parent category for hierarchical structure. {@link
-  /// ecommerce_mall_categories}
+  /// Self-referencing field enabling hierarchical section organization with
+  /// nested content structures.
+  ///
+  /// Supports multi-level navigation trees and sub-category organization for
+  /// complex content hierarchies.
   parent_id String?
   
-  /// Platform section that contains this category. {@link
-  /// ecommerce_mall_sections}
-  ecommerce_mall_section_id String
+  /// Active status determining section visibility in navigation and content
+  /// management systems.
+  ///
+  /// Controls whether section appears in user interfaces while preserving
+  /// content organization for administrative purposes.
+  is_active Boolean
   
-  /// Unique technical identifier for category in taxonomy hierarchy.
-  code String
-  
-  /// Display name for the product category following standard taxonomy
-  /// conventions.
-  name String
-  
-  /// Comprehensive category description including product scope and typical
-  /// examples.
-  description String?
-  
-  /// Complete hierarchical path representing category ancestry for navigation
-  /// breadcrumbs.
-  full_path String
-  
-  /// Hierarchical level within category tree structure starting from 0 for
-  /// root categories.
-  level Int
-  
-  /// Dot-separated string showing complete category hierarchy (e.g.,
-  /// 'Fashion.Clothing.Mens').
-  level_path String
-  
-  /// Numeric priority for category display order within parent or section
-  /// grouping.
-  sort_order Int
-  
-  /// SEO-optimized page title for category landing pages.
-  meta_title String
-  
-  /// SEO meta description text for search engine optimization and social media
-  /// sharing.
-  meta_description String
-  
-  /// Comma-separated list of SEO keywords relevant to the category.
-  meta_keywords String?
-  
-  /// URL-friendly category identifier for clean navigation paths and SEO
-  /// benefits.
-  slug String
-  
-  /// Primary category image URL for navigation and marketing displays.
-  image_url String?
-  
-  /// CSS icon class for visual representation in navigation and category
-  /// browsing.
-  icon_class String?
-  
-  /// Whether the category is currently available for product assignment and
-  /// visible to customers.
-  active Boolean
-  
-  /// Featured status for priority placement in navigation and promotional
-  /// displays.
-  featured Boolean
-  
-  /// Whether to display this category in primary navigation menus.
-  show_in_navigation Boolean
-  
-  /// Cached count of active products directly assigned to this specific
-  /// category, updated through triggers or background processes.
-  product_count Int
-  
-  /// When the category was established in the platform taxonomy.
+  /// Record creation timestamp for change tracking and system administration
+  /// purposes.
+  ///
+  /// Establishes baseline for organizational structure development and content
+  /// timeline management.
   created_at DateTime
   
-  /// Most recent modification timestamp for category properties or
-  /// relationships.
+  /// Record modification timestamp documenting section configuration changes
+  /// and updates.
+  ///
+  /// Supports administrative transparency and content management history
+  /// tracking across platform sections.
   updated_at DateTime
-  
-  /// Timestamp for category soft deletion allowing maintenance without
-  /// permanent data loss.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  section ecommerce_mall_sections @relation(fields: [ecommerce_mall_section_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
   
-  recursive ecommerce_mall_categories[] @relation("recursive")
-  ecommerce_mall_products ecommerce_mall_products[]
+  shopping_mall_articles shopping_mall_articles[]
   
-  @@unique([code])
-  @@unique([slug])
+  @@unique([channel_id, code])
+  @@index([channel_id])
+  @@index([section_type])
+  @@index([is_active])
   @@index([parent_id])
-  @@index([ecommerce_mall_section_id])
-  @@index([level])
-  @@index([level_path])
-  @@index([active])
-  @@index([featured])
-  @@index([show_in_navigation])
+}
+
+/// Product category organization within marketplace channels providing
+/// hierarchical classification systems.
+///
+/// Channel categories represent standardized product taxonomies that enable
+/// systematic product organization and customer discovery across different
+/// marketplace environments. They provide the fundamental structure for
+/// product browsing, search refinement, and recommendation generation within
+/// specific channels.
+///
+/// Categories serve as the primary navigation framework for customers while
+/// providing sellers with structured product placement options. The
+/// hierarchical organization enables both broad category browsing and
+/// specific product location while supporting channel-specific
+/// categorization needs and marketplace scalability requirements.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channel_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the channel containing this category. {@link
+  /// shopping_mall_channels.id}
+  channel_id String
+  
+  /// Self-referencing field enabling hierarchical category organization with
+  /// nested product classifications.
+  ///
+  /// Supports multi-level category trees and specialized sub-category
+  /// organization for detailed product classification.
+  parent_id String?
+  
+  /// Unique category identifier used for system references and categorization
+  /// logic.
+  ///
+  /// Must follow channel-specific naming conventions for consistent product
+  /// organization across marketplace operations.
+  code String
+  
+  /// Human-readable category name for navigation menus and product discovery
+  /// interfaces.
+  ///
+  /// Provides intuitive product classification enabling efficient customer
+  /// browsing and seller product organization.
+  name String
+  
+  /// Comprehensive explanation of category scope and intended product
+  /// classification boundaries.
+  ///
+  /// Guides product placement decisions and helps customers understand
+  /// category-specific offerings and limitations.
+  description String?
+  
+  /// Category classification indicating functional purpose and product
+  /// organization requirements.
+  ///
+  /// Distinguishes between different category types such as primary
+  /// classifications, seasonal categories, or specialized product segments.
+  category_type String
+  
+  /// Numeric sequence determining category order in navigation and product
+  /// browsing interfaces.
+  ///
+  /// Enables prioritized organization of categories based on business
+  /// importance and customer browsing patterns within channels.
+  display_order Int
+  
+  /// Active status controlling category visibility in product browsing and
+  /// assignment interfaces.
+  ///
+  /// Manages category availability for product classification while preserving
+  /// organizational structure for administrative purposes.
+  is_active Boolean
+  
+  /// Record creation timestamp for audit tracking and category organization
+  /// maintenance.
+  ///
+  /// Supports marketplace categorization timeline analysis and content
+  /// development tracking across channel environments.
+  created_at DateTime
+  
+  /// Record modification timestamp documenting category hierarchy changes and
+  /// organizational updates.
+  ///
+  /// Enables monitoring of category structure evolution and marketplace
+  /// organization improvement initiatives.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_channel_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_channel_categories[] @relation("recursive")
+  shopping_mall_articles shopping_mall_articles[]
+  
+  @@unique([channel_id, code])
+  @@index([channel_id])
+  @@index([parent_id])
+  @@index([is_active])
+  @@index([display_order])
+}
+
+/// Platform configuration management system defining operational parameters
+/// and feature settings across marketplace environments.
+///
+/// Configuration represents centralized control over platform behavior,
+/// business rules, and operational settings that can be modified without
+/// system downtime or code changes. They provide flexible platform
+/// customization capabilities enabling differentiated marketplace
+/// experiences across different channels and operational contexts.
+///
+/// Configurations serve as the primary mechanism for feature toggles,
+/// business rule management, and operational parameter control. They enable
+/// platform administrators to adjust marketplace behavior dynamically while
+/// maintaining system stability and providing consistent service delivery
+/// standards across all operational domains.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the channel where this configuration applies. {@link
+  /// shopping_mall_channels.id}
+  channel_id String?
+  
+  /// Unique configuration identifier used as configuration key in application
+  /// code.
+  ///
+  /// Must follow namespace conventions for categorizing related configurations
+  /// and enabling programmatic access across the platform.
+  config_key String
+  
+  /// Configuration category organizing related settings for management and
+  /// administrative purposes.
+  ///
+  /// Groups configurations into logical categories such as payment settings,
+  /// shipping rules, or user interface preferences.
+  config_group String
+  
+  /// Data type classification indicating configuration value format and
+  /// validation requirements.
+  ///
+  /// Defines accepted value types such as string settings, numeric parameters,
+  /// boolean flags, or complex JSON configurations.
+  config_type String
+  
+  /// String value component for text-based configuration parameters and
+  /// settings.
+  ///
+  /// Provides flexible text storage for configuration values that require
+  /// string representation or human-readable settings.
+  string_value String?
+  
+  /// Numeric value component for quantifiable configuration parameters and
+  /// mathematical settings.
+  ///
+  /// Enables numeric configuration management including prices, percentages,
+  /// time periods, and calculation constants.
+  numeric_value Float?
+  
+  /// Boolean value component for toggle-style configuration parameters and
+  /// on/off settings.
+  ///
+  /// Supports feature flags, enable/disable switches, and binary configuration
+  /// options across platform functionality.
+  boolean_value Boolean?
+  
+  /// JSON value component for complex configuration parameters requiring
+  /// structured data representation.
+  ///
+  /// Enables advanced configuration options including object mappings, array
+  /// lists, and hierarchical parameter structures.
+  json_value String?
+  
+  /// Comprehensive explanation of configuration purpose and expected
+  /// application behavior.
+  ///
+  /// Provides detailed technical documentation helping administrators
+  /// understand configuration impact and appropriate usage contexts.
+  description String?
+  
+  /// Active status controlling whether configuration parameter is applied to
+  /// system behavior.
+  ///
+  /// Enables feature toggle functionality and progressive configuration
+  /// deployments without system downtime or code modifications.
+  is_active Boolean
+  
+  /// Record creation timestamp for configuration timeline tracking and system
+  /// administration.
+  ///
+  /// Establishes audit foundation for configuration history and platform
+  /// behavior modification tracking across operational environments.
+  created_at DateTime
+  
+  /// Record modification timestamp documenting configuration changes and
+  /// setting updates.
+  ///
+  /// Supports configuration management processes and provides transparency for
+  /// system behavior modifications over time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([config_key])
+  @@unique([channel_id, config_key])
+  @@index([config_group])
+  @@index([config_type])
+  @@index([is_active])
+  @@index([channel_id])
+}
+
+/// Global system settings providing core platform parameter management and
+/// operational configuration controls across all marketplace environments.
+///
+/// System settings represent fundamental platform configurations that affect
+/// all channels and user types throughout the marketplace ecosystem. They
+/// define essential operational parameters, feature enablement controls, and
+/// business rule configurations that establish platform-wide behavior
+/// standards and service delivery requirements.
+///
+/// System settings serve as the foundational control layer for platform
+/// operations, encompassing security policies, performance parameters,
+/// business rule enforcement mechanisms, and cross-channel operational
+/// standards. They enable platform administrators to maintain consistent
+/// marketplace behavior while supporting sophisticated configuration
+/// management for different operational contexts and regulatory compliance
+/// requirements across global deployments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique setting identifier serving as configuration key for platform-wide
+  /// parameter access.
+  ///
+  /// Must follow hierarchical naming conventions for organizing related
+  /// settings and enabling efficient programmatic configuration management
+  /// across the entire platform ecosystem.
+  setting_key String
+  
+  /// Setting category organizing related system parameters for management and
+  /// administrative access.
+  ///
+  /// Groups settings into logical categories such as system performance,
+  /// security policies, user management, or operational parameters for
+  /// efficient administrative oversight.
+  setting_category String
+  
+  /// Data type specification indicating expected setting value format and
+  /// validation requirements.
+  ///
+  /// Defines acceptable value formats including string parameters, numeric
+  /// settings, boolean flags, JSON objects, or specialized data structures for
+  /// platform operations.
+  value_type String
+  
+  /// String value component for text-based system parameters and configuration
+  /// strings.
+  ///
+  /// Provides comprehensive text storage for platform-wide settings including
+  /// service URLs, contact information, or human-readable policy definitions.
+  string_value String?
+  
+  /// Numeric value component for quantitative system parameters and
+  /// mathematical configuration options.
+  ///
+  /// Enables numeric setting management including timeout periods, cache
+  /// sizes, processing limits, and performance-related configuration values.
+  numeric_value Float?
+  
+  /// Boolean value component for system-wide toggle controls and feature
+  /// enablement switches.
+  ///
+  /// Supports global feature management including security settings,
+  /// operational modes, and platform-wide enable/disable controls for service
+  /// functionality.
+  boolean_value Boolean?
+  
+  /// JSON value component for complex system configurations requiring
+  /// structured data organization.
+  ///
+  /// Enables sophisticated parameter management including configuration
+  /// objects, permission matrices, and hierarchical setting structures for
+  /// advanced platform control.
+  json_value String?
+  
+  /// Detailed explanation of system setting purpose and impact on platform
+  /// operations.
+  ///
+  /// Provides comprehensive technical documentation helping administrators
+  /// understand setting functionality and appropriate configuration values for
+  /// platform optimization.
+  description String?
+  
+  /// Enabled status controlling whether system setting is active and applied
+  /// to platform operations.
+  ///
+  /// Manages platform-wide feature availability and operational parameter
+  /// enforcement with immediate effect across all marketplace environments.
+  is_enabled Boolean
+  
+  /// Record creation timestamp for system setting timeline tracking and
+  /// administrative auditing.
+  ///
+  /// Establishes foundation for system configuration history and platform
+  /// evolution tracking across all operational environments and deployment
+  /// contexts.
+  created_at DateTime
+  
+  /// Record modification timestamp documenting system setting changes and
+  /// platform parameter updates.
+  ///
+  /// Supports system administration transparency and provides change history
+  /// for critical platform-wide configuration modifications over time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([setting_category])
+  @@index([value_type])
+  @@index([is_enabled])
 }

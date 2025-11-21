@@ -7,9 +7,6 @@ import { IDiscussionBoardGuest } from "../../../api/structures/IDiscussionBoardG
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Register a new guest user account for temporary access to the discussion
-   * board.
-   *
    * This endpoint allows unauthenticated visitors to create a temporary guest
    * account for browsing published articles and reading comments on the
    * discussion board without requiring email verification or user
@@ -63,8 +60,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Renew guest user access tokens using a valid refresh token.
-   *
    * This endpoint allows guest users to obtain new access tokens by
    * presenting a valid refresh token, extending their session without
    * requiring re-registration.

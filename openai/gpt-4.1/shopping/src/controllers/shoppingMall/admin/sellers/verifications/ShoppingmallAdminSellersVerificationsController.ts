@@ -13,9 +13,6 @@ import { IShoppingMallSellerVerification } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/sellers/:sellerId/verifications")
 export class ShoppingmallAdminSellersVerificationsController {
   /**
-   * Search and list all seller verification records for a seller
-   * (shopping_mall_seller_verifications).
-   *
    * Retrieve a paginated, filtered list of business verification records
    * associated with a seller.
    *
@@ -63,9 +60,6 @@ export class ShoppingmallAdminSellersVerificationsController {
   }
 
   /**
-   * Retrieve a specific seller verification record from
-   * shopping_mall_seller_verifications.
-   *
    * Retrieve detailed information for a specific seller verification record
    * associated with a given seller.
    *
@@ -123,9 +117,6 @@ export class ShoppingmallAdminSellersVerificationsController {
   }
 
   /**
-   * Update a specific seller verification record in
-   * shopping_mall_seller_verifications.
-   *
    * Update a business verification record for a specific seller, such as
    * approving, rejecting, or annotating a submitted verification. This
    * operation is strongly controlled: only platform admins can call this

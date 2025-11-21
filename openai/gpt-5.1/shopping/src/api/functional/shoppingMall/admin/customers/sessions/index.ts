@@ -7,9 +7,6 @@ import { IShoppingMallCustomerSession } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallCustomerSession } from "../../../../../structures/IPageIShoppingMallCustomerSession";
 
 /**
- * Search and retrieve customer session records from
- * shopping_mall_customer_sessions for a specific customer.
- *
  * Retrieve a filtered and paginated list of authentication sessions associated
  * with a specific customer account from the shopping_mall_customer_sessions
  * table.
@@ -152,9 +149,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a specific customer session from
- * shopping_mall_customer_sessions.
- *
  * Retrieve detailed information about a single customer authentication session
  * from the shopping_mall_customer_sessions table.
  *
@@ -280,9 +274,6 @@ export namespace at {
 }
 
 /**
- * Terminate a specific customer session in shopping_mall_customer_sessions for
- * a given customer as an admin action.
- *
  * Terminate a specific customer session record for a given customer as an
  * administrative security operation.
  *

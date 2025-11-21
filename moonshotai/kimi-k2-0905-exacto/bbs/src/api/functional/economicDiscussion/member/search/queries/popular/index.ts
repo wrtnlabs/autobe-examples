@@ -5,8 +5,6 @@ import typia from "typia";
 import { IEconomicDiscussionArticle } from "../../../../../../structures/IEconomicDiscussionArticle";
 
 /**
- * Retrieve popular search queries from the platform.
- *
  * Access platform-wide search analytics to discover trending topics and popular
  * content areas in economic and political discussions. This operation surfaces
  * queries that demonstrate high community engagement, useful result quality,

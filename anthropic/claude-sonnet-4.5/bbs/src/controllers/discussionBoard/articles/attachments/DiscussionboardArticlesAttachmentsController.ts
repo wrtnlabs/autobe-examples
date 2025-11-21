@@ -10,8 +10,6 @@ import { IDiscussionBoardArticleAttachment } from "../../../../api/structures/ID
 @Controller("/discussionBoard/articles/:articleId/attachments")
 export class DiscussionboardArticlesAttachmentsController {
   /**
-   * Search and retrieve paginated list of attachments for a specific article.
-   *
    * Retrieves a filtered and paginated list of attachments associated with a
    * specific discussion article. This operation provides advanced search
    * capabilities for finding attachments based on type, format, size, filename,
@@ -83,8 +81,6 @@ export class DiscussionboardArticlesAttachmentsController {
   }
 
   /**
-   * Retrieve detailed information about a specific article attachment.
-   *
    * Fetch complete metadata and information for a specific attachment belonging
    * to a discussion board article. This operation provides all attachment
    * details including file type, format, size, original filename, storage

@@ -10,9 +10,6 @@ import { ICommunityPlatformCommunitySettings } from "../../../../../api/structur
 @Controller("/communityPlatform/moderator/communities/:communityName/settings")
 export class CommunityplatformModeratorCommunitiesSettingsController {
   /**
-   * Update settings for a given community
-   * (community_platform_community_settings table).
-   *
    * Update the configuration details and settings for a target community using
    * its unique URL slug identifier.
    *

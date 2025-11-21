@@ -7,8 +7,6 @@ import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/memberUser/posts")
 export class CommunityplatformMemberuserPostsController {
   /**
-   * Create a new community post backed by the community_platform_posts table.
-   *
    * Create a new post within a community on the platform.
    *
    * This operation is backed by the `community_platform_posts` model, which
@@ -61,9 +59,6 @@ export class CommunityplatformMemberuserPostsController {
   }
 
   /**
-   * Update a post record in the community_platform_posts table identified by
-   * postId.
-   *
    * Update an existing post in the `community_platform_posts` table using a
    * structured update payload.
    *

@@ -8,8 +8,6 @@ import { IPageIShoppingMallAdmin } from "../../../../structures/IPageIShoppingMa
 export * as shoppingMallAdminSessions from "./shoppingMallAdminSessions/index";
 
 /**
- * Create a new shopping mall administrator account.
- *
  * Create a new administrator account with required credentials such as email
  * and password hash.
  *
@@ -106,8 +104,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of shopping mall admins.
- *
  * Retrieve a filtered and paginated list of shopping mall admin users. This
  * operation enables administrative staff to search through admin accounts using
  * various criteria including username, email, roles, and activity status.
@@ -201,8 +197,6 @@ export namespace index {
 }
 
 /**
- * Retrieve shopping mall administrator details by ID.
- *
  * Retrieve detailed information about a specific shopping mall administrator
  * using their unique ID.
  *
@@ -297,8 +291,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall administrator.
- *
  * Update the details of an existing shopping mall administrator.
  *
  * This operation allows authorized users to modify the email and password hash
@@ -407,8 +399,6 @@ export namespace update {
 }
 
 /**
- * Delete an existing shopping mall administrator by ID.
- *
  * Permanently delete a shopping mall administrator.
  *
  * This operation allows for the complete removal of an administrator account

@@ -8,8 +8,6 @@ import { ITodoListAuth } from "../../../../../api/structures/ITodoListAuth";
 @Controller("/todoList/auth/guest/logout")
 export class TodolistAuthGuestController {
   /**
-   * Terminate a guest user session.
-   *
    * This operation terminates an active guest user session in the todo list
    * application. Guest users represent unauthenticated access with limited
    * functionality, typically unable to persist todos permanently. Logout for

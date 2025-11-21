@@ -13,8 +13,6 @@ import { ICommunityForumCommunityModerator } from "../../../../api/structures/IC
 @Controller("/communityForum/administrator/moderators")
 export class CommunityforumAdministratorModeratorsController {
   /**
-   * Search and retrieve moderators with filters.
-   *
    * Retrieve a filtered and paginated list of moderators in the system.
    *
    * This operation provides advanced search capabilities for finding moderators
@@ -57,8 +55,6 @@ export class CommunityforumAdministratorModeratorsController {
   }
 
   /**
-   * Retrieve detailed information for a specific community forum moderator.
-   *
    * Retrieve detailed information about a specific community forum moderator by
    * their unique identifier.
    *
@@ -108,8 +104,6 @@ export class CommunityforumAdministratorModeratorsController {
   }
 
   /**
-   * Update information for an existing community forum moderator.
-   *
    * Update the information for an existing community forum moderator.
    *
    * This endpoint allows authorized administrators to modify the profile

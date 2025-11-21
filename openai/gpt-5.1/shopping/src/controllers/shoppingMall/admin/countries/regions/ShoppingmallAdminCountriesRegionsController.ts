@@ -7,9 +7,6 @@ import { IShoppingMallRegion } from "../../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/admin/countries/:countryCode/regions")
 export class ShoppingmallAdminCountriesRegionsController {
   /**
-   * Create a ShoppingMall region in shopping_mall_regions under a specific
-   * shopping_mall_countries country.
-   *
    * Create a new region record within a specific country for the ShoppingMall
    * platform.
    *
@@ -81,9 +78,6 @@ export class ShoppingmallAdminCountriesRegionsController {
   }
 
   /**
-   * Update a ShoppingMall region in shopping_mall_regions identified by
-   * countryCode and regionCode.
-   *
    * Update an existing ShoppingMall region belonging to a specific country.
    *
    * This operation updates a record in the `shopping_mall_regions` Prisma
@@ -154,9 +148,6 @@ export class ShoppingmallAdminCountriesRegionsController {
   }
 
   /**
-   * Permanently delete a region record from the shopping_mall_regions table
-   * using country and region codes via a hard delete.
-   *
    * Permanently delete a specific region record from the
    * `shopping_mall_regions` table using composite business identifiers
    * derived from country and region codes.

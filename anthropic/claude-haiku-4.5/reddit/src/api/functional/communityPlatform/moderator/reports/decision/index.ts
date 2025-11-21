@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformReportDecision } from "../../../../../structures/ICommunityPlatformReportDecision";
 
 /**
- * Create a moderation decision for a community platform report.
- *
  * Submit a new moderation decision to resolve a specific report. This operation
  * records the moderator's determination of whether content violates community
  * rules and specifies the action taken (approve content, remove content, issue
@@ -137,8 +135,6 @@ export namespace create {
 }
 
 /**
- * Update or overturn a moderation decision for a community platform report.
- *
  * Modify an existing moderation decision, typically when overturning it due to
  * a successful appeal. This operation updates the decision's action_type,
  * reason, and internal notes while maintaining complete audit trail through the

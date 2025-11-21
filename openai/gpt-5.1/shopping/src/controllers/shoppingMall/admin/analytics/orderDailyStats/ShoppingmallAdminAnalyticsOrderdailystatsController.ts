@@ -8,9 +8,6 @@ import { IShoppingMallOrderDailyStat } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/analytics/orderDailyStats")
 export class ShoppingmallAdminAnalyticsOrderdailystatsController {
   /**
-   * Search paginated shopping_mall_order_daily_stats snapshots over a date
-   * range for analytics and reporting.
-   *
    * Search and retrieve a paginated list of daily order statistics from the
    * shopping_mall_order_daily_stats snapshot table based on flexible
    * analytics criteria.
@@ -67,9 +64,6 @@ export class ShoppingmallAdminAnalyticsOrderdailystatsController {
   }
 
   /**
-   * Retrieve a specific `shopping_mall_order_daily_stats` snapshot record by
-   * ID for detailed order analytics inspection.
-   *
    * Retrieve a specific order daily statistics snapshot from the
    * `shopping_mall_order_daily_stats` table using its unique identifier.
    *

@@ -8,8 +8,6 @@ import { IRedditCommunityContentReport } from "../../../../api/structures/IReddi
 @Controller("/redditCommunity/platformModerator/contentReports")
 export class RedditcommunityPlatformmoderatorContentreportsController {
   /**
-   * Search and retrieve filtered, paginated content reports for moderation.
-   *
    * Retrieve a filtered and paginated list of content reports from the Reddit
    * Community platform. This operation provides comprehensive search
    * capabilities for moderators and administrators to efficiently browse
@@ -88,8 +86,6 @@ export class RedditcommunityPlatformmoderatorContentreportsController {
   }
 
   /**
-   * Update content report moderation status and workflow details.
-   *
    * Update an existing content report's moderation status and processing
    * details within the content moderation workflow. This operation enables
    * moderators to manage the review process by modifying report status,
@@ -146,8 +142,6 @@ export class RedditcommunityPlatformmoderatorContentreportsController {
   }
 
   /**
-   * Delete a resolved or dismissed content report.
-   *
    * This operation permanently deletes a content report that has been
    * resolved or dismissed from the moderation system. When moderators
    * complete their review process and either take action on reported content

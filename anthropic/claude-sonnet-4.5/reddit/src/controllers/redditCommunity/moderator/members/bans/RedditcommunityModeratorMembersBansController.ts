@@ -11,8 +11,6 @@ import { IRedditCommunityCommunityBan } from "../../../../../api/structures/IRed
 @Controller("/redditCommunity/moderator/members/:username/bans")
 export class RedditcommunityModeratorMembersBansController {
   /**
-   * Retrieve paginated list of community bans for a specific member.
-   *
    * Retrieve a filtered and paginated list of all community bans associated
    * with a specific member identified by their username. This operation
    * provides comprehensive search capabilities for reviewing ban records across

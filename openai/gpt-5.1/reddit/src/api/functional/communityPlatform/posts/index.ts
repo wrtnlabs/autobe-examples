@@ -8,9 +8,6 @@ import { IPageICommunityPlatformPost } from "../../../structures/IPageICommunity
 export * as comments from "./comments/index";
 
 /**
- * Search and retrieve a paginated list of posts from the
- * community_platform_posts table.
- *
  * Retrieve a filtered and paginated list of posts from the community platform.
  *
  * This operation works over the `community_platform_posts` model, which stores
@@ -138,9 +135,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single post from the community_platform_posts table by its
- * identifier.
- *
  * Retrieve a single post record from the `community_platform_posts` model by
  * its unique identifier.
  *

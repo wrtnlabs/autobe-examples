@@ -7,8 +7,6 @@ import { IDiscussionBoardAttachment } from "../../../../../structures/IDiscussio
 import { IPageIDiscussionBoardAttachment } from "../../../../../structures/IPageIDiscussionBoardAttachment";
 
 /**
- * Create a new attachment for a discussion board article.
- *
  * Create a new attachment associated with a specific discussion board article
  * identified by the article ID.
  *
@@ -110,8 +108,6 @@ export namespace create {
 }
 
 /**
- * Update and search attachments of a discussion board article.
- *
  * Update the collection of attachments (images or files) linked to a specific
  * discussion board article.
  *
@@ -220,8 +216,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a discussion board article attachment.
- *
  * Retrieve detailed information of a single attachment associated with a
  * specified discussion board article.
  *
@@ -315,8 +309,6 @@ export namespace at {
 }
 
 /**
- * Update an existing attachment of a discussion board article.
- *
  * Update the details of an existing attachment identified by attachmentId,
  * belonging to a discussion board article identified by article id.
  *
@@ -420,8 +412,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific attachment from a discussion board article.
- *
  * Permanently remove an attachment linked to a discussion board article using
  * the article's unique identifier and the attachment's unique identifier.
  *

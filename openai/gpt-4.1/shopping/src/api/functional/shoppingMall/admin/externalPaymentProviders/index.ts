@@ -7,9 +7,6 @@ import { IShoppingMallExternalPaymentProvider } from "../../../../structures/ISh
 import { IPageIShoppingMallExternalPaymentProvider } from "../../../../structures/IPageIShoppingMallExternalPaymentProvider";
 
 /**
- * Register a new external payment provider
- * (shopping_mall_external_payment_providers).
- *
  * Admin-only operation to register a new external payment provider into the
  * registry table 'shopping_mall_external_payment_providers'. All core metadata
  * must be supplied, including provider_name, provider_code, status, and a
@@ -112,9 +109,6 @@ export namespace create {
 }
 
 /**
- * Paginated, filterable list of external payment providers
- * (shopping_mall_external_payment_providers).
- *
  * Retrieve a paginated list of registered external payment providers,
  * supporting filtering by provider name, integration code, status
  * (active/inactive/deprecated), and business context.
@@ -214,9 +208,6 @@ export namespace index {
 }
 
 /**
- * Update configuration and metadata of a specific external payment provider
- * (shopping_mall_external_payment_providers table).
- *
  * Update an existing external payment provider's configuration and metadata for
  * the shopping mall platform.
  *
@@ -336,9 +327,6 @@ export namespace update {
 }
 
 /**
- * Soft delete (deactivate) a specific external payment provider
- * (shopping_mall_external_payment_providers table).
- *
  * Permanently deactivate (soft delete) a registered external payment provider
  * in the shopping mall system.
  *

@@ -1,0 +1,245 @@
+/// User-generated content posts in communities.
+///
+/// Stores text, links, or images shared by community members. Each post
+/// belongs to a specific community and is created by an authenticated user.
+/// Posts can be categorized with tags, voted on, and commented on. The
+/// content includes title, body, and optional URL or image reference. Posts
+/// have a status indicating their current state (active, locked, deleted)
+/// and track creation, modification, and deletion timestamps.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this post is published. {@link
+  /// reddit_like_community_communities.id}
+  reddit_like_community_id String
+  
+  /// User who created this post. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Title of the post.
+  title String
+  
+  /// Main content of the post.
+  body String
+  
+  /// URL for link posts.
+  url String?
+  
+  /// URL for image posts.
+  image_url String?
+  
+  /// Current status of the post (active, locked, deleted).
+  status String
+  
+  /// When the post was created.
+  created_at DateTime
+  
+  /// When the post was last updated.
+  updated_at DateTime
+  
+  /// When the post was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_id], references: [id], onDelete: Cascade)
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_post_tags reddit_like_community_post_tags[]
+  reddit_like_community_post_votes reddit_like_community_post_votes[]
+  reddit_like_community_post_comments reddit_like_community_post_comments[]
+  reddit_like_community_reports reddit_like_community_reports[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_id, created_at], map: "reddit_like_community_posts_reddit_like_community_id_c_ea72458b")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, created_at], map: "reddit_like_community_posts_reddit_like_community_user_2d3a5a9c")
+}
+
+/// Tags associated with community posts.
+///
+/// Enables categorization and discovery of posts. Each tag is a keyword that
+/// helps users find relevant content. Tags are created by community members
+/// and associated with specific posts. The system maintains a count of how
+/// many times each tag is used across all posts.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this tag is associated with. {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// Tag keyword.
+  tag String
+  
+  /// When the tag was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_id, tag], map: "reddit_like_community_post_tags_reddit_like_community__a59620db")
+  @@index([tag])
+}
+
+/// Votes cast on community posts.
+///
+/// Tracks user engagement and content quality. Each vote represents a user's
+/// preference for a post, either upvote or downvote. Votes are associated
+/// with specific posts and users. The system maintains a count of upvotes
+/// and downvotes for each post to determine its popularity and ranking.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post being voted on. {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// User casting the vote. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Type of vote (upvote, downvote).
+  vote_type String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_id, reddit_like_community_user_id], map: "reddit_like_community_post_votes_reddit_like_community_db3963da")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id], map: "reddit_like_community_post_votes_reddit_like_community_4490f981")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id], map: "reddit_like_community_post_votes_reddit_like_community_abfa4337")
+}
+
+/// Comments on community posts.
+///
+/// Enables discussions and engagement around posts. Each comment is a
+/// response to a post and can be replied to, voted on, and moderated.
+/// Comments are created by community members and associated with specific
+/// posts. The system tracks the comment's status and timestamps for
+/// management and auditing purposes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this comment is associated with. {@link
+  /// reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// User who created this comment. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Parent comment for nested replies. {@link
+  /// reddit_like_community_post_comments.id}
+  parent_id String?
+  
+  /// Content of the comment.
+  body String
+  
+  /// Current status of the comment (active, deleted).
+  status String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  parent reddit_like_community_post_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_like_community_post_comments[] @relation("recursive")
+  reddit_like_community_comment_votes reddit_like_community_comment_votes[]
+  
+  @@index([parent_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_post_comments_reddit_like_commun_9914f8f5")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, created_at], map: "reddit_like_community_post_comments_reddit_like_commun_196abd89")
+}
+
+/// Votes cast on post comments.
+///
+/// Tracks user engagement and comment quality. Each vote represents a user's
+/// preference for a comment, either upvote or downvote. Votes are associated
+/// with specific comments and users. The system maintains a count of upvotes
+/// and downvotes for each comment to determine its popularity and ranking.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment being voted on. {@link reddit_like_community_post_comments.id}
+  reddit_like_community_post_comment_id String
+  
+  /// User casting the vote. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Type of vote (upvote, downvote).
+  vote_type String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_like_community_post_comments @relation(fields: [reddit_like_community_post_comment_id], references: [id], onDelete: Cascade)
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_comment_id, reddit_like_community_user_id], map: "reddit_like_community_comment_votes_reddit_like_commun_9d008e6a")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_comment_id], map: "reddit_like_community_comment_votes_reddit_like_commun_fdf3a232")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id], map: "reddit_like_community_comment_votes_reddit_like_commun_00e77606")
+}

@@ -7,9 +7,6 @@ import { IShoppingMallDisputeEvidence } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallDisputeEvidence } from "../../../../../structures/IPageIShoppingMallDisputeEvidence";
 
 /**
- * Create a new shopping_mall_dispute_evidences record under a dispute
- * identified by disputeCode.
- *
  * Create a new dispute evidence record under a specific dispute identified by
  * `disputeCode`, allowing authorized administrators to attach additional
  * artifacts, notes, or documents to the dispute case.
@@ -145,9 +142,6 @@ export namespace create {
 }
 
 /**
- * Search dispute evidence records in the shopping_mall_dispute_evidences table
- * for a specific dispute.
- *
  * Search and retrieve a paginated list of evidences attached to a specific
  * dispute identified by its business-level dispute code.
  *
@@ -279,9 +273,6 @@ export namespace index {
 }
 
 /**
- * Get a single shopping_mall_dispute_evidences record for a dispute by
- * disputeCode and disputeEvidenceId.
- *
  * Retrieve a single dispute evidence record by dispute code and evidence
  * identifier, allowing administrative users to inspect the exact material
  * attached to a dispute for decision-making.
@@ -425,9 +416,6 @@ export namespace at {
 }
 
 /**
- * Update an existing evidence record for a dispute in the
- * shopping_mall_dispute_evidences table.
- *
  * Update a specific dispute evidence record that belongs to a dispute
  * identified by a business-level dispute code.
  *
@@ -579,9 +567,6 @@ export namespace update {
 }
 
 /**
- * Delete a dispute evidence record from the shopping_mall_dispute_evidences
- * table for a given dispute.
- *
  * Erase a specific dispute evidence record that belongs to a dispute identified
  * by its business dispute code.
  *

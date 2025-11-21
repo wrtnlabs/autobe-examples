@@ -8,8 +8,6 @@ import { IPageIShoppingMallWishlistItem } from "../../../../../../structures/IPa
 export * as items from "./items/index";
 
 /**
- * Search and retrieve filtered wishlist items for the authenticated buyer.
- *
  * Retrieve a filtered and paginated list of wishlist items belonging to the
  * currently authenticated buyer. This operation provides advanced search
  * capabilities for buyers to find items they have saved for future purchase

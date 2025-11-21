@@ -8,8 +8,6 @@ import { IPageITodoListUser } from "../../../../structures/IPageITodoListUser";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve a paginated, filterable user list from the todo_list_users table.
- *
  * Retrieve a paginated list of users who are registered in the Todo List
  * application.
  *
@@ -107,8 +105,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a specific user record from the todo_list_users table.
- *
  * Return the complete detail of a specific user account identified by userId
  * from the Todo List application.
  *
@@ -197,8 +193,6 @@ export namespace at {
 }
 
 /**
- * Update a registered Todo List user account in the todo_list_users table.
- *
  * Update details of an existing Todo List user account, identified by their
  * unique userId (UUID).
  *
@@ -305,9 +299,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a Todo List user account from the todo_list_users table by
- * UUID.
- *
  * Permanently remove a Todo List user account from the system, using the unique
  * userId as a hard delete.
  *

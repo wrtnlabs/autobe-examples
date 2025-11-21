@@ -7,8 +7,6 @@ import { IShoppingMallProductReview } from "../../../structures/IShoppingMallPro
 import { IPageIShoppingMallProductReview } from "../../../structures/IPageIShoppingMallProductReview";
 
 /**
- * List and search shopping mall product reviews with filtering and pagination.
- *
  * Retrieve a paginated and searchable list of product reviews submitted by
  * customers.
  *
@@ -108,8 +106,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information of a specific product review by ID.
- *
  * Retrieve a specific product review by its unique identifier.
  *
  * This operation returns comprehensive review details including the star

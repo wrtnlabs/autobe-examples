@@ -13,9 +13,6 @@ import { ICommunityPlatformProfileDisplayMetric } from "../../../../../api/struc
 @Controller("/communityPlatform/user/users/:userId/profileDisplayMetrics")
 export class CommunityplatformUserUsersProfiledisplaymetricsController {
   /**
-   * Retrieve analytics/metrics snapshot for a user's profile
-   * (community_platform_profile_display_metrics).
-   *
    * Fetch the latest analytics and engagement metrics for the display of a
    * user's profile. Metrics captured include total profile views, total
    * impressions (including previews), timestamp of the last profile view, and
@@ -64,9 +61,6 @@ export class CommunityplatformUserUsersProfiledisplaymetricsController {
   }
 
   /**
-   * Retrieve profile display metrics for a user
-   * (community_platform_profile_display_metrics).
-   *
    * Retrieve the analytics and engagement metrics for a specific user's profile
    * display, identified by both the user's unique identifier and the associated
    * metric record identifier.
@@ -118,9 +112,6 @@ export class CommunityplatformUserUsersProfiledisplaymetricsController {
   }
 
   /**
-   * Update profile display metrics for a user
-   * (community_platform_profile_display_metrics).
-   *
    * Update the engagement analytics and display metrics for a user's profile,
    * identified by both the user's unique identifier and the associated metrics
    * record identifier.

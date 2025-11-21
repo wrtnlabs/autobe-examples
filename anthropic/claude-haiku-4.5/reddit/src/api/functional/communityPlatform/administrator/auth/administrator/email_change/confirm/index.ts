@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../../../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Confirm and finalize email address change for administrator account.
- *
  * Completes the email address change process for a platform administrator by
  * verifying the email confirmation token. This operation accepts the
  * verification token provided in the email link and validates it against the

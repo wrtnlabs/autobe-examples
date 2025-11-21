@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardAdmin } from "../../../structures/IDiscussionBoardAdmin";
 
 /**
- * Register a new administrator account in the discussion_board_admin table.
- *
  * Register a new admin by providing necessary information such as username,
  * email, and password, stored securely within the discussion_board_admin table.
  * Upon successful registration, initial JWT tokens are issued for
@@ -100,8 +98,6 @@ export namespace join {
 }
 
 /**
- * Log in as an administrator to obtain authorization tokens.
- *
  * Authenticate administrator credentials provided during login to generate JWT
  * access tokens for managing the discussion board system. Ensures only
  * authorized users with valid credentials gain administrative access,
@@ -193,8 +189,6 @@ export namespace login {
 }
 
 /**
- * Refresh authorization tokens for administrator sessions.
- *
  * Refresh admin JWT access tokens using a valid refresh token to maintain an
  * active authenticated session without re-login. Ensures continued access to
  * administrative features by validating refresh token status and expiration

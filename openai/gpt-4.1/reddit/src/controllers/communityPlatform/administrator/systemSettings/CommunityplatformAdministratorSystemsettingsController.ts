@@ -15,9 +15,6 @@ import { IPageICommunityPlatformSystemSettings } from "../../../../api/structure
 @Controller("/communityPlatform/administrator/systemSettings")
 export class CommunityplatformAdministratorSystemsettingsController {
   /**
-   * Create a new platform-wide system setting
-   * (community_platform_system_settings table).
-   *
    * Create a new system-wide configuration setting for the platform. This
    * allows privileged administrators to add new configuration parameters that
    * control key operational aspects of the service, such as feature toggles,
@@ -61,9 +58,6 @@ export class CommunityplatformAdministratorSystemsettingsController {
   }
 
   /**
-   * Search, filter, and paginate global community platform system settings
-   * (community_platform_system_settings table).
-   *
    * Fetch a paginated and filterable list of all platform-wide system settings
    * as defined in the community_platform_system_settings table.
    *
@@ -106,9 +100,6 @@ export class CommunityplatformAdministratorSystemsettingsController {
   }
 
   /**
-   * Retrieve a specific global system setting by key from
-   * community_platform_system_settings table.
-   *
    * Retrieve detailed information about an individual global system setting
    * entry, as specified by its unique key in the
    * community_platform_system_settings database table.
@@ -148,9 +139,6 @@ export class CommunityplatformAdministratorSystemsettingsController {
   }
 
   /**
-   * Update value/description for a global system setting
-   * (community_platform_system_settings table).
-   *
    * Update the value (and, if required, the description) of an existing global
    * system setting stored in the platform's database. This endpoint enables
    * qualified administrators to fine-tune platform behavior in real time by
@@ -196,9 +184,6 @@ export class CommunityplatformAdministratorSystemsettingsController {
   }
 
   /**
-   * Permanently delete a global system setting from
-   * community_platform_system_settings by key.
-   *
    * Delete a specific global system setting using its unique key. Each system
    * setting is a name/value pair required for the platform's dynamic
    * configuration and operational control.

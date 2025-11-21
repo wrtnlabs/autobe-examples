@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoAppTodo } from "../../../../../structures/ITodoAppTodo";
 
 /**
- * Batch update multiple todos in the todo_app_todos table using a single bulk
- * operation.
- *
  * Modify multiple todo items in a single request for advanced user convenience
  * and workflow optimization.
  *

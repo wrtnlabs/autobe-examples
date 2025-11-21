@@ -8,8 +8,6 @@ import { ICommunityPlatformCommentTree } from "../../../api/structures/ICommunit
 @Controller("/communityPlatform/threads/:postId")
 export class CommunityplatformThreadsController {
   /**
-   * Get a single community thread post from community_platform_posts by id.
-   *
    * Retrieve a detailed representation of a single community thread post
    * identified by its unique post identifier.
    *
@@ -63,9 +61,6 @@ export class CommunityplatformThreadsController {
   }
 
   /**
-   * Get the comment tree for a community thread from
-   * community_platform_comments by post id.
-   *
    * Retrieve the full or paginated comment tree of a community thread post so
    * that clients can render nested discussions.
    *

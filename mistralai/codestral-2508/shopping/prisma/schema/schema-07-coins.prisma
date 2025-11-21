@@ -1,51 +1,11 @@
-/// Customer coin balances for digital currency transactions.
+/// Records all coin transactions between users and the system.
 ///
-/// Stores the current balance of coins for each customer, including the
-/// total amount of coins available for use in transactions. The balance is
-/// updated whenever a customer makes a purchase, receives coins as a reward,
-/// or uses coins to make a purchase. The balance is displayed to the
-/// customer on their account dashboard and is used to determine the
-/// customer's eligibility for coin-based discounts and promotions.
-///
-/// @namespace Coins
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_coins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Customer who owns the coin balance. {@link shopping_mall_customers.id}
-  shopping_mall_customer_id String
-  
-  /// Current coin balance.
-  balance Int
-  
-  /// When the coin balance was created.
-  created_at DateTime
-  
-  /// When the coin balance was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  @@unique([shopping_mall_customer_id])
-  @@index([balance])
-}
-
-/// Records of coin transactions between customers and sellers.
-///
-/// Stores detailed information about each coin transaction, including the
-/// amount of coins transferred, the type of transaction (purchase, refund,
-/// reward), and the associated order or payment. Coin transactions are used
-/// to track the flow of coins within the system and to ensure that customers
-/// have sufficient coins to make purchases. The transaction records are
-/// displayed to customers on their account dashboard and are used to
-/// generate reports for sellers and administrators.
+/// Stores details of each coin transaction including the amount, type
+/// (deposit or withdrawal),
+/// and associated user. Each transaction is linked to a specific user and
+/// maintains a reference to the order if applicable. The transaction records
+/// include timestamps for creation, updates, and soft deletion to support audit
+/// trails and historical tracking.
 ///
 /// @namespace Coins
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -56,41 +16,113 @@ model shopping_mall_coin_transactions {
   /// Primary Key.
   id String @id
   
-  /// Customer involved in the transaction. {@link shopping_mall_customers.id}
+  /// Customer who performed the transaction. {@link shopping_mall_customers.id}
   shopping_mall_customer_id String
-  
-  /// Seller involved in the transaction. {@link shopping_mall_sellers.id}
-  shopping_mall_seller_id String
   
   /// Order associated with the transaction. {@link shopping_mall_orders.id}
   shopping_mall_order_id String?
   
-  /// Payment associated with the transaction. {@link
-  /// shopping_mall_order_payments.id}
-  shopping_mall_order_payment_id String?
+  /// Amount of coins involved in the transaction.
+  amount Float
   
-  /// Amount of coins transferred.
-  amount Int
+  /// Type of transaction (deposit or withdrawal).
+  type String
   
-  /// Type of transaction (purchase, refund, reward).
-  transaction_type String
-  
-  /// When the transaction occurred.
+  /// Timestamp when the transaction was created.
   created_at DateTime
+  
+  /// Timestamp when the transaction was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the transaction was soft deleted.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  payment shopping_mall_order_payments? @relation(fields: [shopping_mall_order_payment_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_customer_id])
-  @@index([shopping_mall_seller_id])
   @@index([shopping_mall_order_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_payment_id], map: "shopping_mall_coin_transactions_shopping_mall_order_pa_df981919")
   
-  @@index([transaction_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_coin_transactions_shopping_mall_customer_c4786435")
+}
+
+/// Tracks the current coin balance for each user.
+///
+/// Stores the current balance of coins for each user, allowing quick access to
+/// user's available coins. Each balance record is linked to a specific user
+/// and includes timestamps for creation, updates, and soft deletion to support
+/// audit trails and historical tracking.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_balances {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns the coin balance. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Current balance of coins for the user.
+  balance Float
+  
+  /// Timestamp when the balance record was created.
+  created_at DateTime
+  
+  /// Timestamp when the balance record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the balance record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_customer_id])
+}
+
+/// Tracks the mileage points earned by users through purchases.
+///
+/// Stores the mileage points earned by users for each purchase. Each mileage
+/// record is linked to a specific user and includes timestamps for creation,
+/// updates, and soft deletion to support audit trails and historical
+/// tracking.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_mileages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who earned the mileage points. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Mileage points earned by the user.
+  points Int
+  
+  /// Timestamp when the mileage record was created.
+  created_at DateTime
+  
+  /// Timestamp when the mileage record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the mileage record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id, created_at])
 }

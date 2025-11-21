@@ -7,9 +7,6 @@ import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallProductImage } from "../../../../../structures/IPageIShoppingMallProductImage";
 
 /**
- * Paginated search of SKU images for a product using
- * shopping_mall_product_images table.
- *
  * Retrieve a filtered and paginated list of images linked to a specific SKU
  * variant of a product. This endpoint allows clients to search for images by
  * specifying image attributes—such as display position, alt text content, or
@@ -127,9 +124,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a single SKU image from shopping_mall_product_images
- * table.
- *
  * Fetches metadata and asset details for a single image associated with the
  * specified SKU of a product. The operation requires all identifiers
  * (productId, skuId, imageId) to correctly scope the query and ensure the image

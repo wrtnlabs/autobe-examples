@@ -15,9 +15,6 @@ import { IPageICommunityPlatformContentQuarantine } from "../../../../api/struct
 @Controller("/communityPlatform/administrator/contentQuarantines")
 export class CommunityplatformAdministratorContentquarantinesController {
   /**
-   * Create a new content quarantine record in the
-   * community_platform_content_quarantines table.
-   *
    * This operation allows the creation of a new content quarantine record,
    * which may be applied to a post, comment, or an entire community. Upon
    * execution, the operation requires specifying the quarantine_type and
@@ -64,9 +61,6 @@ export class CommunityplatformAdministratorContentquarantinesController {
   }
 
   /**
-   * Search and retrieve a paginated list of content quarantines
-   * (community_platform_content_quarantines).
-   *
    * Retrieve a filtered and paginated list of content quarantine records for
    * compliance and moderation review.
    *
@@ -112,9 +106,6 @@ export class CommunityplatformAdministratorContentquarantinesController {
   }
 
   /**
-   * Retrieve detailed information of a specific content quarantine
-   * (community_platform_content_quarantines) by ID.
-   *
    * Retrieve the full details of a specific content quarantine record
    * identified by its unique ID.
    *
@@ -158,9 +149,6 @@ export class CommunityplatformAdministratorContentquarantinesController {
   }
 
   /**
-   * Update an existing content quarantine record in the
-   * community_platform_content_quarantines table.
-   *
    * This operation modifies an existing content quarantine, such as changing
    * its status (from active to lifted, expired, or revoked), adjusting the
    * quarantine period, or updating the type if necessary. The quarantine record
@@ -212,9 +200,6 @@ export class CommunityplatformAdministratorContentquarantinesController {
   }
 
   /**
-   * Permanently deletes a content quarantine record; associated with
-   * community_platform_content_quarantines table.
-   *
    * Delete a specific content quarantine record from the system.
    *
    * This API endpoint enables the hard removal of a quarantine record

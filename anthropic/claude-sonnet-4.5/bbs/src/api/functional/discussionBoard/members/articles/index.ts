@@ -7,8 +7,6 @@ import { IDiscussionBoardArticle } from "../../../../structures/IDiscussionBoard
 import { IPageIDiscussionBoardArticle } from "../../../../structures/IPageIDiscussionBoardArticle";
 
 /**
- * Retrieve paginated list of articles authored by a specific member.
- *
  * Retrieve a filtered and paginated list of discussion articles authored by a
  * specific member from the discussion board platform.
  *

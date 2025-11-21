@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallRefundsAndDisputesDashboard } from "../../../../../structures/IShoppingMallRefundsAndDisputesDashboard";
 
 /**
- * Provide an aggregated refunds and disputes dashboard composed from multiple
- * shopping_mall_* statistics and case tables.
- *
  * Retrieve a consolidated dashboard view of refund and dispute activity for
  * governance and operations.
  *

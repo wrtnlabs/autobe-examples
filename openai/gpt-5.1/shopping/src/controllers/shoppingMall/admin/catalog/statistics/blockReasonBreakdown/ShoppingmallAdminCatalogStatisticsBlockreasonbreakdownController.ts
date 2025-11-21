@@ -7,9 +7,6 @@ import { IShoppingMallCatalogBlockReasonBreakdownStatistics } from "../../../../
 @Controller("/shoppingMall/admin/catalog/statistics/blockReasonBreakdown")
 export class ShoppingmallAdminCatalogStatisticsBlockreasonbreakdownController {
   /**
-   * Return an aggregated breakdown of catalog block reasons using
-   * shopping_mall_catalog_block_reasons and related linkage tables.
-   *
    * Provide an aggregated breakdown of catalog block reasons across products
    * and SKUs within the shoppingMall platform.
    *

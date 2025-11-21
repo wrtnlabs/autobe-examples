@@ -11,8 +11,6 @@ import { ICommunityForumCommunitySubscription } from "../../../../../api/structu
 @Controller("/communityForum/user/users/:username/subscriptions")
 export class CommunityforumUserUsersSubscriptionsController {
   /**
-   * Get paginated list of communities a user is subscribed to.
-   *
    * Retrieve a paginated list of communities that a user is subscribed to. This
    * endpoint allows users to view their personalized feed of followed
    * communities. The response includes essential community information

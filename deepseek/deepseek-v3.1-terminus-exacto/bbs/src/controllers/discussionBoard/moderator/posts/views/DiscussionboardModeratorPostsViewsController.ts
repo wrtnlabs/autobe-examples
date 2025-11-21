@@ -11,9 +11,6 @@ import { IDiscussionBoardPostView } from "../../../../../api/structures/IDiscuss
 @Controller("/discussionBoard/moderator/posts/:postId/views")
 export class DiscussionboardModeratorPostsViewsController {
   /**
-   * Search and retrieve paginated view records for a specific discussion board
-   * post.
-   *
    * This operation provides comprehensive search capabilities for viewing post
    * engagement analytics. It allows filtering view records by member, date
    * ranges, and other criteria to analyze post popularity and user engagement

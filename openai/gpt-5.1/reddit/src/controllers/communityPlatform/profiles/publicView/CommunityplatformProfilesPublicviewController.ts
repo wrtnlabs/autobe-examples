@@ -7,9 +7,6 @@ import { ICommunityPlatformUserProfilePublicView } from "../../../../api/structu
 @Controller("/communityPlatform/profiles/:handle/publicView")
 export class CommunityplatformProfilesPublicviewController {
   /**
-   * Get the public, read-only profile view for a user identified by handle
-   * from community_platform_user_profiles.
-   *
    * Retrieve a public, read-only view of a user profile identified by its
    * globally unique handle from the `community_platform_user_profiles`
    * table.

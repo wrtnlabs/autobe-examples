@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallRefundRequestItem } from "../../../../../structures/IShoppingMallRefundRequestItem";
 
 /**
- * Create a new refund request item record in
- * `shopping_mall_refund_request_items` under a specific refund request.
- *
  * Create a new line-level refund request item associated with an existing
  * refund request.
  *
@@ -149,9 +146,6 @@ export namespace create {
 }
 
 /**
- * Update an existing refund request item record in
- * `shopping_mall_refund_request_items` for a given refund request.
- *
  * Update an existing refund request item associated with a specific refund
  * request.
  *

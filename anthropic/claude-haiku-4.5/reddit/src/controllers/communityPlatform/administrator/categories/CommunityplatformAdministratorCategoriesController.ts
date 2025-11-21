@@ -7,8 +7,6 @@ import { ICommunityPlatformCategory } from "../../../../api/structures/ICommunit
 @Controller("/communityPlatform/administrator/categories")
 export class CommunityplatformAdministratorCategoriesController {
   /**
-   * Create a new community content category.
-   *
    * Create a new content category that will be used for organizing and
    * classifying communities on the platform. This endpoint allows
    * administrators to expand the platform's category taxonomy as needed. Each
@@ -49,8 +47,6 @@ export class CommunityplatformAdministratorCategoriesController {
   }
 
   /**
-   * Update a community category.
-   *
    * Update an existing community category by its ID. This operation allows
    * modification of category properties such as display name, URL slug,
    * description, icon, and display order.
@@ -86,8 +82,6 @@ export class CommunityplatformAdministratorCategoriesController {
   }
 
   /**
-   * Delete a community category.
-   *
    * Permanently remove a community category from the platform. This operation
    * completely deletes the category record from the database and cannot be
    * reversed. The deletion is irreversible.

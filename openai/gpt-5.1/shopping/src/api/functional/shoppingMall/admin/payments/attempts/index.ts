@@ -7,9 +7,6 @@ import { IShoppingMallOrderPaymentAttempt } from "../../../../../structures/ISho
 import { IPageIShoppingMallOrderPaymentAttempt } from "../../../../../structures/IPageIShoppingMallOrderPaymentAttempt";
 
 /**
- * Create a new shopping_mall_order_payment_attempt under a specific logical
- * order payment.
- *
  * Create a new payment attempt associated with a specific logical order
  * payment.
  *
@@ -150,9 +147,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of shopping_mall_order_payment_attempts
- * for a specific order payment.
- *
  * Retrieve a paginated and filtered list of payment attempts for a specific
  * logical order payment.
  *
@@ -295,9 +289,6 @@ export namespace index {
 }
 
 /**
- * Get details of a specific payment attempt from
- * shopping_mall_order_payment_attempts.
- *
  * Retrieve a single payment attempt record for a given order payment using its
  * logical payment identifier and attempt sequence.
  *
@@ -436,9 +427,6 @@ export namespace at {
 }
 
 /**
- * Update a specific payment attempt record in
- * shopping_mall_order_payment_attempts.
- *
  * Update selected mutable fields of a payment attempt record identified by
  * `orderPaymentId` and `attemptSequence`.
  *
@@ -592,9 +580,6 @@ export namespace update {
 }
 
 /**
- * Delete a payment attempt row from shopping_mall_order_payment_attempts for a
- * given order payment.
- *
  * Delete a specific payment attempt record for an order payment using its
  * parent payment identifier and attempt sequence.
  *

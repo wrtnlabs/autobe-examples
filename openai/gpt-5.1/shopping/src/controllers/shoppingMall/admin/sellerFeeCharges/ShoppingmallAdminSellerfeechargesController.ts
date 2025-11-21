@@ -8,9 +8,6 @@ import { IPageIShoppingMallSellerFeeCharge } from "../../../../api/structures/IP
 @Controller("/shoppingMall/admin/sellerFeeCharges")
 export class ShoppingmallAdminSellerfeechargesController {
   /**
-   * Create a new seller fee charge in the shopping_mall_seller_fee_charges
-   * table.
-   *
    * Create a new seller fee charge entry in the
    * shopping_mall_seller_fee_charges table.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminSellerfeechargesController {
   }
 
   /**
-   * Search and retrieve a paginated list of seller fee charges from
-   * `shopping_mall_seller_fee_charges`.
-   *
    * Retrieve a filtered and paginated list of seller fee charge records from
    * the `shopping_mall_seller_fee_charges` table.
    *
@@ -151,9 +145,6 @@ export class ShoppingmallAdminSellerfeechargesController {
   }
 
   /**
-   * Retrieve detailed information for a single seller fee charge from
-   * `shopping_mall_seller_fee_charges` by ID.
-   *
    * Fetch complete details of a specific seller fee charge from the
    * `shopping_mall_seller_fee_charges` table using its primary key.
    *
@@ -216,9 +207,6 @@ export class ShoppingmallAdminSellerfeechargesController {
   }
 
   /**
-   * Update an existing seller fee charge in the
-   * shopping_mall_seller_fee_charges table by feeChargeId.
-   *
    * Update an existing seller fee charge record in the
    * shopping_mall_seller_fee_charges table identified by its unique
    * feeChargeId.

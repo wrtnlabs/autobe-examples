@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallExternalPaymentProvider } from "../../../structures/IShoppingMallExternalPaymentProvider";
 
 /**
- * Get external payment provider details by providerCode
- * (shopping_mall_external_payment_providers).
- *
  * Retrieve complete metadata for a specific external payment provider using its
  * system integration key (providerCode). This includes the display name, unique
  * code, status (active/inactive/deprecated), legal and integration notes,

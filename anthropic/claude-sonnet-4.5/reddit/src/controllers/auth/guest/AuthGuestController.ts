@@ -9,8 +9,6 @@ import { IRedditCommunityGuest } from "../../../api/structures/IRedditCommunityG
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Register a new temporary guest account for platform exploration.
-   *
    * Register a new guest account and receive JWT authentication tokens.
    *
    * This endpoint creates a temporary guest account for unauthenticated
@@ -59,8 +57,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh guest account access token using valid refresh token.
-   *
    * Refresh expired access token for guest accounts using a valid refresh
    * token.
    *

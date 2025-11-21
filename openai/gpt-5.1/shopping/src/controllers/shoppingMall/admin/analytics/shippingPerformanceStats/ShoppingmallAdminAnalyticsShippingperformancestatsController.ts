@@ -8,9 +8,6 @@ import { IShoppingMallShippingPerformanceStat } from "../../../../../api/structu
 @Controller("/shoppingMall/admin/analytics/shippingPerformanceStats")
 export class ShoppingmallAdminAnalyticsShippingperformancestatsController {
   /**
-   * Search and list shipping performance statistics snapshots from
-   * shopping_mall_shipping_performance_stats with filtering and pagination.
-   *
    * Retrieve a filtered, sorted, and paginated list of shipping performance
    * statistics snapshot records from the
    * shopping_mall_shipping_performance_stats table.
@@ -81,9 +78,6 @@ export class ShoppingmallAdminAnalyticsShippingperformancestatsController {
   }
 
   /**
-   * Get a single shopping_mall_shipping_performance_stats snapshot record by
-   * ID for shipping performance analytics.
-   *
    * Retrieve a single shipping performance statistics snapshot from the
    * `shopping_mall_shipping_performance_stats` table by its unique
    * identifier.

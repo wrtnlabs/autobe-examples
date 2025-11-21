@@ -7,8 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../../api/structures/IC
 @Controller("/communityPlatform/auth/moderator/email-verify/send")
 export class CommunityplatformAuthModeratorEmail_verifySendController {
   /**
-   * Send email verification link to moderator for account email confirmation.
-   *
    * Sends an email verification token to the moderator's registered email
    * address to confirm email ownership and enable account recovery
    * capabilities. This operation locates the moderator using the provided

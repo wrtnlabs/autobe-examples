@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportOfAttachment } from "../../../../../structures/IDiscussionBoardReportOfAttachment";
 
 /**
- * Get the attachment link detail for a specific report from
- * `discussion_board_report_of_attachments`.
- *
  * Retrieve the attachment information associated with a specific discussion
  * board report.
  *

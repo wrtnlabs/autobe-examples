@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReturnRequest } from "../../../../structures/IShoppingMallReturnRequest";
 
 /**
- * Create a return or pickup request in the shopping_mall_return_requests table.
- *
  * Create a new return, pickup, or reverse logistics request associated with a
  * specific order item in the shopping mall platform.
  *
@@ -113,8 +111,6 @@ export namespace create {
 }
 
 /**
- * Update a return or pickup request in the shopping_mall_return_requests table.
- *
  * Update the details or workflow status of an existing return or pickup request
  * in the shopping mall platform.
  *

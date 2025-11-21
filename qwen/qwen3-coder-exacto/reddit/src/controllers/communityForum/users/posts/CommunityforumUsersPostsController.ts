@@ -9,8 +9,6 @@ import { ICommunityForumCommunityPost } from "../../../../api/structures/ICommun
 @Controller("/communityForum/users/:username/posts")
 export class CommunityforumUsersPostsController {
   /**
-   * Retrieve paginated list of posts created by a specific user.
-   *
    * Retrieve a paginated list of posts created by a specific user, identified
    * by their username.
    *

@@ -9,8 +9,6 @@ export * as joinRequests from "./joinRequests/index";
 export * as memberships from "./memberships/index";
 
 /**
- * Update a community's details in the community_platform_communities table.
- *
  * Update the metadata, business identity fields, and configuration of an
  * existing community by providing new values for name, display title,
  * description, status, and other editable attributes. This operation enables
@@ -124,8 +122,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a community: mark it deleted in community_platform_communities.
- *
  * Delete a community from the platform by marking it as removed. This soft
  * delete operation sets the 'deleted_at' field in the
  * 'community_platform_communities' database table to the current timestamp,

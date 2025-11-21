@@ -7,8 +7,6 @@ import { IDiscussionBoardEmailVerification } from "../../../../structures/IDiscu
 import { IPageIDiscussionBoardEmailVerification } from "../../../../structures/IPageIDiscussionBoardEmailVerification";
 
 /**
- * Search and retrieve paginated list of email verification records.
- *
  * Retrieve a filtered and paginated list of email verification records for
  * monitoring and administration purposes.
  *
@@ -124,8 +122,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific email verification record.
- *
  * Retrieve complete details of a specific email verification record by its
  * unique identifier.
  *

@@ -12,9 +12,6 @@ import { ICommunityPlatformPostVote } from "../../../../api/structures/ICommunit
 @Controller("/communityPlatform/user/postVotes")
 export class CommunityplatformUserPostvotesController {
   /**
-   * Create a new vote (upvote or downvote) for a post in the
-   * community_platform_post_votes table.
-   *
    * Create a new user vote (upvote or downvote) on a post in the community
    * platform. This operation is intended for authenticated users who wish to
    * express preference or feedback on a specific post.
@@ -61,9 +58,6 @@ export class CommunityplatformUserPostvotesController {
   }
 
   /**
-   * Update or remove an existing post vote in the community_platform_post_votes
-   * table by its unique ID.
-   *
    * Update an existing vote (upvote or downvote) or remove it (soft delete) on
    * a post, identified by the postVoteId path parameter. This operation is
    * available to authenticated users who previously cast the vote or to
@@ -109,9 +103,6 @@ export class CommunityplatformUserPostvotesController {
   }
 
   /**
-   * Remove (soft delete) a post vote by postVoteId from
-   * community_platform_post_votes.
-   *
    * Remove a post vote record for a given postVoteId from the community
    * platform system.
    *

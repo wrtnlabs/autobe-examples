@@ -9,9 +9,6 @@ export * as analytics from "./analytics/index";
 export * as mergeEvents from "./mergeEvents/index";
 
 /**
- * Admin search and list of wishlists from the shopping_mall_wishlists table in
- * a paginated way.
- *
  * Search and retrieve a paginated list of wishlist headers stored in the
  * `shopping_mall_wishlists` table from an administrative context.
  *
@@ -120,9 +117,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single wishlist from the
- * shopping_mall_wishlists table by ID for admin users.
- *
  * Retrieve full details of a single wishlist stored in the
  * `shopping_mall_wishlists` table by its identifier for administrative
  * purposes.

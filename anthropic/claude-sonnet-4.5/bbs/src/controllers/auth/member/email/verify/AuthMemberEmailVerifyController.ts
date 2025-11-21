@@ -8,9 +8,6 @@ import { IDiscussionBoardMember } from "../../../../../api/structures/IDiscussio
 @Controller("/auth/member/email/verify")
 export class AuthMemberEmailVerifyController {
   /**
-   * Verify member email address using token from
-   * discussion_board_email_verifications table.
-   *
    * Verifies a member's email address using the unique verification token sent
    * during registration, enabling full content creation privileges on the
    * discussion board platform. This operation validates the token against

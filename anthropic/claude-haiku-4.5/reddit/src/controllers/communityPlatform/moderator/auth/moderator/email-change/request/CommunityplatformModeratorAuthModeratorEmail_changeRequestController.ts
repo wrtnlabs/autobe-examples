@@ -7,9 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../../../api/structures
 @Controller("/communityPlatform/moderator/auth/moderator/email-change/request")
 export class CommunityplatformModeratorAuthModeratorEmail_changeRequestController {
   /**
-   * Request email address change for moderator account with verification
-   * email.
-   *
    * Initiate a moderator email address change by submitting the current
    * password for verification and the desired new email address. This
    * operation generates a secure email change token and sends a verification

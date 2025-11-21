@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityVisitor } from "../../../structures/IRedditCommunityVisitor";
 
 /**
- * Create visitor account registration endpoint for guest user account creation.
- *
  * Visitor registration operation that creates temporary guest accounts for
  * unauthenticated browsing. This operation enables guests to create quick
  * accounts with email and password for basic platform access. The visitor
@@ -111,8 +109,6 @@ export namespace join {
 }
 
 /**
- * Refresh visitor authentication tokens for extended guest browsing sessions.
- *
  * Visitor token refresh operation that provides new JWT access and refresh
  * tokens for active visitor sessions. This operation is crucial for maintaining
  * uninterrupted guest browsing experiences while implementing proper security

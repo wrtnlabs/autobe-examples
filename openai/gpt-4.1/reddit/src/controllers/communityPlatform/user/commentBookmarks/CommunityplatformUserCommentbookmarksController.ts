@@ -15,8 +15,6 @@ import { IPageICommunityPlatformCommentBookmark } from "../../../../api/structur
 @Controller("/communityPlatform/user/commentBookmarks")
 export class CommunityplatformUserCommentbookmarksController {
   /**
-   * Create a new comment bookmark (community_platform_comment_bookmarks).
-   *
    * Create a new comment bookmark, which enables users to save and quickly
    * access discussions they find important. This operation requires the user to
    * be authenticated and supply both the target comment identifier and the
@@ -64,9 +62,6 @@ export class CommunityplatformUserCommentbookmarksController {
   }
 
   /**
-   * Search and retrieve a paginated, filtered list of comment bookmarks
-   * (community_platform_comment_bookmarks).
-   *
    * Retrieve a filtered, paginated list of comment bookmarks a user has saved
    * within the platform.
    *
@@ -109,9 +104,6 @@ export class CommunityplatformUserCommentbookmarksController {
   }
 
   /**
-   * Retrieve details for a specific comment bookmark by its ID
-   * (community_platform_comment_bookmarks).
-   *
    * Get complete details for a specific comment bookmark, using the unique
    * bookmark ID.
    *
@@ -149,9 +141,6 @@ export class CommunityplatformUserCommentbookmarksController {
   }
 
   /**
-   * Update an existing comment bookmark (community_platform_comment_bookmarks)
-   * by ID.
-   *
    * Update a comment bookmark by bookmark ID. This can be used for scenarios
    * such as restoring a previously deleted bookmark (undo), or updating any
    * mutable properties the system allows in the bookmark entity. The request
@@ -202,9 +191,6 @@ export class CommunityplatformUserCommentbookmarksController {
   }
 
   /**
-   * Erase a comment bookmark by its unique identifier from the
-   * community_platform_comment_bookmarks table.
-   *
    * Remove a comment bookmark from a user's saved bookmarks by its unique
    * identifier.
    *

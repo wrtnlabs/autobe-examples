@@ -8,9 +8,6 @@ import { IPageIShoppingMallSellerSubscription } from "../../../../api/structures
 @Controller("/shoppingMall/admin/sellerSubscriptions")
 export class ShoppingmallAdminSellersubscriptionsController {
   /**
-   * Create a new seller subscription record in the
-   * shopping_mall_seller_subscriptions table.
-   *
    * Register a new seller subscription in the shopping mall platform by
    * inserting a record into the shopping_mall_seller_subscriptions table.
    *
@@ -62,9 +59,6 @@ export class ShoppingmallAdminSellersubscriptionsController {
   }
 
   /**
-   * Search and retrieve a paginated list of seller subscriptions from the
-   * shopping_mall_seller_subscriptions table using rich filter criteria.
-   *
    * Retrieve a filtered and paginated list of seller subscription records
    * from the shopping mall platform for administrative analysis and
    * operations.
@@ -138,9 +132,6 @@ export class ShoppingmallAdminSellersubscriptionsController {
   }
 
   /**
-   * Retrieve a seller subscription record from the
-   * shopping_mall_seller_subscriptions table by its unique identifier.
-   *
    * Fetch detailed information for a single seller subscription managed by
    * the shopping mall platform.
    *
@@ -197,9 +188,6 @@ export class ShoppingmallAdminSellersubscriptionsController {
   }
 
   /**
-   * Update an existing seller subscription record in the
-   * shopping_mall_seller_subscriptions table.
-   *
    * Update an existing seller subscription in the shoppingMall platform based
    * on its subscriptionId path parameter.
    *
@@ -267,9 +255,6 @@ export class ShoppingmallAdminSellersubscriptionsController {
   }
 
   /**
-   * Permanently delete a seller subscription record from the
-   * shopping_mall_seller_subscriptions table.
-   *
    * Permanently remove a seller subscription record from the shoppingMall
    * platform using its subscriptionId.
    *

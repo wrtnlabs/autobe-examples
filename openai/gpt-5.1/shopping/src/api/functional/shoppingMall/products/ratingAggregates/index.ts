@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductRatingAggregate } from "../../../../structures/IShoppingMallProductRatingAggregate";
 
 /**
- * Retrieve rating aggregate metrics for a product from the
- * shopping_mall_product_rating_aggregates table.
- *
  * Fetch precomputed rating aggregate information for a single product using the
  * shopping_mall_product_rating_aggregates table.
  *

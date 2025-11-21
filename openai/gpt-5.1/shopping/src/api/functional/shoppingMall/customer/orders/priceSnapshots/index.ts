@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallOrderPriceSnapshot } from "../../../../../structures/IShoppingMallOrderPriceSnapshot";
 
 /**
- * Retrieve a single shopping_mall_order_price_snapshots record for a given
- * order and snapshot identifier.
- *
  * Retrieve a specific price snapshot associated with an order using the order’s
  * business-facing code and the unique identifier of the snapshot.
  *

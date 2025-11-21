@@ -10,8 +10,6 @@ import { ITodoListTodoListUser } from "../../../../../api/structures/ITodoListTo
 @Controller("/auth/user/email/verify")
 export class AuthUserEmailVerifyController {
   /**
-   * Verify user email address in todo_list_users table.
-   *
    * This operation enables registered users to verify their email addresses as
    * part of account confirmation. It utilizes verification fields and tokens in
    * the 'todo_list_users' schema to update verification status.

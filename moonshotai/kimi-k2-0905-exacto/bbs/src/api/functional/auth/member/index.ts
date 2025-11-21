@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionMember } from "../../../structures/IEconomicDiscussionMember";
 
 /**
- * Register new member account with email verification for economic discussion
- * board community.
- *
  * Member registration enables new users to join the economic and political
  * discussion board community. The system validates incoming registration data
  * against database constraints, checking that usernames contain only valid
@@ -132,8 +129,6 @@ export namespace join {
 }
 
 /**
- * Authenticate member with email/password and issue JWT tokens.
- *
  * Member login authenticates existing community members using their registered
  * email address and password. The system supports both email-based and
  * username-based authentication methods for maximum user convenience, checking
@@ -260,8 +255,6 @@ export namespace login {
 }
 
 /**
- * Refresh expired access token using valid refresh token.
- *
  * Member token refresh extends authenticated sessions when access tokens expire
  * but refresh tokens remain valid. The operation accepts the expired JWT access
  * token alongside the current refresh token to verify session continuity, with

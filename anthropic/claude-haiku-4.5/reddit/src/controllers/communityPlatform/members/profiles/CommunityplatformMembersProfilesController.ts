@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberProfile } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/members/:memberId/profiles")
 export class CommunityplatformMembersProfilesController {
   /**
-   * Retrieve a member's profile information by member ID.
-   *
    * Fetch the complete profile information for a specific community member.
    * This operation retrieves the member's public-facing profile data
    * including customizable fields such as display name, biography, profile
@@ -44,8 +42,6 @@ export class CommunityplatformMembersProfilesController {
   }
 
   /**
-   * Update a member's profile information.
-   *
    * Update the profile information for a community member. This operation
    * allows members to customize their public identity on the platform by
    * modifying display name, biography, profile image, geographic location,

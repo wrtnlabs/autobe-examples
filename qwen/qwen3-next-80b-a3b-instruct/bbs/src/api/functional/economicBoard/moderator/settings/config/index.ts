@@ -80,8 +80,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific system configuration setting by key.
- *
  * Retrieve a specific system configuration setting by its unique key from the
  * economic_board_system_config table.
  *

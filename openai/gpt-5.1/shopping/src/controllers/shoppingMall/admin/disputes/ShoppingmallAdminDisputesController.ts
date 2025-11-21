@@ -8,9 +8,6 @@ import { IPageIShoppingMallDispute } from "../../../../api/structures/IPageIShop
 @Controller("/shoppingMall/admin/disputes")
 export class ShoppingmallAdminDisputesController {
   /**
-   * Create a new dispute record in the shopping_mall_disputes table for the
-   * ShoppingMall platform.
-   *
    * Create a new dispute case in the ShoppingMall dispute management
    * subsystem.
    *
@@ -72,9 +69,6 @@ export class ShoppingmallAdminDisputesController {
   }
 
   /**
-   * Search and retrieve a paginated list of disputes from the
-   * shopping_mall_disputes table.
-   *
    * Retrieve a filtered and paginated list of dispute records from the
    * shopping mall platform based on the `shopping_mall_disputes` Prisma
    * table.
@@ -132,9 +126,6 @@ export class ShoppingmallAdminDisputesController {
   }
 
   /**
-   * Retrieve detailed information for a single dispute from the
-   * shopping_mall_disputes table by disputeCode.
-   *
    * Retrieve a single detailed dispute record from the shopping mall platform
    * using its unique dispute code, backed by the `shopping_mall_disputes`
    * Prisma table.
@@ -187,9 +178,6 @@ export class ShoppingmallAdminDisputesController {
   }
 
   /**
-   * Update an existing shopping_mall_disputes record using its disputeCode
-   * business identifier.
-   *
    * Update an existing dispute identified by disputeCode in the
    * shopping_mall_disputes table.
    *
@@ -254,9 +242,6 @@ export class ShoppingmallAdminDisputesController {
   }
 
   /**
-   * Permanently delete a dispute in the `shopping_mall_disputes` table by its
-   * business disputeCode.
-   *
    * Delete a single dispute record from the `shopping_mall_disputes` table
    * using its business-visible dispute code.
    *

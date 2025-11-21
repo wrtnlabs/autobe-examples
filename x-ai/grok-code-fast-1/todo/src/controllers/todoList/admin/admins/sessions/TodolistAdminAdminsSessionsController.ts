@@ -13,9 +13,6 @@ import { ITodoListAdminSession } from "../../../../../api/structures/ITodoListAd
 @Controller("/todoList/admin/admins/:adminId/sessions")
 export class TodolistAdminAdminsSessionsController {
   /**
-   * Retrieve paginated list of authentication sessions for a specific admin
-   * (todo_list_admin_sessions table).
-   *
    * Search and retrieve all authentication session records for a given admin,
    * supporting pagination, sorting, and advanced filtering options. Each
    * session record contains details such as login IP, URL, referrer, and
@@ -63,9 +60,6 @@ export class TodolistAdminAdminsSessionsController {
   }
 
   /**
-   * Retrieve details of a specific admin session (todo_list_admin_sessions
-   * table) by IDs.
-   *
    * Retrieve detailed information about an administrator's login session for
    * auditing, security, or troubleshooting purposes. This endpoint returns
    * comprehensive session metadata, including the associated administrator, IP
@@ -113,9 +107,6 @@ export class TodolistAdminAdminsSessionsController {
   }
 
   /**
-   * Permanently delete a specific administrative session
-   * (todo_list_admin_sessions table) by IDs.
-   *
    * Permanently remove the specified administrative session from the
    * todo_list_admin_sessions table. This is a privileged operation intended for
    * incident response, forced logout, or compliance-driven cleanup. It requires

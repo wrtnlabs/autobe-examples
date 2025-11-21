@@ -8,9 +8,6 @@ import { IShoppingMallAdminSession } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/admins/:adminId/sessions")
 export class ShoppingmallAdminAdminsSessionsController {
   /**
-   * Search and list admin session records from the
-   * shopping_mall_admin_sessions table for a specific admin.
-   *
    * Search and retrieve a filtered, paginated list of session records for a
    * specific admin account based on the `shopping_mall_admin_sessions`
    * model.
@@ -66,9 +63,6 @@ export class ShoppingmallAdminAdminsSessionsController {
   }
 
   /**
-   * Retrieve a single administrator session record from the
-   * shopping_mall_admin_sessions table.
-   *
    * Retrieve a detailed view of a specific administrator session stored in
    * the `shopping_mall_admin_sessions` Prisma model.
    *
@@ -136,9 +130,6 @@ export class ShoppingmallAdminAdminsSessionsController {
   }
 
   /**
-   * Terminate a specific administrator session record in the
-   * shopping_mall_admin_sessions table.
-   *
    * Terminate a specific administrator session associated with the
    * `shopping_mall_admin_sessions` Prisma model so that it can no longer be
    * used for access.

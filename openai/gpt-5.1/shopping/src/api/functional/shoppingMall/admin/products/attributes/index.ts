@@ -7,9 +7,6 @@ import { IShoppingMallProductAttribute } from "../../../../../structures/IShoppi
 export * as values from "./values/index";
 
 /**
- * Get detailed information of a single attribute row from
- * shopping_mall_product_attributes for a specific product.
- *
  * Retrieve a single product attribute definition for a given product from the
  * shopping_mall_product_attributes table.
  *
@@ -142,9 +139,6 @@ export namespace at {
 }
 
 /**
- * Create a new attribute row in shopping_mall_product_attributes for the
- * specified product.
- *
  * Create a new product attribute for a specific product in the
  * shopping_mall_product_attributes table.
  *

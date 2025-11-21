@@ -7,9 +7,6 @@ import { IShoppingMallOrderStatusHistory } from "../../../../../structures/IShop
 import { IPageIShoppingMallOrderStatusHistory } from "../../../../../structures/IPageIShoppingMallOrderStatusHistory";
 
 /**
- * List and search status history records for a specific order from the
- * shopping_mall_order_status_histories table.
- *
  * Retrieve a filtered, paginated list of status history entries for a specific
  * order in the shoppingMall platform.
  *
@@ -154,9 +151,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single order status history entry from the
- * shopping_mall_order_status_histories table.
- *
  * Retrieve the full details of a single status history entry for a specific
  * order in the shoppingMall platform.
  *

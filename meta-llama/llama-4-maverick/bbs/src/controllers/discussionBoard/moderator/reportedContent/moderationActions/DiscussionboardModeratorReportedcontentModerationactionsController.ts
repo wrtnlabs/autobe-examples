@@ -12,8 +12,6 @@ import { IDiscussionBoardModerationAction } from "../../../../../api/structures/
 )
 export class DiscussionboardModeratorReportedcontentModerationactionsController {
   /**
-   * Update moderation actions for a reported content item.
-   *
    * This operation enables moderators to update the moderation actions taken on
    * a reported content item. The reportedContentId path parameter identifies
    * the content, and the request body contains the moderation action details.

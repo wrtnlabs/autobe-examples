@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformUserProfile } from "../../../../../structures/ICommunityPlatformUserProfile";
 
 /**
- * Update an existing community platform user's profile (display name, avatar,
- * bio, or status).
- *
  * Update a user's profile attributes and information by providing new data in
  * the request body. This operation first verifies that both the user account
  * and the targeted profile exist, and that the profile is associated with the
@@ -132,9 +129,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a user's profile from the system
- * (community_platform_user_profiles table).
- *
  * Delete a user profile from the community platform, ensuring the action is
  * authorized and only affects the specific user and profile combination
  * provided in the path.

@@ -8,9 +8,6 @@ import { IPageICommunityPlatformComment } from "../../../../../structures/IPageI
 export * as replies from "./replies/index";
 
 /**
- * Create a new comment record in the community_platform_comments table for a
- * specific post.
- *
  * Create a new comment for the specified post within the community platform.
  *
  * This operation targets the `community_platform_comments` table, which stores
@@ -141,9 +138,6 @@ export namespace create {
 }
 
 /**
- * List and search comments for a specific post from the
- * community_platform_comments table with pagination and filtering.
- *
  * Retrieve a filtered and paginated list of comments for a specific post, using
  * the community_platform_comments table as the primary data source.
  *
@@ -269,9 +263,6 @@ export namespace index {
 }
 
 /**
- * Update a specific comment in the community_platform_comments table for a
- * given post.
- *
  * Update an existing comment record in the community platform that is attached
  * to a specific post.
  *
@@ -437,9 +428,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a specific comment from the community_platform_comments
- * table for a given post.
- *
  * Erase a specific comment row from the community_platform_comments table for a
  * given post.
  *

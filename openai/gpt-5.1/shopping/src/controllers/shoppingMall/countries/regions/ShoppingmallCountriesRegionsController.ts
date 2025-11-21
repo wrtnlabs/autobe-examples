@@ -8,9 +8,6 @@ import { IShoppingMallRegion } from "../../../../api/structures/IShoppingMallReg
 @Controller("/shoppingMall/countries/:countryCode/regions")
 export class ShoppingmallCountriesRegionsController {
   /**
-   * List regions for a specific country from shopping_mall_regions with
-   * filtering and pagination.
-   *
    * Retrieve a paginated, filterable list of regions that belong to a
    * specific country in the shoppingMall platform.
    *
@@ -80,9 +77,6 @@ export class ShoppingmallCountriesRegionsController {
   }
 
   /**
-   * Get detailed configuration of a specific region from
-   * shopping_mall_regions by countryCode and regionCode.
-   *
    * Retrieve detailed information about a single region belonging to a
    * specific country in the shoppingMall platform.
    *

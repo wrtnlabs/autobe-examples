@@ -16,9 +16,6 @@ export * as shipments from "./shipments/index";
 export * as payments from "./payments/index";
 
 /**
- * Search and paginate order headers from the `shopping_mall_orders` table for
- * administrative use.
- *
  * Search and retrieve a filtered, paginated list of order headers from the
  * `shopping_mall_orders` table.
  *
@@ -161,9 +158,6 @@ export namespace index {
 }
 
 /**
- * Get a single detailed order from `shopping_mall_orders` by its business
- * orderCode.
- *
  * Retrieve a single detailed order record from the `shopping_mall_orders` table
  * using its business identifier `orderCode`.
  *
@@ -288,9 +282,6 @@ export namespace at {
 }
 
 /**
- * Create a customer contact snapshot for an order in
- * shopping_mall_order_customer_contacts using order_code.
- *
  * Create a customer contact information snapshot for a specific order
  * referenced by its business order code.
  *
@@ -423,9 +414,6 @@ export namespace create {
 }
 
 /**
- * Logically delete a shopping_mall_orders record by business order_code using
- * deleted_at timestamp.
- *
  * Logically remove a shopping mall order identified by its business-facing
  * order_code by setting the deleted_at column while preserving the record for
  * audit and compliance.

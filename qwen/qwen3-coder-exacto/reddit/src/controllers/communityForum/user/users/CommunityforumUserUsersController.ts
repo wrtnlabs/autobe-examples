@@ -10,8 +10,6 @@ import { ICommunityForumCommunityUser } from "../../../../api/structures/ICommun
 @Controller("/communityForum/user/users/:username")
 export class CommunityforumUserUsersController {
   /**
-   * Update a community forum user's profile information.
-   *
    * Update the profile information for an existing community forum user. This
    * operation allows users to modify their public profile details while
    * maintaining strict security controls over sensitive authentication

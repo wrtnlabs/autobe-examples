@@ -8,8 +8,6 @@ export * as attachments from "./attachments/index";
 export * as comments from "./comments/index";
 
 /**
- * Create a new article draft in the discussion board.
- *
  * Create a new discussion board article in draft status. This operation allows
  * authenticated contributors to compose articles on economic and political
  * topics before submitting them for moderator review.
@@ -134,8 +132,6 @@ export namespace create {
 }
 
 /**
- * Update an article with revised content or metadata.
- *
  * Update an existing discussion board article by providing new content, title,
  * category assignment, or status change. This operation allows contributors to
  * revise their own articles in draft or rejected states.
@@ -252,8 +248,6 @@ export namespace update {
 }
 
 /**
- * Delete an article (contributor).
- *
  * Remove a discussion board article from the system as a contributor by either
  * soft deletion (preserving record for compliance) or permanent deletion (erase
  * all data). Soft deletion sets the deleted_at timestamp, removing public

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductImage } from "../../../../structures/IShoppingMallProductImage";
 
 /**
- * Retrieve a specific image for a shopping mall product
- * (shopping_mall_product_images).
- *
  * Retrieve a single image asset associated with a product for use in product
  * galleries or detail pages.
  *

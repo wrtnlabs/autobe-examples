@@ -7,9 +7,6 @@ import { ICommunityPlatformUserProfile } from "../../../../../structures/ICommun
 import { IPageICommunityPlatformUserProfile } from "../../../../../structures/IPageICommunityPlatformUserProfile";
 
 /**
- * Search and list user profiles for a user using advanced filters
- * (community_platform_user_profiles).
- *
  * Search and retrieve a paginated, filterable list of all user profiles for a
  * given user based on advanced search and privacy settings. This allows
  * administrators to view, audit, and analyze user profile data while respecting
@@ -123,9 +120,6 @@ export namespace index {
 }
 
 /**
- * Update an existing community platform user's profile (display name, avatar,
- * bio, or status).
- *
  * Update a user's profile attributes and information by providing new data in
  * the request body. This operation first verifies that both the user account
  * and the targeted profile exist, and that the profile is associated with the

@@ -7,8 +7,6 @@ import { IDiscussionBoardUser } from "../../../api/structures/IDiscussionBoardUs
 @Controller("/my/profile")
 export class MyProfileController {
   /**
-   * Retrieve the authenticated user's profile.
-   *
    * Fetch the current authenticated user's profile including account details,
    * email, username, account status, and verification state.
    *

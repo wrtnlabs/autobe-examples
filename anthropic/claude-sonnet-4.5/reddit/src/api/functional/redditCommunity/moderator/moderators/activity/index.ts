@@ -7,9 +7,6 @@ import { IRedditCommunityCommunityModerator } from "../../../../../structures/IR
 import { IPageIRedditCommunityModerationAction } from "../../../../../structures/IPageIRedditCommunityModerationAction";
 
 /**
- * Retrieve filtered and paginated moderation activity history for a specific
- * moderator.
- *
  * Retrieve a comprehensive, filtered, and paginated history of all moderation
  * actions performed by a specific moderator identified by their username. This
  * operation provides powerful search and filtering capabilities to analyze

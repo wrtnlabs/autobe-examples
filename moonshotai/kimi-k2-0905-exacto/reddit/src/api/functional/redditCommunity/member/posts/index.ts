@@ -7,8 +7,6 @@ import { IRedditCommunityPost } from "../../../../structures/IRedditCommunityPos
 export * as comments from "./comments/index";
 
 /**
- * Create a new Reddit community post.
- *
  * Create a new post within a Reddit community. This operation allows
  * authenticated community members to share content in text post, link post, or
  * image post format. The post type is determined by the reddit_post_type_id
@@ -113,8 +111,6 @@ export namespace create {
 }
 
 /**
- * Update an existing post with new content or properties.
- *
  * Update an existing post with new content, title, or other properties. This
  * operation allows authenticated members to modify their own posts while the
  * system automatically creates snapshots to preserve edit history. The update
@@ -225,8 +221,6 @@ export namespace update {
 }
 
 /**
- * Delete a post from the platform.
- *
  * Remove a post from the platform. This operation allows authenticated members
  * to delete their own posts, with the system handling cleanup of associated
  * data including votes, comments, and snapshots according to platform

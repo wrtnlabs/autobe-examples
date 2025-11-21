@@ -9,8 +9,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/sales/:saleId/reviews")
 export class ShoppingmallSalesReviewsController {
   /**
-   * Retrieve filtered and paginated reviews for a specific product sale.
-   *
    * Retrieve a comprehensive list of product reviews for a specific sale
    * listing with advanced filtering and search capabilities. This operation
    * provides buyers with detailed feedback from other customers who purchased

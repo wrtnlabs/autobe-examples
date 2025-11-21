@@ -8,9 +8,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/skus/:skuId/reviews")
 export class ShoppingmallSkusReviewsController {
   /**
-   * Search and list reviews from shopping_mall_reviews scoped to a specific
-   * SKU.
-   *
    * Retrieve a paginated, filtered list of reviews for a specific SKU as
    * stored in the shopping_mall_reviews table.
    *
@@ -74,9 +71,6 @@ export class ShoppingmallSkusReviewsController {
   }
 
   /**
-   * Get a detailed shoppingMall review record for a specific SKU from
-   * shopping_mall_reviews.
-   *
    * Retrieve a single detailed review for a specific SKU using its review
    * identifier.
    *

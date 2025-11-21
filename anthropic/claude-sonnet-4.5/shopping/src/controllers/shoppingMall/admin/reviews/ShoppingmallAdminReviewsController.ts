@@ -10,8 +10,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/admin/reviews/:reviewId")
 export class ShoppingmallAdminReviewsController {
   /**
-   * Delete a product review from the system.
-   *
    * Delete an existing product review from the shopping marketplace platform.
    * This operation permanently removes the review record from the database
    * including all associated review images and metadata.

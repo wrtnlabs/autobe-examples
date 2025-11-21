@@ -7,9 +7,6 @@ import { ICommunityPlatformVoteTrendAnalytics } from "../../../../../../api/stru
 @Controller("/communityPlatform/adminUser/analytics/votes/trends")
 export class CommunityplatformAdminuserAnalyticsVotesTrendsController {
   /**
-   * Retrieve aggregated vote trend analytics composed from vote and content
-   * tables in the community platform.
-   *
    * Retrieve aggregated analytics about voting behavior trends across the
    * community platform over a specified period.
    *

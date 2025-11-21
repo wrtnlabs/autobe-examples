@@ -12,8 +12,6 @@ import { IRedditCommunityModeratorSession } from "../../../../../api/structures/
 @Controller("/redditCommunity/moderator/moderators/:username/sessions")
 export class RedditcommunityModeratorModeratorsSessionsController {
   /**
-   * Retrieve filtered list of authentication sessions for a specific moderator.
-   *
    * Retrieve a comprehensive list of authentication sessions associated with a
    * specific moderator account. This operation provides session management and
    * security monitoring capabilities by returning detailed information about
@@ -67,8 +65,6 @@ export class RedditcommunityModeratorModeratorsSessionsController {
   }
 
   /**
-   * Terminate a specific moderator authentication session.
-   *
    * Permanently terminate and invalidate a specific authentication session for
    * a moderator account. This operation provides essential security
    * functionality by allowing moderators to remotely log out from individual

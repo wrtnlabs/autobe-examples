@@ -12,8 +12,6 @@ import { IShoppingMallOrderSeller } from "../../../../../api/structures/IShoppin
 @Controller("/shoppingMall/admin/orders/:orderId/sellers")
 export class ShoppingmallAdminOrdersSellersController {
   /**
-   * Search and retrieve seller segments within a specific order.
-   *
    * Retrieve a filtered and paginated list of seller-specific order segments
    * for a given parent order. This operation provides comprehensive search
    * capabilities for analyzing how a multi-seller order is distributed across
@@ -68,9 +66,6 @@ export class ShoppingmallAdminOrdersSellersController {
   }
 
   /**
-   * Retrieve detailed information about a specific seller segment within an
-   * order.
-   *
    * Retrieve complete detailed information about a specific seller's segment
    * within a multi-seller order. This operation provides comprehensive
    * visibility into how a particular seller is handling their portion of the

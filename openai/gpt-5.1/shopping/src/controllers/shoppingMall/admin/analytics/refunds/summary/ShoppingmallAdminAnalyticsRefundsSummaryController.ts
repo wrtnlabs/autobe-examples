@@ -7,9 +7,6 @@ import { IShoppingMallAnalyticsRefundSummary } from "../../../../../../api/struc
 @Controller("/shoppingMall/admin/analytics/refunds/summary")
 export class ShoppingmallAdminAnalyticsRefundsSummaryController {
   /**
-   * Retrieve an aggregated refund and post-payment adjustment summary derived
-   * from ShoppingMall refund- and dispute-related tables.
-   *
    * Retrieve a comprehensive analytical summary of refunds and related
    * post-payment adjustments on the ShoppingMall platform for a specified
    * period and filter set.

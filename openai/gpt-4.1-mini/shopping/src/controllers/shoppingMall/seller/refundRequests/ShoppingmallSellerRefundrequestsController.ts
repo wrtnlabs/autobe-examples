@@ -10,8 +10,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/seller/refundRequests/:refundRequestId")
 export class ShoppingmallSellerRefundrequestsController {
   /**
-   * Update a refund request by ID in the shopping mall system.
-   *
    * Update details of an existing refund request by specifying its unique
    * identifier.
    *

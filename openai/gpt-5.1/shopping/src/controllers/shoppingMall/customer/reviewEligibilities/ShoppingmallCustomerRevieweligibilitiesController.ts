@@ -8,9 +8,6 @@ import { IShoppingMallReviewEligibility } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/customer/reviewEligibilities")
 export class ShoppingmallCustomerRevieweligibilitiesController {
   /**
-   * Search paginated review eligibility records from the
-   * shopping_mall_review_eligibilities table.
-   *
    * Retrieve a filtered, paginated list of review eligibility records from
    * the `shopping_mall_review_eligibilities` table.
    *

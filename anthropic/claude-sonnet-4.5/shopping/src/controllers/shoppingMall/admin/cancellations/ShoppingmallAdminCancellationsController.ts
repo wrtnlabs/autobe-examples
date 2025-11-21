@@ -14,9 +14,6 @@ import { IShoppingMallOrderCancellation } from "../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/cancellations")
 export class ShoppingmallAdminCancellationsController {
   /**
-   * Search and retrieve a filtered, paginated list of order cancellation
-   * requests.
-   *
    * Retrieve a comprehensive, filtered list of order cancellation requests with
    * advanced search and pagination capabilities. This operation provides
    * marketplace administrators and authorized users with the ability to query
@@ -69,8 +66,6 @@ export class ShoppingmallAdminCancellationsController {
   }
 
   /**
-   * Retrieve detailed information about a specific order cancellation request.
-   *
    * Retrieve comprehensive details about a specific order cancellation request
    * identified by its unique cancellation ID. This operation provides
    * authorized users with complete visibility into the cancellation workflow
@@ -122,8 +117,6 @@ export class ShoppingmallAdminCancellationsController {
   }
 
   /**
-   * Update an order cancellation request status (admin approval/rejection).
-   *
    * Update an existing order cancellation request, typically to approve or
    * reject the buyer's cancellation request. This operation is primarily used
    * by administrators to review and process cancellation requests submitted by
@@ -176,8 +169,6 @@ export class ShoppingmallAdminCancellationsController {
   }
 
   /**
-   * Delete an order cancellation request.
-   *
    * Permanently remove an order cancellation request from the system by its
    * unique identifier.
    *

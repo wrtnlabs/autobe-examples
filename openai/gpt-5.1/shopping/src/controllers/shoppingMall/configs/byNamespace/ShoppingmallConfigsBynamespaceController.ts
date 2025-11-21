@@ -7,8 +7,6 @@ import { IShoppingMallConfig } from "../../../../api/structures/IShoppingMallCon
 @Controller("/shoppingMall/configs/byNamespace/:namespace")
 export class ShoppingmallConfigsBynamespaceController {
   /**
-   * Get a configuration from shopping_mall_configs by its namespace key.
-   *
    * Retrieve a single configuration object from the `shopping_mall_configs`
    * table identified by its business-level namespace key.
    *

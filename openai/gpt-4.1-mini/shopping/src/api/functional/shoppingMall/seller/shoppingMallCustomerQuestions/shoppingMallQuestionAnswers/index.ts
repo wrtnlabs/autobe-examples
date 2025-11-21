@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallQuestionAnswer } from "../../../../../structures/IShoppingMallQuestionAnswer";
 
 /**
- * Create a new answer for a customer question by a seller in the shopping mall.
- *
  * Create a new seller answer for an existing customer question in the shopping
  * mall platform.
  *
@@ -237,8 +235,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific shopping mall question answer.
- *
  * Permanently delete a specific seller-provided answer to a customer question
  * in the shopping mall platform.
  *

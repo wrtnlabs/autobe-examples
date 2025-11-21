@@ -11,9 +11,6 @@ import { IShoppingMallProductImage } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/products/:productId/images")
 export class ShoppingmallAdminProductsImagesController {
   /**
-   * Search and list all images for a given product
-   * (shopping_mall_product_images) with pagination and filters.
-   *
    * Retrieves a filtered, paginated list of all images attached to a given
    * product. The operation provides search/filter functionality to locate
    * images by position, label, and related fields. Results include image

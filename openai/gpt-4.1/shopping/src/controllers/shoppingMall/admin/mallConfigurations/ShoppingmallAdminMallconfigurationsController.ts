@@ -15,9 +15,6 @@ import { IPageIShoppingMallConfiguration } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/admin/mallConfigurations")
 export class ShoppingmallAdminMallconfigurationsController {
   /**
-   * Create a new platform configuration entry in shopping_mall_configurations
-   * table.
-   *
    * Create a new system configuration entry for the platform-wide shopping mall
    * backend. This operation enables administrators to register global
    * configuration options—these may include feature toggles, business
@@ -63,9 +60,6 @@ export class ShoppingmallAdminMallconfigurationsController {
   }
 
   /**
-   * Search and retrieve a paginated list of shopping mall configuration entries
-   * (shopping_mall_configurations table).
-   *
    * Retrieve a paginated and filterable list of all shopping mall configuration
    * entries defined in the system.
    *
@@ -109,9 +103,6 @@ export class ShoppingmallAdminMallconfigurationsController {
   }
 
   /**
-   * Retrieve details for a specific shopping mall configuration entry by unique
-   * config_key (shopping_mall_configurations table).
-   *
    * Retrieve the complete details of a specific shopping mall configuration
    * entry by its unique configuration key.
    *
@@ -153,9 +144,6 @@ export class ShoppingmallAdminMallconfigurationsController {
   }
 
   /**
-   * Update a platform configuration entry in shopping_mall_configurations table
-   * by config_key.
-   *
    * Update an existing configuration entry for the shopping mall platform. This
    * endpoint allows administrators to change the value, description, or status
    * of a specific configuration entry identified by its unique config_key in
@@ -206,9 +194,6 @@ export class ShoppingmallAdminMallconfigurationsController {
   }
 
   /**
-   * Soft-delete platform configuration entry in shopping_mall_configurations by
-   * config_key.
-   *
    * Permanently (via soft-delete) remove a configuration entry by its unique
    * config_key from the platform settings.
    *

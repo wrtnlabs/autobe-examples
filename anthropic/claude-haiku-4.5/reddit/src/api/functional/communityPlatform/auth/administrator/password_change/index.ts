@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformAdministrator } from "../../../../../structures/ICommunityPlatformAdministrator";
 
 /**
- * Change password for an authenticated platform administrator.
- *
  * Update the password for an authenticated platform administrator who remembers
  * their current credentials. This operation requires the administrator to
  * provide their current password for verification, plus a new password meeting

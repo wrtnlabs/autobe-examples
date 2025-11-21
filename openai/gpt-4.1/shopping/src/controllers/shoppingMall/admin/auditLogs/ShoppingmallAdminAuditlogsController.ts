@@ -12,9 +12,6 @@ import { IShoppingMallAuditLog } from "../../../../api/structures/IShoppingMallA
 @Controller("/shoppingMall/admin/auditLogs")
 export class ShoppingmallAdminAuditlogsController {
   /**
-   * Search and retrieve a filtered, paginated list of audit log entries from
-   * shopping_mall_audit_logs.
-   *
    * Provides administrators access to the full set of audit log records for
    * investigation or compliance review.
    *
@@ -53,9 +50,6 @@ export class ShoppingmallAdminAuditlogsController {
   }
 
   /**
-   * Retrieve a specific audit log entry from shopping_mall_audit_logs by unique
-   * identifier.
-   *
    * Retrieve detailed information about a single audit log entry from
    * shopping_mall_audit_logs, using its unique identifier as the primary data
    * key.

@@ -14,9 +14,6 @@ import { IShoppingMallRefundRequest } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/admin/refundRequests")
 export class ShoppingmallAdminRefundrequestsController {
   /**
-   * Search and paginate refund requests in shopping_mall_refund_requests with
-   * advanced filters.
-   *
    * Searches, filters, and returns a paginated list of refund requests from
    * shopping_mall_refund_requests, supporting advanced workflow and compliance
    * review.
@@ -61,9 +58,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Retrieve full detail of a specific refund request
-   * (shopping_mall_refund_requests).
-   *
    * Retrieve the full detail for a single refund request in the shopping mall.
    * This endpoint provides all information filed by the customer for this
    * request, including the refund reason, status (such as pending, approved,
@@ -109,8 +103,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Update the details and status of a shopping mall refund request record.
-   *
    * This API operation allows authorized actors to update the details of an
    * existing refund request in the shopping mall system.
    *
@@ -161,9 +153,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Soft-delete a refund request record (set deleted_at for compliance and
-   * auditability).
-   *
    * This API operation enables authorized administrators to mark a refund
    * request as deleted within the shopping mall system using soft deletion
    * semantics, leveraging the deleted_at column defined in the schema.

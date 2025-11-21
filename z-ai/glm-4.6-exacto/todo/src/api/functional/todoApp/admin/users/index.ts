@@ -8,9 +8,6 @@ import { IPageITodoAppUser } from "../../../../structures/IPageITodoAppUser";
 export * as sessions from "./sessions/index";
 
 /**
- * Paginated search and retrieval of user accounts for admin oversight
- * (todo_app_users).
- *
  * Retrieve a paginated and filterable list of user accounts for administrative
  * purposes.
  *
@@ -116,8 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a user account by userId (todo_app_users).
- *
  * Fetch complete details for a specific user account by its unique identifier
  * for administrative purposes.
  *

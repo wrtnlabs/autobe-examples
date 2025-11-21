@@ -8,8 +8,6 @@ import { IDiscussionBoardModerator } from "../../../../../../api/structures/IDis
 @Controller("/auth/moderator/password/reset/request")
 export class AuthModeratorPasswordResetRequestController {
   /**
-   * Request password reset token for moderator account.
-   *
    * Initiates a password reset process for moderators by generating and sending
    * a secure reset token to their registered email address.
    *

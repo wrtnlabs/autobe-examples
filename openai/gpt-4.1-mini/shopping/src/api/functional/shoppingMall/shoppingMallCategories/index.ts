@@ -8,8 +8,6 @@ import { IPageIShoppingMallCategory } from "../../../structures/IPageIShoppingMa
 import { IShoppingMallShoppingMallCategory } from "../../../structures/IShoppingMallShoppingMallCategory";
 
 /**
- * Search and retrieve shopping mall categories with filtering and pagination.
- *
  * Retrieve a filtered and paginated list of shopping mall product categories.
  *
  * This operation supports advanced search and filtering capabilities including
@@ -103,9 +101,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information about a single shopping mall category by its unique
- * name.
- *
  * Retrieve detailed information about a specific product category in the
  * shopping mall by categoryName.
  *

@@ -10,9 +10,6 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/user/communities")
 export class CommunityplatformUserCommunitiesController {
   /**
-   * Create a new community entity with full identity, descriptive, and
-   * visibility settings (community_platform_communities).
-   *
    * Create a new community on the platform with full specification of its
    * business identity, including mandatory fields for unique name (slug),
    * display title, description, visibility (public, private, or invite-only),

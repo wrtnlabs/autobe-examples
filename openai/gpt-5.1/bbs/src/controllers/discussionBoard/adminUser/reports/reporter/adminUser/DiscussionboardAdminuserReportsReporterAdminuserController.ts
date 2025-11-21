@@ -10,9 +10,6 @@ import { IDiscussionBoardReportOfAdminusers } from "../../../../../../api/struct
 @Controller("/discussionBoard/adminUser/reports/:reportId/reporter/adminUser")
 export class DiscussionboardAdminuserReportsReporterAdminuserController {
   /**
-   * Retrieve the admin reporter link for a report from
-   * discussion_board_report_of_adminusers.
-   *
    * Get the admin user reporter association for a specific report identified by
    * its UUID.
    *

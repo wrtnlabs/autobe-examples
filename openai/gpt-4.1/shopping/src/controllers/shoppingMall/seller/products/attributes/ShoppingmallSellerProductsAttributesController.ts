@@ -15,9 +15,6 @@ import { IPageIShoppingMallProductAttribute } from "../../../../../api/structure
 @Controller("/shoppingMall/seller/products/:productId/attributes")
 export class ShoppingmallSellerProductsAttributesController {
   /**
-   * Create a new attribute (shopping_mall_product_attributes) for a specific
-   * product (shopping_mall_products).
-   *
    * Create a new attribute specification (such as color or size) for a given
    * product to support SKU and option-based differentiation.
    *
@@ -72,9 +69,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Search and paginate all attribute definitions for a specific product
-   * (shopping_mall_product_attributes table).
-   *
    * Retrieve a filtered and paginated list of attribute definitions for a
    * specific product, identified by its unique productId (UUID). This endpoint
    * provides a full list of all logical attribute types—such as color, size, or
@@ -126,9 +120,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Retrieve full details for one product attribute
-   * (shopping_mall_product_attributes table).
-   *
    * Fetch full details for a single product attribute associated with a
    * specified product, where both the product and attribute are uniquely
    * identified by their UUIDs. This endpoint provides the complete metadata for
@@ -174,9 +165,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Update an existing attribute (shopping_mall_product_attributes) for a given
-   * product (shopping_mall_products).
-   *
    * Update the definition of an existing attribute (e.g., its name or display
    * order) associated with a specific product in the catalog.
    *
@@ -231,9 +219,6 @@ export class ShoppingmallSellerProductsAttributesController {
   }
 
   /**
-   * Soft-delete a specific product attribute associated with a product
-   * (shopping_mall_product_attributes table).
-   *
    * Remove a product attribute (such as color, size, or material) from the
    * attribute list available for constructing SKUs under a specific product.
    *

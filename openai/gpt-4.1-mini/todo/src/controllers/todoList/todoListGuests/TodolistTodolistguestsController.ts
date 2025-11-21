@@ -9,8 +9,6 @@ import { ITodoListGuest } from "../../../api/structures/ITodoListGuest";
 @Controller("/todoList/todoListGuests")
 export class TodolistTodolistguestsController {
   /**
-   * Retrieve details of a specific Todo List guest by ID.
-   *
    * Retrieve detailed information of a registered guest identified by their
    * unique ID within the Todo List system.
    *
@@ -45,8 +43,6 @@ export class TodolistTodolistguestsController {
   }
 
   /**
-   * Create a new Todo List guest.
-   *
    * Create a new guest user within the Todo List system.
    *
    * This operation allows registering a guest user by submitting guest details.

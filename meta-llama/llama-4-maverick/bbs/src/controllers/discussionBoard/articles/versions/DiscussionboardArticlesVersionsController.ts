@@ -8,8 +8,6 @@ import { IDiscussionBoardArticleVersion } from "../../../../api/structures/IDisc
 @Controller("/discussionBoard/articles/:articleId/versions/:versionId")
 export class DiscussionboardArticlesVersionsController {
   /**
-   * Retrieve a specific version of an article.
-   *
    * This operation allows users to retrieve a specific version of an article by
    * providing both the article ID and the version ID. It is useful for tracking
    * changes and viewing historical versions of articles. The operation

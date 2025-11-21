@@ -55,8 +55,6 @@ export class ShoppingmallAdminShoppingmalluserrolesController {
   }
 
   /**
-   * Search and list shopping mall user role assignments.
-   *
    * Retrieve a filtered and paginated list of shopping mall user role
    * assignments from the system.
    *
@@ -95,8 +93,6 @@ export class ShoppingmallAdminShoppingmalluserrolesController {
   }
 
   /**
-   * Retrieve a specific user role assignment by ID.
-   *
    * Retrieve detailed information about a single shopping mall user role
    * assignment identified by its unique ID.
    *
@@ -182,8 +178,6 @@ export class ShoppingmallAdminShoppingmalluserrolesController {
   }
 
   /**
-   * Delete a shopping mall user role mapping by ID.
-   *
    * This DELETE operation removes the specified shopping mall user role mapping
    * identified by its unique ID. It is used when an administrator's role needs
    * to be revoked or adjusted.

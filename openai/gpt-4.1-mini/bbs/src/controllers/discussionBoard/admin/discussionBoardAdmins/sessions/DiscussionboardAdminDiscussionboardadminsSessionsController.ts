@@ -17,8 +17,6 @@ import { IPageIDiscussionBoardAdminSession } from "../../../../../api/structures
 )
 export class DiscussionboardAdminDiscussionboardadminsSessionsController {
   /**
-   * Create a new active session record for a discussion board administrator.
-   *
    * Create a session record linked to a specified discussion board
    * administrator.
    *
@@ -63,8 +61,6 @@ export class DiscussionboardAdminDiscussionboardadminsSessionsController {
   }
 
   /**
-   * List active sessions for a discussion board admin.
-   *
    * Retrieve a paginated list of active sessions belonging to a discussion
    * board administrator.
    *
@@ -113,8 +109,6 @@ export class DiscussionboardAdminDiscussionboardadminsSessionsController {
   }
 
   /**
-   * Retrieve specific session details for a discussion board admin.
-   *
    * Retrieve details of a specific active session for a discussion board
    * administrator.
    *
@@ -158,8 +152,6 @@ export class DiscussionboardAdminDiscussionboardadminsSessionsController {
   }
 
   /**
-   * Update existing session details of a discussion board administrator.
-   *
    * Update the session record for a specific discussion board administrator
    * session.
    *
@@ -206,8 +198,6 @@ export class DiscussionboardAdminDiscussionboardadminsSessionsController {
   }
 
   /**
-   * Delete an administrator's active session.
-   *
    * Delete a specific session belonging to an administrator in the discussion
    * board system.
    *

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallDispute } from "../../../../structures/IShoppingMallDispute";
 
 /**
- * Create a new dispute record in the shopping_mall_disputes table for the
- * ShoppingMall platform.
- *
  * Create a new dispute case in the ShoppingMall dispute management subsystem.
  *
  * This endpoint operates on the shopping_mall_disputes table, which stores
@@ -135,9 +132,6 @@ export namespace create {
 }
 
 /**
- * Update an existing shopping_mall_disputes record using its disputeCode
- * business identifier.
- *
  * Update an existing dispute identified by disputeCode in the
  * shopping_mall_disputes table.
  *

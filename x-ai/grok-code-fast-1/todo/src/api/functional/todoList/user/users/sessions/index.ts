@@ -7,9 +7,6 @@ import { ITodoListUserSession } from "../../../../../structures/ITodoListUserSes
 import { IPageITodoListUserSession } from "../../../../../structures/IPageITodoListUserSession";
 
 /**
- * Searches and lists authentication sessions for a given user account in
- * todo_list_user_sessions.
- *
  * Retrieve a filtered and paginated list of authentication session records
  * associated with the specified user. Only the user themselves or an
  * administrative actor can access this information, and the result includes

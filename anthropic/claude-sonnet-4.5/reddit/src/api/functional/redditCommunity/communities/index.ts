@@ -9,8 +9,6 @@ export * as moderators from "./moderators/index";
 export * as rules from "./rules/index";
 
 /**
- * Search and retrieve a filtered, paginated list of communities.
- *
  * Retrieve a filtered and paginated list of communities from the
  * reddit_community platform with advanced search and filtering capabilities.
  * This operation provides comprehensive community discovery functionality,
@@ -121,8 +119,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific community.
- *
  * Retrieve comprehensive information about a specific community using its
  * unique community name identifier.
  *

@@ -8,8 +8,6 @@ import { IPageIRedditCommunityPost } from "../../../structures/IPageIRedditCommu
 export * as comments from "./comments/index";
 
 /**
- * Search and retrieve a filtered, paginated list of posts across communities.
- *
  * Retrieve a filtered and paginated list of posts from the Reddit-like
  * community platform. This operation provides comprehensive search and
  * filtering capabilities for discovering posts across all communities or within
@@ -120,8 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific post.
- *
  * Retrieve complete details of a single post identified by its unique post ID.
  *
  * This operation provides comprehensive information about a specific post

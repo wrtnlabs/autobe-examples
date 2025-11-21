@@ -8,8 +8,6 @@ import { IPageIDiscussionBoardArticle } from "../../../structures/IPageIDiscussi
 export * as comments from "./comments/index";
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board articles.
- *
  * Retrieve a filtered and paginated collection of discussion board articles
  * with comprehensive search and filtering capabilities. This operation provides
  * advanced discovery features for finding articles based on publication status,
@@ -121,8 +119,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a complete article with all details and attachments.
- *
  * Retrieve the full details of a specific article from the discussion board,
  * including content, metadata, all attachments, and related information. This
  * operation implements comprehensive visibility controls ensuring users can

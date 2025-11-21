@@ -7,9 +7,6 @@ import { IShoppingMallAccountRiskFlag } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallAccountRiskFlag } from "../../../../../structures/IPageIShoppingMallAccountRiskFlag";
 
 /**
- * Search paginated account risk flags for a specific guest user using
- * `shopping_mall_account_risk_flags`.
- *
  * Retrieve a paginated, filterable list of risk flag records associated with a
  * specific guest user in the shoppingMall platform.
  *

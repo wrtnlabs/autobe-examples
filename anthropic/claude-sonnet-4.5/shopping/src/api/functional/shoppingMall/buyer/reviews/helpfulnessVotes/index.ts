@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallReviewHelpfulnessVote } from "../../../../../structures/IShoppingMallReviewHelpfulnessVote";
 
 /**
- * Submit a helpfulness vote for a specific review.
- *
  * Create a new helpfulness vote record for a specific product review, allowing
  * authenticated buyers to indicate whether they found the review useful. This
  * operation enables the review helpfulness voting system that helps other

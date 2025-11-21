@@ -8,9 +8,6 @@ import { IDiscussionBoardMember } from "../../../../../api/structures/IDiscussio
 @Controller("/auth/member/password/reset")
 export class AuthMemberPasswordResetController {
   /**
-   * Request password reset token for member account in
-   * discussion_board_password_resets table.
-   *
    * Initiates a password reset request for a member who has forgotten their
    * password, creating a secure single-use token that enables password change
    * without knowing the current password. This operation creates records in

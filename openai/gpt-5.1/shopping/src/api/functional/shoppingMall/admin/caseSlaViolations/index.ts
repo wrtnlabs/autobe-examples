@@ -7,9 +7,6 @@ import { IShoppingMallCaseSlaViolation } from "../../../../structures/IShoppingM
 import { IPageIShoppingMallCaseSlaViolation } from "../../../../structures/IPageIShoppingMallCaseSlaViolation";
 
 /**
- * Search SLA violation records from shopping_mall_case_sla_violations with
- * filtering and pagination.
- *
  * Search and retrieve a filtered, paginated list of SLA violation records
  * stored in the shopping_mall_case_sla_violations table.
  *
@@ -124,9 +121,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single case SLA violation record from the
- * shopping_mall_case_sla_violations table.
- *
  * Retrieve detailed information about a single SLA violation record associated
  * with cancellation, refund, or dispute handling.
  *

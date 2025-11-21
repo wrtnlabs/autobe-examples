@@ -12,9 +12,6 @@ import { ITodoAppGuestUser } from "../../../../api/structures/ITodoAppGuestUser"
 @Controller("/todoApp/adminUser/guestUsers")
 export class TodoappAdminuserGuestusersController {
   /**
-   * Search and paginate guest user concept records stored in the
-   * todo_app_guestusers table.
-   *
    * Retrieve a paginated and optionally filtered list of guest user concept
    * records from the todo_app_guestusers table for administrative monitoring
    * and analysis.
@@ -78,9 +75,6 @@ export class TodoappAdminuserGuestusersController {
   }
 
   /**
-   * Get a single guest user concept record from the todo_app_guestusers table
-   * by UUID id.
-   *
    * Fetch detailed information of a single guest user concept record from the
    * todo_app_guestusers table using its unique identifier.
    *

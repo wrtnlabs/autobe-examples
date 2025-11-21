@@ -10,8 +10,6 @@ export * as moderationLogs from "./moderationLogs/index";
 export * as accountActions from "./accountActions/index";
 
 /**
- * Search and retrieve a paginated list of moderators with filtering.
- *
  * Retrieve a filtered, sorted, and paginated list of moderator accounts from
  * the system.
  *
@@ -130,8 +128,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific moderator account.
- *
  * Retrieve comprehensive details about a specific moderator account identified
  * by moderatorId. This operation provides access to moderator profile
  * information, authentication status, account activity, and moderation
@@ -235,8 +231,6 @@ export namespace at {
 }
 
 /**
- * Update moderator account profile and authentication details.
- *
  * Update editable fields of a moderator account identified by moderatorId. This
  * operation allows moderators to modify their profile information, change
  * authentication credentials, and update display preferences while maintaining
@@ -360,8 +354,6 @@ export namespace update {
 }
 
 /**
- * Remove moderator account and revoke moderation privileges.
- *
  * Permanently revoke moderator privileges and mark the moderator account as
  * deleted in the discussion_board_moderators table. This operation implements
  * soft deletion by setting the deleted_at timestamp, which preserves the

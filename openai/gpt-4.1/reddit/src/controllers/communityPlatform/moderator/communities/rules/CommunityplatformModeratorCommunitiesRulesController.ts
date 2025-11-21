@@ -12,9 +12,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../../api/structures/I
 @Controller("/communityPlatform/moderator/communities/:communityName/rules")
 export class CommunityplatformModeratorCommunitiesRulesController {
   /**
-   * Create a new rule for a specific community
-   * (community_platform_community_rules table).
-   *
    * Create a new moderation or content rule for a target community.
    *
    * This operation lets authorized moderators define a community-specific rule,
@@ -62,9 +59,6 @@ export class CommunityplatformModeratorCommunitiesRulesController {
   }
 
   /**
-   * Update an existing rule for a specific community
-   * (community_platform_community_rules table).
-   *
    * Update the content or moderation rule details for a community.
    *
    * Authorized moderators invoke this endpoint to modify the description,
@@ -116,9 +110,6 @@ export class CommunityplatformModeratorCommunitiesRulesController {
   }
 
   /**
-   * Delete a moderation rule (community_platform_community_rules) for a
-   * specific community by name and rule code.
-   *
    * Remove an existing community rule associated with a specific community. The
    * operation is intended for use by authorized community moderators who need
    * to manage or update the set of enforced rules within a community.

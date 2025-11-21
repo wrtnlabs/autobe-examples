@@ -11,8 +11,6 @@ import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallRev
 @Controller("/shoppingMall/customer/reviews/:reviewId")
 export class ShoppingmallCustomerReviewsController {
   /**
-   * Update a product review (shopping_mall_reviews) by reviewId with new data.
-   *
    * This API endpoint allows updating of a product review in the shopping mall
    * platform, targeted by its unique identifier. The endpoint supports
    * modifications to core review fields such as the title (summary), body text,
@@ -63,9 +61,6 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Delete (erase or soft delete) a product review (shopping_mall_reviews) by
-   * reviewId.
-   *
    * This API endpoint removes a specific product review from the platform
    * database, based on its unique reviewId. Depending on the business and
    * moderation rules, this may entail soft-deleting the review (setting

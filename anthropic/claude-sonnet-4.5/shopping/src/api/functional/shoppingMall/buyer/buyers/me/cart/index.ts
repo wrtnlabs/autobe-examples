@@ -8,9 +8,6 @@ import { IPageIShoppingMallCartItem } from "../../../../../../structures/IPageIS
 export * as items from "./items/index";
 
 /**
- * Search and retrieve the authenticated buyer's shopping cart items with
- * filtering.
- *
  * Retrieve a filtered and paginated list of shopping cart items for the
  * currently authenticated buyer. This operation provides the buyer's personal
  * cart contents with support for complex queries including product filtering,

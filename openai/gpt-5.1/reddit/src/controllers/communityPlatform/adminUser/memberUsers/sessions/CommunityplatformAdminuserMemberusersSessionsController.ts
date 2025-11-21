@@ -8,9 +8,6 @@ import { ICommunityPlatformMemberuserSession } from "../../../../../api/structur
 @Controller("/communityPlatform/adminUser/memberUsers/:username/sessions")
 export class CommunityplatformAdminuserMemberusersSessionsController {
   /**
-   * Search and retrieve a paginated list of member user session summaries
-   * from community_platform_memberuser_sessions.
-   *
    * Retrieve a filtered, paginated list of session records for a specific
    * member user identified by username.
    *
@@ -93,9 +90,6 @@ export class CommunityplatformAdminuserMemberusersSessionsController {
   }
 
   /**
-   * Retrieve detailed information for a specific member user session from
-   * community_platform_memberuser_sessions.
-   *
    * Retrieve detailed information about a single session for a specific
    * member user, identified by username and sessionId.
    *
@@ -170,9 +164,6 @@ export class CommunityplatformAdminuserMemberusersSessionsController {
   }
 
   /**
-   * Erase a specific session record for a member user in the
-   * community_platform_memberuser_sessions table.
-   *
    * Erase a specific session belonging to a given member user by username and
    * session identifier.
    *

@@ -7,8 +7,6 @@ import typia, { tags } from "typia";
 )
 export class DiscussionboardModeratorArticlesAttachmentsController {
   /**
-   * Remove a file attachment from a discussion board article.
-   *
    * Delete a specific file attachment that was previously uploaded to
    * accompany an article. This operation removes the attachment metadata
    * record from the discussion_board_article_attachments table and triggers

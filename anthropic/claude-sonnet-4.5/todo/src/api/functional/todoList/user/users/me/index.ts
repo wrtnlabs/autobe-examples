@@ -8,8 +8,6 @@ export * as password from "./password/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve authenticated user's own account information.
- *
  * Retrieve the current authenticated user's account profile information
  * including email address, account creation timestamp, and last update
  * timestamp. This operation allows users to view their own account details for
@@ -81,8 +79,6 @@ export namespace at {
 }
 
 /**
- * Update authenticated user's own account information.
- *
  * Update the current authenticated user's account profile information including
  * email address and password. This operation enables users to maintain their
  * account security and keep contact information current through self-service

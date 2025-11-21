@@ -7,9 +7,6 @@ import { ICommunityPlatformPostVote } from "../../../../structures/ICommunityPla
 import { IPageICommunityPlatformPostVote } from "../../../../structures/IPageICommunityPlatformPostVote";
 
 /**
- * Search and retrieve a paginated list of post vote records from the
- * community_platform_post_votes table.
- *
  * Fetches a filtered and paginated list of user votes on posts. This endpoint
  * is designed for administrative or moderation use, enabling the search and
  * review of all individual voting records within the system. Search filters
@@ -113,9 +110,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single post vote record by ID
- * (community_platform_post_votes).
- *
  * Retrieves all details about a specific user voting action identified by the
  * postVoteId. This includes the post involved, user involved, vote type,
  * creation and update timestamps, and soft deletion (removal) timestamp if

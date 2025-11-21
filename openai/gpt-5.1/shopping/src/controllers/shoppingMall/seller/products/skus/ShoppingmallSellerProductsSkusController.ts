@@ -8,8 +8,6 @@ import { IPageIShoppingMallSku } from "../../../../../api/structures/IPageIShopp
 @Controller("/shoppingMall/seller/products/:productId/skus")
 export class ShoppingmallSellerProductsSkusController {
   /**
-   * Create a new SKU (shopping_mall_skus) under the specified product.
-   *
    * Create a new SKU for the specified product in the catalog.
    *
    * This operation writes to the shopping_mall_skus Prisma table, which
@@ -66,9 +64,6 @@ export class ShoppingmallSellerProductsSkusController {
   }
 
   /**
-   * Search and paginate SKUs for a specific product using the
-   * shopping_mall_skus table.
-   *
    * Retrieve a filtered, paginated list of SKUs for a specific product from
    * the shopping_mall_skus table.
    *
@@ -136,8 +131,6 @@ export class ShoppingmallSellerProductsSkusController {
   }
 
   /**
-   * Update a SKU variant in the shopping_mall_skus table for a given product.
-   *
    * Update an existing SKU variant for a specific product in the shoppingMall
    * catalog.
    *
@@ -208,9 +201,6 @@ export class ShoppingmallSellerProductsSkusController {
   }
 
   /**
-   * Delete a SKU variant from the shopping_mall_skus table for a given
-   * product.
-   *
    * Delete an existing SKU variant for a specific product from the
    * shoppingMall catalog.
    *

@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallPolicyStatistics } from "../../../../../structures/IShoppingMallPolicyStatistics";
 
 /**
- * Get aggregated statistics for business policies from
- * shopping_mall_business_policies.
- *
  * Retrieve aggregated statistical information about business policies
  * configured in the shopping mall platform.
  *

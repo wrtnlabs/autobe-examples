@@ -7,9 +7,6 @@ import { IDiscussionBoardPost } from "../../../../../structures/IDiscussionBoard
 import { IPageIDiscussionBoardPost } from "../../../../../structures/IPageIDiscussionBoardPost";
 
 /**
- * Retrieve comprehensive analytics and performance metrics for discussion board
- * posts.
- *
  * This operation provides detailed analytics for discussion board posts by
  * aggregating data from multiple tables including posts, views, and likes. It
  * computes key performance indicators such as total views, like counts,

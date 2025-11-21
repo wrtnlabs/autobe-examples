@@ -8,9 +8,6 @@ import { IShoppingMallProductRating } from "../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/productRatings/:productRatingId")
 export class ShoppingmallProductratingsController {
   /**
-   * Retrieve a specific product rating by its unique identifier from the
-   * shopping_mall_product_ratings table.
-   *
    * Retrieve full details for a standalone product rating record identified by
    * its unique ID.
    *

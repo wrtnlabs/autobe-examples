@@ -7,8 +7,6 @@ import { IShoppingMallReview } from "../../../../../structures/IShoppingMallRevi
 import { IPageIShoppingMallReview } from "../../../../../structures/IPageIShoppingMallReview";
 
 /**
- * Retrieve paginated list of reviews for a specific seller's products.
- *
  * Retrieve a filtered and paginated list of product reviews associated with a
  * specific seller's product catalog. This operation provides sellers with
  * visibility into customer feedback across all their listed products, enabling

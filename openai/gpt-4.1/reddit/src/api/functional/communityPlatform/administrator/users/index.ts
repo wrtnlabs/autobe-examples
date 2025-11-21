@@ -10,9 +10,6 @@ export * as profiles from "./profiles/index";
 export * as profileImageHistory from "./profileImageHistory/index";
 
 /**
- * Search and retrieve paginated users from community_platform_users for
- * administrative/audit purposes.
- *
  * Retrieve and search the list of registered users in the community platform
  * using advanced filtering, pagination, and sorting features. This
  * administrative operation allows compliance and support staff to find users by
@@ -114,8 +111,6 @@ export namespace index {
 }
 
 /**
- * Retrieve user details from the community_platform_users table by userId.
- *
  * Retrieve the complete profile of a registered user from the system.
  *
  * This operation allows administrative actors to view a user's registered
@@ -211,9 +206,6 @@ export namespace at {
 }
 
 /**
- * Update a user's profile and account state by userId in the
- * community_platform_users table.
- *
  * Update one or more attributes of a registered user account identified by
  * userId.
  *
@@ -326,8 +318,6 @@ export namespace update {
 }
 
 /**
- * Erase a user record from the community_platform_users table by userId.
- *
  * Permanently remove a registered user account from the platform based on their
  * unique userId.
  *

@@ -9,8 +9,6 @@ export * as comments from "./comments/index";
 export * as votes from "./votes/index";
 
 /**
- * Search and retrieve a filtered, paginated list of community platform posts.
- *
  * Retrieve a filtered and paginated list of community platform posts from the
  * system. This operation provides advanced search capabilities for finding
  * posts based on multiple criteria including community ID, post type (text,
@@ -120,8 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific community post.
- *
  * Retrieve comprehensive details of a community platform post by its unique
  * identifier. This operation returns the complete post entity including title,
  * content (text, link metadata, or image information depending on post_type),

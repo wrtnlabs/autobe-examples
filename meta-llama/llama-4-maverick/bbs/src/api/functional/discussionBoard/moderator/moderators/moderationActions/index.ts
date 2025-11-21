@@ -7,8 +7,6 @@ import { IDiscussionBoardModerationAction } from "../../../../../structures/IDis
 import { IPageIDiscussionBoardModerationAction } from "../../../../../structures/IPageIDiscussionBoardModerationAction";
 
 /**
- * Search moderation actions by moderator ID with pagination.
- *
  * Retrieve a filtered and paginated list of moderation actions performed by a
  * specific moderator. This operation provides advanced search capabilities for
  * finding moderation actions based on multiple criteria. It supports

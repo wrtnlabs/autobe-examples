@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityCommunityModerator } from "../../../../../structures/IRedditCommunityCommunityModerator";
 
 /**
- * Assign a new moderator to the community.
- *
  * Assign a new moderator to a specific community, granting them moderation
  * authority and privileges within that community space. This operation creates
  * a new moderator assignment by establishing a relationship between an existing
@@ -125,8 +123,6 @@ export namespace create {
 }
 
 /**
- * Remove a moderator from a community.
- *
  * Remove moderator authority from a community by deleting the
  * moderator-community relationship.
  *

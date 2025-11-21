@@ -14,9 +14,6 @@ import { IDiscussionBoardReport } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/adminUser/reports")
 export class DiscussionboardAdminuserReportsController {
   /**
-   * Search and retrieve a paginated list of discussion_board_reports for
-   * moderation purposes.
-   *
    * Retrieve a paginated and filtered list of reports registered in the
    * discussion board system for administrative review.
    *
@@ -74,8 +71,6 @@ export class DiscussionboardAdminuserReportsController {
   }
 
   /**
-   * Get detailed information of a single report from discussion_board_reports.
-   *
    * Retrieve a single discussion board report record for detailed inspection by
    * an authorized actor.
    *
@@ -129,9 +124,6 @@ export class DiscussionboardAdminuserReportsController {
   }
 
   /**
-   * Update a discussion board report in the `discussion_board_reports` table by
-   * reportId.
-   *
    * Update the status and moderation details of a specific discussion board
    * report record identified by `reportId`.
    *
@@ -195,9 +187,6 @@ export class DiscussionboardAdminuserReportsController {
   }
 
   /**
-   * Delete a discussion board report in the `discussion_board_reports` table by
-   * reportId.
-   *
    * Delete a specific discussion board report record from the
    * `discussion_board_reports` table using its `reportId` as identifier.
    *

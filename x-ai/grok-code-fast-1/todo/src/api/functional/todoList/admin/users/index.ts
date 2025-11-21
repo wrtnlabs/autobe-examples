@@ -5,8 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as sessions from "./sessions/index";
 
 /**
- * Soft-deletes a user account in the todo_list_users table by userId.
- *
  * Soft delete an existing user by userId. This operation sets the user's
  * deleted_at field, making the account inaccessible to both the user and any
  * other actors in the system from that moment onward.

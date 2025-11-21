@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationActionMetrics } from "../../../../../structures/ICommunityPlatformModerationActionMetrics";
 
 /**
- * Get aggregated metrics for a specific moderation action based on
- * community_platform_moderation_actions and related reporting tables.
- *
  * Retrieve a detailed metrics snapshot for a single moderation action to
  * support moderation analytics, oversight, and audit review workflows.
  *

@@ -7,9 +7,6 @@ import { IDiscussionBoardPostView } from "../../../../../structures/IDiscussionB
 import { IPageIDiscussionBoardPostView } from "../../../../../structures/IPageIDiscussionBoardPostView";
 
 /**
- * Search and retrieve paginated view records for a specific discussion board
- * post.
- *
  * This operation provides comprehensive search capabilities for viewing post
  * engagement analytics. It allows filtering view records by member, date
  * ranges, and other criteria to analyze post popularity and user engagement

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformComment } from "../../../../../structures/ICommunityPlatformComment";
 
 /**
- * Create a new top-level comment on a post.
- *
  * Create a new comment as a direct reply to a specific post in the community
  * platform. This operation allows authenticated members to submit comments with
  * markdown-formatted content on any post they can access. The comment is

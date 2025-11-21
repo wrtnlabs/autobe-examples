@@ -8,9 +8,6 @@ import { ICommunityPlatformModerationAction } from "../../../../../../api/struct
 @Controller("/communityPlatform/adminUser/moderation/search/actions")
 export class CommunityplatformAdminuserModerationSearchActionsController {
   /**
-   * Search moderation actions stored in the
-   * community_platform_moderation_actions table with pagination and filters.
-   *
    * Search and retrieve a filtered, paginated list of moderation actions from
    * the `community_platform_moderation_actions` table.
    *

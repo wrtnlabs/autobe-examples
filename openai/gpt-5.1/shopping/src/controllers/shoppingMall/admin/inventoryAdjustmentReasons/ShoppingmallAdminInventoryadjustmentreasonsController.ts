@@ -8,9 +8,6 @@ import { IPageIShoppingMallInventoryAdjustmentReason } from "../../../../api/str
 @Controller("/shoppingMall/admin/inventoryAdjustmentReasons")
 export class ShoppingmallAdminInventoryadjustmentreasonsController {
   /**
-   * Create a new shopping_mall_inventory_adjustment_reasons record defining
-   * an inventory adjustment reason.
-   *
    * Create a new standardized inventory adjustment reason in the
    * shopping_mall_inventory_adjustment_reasons master table, using the fields
    * supplied in the request body.
@@ -70,9 +67,6 @@ export class ShoppingmallAdminInventoryadjustmentreasonsController {
   }
 
   /**
-   * Search and retrieve a paginated list of inventory adjustment reasons from
-   * shopping_mall_inventory_adjustment_reasons.
-   *
    * Retrieve a filtered, sortable, and paginated list of inventory adjustment
    * reasons from the system for use in configuration and operational
    * workflows.
@@ -120,9 +114,6 @@ export class ShoppingmallAdminInventoryadjustmentreasonsController {
   }
 
   /**
-   * Get a shopping_mall_inventory_adjustment_reasons record by its unique
-   * reason code.
-   *
    * Retrieve the detailed information of a single inventory adjustment reason
    * identified by its business code from the
    * shopping_mall_inventory_adjustment_reasons table.
@@ -179,9 +170,6 @@ export class ShoppingmallAdminInventoryadjustmentreasonsController {
   }
 
   /**
-   * Update an inventory adjustment reason in
-   * shopping_mall_inventory_adjustment_reasons by reasonCode.
-   *
    * Update an existing inventory adjustment reason identified by its business
    * `reasonCode` in the shopping_mall_inventory_adjustment_reasons table.
    *
@@ -243,9 +231,6 @@ export class ShoppingmallAdminInventoryadjustmentreasonsController {
   }
 
   /**
-   * Delete an inventory adjustment reason from
-   * shopping_mall_inventory_adjustment_reasons by reasonCode.
-   *
    * Permanently delete an inventory adjustment reason identified by its
    * `reasonCode` from the shopping_mall_inventory_adjustment_reasons table.
    *

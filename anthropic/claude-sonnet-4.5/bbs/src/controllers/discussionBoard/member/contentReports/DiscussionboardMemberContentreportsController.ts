@@ -11,8 +11,6 @@ import { IDiscussionBoardContentReport } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/member/contentReports")
 export class DiscussionboardMemberContentreportsController {
   /**
-   * Retrieve detailed information about a specific content report by ID.
-   *
    * Retrieve detailed information about a specific content report submitted by
    * a member flagging an article for policy violations.
    *
@@ -61,8 +59,6 @@ export class DiscussionboardMemberContentreportsController {
   }
 
   /**
-   * Submit a new content report flagging an article for policy violations.
-   *
    * Create a new content report flagging an article for policy violations or
    * inappropriate content.
    *

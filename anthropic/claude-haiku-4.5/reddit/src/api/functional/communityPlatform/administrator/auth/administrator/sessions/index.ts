@@ -8,8 +8,6 @@ import { ICommunityPlatformAdministratorSession } from "../../../../../../struct
 export * as logout_all from "./logout_all/index";
 
 /**
- * Retrieve all administrator sessions.
- *
  * Fetch a list of all active sessions for the authenticated platform
  * administrator across multiple devices and locations. This endpoint provides
  * session management capabilities by displaying all current login sessions with
@@ -81,8 +79,6 @@ export namespace index {
 }
 
 /**
- * Revoke and terminate an administrator session.
- *
  * Immediately terminate a specific administrator session, forcing the holder of
  * that session token to reauthenticate. This operation sets the expired_at
  * timestamp on the session record in the

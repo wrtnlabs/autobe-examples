@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMember } from "../../../../../../structures/ICommunityPlatformMember";
 
 /**
- * Change password for an authenticated member by providing current and new
- * password.
- *
  * Allow an authenticated member to change their password while logged in and
  * actively authenticated. This operation provides the primary password change
  * mechanism for members who know their current password and want to update it

@@ -10,9 +10,6 @@ import { IShoppingMallProductReview } from "../../../api/structures/IShoppingMal
 @Controller("/shoppingMall/shoppingMallProductReviews")
 export class ShoppingmallShoppingmallproductreviewsController {
   /**
-   * List and search shopping mall product reviews with filtering and
-   * pagination.
-   *
    * Retrieve a paginated and searchable list of product reviews submitted by
    * customers.
    *
@@ -51,8 +48,6 @@ export class ShoppingmallShoppingmallproductreviewsController {
   }
 
   /**
-   * Retrieve detailed information of a specific product review by ID.
-   *
    * Retrieve a specific product review by its unique identifier.
    *
    * This operation returns comprehensive review details including the star

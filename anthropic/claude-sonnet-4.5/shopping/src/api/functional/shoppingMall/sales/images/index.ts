@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleImage } from "../../../../structures/IShoppingMallSaleImage";
 
 /**
- * Retrieve a specific product sale image by sale code and image ID.
- *
  * Retrieve detailed information about a specific product image associated with
  * a sale listing. This operation provides access to individual image metadata
  * including the image URL, display order, and other relevant properties.

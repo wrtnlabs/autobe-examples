@@ -17,8 +17,6 @@ import { IPageITodoListGuestSession } from "../../../../../api/structures/IPageI
 )
 export class TodolistUserTodolistguestsTodolistguestsessionsController {
   /**
-   * Create a new guest session for a specific todoListGuest.
-   *
    * Create a new session record for a guest visitor of the Todo List
    * application.
    *
@@ -69,8 +67,6 @@ export class TodolistUserTodolistguestsTodolistguestsessionsController {
   }
 
   /**
-   * Retrieve list of guest sessions for a specific guest user.
-   *
    * Retrieve a paginated list of todo list guest session records for the
    * specified guest user. This endpoint supports filtering and sorting on
    * session properties such as IP address, referrer, and expiration status.
@@ -116,8 +112,6 @@ export class TodolistUserTodolistguestsTodolistguestsessionsController {
   }
 
   /**
-   * Retrieve specific guest session details by ID.
-   *
    * Retrieve detailed information for a specific todo list guest session
    * identified by its unique ID. This endpoint provides full session context
    * including connection information and lifecycle timestamps.
@@ -161,8 +155,6 @@ export class TodolistUserTodolistguestsTodolistguestsessionsController {
   }
 
   /**
-   * Update an existing guest session for a specific todoListGuest.
-   *
    * Update the details of an existing session record associated with the
    * specified guest identified by todoListGuestId.
    *
@@ -214,8 +206,6 @@ export class TodolistUserTodolistguestsTodolistguestsessionsController {
   }
 
   /**
-   * Delete a todo list guest session by its ID.
-   *
    * This API operation permanently deletes an individual guest session
    * belonging to a guest visitor identified by the provided guest UUID and the
    * session's UUID.

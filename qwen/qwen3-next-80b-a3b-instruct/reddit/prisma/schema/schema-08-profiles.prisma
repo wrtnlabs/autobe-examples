@@ -1,0 +1,333 @@
+/// Core profile representation for each citizen, storing essential identity
+/// and preference data.
+///
+/// This table serves as the primary profile entity that citizens view and
+/// update, containing display information and preferences. It links to the
+/// citizen account through the citizen_id, but stores user-facing profile
+/// information separately to allow for profile customization without
+/// affecting authentication data. Profiles are directly managed by citizens
+/// and appear in public user views across the platform.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen account. {@link community_bbs_citizen.id}.
+  citizen_id String
+  
+  /// The public-facing name displayed on posts and comments. Must be unique
+  /// within the community. Used instead of username for user-facing display.
+  display_name String
+  
+  /// Optional biography or description the user provides about themselves.
+  /// Limited to 500 characters.
+  bio String?
+  
+  /// URL to the user's profile avatar image. Stored as a URI reference to an
+  /// uploaded image file.
+  avatar_url String?
+  
+  /// User-provided location information (e.g., city or neighborhood). Used for
+  /// local community relevance.
+  location String?
+  
+  /// Optional personal or professional website URL provided by the user.
+  website String?
+  
+  /// User-selected theme preference for their profile interface (e.g., light,
+  /// dark, high-contrast).
+  custom_theme String?
+  
+  /// Default post sorting preference when viewing communities (e.g., 'hot',
+  /// 'new', 'top', 'controversial').
+  default_sort_order String
+  
+  /// Whether the user wants to receive email notifications for replies, likes,
+  /// and moderation actions.
+  notification_email_enabled Boolean
+  
+  /// Whether the user wants to receive in-app notifications for interactions
+  /// on their content.
+  notification_in_app_enabled Boolean
+  
+  /// Timestamp when this profile was created. Matches the citizen account
+  /// creation time.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update. Updated whenever display_name, bio,
+  /// avatar_url, or preferences change.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  @@unique([citizen_id])
+  @@unique([display_name])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([location])
+}
+
+/// Aggregate summary of a citizen's posting and commenting activity across
+/// the platform.
+///
+/// This table provides a rapidly queryable summary of user activity
+/// statistics derived from posts, comments, votes, and reports. It is
+/// updated asynchronously by background jobs whenever a user's activities
+/// change. This table enables fast loading of profile activity counts
+/// without joining multiple transactional tables, improving performance
+/// during profile views and community leaderboards.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_activity_summary {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen account. {@link community_bbs_citizen.id}.
+  citizen_id String
+  
+  /// Total number of posts created by this citizen, including published,
+  /// pending, and deleted posts.
+  post_count Int
+  
+  /// Total number of comments created by this citizen across all posts.
+  comment_count Int
+  
+  /// Total number of direct replies to comments made by this citizen.
+  reply_count Int
+  
+  /// Total number of upvotes received on all posts and comments combined.
+  upvote_count Int
+  
+  /// Total number of downvotes received on all posts and comments combined.
+  downvote_count Int
+  
+  /// Total number of reports filed against this citizen's content by other
+  /// users.
+  report_count Int
+  
+  /// Number of reports against this citizen's content that were approved and
+  /// led to content removal.
+  report_approved_count Int
+  
+  /// ID of the community where this citizen has contributed the most content.
+  /// Nullable if activity is spread evenly.
+  most_active_community_id String?
+  
+  /// Timestamp of the most recent post created by this citizen. Used to
+  /// determine recent activity.
+  last_post_at DateTime?
+  
+  /// Timestamp of the most recent comment created by this citizen. Used to
+  /// identify active users.
+  last_comment_at DateTime?
+  
+  /// Timestamp when this summary was initially created, which occurs when the
+  /// citizen's first post or comment is published.
+  created_at DateTime
+  
+  /// Timestamp when this summary was last updated following any change in the
+  /// citizen's activity metrics.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  @@unique([citizen_id])
+  @@index([post_count])
+  @@index([comment_count])
+  @@index([upvote_count])
+  @@index([last_post_at])
+  @@index([last_comment_at])
+  // spellchecker: ignore-next-line
+  @@index([most_active_community_id], map: "community_bbs_user_activity_summary_most_active_commun_5bee18c1")
+  @@index([report_count])
+  @@index([report_approved_count])
+}
+
+/// Collection of badges earned by a citizen for achieving specific community
+/// milestones or behaviors.
+///
+/// This table tracks the badges awarded to each citizen based on their
+/// activity, reputation, and contributions. Badges are automatically granted
+/// by the system when predetermined thresholds are met. Each badge
+/// represents an achievement such as 'First Post', 'Helpful Commenter', or
+/// 'Trusted Contributor'. This table stores the relationship between
+/// citizens and their earned badges along with the timestamp of when the
+/// badge was awarded.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_badges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen who earned the badge. {@link
+  /// community_bbs_citizen.id}.
+  citizen_id String
+  
+  /// Reference to the type of badge earned. {@link
+  /// community_bbs_badge_types.id}.
+  badge_type_id String
+  
+  /// Timestamp when the badge was granted to the citizen. Determined by the
+  /// system when eligibility criteria were met.
+  earned_at DateTime
+  
+  /// Order in which this badge should be displayed in the user's badge
+  /// collection. Lower values appear first.
+  display_order Int
+  
+  /// Whether this badge is currently visible on the user's public profile. Can
+  /// be toggled by user preferences.
+  is_visible Boolean
+  
+  /// Optional custom description override for this badge instance, if the
+  /// system allows personalized badge messages.
+  description_override String?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  badgeType community_bbs_badge_types @relation(fields: [badge_type_id], references: [id], onDelete: Cascade)
+  
+  @@index([citizen_id])
+  @@index([badge_type_id])
+  @@index([earned_at])
+  @@index([display_order])
+  @@index([is_visible])
+}
+
+/// Aggregate summary of a citizen's reputation and karma based on community
+/// interactions.
+///
+/// This table stores the calculated karma score for each citizen, derived
+/// from upvotes, downvotes, report actions, and moderation outcomes. The
+/// karma score is updated asynchronously as citizen actions trigger karma
+/// changes. This summary enables fast display of reputation metrics on user
+/// profiles and content without recomputing scores from transactional tables
+/// in real time. The karma score influences whether posts bypass initial
+/// moderation and determines eligibility for Trusted Contributor status.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_karma_summary {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen whose karma is being summarized. {@link
+  /// community_bbs_citizen.id}.
+  citizen_id String
+  
+  /// The current total karma score for the citizen, calculated as the sum of
+  /// all karma changes from actions received.
+  karma_score Int
+  
+  /// Total number of karma changes recorded for this citizen, representing the
+  /// volume of reputation-modifying interactions.
+  karma_changes_count Int
+  
+  /// Timestamp when the karma score was last recalculated based on new
+  /// interactions or moderation actions.
+  karma_last_updated DateTime
+  
+  /// Flag indicating whether the citizen has reached Trusted Contributor
+  /// status (karma >= 100). This determines post moderation bypass
+  /// eligibility.
+  trusted_contributor Boolean
+  
+  /// Timestamp when the citizen first achieved Trusted Contributor status
+  /// (karma >= 100). Null if never achieved.
+  trusted_at DateTime?
+  
+  /// Number of times this citizen has been temporarily suspended for guideline
+  /// violations.
+  suspension_count Int
+  
+  /// Number of posts by this citizen that have been permanently rejected by
+  /// moderators.
+  post_rejection_count Int
+  
+  /// Timestamp when this karma summary was first created, which occurs when
+  /// the citizen's first action triggers a karma change.
+  created_at DateTime
+  
+  /// Timestamp when this karma summary was last updated after a karma change
+  /// event.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  citizen community_bbs_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  @@unique([citizen_id])
+  @@index([karma_score])
+  @@index([trusted_contributor])
+  @@index([karma_last_updated])
+  @@index([suspension_count])
+  @@index([post_rejection_count])
+}
+
+/// Relationship table tracking which citizens are following other citizens
+/// on the platform.
+///
+/// This table represents the follower/following relationships between
+/// citizens, enabling social connection and content discovery. When citizen
+/// A follows citizen B, a record is created in this table. The relationships
+/// are bidirectional in the UI (showing 'followers' and 'following' views)
+/// but stored as unidirectional records. This table allows for quick queries
+/// about who follows whom, and supports notifications when followed users
+/// post or comment.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_followers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who is following another user. {@link
+  /// community_bbs_citizen.id}.
+  follower_citizen_id String
+  
+  /// The citizen who is being followed. {@link community_bbs_citizen.id}.
+  followed_citizen_id String
+  
+  /// Timestamp when the follower relationship was established.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  follower community_bbs_citizen @relation("community_bbs_user_followers_of_follower_citizen_id", fields: [follower_citizen_id], references: [id], onDelete: Cascade)
+  followed community_bbs_citizen @relation("community_bbs_user_followers_of_followed_citizen_id", fields: [followed_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([follower_citizen_id, followed_citizen_id], map: "community_bbs_user_followers_follower_citizen_id_follo_1cea3635")
+  @@index([follower_citizen_id])
+  @@index([followed_citizen_id])
+  @@index([created_at])
+}

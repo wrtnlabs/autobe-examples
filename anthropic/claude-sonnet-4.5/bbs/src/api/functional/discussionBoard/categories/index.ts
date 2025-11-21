@@ -7,8 +7,6 @@ import { IDiscussionBoardArticleCategory } from "../../../structures/IDiscussion
 import { IPageIDiscussionBoardArticleCategory } from "../../../structures/IPageIDiscussionBoardArticleCategory";
 
 /**
- * Search and retrieve a paginated list of discussion board article categories.
- *
  * Retrieve a filtered and paginated list of article categories that organize
  * discussions by topic area. This operation provides search capabilities for
  * finding categories based on name, slug, or description keywords, with support
@@ -115,8 +113,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific article category by unique identifier.
- *
  * Retrieve complete details of a specific article category identified by its
  * unique UUID. This operation returns the full category record including name,
  * slug, description, display sort order, and metadata timestamps.

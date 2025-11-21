@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommentVote } from "../../../../../structures/ICommunityPlatformCommentVote";
 
 /**
- * Create or update a member user's vote on a comment in
- * community_platform_comment_votes.
- *
  * Create or update the authenticated member user's vote on a specific comment,
  * persisting it in the comment votes table and returning the resulting
  * aggregate state.
@@ -143,9 +140,6 @@ export namespace create {
 }
 
 /**
- * Update a community_platform_comment_votes record for an existing vote on a
- * comment.
- *
  * Update an existing member user's vote on a specific comment identified by
  * commentId and voteId.
  *
@@ -292,9 +286,6 @@ export namespace update {
 }
 
 /**
- * Erase a community_platform_comment_votes record to remove an existing vote on
- * a comment.
- *
  * Permanently remove an existing member user's vote from a specific comment
  * using the commentId and voteId identifiers.
  *

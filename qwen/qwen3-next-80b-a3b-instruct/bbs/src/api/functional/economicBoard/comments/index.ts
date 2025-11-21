@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicBoardComment } from "../../../structures/IEconomicBoardComment";
 
 /**
- * Retrieve a single economic board comment by its unique identifier.
- *
  * Retrieve a single economic board comment by its unique UUID identifier. This
  * operation provides comprehensive details of a comment attached to a published
  * discussion post, including its content, authorship, and moderation status.
@@ -114,8 +112,6 @@ export namespace at {
 }
 
 /**
- * Delete a specific comment by its unique ID.
- *
  * Permanently deletes a specific comment by its globally unique ID. The record
  * is soft-deleted using the deleted_at field. Only the comment owner or a
  * moderator can delete the comment.

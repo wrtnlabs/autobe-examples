@@ -8,8 +8,6 @@ import { IPageIShoppingMallCustomer } from "../../../../structures/IPageIShoppin
 export * as shoppingMallCustomerSessions from "./shoppingMallCustomerSessions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of shopping mall customers.
- *
  * Retrieve a filtered and paginated list of registered shopping mall customers
  * from the system. This operation supports advanced search criteria allowing
  * query by email, registration period, or other customer attributes.

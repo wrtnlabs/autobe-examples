@@ -6,9 +6,6 @@ export * as comments from "./comments/index";
 export * as attachments from "./attachments/index";
 
 /**
- * Permanently delete a single article record from the discussion_board_articles
- * table by articleId.
- *
  * Erase an existing discussion board article identified by articleId from the
  * system.
  *

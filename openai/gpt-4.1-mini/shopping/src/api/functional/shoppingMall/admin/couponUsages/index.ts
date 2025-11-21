@@ -7,8 +7,6 @@ import { IShoppingMallCouponUsage } from "../../../../structures/IShoppingMallCo
 import { IPageIShoppingMallCouponUsage } from "../../../../structures/IPageIShoppingMallCouponUsage";
 
 /**
- * Create a new coupon usage record.
- *
  * Submit a new coupon usage record to the system.
  *
  * This operation validates the input data, including coupon identification and
@@ -101,8 +99,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated coupon usage records.
- *
  * Retrieve a filtered and paginated list of coupon usage records from the
  * shopping mall platform.
  *
@@ -201,8 +197,6 @@ export namespace index {
 }
 
 /**
- * Get coupon usage details by couponUsageId.
- *
  * Retrieve detailed information about a specific coupon usage by its unique
  * identifier.
  *
@@ -291,8 +285,6 @@ export namespace at {
 }
 
 /**
- * Update a coupon usage record by ID.
- *
  * Update an existing coupon usage record that tracks the redemption of coupons
  * by customers in the shopping mall. The record includes references to the
  * related coupon, customer, and customer session during which the coupon was
@@ -394,8 +386,6 @@ export namespace update {
 }
 
 /**
- * Delete a coupon usage record by ID.
- *
  * Delete an existing coupon usage record to remove its usage history from the
  * system.
  *

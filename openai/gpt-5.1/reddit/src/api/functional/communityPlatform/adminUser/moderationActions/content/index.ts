@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerationActionOnContent } from "../../../../../structures/ICommunityPlatformModerationActionOnContent";
 
 /**
- * Get content-specific details for a moderation action from moderation_actions
- * and moderation_actions_on_content tables.
- *
  * Retrieve the content-targeted details for a given moderation action, joining
  * the `community_platform_moderation_actions` header with its related
  * `community_platform_moderation_actions_on_content` and associated content

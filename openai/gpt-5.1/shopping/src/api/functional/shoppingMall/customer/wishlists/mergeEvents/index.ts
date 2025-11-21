@@ -7,9 +7,6 @@ import { IShoppingMallWishlistMergeEvent } from "../../../../../structures/IShop
 import { IPageIShoppingMallWishlistMergeEvent } from "../../../../../structures/IPageIShoppingMallWishlistMergeEvent";
 
 /**
- * Search and retrieve a paginated list of wishlist merge events from
- * `shopping_mall_wishlist_merge_events`.
- *
  * Retrieve a filtered and paginated list of merge events that have been
  * recorded for a specific wishlist.
  *
@@ -150,9 +147,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single wishlist merge event from
- * `shopping_mall_wishlist_merge_events`.
- *
  * Retrieve detailed information for a single wishlist merge event associated
  * with a specific wishlist.
  *

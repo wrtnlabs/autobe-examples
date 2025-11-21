@@ -12,8 +12,6 @@ import { IShoppingMallProductSnapshot } from "../../../../../api/structures/ISho
 @Controller("/shoppingMall/admin/shoppingMallProducts/snapshots")
 export class ShoppingmallAdminShoppingmallproductsSnapshotsController {
   /**
-   * Search and paginate shopping mall product snapshots.
-   *
    * Retrieve a filtered and paginated list of shopping mall product snapshots
    * representing historical product data at specific points in time.
    *
@@ -48,8 +46,6 @@ export class ShoppingmallAdminShoppingmallproductsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific shopping mall product snapshot by ID.
-   *
    * Retrieve detailed information of a shopping mall product snapshot by its
    * unique identifier.
    *

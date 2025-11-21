@@ -3,8 +3,6 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
 /**
- * Terminate all moderator sessions across all devices.
- *
  * This operation allows an authenticated moderator to immediately terminate all
  * of their active sessions across all devices. Upon invocation, every session
  * associated with the moderator's account is invalidated, requiring

@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipment";
 
 /**
- * Update shipment details by shipment ID.
- *
  * Update an existing shipment's details in the system identified by the
  * shipment ID.
  *
@@ -107,8 +105,6 @@ export namespace update {
 }
 
 /**
- * Delete shipment permanently by shipment ID.
- *
  * Permanently delete the shipment identified by shipment ID from the system.
  *
  * This hard delete operation removes all shipment data irrevocably. It requires

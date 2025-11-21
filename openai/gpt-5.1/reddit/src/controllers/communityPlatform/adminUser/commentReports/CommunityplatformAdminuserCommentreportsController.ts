@@ -8,9 +8,6 @@ import { ICommunityPlatformCommentReport } from "../../../../api/structures/ICom
 @Controller("/communityPlatform/adminUser/commentReports")
 export class CommunityplatformAdminuserCommentreportsController {
   /**
-   * Search and paginate over comment-level reports in the
-   * `community_platform_comment_reports` table.
-   *
    * Search and retrieve a paginated list of comment-level policy violation
    * reports from the `community_platform_comment_reports` table.
    *
@@ -67,9 +64,6 @@ export class CommunityplatformAdminuserCommentreportsController {
   }
 
   /**
-   * Get detailed information for a single comment report from the
-   * `community_platform_comment_reports` table.
-   *
    * Retrieve the detailed information for a single comment-level report from
    * the `community_platform_comment_reports` table by its unique identifier.
    *
@@ -116,9 +110,6 @@ export class CommunityplatformAdminuserCommentreportsController {
   }
 
   /**
-   * Update an existing comment report record in the
-   * community_platform_comment_reports table.
-   *
    * Update an existing comment report stored in the
    * community_platform_comment_reports table.
    *
@@ -190,9 +181,6 @@ export class CommunityplatformAdminuserCommentreportsController {
   }
 
   /**
-   * Erase a specific comment report record from the
-   * community_platform_comment_reports table by its identifier.
-   *
    * Delete an existing comment-level report record identified by its unique
    * commentReportId from the community_platform_comment_reports table.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallReviewResponse } from "../../../../../structures/IShopping
 import { IPageIShoppingMallReviewResponse } from "../../../../../structures/IPageIShoppingMallReviewResponse";
 
 /**
- * Search and paginate seller responses tied to a specific customer review
- * (shopping_mall_review_responses table).
- *
  * Retrieve a paginated and filtered list of seller responses associated with a
  * specific product review.
  *
@@ -121,9 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the detailed information for a specific seller response related to a
- * customer review (shopping_mall_review_responses table).
- *
  * Retrieve the full detailed information of a seller's response to a specific
  * customer review, based on the given review and response identifiers.
  *
@@ -225,9 +219,6 @@ export namespace at {
 }
 
 /**
- * Remove a specific seller's response to a customer review
- * (shopping_mall_review_responses table).
- *
  * Delete a specific seller's response to a customer review.
  *
  * This endpoint is used when a seller, or an admin on their behalf, needs to

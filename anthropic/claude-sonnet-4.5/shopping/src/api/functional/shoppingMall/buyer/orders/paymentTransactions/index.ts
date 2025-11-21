@@ -7,8 +7,6 @@ import { IShoppingMallPaymentTransaction } from "../../../../../structures/IShop
 import { IPageIShoppingMallPaymentTransaction } from "../../../../../structures/IPageIShoppingMallPaymentTransaction";
 
 /**
- * Create a new payment transaction for an order.
- *
  * Create a new payment transaction record for a specific order in the shopping
  * mall system. This operation is invoked during the order checkout process when
  * a buyer selects a payment method and confirms their purchase. The operation
@@ -128,8 +126,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve filtered payment transactions for a specific order.
- *
  * Retrieve a filtered and paginated list of payment transactions associated
  * with a specific order in the shopping mall system. This operation provides
  * advanced search capabilities for finding payment transactions based on

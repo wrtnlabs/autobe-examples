@@ -99,9 +99,6 @@ export namespace create {
 }
 
 /**
- * Search and list refund requests with filtering and pagination in the shopping
- * mall.
- *
  * Retrieve a paginated list of refund requests submitted by customers. Supports
  * filtering by refund status, request date, and other search criteria.
  *
@@ -198,8 +195,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed refund request by ID.
- *
  * Retrieve a specific refund request by its unique identifier. This endpoint
  * returns all pertinent information about the request including refund amount,
  * reason, current status, when it was requested, and when it was processed if

@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunity } from "../../../../../../structures/ICommu
 import { ICommunityPlatformMember } from "../../../../../../structures/ICommunityPlatformMember";
 
 /**
- * Complete password reset for a member using a valid reset token and new
- * password.
- *
  * Complete the password reset workflow for a member account. This operation
  * validates a password reset token received via email and applies a new
  * password to the member's account.

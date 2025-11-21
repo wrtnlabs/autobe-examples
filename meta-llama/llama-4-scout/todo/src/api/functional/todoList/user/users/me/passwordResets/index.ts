@@ -7,9 +7,6 @@ import { ITodoListUserPasswordReset } from "../../../../../../structures/ITodoLi
 import { IPageITodoListUserPasswordReset } from "../../../../../../structures/IPageITodoListUserPasswordReset";
 
 /**
- * Retrieve password reset history for the authenticated user's account using
- * the password reset log table.
- *
  * This endpoint allows an authenticated user to query the log of all password
  * reset requests and their status for their own account. Results include events
  * whether used, expired, or still active. The operation supports filtering by
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a password reset event by token for the user's account
- * using the password reset log table.
- *
  * This endpoint allows the authenticated user to inspect the details of a
  * password reset event from their own account by specifying the event's unique
  * reset token in the path. Information returned includes creation, expiration,

@@ -10,8 +10,6 @@ import { ITodoListUser } from "../../../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/users/me/password")
 export class TodolistUserUsersMePasswordController {
   /**
-   * Update authenticated user's password.
-   *
    * Change the password for the currently authenticated user account. This
    * operation provides secure password management capabilities allowing users
    * to update their credentials for security maintenance.

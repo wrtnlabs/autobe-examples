@@ -17,8 +17,6 @@ import { IPageIRedditCommunityAdminSession } from "../../../../../api/structures
 )
 export class RedditcommunityAdminRedditcommunityadminsSessionsController {
   /**
-   * Create a new admin session for a given administrator.
-   *
    * Create a new session record for a Reddit Community Administrator.
    *
    * This endpoint accepts connection context including IP address, referrer,
@@ -64,8 +62,6 @@ export class RedditcommunityAdminRedditcommunityadminsSessionsController {
   }
 
   /**
-   * Search sessions for a reddit community administrator.
-   *
    * Retrieve a filtered and paginated list of admin sessions for a specific
    * reddit community administrator.
    *
@@ -112,8 +108,6 @@ export class RedditcommunityAdminRedditcommunityadminsSessionsController {
   }
 
   /**
-   * Retrieve detailed admin session info for given admin and session IDs.
-   *
    * Retrieve detailed information about a specific Reddit Community
    * Administrator's session.
    *
@@ -162,8 +156,6 @@ export class RedditcommunityAdminRedditcommunityadminsSessionsController {
   }
 
   /**
-   * Update Reddit community admin session details.
-   *
    * Update an existing admin session identified by the composite keys
    * redditCommunityAdminId and session id. This operation modifies session
    * details such as IP address, connection URL, referrer, and expiration time.
@@ -217,8 +209,6 @@ export class RedditcommunityAdminRedditcommunityadminsSessionsController {
   }
 
   /**
-   * Delete a Reddit community admin session.
-   *
    * Delete an existing admin session identified by the composite keys
    * redditCommunityAdminId and session id. This operation permanently removes
    * the session record from the database, terminating the admin's active

@@ -4,9 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Delete the seller warehouse address record associated with a warehouseId from
- * shopping_mall_seller_warehouse_addresses.
- *
  * Delete the stored address for a specific seller warehouse, identified by its
  * warehouse identifier, from the seller warehouse address table.
  *

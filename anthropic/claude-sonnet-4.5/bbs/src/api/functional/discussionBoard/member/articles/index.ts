@@ -8,8 +8,6 @@ export * as attachments from "./attachments/index";
 export * as reports from "./reports/index";
 
 /**
- * Create a new discussion board article with title, content, and category.
- *
  * Creates a new discussion board article authored by the authenticated member.
  * This operation accepts article creation data including title (5-200
  * characters), body content (minimum 50 characters, maximum 50,000 characters),

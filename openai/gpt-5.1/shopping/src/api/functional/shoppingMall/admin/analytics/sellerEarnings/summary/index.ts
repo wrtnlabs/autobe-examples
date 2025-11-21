@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSellerEarningsSummary } from "../../../../../../structures/IShoppingMallSellerEarningsSummary";
 
 /**
- * Return a summarized view of seller earnings aggregated from
- * shopping_mall_seller_earnings.
- *
  * Provide an aggregated analytical summary of seller earnings based on data
  * from the shopping_mall_seller_earnings table and its related payout and order
  * entities.

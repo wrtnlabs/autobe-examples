@@ -7,9 +7,6 @@ import { IShoppingMallAdminRiskOverview } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/adminDashboard/riskOverview")
 export class ShoppingmallAdminAdmindashboardRiskoverviewController {
   /**
-   * Provide an aggregated risk overview dashboard for admins using
-   * shopping_mall_* risk and analytical snapshot tables.
-   *
    * Retrieve an aggregated risk overview dashboard for administrative users
    * responsible for governance and fraud management on the shoppingMall
    * platform.

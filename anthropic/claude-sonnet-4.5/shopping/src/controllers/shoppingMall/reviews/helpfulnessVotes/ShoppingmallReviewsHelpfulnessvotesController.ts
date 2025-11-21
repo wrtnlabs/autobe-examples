@@ -9,8 +9,6 @@ import { IShoppingMallReviewHelpfulnessVote } from "../../../../api/structures/I
 @Controller("/shoppingMall/reviews/:reviewId/helpfulnessVotes")
 export class ShoppingmallReviewsHelpfulnessvotesController {
   /**
-   * Search and retrieve paginated helpfulness votes for a specific review.
-   *
    * Retrieve a filtered and paginated list of helpfulness votes submitted by
    * buyers for a specific product review. This operation provides comprehensive
    * search capabilities for analyzing vote patterns, including filtering by

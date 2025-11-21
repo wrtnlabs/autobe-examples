@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../../../structures/ITodoListUser";
 
 /**
- * Completes password reset for user (todo_list_users) after token validation.
- *
  * This endpoint finalizes the password reset process by accepting a new
  * password and associated token provided to the user's email. Validation logic
  * checks the token's validity, ensures it has not expired or been used, and

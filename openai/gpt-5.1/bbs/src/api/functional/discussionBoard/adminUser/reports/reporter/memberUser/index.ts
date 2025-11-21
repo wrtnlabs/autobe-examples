@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardReportOfMemberUser } from "../../../../../../structures/IDiscussionBoardReportOfMemberUser";
 
 /**
- * Get the member user reporter linked to a specific report from
- * `discussion_board_report_of_memberusers`.
- *
  * Retrieve the member user who reported a specific piece of content, using the
  * report identifier as input.
  *

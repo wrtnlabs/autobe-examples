@@ -12,8 +12,6 @@ import { IDiscussionBoardArticle } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/member/articles")
 export class DiscussionboardMemberArticlesController {
   /**
-   * Create a new discussion board article with title, content, and category.
-   *
    * Creates a new discussion board article authored by the authenticated
    * member. This operation accepts article creation data including title (5-200
    * characters), body content (minimum 50 characters, maximum 50,000

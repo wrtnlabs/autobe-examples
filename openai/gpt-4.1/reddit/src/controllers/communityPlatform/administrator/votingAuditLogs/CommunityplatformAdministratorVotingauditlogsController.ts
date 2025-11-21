@@ -12,9 +12,6 @@ import { ICommunityPlatformVotingAuditLog } from "../../../../api/structures/ICo
 @Controller("/communityPlatform/administrator/votingAuditLogs")
 export class CommunityplatformAdministratorVotingauditlogsController {
   /**
-   * Search and retrieve a paginated list of community platform voting audit
-   * logs (community_platform_voting_audit_logs).
-   *
    * Retrieve a paginated and filterable list of all voting audit log entries
    * for the platform.
    *
@@ -60,9 +57,6 @@ export class CommunityplatformAdministratorVotingauditlogsController {
   }
 
   /**
-   * Retrieve the details of a single voting audit log by ID
-   * (community_platform_voting_audit_logs).
-   *
    * Retrieve all fields of a particular voting audit log entry by its unique
    * identifier.
    *

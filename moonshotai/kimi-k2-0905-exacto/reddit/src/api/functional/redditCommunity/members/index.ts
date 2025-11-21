@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityUserProfiles } from "../../../structures/IRedditCommunityUserProfiles";
 
 /**
- * Retrieve member profile information linked by member ID.
- *
  * Retrieve complete profile information for a specific community member
  * identified by their member ID. This operation returns all publicly available
  * profile data linked through the member_id foreign key relationship in the

@@ -11,9 +11,6 @@ import { IDiscussionBoardGuest } from "../../../api/structures/IDiscussionBoardG
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Register new guest session for anonymous browsing access to discussion
-   * board content.
-   *
    * Creates a new guest session for unauthenticated visitors to browse the
    * discussion board with read-only access to public content.
    *
@@ -76,9 +73,6 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh guest JWT tokens to extend browsing session and maintain read-only
-   * access.
-   *
    * Refreshes JWT access tokens for guest users to maintain continuous browsing
    * sessions and read-only access to discussion board content.
    *

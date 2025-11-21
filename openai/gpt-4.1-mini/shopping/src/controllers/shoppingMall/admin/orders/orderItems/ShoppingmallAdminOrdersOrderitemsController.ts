@@ -11,9 +11,6 @@ import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/admin/orders/:orderId/orderItems")
 export class ShoppingmallAdminOrdersOrderitemsController {
   /**
-   * Search and retrieve a paginated list of order items for a shopping mall
-   * order.
-   *
    * Retrieve a filtered, sorted, and paginated list of order items associated
    * with a specific shopping mall order.
    *

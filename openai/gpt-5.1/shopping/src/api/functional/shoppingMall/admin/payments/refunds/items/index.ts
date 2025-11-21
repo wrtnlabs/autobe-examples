@@ -7,9 +7,6 @@ import { IShoppingMallPaymentRefundItem } from "../../../../../../structures/ISh
 import { IPageIShoppingMallPaymentRefundItem } from "../../../../../../structures/IPageIShoppingMallPaymentRefundItem";
 
 /**
- * Create a single refund line item in shopping_mall_payment_refund_items for a
- * specific payment refund sequence.
- *
  * Create a single refund line item record associated with a specific order
  * payment refund sequence.
  *
@@ -179,9 +176,6 @@ export namespace create {
 }
 
 /**
- * List and search refund item breakdowns in shopping_mall_payment_refund_items
- * for a specific refund of an order payment.
- *
  * Retrieve a filtered and paginated list of refund item breakdown records for a
  * specific refund of a given order payment.
  *
@@ -335,9 +329,6 @@ export namespace index {
 }
 
 /**
- * Get a single refund line item from shopping_mall_payment_refund_items for a
- * specific payment refund sequence.
- *
  * Retrieve the detailed information of a specific refund line item belonging to
  * a given order payment refund sequence.
  *
@@ -484,9 +475,6 @@ export namespace at {
 }
 
 /**
- * Update a specific shopping_mall_payment_refund_items record for a given order
- * payment refund.
- *
  * Update an existing item-level payment refund item in the context of a
  * particular order payment refund.
  *
@@ -672,9 +660,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific shopping_mall_payment_refund_items record for a given order
- * payment refund before finalization.
- *
  * Delete an existing item-level payment refund item associated with a
  * particular order payment refund before the refund is finalized.
  *

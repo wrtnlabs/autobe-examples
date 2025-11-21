@@ -7,9 +7,6 @@ import { IDiscussionBoardModerationQueue } from "../../../../../structures/IDisc
 import { IPageIDiscussionBoardModerationQueue } from "../../../../../structures/IPageIDiscussionBoardModerationQueue";
 
 /**
- * Retrieve filtered and paginated list of articles awaiting moderator review
- * from the moderation queue.
- *
  * This operation provides moderators access to the article review queue with
  * comprehensive filtering and sorting capabilities. The moderation queue is the
  * central workflow mechanism where submitted articles await moderator approval,

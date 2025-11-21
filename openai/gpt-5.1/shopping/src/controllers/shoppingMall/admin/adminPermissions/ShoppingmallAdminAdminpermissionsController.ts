@@ -8,9 +8,6 @@ import { IPageIShoppingMallAdminPermission } from "../../../../api/structures/IP
 @Controller("/shoppingMall/admin/adminPermissions")
 export class ShoppingmallAdminAdminpermissionsController {
   /**
-   * Create a new admin permission record in the
-   * shopping_mall_admin_permissions table.
-   *
    * Create a new administrative permission definition in the
    * `shopping_mall_admin_permissions` table using structured RBAC
    * configuration data provided by an admin client.
@@ -54,9 +51,6 @@ export class ShoppingmallAdminAdminpermissionsController {
   }
 
   /**
-   * Search and list admin permissions from the
-   * `shopping_mall_admin_permissions` table with filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of admin permission definitions
    * from the RBAC permission catalog stored in
    * `shopping_mall_admin_permissions`.
@@ -124,9 +118,6 @@ export class ShoppingmallAdminAdminpermissionsController {
   }
 
   /**
-   * Retrieve a specific admin permission from the
-   * shopping_mall_admin_permissions table by its global code.
-   *
    * Retrieve a single administrative permission definition, identified by its
    * globally unique permission code, from the
    * `shopping_mall_admin_permissions` table.
@@ -179,9 +170,6 @@ export class ShoppingmallAdminAdminpermissionsController {
   }
 
   /**
-   * Update a shopping_mall_admin_permissions record identified by its unique
-   * permission code.
-   *
    * Update an existing administrative permission entity in the
    * `shopping_mall_admin_permissions` table based on its unique permission
    * code.
@@ -239,9 +227,6 @@ export class ShoppingmallAdminAdminpermissionsController {
   }
 
   /**
-   * Delete a shopping_mall_admin_permissions record identified by its unique
-   * permission code.
-   *
    * Delete an existing administrative permission from the
    * `shopping_mall_admin_permissions` table using its unique permission
    * code.

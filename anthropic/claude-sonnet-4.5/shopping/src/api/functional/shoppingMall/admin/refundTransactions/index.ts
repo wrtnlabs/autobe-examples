@@ -7,8 +7,6 @@ import { IShoppingMallRefundTransaction } from "../../../../structures/IShopping
 import { IPageIShoppingMallRefundTransaction } from "../../../../structures/IPageIShoppingMallRefundTransaction";
 
 /**
- * Search and retrieve a filtered, paginated list of refund transactions.
- *
  * Retrieve a comprehensive, filtered list of refund transactions with advanced
  * search and pagination capabilities. This operation enables administrators to
  * search through all refund payment processing records in the shopping mall
@@ -118,8 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific refund transaction.
- *
  * Retrieve complete details of a single refund transaction identified by its
  * unique transaction ID. This operation provides administrators with
  * comprehensive information about a specific refund payment processing record.

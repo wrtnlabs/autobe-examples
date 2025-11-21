@@ -7,9 +7,6 @@ import { IShoppingMallSellerProfile } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/sellers/:sellerId/profile")
 export class ShoppingmallAdminSellersProfileController {
   /**
-   * Get the ShoppingMall seller profile associated with a specific seller
-   * account.
-   *
    * Retrieve the detailed profile record for a specific seller in the
    * ShoppingMall platform.
    *
@@ -61,8 +58,6 @@ export class ShoppingmallAdminSellersProfileController {
   }
 
   /**
-   * Update the ShoppingMall seller profile for a specific seller account.
-   *
    * Update the extended profile record for a specific seller in the
    * ShoppingMall platform.
    *

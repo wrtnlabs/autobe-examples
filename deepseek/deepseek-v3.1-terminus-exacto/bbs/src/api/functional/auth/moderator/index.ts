@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerator } from "../../../structures/IDiscussionBoardModerator";
 
 /**
- * Register a new moderator account with authentication credentials.
- *
  * This POST endpoint handles moderator account registration by creating a new
  * moderator record in the discussion_board_moderators table. The operation
  * validates the provided email and username against the unique constraints
@@ -121,8 +119,6 @@ export namespace join {
 }
 
 /**
- * Authenticate moderator and issue JWT tokens.
- *
  * This POST endpoint handles moderator authentication by validating provided
  * credentials against the stored information in the discussion_board_moderators
  * table. The operation supports authentication using either email address or
@@ -234,8 +230,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for moderator session continuation.
- *
  * This POST endpoint handles token refresh for moderator sessions by validating
  * an existing refresh token and issuing new access and refresh tokens. The
  * operation maintains session continuity while enhancing security through

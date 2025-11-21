@@ -7,8 +7,6 @@ import { IDiscussionBoardArticle } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/contributor/articles")
 export class DiscussionboardContributorArticlesController {
   /**
-   * Create a new article draft in the discussion board.
-   *
    * Create a new discussion board article in draft status. This operation
    * allows authenticated contributors to compose articles on economic and
    * political topics before submitting them for moderator review.
@@ -68,8 +66,6 @@ export class DiscussionboardContributorArticlesController {
   }
 
   /**
-   * Update an article with revised content or metadata.
-   *
    * Update an existing discussion board article by providing new content,
    * title, category assignment, or status change. This operation allows
    * contributors to revise their own articles in draft or rejected states.
@@ -114,8 +110,6 @@ export class DiscussionboardContributorArticlesController {
   }
 
   /**
-   * Delete an article (contributor).
-   *
    * Remove a discussion board article from the system as a contributor by
    * either soft deletion (preserving record for compliance) or permanent
    * deletion (erase all data). Soft deletion sets the deleted_at timestamp,

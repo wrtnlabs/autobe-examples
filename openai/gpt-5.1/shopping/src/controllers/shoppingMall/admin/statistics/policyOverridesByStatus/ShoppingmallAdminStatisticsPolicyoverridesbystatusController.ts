@@ -7,9 +7,6 @@ import { IShoppingMallPolicyOverrideStatusStatistics } from "../../../../../api/
 @Controller("/shoppingMall/admin/statistics/policyOverridesByStatus")
 export class ShoppingmallAdminStatisticsPolicyoverridesbystatusController {
   /**
-   * Get aggregated statistics of shopping_mall_policy_overrides grouped by
-   * status for governance dashboards.
-   *
    * Retrieve aggregated statistics about policy override usage across the
    * platform based on records in the shopping_mall_policy_overrides table.
    *

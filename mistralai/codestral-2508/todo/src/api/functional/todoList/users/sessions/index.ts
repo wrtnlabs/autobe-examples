@@ -7,9 +7,6 @@ import { ITodoListUserSession } from "../../../../structures/ITodoListUserSessio
 import { IPageITodoListUserSession } from "../../../../structures/IPageITodoListUserSession";
 
 /**
- * Search and retrieve paginated user sessions by userId from
- * todo_list_user_sessions.
- *
  * Obtain a filtered, paginated list of all sessions for a specific user
  * account, supporting search on session metadata such as IP and timing.
  * Intended for secure audit trails and compliance, the userId path parameter is
@@ -111,9 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed session information by sessionId for given user from
- * todo_list_user_sessions.
- *
  * Fetch full session details by sessionId and parent userId, for audit or
  * security review. Returns all columns defined in the todo_list_user_sessions
  * schema plus the foreign key reference to user.

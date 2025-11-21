@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunitySubscription } from "../../../../../structures/ICommunityPlatformCommunitySubscription";
 
 /**
- * Get a specific community subscriber relationship record from
- * community_platform_community_subscriptions.
- *
  * Retrieve details of a specific subscriber relationship for a community, using
  * the community_platform_community_subscriptions table as the underlying data
  * source.

@@ -7,9 +7,6 @@ import { IShoppingMallSellerSubscription } from "../../../../structures/IShoppin
 import { IPageIShoppingMallSellerSubscription } from "../../../../structures/IPageIShoppingMallSellerSubscription";
 
 /**
- * Create a new seller subscription record in the
- * shopping_mall_seller_subscriptions table.
- *
  * Register a new seller subscription in the shopping mall platform by inserting
  * a record into the shopping_mall_seller_subscriptions table.
  *
@@ -127,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of seller subscriptions from the
- * shopping_mall_seller_subscriptions table using rich filter criteria.
- *
  * Retrieve a filtered and paginated list of seller subscription records from
  * the shopping mall platform for administrative analysis and operations.
  *
@@ -267,9 +261,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a seller subscription record from the
- * shopping_mall_seller_subscriptions table by its unique identifier.
- *
  * Fetch detailed information for a single seller subscription managed by the
  * shopping mall platform.
  *
@@ -388,9 +379,6 @@ export namespace at {
 }
 
 /**
- * Update an existing seller subscription record in the
- * shopping_mall_seller_subscriptions table.
- *
  * Update an existing seller subscription in the shoppingMall platform based on
  * its subscriptionId path parameter.
  *
@@ -530,9 +518,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a seller subscription record from the
- * shopping_mall_seller_subscriptions table.
- *
  * Permanently remove a seller subscription record from the shoppingMall
  * platform using its subscriptionId.
  *

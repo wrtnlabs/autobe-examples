@@ -13,9 +13,6 @@ import { IShoppingMallProductAttributeValue } from "../../../../../api/structure
 @Controller("/shoppingMall/admin/skus/:skuId/attributeValues")
 export class ShoppingmallAdminSkusAttributevaluesController {
   /**
-   * Paginated search for all attribute values attached to a single SKU
-   * (shopping_mall_product_attribute_values).
-   *
    * Search and list all attribute values that are associated with a particular
    * SKU variant in the product catalog.
    *
@@ -60,9 +57,6 @@ export class ShoppingmallAdminSkusAttributevaluesController {
   }
 
   /**
-   * Update attribute value for a SKU in shopping_mall_product_attribute_values
-   * table.
-   *
    * Update an attribute value associated with a specific product SKU in the
    * e-commerce catalog. This operation is essential for managing product
    * variants, supporting accurate filtering, search, and display for
@@ -120,9 +114,6 @@ export class ShoppingmallAdminSkusAttributevaluesController {
   }
 
   /**
-   * Delete an attribute value mapping from a SKU in
-   * shopping_mall_product_attribute_values table.
-   *
    * Remove an attribute value mapping from a SKU in the product catalog.
    * Deleting this mapping updates the product variant configuration and may
    * impact customer-facing selection options and filter logic.

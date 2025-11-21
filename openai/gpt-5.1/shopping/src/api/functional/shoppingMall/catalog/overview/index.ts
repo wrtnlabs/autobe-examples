@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallCatalogOverview } from "../../../../structures/IShoppingMallCatalogOverview";
 
 /**
- * Get an aggregated ShoppingMall catalog overview derived from catalog-related
- * tables.
- *
  * Retrieve a high-level overview of the ShoppingMall catalog as a single
  * aggregated resource.
  *

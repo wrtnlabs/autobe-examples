@@ -8,8 +8,6 @@ import { IRedditCommunityPost } from "../../../api/structures/IRedditCommunityPo
 @Controller("/redditCommunity/posts")
 export class RedditcommunityPostsController {
   /**
-   * Search and filter posts across communities with advanced criteria.
-   *
    * This operation enables comprehensive post discovery and filtering across
    * the platform with support for multiple search criteria and sorting
    * options. Users can filter posts by community, post type, voting patterns,
@@ -49,8 +47,6 @@ export class RedditcommunityPostsController {
   }
 
   /**
-   * Retrieve detailed information about a specific Reddit community post.
-   *
    * Retrieve comprehensive details about a specific Reddit community post by
    * its unique identifier. This operation returns the complete post data
    * including title, content, author information, community details, voting

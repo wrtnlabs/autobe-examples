@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentReport } from "../../../../structures/ICommuni
 import { IPageICommunityPlatformCommentReport } from "../../../../structures/IPageICommunityPlatformCommentReport";
 
 /**
- * Search and paginate over comment-level reports in the
- * `community_platform_comment_reports` table.
- *
  * Search and retrieve a paginated list of comment-level policy violation
  * reports from the `community_platform_comment_reports` table.
  *
@@ -132,9 +129,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single comment report from the
- * `community_platform_comment_reports` table.
- *
  * Retrieve the detailed information for a single comment-level report from the
  * `community_platform_comment_reports` table by its unique identifier.
  *
@@ -245,9 +239,6 @@ export namespace at {
 }
 
 /**
- * Update an existing comment report record in the
- * community_platform_comment_reports table.
- *
  * Update an existing comment report stored in the
  * community_platform_comment_reports table.
  *
@@ -389,9 +380,6 @@ export namespace update {
 }
 
 /**
- * Erase a specific comment report record from the
- * community_platform_comment_reports table by its identifier.
- *
  * Delete an existing comment-level report record identified by its unique
  * commentReportId from the community_platform_comment_reports table.
  *

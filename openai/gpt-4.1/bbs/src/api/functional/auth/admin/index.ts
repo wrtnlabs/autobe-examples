@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardAdmin } from "../../../structures/IDiscussionBoardAdmin";
 
 /**
- * Registers a new admin account in discussion_board_admins table.
- *
  * This operation registers a new board administrator, referencing the
  * discussion_board_admins table. The client submits a unique email and password
  * (will be hashed inside the service) to create a new admin record. Only the
@@ -115,9 +113,6 @@ export namespace join {
 }
 
 /**
- * Authenticates an administrator from discussion_board_admins table and issues
- * JWT tokens.
- *
  * Allows a registered admin to log in using their email and password. This
  * operation reads the discussion_board_admins table by email (enforcing that
  * email is unique across admins) and verifies the provided password using a
@@ -220,8 +215,6 @@ export namespace login {
 }
 
 /**
- * Renews JWT tokens for an admin account from discussion_board_admins table.
- *
  * This operation allows an authenticated admin to refresh their set of JWT
  * tokens. The refresh token is checked against session data and only valid if
  * the admin's account (located in the discussion_board_admins table) is still

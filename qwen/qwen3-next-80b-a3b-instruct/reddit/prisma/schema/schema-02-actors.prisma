@@ -1,951 +1,302 @@
-/// Represents anonymous users who can browse content without authentication.
-///
-/// Guests are unauthenticated visitors who can view public communities and
-/// posts but cannot interact with content (vote, comment, subscribe). They
-/// are identified by anonymous session context and cannot have a persistent
-/// identity. This table stores minimal information about guests, primarily
-/// for logging system usage and analytics.
-///
-/// Although guests do not need authentication, their activities are tracked
-/// for analytics and moderation purposes. Guest records are not linked to
-/// any login credentials and do not have passwords. The status field
-/// indicates whether this guest session is active or inactive, useful for
-/// cleanup processes.
+/// Primary citizen actor in the community system. Represents a registered
+/// user who can participate in discussions, create posts, and comment on
+/// content. Each citizen has a unique username, email, and password_hash
+/// credential for authentication.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_guest {
+model community_bbs_citizen {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp when the guest record was first created in the system.
-  created_at DateTime
-  
-  /// Timestamp when the guest record was last updated (e.g., when session
-  /// expired).
-  updated_at DateTime
-  
-  /// Timestamp when this guest record was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the guest session. Values: 'active', 'inactive',
-  /// 'banned'. Used to indicate if the guest can continue browsing.
-  status String
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_guest_sessions community_platform_guest_sessions[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_comment_of_guests community_platform_comment_of_guests[]
-  
-  @@index([created_at])
-  @@index([status])
-  @@index([deleted_at])
-}
-
-/// Represents authenticated standard users who can create content, vote,
-/// comment, and subscribe to communities.
-///
-/// Members are the primary content-producing actors in the system. They must
-/// register with an email and password, and verify their email. Members can
-/// create posts, upvote/downvote, comment on posts, reply to comments,
-/// subscribe to communities, and have a persistent reputation (karma) that
-/// travels across communities.
-///
-/// This table includes essential authentication fields (password_hash) and
-/// status controls for suspended/banned accounts. Members can be promoted to
-/// moderators through admin action. The status field determines if the
-/// account is active, suspended, or banned.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_member {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Email address used for registration and verification. Must be unique.
+  /// Email address used for authentication and account recovery. Must be
+  /// unique and verified.
   email String
   
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since members must authenticate to use the platform.
+  /// Public-facing username displayed in posts and comments. Must be unique
+  /// and follow naming conventions.
+  username String
+  
+  /// BCrypt-hashed password for secure authentication. Never stored in plain
+  /// text.
   password_hash String
   
-  /// Timestamp when the member account was created.
+  /// Optional display name that may differ from username. Used in
+  /// notifications and UI.
+  nickname String?
+  
+  /// Timestamp when the citizen account was registered.
   created_at DateTime
   
-  /// Timestamp when the member account was last updated (e.g., password
-  /// change, profile update).
+  /// Timestamp of the last update to citizen profile or authentication data.
   updated_at DateTime
   
-  /// Timestamp when this member account was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
+  /// Soft delete timestamp; null indicates account is active.
   deleted_at DateTime?
-  
-  /// Current status of the member account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform actions.
-  status String
-  
-  /// Whether the member has verified their email address. Required to unlock
-  /// posting and commenting privileges.
-  email_verified Boolean
   
   //----
   // RELATIONS
   //----
-  community_platform_member_sessions community_platform_member_sessions[]
-  community_platform_community_subscriptions community_platform_community_subscriptions[]
-  community_platform_posts community_platform_posts[]
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_comment_of_members community_platform_comment_of_members[]
-  community_platform_post_vote_of_members community_platform_post_vote_of_members[]
-  community_platform_comment_vote_of_members community_platform_comment_vote_of_members[]
-  community_platform_report_of_members community_platform_report_of_members[]
-  community_platform_karma_tracker community_platform_karma_tracker?
-  community_platform_post_karma community_platform_post_karma[]
-  community_platform_comment_karma community_platform_comment_karma[]
-  community_platform_karma_decay_logs community_platform_karma_decay_logs[]
-  community_platform_notifications community_platform_notifications[]
-  community_platform_notification_preferences community_platform_notification_preferences[]
-  community_platform_tips_of_creator_id community_platform_tips[] @relation("community_platform_tips_of_creator_id")
-  community_platform_tips_of_member_id community_platform_tips[] @relation("community_platform_tips_of_member_id")
-  community_platform_subscriptions community_platform_subscriptions[]
-  community_platform_payouts community_platform_payouts[]
-  community_platform_creator_monetization_applications community_platform_creator_monetization_applications?
+  community_bbs_citizen_sessions community_bbs_citizen_sessions?
+  community_bbs_communities community_bbs_communities[]
+  community_bbs_community_moderators community_bbs_community_moderators[]
+  community_bbs_community_subscribers community_bbs_community_subscribers[]
+  community_bbs_community_invitations_of_invited_citizen_id community_bbs_community_invitations[] @relation("community_bbs_community_invitations_of_invited_citizen_id")
+  community_bbs_community_invitations_of_invited_by_id community_bbs_community_invitations[] @relation("community_bbs_community_invitations_of_invited_by_id")
+  community_bbs_posts community_bbs_posts[]
+  community_bbs_comments community_bbs_comments[]
+  community_bbs_post_votes community_bbs_post_votes[]
+  community_bbs_comment_votes community_bbs_comment_votes[]
+  community_bbs_karma_history community_bbs_karma_history[]
+  community_bbs_subscriptions community_bbs_subscriptions[]
+  community_bbs_profiles community_bbs_profiles?
+  community_bbs_user_activity_summary community_bbs_user_activity_summary?
+  community_bbs_user_badges community_bbs_user_badges[]
+  community_bbs_user_karma_summary community_bbs_user_karma_summary?
+  community_bbs_user_followers_of_follower_citizen_id community_bbs_user_followers[] @relation("community_bbs_user_followers_of_follower_citizen_id")
+  community_bbs_user_followers_of_followed_citizen_id community_bbs_user_followers[] @relation("community_bbs_user_followers_of_followed_citizen_id")
+  community_bbs_reports community_bbs_reports[]
   
   @@unique([email])
-  @@index([created_at])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
+  @@unique([username])
 }
 
-/// Represents community-level administrators who have moderation privileges
-/// in specific communities.
-///
-/// Moderators are members who have been granted moderation rights over one
-/// or more communities by an administrator. They can delete posts and
-/// comments, ban users from specific communities, approve pending content,
-/// and manage community settings. Moderators log in using the same
-/// authentication system as members but have additional permissions encoded
-/// in their JWT token.
-///
-/// This table contains authentication fields and status controls. Unlike
-/// members, moderators have explicit authority over specific communities
-/// (managed in other tables like community_platform_community_moderators).
-/// This table represents the core identity of a moderator user.
+/// Session record for citizen authentication. Each session represents an
+/// active login instance from a specific device or browser. Session data is
+/// ephemeral and tied to the citizen's identity for tracking authenticated
+/// interactions.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_moderator {
+model community_bbs_citizen_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for registration and verification. Must be unique.
-  email String
+  /// Reference to the citizen account this session belongs to. {@link
+  /// community_bbs_citizen.id}
+  community_bbs_citizen_id String
   
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since moderators must authenticate to use the platform.
-  password_hash String
+  /// IP address from which the session was initiated. Used for security and
+  /// geographic analysis.
+  ip String
   
-  /// Timestamp when the moderator account was created.
+  /// Full URL of the page where the login occurred. Used for session context
+  /// tracking.
+  href String
+  
+  /// HTTP referrer URL indicating where the user came from before login.
+  referrer String
+  
+  /// Timestamp when the session was initiated.
   created_at DateTime
   
-  /// Timestamp when the moderator account was last updated (e.g., password
-  /// change, profile update).
-  updated_at DateTime
-  
-  /// Timestamp when this moderator account was soft-deleted. Null means
-  /// active. Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the moderator account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform moderation actions.
-  status String
-  
-  /// Whether the moderator has verified their email address. Required for full
-  /// access to moderation features.
-  email_verified Boolean
+  /// Timestamp when this session expires or was manually revoked. Null if
+  /// still active.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_platform_moderator_sessions community_platform_moderator_sessions[]
-  community_platform_community_moderators community_platform_community_moderators[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_comment_of_moderators community_platform_comment_of_moderators[]
-  community_platform_post_vote_of_moderators community_platform_post_vote_of_moderators[]
-  community_platform_comment_vote_of_moderators community_platform_comment_vote_of_moderators[]
-  community_platform_report_of_moderators community_platform_report_of_moderators[]
+  citizen community_bbs_citizen @relation(fields: [community_bbs_citizen_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
-  @@index([created_at])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
+  @@unique([community_bbs_citizen_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_citizen_id, created_at], map: "community_bbs_citizen_sessions_community_bbs_citizen_i_d2f2f861")
 }
 
-/// Represents system-wide administrators with unrestricted control over the
-/// entire platform.
-///
-/// Admins have full authority to manage all users, communities, content, and
-/// system settings. They can ban users globally, promote/demote moderators,
-/// view audit logs, modify system-wide policies, and perform emergency
-/// moderation actions. Admins log in using the same authentication system as
-/// members and moderators.
-///
-/// This table contains essential authentication fields and status controls.
-/// Admins are granted privileges through system-wide configuration; there
-/// are no community-specific permissions.
-///
-/// An admin can be a member or moderator, but this table represents their
-/// elevated role in the system with broader permissions.
+/// Moderator actor with elevated permissions to review, hide, or remove
+/// content. Moderators are selected from trusted citizen users and given
+/// limited authority over community content. Their identity remains distinct
+/// from regular citizens.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_admin {
+model community_bbs_moderator {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for registration and verification. Must be unique.
+  /// Email address used for authentication and account recovery. Must be
+  /// unique and verified.
   email String
   
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since admins must authenticate to use the platform.
+  /// Public-facing username displayed in moderation logs and community
+  /// communications. Must be unique.
+  username String
+  
+  /// BCrypt-hashed password for secure authentication. Never stored in plain
+  /// text.
   password_hash String
+  
+  /// Optional display name used in moderation notices and system notifications.
+  nickname String?
+  
+  /// Timestamp when the moderator account was activated.
+  created_at DateTime
+  
+  /// Timestamp of the last update to moderator profile or authentication data.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null indicates account is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_bbs_moderator_sessions community_bbs_moderator_sessions?
+  community_bbs_reports community_bbs_reports[]
+  
+  @@unique([email])
+  @@unique([username])
+}
+
+/// Session record for moderator authentication. Tracks each active login
+/// session for moderators, enabling accountability and security isolation
+/// from regular citizen sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator account this session belongs to. {@link
+  /// community_bbs_moderator.id}
+  community_bbs_moderator_id String
+  
+  /// IP address from which the session was initiated. Used for security and
+  /// geographic analysis.
+  ip String
+  
+  /// Full URL of the page where the login occurred. Used for session context
+  /// tracking.
+  href String
+  
+  /// HTTP referrer URL indicating where the user came from before login.
+  referrer String
+  
+  /// Timestamp when the session was initiated.
+  created_at DateTime
+  
+  /// Timestamp when this session expires or was manually revoked. Null if
+  /// still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_bbs_moderator @relation(fields: [community_bbs_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_bbs_moderator_id], map: "community_bbs_moderator_sessions_community_bbs_moderat_c28514b2")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_moderator_id, created_at], map: "community_bbs_moderator_sessions_community_bbs_moderat_19b73636")
+}
+
+/// Administrator actor with full system access. Admins manage platform
+/// settings, handle legal compliance, oversee moderator actions, and resolve
+/// citizen disputes. Admin accounts are highly restricted and require
+/// multi-factor authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address used for authentication and system notifications. Must be
+  /// unique and verified.
+  email String
+  
+  /// Public-facing administrator username, used in audit logs and system
+  /// communications.
+  username String
+  
+  /// BCrypt-hashed password for secure authentication. Never stored in plain
+  /// text.
+  password_hash String
+  
+  /// Optional display name for administrative interfaces and internal notes.
+  nickname String?
   
   /// Timestamp when the admin account was created.
   created_at DateTime
   
-  /// Timestamp when the admin account was last updated (e.g., password change,
-  /// profile update).
+  /// Timestamp of the last update to admin profile or authentication data.
   updated_at DateTime
   
-  /// Timestamp when this admin account was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
+  /// Soft delete timestamp; null indicates account is active.
   deleted_at DateTime?
-  
-  /// Current status of the admin account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform administrative actions.
-  status String
-  
-  /// Whether the admin has verified their email address. Required for security
-  /// and compliance.
-  email_verified Boolean
   
   //----
   // RELATIONS
   //----
-  community_platform_admin_sessions community_platform_admin_sessions[]
-  community_platform_community_archive_logs community_platform_community_archive_logs[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_comment_of_admins community_platform_comment_of_admins[]
-  community_platform_post_vote_of_admins community_platform_post_vote_of_admins[]
-  community_platform_comment_vote_of_admins community_platform_comment_vote_of_admins[]
-  community_platform_report_of_admins community_platform_report_of_admins[]
+  community_bbs_admin_sessions community_bbs_admin_sessions?
+  community_bbs_reports community_bbs_reports[]
   
   @@unique([email])
-  @@index([created_at])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
+  @@unique([username])
 }
 
-/// Tracks anonymous browsing sessions for guest users who are not
-/// authenticated.
-///
-/// Each guest session represents a single browsing session (e.g., from a
-/// browser or device). This session table is used for analytics, abuse
-/// detection, and rate limiting. It does not represent a persistent identity
-/// and has no relation to a user account.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on guest_id
-/// and created_at enables efficient tracking of session activity patterns.
+/// Session record for administrator authentication. Every admin login
+/// creates a session that is strictly tracked for security and audit
+/// purposes. Admin sessions are isolated from all other actor sessions to
+/// prevent privilege escalation.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_guest_sessions {
+model community_bbs_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// References the guest record that this session belongs to. {@link
-  /// community_platform_guest.id}.
-  community_platform_guest_id String
+  /// Reference to the admin account this session belongs to. {@link
+  /// community_bbs_admin.id}
+  community_bbs_admin_id String
   
-  /// Client IP address from which the session was initiated.
+  /// IP address from which the session was initiated. Used for security and
+  /// geographic analysis.
   ip String
   
-  /// URL of the page the user was viewing when the session was created.
+  /// Full URL of the page where the login occurred. Used for session context
+  /// tracking.
   href String
   
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
+  /// HTTP referrer URL indicating where the user came from before login.
   referrer String
   
-  /// Timestamp when this session was initiated.
+  /// Timestamp when the session was initiated.
   created_at DateTime
   
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
+  /// Timestamp when this session expires or was manually revoked. Null if
+  /// still active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  admin community_bbs_admin @relation(fields: [community_bbs_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_bbs_admin_id])
   
   // spellchecker: ignore-next-line
-  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
-}
-
-/// Tracks authenticated user sessions for member accounts.
-///
-/// Each session represents an active login session for a member (standard
-/// user). When a member logs in, a session record is created with a JWT
-/// token (stored externally). This table enables session management,
-/// revocation, and security monitoring.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on member_id
-/// and created_at enables efficient tracking of login patterns and for
-/// revocation purposes.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_member_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the member record that this session belongs to. {@link
-  /// community_platform_member.id}.
-  community_platform_member_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
-  community_platform_post_vote_of_members community_platform_post_vote_of_members[]
-  community_platform_comment_vote_of_members community_platform_comment_vote_of_members[]
-  
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
-}
-
-/// Tracks authenticated user sessions for moderator accounts.
-///
-/// Each session represents an active login session for a moderator.
-/// Moderator sessions are treated the same as member sessions for
-/// authentication purposes, but are tracked separately for audit and
-/// security purposes.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on
-/// moderator_id and created_at enables efficient tracking of moderator
-/// activity patterns.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_moderator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the moderator record that this session belongs to. {@link
-  /// community_platform_moderator.id}.
-  community_platform_moderator_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  moderator community_platform_moderator @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
-  
-  community_platform_post_vote_of_moderators community_platform_post_vote_of_moderators[]
-  community_platform_comment_vote_of_moderators community_platform_comment_vote_of_moderators[]
-  
-  // spellchecker: ignore-next-line
-  @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_sessions_community_platfo_a04f067a")
-}
-
-/// Tracks authenticated user sessions for administrative accounts with
-/// system-wide privileges.
-///
-/// Each session represents an active login session for an admin. Admin
-/// sessions have stricter security requirements, including shorter idle
-/// timeouts and mandatory two-factor authentication in production. This
-/// table enables audit trails for critical administrative actions.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on admin_id
-/// and created_at enables efficient tracking of admin activity patterns and
-/// security analysis.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_admin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the admin record that this session belongs to. {@link
-  /// community_platform_admin.id}.
-  community_platform_admin_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 15 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
-  
-  community_platform_post_vote_of_admins community_platform_post_vote_of_admins[]
-  community_platform_comment_vote_of_admins community_platform_comment_vote_of_admins[]
-  
-  // spellchecker: ignore-next-line
-  @@index([community_platform_admin_id, created_at], map: "community_platform_admin_sessions_community_platform_a_481f9112")
-}
-
-/// Represents anonymous users who can browse content without authentication.
-///
-/// Guests are unauthenticated visitors who can view public communities and
-/// posts but cannot interact with content (vote, comment, subscribe). They
-/// are identified by anonymous session context and cannot have a persistent
-/// identity. This table stores minimal information about guests, primarily
-/// for logging system usage and analytics.
-///
-/// Although guests do not need authentication, their activities are tracked
-/// for analytics and moderation purposes. Guest records are not linked to
-/// any login credentials and do not have passwords. The status field
-/// indicates whether this guest session is active or inactive, useful for
-/// cleanup processes.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model guest {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Timestamp when the guest record was first created in the system.
-  created_at DateTime
-  
-  /// Timestamp when the guest record was last updated (e.g., when session
-  /// expired).
-  updated_at DateTime
-  
-  /// Timestamp when this guest record was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the guest session. Values: 'active', 'inactive',
-  /// 'banned'. Used to indicate if the guest can continue browsing.
-  status String
-  
-  /// System identifier of the entity that created this record. Standardized as
-  /// 'system' for auto-generated records.
-  created_by String
-  
-  /// System identifier of the entity that last updated this record. Null means
-  /// no update has occurred since creation.
-  updated_by String?
-  
-  //----
-  // RELATIONS
-  //----
-  guest_sessions guest_sessions[]
-  
-  @@index([status])
-  @@index([deleted_at])
-}
-
-/// Represents authenticated standard users who can create content, vote,
-/// comment, and subscribe to communities.
-///
-/// Members are the primary content-producing actors in the system. They must
-/// register with an email and password, and verify their email. Members can
-/// create posts, upvote/downvote, comment on posts, reply to comments,
-/// subscribe to communities, and have a persistent reputation (karma) that
-/// travels across communities.
-///
-/// This table includes essential authentication fields (password_hash) and
-/// status controls for suspended/banned accounts. Members can be promoted to
-/// moderators through admin action. The status field determines if the
-/// account is active, suspended, or banned.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model member {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Email address used for registration and verification. Must be unique.
-  email String
-  
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since members must authenticate to use the platform.
-  password_hash String
-  
-  /// Timestamp when the member account was created.
-  created_at DateTime
-  
-  /// Timestamp when the member account was last updated (e.g., password
-  /// change, profile update).
-  updated_at DateTime
-  
-  /// Timestamp when this member account was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the member account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform actions.
-  status String
-  
-  /// Whether the member has verified their email address. Required to unlock
-  /// posting and commenting privileges.
-  email_verified Boolean
-  
-  /// System identifier of the entity that created this record. Standardized as
-  /// 'system' for auto-generated records.
-  created_by String
-  
-  /// System identifier of the entity that last updated this record. Null means
-  /// no update has occurred since creation.
-  updated_by String?
-  
-  //----
-  // RELATIONS
-  //----
-  member_sessions member_sessions[]
-  
-  @@unique([email])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
-}
-
-/// Represents community-level administrators who have moderation privileges
-/// in specific communities.
-///
-/// Moderators are members who have been granted moderation rights over one
-/// or more communities by an administrator. They can delete posts and
-/// comments, ban users from specific communities, approve pending content,
-/// and manage community settings. Moderators log in using the same
-/// authentication system as members but have additional permissions encoded
-/// in their JWT token.
-///
-/// This table contains authentication fields and status controls. Unlike
-/// members, moderators have explicit authority over specific communities
-/// (managed in other tables like community_platform_community_moderators).
-/// This table represents the core identity of a moderator user.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model moderator {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Email address used for registration and verification. Must be unique.
-  email String
-  
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since moderators must authenticate to use the platform.
-  password_hash String
-  
-  /// Timestamp when the moderator account was created.
-  created_at DateTime
-  
-  /// Timestamp when the moderator account was last updated (e.g., password
-  /// change, profile update).
-  updated_at DateTime
-  
-  /// Timestamp when this moderator account was soft-deleted. Null means
-  /// active. Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the moderator account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform moderation actions.
-  status String
-  
-  /// Whether the moderator has verified their email address. Required for full
-  /// access to moderation features.
-  email_verified Boolean
-  
-  /// System identifier of the entity that created this record. Standardized as
-  /// 'system' for auto-generated records.
-  created_by String
-  
-  /// System identifier of the entity that last updated this record. Null means
-  /// no update has occurred since creation.
-  updated_by String?
-  
-  //----
-  // RELATIONS
-  //----
-  moderator_sessions moderator_sessions[]
-  
-  @@unique([email])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
-}
-
-/// Represents system-wide administrators with unrestricted control over the
-/// entire platform.
-///
-/// Admins have full authority to manage all users, communities, content, and
-/// system settings. They can ban users globally, promote/demote moderators,
-/// view audit logs, modify system-wide policies, and perform emergency
-/// moderation actions. Admins log in using the same authentication system as
-/// members and moderators.
-///
-/// This table contains essential authentication fields and status controls.
-/// Admins are granted privileges through system-wide configuration; there
-/// are no community-specific permissions.
-///
-/// An admin can be a member or moderator, but this table represents their
-/// elevated role in the system with broader permissions.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model admin {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Email address used for registration and verification. Must be unique.
-  email String
-  
-  /// Hashed password for authentication. Never stored in plain text. Required
-  /// since admins must authenticate to use the platform.
-  password_hash String
-  
-  /// Timestamp when the admin account was created.
-  created_at DateTime
-  
-  /// Timestamp when the admin account was last updated (e.g., password change,
-  /// profile update).
-  updated_at DateTime
-  
-  /// Timestamp when this admin account was soft-deleted. Null means active.
-  /// Used for audit trails and data cleanup.
-  deleted_at DateTime?
-  
-  /// Current status of the admin account. Values: 'active', 'suspended',
-  /// 'banned'. Indicates if the account can perform administrative actions.
-  status String
-  
-  /// Whether the admin has verified their email address. Required for security
-  /// and compliance.
-  email_verified Boolean
-  
-  /// System identifier of the entity that created this record. Standardized as
-  /// 'system' for auto-generated records.
-  created_by String
-  
-  /// System identifier of the entity that last updated this record. Null means
-  /// no update has occurred since creation.
-  updated_by String?
-  
-  //----
-  // RELATIONS
-  //----
-  admin_sessions admin_sessions[]
-  
-  @@unique([email])
-  @@index([status])
-  @@index([email_verified])
-  @@index([deleted_at])
-}
-
-/// Tracks anonymous browsing sessions for guest users who are not
-/// authenticated.
-///
-/// Each guest session represents a single browsing session (e.g., from a
-/// browser or device). This session table is used for analytics, abuse
-/// detection, and rate limiting. It does not represent a persistent identity
-/// and has no relation to a user account.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on guest_id
-/// and created_at enables efficient tracking of session activity patterns.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model guest_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the guest record that this session belongs to. {@link
-  /// guest.id}.
-  guest_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  guest guest @relation(fields: [guest_id], references: [id], onDelete: Cascade)
-  
-  @@index([guest_id, created_at])
-}
-
-/// Tracks authenticated user sessions for member accounts.
-///
-/// Each session represents an active login session for a member (standard
-/// user). When a member logs in, a session record is created with a JWT
-/// token (stored externally). This table enables session management,
-/// revocation, and security monitoring.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on member_id
-/// and created_at enables efficient tracking of login patterns and for
-/// revocation purposes.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model member_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the member record that this session belongs to. {@link
-  /// member.id}.
-  member_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  member member @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  @@index([member_id, created_at])
-}
-
-/// Tracks authenticated user sessions for moderator accounts.
-///
-/// Each session represents an active login session for a moderator.
-/// Moderator sessions are treated the same as member sessions for
-/// authentication purposes, but are tracked separately for audit and
-/// security purposes.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on
-/// moderator_id and created_at enables efficient tracking of moderator
-/// activity patterns.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model moderator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the moderator record that this session belongs to. {@link
-  /// moderator.id}.
-  moderator_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  moderator moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
-  
-  @@index([moderator_id, created_at])
-}
-
-/// Tracks authenticated user sessions for administrative accounts with
-/// system-wide privileges.
-///
-/// Each session represents an active login session for an admin. Admin
-/// sessions have stricter security requirements, including shorter idle
-/// timeouts and mandatory two-factor authentication in production. This
-/// table enables audit trails for critical administrative actions.
-///
-/// This table follows the strict session pattern: no token hashes, no device
-/// info, no updated_at, no deleted_at. Only exposes required fields: ip,
-/// href, referrer, created_at, expired_at. The composite index on admin_id
-/// and created_at enables efficient tracking of admin activity patterns and
-/// security analysis.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model admin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// References the admin record that this session belongs to. {@link
-  /// admin.id}.
-  admin_id String
-  
-  /// Client IP address from which the session was initiated.
-  ip String
-  
-  /// URL of the page the user was viewing when the session was created.
-  href String
-  
-  /// Referrer URL indicating where the user came from before visiting the
-  /// platform.
-  referrer String
-  
-  /// Timestamp when this session was initiated.
-  created_at DateTime
-  
-  /// Timestamp when this session expired (e.g., after 30 minutes of
-  /// inactivity). Null means the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  admin admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  @@index([admin_id, created_at])
+  @@index([community_bbs_admin_id, created_at], map: "community_bbs_admin_sessions_community_bbs_admin_id_cr_389aee6a")
 }

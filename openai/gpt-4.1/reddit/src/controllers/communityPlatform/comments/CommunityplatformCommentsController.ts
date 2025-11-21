@@ -10,9 +10,6 @@ import { ICommunityPlatformComment } from "../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/comments")
 export class CommunityplatformCommentsController {
   /**
-   * Search and retrieve a paginated, filtered list of comments
-   * (community_platform_comments table).
-   *
    * Retrieve a paginated and optionally filtered list of community platform
    * comments from the system. This operation enables complex searches,
    * including filtering by target post, comment author (user), parent comment,
@@ -57,9 +54,6 @@ export class CommunityplatformCommentsController {
   }
 
   /**
-   * Retrieve the details of a single comment by id from the
-   * community_platform_comments table.
-   *
    * Retrieve a specific community platform comment using its unique identifier.
    * This operation returns all data stored for the comment, including the body
    * text, user and session association, pointer to the parent comment (if it is

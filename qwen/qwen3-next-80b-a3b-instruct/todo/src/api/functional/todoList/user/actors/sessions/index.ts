@@ -4,8 +4,6 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Permanently delete a user session by user and session identifiers.
- *
  * Permanently delete a user session by combining the user identifier and
  * session identifier. This operation removes the session record from the
  * database and immediately invalidates the associated authentication token.

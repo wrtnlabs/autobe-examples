@@ -7,9 +7,6 @@ import { IShoppingMallShipment } from "../../../../../structures/IShoppingMallSh
 import { IPageIShoppingMallShipment } from "../../../../../structures/IPageIShoppingMallShipment";
 
 /**
- * List and search shipments in the `shopping_mall_shipments` table for a given
- * seller-visible orderCode with pagination.
- *
  * Retrieve a filtered, paginated list of shipments belonging to a specific
  * order that are relevant to the authenticated seller from the
  * `shopping_mall_shipments` table.
@@ -145,9 +142,6 @@ export namespace index {
 }
 
 /**
- * Update a shipment header in shopping_mall_shipments identified by order_code
- * and shipment_code.
- *
  * Update shipment header information for a specific shipment belonging to an
  * order, using order_code and shipment_code as business identifiers.
  *
@@ -305,9 +299,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a shipment header in shopping_mall_shipments identified by
- * order_code and shipment_code.
- *
  * Permanently remove a shipment header from the shopping_mall_shipments table
  * so that it no longer appears in operational queries or detail views.
  *

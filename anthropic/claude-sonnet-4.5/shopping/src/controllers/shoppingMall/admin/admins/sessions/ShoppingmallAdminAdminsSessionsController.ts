@@ -13,9 +13,6 @@ import { IShoppingMallAdminSession } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/admin/admins/:adminId/sessions")
 export class ShoppingmallAdminAdminsSessionsController {
   /**
-   * Retrieve filtered, paginated list of admin authentication sessions for
-   * security monitoring.
-   *
    * Retrieve a filtered and paginated list of authentication sessions for a
    * specific administrator account. This operation provides comprehensive
    * session tracking capabilities essential for security monitoring, audit
@@ -79,8 +76,6 @@ export class ShoppingmallAdminAdminsSessionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific admin session.
-   *
    * Retrieve comprehensive details about a specific admin authentication
    * session from the system. This operation provides complete session
    * information including JWT tokens, login/logout timestamps, IP address, user
@@ -131,8 +126,6 @@ export class ShoppingmallAdminAdminsSessionsController {
   }
 
   /**
-   * Delete a specific admin session to terminate authentication.
-   *
    * Permanently delete a specific admin authentication session from the system,
    * effectively logging out the admin user and invalidating the associated JWT
    * authentication tokens. This operation implements secure session termination

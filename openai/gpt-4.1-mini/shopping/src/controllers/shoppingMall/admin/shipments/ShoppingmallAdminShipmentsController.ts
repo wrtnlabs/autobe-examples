@@ -11,8 +11,6 @@ import { IShoppingMallShipment } from "../../../../api/structures/IShoppingMallS
 @Controller("/shoppingMall/admin/shipments/:shipmentId")
 export class ShoppingmallAdminShipmentsController {
   /**
-   * Update shipment details by shipment ID.
-   *
    * Update an existing shipment's details in the system identified by the
    * shipment ID.
    *
@@ -55,8 +53,6 @@ export class ShoppingmallAdminShipmentsController {
   }
 
   /**
-   * Delete shipment permanently by shipment ID.
-   *
    * Permanently delete the shipment identified by shipment ID from the system.
    *
    * This hard delete operation removes all shipment data irrevocably. It

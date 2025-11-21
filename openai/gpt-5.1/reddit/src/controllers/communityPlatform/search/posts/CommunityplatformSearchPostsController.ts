@@ -8,9 +8,6 @@ import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/search/posts")
 export class CommunityplatformSearchPostsController {
   /**
-   * Search and paginate posts from the `community_platform_posts` table using
-   * rich filter and sort options.
-   *
    * Search and retrieve a paginated list of posts from the
    * `community_platform_posts` model based on flexible search criteria.
    *

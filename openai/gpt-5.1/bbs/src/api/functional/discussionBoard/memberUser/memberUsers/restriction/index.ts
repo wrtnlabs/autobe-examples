@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberuserRestriction } from "../../../../../structures/IDiscussionBoardMemberuserRestriction";
 
 /**
- * Get the current restriction status for a member user from
- * discussion_board_memberuser_restrictions.
- *
  * Retrieve the current restriction state for a single member user as recorded
  * in the discussion_board_memberuser_restrictions table.
  *

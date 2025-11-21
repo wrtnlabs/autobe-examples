@@ -7,9 +7,6 @@ import { ICommunityPlatformAppeal } from "../../../../structures/ICommunityPlatf
 import { IPageICommunityPlatformAppeal } from "../../../../structures/IPageICommunityPlatformAppeal";
 
 /**
- * Search and retrieve a paginated list of appeals from the
- * community_platform_appeals table.
- *
  * Retrieve a filtered and paginated list of appeal records from the
  * `community_platform_appeals` table for administrative review.
  *
@@ -130,9 +127,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single appeal from the
- * community_platform_appeals table by its identifier.
- *
  * Fetch the full details of a single appeal record from the
  * `community_platform_appeals` table using its unique identifier.
  *
@@ -252,8 +246,6 @@ export namespace at {
 }
 
 /**
- * Update an existing appeal record in the community_platform_appeals table.
- *
  * Update the status or details of an existing appeal in the community platform.
  *
  * This operation targets a single record in the community_platform_appeals
@@ -389,9 +381,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific appeal record from the community_platform_appeals table by
- * appealId.
- *
  * Delete a specific appeal record identified by its unique appealId from the
  * community_platform_appeals table.
  *

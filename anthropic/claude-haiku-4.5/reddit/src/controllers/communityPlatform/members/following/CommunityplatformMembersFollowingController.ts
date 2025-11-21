@@ -8,8 +8,6 @@ import { ICommunityPlatformMemberFollower } from "../../../../api/structures/ICo
 @Controller("/communityPlatform/members/:memberId/following")
 export class CommunityplatformMembersFollowingController {
   /**
-   * Retrieve paginated list of members being followed by a specific member.
-   *
    * Retrieve a paginated, filtered list of members that are being followed by
    * the specified member. This operation queries the
    * community_platform_member_followers table to find all follow
@@ -56,8 +54,6 @@ export class CommunityplatformMembersFollowingController {
   }
 
   /**
-   * Unfollow a member by removing the follow relationship.
-   *
    * Remove a follow relationship where the authenticated member (identified
    * by memberId path parameter) unfollows another member (identified by
    * followingId path parameter). This operation permanently removes the

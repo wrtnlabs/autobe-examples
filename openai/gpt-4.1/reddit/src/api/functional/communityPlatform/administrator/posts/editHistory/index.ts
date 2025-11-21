@@ -7,9 +7,6 @@ import { ICommunityPlatformPostEditHistory } from "../../../../../structures/ICo
 import { IPageICommunityPlatformPostEditHistory } from "../../../../../structures/IPageICommunityPlatformPostEditHistory";
 
 /**
- * Retrieve a paginated, filterable edit history for a specific post
- * (community_platform_post_edit_history table).
- *
  * Retrieve a filtered and paginated list of all edit history records for a
  * specific post. This allows users, moderators, or administrators to understand
  * the evolution of a post's content over time, including both user and
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Fetch full details for a specific post edit history record
- * (community_platform_post_edit_history table).
- *
  * Fetch the detailed information of a specific post edit history record,
  * including both before and after state, reason for edit, user who made the
  * change, session, and the timestamp. This allows transparency and effective

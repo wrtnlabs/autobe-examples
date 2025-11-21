@@ -11,8 +11,6 @@ import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallC
 @Controller("/shoppingMall/admin/shoppingMallCustomers")
 export class ShoppingmallAdminShoppingmallcustomersController {
   /**
-   * Search and retrieve a filtered, paginated list of shopping mall customers.
-   *
    * Retrieve a filtered and paginated list of registered shopping mall
    * customers from the system. This operation supports advanced search criteria
    * allowing query by email, registration period, or other customer

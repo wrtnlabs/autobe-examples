@@ -15,8 +15,6 @@ import { IPageIShoppingMallSystemConfig } from "../../../../api/structures/IPage
 @Controller("/shoppingMall/admin/systemConfigs")
 export class ShoppingmallAdminSystemconfigsController {
   /**
-   * Create a new platform system configuration setting.
-   *
    * Create a new system configuration entry for the e-commerce shopping mall
    * platform. This operation enables administrators to add new configuration
    * parameters that control platform-wide behavior including business settings,
@@ -69,9 +67,6 @@ export class ShoppingmallAdminSystemconfigsController {
   }
 
   /**
-   * Search and retrieve filtered, paginated list of system configuration
-   * settings.
-   *
    * Retrieve a filtered and paginated list of platform-wide system
    * configuration settings from the shopping mall system. This operation
    * provides advanced search capabilities for administrators to find and review
@@ -123,9 +118,6 @@ export class ShoppingmallAdminSystemconfigsController {
   }
 
   /**
-   * Retrieve detailed information for a specific system configuration by
-   * config_key.
-   *
    * Retrieve complete detailed information for a specific system configuration
    * setting identified by its unique config_key. This operation provides
    * administrators with full access to all configuration details including the
@@ -177,8 +169,6 @@ export class ShoppingmallAdminSystemconfigsController {
   }
 
   /**
-   * Update an existing platform system configuration setting.
-   *
    * Update an existing system configuration entry for the e-commerce shopping
    * mall platform. This operation enables administrators to modify
    * configuration parameters that control platform-wide behavior including
@@ -237,8 +227,6 @@ export class ShoppingmallAdminSystemconfigsController {
   }
 
   /**
-   * Delete a system configuration setting by its unique key.
-   *
    * Permanently remove a system configuration setting from the shopping mall
    * platform. This operation allows platform administrators to delete
    * configuration entries that control core platform behavior and features.

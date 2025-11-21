@@ -13,9 +13,6 @@ import { ITodoAppMemberUserRefresh } from "../../../api/structures/ITodoAppMembe
 @Controller("/auth/memberUser")
 export class AuthMemberuserController {
   /**
-   * Register a new member user in the todo_app_memberusers table and issue
-   * initial authorization tokens.
-   *
    * This API operation registers a new member user account in the todoApp
    * service by inserting a record into the `todo_app_memberusers` table and
    * then issuing authentication tokens. The underlying table stores
@@ -88,9 +85,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Authenticate an existing member user using todo_app_memberusers and record
-   * a session in todo_app_memberuser_sessions, returning authorization tokens.
-   *
    * This API operation authenticates an existing member user of the todoApp
    * service by validating their credentials against the `todo_app_memberusers`
    * table and then establishing a session in `todo_app_memberuser_sessions`.
@@ -163,9 +157,6 @@ export class AuthMemberuserController {
   }
 
   /**
-   * Refresh authorization tokens for a member user using a valid refresh token
-   * and optional session validation against todo_app_memberuser_sessions.
-   *
    * This API operation renews authentication tokens for a member user of the
    * todoApp service by accepting a refresh token and issuing a new
    * `ITodoAppMemberUser.IAuthorized` response. The underlying member identity

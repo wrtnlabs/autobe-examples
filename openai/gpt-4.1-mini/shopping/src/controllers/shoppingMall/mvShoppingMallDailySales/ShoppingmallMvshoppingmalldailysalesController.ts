@@ -10,8 +10,6 @@ import { IShoppingMallMvShoppingMallDailySale } from "../../../api/structures/IS
 @Controller("/shoppingMall/mvShoppingMallDailySales")
 export class ShoppingmallMvshoppingmalldailysalesController {
   /**
-   * Retrieve paginated daily sales summaries of the shopping mall.
-   *
    * Retrieve a filtered and paginated list of daily sales summary records from
    * the mv_shopping_mall_daily_sales materialized view.
    *
@@ -52,8 +50,6 @@ export class ShoppingmallMvshoppingmalldailysalesController {
   }
 
   /**
-   * Retrieve a single daily sales summary record by unique ID.
-   *
    * Retrieve detailed information about a specific daily sales summary by
    * unique identifier.
    *

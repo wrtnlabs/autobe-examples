@@ -7,9 +7,6 @@ import { ITodoAppMemberUserSession } from "../../../../../structures/ITodoAppMem
 import { IPageITodoAppMemberUserSession } from "../../../../../structures/IPageITodoAppMemberUserSession";
 
 /**
- * List and search todo_app_memberuser_sessions for a specific member user for
- * administrative auditing.
- *
  * Retrieve a paginated and filterable list of authentication sessions belonging
  * to a specific member user, primarily for administrative monitoring and
  * security analysis.
@@ -157,9 +154,6 @@ export namespace index {
 }
 
 /**
- * Get detailed todo_app_memberuser_sessions information for a specific member
- * user session by IDs.
- *
  * Retrieve detailed information about a single authentication session for a
  * particular member user, intended for administrative review and security
  * analysis.
@@ -283,9 +277,6 @@ export namespace at {
 }
 
 /**
- * Erase a specific member user session record in the
- * `todo_app_memberuser_sessions` table.
- *
  * Erase a single member user session for the TodoApp service using both the
  * member user identifier and the session identifier.
  *

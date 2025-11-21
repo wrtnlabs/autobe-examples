@@ -6,8 +6,6 @@ export * as email_change from "./email_change/index";
 export * as sessions from "./sessions/index";
 
 /**
- * Terminate member session and perform member logout.
- *
  * Logout a currently authenticated member by terminating their active session.
  * This operation invalidates the member's current session token and sets the
  * session expiration timestamp, preventing any further API requests using that

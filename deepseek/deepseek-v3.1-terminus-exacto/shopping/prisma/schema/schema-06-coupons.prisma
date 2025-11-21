@@ -1,0 +1,345 @@
+/// Platform-managed discount coupons for customer purchases.
+///
+/// Stores coupon definitions including discount types, values, eligibility
+/// criteria, and validity periods. Each coupon can be applied to eligible
+/// orders to provide discounts based on configured rules. Coupons support
+/// various discount types including percentage-based, fixed amount, and free
+/// shipping.
+///
+/// Coupons have configurable usage limits per customer and overall usage
+/// caps. They can be targeted to specific customer segments, product
+/// categories, or order minimums. The system tracks coupon usage statistics
+/// and enforces expiration dates.
+///
+/// Coupons are managed by platform administrators and can be distributed
+/// through various channels including email campaigns, promotional events,
+/// and customer loyalty programs. Requires creator tracking for audit
+/// purposes and proper indexing for performance.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where this coupon is valid. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String?
+  
+  /// Administrator who created this coupon. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session when coupon was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Unique coupon code that customers enter during checkout. Must be
+  /// uppercase and alphanumeric.
+  code String
+  
+  /// Descriptive name for the coupon for administrative purposes.
+  name String
+  
+  /// Detailed description explaining coupon terms and conditions.
+  description String?
+  
+  /// Type of discount: percentage, fixed_amount, free_shipping.
+  discount_type String
+  
+  /// Discount amount or percentage value. Must be positive.
+  discount_value Float
+  
+  /// Minimum order amount required to use this coupon.
+  minimum_order_amount Float?
+  
+  /// Maximum discount amount for percentage-based coupons.
+  maximum_discount Float?
+  
+  /// Maximum times a single customer can use this coupon.
+  usage_limit_per_customer Int?
+  
+  /// Overall maximum usage limit for this coupon.
+  total_usage_limit Int?
+  
+  /// Current usage count for tracking purposes.
+  used_count Int
+  
+  /// Date and time when coupon becomes active.
+  valid_from DateTime
+  
+  /// Date and time when coupon expires.
+  valid_until DateTime
+  
+  /// Whether the coupon is currently active for use.
+  is_active Boolean
+  
+  /// Timestamp when coupon was created.
+  created_at DateTime
+  
+  /// Timestamp when coupon was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when coupon was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  creator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  creatorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  
+  @@index([shopping_mall_channel_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_coupons_shopping_mall_administrator_sess_40c5197f")
+  
+  @@unique([code])
+  @@index([valid_from, valid_until])
+  @@index([is_active, valid_until])
+  @@index([discount_type])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_coupons_shopping_mall_administrator_id_c_8666189a")
+}
+
+/// Tracks individual coupon applications to customer orders.
+///
+/// Records each instance of a coupon being used in an order, including the
+/// customer who used it, the order it was applied to, and the discount
+/// amount applied. This table provides audit trails for coupon usage and
+/// prevents duplicate applications.
+///
+/// Usage records are created when a coupon is successfully applied during
+/// checkout. The system validates coupon eligibility before creating usage
+/// records and enforces usage limits based on the coupon configuration.
+///
+/// This tracking enables reporting on coupon effectiveness, customer
+/// redemption patterns, and promotional campaign performance analysis.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupon_usages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coupon that was used. {@link shopping_mall_coupons.id}
+  shopping_mall_coupon_id String
+  
+  /// Customer who used the coupon. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when coupon was used. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Order where coupon was applied. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Actual discount amount applied to the order.
+  discount_amount Float
+  
+  /// Timestamp when coupon was applied to the order.
+  applied_at DateTime
+  
+  /// Timestamp when usage record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_coupon_usages_shopping_mall_customer_ses_852a0ad5")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coupon_id, shopping_mall_order_id], map: "shopping_mall_coupon_usages_shopping_mall_coupon_id_sh_5e18090c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, applied_at], map: "shopping_mall_coupon_usages_shopping_mall_customer_id__f3cd96b5")
+  @@index([shopping_mall_order_id])
+  @@index([applied_at])
+}
+
+/// Marketing promotions and campaign definitions.
+///
+/// Defines promotional campaigns that can include multiple coupons, special
+/// pricing, or other marketing incentives. Promotions have specific start
+/// and end dates, target audiences, and can be associated with specific
+/// products or categories.
+///
+/// Promotions support various types including seasonal sales, clearance
+/// events, loyalty rewards, and new customer incentives. Each promotion can
+/// have multiple rules defining eligibility criteria and discount
+/// structures.
+///
+/// Platform administrators manage promotions through dedicated tools that
+/// allow for campaign scheduling, performance tracking, and audience
+/// targeting configuration. Requires creator tracking and proper indexing
+/// for campaign management.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where promotion is active. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String?
+  
+  /// Administrator who created this promotion. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator session when promotion was created. {@link
+  /// shopping_mall_administrator_sessions.id}
+  shopping_mall_administrator_session_id String
+  
+  /// Promotion name for identification and display.
+  name String
+  
+  /// Detailed description of promotion terms and benefits.
+  description String?
+  
+  /// Type of promotion: sale, clearance, loyalty, seasonal, etc.
+  promotion_type String
+  
+  /// Date and time when promotion becomes active.
+  start_date DateTime
+  
+  /// Date and time when promotion expires.
+  end_date DateTime
+  
+  /// Whether the promotion is currently active.
+  is_active Boolean
+  
+  /// Priority level for promotion ordering and conflict resolution. Higher
+  /// numbers indicate higher priority.
+  priority Int
+  
+  /// Timestamp when promotion was created.
+  created_at DateTime
+  
+  /// Timestamp when promotion was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when promotion was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  creator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  creatorSession shopping_mall_administrator_sessions @relation(fields: [shopping_mall_administrator_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  
+  @@index([shopping_mall_channel_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_session_id], map: "shopping_mall_promotions_shopping_mall_administrator_s_8d0675e6")
+  
+  @@unique([name])
+  @@index([start_date, end_date])
+  @@index([is_active, end_date])
+  @@index([promotion_type])
+  @@index([priority])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_promotions_shopping_mall_administrator_i_579d471c")
+}
+
+/// Rules and conditions defining promotion eligibility and discounts.
+///
+/// Specifies the conditions under which a promotion applies and the discount
+/// calculations. Rules can target specific products, categories, customer
+/// segments, or order characteristics.
+///
+/// Each rule belongs to a promotion and defines the criteria for promotion
+/// application. Rules support complex conditions including minimum order
+/// amounts, product quantity thresholds, customer loyalty tiers, and
+/// time-based restrictions.
+///
+/// The system evaluates promotion rules during checkout to determine
+/// applicable discounts and ensures that only eligible promotions are
+/// applied to customer orders.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent promotion that this rule belongs to. {@link
+  /// shopping_mall_promotions.id}
+  shopping_mall_promotion_id String
+  
+  /// Target category for category-specific promotions. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String?
+  
+  /// Target product for product-specific promotions. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Type of rule: product_based, category_based, order_based, customer_based.
+  rule_type String
+  
+  /// JSON condition definition for rule evaluation.
+  condition String
+  
+  /// Discount calculation method: percentage, fixed_amount, etc.
+  discount_type String
+  
+  /// Discount amount or percentage value.
+  discount_value Float
+  
+  /// Minimum product quantity required for rule application.
+  minimum_quantity Int?
+  
+  /// Maximum product quantity for rule application.
+  maximum_quantity Int?
+  
+  /// Minimum order amount required for rule application.
+  minimum_order_amount Float?
+  
+  /// Rule priority for ordering and conflict resolution.
+  priority Int
+  
+  /// Whether the rule is currently active.
+  is_active Boolean
+  
+  /// Timestamp when rule was created.
+  created_at DateTime
+  
+  /// Timestamp when rule was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories? @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_promotion_id, priority], map: "shopping_mall_promotion_rules_shopping_mall_promotion__ede6a999")
+  @@index([rule_type])
+  @@index([is_active])
+  @@index([shopping_mall_category_id])
+  @@index([shopping_mall_product_id])
+}

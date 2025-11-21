@@ -10,9 +10,6 @@ import { IDiscussionBoardPasswordReset } from "../../../../api/structures/IDiscu
 @Controller("/discussionBoard/moderator/passwordResets/:resetId")
 export class DiscussionboardModeratorPasswordresetsController {
   /**
-   * Retrieve a specific password reset request by ID (token excluded for
-   * security).
-   *
    * Retrieve detailed information about a password reset request identified by
    * its unique ID from the discussion_board_password_resets table.
    *

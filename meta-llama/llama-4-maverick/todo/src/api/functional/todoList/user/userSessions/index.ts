@@ -7,8 +7,6 @@ import { ITodoListUserSession } from "../../../../structures/ITodoListUserSessio
 import { IPageITodoListUserSession } from "../../../../structures/IPageITodoListUserSession";
 
 /**
- * Search or manage user sessions.
- *
  * This operation enables searching or managing active user sessions using
  * various search criteria defined in the IUserSession.IRequest schema. It
  * supports pagination and returns a list of user sessions with summary

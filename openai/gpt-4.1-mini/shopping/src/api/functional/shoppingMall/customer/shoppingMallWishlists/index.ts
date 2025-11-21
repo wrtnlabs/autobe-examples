@@ -8,8 +8,6 @@ import { IPageIShoppingMallWishlist } from "../../../../structures/IPageIShoppin
 export * as shoppingMallWishlistItems from "./shoppingMallWishlistItems/index";
 
 /**
- * Create a new shopping mall wishlist for a customer.
- *
  * Create a new wishlist belonging to a customer in the shopping mall system.
  *
  * This operation accepts the wishlist creation request, which includes
@@ -105,8 +103,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of shopping mall wishlists.
- *
  * Retrieve a filtered and paginated list of shopping mall wishlists. This
  * operation supports complex search parameters such as filtering by owning
  * customer, creation date ranges, and soft deletion status.
@@ -204,8 +200,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific shopping mall wishlist.
- *
  * Retrieve detailed information for a single shopping mall wishlist identified
  * by its unique identifier.
  *
@@ -294,8 +288,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall wishlist by ID.
- *
  * Modify an existing wishlist specified by its unique identifier.
  *
  * This operation enables updating the wishlist's details, refreshing the update
@@ -399,8 +391,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a shopping mall wishlist by ID.
- *
  * This API endpoint allows an authenticated customer to permanently delete one
  * of their wishlists by its unique identifier. Deletion removes the wishlist
  * from the system irrevocably.

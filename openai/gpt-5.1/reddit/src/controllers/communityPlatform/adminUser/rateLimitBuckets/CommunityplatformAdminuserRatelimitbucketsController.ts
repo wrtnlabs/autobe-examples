@@ -8,10 +8,6 @@ import { IPageICommunityPlatformRateLimitBucket } from "../../../../api/structur
 @Controller("/communityPlatform/adminUser/rateLimitBuckets")
 export class CommunityplatformAdminuserRatelimitbucketsController {
   /**
-   * Create a new rate limit bucket record in the
-   * community_platform_rate_limit_buckets table for administrative control of
-   * rate limiting.
-   *
    * Create a new rate limit bucket entry in the community platform's rate
    * limiting subsystem.
    *
@@ -59,9 +55,6 @@ export class CommunityplatformAdminuserRatelimitbucketsController {
   }
 
   /**
-   * Search and paginate over `community_platform_rate_limit_buckets` entries
-   * for administrative inspection.
-   *
    * Search and page through rate limit bucket state for the community
    * platform.
    *
@@ -120,9 +113,6 @@ export class CommunityplatformAdminuserRatelimitbucketsController {
   }
 
   /**
-   * Get a single rate limit bucket record from the
-   * community_platform_rate_limit_buckets table by its identifier.
-   *
    * Retrieve the full detail of a specific rate limit bucket identified by
    * its unique bucket identifier.
    *
@@ -176,9 +166,6 @@ export class CommunityplatformAdminuserRatelimitbucketsController {
   }
 
   /**
-   * Update a rate limit bucket in the community_platform_rate_limit_buckets
-   * table by its id.
-   *
    * Update an existing rate limit bucket record in the community platform
    * rate limiter subsystem.
    *
@@ -242,9 +229,6 @@ export class CommunityplatformAdminuserRatelimitbucketsController {
   }
 
   /**
-   * Delete a rate limit bucket record from the
-   * community_platform_rate_limit_buckets table by its id.
-   *
    * Erase a rate limit bucket entry from the community platform rate limiting
    * store so that it is no longer used for abuse prevention decisions.
    *

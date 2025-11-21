@@ -10,8 +10,6 @@ export * as rules from "./rules/index";
 export * as posts from "./posts/index";
 
 /**
- * Search and retrieve a filtered, paginated list of public communities.
- *
  * This operation provides advanced community discovery functionality, enabling
  * users to search for and explore communities based on multiple filtering
  * criteria including category classification, visibility status, activity
@@ -136,8 +134,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific community.
- *
  * Retrieves comprehensive information about a specific community, enabling
  * users to view community metadata, configuration, and statistics. This
  * operation accesses the community_platform_communities table containing core

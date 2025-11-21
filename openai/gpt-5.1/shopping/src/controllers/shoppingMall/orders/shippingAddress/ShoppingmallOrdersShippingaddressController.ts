@@ -7,9 +7,6 @@ import { IShoppingMallShippingAddress } from "../../../../api/structures/IShoppi
 @Controller("/shoppingMall/orders/:orderCode/shippingAddress")
 export class ShoppingmallOrdersShippingaddressController {
   /**
-   * Retrieve the shopping_mall_shipping_addresses snapshot for an order
-   * identified by orderCode.
-   *
    * Get the immutable shipping address snapshot for a given order identified
    * by its business orderCode.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallSystemOverviewDashboard } from "../../../../../api/structu
 @Controller("/shoppingMall/admin/dashboard/systemOverview")
 export class ShoppingmallAdminDashboardSystemoverviewController {
   /**
-   * Get an aggregated system overview dashboard derived from shoppingMall
-   * analytics and snapshot tables.
-   *
    * Retrieve a consolidated system overview dashboard for the shoppingMall
    * platform.
    *

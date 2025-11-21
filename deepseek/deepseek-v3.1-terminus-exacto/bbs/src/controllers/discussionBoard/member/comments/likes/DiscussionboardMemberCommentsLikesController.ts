@@ -13,8 +13,6 @@ import { IPageIDiscussionBoardCommentLike } from "../../../../../api/structures/
 @Controller("/discussionBoard/member/comments/:commentId/likes")
 export class DiscussionboardMemberCommentsLikesController {
   /**
-   * Create a new like for a comment.
-   *
    * This operation allows authenticated members to express appreciation for
    * discussion board comments by creating a like record. The system validates
    * that the target comment exists and is accessible before creating the like
@@ -57,8 +55,6 @@ export class DiscussionboardMemberCommentsLikesController {
   }
 
   /**
-   * Search and retrieve paginated list of comment likes.
-   *
    * This operation provides comprehensive search capabilities for retrieving
    * likes associated with a specific comment on the discussion board. Users can
    * filter likes by creation date ranges, sort by various criteria, and
@@ -102,8 +98,6 @@ export class DiscussionboardMemberCommentsLikesController {
   }
 
   /**
-   * Permanently delete a specific comment like record.
-   *
    * This operation permanently removes a comment like record from the
    * discussion board system. The operation requires authentication and
    * authorization to ensure only the user who created the like can delete it.

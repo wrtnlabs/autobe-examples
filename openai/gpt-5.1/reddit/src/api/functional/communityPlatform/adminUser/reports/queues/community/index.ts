@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityReport } from "../../../../../../structures/
 import { IPageICommunityPlatformCommunityReport } from "../../../../../../structures/IPageICommunityPlatformCommunityReport";
 
 /**
- * Search and retrieve a paginated queue of community report records from
- * community_platform_community_reports for moderation review.
- *
  * Retrieve a filtered, paginated queue of community-level moderation reports
  * for platform administrators and moderators.
  *

@@ -8,10 +8,6 @@ import { IShoppingMallSellerPerformanceSnapshot } from "../../../../../api/struc
 @Controller("/shoppingMall/admin/analytics/sellerPerformance")
 export class ShoppingmallAdminAnalyticsSellerperformanceController {
   /**
-   * Search seller performance snapshots from
-   * `shopping_mall_seller_performance_snapshots` with KPI-based filters and
-   * pagination.
-   *
    * Retrieve a paginated list of seller performance snapshots from the
    * `shopping_mall_seller_performance_snapshots` table for analytics and risk
    * monitoring.

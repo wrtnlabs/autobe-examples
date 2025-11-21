@@ -13,9 +13,6 @@ import { ICommunityPlatformNotificationSettings } from "../../../../api/structur
 @Controller("/communityPlatform/administrator/notificationSettings")
 export class CommunityplatformAdministratorNotificationsettingsController {
   /**
-   * Search and retrieve a paginated list of user notification settings
-   * (community_platform_notification_settings).
-   *
    * Retrieve a paginated list of user notification settings from the platform's
    * configuration.
    *
@@ -64,9 +61,6 @@ export class CommunityplatformAdministratorNotificationsettingsController {
   }
 
   /**
-   * Retrieve detail of a single user notification setting
-   * (community_platform_notification_settings) by internal ID.
-   *
    * Retrieve the full details of a specific notification settings record for a
    * user given its unique identifier.
    *
@@ -111,9 +105,6 @@ export class CommunityplatformAdministratorNotificationsettingsController {
   }
 
   /**
-   * Permanently delete a user's notification settings by notificationSettingsId
-   * (community_platform_notification_settings table).
-   *
    * Permanently delete a user's notification settings, removing all messaging,
    * email, push, and other notification delivery rules from the system.
    *

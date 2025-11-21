@@ -8,9 +8,6 @@ import { IPageIShoppingMallPaymentChargeback } from "../../../../../api/structur
 @Controller("/shoppingMall/admin/payments/:orderPaymentId/chargebacks")
 export class ShoppingmallAdminPaymentsChargebacksController {
   /**
-   * Create a shopping_mall_payment_chargebacks entry for a specific order
-   * payment.
-   *
    * Create a new chargeback record for a specific order payment in the
    * shoppingMall platform.
    *
@@ -81,9 +78,6 @@ export class ShoppingmallAdminPaymentsChargebacksController {
   }
 
   /**
-   * Search and list chargebacks in shopping_mall_payment_chargebacks for a
-   * specific order payment.
-   *
    * Retrieve a filtered and paginated list of chargeback records associated
    * with a specific order payment.
    *
@@ -155,9 +149,6 @@ export class ShoppingmallAdminPaymentsChargebacksController {
   }
 
   /**
-   * Get a specific payment chargeback (shopping_mall_payment_chargebacks) by
-   * payment and chargeback identifiers.
-   *
    * Retrieve a single chargeback record associated with a particular order
    * payment, exposing full details needed for financial reconciliation and
    * dispute handling.
@@ -230,9 +221,6 @@ export class ShoppingmallAdminPaymentsChargebacksController {
   }
 
   /**
-   * Update a specific payment chargeback (shopping_mall_payment_chargebacks)
-   * associated with a given order payment.
-   *
    * Modify the mutable details of a specific chargeback associated with a
    * given order payment, such as status transitions, internal categorization,
    * and administrative notes.
@@ -309,9 +297,6 @@ export class ShoppingmallAdminPaymentsChargebacksController {
   }
 
   /**
-   * Delete a chargeback record in shopping_mall_payment_chargebacks for a
-   * specific order payment.
-   *
    * Delete a specific chargeback entry for a given order payment.
    *
    * This operation removes a single chargeback record from the

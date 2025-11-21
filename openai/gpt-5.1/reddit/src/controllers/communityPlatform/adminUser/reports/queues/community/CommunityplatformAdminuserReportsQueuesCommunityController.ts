@@ -8,9 +8,6 @@ import { ICommunityPlatformCommunityReport } from "../../../../../../api/structu
 @Controller("/communityPlatform/adminUser/reports/queues/community")
 export class CommunityplatformAdminuserReportsQueuesCommunityController {
   /**
-   * Search and retrieve a paginated queue of community report records from
-   * community_platform_community_reports for moderation review.
-   *
    * Retrieve a filtered, paginated queue of community-level moderation
    * reports for platform administrators and moderators.
    *

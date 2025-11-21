@@ -12,8 +12,6 @@ import { IPageIRedditCommunityCommunityModerator } from "../../../../api/structu
 @Controller("/redditCommunity/communities/:communityName/moderators")
 export class RedditcommunityCommunitiesModeratorsController {
   /**
-   * Assign a new moderator to the community.
-   *
    * Assign a new moderator to a specific community, granting them moderation
    * authority and privileges within that community space. This operation
    * creates a new record in the reddit_community_community_moderators junction
@@ -72,8 +70,6 @@ export class RedditcommunityCommunitiesModeratorsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of community moderators.
-   *
    * Retrieve a filtered and paginated list of moderators assigned to a specific
    * community. This operation allows querying moderators who have moderation
    * authority within a particular community identified by its unique

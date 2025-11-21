@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformModerator } from "../../../../../structures/ICommunityPlatformModerator";
 
 /**
- * Retrieve detailed moderator information for a community
- * (community_platform_moderators table).
- *
  * Retrieve full information about a single moderator for a specific community.
  *
  * This endpoint is intended for administrative interfaces or community
@@ -118,9 +115,6 @@ export namespace at {
 }
 
 /**
- * Update moderator assignment and business status for a community moderator
- * (community_platform_moderators and community_platform_communities).
- *
  * Update the role, status, or business workflow state for a platform community
  * moderator in the context of a specific community.
  *
@@ -248,9 +242,6 @@ export namespace update {
 }
 
 /**
- * Remove (soft-delete) a platform moderator's assignment from a community
- * (community_platform_moderators).
- *
  * Remove a moderator from active duties in the context of a specific community,
  * supporting soft-deletion for audit and recovery.
  *
@@ -358,8 +349,6 @@ export namespace erase {
 }
 
 /**
- * Create a new moderator record (community_platform_moderators table).
- *
  * Create a new moderator account for the community platform, supporting
  * workflows for designating moderators or onboarding new privileged users.
  *

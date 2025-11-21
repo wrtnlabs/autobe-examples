@@ -10,9 +10,6 @@ import { IDiscussionBoardContentReport } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/member/articles/:articleId/reports")
 export class DiscussionboardMemberArticlesReportsController {
   /**
-   * Create a new content report for an article flagging potential policy
-   * violations.
-   *
    * Submit a new content report flagging an article for potential policy
    * violations or inappropriate content.
    *

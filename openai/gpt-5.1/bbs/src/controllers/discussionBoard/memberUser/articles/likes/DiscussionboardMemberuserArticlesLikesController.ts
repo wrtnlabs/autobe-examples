@@ -13,9 +13,6 @@ import { IDiscussionBoardArticleLike } from "../../../../../api/structures/IDisc
 @Controller("/discussionBoard/memberUser/articles/:articleId/likes")
 export class DiscussionboardMemberuserArticlesLikesController {
   /**
-   * Retrieve like engagement information for a single article from
-   * discussion_board_article_likes by articleId.
-   *
    * Retrieve the like engagement state and count for a single discussion board
    * article for the current authenticated member user.
    *
@@ -89,9 +86,6 @@ export class DiscussionboardMemberuserArticlesLikesController {
   }
 
   /**
-   * Create or confirm a like in discussion_board_article_likes for the current
-   * member on an article.
-   *
    * Create or confirm a like engagement from the current member user for a
    * specific discussion board article.
    *
@@ -171,9 +165,6 @@ export class DiscussionboardMemberuserArticlesLikesController {
   }
 
   /**
-   * Retrieve like engagement information for a discussion_board_article_likes
-   * entry by articleId.
-   *
    * Retrieve the like engagement state and count for a single discussion board
    * article.
    *
@@ -247,9 +238,6 @@ export class DiscussionboardMemberuserArticlesLikesController {
   }
 
   /**
-   * Remove a member user's like record for an article from
-   * discussion_board_article_likes.
-   *
    * Perform an "unlike" operation by deleting the existing like record for the
    * target article in the discussion_board_article_likes table.
    *

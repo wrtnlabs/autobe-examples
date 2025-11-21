@@ -8,9 +8,6 @@ import { IShoppingMallCartMergeEvent } from "../../../../../api/structures/IShop
 @Controller("/shoppingMall/admin/carts")
 export class ShoppingmallAdminCartsMergeeventsController {
   /**
-   * List merge events (shopping_mall_cart_merge_events) for a specific cart
-   * with filtering and pagination.
-   *
    * Retrieve a filtered and paginated list of merge events associated with a
    * specific shopping cart identified by cartId.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminCartsMergeeventsController {
   }
 
   /**
-   * Retrieve detailed shopping_mall_cart_merge_events record for a specific
-   * cart merge event.
-   *
    * Get detailed information about a specific cart merge event identified by
    * mergeEventId, scoped to a particular cart identified by cartId.
    *
@@ -136,9 +130,6 @@ export class ShoppingmallAdminCartsMergeeventsController {
   }
 
   /**
-   * Search and paginate `shopping_mall_cart_merge_events` audit records for
-   * cart merge operations.
-   *
    * Retrieve a filtered and paginated list of cart merge events from the
    * `shopping_mall_cart_merge_events` table for operational auditing and
    * analytics.

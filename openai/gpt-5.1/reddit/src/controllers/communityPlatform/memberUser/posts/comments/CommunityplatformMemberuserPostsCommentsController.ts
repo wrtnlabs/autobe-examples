@@ -8,9 +8,6 @@ import { IPageICommunityPlatformComment } from "../../../../../api/structures/IP
 @Controller("/communityPlatform/memberUser/posts/:postId/comments")
 export class CommunityplatformMemberuserPostsCommentsController {
   /**
-   * Create a new comment record in the community_platform_comments table for
-   * a specific post.
-   *
    * Create a new comment for the specified post within the community
    * platform.
    *
@@ -72,9 +69,6 @@ export class CommunityplatformMemberuserPostsCommentsController {
   }
 
   /**
-   * List and search comments for a specific post from the
-   * community_platform_comments table with pagination and filtering.
-   *
    * Retrieve a filtered and paginated list of comments for a specific post,
    * using the community_platform_comments table as the primary data source.
    *
@@ -128,9 +122,6 @@ export class CommunityplatformMemberuserPostsCommentsController {
   }
 
   /**
-   * Update a specific comment in the community_platform_comments table for a
-   * given post.
-   *
    * Update an existing comment record in the community platform that is
    * attached to a specific post.
    *
@@ -220,9 +211,6 @@ export class CommunityplatformMemberuserPostsCommentsController {
   }
 
   /**
-   * Permanently delete a specific comment from the
-   * community_platform_comments table for a given post.
-   *
    * Erase a specific comment row from the community_platform_comments table
    * for a given post.
    *

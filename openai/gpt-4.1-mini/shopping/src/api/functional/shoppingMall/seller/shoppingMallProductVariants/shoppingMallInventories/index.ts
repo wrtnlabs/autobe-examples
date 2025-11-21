@@ -7,8 +7,6 @@ import { IShoppingMallInventory } from "../../../../../structures/IShoppingMallI
 import { IPageIShoppingMallInventory } from "../../../../../structures/IPageIShoppingMallInventory";
 
 /**
- * Search inventories linked to a product variant SKU.
- *
  * Search and list inventory records for a specific product variant SKU.
  *
  * This operation allows querying inventories associated with the SKU designated

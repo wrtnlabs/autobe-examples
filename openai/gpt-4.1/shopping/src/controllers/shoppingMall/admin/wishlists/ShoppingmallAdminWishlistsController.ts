@@ -12,9 +12,6 @@ import { IShoppingMallWishlist } from "../../../../api/structures/IShoppingMallW
 @Controller("/shoppingMall/admin/wishlists")
 export class ShoppingmallAdminWishlistsController {
   /**
-   * Search and retrieve a paginated, filterable list of shopping mall wishlists
-   * (shopping_mall_wishlists table).
-   *
    * Retrieve a paginated and filterable list of all customer wishlists in the
    * system.
    *
@@ -55,9 +52,6 @@ export class ShoppingmallAdminWishlistsController {
   }
 
   /**
-   * Retrieve all detailed information of a single shopping mall wishlist
-   * (shopping_mall_wishlists table) by ID.
-   *
    * Retrieve all available details for one specific customer wishlist by its
    * unique identifier.
    *

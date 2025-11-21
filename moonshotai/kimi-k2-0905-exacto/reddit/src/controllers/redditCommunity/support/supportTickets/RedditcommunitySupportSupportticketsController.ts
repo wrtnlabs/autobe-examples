@@ -8,9 +8,6 @@ import { IRedditCommunitySupportTicket } from "../../../../api/structures/IReddi
 @Controller("/redditCommunity/support/supportTickets")
 export class RedditcommunitySupportSupportticketsController {
   /**
-   * Advanced search and filtering of support tickets by member ID and
-   * criteria.
-   *
    * Retrieve a filtered and paginated list of support tickets with advanced
    * search capabilities based on the reddit_community_support_tickets table
    * schema. This operation supports complex filtering based on ticket

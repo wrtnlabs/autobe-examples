@@ -10,8 +10,6 @@ import { ITodoListTodoListUser } from "../../../../../api/structures/ITodoListTo
 @Controller("/auth/user/two-factor/enable")
 export class AuthUserTwo_factorEnableController {
   /**
-   * Enable two-factor authentication for user account.
-   *
    * Allows users to enable two-factor authentication for their accounts using
    * fields and tokens defined in the 'todo_list_users' table.
    *

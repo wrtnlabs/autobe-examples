@@ -12,9 +12,6 @@ import { IShoppingMallOrderAuditLog } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/admin/orders/:orderNumber/auditLogs")
 export class ShoppingmallAdminOrdersAuditlogsController {
   /**
-   * Search and retrieve a paginated list of order audit logs for a specific
-   * order from shopping_mall_order_audit_logs.
-   *
    * Search and retrieve all audit log events associated with a given order
    * using its business order number. This enables compliance workflows,
    * incident reviews, dispute investigations, or customer support follow-up for
@@ -61,9 +58,6 @@ export class ShoppingmallAdminOrdersAuditlogsController {
   }
 
   /**
-   * Retrieve a specific audit log record for an order
-   * (shopping_mall_order_audit_logs).
-   *
    * Retrieve a single, detailed audit log event for a given order using the
    * business order number and the unique auditLogId. This operation allows
    * authorized actors (admin or the responsible seller) to view a specific

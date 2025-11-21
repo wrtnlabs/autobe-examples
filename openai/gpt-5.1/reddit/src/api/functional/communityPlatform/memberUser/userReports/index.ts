@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformUserReport } from "../../../../structures/ICommunityPlatformUserReport";
 
 /**
- * Create a new user report row in the community_platform_user_reports table.
- *
  * Create a new user-level report capturing a complaint about a member account’s
  * behavior.
  *

@@ -9,8 +9,6 @@ import { IEconomicDiscussionRecommendationsRequest } from "../../../../../api/st
 @Controller("/economicDiscussion/moderator/discovery/recommendations")
 export class EconomicdiscussionModeratorDiscoveryRecommendationsController {
   /**
-   * Get personalized economic and political content recommendations.
-   *
    * Provides personalized article recommendations based on browsing history and
    * interaction patterns. The recommendation engine analyzes user activity
    * including search queries, viewed articles, comment participation, and

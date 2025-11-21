@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityJoinRequest } from "../../../../../structure
 import { IPageICommunityPlatformCommunityJoinRequest } from "../../../../../structures/IPageICommunityPlatformCommunityJoinRequest";
 
 /**
- * Search and retrieve a paginated list of join requests for a community
- * (community_platform_community_join_requests table).
- *
  * Retrieve a filtered and paginated list of join requests for a specified
  * community.
  *
@@ -126,9 +123,6 @@ export namespace index {
 }
 
 /**
- * Get a single join request by ID for the specified community
- * (community_platform_community_join_requests table).
- *
  * Get details about a single join request in a community.
  *
  * This operation is designed to let community moderators and administrators
@@ -231,9 +225,6 @@ export namespace at {
 }
 
 /**
- * Update the status or details of a community join request in
- * community_platform_community_join_requests.
- *
  * Approve or reject a pending join request for a community with moderator
  * privileges.
  *

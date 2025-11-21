@@ -14,8 +14,6 @@ import { IDiscussionBoardModerator } from "../../../../api/structures/IDiscussio
 @Controller("/discussionBoard/moderator/moderators")
 export class DiscussionboardModeratorModeratorsController {
   /**
-   * Search and retrieve a paginated list of moderators with filtering.
-   *
    * Retrieve a filtered, sorted, and paginated list of moderator accounts from
    * the system.
    *
@@ -78,8 +76,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Retrieve detailed information about a specific moderator account.
-   *
    * Retrieve comprehensive details about a specific moderator account
    * identified by moderatorId. This operation provides access to moderator
    * profile information, authentication status, account activity, and
@@ -133,8 +129,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Update moderator account profile and authentication details.
-   *
    * Update editable fields of a moderator account identified by moderatorId.
    * This operation allows moderators to modify their profile information,
    * change authentication credentials, and update display preferences while
@@ -199,8 +193,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Remove moderator account and revoke moderation privileges.
-   *
    * Permanently revoke moderator privileges and mark the moderator account as
    * deleted in the discussion_board_moderators table. This operation implements
    * soft deletion by setting the deleted_at timestamp, which preserves the

@@ -98,8 +98,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of todo items.
- *
  * Retrieve todo list items matching the specified search criteria with
  * pagination. This enables efficient client-side listing and filtering of
  * tasks.
@@ -191,8 +189,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single todo item by unique ID.
- *
  * Retrieve detailed information about a specific todo item by its unique
  * identifier.
  *
@@ -287,8 +283,6 @@ export namespace at {
 }
 
 /**
- * Update a todo item by ID in todo_list_todos.
- *
  * Update an existing todo item owned by the user.
  *
  * This operation allows the authenticated user to update the title,
@@ -388,8 +382,6 @@ export namespace update {
 }
 
 /**
- * Delete a todo item by ID in todo_list_todos.
- *
  * Remove an existing todo item permanently from the system.
  *
  * This operation allows the authenticated owner user to delete their todo item

@@ -7,8 +7,6 @@ import { IShoppingMallCartItem } from "../../../../../structures/IShoppingMallCa
 import { IPageIShoppingMallCartItem } from "../../../../../structures/IPageIShoppingMallCartItem";
 
 /**
- * Create a new shopping cart item in the specified cart.
- *
  * Create a new item in a specific shopping mall cart by supplying product
  * variant and quantity.
  *
@@ -111,8 +109,6 @@ export namespace create {
 }
 
 /**
- * List and search cart items of a shopping mall cart.
- *
  * Retrieve a list of items in the specified shopping mall cart with support for
  * filtering, pagination, and sorting. This operation allows the client to query
  * the cart items associated with a cart identified by shoppingMallCartId.
@@ -226,8 +222,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific shopping cart item by ID within the cart.
- *
  * Retrieve detailed information about a single shopping cart item belonging to
  * a specific shopping mall cart.
  *
@@ -331,8 +325,6 @@ export namespace at {
 }
 
 /**
- * Update a specific item in a shopping cart.
- *
  * Update a specific shopping mall cart item by specifying the cart and the item
  * identifiers.
  *
@@ -443,8 +435,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific item from a shopping cart.
- *
  * This operation permanently deletes a specified shopping mall cart item from
  * the given shopping cart.
  *

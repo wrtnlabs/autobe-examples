@@ -13,8 +13,6 @@ import { IShoppingMallCartItem } from "../../../../../../../api/structures/IShop
 @Controller("/shoppingMall/buyer/buyers/me/cart/items")
 export class ShoppingmallBuyerBuyersMeCartItemsController {
   /**
-   * Add a product SKU to the authenticated buyer's shopping cart.
-   *
    * Add a new product item to the shopping cart for the currently authenticated
    * buyer. This operation enables buyers to select products they intend to
    * purchase by adding them to their cart with a specified quantity.
@@ -64,8 +62,6 @@ export class ShoppingmallBuyerBuyersMeCartItemsController {
   }
 
   /**
-   * Retrieve detailed information about a specific cart item.
-   *
    * Retrieve complete details for a single cart item from the authenticated
    * buyer's shopping cart. This operation provides comprehensive information
    * about a specific product that the buyer has added to their cart, including
@@ -115,8 +111,6 @@ export class ShoppingmallBuyerBuyersMeCartItemsController {
   }
 
   /**
-   * Update the quantity of a specific item in the buyer's shopping cart.
-   *
    * Update the quantity of a specific product item in the authenticated buyer's
    * shopping cart. This operation allows buyers to increase or decrease the
    * quantity of items they intend to purchase without removing the item
@@ -171,8 +165,6 @@ export class ShoppingmallBuyerBuyersMeCartItemsController {
   }
 
   /**
-   * Remove a specific item from the buyer's shopping cart.
-   *
    * Remove a specific product item from the authenticated buyer's shopping
    * cart. This operation allows buyers to delete items they no longer wish to
    * purchase without affecting other items in their cart.

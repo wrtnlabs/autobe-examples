@@ -7,8 +7,6 @@ import { IShoppingMallReviewModerationLog } from "../../../../../structures/ISho
 import { IPageIShoppingMallReviewModerationLog } from "../../../../../structures/IPageIShoppingMallReviewModerationLog";
 
 /**
- * Search and retrieve filtered moderation logs for a specific product review.
- *
  * Retrieve a comprehensive audit trail of all moderation actions performed on a
  * specific product review. This operation provides administrators with complete
  * visibility into the review moderation lifecycle, including who made changes,
@@ -127,8 +125,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific review moderation log entry.
- *
  * Retrieve comprehensive details about a single moderation action performed on
  * a product review. This operation provides administrators with in-depth
  * information about a specific moderation event, including the complete context

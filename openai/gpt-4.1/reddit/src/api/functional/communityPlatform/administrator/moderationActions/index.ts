@@ -9,8 +9,6 @@ export * as moderatorAction from "./moderatorAction/index";
 export * as administratorAction from "./administratorAction/index";
 
 /**
- * Create a new moderation action (community_platform_moderation_actions).
- *
  * Create a new moderation action resulting from a report or violation.
  *
  * This operation allows an administrator or moderator to add a moderation
@@ -114,9 +112,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of moderation actions
- * (community_platform_moderation_actions table).
- *
  * Retrieve a filtered and paginated list of moderation actions performed on the
  * platform. This search API allows authorized reviewers, such as administrators
  * or moderators, to query for actions taken in response to community reports or
@@ -219,9 +214,6 @@ export namespace index {
 }
 
 /**
- * Retrieve the details of a specific moderation action
- * (community_platform_moderation_actions table).
- *
  * Retrieve full details of a specific moderation action by its unique
  * identifier. This endpoint exposes all available metadata, including the
  * action type, result, status, timestamps, the source report, and references to
@@ -315,8 +307,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation action (community_platform_moderation_actions).
- *
  * Update an existing moderation action by its unique identifier.
  *
  * This operation enables administrators or moderators to update all mutable
@@ -424,9 +414,6 @@ export namespace update {
 }
 
 /**
- * Delete a moderation action permanently from the
- * community_platform_moderation_actions table.
- *
  * Delete a specific moderation action from the system using its unique
  * moderationActionId.
  *

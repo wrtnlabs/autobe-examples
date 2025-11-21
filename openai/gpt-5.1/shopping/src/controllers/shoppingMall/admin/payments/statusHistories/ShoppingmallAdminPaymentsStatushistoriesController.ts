@@ -8,9 +8,6 @@ import { IPageIShoppingMallPaymentStatusHistory } from "../../../../../api/struc
 @Controller("/shoppingMall/admin/payments/:orderPaymentId/statusHistories")
 export class ShoppingmallAdminPaymentsStatushistoriesController {
   /**
-   * Create a new shopping_mall_payment_status_histories record for an order
-   * payment.
-   *
    * Create a payment status history record linked to a specific logical order
    * payment.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminPaymentsStatushistoriesController {
   }
 
   /**
-   * List payment status history rows from
-   * shopping_mall_payment_status_histories for a specific order payment.
-   *
    * Retrieve a paginated and filterable list of status history entries for a
    * specific order payment.
    *
@@ -146,9 +140,6 @@ export class ShoppingmallAdminPaymentsStatushistoriesController {
   }
 
   /**
-   * Get a single shopping_mall_payment_status_histories record for an order
-   * payment.
-   *
    * Retrieve detailed information about a single payment status history
    * record for a given order payment.
    *
@@ -210,10 +201,6 @@ export class ShoppingmallAdminPaymentsStatushistoriesController {
   }
 
   /**
-   * Update a payment status history entry in the
-   * shopping_mall_payment_status_histories table for a specific order
-   * payment.
-   *
    * Update a specific payment status history record for a given order
    * payment.
    *
@@ -286,10 +273,6 @@ export class ShoppingmallAdminPaymentsStatushistoriesController {
   }
 
   /**
-   * Delete a payment status history entry from the
-   * shopping_mall_payment_status_histories table for a specific order
-   * payment.
-   *
    * Permanently delete a specific payment status history record for a given
    * order payment.
    *

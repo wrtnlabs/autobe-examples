@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardCommentAttachment } from "../../../../../../structures/IDiscussionBoardCommentAttachment";
 
 /**
- * Create a new image attachment for a discussion board comment.
- *
  * Create a new image file attachment for a specific comment within an article
  * discussion. This operation enables contributors to attach supporting visual
  * content (images only) to their comments to provide evidence, context, or
@@ -142,8 +140,6 @@ export namespace create {
 }
 
 /**
- * Delete an image attachment from a discussion board comment.
- *
  * Remove an image file attachment from a specific comment within an article
  * discussion. This operation enables contributors to manage their own
  * attachments by removing unwanted or erroneous files they have uploaded to

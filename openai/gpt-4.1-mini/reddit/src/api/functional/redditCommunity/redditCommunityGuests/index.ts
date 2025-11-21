@@ -8,8 +8,6 @@ import { IPageIRedditCommunityGuest } from "../../../structures/IPageIRedditComm
 export * as sessions from "./sessions/index";
 
 /**
- * Create a new redditCommunity guest user.
- *
  * Create a new guest user entity for redditCommunity platform. This operation
  * allows anonymous visitors to register as guests without requiring full
  * authentication. The created guest record contains basic information and
@@ -102,8 +100,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of reddit community guests.
- *
  * Retrieve a paginated and optionally filtered list of reddit community guests.
  * These guests represent unauthenticated users accessing public content,
  * identified primarily for auditing and rate limiting.
@@ -196,8 +192,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific reddit community guest.
- *
  * Retrieve detailed information of a reddit community guest identified by the
  * UUID 'id' path parameter.
  *
@@ -287,8 +281,6 @@ export namespace at {
 }
 
 /**
- * Update an existing redditCommunity guest user.
- *
  * Update guest user details in the redditCommunity platform. This endpoint
  * modifies specified fields of the guest user identified by the unique id.
  *

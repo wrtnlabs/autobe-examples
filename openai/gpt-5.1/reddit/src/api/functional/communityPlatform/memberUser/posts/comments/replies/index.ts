@@ -8,9 +8,6 @@ import { IPageICommunityPlatformCommentReply } from "../../../../../../structure
 import { ICommunityPlatformComment } from "../../../../../../structures/ICommunityPlatformComment";
 
 /**
- * Create a new reply in the community_platform_comments table under a specific
- * parent comment for a given post.
- *
  * Create a new reply comment under a specific parent comment on a specific
  * post.
  *
@@ -160,9 +157,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of replies for a specific comment in the
- * community_platform_comments table.
- *
  * Retrieve a filtered and paginated list of replies for a specific parent
  * comment on a specific post.
  *
@@ -314,9 +308,6 @@ export namespace index {
 }
 
 /**
- * Update a specific reply comment in the community_platform_comments table
- * identified by post, parent comment, and reply IDs.
- *
  * Update a specific reply on a post comment while ensuring that it remains
  * correctly scoped under the specified post and parent comment and that all
  * business rules on editing are respected.
@@ -464,9 +455,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific reply from the community_platform_comments table under a
- * given post and parent comment.
- *
  * Delete a specific reply on a post under a given parent comment.
  *
  * This operation targets the `community_platform_comments` model, which stores

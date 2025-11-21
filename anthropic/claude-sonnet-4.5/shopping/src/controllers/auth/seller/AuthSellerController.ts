@@ -10,9 +10,6 @@ import { IShoppingMallSeller } from "../../../api/structures/IShoppingMallSeller
 @Controller("/auth/seller")
 export class AuthSellerController {
   /**
-   * Register a new seller account and issue JWT tokens for the
-   * shopping_mall_sellers table.
-   *
    * Register a new seller account in the e-commerce marketplace and issue
    * initial JWT authentication tokens.
    *
@@ -59,9 +56,6 @@ export class AuthSellerController {
   }
 
   /**
-   * Authenticate seller credentials and issue JWT tokens for the
-   * shopping_mall_sellers table.
-   *
    * Authenticate a seller account using email and password credentials and
    * issue JWT tokens.
    *
@@ -112,9 +106,6 @@ export class AuthSellerController {
   }
 
   /**
-   * Refresh seller JWT access tokens using a valid refresh token from
-   * shopping_mall_seller_sessions.
-   *
    * Refresh seller access tokens using a valid refresh token to extend the
    * authenticated session.
    *

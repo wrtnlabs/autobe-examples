@@ -1,14 +1,13 @@
-/// Unauthenticated users who can browse public content without registration.
+/// Guest users who can browse public content without authentication.
 ///
-/// Represents temporary guest access to the platform with limited
-/// capabilities. Guests can view public communities, posts, and comments but
-/// cannot create content, vote, or subscribe. Each guest session is tracked
-/// for analytics and potential conversion to registered members.
+/// Represents anonymous users accessing the platform with limited
+/// permissions. Guests can view public posts, browse communities, and search
+/// content but cannot create content or participate in discussions. This
+/// table tracks guest sessions and provides basic analytics for anonymous
+/// user behavior.
 ///
-/// Guest accounts are automatically created when users access the platform
-/// without authentication and are maintained for the duration of their
-/// browsing session. They provide a way to showcase platform content while
-/// encouraging user registration for full functionality.
+/// Guests have no authentication requirements and are identified by session
+/// tokens rather than persistent accounts.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -22,43 +21,31 @@ model community_platform_guests {
   /// Unique session identifier for guest tracking.
   session_token String
   
-  /// IP address of the guest for security and analytics.
-  ip_address String
-  
-  /// Browser user agent string for device identification.
-  user_agent String
-  
-  /// Timestamp of last guest activity for session management.
-  last_activity DateTime
-  
   /// Timestamp when guest session was created.
   created_at DateTime
   
   /// Timestamp when guest session was last updated.
   updated_at DateTime
   
-  /// Timestamp when guest session was deleted (soft delete).
+  /// Timestamp when guest session was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([session_token])
-  @@index([last_activity])
   @@index([created_at])
 }
 
-/// Registered users with full platform access and interaction capabilities.
+/// Registered member users with content creation and voting privileges.
 ///
-/// Members are authenticated users who can create content, vote, comment,
-/// subscribe to communities, and build reputation through the karma system.
-/// Each member has a unique identity with profile information, activity
-/// history, and community participation records.
+/// Represents authenticated users who can create posts, submit comments,
+/// vote on content, and subscribe to communities. Members undergo email
+/// verification and have full access to platform features within community
+/// guidelines.
 ///
-/// Members form the core user base of the platform and have access to all
-/// standard features including content creation, community management, and
-/// social interactions. Their accounts are permanent and maintain
-/// comprehensive activity tracking for personalized experiences.
+/// Each member maintains a profile, preferences, and session history for
+/// personalized platform experience.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -69,38 +56,23 @@ model community_platform_members {
   /// Primary Key.
   id String @id
   
-  /// Unique username for member identification and display.
-  username String
-  
-  /// Verified email address for authentication and communication.
+  /// Member email address used for authentication and communication.
   email String
   
-  /// Securely hashed password for account authentication.
+  /// Hashed password for secure authentication.
   password_hash String
   
-  /// Optional display name for user profile customization.
-  display_name String?
+  /// Public display name shown to other users.
+  display_name String
   
-  /// User biography text for profile customization.
-  bio String?
-  
-  /// URL to user's profile avatar image.
-  avatar_url String?
-  
-  /// Current karma score representing user reputation.
+  /// Reputation score based on content upvotes and community participation.
   karma_score Int
   
-  /// Reputation tier level based on karma achievements.
-  reputation_tier Int
+  /// Indicates whether member has completed email verification.
+  is_verified Boolean
   
-  /// Current account status (active, suspended, banned).
-  account_status String
-  
-  /// Timestamp of last successful login.
-  last_login DateTime?
-  
-  /// Whether email address has been verified.
-  email_verified Boolean
+  /// Timestamp of member's last platform activity.
+  last_active_at DateTime?
   
   /// Timestamp when member account was created.
   created_at DateTime
@@ -108,57 +80,57 @@ model community_platform_members {
   /// Timestamp when member account was last updated.
   updated_at DateTime
   
-  /// Timestamp when member account was deleted (soft delete).
+  /// Timestamp when member account was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   community_platform_member_sessions community_platform_member_sessions[]
-  community_platform_moderators community_platform_moderators?
-  community_platform_admins community_platform_admins?
-  community_platform_communities community_platform_communities[]
-  community_platform_community_rules community_platform_community_rules[]
-  community_platform_community_moderators community_platform_community_moderators[]
-  community_platform_posts community_platform_posts[]
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_post_reports community_platform_post_reports[]
-  community_platform_post_votes community_platform_post_votes[]
+  community_platform_user_profiles community_platform_user_profiles?
+  community_platform_user_preferences community_platform_user_preferences?
+  community_platform_community_members community_platform_community_members[]
+  community_platform_community_moderator_of_members community_platform_community_moderator_of_members[]
+  community_platform_post_of_members community_platform_post_of_members[]
+  community_platform_post_votes_of_members community_platform_post_votes_of_members[]
+  community_platform_post_reports_of_members community_platform_post_reports_of_members[]
   community_platform_comment_of_members community_platform_comment_of_members[]
-  community_platform_comment_reports community_platform_comment_reports[]
   community_platform_comment_votes community_platform_comment_votes[]
-  community_platform_karma_records community_platform_karma_records[]
-  community_platform_karma_achievements community_platform_karma_achievements[]
-  community_platform_content_reports community_platform_content_reports[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_votes_of_members community_platform_votes_of_members[]
+  community_platform_vote_limits community_platform_vote_limits[]
   community_platform_moderation_action_of_members community_platform_moderation_action_of_members[]
-  community_platform_moderation_appeals community_platform_moderation_appeals[]
-  community_platform_feed_preferences community_platform_feed_preferences?
-  community_platform_community_discovery community_platform_community_discovery[]
-  community_platform_subscription_of_members community_platform_subscription_of_members[]
-  community_platform_user_activities community_platform_user_activities[]
-  community_platform_engagement_metrics community_platform_engagement_metrics[]
-  community_platform_behavioral_patterns community_platform_behavioral_patterns[]
+  community_platform_moderation_report_of_members community_platform_moderation_report_of_members[]
+  community_platform_moderation_queues community_platform_moderation_queues?
+  community_platform_moderation_logs community_platform_moderation_logs?
+  community_platform_user_bans_of_community_platform_member_id community_platform_user_bans[] @relation("community_platform_user_bans_of_community_platform_member_id")
+  community_platform_user_bans_of_community_platform_use_97948401 community_platform_user_bans? @relation("community_platform_user_bans_of_community_platform_use_97948401")
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_subscription_feeds community_platform_subscription_feeds[]
+  community_platform_user_communities community_platform_user_communities[]
+  community_platform_notifications_of_members community_platform_notifications_of_members[]
+  community_platform_notification_preferences community_platform_notification_preferences[]
+  community_platform_notification_delivery community_platform_notification_delivery[]
+  community_platform_notification_history community_platform_notification_history[]
+  community_platform_push_tokens community_platform_push_tokens[]
+  community_platform_media_files community_platform_media_files[]
+  community_platform_media_uploads community_platform_media_uploads[]
   
-  @@unique([username])
   @@unique([email])
   @@index([karma_score])
-  @@index([reputation_tier])
-  @@index([account_status])
-  @@index([last_login])
+  @@index([last_active_at])
   @@index([created_at])
 }
 
-/// Authentication sessions for community platform members.
+/// Authentication sessions for member users.
 ///
-/// Tracks active login sessions for authenticated members, providing
-/// security monitoring and session management. Each session records
-/// connection context including IP address, user agent, and access patterns
-/// for audit purposes.
+/// Tracks member login sessions for security and audit purposes. Each
+/// session records connection context including IP address, access URL, and
+/// referrer information. Sessions automatically expire after inactivity and
+/// support secure token-based authentication.
 ///
-/// Sessions are used for maintaining user authentication state across
-/// platform interactions and provide the foundation for secure access
-/// control. They support features like "remember me" functionality and
-/// multi-device access while maintaining security standards.
+/// Used for audit tracing of member actions and managed through identity
+/// authentication flows.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -169,22 +141,22 @@ model community_platform_member_sessions {
   /// Primary Key.
   id String @id
   
-  /// Associated member's primary key. {@link community_platform_members.id}
+  /// Belonged member's {@link community_platform_members.id}.
   community_platform_member_id String
   
-  /// IP address of the connection for security tracking.
+  /// IP address of the connection.
   ip String
   
-  /// Connection URL for session context tracking.
+  /// Connection URL where session was established.
   href String
   
-  /// Referrer URL for traffic source analysis.
+  /// Referrer URL that directed to the platform.
   referrer String
   
-  /// Timestamp when session was created.
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Timestamp when session expires (nullable for active sessions).
+  /// Session expiration timestamp.
   expired_at DateTime?
   
   //----
@@ -192,29 +164,28 @@ model community_platform_member_sessions {
   //----
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  community_platform_posts community_platform_posts[]
-  community_platform_post_reports community_platform_post_reports[]
-  community_platform_post_votes community_platform_post_votes[]
+  community_platform_community_moderator_of_members community_platform_community_moderator_of_members[]
+  community_platform_post_of_members community_platform_post_of_members[]
   community_platform_comment_of_members community_platform_comment_of_members[]
-  community_platform_content_reports community_platform_content_reports[]
+  community_platform_votes_of_members community_platform_votes_of_members[]
   community_platform_moderation_action_of_members community_platform_moderation_action_of_members[]
-  community_platform_subscription_of_members community_platform_subscription_of_members[]
+  community_platform_moderation_report_of_members community_platform_moderation_report_of_members[]
+  community_platform_media_files community_platform_media_files[]
+  community_platform_media_uploads community_platform_media_uploads[]
   
   // spellchecker: ignore-next-line
   @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
 }
 
-/// Users with elevated permissions for community moderation.
+/// Community moderators with content management privileges.
 ///
-/// Moderators are trusted community members appointed to maintain content
-/// quality, enforce community rules, and manage user interactions within
-/// specific communities. They have access to advanced moderation tools and
-/// decision-making capabilities.
+/// Represents users who moderate specific communities with enhanced
+/// permissions including content removal, user banning, and community
+/// settings management. Moderators are typically assigned by community
+/// creators or platform administrators.
 ///
-/// Moderators play a crucial role in community health and safety, balancing
-/// free expression with content standards. Their actions are tracked for
-/// transparency and accountability, with clear escalation paths for complex
-/// moderation scenarios.
+/// Moderators undergo additional verification and have access to advanced
+/// moderation tools and analytics.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -225,66 +196,71 @@ model community_platform_moderators {
   /// Primary Key.
   id String @id
   
-  /// Base member account reference. {@link community_platform_members.id}
-  community_platform_member_id String
+  /// Moderator email address for authentication and notifications.
+  email String
   
-  /// Moderation permission level (community, global).
-  moderation_level String
+  /// Hashed password for secure authentication.
+  password_hash String
   
-  /// User who appointed this moderator for accountability.
-  appointed_by String
+  /// Public display name shown in moderation actions.
+  display_name String
   
-  /// Timestamp when moderator was appointed.
-  appointment_date DateTime
+  /// Moderator privilege level (community, global, etc.).
+  moderator_level String
   
-  /// Performance score based on moderation effectiveness.
-  moderation_score Int
+  /// Indicates whether moderator account is currently active.
+  is_active Boolean
   
-  /// Number of communities currently moderating.
-  active_communities Int
+  /// Timestamp of last moderation action performed.
+  last_moderation_at DateTime?
   
-  /// Current moderator status (active, suspended, retired).
-  moderator_status String
-  
-  /// Whether moderator has completed required training.
-  training_completed Boolean
-  
-  /// Timestamp when moderator record was created.
+  /// Timestamp when moderator account was created.
   created_at DateTime
   
-  /// Timestamp when moderator record was last updated.
+  /// Timestamp when moderator account was last updated.
   updated_at DateTime
   
-  /// Timestamp when moderator record was deleted (soft delete).
+  /// Timestamp when moderator account was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
   community_platform_moderator_sessions community_platform_moderator_sessions[]
+  community_platform_community_moderator_of_moderators community_platform_community_moderator_of_moderators[]
+  community_platform_post_of_moderators community_platform_post_of_moderators[]
+  community_platform_post_votes_of_moderators community_platform_post_votes_of_moderators[]
+  community_platform_post_reports_of_moderators community_platform_post_reports_of_moderators[]
   community_platform_comment_of_moderators community_platform_comment_of_moderators[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_votes_of_moderators community_platform_votes_of_moderators[]
+  community_platform_vote_limits community_platform_vote_limits[]
   community_platform_moderation_action_of_moderators community_platform_moderation_action_of_moderators[]
-  community_platform_subscription_of_moderators community_platform_subscription_of_moderators[]
+  community_platform_moderation_report_of_moderators community_platform_moderation_report_of_moderators[]
+  community_platform_moderation_queues community_platform_moderation_queues?
+  community_platform_moderation_logs community_platform_moderation_logs?
+  community_platform_user_bans community_platform_user_bans?
+  community_platform_notifications_of_moderators community_platform_notifications_of_moderators[]
+  community_platform_notification_preferences community_platform_notification_preferences[]
+  community_platform_notification_delivery community_platform_notification_delivery[]
+  community_platform_notification_history community_platform_notification_history[]
+  community_platform_push_tokens community_platform_push_tokens[]
   
-  @@unique([community_platform_member_id])
-  @@index([moderation_level])
-  @@index([moderation_score])
-  @@index([moderator_status])
-  @@index([appointment_date])
+  @@unique([email])
+  @@index([moderator_level])
+  @@index([last_moderation_at])
+  @@index([created_at])
 }
 
-/// Authentication sessions for community platform moderators.
+/// Authentication sessions for moderator users.
 ///
-/// Specialized session tracking for moderator accounts with enhanced
-/// security requirements. Records moderator-specific activities and provides
-/// additional security monitoring for elevated privilege access.
+/// Tracks moderator login sessions with enhanced security logging. Each
+/// session records connection context for audit purposes and supports secure
+/// authentication with additional verification requirements.
 ///
-/// Moderator sessions include additional context for audit trails and
-/// security compliance, supporting the higher trust requirements of
-/// moderation responsibilities while maintaining platform security
-/// standards.
+/// Used for audit tracing of moderator actions and managed through identity
+/// authentication flows.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -295,23 +271,22 @@ model community_platform_moderator_sessions {
   /// Primary Key.
   id String @id
   
-  /// Associated moderator's primary key. {@link
-  /// community_platform_moderators.id}
+  /// Belonged moderator's {@link community_platform_moderators.id}.
   community_platform_moderator_id String
   
-  /// IP address of the moderator connection.
+  /// IP address of the connection.
   ip String
   
-  /// Connection URL for session context.
+  /// Connection URL where session was established.
   href String
   
-  /// Referrer URL for traffic source tracking.
+  /// Referrer URL that directed to the platform.
   referrer String
   
-  /// Timestamp when session was created.
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Timestamp when session expires.
+  /// Session expiration timestamp.
   expired_at DateTime?
   
   //----
@@ -319,24 +294,26 @@ model community_platform_moderator_sessions {
   //----
   moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
+  community_platform_community_moderator_of_moderators community_platform_community_moderator_of_moderators[]
+  community_platform_post_of_moderators community_platform_post_of_moderators[]
   community_platform_comment_of_moderators community_platform_comment_of_moderators[]
+  community_platform_votes_of_moderators community_platform_votes_of_moderators[]
   community_platform_moderation_action_of_moderators community_platform_moderation_action_of_moderators[]
-  community_platform_subscription_of_moderators community_platform_subscription_of_moderators[]
+  community_platform_moderation_report_of_moderators community_platform_moderation_report_of_moderators[]
   
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_sessions_community_platfo_a04f067a")
 }
 
-/// System administrators with full platform control and configuration access.
+/// Platform administrators with full system access.
 ///
-/// Admins have the highest level of privileges for platform management,
-/// system configuration, and global moderation. They can manage all users,
-/// communities, and platform settings with comprehensive oversight
-/// capabilities.
+/// Represents users with complete platform administration privileges
+/// including user management, system configuration, and global moderation
+/// capabilities. Administrators undergo rigorous verification and have
+/// access to all platform features and analytics.
 ///
-/// Admin accounts are carefully managed with strict security requirements
-/// and comprehensive audit trails. Their actions affect the entire platform
-/// and require the highest level of responsibility and accountability.
+/// Administrators maintain platform integrity and handle escalated
+/// moderation cases.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -347,66 +324,80 @@ model community_platform_admins {
   /// Primary Key.
   id String @id
   
-  /// Base member account reference. {@link community_platform_members.id}
-  community_platform_member_id String
+  /// Admin email address for authentication and critical notifications.
+  email String
   
-  /// Administrative permission level (system, content, support).
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Public display name shown in administrative actions.
+  display_name String
+  
+  /// Administrative privilege level (system, content, user, etc.).
   admin_level String
   
-  /// User who appointed this administrator.
-  appointed_by String
+  /// Indicates whether admin has super administrator privileges.
+  is_super_admin Boolean
   
-  /// Timestamp when admin was appointed.
-  appointment_date DateTime
+  /// Timestamp of last administrative action performed.
+  last_admin_action_at DateTime?
   
-  /// Scope of administrative access (global, regional, functional).
-  access_scope String
-  
-  /// Current admin status (active, suspended, retired).
-  admin_status String
-  
-  /// Security clearance level for sensitive operations.
-  security_clearance String
-  
-  /// Timestamp of last security review.
-  last_security_review DateTime?
-  
-  /// Timestamp when admin record was created.
+  /// Timestamp when admin account was created.
   created_at DateTime
   
-  /// Timestamp when admin record was last updated.
+  /// Timestamp when admin account was last updated.
   updated_at DateTime
   
-  /// Timestamp when admin record was deleted (soft delete).
+  /// Timestamp when admin account was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
+  community_platform_channels_of_created_by_id community_platform_channels[] @relation("community_platform_channels_of_created_by_id")
+  community_platform_channels_of_updated_by_id community_platform_channels[] @relation("community_platform_channels_of_updated_by_id")
+  community_platform_sections_of_created_by_id community_platform_sections[] @relation("community_platform_sections_of_created_by_id")
+  community_platform_sections_of_updated_by_id community_platform_sections[] @relation("community_platform_sections_of_updated_by_id")
+  community_platform_categories_of_created_by_id community_platform_categories[] @relation("community_platform_categories_of_created_by_id")
+  community_platform_categories_of_updated_by_id community_platform_categories[] @relation("community_platform_categories_of_updated_by_id")
+  community_platform_configurations_of_created_by_id community_platform_configurations[] @relation("community_platform_configurations_of_created_by_id")
+  community_platform_configurations_of_updated_by_id community_platform_configurations[] @relation("community_platform_configurations_of_updated_by_id")
   community_platform_admin_sessions community_platform_admin_sessions[]
+  community_platform_community_moderator_of_admins community_platform_community_moderator_of_admins[]
+  community_platform_post_of_admins community_platform_post_of_admins[]
+  community_platform_post_votes_of_admins community_platform_post_votes_of_admins[]
+  community_platform_post_reports_of_admins community_platform_post_reports_of_admins[]
   community_platform_comment_of_admins community_platform_comment_of_admins[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_votes_of_admins community_platform_votes_of_admins[]
+  community_platform_vote_limits community_platform_vote_limits[]
   community_platform_moderation_action_of_admins community_platform_moderation_action_of_admins[]
-  community_platform_subscription_of_admins community_platform_subscription_of_admins[]
+  community_platform_moderation_report_of_admins community_platform_moderation_report_of_admins[]
+  community_platform_moderation_queues community_platform_moderation_queues?
+  community_platform_moderation_logs community_platform_moderation_logs?
+  community_platform_user_bans community_platform_user_bans?
+  community_platform_notifications_of_admins community_platform_notifications_of_admins[]
+  community_platform_notification_preferences community_platform_notification_preferences[]
+  community_platform_notification_delivery community_platform_notification_delivery[]
+  community_platform_notification_history community_platform_notification_history[]
+  community_platform_push_tokens community_platform_push_tokens[]
   
-  @@unique([community_platform_member_id])
+  @@unique([email])
   @@index([admin_level])
-  @@index([access_scope])
-  @@index([admin_status])
-  @@index([appointment_date])
+  @@index([last_admin_action_at])
+  @@index([created_at])
 }
 
-/// Authentication sessions for community platform administrators.
+/// Authentication sessions for administrator users.
 ///
-/// High-security session tracking for administrator accounts with
-/// comprehensive audit requirements. Includes enhanced security monitoring
-/// and detailed activity logging for platform-wide administrative actions.
+/// Tracks admin login sessions with comprehensive security logging and
+/// enhanced verification requirements. Each session records connection
+/// context for security auditing and supports secure authentication with
+/// mandatory two-factor authentication.
 ///
-/// Admin sessions support the highest security standards with multi-factor
-/// authentication requirements and detailed access logging. They provide the
-/// foundation for secure platform administration while maintaining
-/// accountability for all administrative actions.
+/// Used for audit tracing of administrative actions and managed through
+/// identity authentication flows.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -417,23 +408,22 @@ model community_platform_admin_sessions {
   /// Primary Key.
   id String @id
   
-  /// Associated administrator's primary key. {@link
-  /// community_platform_admins.id}
+  /// Belonged admin's {@link community_platform_admins.id}.
   community_platform_admin_id String
   
-  /// IP address of the admin connection.
+  /// IP address of the connection.
   ip String
   
-  /// Connection URL for session context.
+  /// Connection URL where session was established.
   href String
   
-  /// Referrer URL for traffic source tracking.
+  /// Referrer URL that directed to the platform.
   referrer String
   
-  /// Timestamp when session was created.
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Timestamp when session expires.
+  /// Session expiration timestamp.
   expired_at DateTime?
   
   //----
@@ -441,10 +431,125 @@ model community_platform_admin_sessions {
   //----
   admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
   
+  community_platform_community_moderator_of_admins community_platform_community_moderator_of_admins[]
+  community_platform_post_of_admins community_platform_post_of_admins[]
   community_platform_comment_of_admins community_platform_comment_of_admins[]
+  community_platform_votes_of_admins community_platform_votes_of_admins[]
   community_platform_moderation_action_of_admins community_platform_moderation_action_of_admins[]
-  community_platform_subscription_of_admins community_platform_subscription_of_admins[]
+  community_platform_moderation_report_of_admins community_platform_moderation_report_of_admins[]
   
   // spellchecker: ignore-next-line
   @@index([community_platform_admin_id, created_at], map: "community_platform_admin_sessions_community_platform_a_481f9112")
+}
+
+/// User profile information for personalized platform experience.
+///
+/// Stores extended profile data for authenticated users including bio
+/// information, avatar references, and personal preferences. Profiles
+/// enhance user identity and provide context for community interactions.
+///
+/// Profiles are managed separately from authentication data to maintain
+/// clear separation of concerns.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// User biography or description for profile page.
+  bio String?
+  
+  /// URL to user's profile avatar image.
+  avatar_url String?
+  
+  /// User's geographic location for community context.
+  location String?
+  
+  /// User's personal website or social media link.
+  website String?
+  
+  /// Timestamp when profile was created.
+  created_at DateTime
+  
+  /// Timestamp when profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when profile was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_user_profiles_community_platform_me_598119e2")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_user_profiles_community_platform_me_5bfb9284")
+}
+
+/// User preference settings for platform customization.
+///
+/// Stores user-configurable settings including notification preferences,
+/// display options, privacy settings, and content filters. Preferences
+/// enable personalized platform experience and control over user
+/// interactions.
+///
+/// Preferences are managed separately from core user data to support
+/// flexible customization options.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Whether user wants to receive email notifications.
+  email_notifications Boolean
+  
+  /// Whether user wants to receive push notifications.
+  push_notifications Boolean
+  
+  /// Preferred platform language setting.
+  language String
+  
+  /// User's timezone for content scheduling.
+  timezone String
+  
+  /// Content filtering preference level (strict, moderate, lenient).
+  content_filter_level String
+  
+  /// Timestamp when preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when preferences were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when preferences were soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_user_preferences_community_platform_f23d9fc4")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_user_preferences_community_platform_7e748b38")
 }

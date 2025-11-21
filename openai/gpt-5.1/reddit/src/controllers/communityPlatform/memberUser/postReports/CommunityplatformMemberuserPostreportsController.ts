@@ -7,9 +7,6 @@ import { ICommunityPlatformPostReport } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/memberUser/postReports")
 export class CommunityplatformMemberuserPostreportsController {
   /**
-   * Create a new post report record in community_platform_post_reports for a
-   * reported post.
-   *
    * Create a new post report for a potentially problematic post within the
    * community platform.
    *

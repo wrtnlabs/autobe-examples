@@ -10,8 +10,6 @@ import { ICommunityForumCommunityReport } from "../../../../api/structures/IComm
 @Controller("/communityForum/user/reports")
 export class CommunityforumUserReportsController {
   /**
-   * Create a new content or user report in the community forum.
-   *
    * Create a new report for inappropriate content or user behavior in the
    * community forum. This endpoint allows authenticated users to report posts
    * or comments that violate community guidelines. Reports include

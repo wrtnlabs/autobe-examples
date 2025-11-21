@@ -4,9 +4,6 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 /**
- * Permanently delete a specific review from shopping_mall_reviews for a given
- * SKU.
- *
  * Delete a specific review record that belongs to a particular SKU in the
  * shoppingMall platform.
  *

@@ -8,8 +8,6 @@ export * as sessions from "./sessions/index";
 export * as subscriptions from "./subscriptions/index";
 
 /**
- * Update a community forum user's profile information.
- *
  * Update the profile information for an existing community forum user. This
  * operation allows users to modify their public profile details while
  * maintaining strict security controls over sensitive authentication

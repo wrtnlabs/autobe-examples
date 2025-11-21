@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAnalyticsPaymentSummary } from "../../../../../../structures/IShoppingMallAnalyticsPaymentSummary";
 
 /**
- * Retrieve an aggregated payment performance summary derived from ShoppingMall
- * payment-related tables.
- *
  * Retrieve an aggregated analytical summary of payments processed on the
  * ShoppingMall platform over a specified time window with optional filters for
  * methods, actors, and high-level attributes.

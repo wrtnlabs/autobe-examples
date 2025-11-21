@@ -9,8 +9,6 @@ import { IRedditCommunityComment } from "../../../../../api/structures/IRedditCo
 @Controller("/redditCommunity/posts/:postId/comments/:commentId/replies")
 export class RedditcommunityPostsCommentsRepliesController {
   /**
-   * Retrieve paginated list of replies to a specific comment.
-   *
    * Retrieve a filtered and paginated list of reply comments for a specific
    * parent comment within a post. This operation provides access to the nested
    * comment thread structure, allowing users to explore reply chains and

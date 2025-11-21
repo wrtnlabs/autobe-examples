@@ -10,9 +10,6 @@ import { ITodoAppAdminUser } from "../../../../../api/structures/ITodoAppAdminUs
 @Controller("/todoApp/adminUser/adminUsers/:adminUserId/status")
 export class TodoappAdminuserAdminusersStatusController {
   /**
-   * Change the status field of a todo_app_adminusers administrative user and
-   * return the updated record.
-   *
    * Update the operational status of an administrative user account stored in
    * the todo_app_adminusers table.
    *

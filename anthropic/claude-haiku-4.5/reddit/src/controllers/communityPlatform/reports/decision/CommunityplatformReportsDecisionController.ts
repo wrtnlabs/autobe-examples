@@ -7,8 +7,6 @@ import { ICommunityPlatformReportDecision } from "../../../../api/structures/ICo
 @Controller("/communityPlatform/reports/:reportId/decision")
 export class CommunityplatformReportsDecisionController {
   /**
-   * Retrieve the moderation decision for a specific report.
-   *
    * Fetch the moderation decision and outcome details for a specific content
    * violation report. This operation retrieves data from the report_decisions
    * relationship of a report, providing transparency about what action was

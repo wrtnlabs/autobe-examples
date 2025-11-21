@@ -7,9 +7,6 @@ import { IShoppingMallSellerSession } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallSellerSession } from "../../../../../structures/IPageIShoppingMallSellerSession";
 
 /**
- * List authentication sessions for a seller from the
- * shopping_mall_seller_sessions table.
- *
  * Retrieve a paginated and filterable list of seller authentication sessions
  * for a specific seller.
  *
@@ -170,9 +167,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single seller session from the
- * shopping_mall_seller_sessions table.
- *
  * Retrieve detailed metadata for a specific seller authentication session using
  * seller and session identifiers.
  *
@@ -321,9 +315,6 @@ export namespace at {
 }
 
 /**
- * Erase a specific seller session record in the shopping_mall_seller_sessions
- * table for security administration.
- *
  * Delete a specific seller session record for administrative security control.
  *
  * This operation targets the `shopping_mall_seller_sessions` Prisma model,

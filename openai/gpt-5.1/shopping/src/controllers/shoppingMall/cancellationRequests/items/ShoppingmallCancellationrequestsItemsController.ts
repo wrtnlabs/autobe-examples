@@ -8,9 +8,6 @@ import { IShoppingMallCancellationRequestItem } from "../../../../api/structures
 @Controller("/shoppingMall/cancellationRequests/:cancellationRequestId/items")
 export class ShoppingmallCancellationrequestsItemsController {
   /**
-   * Search and list item-level lines for a specific cancellation request from
-   * shopping_mall_cancellation_request_items.
-   *
    * Retrieve a filtered and paginated list of item-level lines that belong to
    * a specific cancellation request, based on the
    * `shopping_mall_cancellation_request_items` table.
@@ -83,9 +80,6 @@ export class ShoppingmallCancellationrequestsItemsController {
   }
 
   /**
-   * Get detailed information for a single cancellation request item from
-   * shopping_mall_cancellation_request_items.
-   *
    * Retrieve a single order-item-level cancellation line for a specific
    * cancellation request, using the
    * `shopping_mall_cancellation_request_items` table as the source of truth.

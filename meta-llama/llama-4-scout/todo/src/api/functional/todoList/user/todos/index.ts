@@ -7,8 +7,6 @@ import { ITodoListTodo } from "../../../../structures/ITodoListTodo";
 import { IPageITodoListTodo } from "../../../../structures/IPageITodoListTodo";
 
 /**
- * Create a new todo item in todo_list_todos.
- *
  * Create a new todo item for the current authenticated user. The operation
  * requires at minimum a trimmed, non-empty title between 1 and 100 characters,
  * which must be unique within the user's list for business logic clarity,
@@ -108,9 +106,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of todo items from
- * todo_list_todos table.
- *
  * Search and filter todo list items matching user-supplied criteria with
  * support for pagination and flexible sorting.
  *
@@ -206,9 +201,6 @@ export namespace index {
 }
 
 /**
- * Retrieve complete details about a specific todo item by ID from
- * todo_list_todos table.
- *
  * Obtain full detail for a specific todo item by its unique identifier.
  *
  * This endpoint is designed to provide complete information for a particular
@@ -298,8 +290,6 @@ export namespace at {
 }
 
 /**
- * Update an existing todo item in todo_list_todos by unique todoId.
- *
  * Update an existing todo item belonging to the authenticated user. The todoId
  * parameter uniquely identifies the target todo, which must be owned by the
  * requesting user, preventing unauthorized access or edits.
@@ -400,8 +390,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a todo item from the todo_list_todos table.
- *
  * Permanently delete a todo item that belongs to the authenticated user. This
  * endpoint directly erases the specified todo from the todo_list_todos table.
  *

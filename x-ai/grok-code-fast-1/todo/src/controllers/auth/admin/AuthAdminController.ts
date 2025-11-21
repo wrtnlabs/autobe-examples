@@ -10,9 +10,6 @@ import { ITodoListAdmin } from "../../../api/structures/ITodoListAdmin";
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new admin account (todo_list_admins table) and issue initial JWT
-   * tokens.
-   *
    * The join endpoint provides a secure mechanism for registering new admin
    * users in the system. It interacts specifically with the todo_list_admins
    * table, ensuring that all required fields—such as email and password—are
@@ -61,8 +58,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate an admin (todo_list_admins table) and issue JWT tokens.
-   *
    * This endpoint enables an admin to log in by providing their credentials as
    * defined in the todo_list_admins schema (e.g., email and password fields).
    * The authentication logic is schema-driven, verifying the credentials
@@ -109,9 +104,6 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh JWT access/refresh tokens for admin sessions
-   * (todo_list_admin_sessions, todo_list_admins).
-   *
    * The refresh endpoint accepts a valid admin JWT refresh token and, after
    * verification, issues a new JWT access token and refresh token for the
    * associated administrator. It interacts with the todo_list_admin_sessions

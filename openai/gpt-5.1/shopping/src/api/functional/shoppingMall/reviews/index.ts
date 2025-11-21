@@ -7,9 +7,6 @@ import { IShoppingMallReview } from "../../../structures/IShoppingMallReview";
 import { IPageIShoppingMallReview } from "../../../structures/IPageIShoppingMallReview";
 
 /**
- * Search and retrieve a paginated list of review summaries from the
- * shopping_mall_reviews table.
- *
  * Retrieve a filtered, paginated list of customer-written product reviews from
  * the `shopping_mall_reviews` table.
  *
@@ -130,9 +127,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single review record from the
- * shopping_mall_reviews table by its identifier.
- *
  * Fetch the full details of a single product review from the
  * `shopping_mall_reviews` table using its unique identifier.
  *

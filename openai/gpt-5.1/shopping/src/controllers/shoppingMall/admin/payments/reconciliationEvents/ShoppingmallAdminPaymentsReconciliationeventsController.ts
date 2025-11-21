@@ -7,9 +7,6 @@ import { IShoppingMallPaymentReconciliationEvent } from "../../../../../api/stru
 @Controller("/shoppingMall/admin/payments/:orderPaymentId/reconciliationEvents")
 export class ShoppingmallAdminPaymentsReconciliationeventsController {
   /**
-   * Create a reconciliation event row in
-   * shopping_mall_payment_reconciliation_events for a given order payment.
-   *
    * Create a new reconciliation event associated with a specific order
    * payment in the shopping mall platform.
    *
@@ -85,9 +82,6 @@ export class ShoppingmallAdminPaymentsReconciliationeventsController {
   }
 
   /**
-   * List reconciliation events in shopping_mall_payment_reconciliation_events
-   * for a given order payment.
-   *
    * Retrieve reconciliation events for a specific order payment to analyze
    * its financial reconciliation history.
    *
@@ -144,9 +138,6 @@ export class ShoppingmallAdminPaymentsReconciliationeventsController {
   }
 
   /**
-   * Get a specific shopping_mall_payment_reconciliation_events record for a
-   * given order payment.
-   *
    * Retrieve detailed information about a specific reconciliation event
    * associated with an order payment.
    *
@@ -214,10 +205,6 @@ export class ShoppingmallAdminPaymentsReconciliationeventsController {
   }
 
   /**
-   * Update a reconciliation event in the
-   * shopping_mall_payment_reconciliation_events table for a specific order
-   * payment.
-   *
    * Update an existing reconciliation event for a specific order payment in
    * the shoppingMall platform.
    *
@@ -295,10 +282,6 @@ export class ShoppingmallAdminPaymentsReconciliationeventsController {
   }
 
   /**
-   * Erase a reconciliation event record from the
-   * shopping_mall_payment_reconciliation_events table for a specific order
-   * payment.
-   *
    * Erase a reconciliation event associated with a specific order payment
    * from the shopping_mall_payment_reconciliation_events table.
    *

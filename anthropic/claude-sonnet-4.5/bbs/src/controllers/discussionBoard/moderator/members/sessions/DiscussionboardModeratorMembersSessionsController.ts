@@ -10,8 +10,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/members/:memberId/sessions/:sessionId")
 export class DiscussionboardModeratorMembersSessionsController {
   /**
-   * Terminate a specific member authentication session.
-   *
    * Remove a specific active authentication session for a member, logging them
    * out from the associated device or browser.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallReviewVolumeAnalytics } from "../../../../../../api/struct
 @Controller("/shoppingMall/admin/analytics/reviews/volume")
 export class ShoppingmallAdminAnalyticsReviewsVolumeController {
   /**
-   * Retrieve aggregated review volume analytics derived from
-   * shopping_mall_reviews and related aggregate tables.
-   *
    * Retrieve analytical review volume metrics across the shopping mall
    * marketplace over a specified time window and set of dimensions.
    *

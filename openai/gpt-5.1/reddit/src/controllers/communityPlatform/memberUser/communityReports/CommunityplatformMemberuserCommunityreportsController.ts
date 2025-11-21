@@ -7,9 +7,6 @@ import { ICommunityPlatformCommunityReport } from "../../../../api/structures/IC
 @Controller("/communityPlatform/memberUser/communityReports")
 export class CommunityplatformMemberuserCommunityreportsController {
   /**
-   * Create a new community report record in the
-   * community_platform_community_reports table.
-   *
    * Create a new community-level report entry in the
    * `community_platform_community_reports` table based on information
    * submitted by an authenticated member user.

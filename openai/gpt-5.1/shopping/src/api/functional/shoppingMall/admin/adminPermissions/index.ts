@@ -7,9 +7,6 @@ import { IShoppingMallAdminPermission } from "../../../../structures/IShoppingMa
 import { IPageIShoppingMallAdminPermission } from "../../../../structures/IPageIShoppingMallAdminPermission";
 
 /**
- * Create a new admin permission record in the shopping_mall_admin_permissions
- * table.
- *
  * Create a new administrative permission definition in the
  * `shopping_mall_admin_permissions` table using structured RBAC configuration
  * data provided by an admin client.
@@ -120,9 +117,6 @@ export namespace create {
 }
 
 /**
- * Search and list admin permissions from the `shopping_mall_admin_permissions`
- * table with filtering and pagination.
- *
  * Retrieve a filtered and paginated list of admin permission definitions from
  * the RBAC permission catalog stored in `shopping_mall_admin_permissions`.
  *
@@ -254,9 +248,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific admin permission from the shopping_mall_admin_permissions
- * table by its global code.
- *
  * Retrieve a single administrative permission definition, identified by its
  * globally unique permission code, from the `shopping_mall_admin_permissions`
  * table.
@@ -372,9 +363,6 @@ export namespace at {
 }
 
 /**
- * Update a shopping_mall_admin_permissions record identified by its unique
- * permission code.
- *
  * Update an existing administrative permission entity in the
  * `shopping_mall_admin_permissions` table based on its unique permission code.
  *
@@ -487,9 +475,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping_mall_admin_permissions record identified by its unique
- * permission code.
- *
  * Delete an existing administrative permission from the
  * `shopping_mall_admin_permissions` table using its unique permission code.
  *

@@ -10,8 +10,6 @@ import { IDiscussionBoardPostStatistics } from "../../../../../api/structures/ID
 @Controller("/discussionBoard/moderator/statistics/postsByStatus")
 export class DiscussionboardModeratorStatisticsPostsbystatusController {
   /**
-   * Retrieve statistical breakdown of discussion board posts by status.
-   *
    * This operation provides analytics on the distribution of discussion board
    * posts across different status categories. It aggregates data from the
    * discussion_board_posts table to show how many posts exist in each status

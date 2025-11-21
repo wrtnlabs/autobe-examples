@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformPrivacySettings } from "../../../../structures/ICommunityPlatformPrivacySettings";
 
 /**
- * Retrieve a single CommunityPlatformPrivacySettings record by ID.
- *
  * Fetch the complete privacy settings record for a single user by its unique
  * identifier.
  *
@@ -108,8 +106,6 @@ export namespace at {
 }
 
 /**
- * Update privacy settings in the community_platform_privacy_settings table.
- *
  * Update an existing set of privacy preferences for an end user.
  *
  * This operation enables a user or authorized system actor to update privacy
@@ -217,9 +213,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a privacy settings record in the
- * community_platform_privacy_settings table.
- *
  * Permanently mark a user's privacy settings record as deleted, restricting all
  * future access and modification for that user.
  *
@@ -310,8 +303,6 @@ export namespace erase {
 }
 
 /**
- * Create a new CommunityPlatformPrivacySettings record.
- *
  * Create a new privacy settings record for a platform user, initializing all
  * profile and data consent configuration options.
  *

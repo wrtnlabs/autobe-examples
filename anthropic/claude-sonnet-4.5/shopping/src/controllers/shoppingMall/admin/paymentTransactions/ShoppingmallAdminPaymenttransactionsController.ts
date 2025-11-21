@@ -12,8 +12,6 @@ import { IShoppingMallPaymentTransaction } from "../../../../api/structures/ISho
 @Controller("/shoppingMall/admin/paymentTransactions")
 export class ShoppingmallAdminPaymenttransactionsController {
   /**
-   * Search and retrieve a filtered, paginated list of payment transactions.
-   *
    * Retrieve a filtered and paginated list of payment transactions from the
    * shopping mall platform. This operation provides advanced search
    * capabilities for finding payment transactions based on multiple criteria
@@ -66,8 +64,6 @@ export class ShoppingmallAdminPaymenttransactionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific payment transaction.
-   *
    * Retrieve comprehensive details about a specific payment transaction
    * identified by its unique transaction ID. This operation returns complete
    * transaction information including payment processing status, payment method

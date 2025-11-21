@@ -9,8 +9,6 @@ export * as items from "./items/index";
 export * as statusHistories from "./statusHistories/index";
 
 /**
- * Create a new refund request record in shopping_mall_refund_requests.
- *
  * Create a new refund request in the shopping mall governance system.
  *
  * This operation writes to the shopping_mall_refund_requests table, which holds
@@ -141,9 +139,6 @@ export namespace create {
 }
 
 /**
- * Search refund requests from the shopping_mall_refund_requests table with
- * pagination and rich filters.
- *
  * Search and retrieve a filtered, paginated list of refund requests.
  *
  * This operation is built on top of the shopping_mall_refund_requests table,
@@ -268,9 +263,6 @@ export namespace index {
 }
 
 /**
- * Get a single refund request record from shopping_mall_refund_requests by its
- * primary id.
- *
  * Retrieve detailed information about a specific refund request from the
  * shopping mall governance domain.
  *
@@ -388,8 +380,6 @@ export namespace at {
 }
 
 /**
- * Update a refund request (shopping_mall_refund_requests) by ID.
- *
  * Update an existing refund request by its unique identifier and return the
  * updated refund request resource.
  *
@@ -538,8 +528,6 @@ export namespace update {
 }
 
 /**
- * Delete a refund request (shopping_mall_refund_requests) by ID.
- *
  * Permanently delete an existing refund request identified by its unique
  * identifier.
  *

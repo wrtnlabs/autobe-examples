@@ -7,10 +7,6 @@ import { IShoppingMallRefundsAndDisputesSlaComplianceStatistics } from "../../..
 @Controller("/shoppingMall/admin/refundsAndDisputes/statistics/slaCompliance")
 export class ShoppingmallAdminRefundsanddisputesStatisticsSlacomplianceController {
   /**
-   * Get SLA compliance statistics for refunds and disputes based on
-   * shopping_mall_case_sla_configs, shopping_mall_case_sla_violations, and
-   * related snapshot tables.
-   *
    * Retrieve high-level SLA compliance statistics for refunds and disputes
    * across the shoppingMall platform.
    *

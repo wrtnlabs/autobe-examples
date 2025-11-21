@@ -11,8 +11,6 @@ import { IDiscussionBoardModerationLog } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/moderator/members/:memberId/moderationHistory")
 export class DiscussionboardModeratorMembersModerationhistoryController {
   /**
-   * Retrieve paginated moderation history for a specific member account.
-   *
    * Retrieve a comprehensive, paginated history of all moderation actions taken
    * against a specific member account. This operation provides moderators with
    * complete visibility into a member's enforcement history, including both

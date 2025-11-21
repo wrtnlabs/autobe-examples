@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberBan } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/administrator/memberBans")
 export class CommunityplatformAdministratorMemberbansController {
   /**
-   * Create a new member ban record.
-   *
    * Create a new member ban for disciplinary purposes. This operation allows
    * moderators or administrators to ban a member from the platform or from
    * specific communities. The ban can be temporary (with an expiration date)
@@ -51,8 +49,6 @@ export class CommunityplatformAdministratorMemberbansController {
   }
 
   /**
-   * Retrieve a specific member ban record by ID.
-   *
    * Retrieve detailed information about a specific member ban using its
    * unique identifier. This operation provides comprehensive ban details
    * including the member who was banned, the community affected (if

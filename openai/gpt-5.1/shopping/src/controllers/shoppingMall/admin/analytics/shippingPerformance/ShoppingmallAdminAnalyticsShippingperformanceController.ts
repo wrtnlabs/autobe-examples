@@ -8,9 +8,6 @@ import { IShoppingMallShippingPerformanceAnalytics } from "../../../../../api/st
 @Controller("/shoppingMall/admin/analytics/shippingPerformance")
 export class ShoppingmallAdminAnalyticsShippingperformanceController {
   /**
-   * Retrieve aggregated shipping performance analytics from shipping-related
-   * snapshot tables.
-   *
    * Retrieve shipping and delivery performance analytics over a specified
    * time range with flexible grouping and filtering options.
    *

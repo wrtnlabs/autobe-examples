@@ -7,9 +7,6 @@ import { IShoppingMallWishlistMergeEvent } from "../../../../../structures/IShop
 import { IPageIShoppingMallWishlistMergeEvent } from "../../../../../structures/IPageIShoppingMallWishlistMergeEvent";
 
 /**
- * Search and paginate `shopping_mall_wishlist_merge_events` audit records for
- * wishlist merge operations.
- *
  * Retrieve a filtered and paginated list of wishlist merge events from the
  * `shopping_mall_wishlist_merge_events` table for administrative analysis and
  * monitoring.

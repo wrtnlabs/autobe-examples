@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMember } from "../../../../../../structures/IDiscussionBoardMember";
 
 /**
- * Complete password reset by updating member password in
- * discussion_board_members table.
- *
  * Completes the password reset process by validating the reset token and
  * updating the member's password in the discussion_board_members table. This
  * operation consumes a single-use token from discussion_board_password_resets,

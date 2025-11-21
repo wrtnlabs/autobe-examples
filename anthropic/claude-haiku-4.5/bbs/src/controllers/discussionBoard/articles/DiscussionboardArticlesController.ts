@@ -8,9 +8,6 @@ import { IDiscussionBoardArticle } from "../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/articles")
 export class DiscussionboardArticlesController {
   /**
-   * Search and retrieve a filtered, paginated list of discussion board
-   * articles.
-   *
    * Retrieve a filtered and paginated collection of discussion board articles
    * with comprehensive search and filtering capabilities. This operation
    * provides advanced discovery features for finding articles based on
@@ -58,8 +55,6 @@ export class DiscussionboardArticlesController {
   }
 
   /**
-   * Retrieve a complete article with all details and attachments.
-   *
    * Retrieve the full details of a specific article from the discussion
    * board, including content, metadata, all attachments, and related
    * information. This operation implements comprehensive visibility controls

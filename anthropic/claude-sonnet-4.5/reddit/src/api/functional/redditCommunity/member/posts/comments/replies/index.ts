@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityComment } from "../../../../../../structures/IRedditCommunityComment";
 
 /**
- * Create a reply to an existing comment on a post.
- *
  * Create a new reply comment to an existing comment within a post, enabling
  * nested threaded discussions.
  *

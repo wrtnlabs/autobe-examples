@@ -14,9 +14,6 @@ import { ITodoAppAdmin } from "../../../../api/structures/ITodoAppAdmin";
 @Controller("/todoApp/admin/admins")
 export class TodoappAdminAdminsController {
   /**
-   * Search and retrieve a filtered, paginated list of todo_app_admins (admin
-   * listing).
-   *
    * List all administrator accounts with advanced search, filtering, and
    * pagination for privileged access review.
    *
@@ -57,9 +54,6 @@ export class TodoappAdminAdminsController {
   }
 
   /**
-   * Fetch complete detail for a specific administrator account (todo_app_admins
-   * table) by ID.
-   *
    * Retrieve detailed information for a specific administrator account in the
    * Todo application. The operation is performed by providing the unique
    * administrator ID (UUID) as the path parameter. It returns all persisted
@@ -103,9 +97,6 @@ export class TodoappAdminAdminsController {
   }
 
   /**
-   * Update all updatable fields of a specific administrator account
-   * (todo_app_admins table) by ID.
-   *
    * Update all applicable fields of an existing administrator account. This
    * operation requires specifying the target admin by UUID ID path parameter
    * and providing the new data in the request body. Updatable fields include
@@ -156,9 +147,6 @@ export class TodoappAdminAdminsController {
   }
 
   /**
-   * Soft-delete (mark as removed) an administrator account using
-   * todo_app_admins table.
-   *
    * Permanently remove an administrator account from the system using its
    * unique identifier. This operation marks the todo_app_admins record as
    * deleted by updating the deleted_at column, rather than physically removing

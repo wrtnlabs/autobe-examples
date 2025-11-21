@@ -8,9 +8,6 @@ import { IDiscussionBoardModerationQueue } from "../../../../../api/structures/I
 @Controller("/discussionBoard/moderator/moderation/queue")
 export class DiscussionboardModeratorModerationQueueController {
   /**
-   * Retrieve filtered and paginated list of articles awaiting moderator
-   * review from the moderation queue.
-   *
    * This operation provides moderators access to the article review queue
    * with comprehensive filtering and sorting capabilities. The moderation
    * queue is the central workflow mechanism where submitted articles await

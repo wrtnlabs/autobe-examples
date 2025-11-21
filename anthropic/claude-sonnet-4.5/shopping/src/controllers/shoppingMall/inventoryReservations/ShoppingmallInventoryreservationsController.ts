@@ -8,8 +8,6 @@ import { IShoppingMallInventoryReservation } from "../../../api/structures/IShop
 @Controller("/shoppingMall/inventoryReservations/:reservationId")
 export class ShoppingmallInventoryreservationsController {
   /**
-   * Delete an inventory reservation to release temporarily held stock.
-   *
    * Delete an inventory reservation record to release the temporarily held
    * stock quantity back to available inventory. This operation is used when a
    * reservation is no longer needed and should be cancelled.

@@ -66,8 +66,6 @@ export class RedditcommunityMemberPostsCommentsController {
   }
 
   /**
-   * Update an existing comment's content.
-   *
    * Update the content of an existing comment within a post. This operation
    * allows authenticated members to edit their own comments, modifying the
    * comment text while preserving the original creation metadata and vote
@@ -124,8 +122,6 @@ export class RedditcommunityMemberPostsCommentsController {
   }
 
   /**
-   * Permanently delete a specific comment from a post.
-   *
    * Permanently remove a comment from a post in the community platform. This
    * operation performs a hard deletion that completely removes the comment
    * record from the database, making it unrecoverable.

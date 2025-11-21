@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationCase } from "../../../../../../structures/I
 import { IPageICommunityPlatformModerationCase } from "../../../../../../structures/IPageICommunityPlatformModerationCase";
 
 /**
- * Search moderation cases from community_platform_moderation_cases with
- * filtering, sorting, and pagination.
- *
  * Search and retrieve a filtered, paginated list of moderation cases from the
  * community platform.
  *

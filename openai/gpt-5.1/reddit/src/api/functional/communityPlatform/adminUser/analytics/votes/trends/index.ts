@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformVoteTrendAnalytics } from "../../../../../../structures/ICommunityPlatformVoteTrendAnalytics";
 
 /**
- * Retrieve aggregated vote trend analytics composed from vote and content
- * tables in the community platform.
- *
  * Retrieve aggregated analytics about voting behavior trends across the
  * community platform over a specified period.
  *

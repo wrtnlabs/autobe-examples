@@ -10,9 +10,6 @@ import { IDiscussionBoardModerationStatistics } from "../../../../../api/structu
 @Controller("/discussionBoard/moderator/moderation/statistics")
 export class DiscussionboardModeratorModerationStatisticsController {
   /**
-   * Retrieve aggregated moderation statistics and analytics for moderation
-   * oversight.
-   *
    * This operation provides comprehensive moderation statistics by aggregating
    * data from the moderation workflow tables. It generates key performance
    * indicators that help moderators monitor moderation effectiveness, identify

@@ -14,8 +14,6 @@ import { IRedditCommunityCommunity } from "../../../../api/structures/IRedditCom
 @Controller("/redditCommunity/moderator/communities")
 export class RedditcommunityModeratorCommunitiesController {
   /**
-   * Create a new community space for content sharing and discussions.
-   *
    * Create a new community in the platform, establishing a dedicated space for
    * users to share content and engage in discussions around specific topics or
    * interests.
@@ -62,8 +60,6 @@ export class RedditcommunityModeratorCommunitiesController {
   }
 
   /**
-   * Update an existing community's configuration and metadata.
-   *
    * Update the configuration and metadata of an existing community identified
    * by its unique name code. This operation allows authorized moderators to
    * modify community properties including display name, description, rules,
@@ -119,8 +115,6 @@ export class RedditcommunityModeratorCommunitiesController {
   }
 
   /**
-   * Permanently delete a community from the platform.
-   *
    * Permanently remove a community from the platform identified by its unique
    * name code. This operation performs a complete deletion of the community
    * entity and handles all related data according to database cascade rules and
@@ -178,8 +172,6 @@ export class RedditcommunityModeratorCommunitiesController {
   }
 
   /**
-   * Update an existing community's configuration and metadata.
-   *
    * Update the configuration and metadata of an existing community identified
    * by its unique UUID. This operation allows authorized moderators to modify
    * community properties including display title, description, community rules,
@@ -242,8 +234,6 @@ export class RedditcommunityModeratorCommunitiesController {
   }
 
   /**
-   * Mark a community as deleted (soft delete).
-   *
    * Mark a community as deleted by setting the deleted_at timestamp to the
    * current time. This operation performs a soft delete that preserves all
    * community data including posts, comments, subscriptions, and relationships

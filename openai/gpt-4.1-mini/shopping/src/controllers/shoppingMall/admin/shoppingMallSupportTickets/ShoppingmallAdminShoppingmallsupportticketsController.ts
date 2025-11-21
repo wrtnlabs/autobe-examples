@@ -10,8 +10,6 @@ import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 )
 export class ShoppingmallAdminShoppingmallsupportticketsController {
   /**
-   * Delete a shopping mall support ticket.
-   *
    * Deletes the support ticket identified by the provided
    * shoppingMallSupportTicketId.
    *

@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentEditHistory } from "../../../../../structures/
 import { IPageICommunityPlatformCommentEditHistory } from "../../../../../structures/IPageICommunityPlatformCommentEditHistory";
 
 /**
- * List and search comment edit history snapshots from
- * community_platform_comment_edit_histories for a specific comment.
- *
  * Retrieve a filtered and paginated list of comment edit history snapshots
  * associated with a single comment.
  *

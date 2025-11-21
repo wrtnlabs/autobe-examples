@@ -8,8 +8,6 @@ import { IEconomicBoardAttachment } from "../../../api/structures/IEconomicBoard
 @Controller("/posts/:postId/attachments")
 export class PostsAttachmentsController {
   /**
-   * Upload a file attachment to a discussion post.
-   *
    * Uploads a file attachment to a specified discussion post. This operation
    * accepts multipart-form upload data containing the file and allows the
    * client to associate metadata with the uploaded file.

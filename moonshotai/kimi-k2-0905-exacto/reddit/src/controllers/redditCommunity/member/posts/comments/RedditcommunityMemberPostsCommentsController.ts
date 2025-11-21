@@ -49,8 +49,6 @@ export class RedditcommunityMemberPostsCommentsController {
   }
 
   /**
-   * Update an existing comment on a post.
-   *
    * Update an existing comment's content within a specific post. This
    * operation allows the comment author to modify their comment text while
    * preserving all other comment properties such as voting counts, threading

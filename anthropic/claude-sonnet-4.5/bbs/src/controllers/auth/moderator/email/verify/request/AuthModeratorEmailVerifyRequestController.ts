@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../../../decorators/payload/Moderator
 @Controller("/auth/moderator/email/verify/request")
 export class AuthModeratorEmailVerifyRequestController {
   /**
-   * Request email verification token for moderator.
-   *
    * Generates and sends an email verification token to the moderator's
    * registered email address for email ownership confirmation.
    *

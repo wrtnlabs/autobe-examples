@@ -12,9 +12,6 @@ import { IShoppingMallProductImage } from "../../../../../../api/structures/ISho
 @Controller("/shoppingMall/seller/products/:productId/skus/:skuId/images")
 export class ShoppingmallSellerProductsSkusImagesController {
   /**
-   * Attach a new image/media asset to a specific product SKU (table:
-   * shopping_mall_product_images).
-   *
    * Create a new image asset entry for a specific SKU of a product. This
    * operation is used to attach a single image to a SKU variant, storing
    * metadata and establishing a strict association at the SKU level. The
@@ -76,9 +73,6 @@ export class ShoppingmallSellerProductsSkusImagesController {
   }
 
   /**
-   * Update details and metadata for a SKU-level product image (table:
-   * shopping_mall_product_images).
-   *
    * Update image asset details for a specific SKU in the product catalog. This
    * operation permits modification of SKU-specific image properties—such as
    * position within the gallery, alternative text for accessibility, and an
@@ -141,9 +135,6 @@ export class ShoppingmallSellerProductsSkusImagesController {
   }
 
   /**
-   * Delete a specific image associated with a product SKU
-   * (shopping_mall_product_images).
-   *
    * Removes a single product SKU image from the system by soft-deleting the
    * image record. Upon invocation, the system verifies that the image is
    * associated with both the specified product and SKU, and that the requesting

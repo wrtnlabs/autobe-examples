@@ -7,9 +7,6 @@ import { IShoppingMallOrderTracking } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/customer/orders/:orderCode/tracking")
 export class ShoppingmallCustomerOrdersTrackingController {
   /**
-   * Get logistics-focused tracking information for a ShoppingMall order using
-   * shopping_mall_shipments and related tables.
-   *
    * Retrieve the shipping and delivery tracking information for a specific
    * order, identified by its business order code, focusing on shipment and
    * carrier-related events.

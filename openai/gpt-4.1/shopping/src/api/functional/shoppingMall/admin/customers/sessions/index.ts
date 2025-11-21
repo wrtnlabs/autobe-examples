@@ -7,9 +7,6 @@ import { IShoppingMallCustomerSession } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallCustomerSession } from "../../../../../structures/IPageIShoppingMallCustomerSession";
 
 /**
- * Search and retrieve the session history for a customer account from the
- * shopping_mall_customer_sessions table.
- *
  * Fetch and search all authentication session history records tied to a
  * specific customer, as identified by customerId.
  *
@@ -115,9 +112,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific customer session record from
- * shopping_mall_customer_sessions.
- *
  * Retrieve a specific session record for a customer, enabling audit and
  * tracking of session history.
  *
@@ -220,9 +214,6 @@ export namespace at {
 }
 
 /**
- * Delete a specific customer session from shopping_mall_customer_sessions (hard
- * delete only).
- *
  * Delete or revoke a session record for a specific customer, thereby
  * invalidating their login session for that device, browser, or context.
  *

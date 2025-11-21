@@ -7,9 +7,6 @@ import { IShoppingMallSellerSession } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallSellerSession } from "../../../../../structures/IPageIShoppingMallSellerSession";
 
 /**
- * Search and retrieve a filtered, paginated list of seller authentication
- * sessions.
- *
  * Retrieve a filtered and paginated list of seller authentication sessions from
  * the system. This operation provides advanced search capabilities for finding
  * sessions based on multiple criteria including session creation timestamps,
@@ -124,8 +121,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific seller authentication session.
- *
  * Retrieve complete details of a specific seller authentication session
  * identified by its unique session ID. This operation returns comprehensive
  * session information including creation timestamp, last activity time,
@@ -232,8 +227,6 @@ export namespace at {
 }
 
 /**
- * Terminate a specific seller authentication session (logout).
- *
  * Delete an active authentication session for a seller account, effectively
  * logging the seller out from the platform. This operation is used when a
  * seller explicitly logs out or when an admin needs to forcibly terminate a

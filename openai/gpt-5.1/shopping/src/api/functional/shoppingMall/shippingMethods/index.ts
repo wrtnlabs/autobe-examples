@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallShippingMethod } from "../../../structures/IShoppingMallShippingMethod";
 
 /**
- * Get a single shipping method from shopping_mall_shipping_methods by its
- * method code.
- *
  * Retrieve detailed configuration and descriptive information for a single
  * shipping method identified by its business method code.
  *

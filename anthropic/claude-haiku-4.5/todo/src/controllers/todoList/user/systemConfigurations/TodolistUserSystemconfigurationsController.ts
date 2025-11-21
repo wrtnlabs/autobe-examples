@@ -13,9 +13,6 @@ import { ITodoListSystemConfiguration } from "../../../../api/structures/ITodoLi
 @Controller("/todoList/user/systemConfigurations")
 export class TodolistUserSystemconfigurationsController {
   /**
-   * Search and retrieve system configuration settings with filtering and
-   * pagination.
-   *
    * Retrieve system configuration entries from the todo_list_system_config
    * table with advanced filtering, searching, and pagination capabilities. This
    * operation allows querying system-wide settings that control application
@@ -79,8 +76,6 @@ export class TodolistUserSystemconfigurationsController {
   }
 
   /**
-   * Update an existing system configuration entry by configuration key.
-   *
    * Update a system configuration entry by its unique configuration key. This
    * operation allows administrators to modify system-wide settings that control
    * application behavior without requiring database schema changes.
@@ -153,8 +148,6 @@ export class TodolistUserSystemconfigurationsController {
   }
 
   /**
-   * Permanently delete a system configuration entry by configuration key.
-   *
    * Permanently delete a system configuration entry by its unique configuration
    * key. This operation removes the configuration completely from the system.
    *

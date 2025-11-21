@@ -7,9 +7,6 @@ import { ICommunityPlatformKarmaEvolution } from "../../../../../../structures/I
 import { IPageICommunityPlatformKarmaEvolution } from "../../../../../../structures/IPageICommunityPlatformKarmaEvolution";
 
 /**
- * Retrieve analytical time-series statistics of user karma evolution based on
- * `community_platform_karma_events` and `community_platform_user_karmas`.
- *
  * Retrieve an analytical time-series view of a member user's karma evolution
  * over time based on historical events stored in the
  * `community_platform_karma_events` snapshot table and current aggregates in

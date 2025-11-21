@@ -10,9 +10,6 @@ import { ICommunityPlatformHotPostRanking } from "../../../api/structures/ICommu
 @Controller("/communityPlatform/hotPostRankings")
 export class CommunityplatformHotpostrankingsController {
   /**
-   * Search and retrieve a paginated list of hot/trending post rankings from the
-   * materialized view 'mv_community_platform_hot_post_rankings'.
-   *
    * Retrieve a paginated and optionally filtered list of trending posts
    * currently ranked as 'hot' by the platform-wide algorithm. This operation is
    * foundational for providing dynamic and up-to-date 'hot feed' experiences to
@@ -54,9 +51,6 @@ export class CommunityplatformHotpostrankingsController {
   }
 
   /**
-   * Retrieve hot ranking and analytics for a specific post from materialized
-   * view 'mv_community_platform_hot_post_rankings'.
-   *
    * Fetch the hot ranking analytics for a single post, identified by its unique
    * post ID, directly from the platform-wide materialized view tracking
    * trending content. The response provides the post's current position in the

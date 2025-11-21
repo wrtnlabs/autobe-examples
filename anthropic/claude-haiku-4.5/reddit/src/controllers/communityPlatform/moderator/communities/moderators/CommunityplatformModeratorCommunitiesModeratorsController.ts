@@ -8,9 +8,6 @@ import { IPageICommunityPlatformCommunityModerator } from "../../../../../api/st
 @Controller("/communityPlatform/moderator/communities/:communityId/moderators")
 export class CommunityplatformModeratorCommunitiesModeratorsController {
   /**
-   * Appoint a new moderator to a community with specified tier and
-   * permissions.
-   *
    * Create a new moderator assignment, promoting a member to moderator status
    * within a specific community. This operation is used by community creators
    * and administrators to expand the moderation team. The requesting user
@@ -70,9 +67,6 @@ export class CommunityplatformModeratorCommunitiesModeratorsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of moderators for a
-   * specific community.
-   *
    * Retrieve a filtered and paginated list of moderators assigned to manage a
    * specific community. This operation provides advanced search capabilities
    * for finding moderators based on multiple criteria including moderator

@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAnalyticsOutcomes } from "../../../../../..
 @Controller("/communityPlatform/adminUser/moderation/analytics/outcomes")
 export class CommunityplatformAdminuserModerationAnalyticsOutcomesController {
   /**
-   * Retrieve aggregated moderation outcome analytics composed from moderation
-   * action and case tables.
-   *
    * Retrieve aggregated moderation outcome analytics summarizing moderation
    * actions and case resolutions across the community platform.
    *

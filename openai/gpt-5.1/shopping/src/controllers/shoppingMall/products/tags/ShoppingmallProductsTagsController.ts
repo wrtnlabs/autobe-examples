@@ -8,9 +8,6 @@ import { IShoppingMallProductTagLink } from "../../../../api/structures/IShoppin
 @Controller("/shoppingMall/products/:productId/tags")
 export class ShoppingmallProductsTagsController {
   /**
-   * List product tags linked to a specific product using
-   * shopping_mall_product_tags and shopping_mall_product_tag_links.
-   *
    * Retrieve the list of tags currently associated with a specific product,
    * leveraging the shopping_mall_product_tags and
    * shopping_mall_product_tag_links Prisma models.
@@ -74,9 +71,6 @@ export class ShoppingmallProductsTagsController {
   }
 
   /**
-   * Get a single product–tag association from
-   * shopping_mall_product_tag_links.
-   *
    * Retrieve the detailed association record for a single product–tag link
    * from the shopping_mall_product_tag_links table.
    *

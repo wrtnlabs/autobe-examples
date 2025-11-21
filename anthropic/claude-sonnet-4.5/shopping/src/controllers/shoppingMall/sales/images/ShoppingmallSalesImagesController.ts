@@ -8,8 +8,6 @@ import { IShoppingMallSaleImage } from "../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/sales/:saleCode/images/:imageId")
 export class ShoppingmallSalesImagesController {
   /**
-   * Retrieve a specific product sale image by sale code and image ID.
-   *
    * Retrieve detailed information about a specific product image associated
    * with a sale listing. This operation provides access to individual image
    * metadata including the image URL, display order, and other relevant

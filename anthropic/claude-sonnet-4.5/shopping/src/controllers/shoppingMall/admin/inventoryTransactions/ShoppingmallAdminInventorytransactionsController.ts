@@ -12,8 +12,6 @@ import { IShoppingMallInventoryTransaction } from "../../../../api/structures/IS
 @Controller("/shoppingMall/admin/inventoryTransactions")
 export class ShoppingmallAdminInventorytransactionsController {
   /**
-   * Search and retrieve filtered inventory transaction history records.
-   *
    * Retrieve a comprehensive list of inventory transaction records with
    * advanced filtering and pagination capabilities. This operation provides
    * detailed audit trail access for all inventory movements across the shopping
@@ -71,8 +69,6 @@ export class ShoppingmallAdminInventorytransactionsController {
   }
 
   /**
-   * Retrieve detailed information for a specific inventory transaction record.
-   *
    * Retrieve comprehensive details for a single inventory transaction record
    * identified by its unique transaction ID. This operation provides complete
    * visibility into a specific inventory movement event for audit and

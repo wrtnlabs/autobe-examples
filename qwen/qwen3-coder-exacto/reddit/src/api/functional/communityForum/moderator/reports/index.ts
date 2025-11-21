@@ -7,8 +7,6 @@ import { ICommunityForumCommunityReport } from "../../../../structures/ICommunit
 import { IPageICommunityForumCommunityReport } from "../../../../structures/IPageICommunityForumCommunityReport";
 
 /**
- * Get paginated list of user content reports with filtering.
- *
  * Retrieve a paginated list of content reports filed by users on the platform.
  * This endpoint serves the moderation system by providing access to reported
  * content for review and action. The response includes comprehensive report
@@ -105,8 +103,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific report by its ID.
- *
  * Retrieve detailed information about a specific report using its unique
  * identifier. This endpoint provides moderators and administrators with access
  * to all relevant information about a report, including what content was
@@ -199,8 +195,6 @@ export namespace at {
 }
 
 /**
- * Update an existing content report with new information or status changes.
- *
  * Update an existing content report in the community forum platform. This
  * operation allows moderators to modify report details such as status,
  * categorization, or add additional context before resolving the report.
@@ -310,8 +304,6 @@ export namespace update {
 }
 
 /**
- * Delete a content report that is invalid, duplicate, or no longer relevant.
- *
  * Permanently delete a content report from the community forum platform. This
  * operation allows moderators or administrators to remove reports that are
  * invalid, duplicate, or no longer relevant.

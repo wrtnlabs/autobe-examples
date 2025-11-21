@@ -8,9 +8,6 @@ import { IPageIShoppingMallAccountRiskFlag } from "../../../../api/structures/IP
 @Controller("/shoppingMall/admin/accountRiskFlags")
 export class ShoppingmallAdminAccountriskflagsController {
   /**
-   * Create a new shopping_mall_account_risk_flags record representing an
-   * account risk flag.
-   *
    * Create a new account risk flag entry in the shopping mall risk management
    * subsystem.
    *
@@ -65,9 +62,6 @@ export class ShoppingmallAdminAccountriskflagsController {
   }
 
   /**
-   * Search and list account risk flags from the
-   * shopping_mall_account_risk_flags table.
-   *
    * Search and retrieve a filtered, paginated list of account risk flags
    * stored in the `shopping_mall_account_risk_flags` table.
    *
@@ -128,9 +122,6 @@ export class ShoppingmallAdminAccountriskflagsController {
   }
 
   /**
-   * Get detailed information of a single account risk flag from the
-   * shopping_mall_account_risk_flags table.
-   *
    * Retrieve detailed information about a single account risk flag identified
    * by its unique ID from the `shopping_mall_account_risk_flags` table.
    *
@@ -179,9 +170,6 @@ export class ShoppingmallAdminAccountriskflagsController {
   }
 
   /**
-   * Update an existing shopping_mall_account_risk_flags record identified by
-   * riskFlagId.
-   *
    * Update an existing account risk flag entry in the shopping mall risk
    * management subsystem.
    *
@@ -241,9 +229,6 @@ export class ShoppingmallAdminAccountriskflagsController {
   }
 
   /**
-   * Permanently remove an account risk flag row from the
-   * shopping_mall_account_risk_flags table by its unique identifier.
-   *
    * Erase an existing account risk flag record from the
    * shopping_mall_account_risk_flags table by its unique identifier.
    *

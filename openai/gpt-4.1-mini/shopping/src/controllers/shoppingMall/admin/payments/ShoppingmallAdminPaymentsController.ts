@@ -15,8 +15,6 @@ import { IPageIShoppingMallPayment } from "../../../../api/structures/IPageIShop
 @Controller("/shoppingMall/admin/payments")
 export class ShoppingmallAdminPaymentsController {
   /**
-   * Create a new payment record for an order.
-   *
    * Create a new payment in the shopping mall payment system.
    *
    * This API enables authorized users such as admins or sellers to record a
@@ -63,8 +61,6 @@ export class ShoppingmallAdminPaymentsController {
   }
 
   /**
-   * Search and retrieve paginated list of payment records.
-   *
    * Retrieve a list of payment transactions with advanced search and filtering
    * capabilities.
    *
@@ -108,8 +104,6 @@ export class ShoppingmallAdminPaymentsController {
   }
 
   /**
-   * Retrieve payment details by paymentId.
-   *
    * Retrieve detailed information about a specific payment identified by its
    * paymentId.
    *
@@ -149,8 +143,6 @@ export class ShoppingmallAdminPaymentsController {
   }
 
   /**
-   * Update an existing payment record.
-   *
    * Update payment details for an existing payment record in the shopping mall
    * payment system.
    *
@@ -197,8 +189,6 @@ export class ShoppingmallAdminPaymentsController {
   }
 
   /**
-   * Permanently delete a specific payment record by paymentId.
-   *
    * Permanently deletes an existing payment record by its unique identifier.
    * This API ensures that the payment linked to an order is fully removed from
    * the system, including transaction details and timestamps.

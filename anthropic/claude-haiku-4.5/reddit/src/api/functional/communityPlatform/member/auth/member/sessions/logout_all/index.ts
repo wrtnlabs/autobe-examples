@@ -5,8 +5,6 @@ import typia from "typia";
 import { ICommunityPlatformMember } from "../../../../../../../structures/ICommunityPlatformMember";
 
 /**
- * Logout member from all active sessions across all devices.
- *
  * This operation terminates all active sessions for the authenticated member
  * across all devices and browsers. When executed, all session tokens issued to
  * this member are invalidated, requiring the member to re-authenticate on any

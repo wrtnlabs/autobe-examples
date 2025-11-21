@@ -10,9 +10,6 @@ import { IDiscussionBoardSection } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/channels/:channelName/sections")
 export class DiscussionboardChannelsSectionsController {
   /**
-   * Search and retrieve filtered sections within a specific discussion board
-   * channel.
-   *
    * This operation provides comprehensive search capabilities for retrieving
    * discussion board sections organized within a specific channel. Users can
    * filter sections by various criteria including status, creation date ranges,
@@ -57,8 +54,6 @@ export class DiscussionboardChannelsSectionsController {
   }
 
   /**
-   * Retrieve a specific discussion board section within a channel.
-   *
    * This GET operation allows users to retrieve detailed information about a
    * specific discussion board section within a channel. The operation uses the
    * channel name and section name as path parameters to uniquely identify the

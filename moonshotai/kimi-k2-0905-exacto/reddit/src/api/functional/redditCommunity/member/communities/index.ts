@@ -9,8 +9,6 @@ export * as rules from "./rules/index";
 export * as subscriptions from "./subscriptions/index";
 
 /**
- * Create a new community with specified name, title, and access type.
- *
  * Enable authenticated members to create new thematic communities for content
  * sharing and member engagement.
  *
@@ -117,8 +115,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of communities.
- *
  * Retrieve a filtered and paginated list of communities from the platform. This
  * operation provides comprehensive search capabilities for discovering
  * communities based on various criteria including community name, title,

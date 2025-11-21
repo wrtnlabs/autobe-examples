@@ -7,9 +7,6 @@ import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallO
 import { IPageIShoppingMallOrderItem } from "../../../../../structures/IPageIShoppingMallOrderItem";
 
 /**
- * List and search order items belonging to a shopping_mall_orders record
- * identified by order_code.
- *
  * Retrieve a filtered and paginated collection of order items for a specific
  * shopping mall order identified by its business-facing order_code.
  *
@@ -143,9 +140,6 @@ export namespace index {
 }
 
 /**
- * Get a single ShoppingMall order item record by orderCode and orderItemId from
- * shopping_mall_order_items.
- *
  * Retrieve detailed information of a single order item within a specific
  * customer-facing order identified by its business order code.
  *
@@ -271,10 +265,6 @@ export namespace at {
 }
 
 /**
- * Update a ShoppingMall order item in shopping_mall_order_items identified by
- * orderCode and orderItemId using IShoppingMallOrderItem.IUpdate from a
- * customer-facing endpoint.
- *
  * Update mutable attributes of a specific order item belonging to an order
  * identified by its business order code, with strict adherence to business and
  * schema-level constraints from the customer perspective.
@@ -410,9 +400,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific order item record from the shopping_mall_order_items table
- * for a given order code.
- *
  * Delete a specific order item from a customer order identified by its business
  * order code and item identifier.
  *

@@ -7,9 +7,6 @@ import { ICommunityPlatformPost } from "../../../../structures/ICommunityPlatfor
 import { IPageICommunityPlatformPost } from "../../../../structures/IPageICommunityPlatformPost";
 
 /**
- * Search and paginate posts from the `community_platform_posts` table using
- * rich filter and sort options.
- *
  * Search and retrieve a paginated list of posts from the
  * `community_platform_posts` model based on flexible search criteria.
  *

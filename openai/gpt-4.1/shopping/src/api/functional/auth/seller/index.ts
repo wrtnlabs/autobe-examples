@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
 
 /**
- * Register a new seller account in the shopping_mall_sellers table and issue a
- * JWT token pair.
- *
  * This API registers a new seller account in the platform. It accepts
  * registration details necessary for a seller, as defined in the database
  * schema (shopping_mall_sellers), such as email, password, and other required
@@ -118,9 +115,6 @@ export namespace join {
 }
 
 /**
- * Authenticate a seller and issue a JWT token pair using schema-defined login
- * credentials.
- *
  * This API allows sellers to authenticate using credentials defined in the
  * seller database schema (shopping_mall_sellers), such as email and password.
  * The operation verifies credentials against stored records, handling all error
@@ -229,9 +223,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for seller, issuing new access/refresh token pair if the
- * refresh token is valid.
- *
  * This API accepts a valid refresh token, as defined in the authentication DTO
  * for sellers, and issues a new JWT access/refresh token pair if the refresh
  * token is valid. It implements token rotation and advanced security controls

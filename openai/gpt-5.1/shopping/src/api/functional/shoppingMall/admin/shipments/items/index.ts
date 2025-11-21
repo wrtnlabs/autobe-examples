@@ -7,9 +7,6 @@ import { IShoppingMallShipmentItem } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallShipmentItem } from "../../../../../structures/IPageIShoppingMallShipmentItem";
 
 /**
- * Create a new shipment item record in the shopping_mall_shipment_items table
- * under a specific shipment.
- *
  * Create a new shipment item row under a specific shipment in the
  * `shopping_mall_shipment_items` table, using the shipment context identified
  * by `shipmentCode` from the parent `shopping_mall_shipments` table.
@@ -150,9 +147,6 @@ export namespace create {
 }
 
 /**
- * Search shopping_mall_shipment_items by shipmentCode and return a paginated
- * list of shipment items.
- *
  * Search and retrieve a paginated list of shipment items for a specific
  * shipment identified by shipmentCode.
  *
@@ -300,9 +294,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single shopping_mall_shipment_items record by shipmentCode and
- * shipmentItemId.
- *
  * Retrieve detailed information for a single shipment item belonging to a
  * specific shipment.
  *
@@ -437,9 +428,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shipment item record in the shopping_mall_shipment_items
- * table under a specific shipment.
- *
  * Update an existing shipment item record under a specific shipment, using both
  * the shipment context and the shipment item identifier to target the correct
  * row in the `shopping_mall_shipment_items` table.
@@ -584,9 +572,6 @@ export namespace update {
 }
 
 /**
- * Erase a shipment item from `shopping_mall_shipment_items` under a shipment
- * identified by `shipmentCode`.
- *
  * Erase a specific shipment item that belongs to a shipment identified by a
  * business-level shipment code.
  *

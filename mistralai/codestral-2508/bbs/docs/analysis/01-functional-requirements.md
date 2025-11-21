@@ -1,59 +1,81 @@
-# Functional Requirements for Economic Discussion Board
+# Enhanced Functional Requirements for Economic/Political Discussion Board
 
-## Core Features
+## User Authentication
 
-1. **User Registration and Authentication**
-   - Users can register for an account using their email address and password.
-   - Users can log in to their accounts using their email address and password.
-   - Users can reset their passwords if they forget them.
+### User Registration
 
-2. **Post Creation and Management**
-   - Users can create new posts with a title and content.
-   - Users can edit their own posts.
-   - Users can delete their own posts.
-   - Users can upload attachments (images and files) to their posts.
+- Users can register with a unique username and password.
+- Users must provide a valid email address for verification.
+- Users must agree to the terms and conditions during registration.
 
-3. **Commenting System**
-   - Users can comment on posts.
-   - Users can edit their own comments.
-   - Users can delete their own comments.
+### User Login
 
-4. **Content Moderation**
-   - Admins can delete inappropriate posts and comments.
-   - Admins can ban users who violate the community guidelines.
+- Users can log in with their username and password.
+- Users can log in using social media accounts (optional).
+- Users can reset their password if forgotten.
 
-## User Needs
+### Account Management
 
-1. **User-Friendly Interface**
-   - The service should have an intuitive and easy-to-use interface.
-   - Users should be able to navigate the service without any issues.
+- Users can update their profile information.
+- Users can change their password.
+- Users can deactivate their account.
 
-2. **Secure and Private**
-   - User data should be protected and kept confidential.
-   - The service should have a secure authentication system.
+## Article Management
 
-3. **Fast and Responsive**
-   - The service should load quickly and respond to user actions promptly.
+### Creating Articles
 
-## Business Rules
+- Users can create new articles with a title and content.
+- Users can add tags to categorize articles.
+- Users can attach files and images to articles.
 
-1. **Content Guidelines**
-   - Users must adhere to the community guidelines when creating posts and comments.
-   - Inappropriate content will be removed by admins.
+### Editing Articles
 
-2. **User Conduct**
-   - Users must not engage in harassment, hate speech, or any form of discrimination.
-   - Users who violate these rules will be banned from the service.
+- Users can edit their own articles.
+- Users can update the title, content, tags, and attachments.
 
-## Performance Requirements
+### Deleting Articles
 
-1. **Response Time**
-   - The service should respond to user actions within 2 seconds.
+- Users can delete their own articles.
+- Moderators can delete any article.
 
-2. **Uptime**
-   - The service should have an uptime of 99.9% to ensure it is always available to users.
+## Comment Management
 
-3. **Scalability**
-   - The service should be able to handle a large number of users and posts without any performance issues.
+### Adding Comments
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+- Users can add comments to articles.
+- Users can reply to other comments.
+
+### Editing Comments
+
+- Users can edit their own comments.
+
+### Deleting Comments
+
+- Users can delete their own comments.
+- Moderators can delete any comment.
+
+## File and Image Attachments
+
+### Uploading Attachments
+
+- Users can upload files and images to their articles.
+- Users can upload files and images to their comments.
+
+### Managing Attachments
+
+- Users can view, download, and delete their own attachments.
+- Moderators can manage all attachments.
+
+## User Permissions
+
+### Access Levels
+
+- Guests: Can only view public articles and register/login.
+- Members: Can create, edit, and delete their own articles and comments.
+- Moderators: Can manage all articles, comments, and user accounts.
+
+### Restrictions
+
+- Guests cannot create or edit articles or comments.
+- Members cannot edit or delete articles and comments that are not theirs.
+- Moderators have full access to all features and can manage user accounts.

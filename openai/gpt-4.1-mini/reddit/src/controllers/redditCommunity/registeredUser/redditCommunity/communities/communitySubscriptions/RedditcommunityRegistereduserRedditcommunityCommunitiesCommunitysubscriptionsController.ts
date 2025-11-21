@@ -17,8 +17,6 @@ import { IPageIRedditCommunityCommunitySubscription } from "../../../../../../ap
 )
 export class RedditcommunityRegistereduserRedditcommunityCommunitiesCommunitysubscriptionsController {
   /**
-   * Create a new subscription to a community.
-   *
    * Create a new subscription linking a registered user to a subreddit
    * community on the redditCommunity platform.
    *
@@ -62,8 +60,6 @@ export class RedditcommunityRegistereduserRedditcommunityCommunitiesCommunitysub
   }
 
   /**
-   * List subscriptions of a specified community.
-   *
    * Retrieve a filtered and paginated list of users subscribed to the specified
    * community identified by the unique communityName.
    *
@@ -112,8 +108,6 @@ export class RedditcommunityRegistereduserRedditcommunityCommunitiesCommunitysub
   }
 
   /**
-   * Retrieve a specific community subscription by ID.
-   *
    * Retrieve details of a community subscription linking a registered user to a
    * community on redditCommunity platform.
    *
@@ -159,8 +153,6 @@ export class RedditcommunityRegistereduserRedditcommunityCommunitiesCommunitysub
   }
 
   /**
-   * Update a community subscription by ID for a specific community.
-   *
    * Update an existing subscription of a registered user to a specified
    * redditCommunity community.
    *
@@ -215,8 +207,6 @@ export class RedditcommunityRegistereduserRedditcommunityCommunitiesCommunitysub
   }
 
   /**
-   * Delete a community subscription by ID for a specific community.
-   *
    * Permanently delete a subscription record linking a registered user to a
    * subreddit within the redditCommunity platform.
    *

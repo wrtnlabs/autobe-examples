@@ -14,8 +14,6 @@ import { ITodoUser } from "../../../../api/structures/ITodoUser";
 @Controller("/todo/user/users")
 export class TodoUserUsersController {
   /**
-   * Retrieve a paginated, filtered list of users from the todo_users table.
-   *
    * Search and retrieve a paginated, filtered list of registered users for the
    * Todo List application.
    *
@@ -54,8 +52,6 @@ export class TodoUserUsersController {
   }
 
   /**
-   * Retrieve a specific registered user record from the todo_users table by id.
-   *
    * Retrieve the detailed account record for a specific user by their unique
    * identifier.
    *
@@ -94,8 +90,6 @@ export class TodoUserUsersController {
   }
 
   /**
-   * Update information of a registered user in the todo_users table.
-   *
    * Update the account information of an existing user in the Todo List system
    * using their unique identifier. This operation gives authorized clients the
    * ability to change the email address and/or password of a user, provided all
@@ -146,8 +140,6 @@ export class TodoUserUsersController {
   }
 
   /**
-   * Permanently delete a user account from the todo_users table.
-   *
    * Permanently remove a user account from the Todo List application using the
    * provided unique identifier. This operation leads to irreversible deletion
    * of all the user's personal data, including their registration record and

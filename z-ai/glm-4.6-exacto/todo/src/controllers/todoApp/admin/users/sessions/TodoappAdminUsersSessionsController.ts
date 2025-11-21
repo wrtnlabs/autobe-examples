@@ -13,9 +13,6 @@ import { ITodoAppUserSession } from "../../../../../api/structures/ITodoAppUserS
 @Controller("/todoApp/admin/users/:userId/sessions")
 export class TodoappAdminUsersSessionsController {
   /**
-   * Admin search and retrieve user session activity records from
-   * todo_app_user_sessions table.
-   *
    * Retrieve a paginated and filterable list of all sessions linked to a
    * specific user's account for administrative security audits and user
    * activity tracing.
@@ -66,9 +63,6 @@ export class TodoappAdminUsersSessionsController {
   }
 
   /**
-   * Admin retrieve full details of a user's specific session from
-   * todo_app_user_sessions table.
-   *
    * Retrieve the full details of a specific session for a user to support
    * targeted administrative forensics and investigation workflows.
    *
@@ -114,8 +108,6 @@ export class TodoappAdminUsersSessionsController {
   }
 
   /**
-   * Delete a todo_app_user_sessions record (admin-only session termination).
-   *
    * Delete a user session for compliance, security response, or user account
    * management in the Todo List application.
    *

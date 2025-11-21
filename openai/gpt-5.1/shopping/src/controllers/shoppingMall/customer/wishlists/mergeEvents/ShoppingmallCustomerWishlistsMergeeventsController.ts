@@ -8,9 +8,6 @@ import { IShoppingMallWishlistMergeEvent } from "../../../../../api/structures/I
 @Controller("/shoppingMall/customer/wishlists/:wishlistId/mergeEvents")
 export class ShoppingmallCustomerWishlistsMergeeventsController {
   /**
-   * Search and retrieve a paginated list of wishlist merge events from
-   * `shopping_mall_wishlist_merge_events`.
-   *
    * Retrieve a filtered and paginated list of merge events that have been
    * recorded for a specific wishlist.
    *
@@ -80,9 +77,6 @@ export class ShoppingmallCustomerWishlistsMergeeventsController {
   }
 
   /**
-   * Retrieve detailed information for a single wishlist merge event from
-   * `shopping_mall_wishlist_merge_events`.
-   *
    * Retrieve detailed information for a single wishlist merge event
    * associated with a specific wishlist.
    *

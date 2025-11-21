@@ -7,9 +7,6 @@ import { IShoppingMallProductLocalization } from "../../../../../api/structures/
 @Controller("/shoppingMall/seller/products/:productId/localizations")
 export class ShoppingmallSellerProductsLocalizationsController {
   /**
-   * Create a new localization in `shopping_mall_product_localizations` for a
-   * given product.
-   *
    * Create a new localization entry for a specific product in the catalog.
    *
    * This operation targets the `shopping_mall_product_localizations` table,
@@ -69,9 +66,6 @@ export class ShoppingmallSellerProductsLocalizationsController {
   }
 
   /**
-   * Update an existing `shopping_mall_product_localizations` record for a
-   * given product.
-   *
    * Update an existing localization entry for a specific product in the
    * catalog.
    *
@@ -134,9 +128,6 @@ export class ShoppingmallSellerProductsLocalizationsController {
   }
 
   /**
-   * Delete a product localization record from the
-   * shopping_mall_product_localizations table for a specific product.
-   *
    * Delete a specific product localization record for a given product from
    * the shoppingMall catalog.
    *

@@ -7,9 +7,6 @@ import { ITodoListUser } from "../../../../structures/ITodoListUser";
 export * as sessions from "./sessions/index";
 
 /**
- * Retrieve full profile and status of a registered user account from
- * todo_list_users.
- *
  * Retrieve the full profile and status of a specific registered user account,
  * including core identifying fields and timestamp metadata.
  *
@@ -94,9 +91,6 @@ export namespace at {
 }
 
 /**
- * Update editable profile fields for a registered user account in
- * todo_list_users.
- *
  * Update profile information for a specific registered user account. Modifiable
  * fields typically include display name and email. Any attempted change to
  * protected properties, such as password hash or deleted timestamp, will be
@@ -197,8 +191,6 @@ export namespace update {
 }
 
 /**
- * Soft-deletes a user account in the todo_list_users table by userId.
- *
  * Soft delete an existing user by userId. This operation sets the user's
  * deleted_at field, making the account inaccessible to both the user and any
  * other actors in the system from that moment onward.

@@ -10,9 +10,6 @@ import { IShoppingMallRevenueStatistics } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/statistics/revenue")
 export class ShoppingmallAdminStatisticsRevenueController {
   /**
-   * Retrieve aggregated revenue statistics and financial metrics for the
-   * platform.
-   *
    * Retrieve comprehensive revenue statistics and financial analytics for the
    * shopping mall platform. This operation provides aggregated financial
    * metrics computed from order transactions, payment records, platform

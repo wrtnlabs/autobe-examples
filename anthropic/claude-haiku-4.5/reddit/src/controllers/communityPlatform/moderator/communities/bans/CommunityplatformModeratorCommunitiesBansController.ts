@@ -8,8 +8,6 @@ import { IPageICommunityPlatformCommunityBan } from "../../../../../api/structur
 @Controller("/communityPlatform/moderator/communities/:communityId/bans")
 export class CommunityplatformModeratorCommunitiesBansController {
   /**
-   * Create a new community ban for a member.
-   *
    * Create a new ban record for a member within a specific community. This
    * operation allows authorized moderators to issue temporary suspensions or
    * permanent bans against members who violate community rules. The ban is
@@ -53,8 +51,6 @@ export class CommunityplatformModeratorCommunitiesBansController {
   }
 
   /**
-   * Search and retrieve filtered ban records for a community.
-   *
    * Retrieve a paginated list of community-specific bans from the
    * community_platform_community_bans table with comprehensive filtering and
    * sorting capabilities. This operation supports advanced search for
@@ -110,8 +106,6 @@ export class CommunityplatformModeratorCommunitiesBansController {
   }
 
   /**
-   * Retrieve a specific community ban record.
-   *
    * Retrieve detailed information about a specific community ban record. This
    * operation fetches complete ban details including the ban type (temporary
    * or permanent), reason for ban, creation and expiration timestamps, and
@@ -153,9 +147,6 @@ export class CommunityplatformModeratorCommunitiesBansController {
   }
 
   /**
-   * Update an existing community ban record with modified terms or appeal
-   * status.
-   *
    * Modify an existing community ban record for a member within a specific
    * community. This operation enables moderators to adjust ban parameters
    * after initial issuance, including converting temporary suspensions to
@@ -205,8 +196,6 @@ export class CommunityplatformModeratorCommunitiesBansController {
   }
 
   /**
-   * Permanently delete a community ban record and restore member access.
-   *
    * Permanently remove a community ban record, effectively lifting the ban
    * and restoring the member's access to the community. This operation
    * deletes the ban record entirely from the database, distinguishing it from

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformComment } from "../../../../../structures/ICommunityPlatformComment";
 
 /**
- * Get a specific reply comment from the community_platform_comments table by
- * post, parent comment, and reply identifiers.
- *
  * Fetch a specific reply on a post comment, ensuring that it is correctly
  * scoped under the given post and parent comment.
  *

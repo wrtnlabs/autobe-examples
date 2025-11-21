@@ -14,8 +14,6 @@ import { IShoppingMallInventory } from "../../../../../api/structures/IShoppingM
 )
 export class ShoppingmallCustomerShoppingmallproductvariantsShoppingmallinventoriesController {
   /**
-   * Create inventory record for a product variant by skuCode.
-   *
    * Create a new inventory record under the specified product variant SKU.
    *
    * The request body must include stock quantity details, reserved amounts, and
@@ -61,8 +59,6 @@ export class ShoppingmallCustomerShoppingmallproductvariantsShoppingmallinventor
   }
 
   /**
-   * Update a specific inventory record for a given product variant.
-   *
    * This operation updates detailed information of a shopping mall inventory
    * entry associated with a specific product variant identified by SKU code.
    *
@@ -115,8 +111,6 @@ export class ShoppingmallCustomerShoppingmallproductvariantsShoppingmallinventor
   }
 
   /**
-   * Delete a specific inventory record for a given product variant.
-   *
    * This operation permanently deletes an inventory record identified by its
    * UUID that is associated with a product variant uniquely identified by SKU
    * code.

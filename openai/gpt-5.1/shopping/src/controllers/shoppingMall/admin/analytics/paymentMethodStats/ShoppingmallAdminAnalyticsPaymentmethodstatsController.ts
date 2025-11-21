@@ -8,9 +8,6 @@ import { IShoppingMallPaymentMethodStat } from "../../../../../api/structures/IS
 @Controller("/shoppingMall/admin/analytics/paymentMethodStats")
 export class ShoppingmallAdminAnalyticsPaymentmethodstatsController {
   /**
-   * Search paginated payment method statistics from
-   * `shopping_mall_payment_method_stats`.
-   *
    * Search and retrieve a paginated list of payment method statistics from
    * the `shopping_mall_payment_method_stats` table based on flexible query
    * criteria.
@@ -58,9 +55,6 @@ export class ShoppingmallAdminAnalyticsPaymentmethodstatsController {
   }
 
   /**
-   * Retrieve a single payment method statistics snapshot from
-   * shopping_mall_payment_method_stats by ID.
-   *
    * Retrieve a single payment method statistics snapshot record from the
    * shopping_mall_payment_method_stats table by its unique identifier.
    *

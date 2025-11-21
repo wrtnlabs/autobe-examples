@@ -8,9 +8,6 @@ import { IShoppingMallOrderPayment } from "../../../../../api/structures/IShoppi
 @Controller("/shoppingMall/customer/customers/:customerId/payments")
 export class ShoppingmallCustomerCustomersPaymentsController {
   /**
-   * Search and retrieve a paginated list of shopping_mall_order_payments for
-   * a specific customer.
-   *
    * Retrieve a filtered and paginated list of payment records associated with
    * a specific customer’s orders.
    *
@@ -86,9 +83,6 @@ export class ShoppingmallCustomerCustomersPaymentsController {
   }
 
   /**
-   * Get detailed information about a specific shopping_mall_order_payments
-   * record for a customer.
-   *
    * Retrieve detailed information for a single order payment belonging to a
    * specific customer.
    *

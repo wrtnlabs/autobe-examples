@@ -10,9 +10,6 @@ export * as attributes from "./attributes/index";
 export * as skus from "./skus/index";
 
 /**
- * Update an existing ShoppingMall product row in the shopping_mall_products
- * table by productId via the admin path.
- *
  * Update an existing ShoppingMall product record in the shopping_mall_products
  * table identified by productId via the admin-oriented API path.
  *
@@ -136,8 +133,6 @@ export namespace update {
 }
 
 /**
- * Delete a product from the shopping_mall_products table by productId.
- *
  * Permanently remove a specific product record from the shopping_mall_products
  * table by its unique identifier.
  *

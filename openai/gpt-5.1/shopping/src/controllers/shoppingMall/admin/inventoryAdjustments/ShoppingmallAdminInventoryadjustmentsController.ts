@@ -8,9 +8,6 @@ import { IPageIShoppingMallInventoryAdjustment } from "../../../../api/structure
 @Controller("/shoppingMall/admin/inventoryAdjustments")
 export class ShoppingmallAdminInventoryadjustmentsController {
   /**
-   * Create a ShoppingMall inventory adjustment row in
-   * shopping_mall_inventory_adjustments.
-   *
    * Create a new atomic inventory adjustment record for a specific seller,
    * SKU, and warehouse using the shopping_mall_inventory_adjustments Prisma
    * model.
@@ -64,9 +61,6 @@ export class ShoppingmallAdminInventoryadjustmentsController {
   }
 
   /**
-   * Search and retrieve a paginated list of inventory adjustment events from
-   * shopping_mall_inventory_adjustments.
-   *
    * Retrieve a filtered and paginated list of inventory adjustment events
    * from the shopping_mall_inventory_adjustments table.
    *
@@ -140,9 +134,6 @@ export class ShoppingmallAdminInventoryadjustmentsController {
   }
 
   /**
-   * Get detailed information about a single inventory adjustment from
-   * shopping_mall_inventory_adjustments by its id.
-   *
    * Retrieve full detail for a single inventory adjustment event from the
    * shopping_mall_inventory_adjustments table.
    *
@@ -204,9 +195,6 @@ export class ShoppingmallAdminInventoryadjustmentsController {
   }
 
   /**
-   * Update a ShoppingMall inventory adjustment row in
-   * shopping_mall_inventory_adjustments by inventoryAdjustmentId.
-   *
    * Update an existing inventory adjustment record in the
    * shopping_mall_inventory_adjustments table, identified by
    * inventoryAdjustmentId, using the ShoppingMall inventory management

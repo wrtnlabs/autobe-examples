@@ -7,10 +7,6 @@ import { IShoppingMallSellerOrderMetricsSnapshot } from "../../../../../structur
 import { IPageIShoppingMallSellerOrderMetricsSnapshot } from "../../../../../structures/IPageIShoppingMallSellerOrderMetricsSnapshot";
 
 /**
- * Search seller order metrics snapshots from
- * `shopping_mall_seller_order_metrics_snapshots` with filtering and
- * pagination.
- *
  * Search and retrieve a paginated list of seller order metrics snapshots from
  * the `shopping_mall_seller_order_metrics_snapshots` table.
  *

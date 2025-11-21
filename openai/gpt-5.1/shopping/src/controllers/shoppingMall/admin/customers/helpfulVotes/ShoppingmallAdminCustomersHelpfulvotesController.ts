@@ -7,9 +7,6 @@ import typia, { tags } from "typia";
 )
 export class ShoppingmallAdminCustomersHelpfulvotesController {
   /**
-   * Delete a review helpful vote record from the
-   * shopping_mall_review_helpful_votes table for a specific customer.
-   *
    * Delete a single review helpful vote record associated with a specific
    * customer.
    *

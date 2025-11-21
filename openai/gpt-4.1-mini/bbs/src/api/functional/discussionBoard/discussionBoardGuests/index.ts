@@ -102,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Update an existing discussion board guest user.
- *
  * Update the information of an existing discussion board guest user identified
  * by their unique ID.
  *

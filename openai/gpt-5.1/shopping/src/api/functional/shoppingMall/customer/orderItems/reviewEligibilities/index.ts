@@ -7,9 +7,6 @@ import { IShoppingMallReviewEligibility } from "../../../../../structures/IShopp
 import { IPageIShoppingMallReviewEligibility } from "../../../../../structures/IPageIShoppingMallReviewEligibility";
 
 /**
- * Search review eligibility records for a specific order item in the
- * ShoppingMall review eligibility table.
- *
  * Retrieve a filtered, paginated list of review eligibility records for a
  * specific order item.
  *
@@ -151,9 +148,6 @@ export namespace index {
 }
 
 /**
- * Get detailed ShoppingMall review eligibility information for a specific order
- * item and eligibility ID.
- *
  * Retrieve detailed information for a specific review eligibility record
  * associated with a given order item.
  *

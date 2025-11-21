@@ -14,9 +14,6 @@ import { IShoppingMallQuestionAnswer } from "../../../../../api/structures/IShop
 )
 export class ShoppingmallCustomerShoppingmallcustomerquestionsShoppingmallquestionanswersController {
   /**
-   * List seller answers for a specific customer question with filtering and
-   * pagination.
-   *
    * Retrieve a paginated list of seller answers for the specified shopping mall
    * customer question.
    *
@@ -62,9 +59,6 @@ export class ShoppingmallCustomerShoppingmallcustomerquestionsShoppingmallquesti
   }
 
   /**
-   * Retrieve a specific seller answer to a customer question in the shopping
-   * mall.
-   *
    * Retrieve detailed information about a specific seller answer to a customer
    * question within the shopping mall platform.
    *

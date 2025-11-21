@@ -7,8 +7,6 @@ import { ICommunityPlatformPostBookmark } from "../../../../structures/ICommunit
 import { IPageICommunityPlatformPostBookmark } from "../../../../structures/IPageICommunityPlatformPostBookmark";
 
 /**
- * Create a new post bookmark in the community_platform_post_bookmarks table.
- *
  * Create a new bookmark for a post on behalf of the authenticated user.
  *
  * A user can use this operation to bookmark a post for easy access or later
@@ -113,9 +111,6 @@ export namespace create {
 }
 
 /**
- * Search or index post bookmarks belonging to the authenticated user in
- * community_platform_post_bookmarks.
- *
  * Retrieves a list of post bookmarks created by the currently authenticated
  * user, supporting advanced querying such as filtering by post, sorting by
  * recency, and custom pagination settings. This enables users to efficiently
@@ -213,9 +208,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific post bookmark from
- * community_platform_post_bookmarks table.
- *
  * Retrieve the detailed information of a specific post bookmark identified by
  * its primary key.
  *
@@ -315,9 +307,6 @@ export namespace at {
 }
 
 /**
- * Update an existing post bookmark record in the
- * community_platform_post_bookmarks table.
- *
  * Update details or metadata for a post bookmark. This operation allows an
  * authenticated user to modify an existing post bookmark, reflecting changes
  * such as restoring a previously soft-deleted bookmark, or refreshing its
@@ -420,9 +409,6 @@ export namespace update {
 }
 
 /**
- * Erase (soft-delete) an existing post bookmark record in the
- * community_platform_post_bookmarks table.
- *
  * Erase (soft-delete) a bookmark for a post. The operation sets the
  * 'deleted_at' timestamp so that the bookmark no longer appears in the user's
  * visible bookmarks, but is retained for potential restoration or auditing.

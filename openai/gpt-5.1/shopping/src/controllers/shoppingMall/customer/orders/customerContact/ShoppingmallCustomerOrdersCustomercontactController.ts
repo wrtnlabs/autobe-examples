@@ -7,9 +7,6 @@ import { IShoppingMallOrderCustomerContact } from "../../../../../api/structures
 @Controller("/shoppingMall/customer/orders/:orderCode/customerContact")
 export class ShoppingmallCustomerOrdersCustomercontactController {
   /**
-   * Get the `shopping_mall_order_customer_contacts` snapshot for an order
-   * identified by `orderCode`.
-   *
    * Retrieve the saved customer contact snapshot for a given order identified
    * by its business `orderCode`.
    *

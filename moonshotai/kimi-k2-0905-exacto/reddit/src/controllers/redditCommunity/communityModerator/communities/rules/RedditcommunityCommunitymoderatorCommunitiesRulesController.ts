@@ -10,8 +10,6 @@ import { IPageIRedditCommunityCommunityRule } from "../../../../../api/structure
 )
 export class RedditcommunityCommunitymoderatorCommunitiesRulesController {
   /**
-   * Create a new rule within a specified community.
-   *
    * Create a new rule within an existing community to establish behavioral
    * guidelines and content standards. This operation enables community
    * moderators to add governance policies with automatic sequential ordering
@@ -48,8 +46,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesRulesController {
   }
 
   /**
-   * Search and filter community rules with pagination.
-   *
    * Search and retrieve community rules with advanced filtering and
    * pagination capabilities. This operation provides community moderators
    * with tools to manage, review, and organize community-specific rules and
@@ -93,8 +89,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesRulesController {
   }
 
   /**
-   * Retrieve a specific community rule with detailed information.
-   *
    * Retrieve detailed information about a specific community rule including
    * its display order, title, description, and violation consequences. This
    * operation enables community moderators and members to review individual
@@ -132,9 +126,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesRulesController {
   }
 
   /**
-   * Update community rule with new title, description, and violation
-   * consequences.
-   *
    * Update an existing rule within a specific community by modifying its
    * title, detailed description, violation consequences, and display order.
    *
@@ -176,8 +167,6 @@ export class RedditcommunityCommunitymoderatorCommunitiesRulesController {
   }
 
   /**
-   * Delete community rule permanently.
-   *
    * Remove a community rule completely from the specified community, deleting
    * its title, description, violation consequences, and all associated
    * metadata.

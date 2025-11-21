@@ -8,9 +8,6 @@ import { IPageICommunityPlatformSystemConfig } from "../../../../api/structures/
 @Controller("/communityPlatform/adminUser/systemConfigs")
 export class CommunityplatformAdminuserSystemconfigsController {
   /**
-   * Create a new community platform system configuration row in the
-   * `community_platform_system_configs` table.
-   *
    * Create a new system-wide configuration entry in the
    * `community_platform_system_configs` table for the community platform.
    *
@@ -69,9 +66,6 @@ export class CommunityplatformAdminuserSystemconfigsController {
   }
 
   /**
-   * Search and paginate system configuration entries from
-   * community_platform_system_configs.
-   *
    * Search and retrieve a filtered, paginated list of system configuration
    * entries from the `community_platform_system_configs` table.
    *
@@ -137,9 +131,6 @@ export class CommunityplatformAdminuserSystemconfigsController {
   }
 
   /**
-   * Get a single system configuration entry from
-   * community_platform_system_configs by ID.
-   *
    * Retrieve detailed information for a single system configuration entry
    * from the `community_platform_system_configs` table using its unique
    * identifier.
@@ -192,9 +183,6 @@ export class CommunityplatformAdminuserSystemconfigsController {
   }
 
   /**
-   * Update an existing community platform system configuration row in the
-   * `community_platform_system_configs` table by its `systemConfigId`.
-   *
    * Update an existing system configuration entry in the
    * `community_platform_system_configs` table identified by
    * `systemConfigId`.
@@ -261,9 +249,6 @@ export class CommunityplatformAdminuserSystemconfigsController {
   }
 
   /**
-   * Delete a configuration row from the `community_platform_system_configs`
-   * table by ID.
-   *
    * Remove a specific system configuration entry from the community platform.
    *
    * This operation targets the `community_platform_system_configs` table,

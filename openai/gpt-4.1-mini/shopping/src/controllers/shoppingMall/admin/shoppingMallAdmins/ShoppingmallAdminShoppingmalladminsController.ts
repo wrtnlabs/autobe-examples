@@ -15,8 +15,6 @@ import { IPageIShoppingMallAdmin } from "../../../../api/structures/IPageIShoppi
 @Controller("/shoppingMall/admin/shoppingMallAdmins")
 export class ShoppingmallAdminShoppingmalladminsController {
   /**
-   * Create a new shopping mall administrator account.
-   *
    * Create a new administrator account with required credentials such as email
    * and password hash.
    *
@@ -58,8 +56,6 @@ export class ShoppingmallAdminShoppingmalladminsController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of shopping mall admins.
-   *
    * Retrieve a filtered and paginated list of shopping mall admin users. This
    * operation enables administrative staff to search through admin accounts
    * using various criteria including username, email, roles, and activity
@@ -99,8 +95,6 @@ export class ShoppingmallAdminShoppingmalladminsController {
   }
 
   /**
-   * Retrieve shopping mall administrator details by ID.
-   *
    * Retrieve detailed information about a specific shopping mall administrator
    * using their unique ID.
    *
@@ -142,8 +136,6 @@ export class ShoppingmallAdminShoppingmalladminsController {
   }
 
   /**
-   * Update an existing shopping mall administrator.
-   *
    * Update the details of an existing shopping mall administrator.
    *
    * This operation allows authorized users to modify the email and password
@@ -192,8 +184,6 @@ export class ShoppingmallAdminShoppingmalladminsController {
   }
 
   /**
-   * Delete an existing shopping mall administrator by ID.
-   *
    * Permanently delete a shopping mall administrator.
    *
    * This operation allows for the complete removal of an administrator account

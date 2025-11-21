@@ -1,38 +1,39 @@
-/// Attachment files uploaded by users to support posts and comments.
+/// Main attachment entity containing shared fields for all attachments.
 ///
-/// Stores metadata about uploaded files including file type, size, and
-/// storage location.
-/// Each attachment is associated with a specific post or comment and created
-/// by an authenticated user.
-/// Attachments remain attached to their parent entity even if the parent is
-/// modified or deleted.
-/// The system supports multiple attachments per post or comment.
+/// Stores core attachment information including file metadata, upload
+/// timestamps,
+/// and system management fields. This is the primary entity that users interact
+/// with when managing attachments across the system.
 ///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// content moderation.
+/// Attachments can be associated with either articles or comments through
+/// subtype entities, creating a polymorphic relationship pattern.
+///
+/// The main entity contains shared fields like file name, size, and MIME type,
+/// while subtype entities track which specific content type each attachment
+/// belongs
+/// to. This structure allows for proper data integrity while supporting
+/// the different content types that can have attachments.
 ///
 /// @namespace Attachments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_attachments {
+model economic_political_discussion_board_attachments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Post that this attachment belongs to. {@link
-  /// economic_discussion_board_posts.id}.
-  economic_discussion_board_post_id String?
+  /// Type of actor who created the attachment (e.g., 'member', 'moderator').
+  actor_type String
   
-  /// Comment that this attachment belongs to. {@link
-  /// economic_discussion_board_comments.id}.
-  economic_discussion_board_comment_id String?
-  
-  /// MIME type of the uploaded file.
-  file_type String
+  /// Original name of the uploaded file.
+  file_name String
   
   /// Size of the file in bytes.
   file_size Int
+  
+  /// MIME type of the file (e.g., 'image/jpeg', 'application/pdf').
+  mime_type String
   
   /// Storage path of the file in the system.
   file_path String
@@ -49,261 +50,92 @@ model economic_discussion_board_attachments {
   //----
   // RELATIONS
   //----
-  post economic_discussion_board_posts? @relation(fields: [economic_discussion_board_post_id], references: [id], onDelete: Cascade)
-  comment economic_discussion_board_comments? @relation(fields: [economic_discussion_board_comment_id], references: [id], onDelete: Cascade)
-  
-  economic_discussion_board_attachment_snapshots economic_discussion_board_attachment_snapshots[]
-  
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_post_id], map: "economic_discussion_board_attachments_economic_discuss_66793ed7")
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_comment_id], map: "economic_discussion_board_attachments_economic_discuss_113af461")
+  economic_political_discussion_board_attachment_of_articles economic_political_discussion_board_attachment_of_articles?
+  economic_political_discussion_board_attachment_of_comments economic_political_discussion_board_attachment_of_comments?
 }
 
-/// Historical snapshots of attachment metadata.
+/// Subtype entity tracking attachments associated with articles.
 ///
-/// Captures point-in-time states of attachments for audit trails and change
-/// tracking.
-/// Each snapshot records the attachment metadata at a specific point in time.
-/// Snapshots are created whenever an attachment is modified or when
-/// significant changes occur.
-/// The system maintains a complete history of attachment changes for
-/// compliance and auditing purposes.
+/// This table establishes the relationship between attachments and articles,
+/// allowing articles to have multiple attachments while maintaining proper
+/// data integrity. Each record links an attachment to a specific article and
+/// includes the actor who created the attachment.
 ///
-/// Snapshots are immutable and cannot be modified after creation.
+/// The subtype pattern ensures that attachments can be properly associated
+/// with articles while maintaining the polymorphic relationship structure
+/// with other content types.
 ///
 /// @namespace Attachments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_attachment_snapshots {
+model economic_political_discussion_board_attachment_of_articles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id
+  id String @id(map: "economic_political_discussion_board_attachment_of_arti_22b3d90f")
   
-  /// Attachment that this snapshot belongs to. {@link
-  /// economic_discussion_board_attachments.id}.
-  economic_discussion_board_attachment_id String
+  /// Reference to the main attachment entity. {@link
+  /// economic_political_discussion_board_attachments.id}
+  economic_political_discussion_board_attachment_id String
   
-  /// MIME type of the uploaded file at snapshot time.
-  file_type String
+  /// Reference to the article this attachment belongs to. {@link
+  /// economic_political_discussion_board_articles.id}
+  economic_political_discussion_board_article_id String
   
-  /// Size of the file in bytes at snapshot time.
-  file_size Int
-  
-  /// Storage path of the file in the system at snapshot time.
-  file_path String
-  
-  /// Timestamp when the snapshot was created.
+  /// Timestamp when this attachment-article relationship was created.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  attachment economic_discussion_board_attachments @relation(fields: [economic_discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  attachment economic_political_discussion_board_attachments @relation(fields: [economic_political_discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  article economic_political_discussion_board_articles @relation(fields: [economic_political_discussion_board_article_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_attachment_id, created_at], map: "economic_discussion_board_attachment_snapshots_economi_d832325d")
+  @@unique([economic_political_discussion_board_attachment_id], map: "economic_political_discussion_board_attachment_of_arti_6e1be518")
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_article_id], map: "economic_political_discussion_board_attachment_of_arti_4131fa7b")
 }
 
-/// Attachment files uploaded by users to support posts.
+/// Subtype entity tracking attachments associated with comments.
 ///
-/// Stores metadata about uploaded files including file type, size, and
-/// storage location.
-/// Each attachment is associated with a specific post and created by an
-/// authenticated user.
-/// Attachments remain attached to their parent entity even if the parent is
-/// modified or deleted.
-/// The system supports multiple attachments per post.
+/// This table establishes the relationship between attachments and comments,
+/// allowing comments to have multiple attachments while maintaining proper
+/// data integrity. Each record links an attachment to a specific comment and
+/// includes the actor who created the attachment.
 ///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// content moderation.
+/// The subtype pattern ensures that attachments can be properly associated
+/// with comments while maintaining the polymorphic relationship structure
+/// with other content types.
 ///
 /// @namespace Attachments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_post_attachments {
+model economic_political_discussion_board_attachment_of_comments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id
+  id String @id(map: "economic_political_discussion_board_attachment_of_comm_7968791e")
   
-  /// Post that this attachment belongs to. {@link
-  /// economic_discussion_board_posts.id}.
-  economic_discussion_board_post_id String
+  /// Reference to the main attachment entity. {@link
+  /// economic_political_discussion_board_attachments.id}
+  economic_political_discussion_board_attachment_id String
   
-  /// MIME type of the uploaded file.
-  file_type String
+  /// Reference to the comment this attachment belongs to. {@link
+  /// economic_political_discussion_board_comments.id}
+  economic_political_discussion_board_comment_id String
   
-  /// Size of the file in bytes.
-  file_size Int
-  
-  /// Storage path of the file in the system.
-  file_path String
-  
-  /// Timestamp when the attachment was created.
-  created_at DateTime
-  
-  /// Timestamp when the attachment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the attachment was deleted (soft delete).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  post economic_discussion_board_posts @relation(fields: [economic_discussion_board_post_id], references: [id], onDelete: Cascade)
-  
-  economic_discussion_board_post_attachment_snapshots economic_discussion_board_post_attachment_snapshots[]
-  
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_post_id], map: "economic_discussion_board_post_attachments_economic_di_428b12bd")
-}
-
-/// Attachment files uploaded by users to support comments.
-///
-/// Stores metadata about uploaded files including file type, size, and
-/// storage location.
-/// Each attachment is associated with a specific comment and created by an
-/// authenticated user.
-/// Attachments remain attached to their parent entity even if the parent is
-/// modified or deleted.
-/// The system supports multiple attachments per comment.
-///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// content moderation.
-///
-/// @namespace Attachments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_comment_attachments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Comment that this attachment belongs to. {@link
-  /// economic_discussion_board_comments.id}.
-  economic_discussion_board_comment_id String
-  
-  /// MIME type of the uploaded file.
-  file_type String
-  
-  /// Size of the file in bytes.
-  file_size Int
-  
-  /// Storage path of the file in the system.
-  file_path String
-  
-  /// Timestamp when the attachment was created.
-  created_at DateTime
-  
-  /// Timestamp when the attachment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the attachment was deleted (soft delete).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  comment economic_discussion_board_comments @relation(fields: [economic_discussion_board_comment_id], references: [id], onDelete: Cascade)
-  
-  economic_discussion_board_comment_attachment_snapshots economic_discussion_board_comment_attachment_snapshots[]
-  
-  // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_comment_id], map: "economic_discussion_board_comment_attachments_economic_24965635")
-}
-
-/// Historical snapshots of post attachment metadata.
-///
-/// Captures point-in-time states of post attachments for audit trails and
-/// change tracking.
-/// Each snapshot records the attachment metadata at a specific point in time.
-/// Snapshots are created whenever an attachment is modified or when
-/// significant changes occur.
-/// The system maintains a complete history of attachment changes for
-/// compliance and auditing purposes.
-///
-/// Snapshots are immutable and cannot be modified after creation.
-///
-/// @namespace Attachments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_post_attachment_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Post attachment that this snapshot belongs to. {@link
-  /// economic_discussion_board_post_attachments.id}.
-  economic_discussion_board_post_attachment_id String
-  
-  /// MIME type of the uploaded file at snapshot time.
-  file_type String
-  
-  /// Size of the file in bytes at snapshot time.
-  file_size Int
-  
-  /// Storage path of the file in the system at snapshot time.
-  file_path String
-  
-  /// Timestamp when the snapshot was created.
+  /// Timestamp when this attachment-comment relationship was created.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  postAttachment economic_discussion_board_post_attachments @relation(fields: [economic_discussion_board_post_attachment_id], references: [id], onDelete: Cascade)
+  attachment economic_political_discussion_board_attachments @relation(fields: [economic_political_discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  comment economic_political_discussion_board_comments @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_post_attachment_id, created_at], map: "economic_discussion_board_post_attachment_snapshots_ec_9ee54b7d")
-}
-
-/// Historical snapshots of comment attachment metadata.
-///
-/// Captures point-in-time states of comment attachments for audit trails and
-/// change tracking.
-/// Each snapshot records the attachment metadata at a specific point in time.
-/// Snapshots are created whenever an attachment is modified or when
-/// significant changes occur.
-/// The system maintains a complete history of attachment changes for
-/// compliance and auditing purposes.
-///
-/// Snapshots are immutable and cannot be modified after creation.
-///
-/// @namespace Attachments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_discussion_board_comment_attachment_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Comment attachment that this snapshot belongs to. {@link
-  /// economic_discussion_board_comment_attachments.id}.
-  economic_discussion_board_comment_attachment_id String
-  
-  /// MIME type of the uploaded file at snapshot time.
-  file_type String
-  
-  /// Size of the file in bytes at snapshot time.
-  file_size Int
-  
-  /// Storage path of the file in the system at snapshot time.
-  file_path String
-  
-  /// Timestamp when the snapshot was created.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  commentAttachment economic_discussion_board_comment_attachments @relation(fields: [economic_discussion_board_comment_attachment_id], references: [id], onDelete: Cascade)
-  
+  @@unique([economic_political_discussion_board_attachment_id], map: "economic_political_discussion_board_attachment_of_comm_870f8d6b")
   // spellchecker: ignore-next-line
-  @@index([economic_discussion_board_comment_attachment_id, created_at], map: "economic_discussion_board_comment_attachment_snapshots_8fc94671")
+  @@index([economic_political_discussion_board_comment_id], map: "economic_political_discussion_board_attachment_of_comm_ab74dcef")
 }

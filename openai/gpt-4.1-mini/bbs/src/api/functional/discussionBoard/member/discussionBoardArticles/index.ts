@@ -102,8 +102,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of discussion board articles.
- *
  * Retrieve a filtered, paginated list of discussion board articles from the
  * system.
  *
@@ -201,8 +199,6 @@ export namespace index {
 }
 
 /**
- * Update a discussion board article by ID.
- *
  * Update an existing discussion board article identified by its unique ID.
  *
  * This API endpoint allows authorized users to modify the title and content of
@@ -300,8 +296,6 @@ export namespace update {
 }
 
 /**
- * Erase a discussion board article by ID.
- *
  * Delete a discussion board article permanently by its unique ID.
  *
  * Only authorized users such as the article's author or admin roles can perform

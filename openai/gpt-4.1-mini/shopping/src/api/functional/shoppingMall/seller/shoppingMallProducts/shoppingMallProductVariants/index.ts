@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallProductVariant } from "../../../../../structures/IShoppingMallProductVariant";
 
 /**
- * Create a new shopping mall product variant (SKU) for a specific product.
- *
  * Create a new product variant (SKU) for the specified shopping mall product
  * identified by its unique productCode.\n\nThis operation allows authorized
  * sellers to add detailed SKUs associated with the parent product, including
@@ -106,8 +104,6 @@ export namespace create {
 }
 
 /**
- * Update an existing shopping mall product variant identified by skuCode.
- *
  * Update details of an existing product variant (SKU) linked to the specified
  * shopping mall product by productCode and skuCode.\n\nThis operation permits
  * modification of variant attributes including color, size, option selections,
@@ -210,8 +206,6 @@ export namespace update {
 }
 
 /**
- * Delete a product variant SKU by skuCode under a product.
- *
  * Delete a specific product variant SKU from the shopping mall product catalog.
  *
  * This operation deletes the SKU identified by skuCode under the product

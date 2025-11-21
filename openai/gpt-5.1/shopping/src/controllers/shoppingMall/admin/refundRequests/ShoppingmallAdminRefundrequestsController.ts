@@ -8,8 +8,6 @@ import { IPageIShoppingMallRefundRequest } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/admin/refundRequests")
 export class ShoppingmallAdminRefundrequestsController {
   /**
-   * Create a new refund request record in shopping_mall_refund_requests.
-   *
    * Create a new refund request in the shopping mall governance system.
    *
    * This operation writes to the shopping_mall_refund_requests table, which
@@ -75,9 +73,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Search refund requests from the shopping_mall_refund_requests table with
-   * pagination and rich filters.
-   *
    * Search and retrieve a filtered, paginated list of refund requests.
    *
    * This operation is built on top of the shopping_mall_refund_requests
@@ -135,9 +130,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Get a single refund request record from shopping_mall_refund_requests by
-   * its primary id.
-   *
    * Retrieve detailed information about a specific refund request from the
    * shopping mall governance domain.
    *
@@ -191,8 +183,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Update a refund request (shopping_mall_refund_requests) by ID.
-   *
    * Update an existing refund request by its unique identifier and return the
    * updated refund request resource.
    *
@@ -263,8 +253,6 @@ export class ShoppingmallAdminRefundrequestsController {
   }
 
   /**
-   * Delete a refund request (shopping_mall_refund_requests) by ID.
-   *
    * Permanently delete an existing refund request identified by its unique
    * identifier.
    *

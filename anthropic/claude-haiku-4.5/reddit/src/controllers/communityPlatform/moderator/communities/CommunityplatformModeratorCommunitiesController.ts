@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunity } from "../../../../api/structures/ICommuni
 @Controller("/communityPlatform/moderator/communities/:communityId")
 export class CommunityplatformModeratorCommunitiesController {
   /**
-   * Update community settings and configuration.
-   *
    * Update an existing community's metadata, visibility, and moderation
    * settings. This operation allows community creators and senior moderators
    * to modify community properties including display name, description,

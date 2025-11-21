@@ -11,8 +11,6 @@ import { IDiscussionBoardCommentReply } from "../../../../../api/structures/IDis
 @Controller("/discussionBoard/registeredUser/comments/:commentId/replies")
 export class DiscussionboardRegistereduserCommentsRepliesController {
   /**
-   * Create a new reply to a comment.
-   *
    * This operation allows users to create replies to existing comments on
    * discussion board articles. The reply content is associated with the
    * specified comment ID and is stored in the database. The operation requires
@@ -46,8 +44,6 @@ export class DiscussionboardRegistereduserCommentsRepliesController {
   }
 
   /**
-   * Update an existing reply to a comment.
-   *
    * This operation allows users to update their previously created replies to
    * comments on discussion board articles. The operation requires
    * authentication to verify that the user updating the reply is the same user

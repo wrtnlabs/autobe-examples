@@ -8,8 +8,6 @@ import { IPageIShoppingMallOrder } from "../../../../structures/IPageIShoppingMa
 export * as orderItems from "./orderItems/index";
 
 /**
- * Create a new shopping mall order.
- *
  * Create a new order representing a customer purchase in the shopping mall.
  *
  * This operation accepts detailed information about the order, including the
@@ -102,8 +100,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of shopping mall orders with filtering and sorting.
- *
  * Retrieve a filtered and paginated list of shopping mall orders. This
  * operation allows clients to search orders by order number, status, payment
  * status, customer, seller, or date ranges.
@@ -199,8 +195,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information of a shopping mall order by ID.
- *
  * Retrieve detailed information about a specific shopping mall order.
  *
  * This operation requires the order's unique identifier (UUID). It returns full
@@ -291,8 +285,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping mall order by its orderId.
- *
  * Update the details of an existing order in the shopping mall.
  *
  * This operation allows modification of order properties including order

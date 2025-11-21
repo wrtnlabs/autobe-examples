@@ -13,8 +13,6 @@ import { ITodoListTodoListUser } from "../../../../api/structures/ITodoListTodoL
 @Controller("/todoList/user/todoListUsers")
 export class TodolistUserTodolistusersController {
   /**
-   * Search and retrieve a filtered, paginated list of todo list users.
-   *
    * Retrieve a filtered and paginated list of registered users within the Todo
    * List application.
    *
@@ -55,8 +53,6 @@ export class TodolistUserTodolistusersController {
   }
 
   /**
-   * Retrieve a registered Todo List user by ID.
-   *
    * Retrieve detailed information of a registered Todo List user by their
    * unique UUID identifier.
    *
@@ -95,8 +91,6 @@ export class TodolistUserTodolistusersController {
   }
 
   /**
-   * Update an existing Todo List user by ID.
-   *
    * Update the attributes of a registered Todo List user using their unique
    * UUID.
    *

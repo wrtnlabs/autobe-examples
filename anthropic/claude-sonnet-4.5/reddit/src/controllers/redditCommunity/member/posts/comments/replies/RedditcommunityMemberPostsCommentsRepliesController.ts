@@ -10,8 +10,6 @@ import { IRedditCommunityComment } from "../../../../../../api/structures/IReddi
 @Controller("/redditCommunity/member/posts/:postId/comments/:commentId/replies")
 export class RedditcommunityMemberPostsCommentsRepliesController {
   /**
-   * Create a reply to an existing comment on a post.
-   *
    * Create a new reply comment to an existing comment within a post, enabling
    * nested threaded discussions.
    *

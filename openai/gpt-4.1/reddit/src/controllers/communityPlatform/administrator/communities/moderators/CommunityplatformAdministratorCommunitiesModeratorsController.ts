@@ -15,9 +15,6 @@ import { ICommunityPlatformModerator } from "../../../../../api/structures/IComm
 )
 export class CommunityplatformAdministratorCommunitiesModeratorsController {
   /**
-   * Retrieve detailed moderator information for a community
-   * (community_platform_moderators table).
-   *
    * Retrieve full information about a single moderator for a specific
    * community.
    *
@@ -72,9 +69,6 @@ export class CommunityplatformAdministratorCommunitiesModeratorsController {
   }
 
   /**
-   * Update moderator assignment and business status for a community moderator
-   * (community_platform_moderators and community_platform_communities).
-   *
    * Update the role, status, or business workflow state for a platform
    * community moderator in the context of a specific community.
    *
@@ -137,9 +131,6 @@ export class CommunityplatformAdministratorCommunitiesModeratorsController {
   }
 
   /**
-   * Remove (soft-delete) a platform moderator's assignment from a community
-   * (community_platform_moderators).
-   *
    * Remove a moderator from active duties in the context of a specific
    * community, supporting soft-deletion for audit and recovery.
    *
@@ -190,8 +181,6 @@ export class CommunityplatformAdministratorCommunitiesModeratorsController {
   }
 
   /**
-   * Create a new moderator record (community_platform_moderators table).
-   *
    * Create a new moderator account for the community platform, supporting
    * workflows for designating moderators or onboarding new privileged users.
    *

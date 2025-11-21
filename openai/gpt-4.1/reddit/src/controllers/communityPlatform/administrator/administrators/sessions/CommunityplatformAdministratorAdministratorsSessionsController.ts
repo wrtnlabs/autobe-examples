@@ -14,9 +14,6 @@ import { ICommunityPlatformAdministratorSession } from "../../../../../api/struc
 )
 export class CommunityplatformAdministratorAdministratorsSessionsController {
   /**
-   * Search and list all sessions for a specific administrator in
-   * community_platform_administrator_sessions.
-   *
    * Returns a filterable, paginated list of all session records for the
    * specified platform administrator. The search is strictly scoped by the
    * administrator's unique ID (UUID), as required by the
@@ -70,9 +67,6 @@ export class CommunityplatformAdministratorAdministratorsSessionsController {
   }
 
   /**
-   * Retrieve detailed administrator session information from the
-   * community_platform_administrator_sessions table.
-   *
    * Retrieve complete details for a single administrator session based on its
    * unique session ID and its parent administrator ID. This operation allows
    * system administrators to audit, monitor, or verify session details such as

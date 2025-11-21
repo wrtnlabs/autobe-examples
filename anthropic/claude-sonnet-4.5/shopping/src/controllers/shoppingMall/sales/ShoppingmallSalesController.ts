@@ -10,8 +10,6 @@ import { IShoppingMallSale } from "../../../api/structures/IShoppingMallSale";
 @Controller("/shoppingMall/sales")
 export class ShoppingmallSalesController {
   /**
-   * Search and retrieve a filtered, paginated list of product sales.
-   *
    * Retrieve a comprehensive, filtered, and paginated list of product sales
    * listings from the shopping mall marketplace. This operation provides
    * advanced search and filtering capabilities essential for product discovery,
@@ -64,9 +62,6 @@ export class ShoppingmallSalesController {
   }
 
   /**
-   * Retrieve detailed information about a specific product sale listing by
-   * code.
-   *
    * Retrieve complete details of a product sale listing from the shopping
    * marketplace using its unique business identifier code. This operation
    * provides comprehensive information about the product including its

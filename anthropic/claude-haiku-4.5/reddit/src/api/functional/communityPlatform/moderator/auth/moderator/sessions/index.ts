@@ -7,8 +7,6 @@ import { IPageICommunityPlatformModeratorSession } from "../../../../../../struc
 export * as logout_all from "./logout_all/index";
 
 /**
- * Retrieve all active sessions for the authenticated moderator.
- *
  * Fetch a list of all active sessions for the currently authenticated moderator
  * account. This operation provides visibility into all devices and locations
  * where the moderator is currently logged in, enabling account security
@@ -72,8 +70,6 @@ export namespace index {
 }
 
 /**
- * Terminate a specific moderator session by session ID.
- *
  * This operation allows an authenticated moderator to terminate a specific
  * session identified by its unique session ID. The targeted session becomes
  * immediately invalid, preventing further API requests from that session. This

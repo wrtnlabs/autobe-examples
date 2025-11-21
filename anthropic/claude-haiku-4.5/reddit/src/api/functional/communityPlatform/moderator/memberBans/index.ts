@@ -7,8 +7,6 @@ import { ICommunityPlatformMemberBan } from "../../../../structures/ICommunityPl
 import { IPageICommunityPlatformMemberBan } from "../../../../structures/IPageICommunityPlatformMemberBan";
 
 /**
- * Create a new member ban record.
- *
  * Create a new member ban for disciplinary purposes. This operation allows
  * moderators or administrators to ban a member from the platform or from
  * specific communities. The ban can be temporary (with an expiration date) or
@@ -116,8 +114,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of member bans.
- *
  * Retrieve a comprehensive filtered and paginated list of member bans with
  * advanced search and sorting capabilities. This operation allows moderators
  * and administrators to search for permanent bans using various criteria
@@ -228,8 +224,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific member ban record by ID.
- *
  * Retrieve detailed information about a specific member ban using its unique
  * identifier. This operation provides comprehensive ban details including the
  * member who was banned, the community affected (if applicable), the ban reason
@@ -327,8 +321,6 @@ export namespace at {
 }
 
 /**
- * Delete a member ban record from the community platform.
- *
  * Remove a permanent member ban record by its unique identifier. This operation
  * permanently deletes the ban entry from the community_platform_member_bans
  * table, which removes the access restriction previously imposed on the banned

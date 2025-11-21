@@ -12,8 +12,6 @@ import { IDiscussionBoardModerator } from "../../../../api/structures/IDiscussio
 @Controller("/discussionBoard/moderator/moderators")
 export class DiscussionboardModeratorModeratorsController {
   /**
-   * Search and retrieve a filtered list of moderators.
-   *
    * Retrieve a list of moderators with advanced filtering and pagination. This
    * operation allows administrators to search for moderators based on various
    * criteria such as name, email, status, and permissions. It supports complex
@@ -42,8 +40,6 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Retrieve detailed information about a specific moderator.
-   *
    * Get detailed information about a moderator by their unique identifier. This
    * operation returns comprehensive details about the moderator, including
    * their permissions, status, and activity history. It is designed for

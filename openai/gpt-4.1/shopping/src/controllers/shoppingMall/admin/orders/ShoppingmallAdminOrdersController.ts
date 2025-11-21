@@ -13,8 +13,6 @@ import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrde
 @Controller("/shoppingMall/admin/orders")
 export class ShoppingmallAdminOrdersController {
   /**
-   * Search, filter, and paginate shopping_mall_orders records.
-   *
    * Retrieve a filtered and paginated list of all orders submitted on the
    * platform.
    *
@@ -61,8 +59,6 @@ export class ShoppingmallAdminOrdersController {
   }
 
   /**
-   * Get the complete shopping_mall_orders record by unique order_number.
-   *
    * Fetches the complete details for a specific order identified by its
    * globally unique business order number.
    *
@@ -105,9 +101,6 @@ export class ShoppingmallAdminOrdersController {
   }
 
   /**
-   * Soft delete a shopping mall order by its unique business order number
-   * (shopping_mall_orders table).
-   *
    * Permanently remove a shopping mall order by its unique business order
    * number.
    *

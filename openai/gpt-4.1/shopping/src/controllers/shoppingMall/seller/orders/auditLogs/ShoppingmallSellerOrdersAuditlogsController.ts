@@ -10,9 +10,6 @@ import { IShoppingMallOrderAuditLog } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/seller/orders/:orderNumber/auditLogs/:auditLogId")
 export class ShoppingmallSellerOrdersAuditlogsController {
   /**
-   * Retrieve a specific audit log record for an order
-   * (shopping_mall_order_audit_logs).
-   *
    * Retrieve a single, detailed audit log event for a given order using the
    * business order number and the unique auditLogId. This operation allows
    * authorized actors (admin or the responsible seller) to view a specific

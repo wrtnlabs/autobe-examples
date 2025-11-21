@@ -10,9 +10,6 @@ import { ITodoUser } from "../../../api/structures/ITodoUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * User registration endpoint for todo_users table with initial
-   * authentication.
-   *
    * Registers a new user in the todo_users table and issues access/refresh
    * tokens. Enforces email uniqueness and password policy. Returns authorized
    * JWTs on success. Account creation is public and unauthenticated. Strict
@@ -44,8 +41,6 @@ export class AuthUserController {
   }
 
   /**
-   * User login endpoint for todo_users table with JWT issuance.
-   *
    * Authenticates a registered user against the todo_users table. Validates
    * email and password fields. Issues authorized JWTs on success. Error
    * handling and rate-limiting are strictly enforced as per security
@@ -77,8 +72,6 @@ export class AuthUserController {
   }
 
   /**
-   * User token refresh endpoint utilizing todo_user_sessions tracking.
-   *
    * Refreshes JWT tokens for a user based on a valid refresh token. Operates
    * using todo_user_sessions schema. Enforces secure token rotation, session
    * tracking, and strict invalidation on misuse. Critical to long-life

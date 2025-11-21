@@ -8,9 +8,6 @@ import { IPageIDiscussionBoardAdmin } from "../../../../structures/IPageIDiscuss
 export * as sessions from "./sessions/index";
 
 /**
- * Search, filter, and paginate administrator accounts from the
- * discussion_board_admins table.
- *
  * List and search for administrator accounts registered for the discussion
  * board system.
  *
@@ -107,9 +104,6 @@ export namespace index {
 }
 
 /**
- * Retrieve administrator account details by adminId from
- * discussion_board_admins.
- *
  * Retrieve the complete administrator account profile using the unique admin
  * ID. This API returns all visible details of the admin, including the email
  * address, creation and update timestamps, and the current status (active or
@@ -207,8 +201,6 @@ export namespace at {
 }
 
 /**
- * Update administrator account profile in discussion_board_admins by adminId.
- *
  * Update the profile information for a specific administrator account
  * identified by adminId. This includes changing the admin's email address,
  * rotating the password hash (for password resets), and enabling or revoking
@@ -318,9 +310,6 @@ export namespace update {
 }
 
 /**
- * Delete a system administrator account (discussion_board_admins) by unique
- * adminId.
- *
  * Permanently delete a system administration account from the discussion
  * board's governance infrastructure.
  *

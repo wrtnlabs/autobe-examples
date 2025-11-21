@@ -8,8 +8,6 @@ import { IEconomicDiscussionTrendingList } from "../../../../api/structures/IEco
 @Controller("/economicDiscussion/discovery/trending")
 export class EconomicdiscussionDiscoveryController {
   /**
-   * Retrieve trending economic and political discussions.
-   *
    * Retrieves a list of trending articles based on recent community activity
    * and engagement metrics. The trending discovery endpoint analyzes articles
    * from the past 24 hours to identify the most actively discussed economic and

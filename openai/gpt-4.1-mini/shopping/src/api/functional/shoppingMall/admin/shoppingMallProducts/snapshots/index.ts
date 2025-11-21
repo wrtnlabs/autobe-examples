@@ -7,8 +7,6 @@ import { IShoppingMallProductSnapshot } from "../../../../../structures/IShoppin
 import { IPageIShoppingMallProductSnapshot } from "../../../../../structures/IPageIShoppingMallProductSnapshot";
 
 /**
- * Search and paginate shopping mall product snapshots.
- *
  * Retrieve a filtered and paginated list of shopping mall product snapshots
  * representing historical product data at specific points in time.
  *
@@ -102,8 +100,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific shopping mall product snapshot by ID.
- *
  * Retrieve detailed information of a shopping mall product snapshot by its
  * unique identifier.
  *

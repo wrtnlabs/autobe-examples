@@ -15,9 +15,6 @@ import { IPageICommunityPlatformPolicyDocument } from "../../../../api/structure
 @Controller("/communityPlatform/administrator/policyDocuments")
 export class CommunityplatformAdministratorPolicydocumentsController {
   /**
-   * Create a new legal or compliance policy document in the
-   * community_platform_policy_documents table.
-   *
    * This API operation registers a new platform legal or compliance document,
    * such as Terms of Service, Privacy Policy, or other regulatory requirement
    * documents, and saves all essential metadata in the canonical policy
@@ -64,9 +61,6 @@ export class CommunityplatformAdministratorPolicydocumentsController {
   }
 
   /**
-   * Search and retrieve a paginated list of platform policy documents
-   * (community_platform_policy_documents table).
-   *
    * Retrieve a filtered and paginated list of policy documents relevant to the
    * community platform's legal, compliance, and governance domains.
    *
@@ -114,9 +108,6 @@ export class CommunityplatformAdministratorPolicydocumentsController {
   }
 
   /**
-   * Retrieve a specific platform policy document by policyType and version
-   * (community_platform_policy_documents table).
-   *
    * Fetch the detailed metadata and access URI for a specific policy or legal
    * document based on its type (e.g., 'tos', 'privacy') and version
    * identifier.
@@ -165,9 +156,6 @@ export class CommunityplatformAdministratorPolicydocumentsController {
   }
 
   /**
-   * Update or revise a specific legal or compliance policy document in the
-   * community_platform_policy_documents table by policy_type and version.
-   *
    * This API operation enables administrative updating of the content,
    * effective date, or description of a previously registered legal or
    * compliance document, as stored in the community_platform_policy_documents
@@ -224,9 +212,6 @@ export class CommunityplatformAdministratorPolicydocumentsController {
   }
 
   /**
-   * Soft-delete (retire) a platform policy/legal document by type and version;
-   * marks as deleted in community_platform_policy_documents.
-   *
    * Delete a specific canonical policy or legal document by its type and
    * version from the community platform. This operation is used for managing
    * the lifecycle of compliance-related documents, such as retiring outdated

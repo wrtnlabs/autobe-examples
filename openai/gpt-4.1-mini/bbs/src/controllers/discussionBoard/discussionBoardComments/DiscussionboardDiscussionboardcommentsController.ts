@@ -8,8 +8,6 @@ import { IDiscussionBoardComment } from "../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/discussionBoardComments/:id")
 export class DiscussionboardDiscussionboardcommentsController {
   /**
-   * Retrieve detailed information of a discussion board comment by ID.
-   *
    * Retrieve a single discussion board comment by its unique identifier.
    *
    * This operation returns the full details of the comment, including its text

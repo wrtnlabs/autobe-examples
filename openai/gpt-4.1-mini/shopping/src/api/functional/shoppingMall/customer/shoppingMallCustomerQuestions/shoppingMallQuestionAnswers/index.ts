@@ -7,9 +7,6 @@ import { IShoppingMallQuestionAnswer } from "../../../../../structures/IShopping
 import { IPageIShoppingMallQuestionAnswer } from "../../../../../structures/IPageIShoppingMallQuestionAnswer";
 
 /**
- * List seller answers for a specific customer question with filtering and
- * pagination.
- *
  * Retrieve a paginated list of seller answers for the specified shopping mall
  * customer question.
  *
@@ -118,9 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific seller answer to a customer question in the shopping
- * mall.
- *
  * Retrieve detailed information about a specific seller answer to a customer
  * question within the shopping mall platform.
  *

@@ -8,8 +8,6 @@ import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 @Controller("/redditCommunity/admin/redditCommunity/communities/:communityName")
 export class RedditcommunityAdminRedditcommunityCommunitiesController {
   /**
-   * Delete a reddit community by its unique name.
-   *
    * Permanently delete the specified community identified by its unique name
    * from the redditCommunity platform.
    *

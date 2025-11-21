@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMember } from "../../../structures/IDiscussionBoardMember";
 
 /**
- * Register a new member account for discussion board access.
- *
  * This endpoint handles member registration for the discussion board platform.
  * It creates a new member account in the discussion_board_members table by
  * validating the provided email address for uniqueness against existing member
@@ -120,8 +118,6 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing member and issue access tokens.
- *
  * This endpoint handles member authentication by validating provided
  * credentials against the discussion_board_members table. It performs secure
  * password verification by comparing the hashed password stored in the
@@ -229,8 +225,6 @@ export namespace login {
 }
 
 /**
- * Refresh authentication tokens for continuous member access.
- *
  * This endpoint handles token refresh operations for authenticated members,
  * allowing them to maintain continuous access to discussion board features
  * without re-entering credentials. It validates the provided refresh token

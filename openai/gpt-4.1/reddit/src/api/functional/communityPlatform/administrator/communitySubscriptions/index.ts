@@ -5,9 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as auditLogs from "./auditLogs/index";
 
 /**
- * Permanently remove a community subscription (hard delete) by ID from
- * community_platform_community_subscriptions.
- *
  * This endpoint allows for the permanent removal of a specific community
  * subscription record, identified by its unique subscription ID. It is intended
  * for administrative functions or exceptional cases (such as regulatory

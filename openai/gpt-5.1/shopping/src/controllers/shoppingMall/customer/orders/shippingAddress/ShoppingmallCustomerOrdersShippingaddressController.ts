@@ -7,8 +7,6 @@ import { IShoppingMallOrderShippingAddress } from "../../../../../api/structures
 @Controller("/shoppingMall/customer/orders/:orderCode/shippingAddress")
 export class ShoppingmallCustomerOrdersShippingaddressController {
   /**
-   * Create shipping address snapshot for an order in shopping_mall_orders.
-   *
    * Create or attach a shipping address snapshot for the specified order,
    * identified by its business orderCode.
    *
@@ -72,8 +70,6 @@ export class ShoppingmallCustomerOrdersShippingaddressController {
   }
 
   /**
-   * Update shipping address snapshot for an order in shopping_mall_orders.
-   *
    * Update the shipping address snapshot currently associated with the
    * specified order, identified by its business orderCode.
    *

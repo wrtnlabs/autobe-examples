@@ -12,9 +12,6 @@ import { IShoppingMallOrderStatusHistory } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/orders/:orderId/statusHistories")
 export class ShoppingmallAdminOrdersStatushistoriesController {
   /**
-   * Search and retrieve filtered order status history records for a specific
-   * order.
-   *
    * Retrieve a comprehensive audit trail of status transitions for a specific
    * order in the shopping mall platform. This operation provides visibility
    * into the complete lifecycle of an order by returning all status change
@@ -73,8 +70,6 @@ export class ShoppingmallAdminOrdersStatushistoriesController {
   }
 
   /**
-   * Retrieve detailed information about a specific order status history record.
-   *
    * Retrieve comprehensive details about a single status transition event in an
    * order's lifecycle. This operation returns complete information about a
    * specific status change including when it occurred, what status was set, any

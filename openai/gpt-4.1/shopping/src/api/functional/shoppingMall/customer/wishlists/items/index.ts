@@ -7,9 +7,6 @@ import { IShoppingMallWishlistItem } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallWishlistItem } from "../../../../../structures/IPageIShoppingMallWishlistItem";
 
 /**
- * Add a new item (SKU) to a shopping mall wishlist
- * (shopping_mall_wishlist_items table).
- *
  * Add a product to a customer's wishlist by creating a new wishlist item under
  * the specified wishlist.
  *
@@ -118,9 +115,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of wishlist items for a specific
- * wishlist (shopping_mall_wishlist_items).
- *
  * Fetch the complete contents of a given wishlist in a paginated, searchable
  * fashion, leveraging the shopping_mall_wishlist_items subsidiary table.
  *
@@ -227,9 +221,6 @@ export namespace index {
 }
 
 /**
- * Get details of a specific shopping mall wishlist item for a given wishlist
- * (shopping_mall_wishlist_items table).
- *
  * Retrieve information for a single item within a customer wishlist using
  * specified wishlist and item identifiers.
  *
@@ -331,9 +322,6 @@ export namespace at {
 }
 
 /**
- * Update a specific item in a shopping mall wishlist
- * (shopping_mall_wishlist_items table).
- *
  * Update the details of a specific wishlist item in a customer's wishlist.
  *
  * This operation enables modifications to a wishlist item—such as changing the
@@ -447,9 +435,6 @@ export namespace update {
 }
 
 /**
- * Permanently remove a specific wishlist item (shopping_mall_wishlist_items
- * table) from a wishlist.
- *
  * Remove (delete) a specific item from a customer's wishlist.
  *
  * This operation allows authenticated customers to permanently delete a

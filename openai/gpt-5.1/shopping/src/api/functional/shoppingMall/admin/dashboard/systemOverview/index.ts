@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallSystemOverviewDashboard } from "../../../../../structures/IShoppingMallSystemOverviewDashboard";
 
 /**
- * Get an aggregated system overview dashboard derived from shoppingMall
- * analytics and snapshot tables.
- *
  * Retrieve a consolidated system overview dashboard for the shoppingMall
  * platform.
  *

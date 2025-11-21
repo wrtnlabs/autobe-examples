@@ -8,8 +8,6 @@ import { ModeratorPayload } from "../../../../../decorators/payload/ModeratorPay
 @Controller("/redditCommunity/moderator/posts/:postId/comments/:commentId")
 export class RedditcommunityModeratorPostsCommentsController {
   /**
-   * Permanently delete a specific comment from a post.
-   *
    * Permanently remove a comment from a post in the community platform. This
    * operation performs a hard deletion that completely removes the comment
    * record from the database, making it unrecoverable.

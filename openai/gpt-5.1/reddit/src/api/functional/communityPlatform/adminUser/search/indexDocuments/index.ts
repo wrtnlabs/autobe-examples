@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformIndexDocuments } from "../../../../../structures/ICommunityPlatformIndexDocuments";
 
 /**
- * Index or re-index community platform documents into the search index store.
- *
  * Trigger indexing or re-indexing of community platform documents into the
  * search index layer.
  *
@@ -126,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Delete a search index document row from the community_platform_search_indexes
- * table by identifier.
- *
  * Delete a single search index document record identified by its unique
  * identifier from the `community_platform_search_indexes` table.
  *

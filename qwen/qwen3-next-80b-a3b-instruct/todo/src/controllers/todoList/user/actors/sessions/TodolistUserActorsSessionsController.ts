@@ -8,8 +8,6 @@ import { UserPayload } from "../../../../../decorators/payload/UserPayload";
 @Controller("/todoList/user/actors/:userId/sessions/:sessionId")
 export class TodolistUserActorsSessionsController {
   /**
-   * Permanently delete a user session by user and session identifiers.
-   *
    * Permanently delete a user session by combining the user identifier and
    * session identifier. This operation removes the session record from the
    * database and immediately invalidates the associated authentication token.

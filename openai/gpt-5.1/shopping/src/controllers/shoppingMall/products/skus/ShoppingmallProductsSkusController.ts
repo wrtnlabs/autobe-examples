@@ -7,8 +7,6 @@ import { IShoppingMallSku } from "../../../../api/structures/IShoppingMallSku";
 @Controller("/shoppingMall/products/:productId/skus/:skuId")
 export class ShoppingmallProductsSkusController {
   /**
-   * Retrieve a specific SKU (shopping_mall_skus) for a given product.
-   *
    * Retrieve detailed information for a specific SKU that belongs to a given
    * product.
    *

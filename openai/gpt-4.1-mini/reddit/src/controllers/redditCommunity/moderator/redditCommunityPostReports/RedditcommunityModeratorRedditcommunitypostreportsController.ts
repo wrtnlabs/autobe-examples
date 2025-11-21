@@ -10,8 +10,6 @@ import { ModeratorPayload } from "../../../../decorators/payload/ModeratorPayloa
 )
 export class RedditcommunityModeratorRedditcommunitypostreportsController {
   /**
-   * Delete a specific reddit community post report.
-   *
    * This operation permanently deletes a reddit community post report
    * identified by the postReportId path parameter.
    *

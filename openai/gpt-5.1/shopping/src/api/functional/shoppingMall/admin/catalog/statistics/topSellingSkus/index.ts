@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCatalogTopSellingSkuStatistics } from "../../../../../../structures/IShoppingMallCatalogTopSellingSkuStatistics";
 
 /**
- * Retrieve top-selling SKU statistics derived from order and SKU tables in the
- * shoppingMall schema.
- *
  * Retrieve aggregated statistics describing the top-selling SKUs on the
  * shoppingMall platform over a specified analysis window.
  *

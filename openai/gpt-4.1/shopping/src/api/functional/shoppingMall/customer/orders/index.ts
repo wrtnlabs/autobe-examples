@@ -8,8 +8,6 @@ export * as items from "./items/index";
 export * as shipments from "./shipments/index";
 
 /**
- * Create a new order record in shopping_mall_orders.
- *
  * Create a new shopping mall order on the platform.
  *
  * This operation enables customers (or system actors on their behalf) to place
@@ -117,8 +115,6 @@ export namespace create {
 }
 
 /**
- * Update an order in shopping_mall_orders by order_number.
- *
  * Update the details of an existing shopping mall order identified by its
  * business-unique order_number.
  *

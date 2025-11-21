@@ -8,9 +8,6 @@ import { IPageICommunityPlatformCommunity } from "../../../structures/IPageIComm
 export * as subscribers from "./subscribers/index";
 
 /**
- * Search communities in the community_platform_communities table with
- * filtering, sorting, and pagination.
- *
  * Search and retrieve a paginated list of communities from the
  * community_platform_communities table according to flexible filter and sort
  * criteria.
@@ -139,9 +136,6 @@ export namespace index {
 }
 
 /**
- * Get a single community_platform_communities record by its global slug as
- * ICommunityPlatformCommunity.
- *
  * Retrieve a single community resource identified by a human-readable slug from
  * the community_platform_communities table.
  *

@@ -7,10 +7,6 @@ import { IShoppingMallActorSecurityOverview } from "../../../../../api/structure
 @Controller("/shoppingMall/admin/actors/securityOverview")
 export class ShoppingmallAdminActorsSecurityoverviewController {
   /**
-   * Provide an aggregated security overview for actors using security‑event
-   * Prisma tables such as shopping_mall_actor_security_events and its linkage
-   * tables.
-   *
    * Get a consolidated security overview for actors on the shoppingMall
    * platform.
    *

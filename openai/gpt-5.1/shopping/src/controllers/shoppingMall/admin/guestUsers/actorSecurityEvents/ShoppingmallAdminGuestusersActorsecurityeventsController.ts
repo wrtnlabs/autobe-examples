@@ -8,9 +8,6 @@ import { IShoppingMallActorSecurityEvent } from "../../../../../api/structures/I
 @Controller("/shoppingMall/admin/guestUsers/:guestUserId/actorSecurityEvents")
 export class ShoppingmallAdminGuestusersActorsecurityeventsController {
   /**
-   * Search actor security events for a specific guest user using
-   * `shopping_mall_actor_security_events` and its guest-user linkage.
-   *
    * Search and retrieve actor security events associated with a specific
    * guest user actor within the shoppingMall platform.
    *

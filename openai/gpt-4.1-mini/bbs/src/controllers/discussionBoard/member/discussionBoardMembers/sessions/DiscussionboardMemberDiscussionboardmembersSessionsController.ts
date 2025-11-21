@@ -13,8 +13,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 )
 export class DiscussionboardMemberDiscussionboardmembersSessionsController {
   /**
-   * Create a new session for a discussion board member.
-   *
    * Create a new authentication session record for a discussion board member.
    *
    * This operation allows the system to record and track an authentication
@@ -63,8 +61,6 @@ export class DiscussionboardMemberDiscussionboardmembersSessionsController {
   }
 
   /**
-   * Update a session of a discussion board member.
-   *
    * Update an existing authentication session record for a discussion board
    * member.
    *

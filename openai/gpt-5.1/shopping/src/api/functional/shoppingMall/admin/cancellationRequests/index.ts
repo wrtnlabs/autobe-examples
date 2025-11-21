@@ -8,9 +8,6 @@ import { IPageIShoppingMallCancellationRequest } from "../../../../structures/IP
 export * as items from "./items/index";
 
 /**
- * Search and list cancellation requests from the
- * shopping_mall_cancellation_requests table with filtering and pagination.
- *
  * Search and retrieve a filtered, paginated list of cancellation requests
  * recorded in the shopping mall platform.
  *
@@ -130,9 +127,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single cancellation request record from the
- * shopping_mall_cancellation_requests table by its identifier.
- *
  * Retrieve a single cancellation request record by its unique identifier from
  * the `shopping_mall_cancellation_requests` table.
  *
@@ -247,9 +241,6 @@ export namespace at {
 }
 
 /**
- * Update a shopping_mall_cancellation_requests record representing a
- * cancellation request.
- *
  * Update an existing cancellation request in the shopping mall platform.
  *
  * This operation targets the shopping_mall_cancellation_requests table, which
@@ -379,9 +370,6 @@ export namespace update {
 }
 
 /**
- * Erase a shopping_mall_cancellation_requests record representing a
- * cancellation request.
- *
  * Permanently remove an existing cancellation request from the
  * shopping_mall_cancellation_requests table.
  *

@@ -12,9 +12,6 @@ import { ICommunityForumCommunityModerator } from "../../../api/structures/IComm
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register a new moderator account in the community forum platform, creating
-   * a moderator record linked to an existing user account.
-   *
    * Registers a new moderator account in the community forum platform. This
    * endpoint creates a new entry in the community_forum_moderators table,
    * linking to an existing user account. The moderator role grants elevated
@@ -63,9 +60,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate an existing moderator and issue new JWT tokens for accessing
-   * moderation features.
-   *
    * Authenticates an existing moderator in the community forum platform. This
    * endpoint validates the moderator's credentials and issues new JWT access
    * and refresh tokens for authorized access to moderation features.
@@ -112,9 +106,6 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh the JWT tokens for an authenticated moderator session, extending
-   * the session validity period.
-   *
    * Refreshes the JWT tokens for an authenticated moderator session in the
    * community forum platform. This endpoint validates the current refresh token
    * and issues new access and refresh tokens, extending the moderator's

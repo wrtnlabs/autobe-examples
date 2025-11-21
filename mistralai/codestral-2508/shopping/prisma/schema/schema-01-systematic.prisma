@@ -1,6 +1,7 @@
-/// Shopping mall channel information. A channel is a distinct section of the
-/// shopping mall that can have its own configuration and sections. Channels
-/// are used to organize products and services into logical groups.
+/// Shopping mall channel information. Represents individual sales channels
+/// within the mall system. Each channel has unique configuration and can
+/// contain multiple sections. Channels are managed by administrators and
+/// referenced by other domain entities.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,24 +12,25 @@ model shopping_mall_channels {
   /// Primary Key.
   id String @id
   
-  /// Unique code for the channel. Used for identification and reference
-  /// purposes.
+  /// Unique channel code. Used for identification and reference across the
+  /// system.
   code String
   
-  /// Name of the channel. Displayed to users to identify the channel.
+  /// Display name of the channel. Used for user-facing identification.
   name String
   
-  /// Description of the channel. Provides additional information about the
-  /// channel's purpose and content.
+  /// Detailed description of the channel. Provides context about the channel's
+  /// purpose and content.
   description String?
   
-  /// Timestamp when the channel was created.
+  /// Timestamp when the channel was created. Used for auditing and sorting.
   created_at DateTime
   
-  /// Timestamp when the channel was last updated.
+  /// Timestamp when the channel was last updated. Used for version tracking.
   updated_at DateTime
   
-  /// Timestamp when the channel was deleted (soft delete).
+  /// Timestamp when the channel was deleted. Used for soft deletion and
+  /// auditing.
   deleted_at DateTime?
   
   //----
@@ -37,15 +39,17 @@ model shopping_mall_channels {
   shopping_mall_sections shopping_mall_sections[]
   shopping_mall_configurations shopping_mall_configurations[]
   shopping_mall_sales shopping_mall_sales[]
-  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_article_categories shopping_mall_article_categories[]
   
   @@unique([code])
-  @@index([created_at])
+  @@index([name])
 }
 
-/// Shopping mall section information. A section is a distinct area within a
-/// channel that can have its own configuration and products. Sections are
-/// used to further organize products and services into logical subgroups.
+/// Shopping mall section information. Represents organizational units within
+/// channels. Sections group related products and content within a channel.
+/// Each section belongs to a specific channel and can contain multiple
+/// configurations.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -56,27 +60,28 @@ model shopping_mall_sections {
   /// Primary Key.
   id String @id
   
-  /// Channel that this section belongs to. {@link shopping_mall_channels.id}
+  /// Belongs to channel's {@link shopping_mall_channels.id}.
   shopping_mall_channel_id String
   
-  /// Unique code for the section. Used for identification and reference
-  /// purposes.
+  /// Unique section code within the channel. Used for identification and
+  /// reference.
   code String
   
-  /// Name of the section. Displayed to users to identify the section.
+  /// Display name of the section. Used for user-facing identification.
   name String
   
-  /// Description of the section. Provides additional information about the
-  /// section's purpose and content.
+  /// Detailed description of the section. Provides context about the section's
+  /// purpose and content.
   description String?
   
-  /// Timestamp when the section was created.
+  /// Timestamp when the section was created. Used for auditing and sorting.
   created_at DateTime
   
-  /// Timestamp when the section was last updated.
+  /// Timestamp when the section was last updated. Used for version tracking.
   updated_at DateTime
   
-  /// Timestamp when the section was deleted (soft delete).
+  /// Timestamp when the section was deleted. Used for soft deletion and
+  /// auditing.
   deleted_at DateTime?
   
   //----
@@ -86,15 +91,16 @@ model shopping_mall_sections {
   
   shopping_mall_configurations shopping_mall_configurations[]
   shopping_mall_sales shopping_mall_sales[]
-  shopping_mall_articles shopping_mall_articles[]
   
   @@unique([shopping_mall_channel_id, code])
-  @@index([created_at])
+  @@index([name])
+  @@index([shopping_mall_channel_id])
 }
 
-/// Shopping mall configuration information. Configurations are used to store
-/// system-wide settings and preferences for the shopping mall.
-/// Configurations can be specific to a channel or section.
+/// Shopping mall configuration information. Represents system settings and
+/// preferences for channels and sections. Configurations control behavior
+/// and appearance of the mall components. Each configuration belongs to
+/// either a channel or a section.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -105,32 +111,32 @@ model shopping_mall_configurations {
   /// Primary Key.
   id String @id
   
-  /// Channel that this configuration belongs to. {@link
-  /// shopping_mall_channels.id}
+  /// Belongs to channel's {@link shopping_mall_channels.id}.
   shopping_mall_channel_id String?
   
-  /// Section that this configuration belongs to. {@link
-  /// shopping_mall_sections.id}
+  /// Belongs to section's {@link shopping_mall_sections.id}.
   shopping_mall_section_id String?
   
-  /// Unique key for the configuration. Used for identification and reference
-  /// purposes.
+  /// Configuration key. Identifies the specific setting being configured.
   key String
   
-  /// Value of the configuration. Stores the actual configuration data.
+  /// Configuration value. Contains the setting's value or data.
   value String
   
-  /// Description of the configuration. Provides additional information about
-  /// the configuration's purpose and usage.
+  /// Detailed description of the configuration. Explains the purpose and usage
+  /// of the setting.
   description String?
   
-  /// Timestamp when the configuration was created.
+  /// Timestamp when the configuration was created. Used for auditing and
+  /// sorting.
   created_at DateTime
   
-  /// Timestamp when the configuration was last updated.
+  /// Timestamp when the configuration was last updated. Used for version
+  /// tracking.
   updated_at DateTime
   
-  /// Timestamp when the configuration was deleted (soft delete).
+  /// Timestamp when the configuration was deleted. Used for soft deletion and
+  /// auditing.
   deleted_at DateTime?
   
   //----
@@ -139,9 +145,9 @@ model shopping_mall_configurations {
   channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
   section shopping_mall_sections? @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
   
+  @@unique([shopping_mall_channel_id, key])
+  @@unique([shopping_mall_section_id, key])
+  @@index([key])
   @@index([shopping_mall_channel_id])
   @@index([shopping_mall_section_id])
-  
-  @@unique([key])
-  @@index([created_at])
 }

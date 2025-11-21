@@ -10,8 +10,6 @@ import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 )
 export class ShoppingmallAdminShoppingmallcategoriesShoppingmallcategoryhierarchiesController {
   /**
-   * Permanently delete a shopping mall category hierarchy record by ID.
-   *
    * Permanently delete a shopping mall category hierarchy record by its unique
    * identifier in the context of the specified parent category.
    *

@@ -13,8 +13,6 @@ export * as helpfulVotes from "./helpfulVotes/index";
 export * as reviewEligibilities from "./reviewEligibilities/index";
 
 /**
- * Update a ShoppingMall customer record in the `shopping_mall_customers` table.
- *
  * Update an existing customer account stored in the `shopping_mall_customers`
  * table and return the fully refreshed customer representation.
  *
@@ -142,9 +140,6 @@ export namespace update {
 }
 
 /**
- * Delete a ShoppingMall customer record from the `shopping_mall_customers`
- * table.
- *
  * Permanently remove an existing customer account from the
  * `shopping_mall_customers` table using its unique identifier.
  *

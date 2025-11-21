@@ -9,9 +9,6 @@ import { ICommunityPlatformComment } from "../../../../../../api/structures/ICom
 )
 export class CommunityplatformAdminuserPostsCommentsRepliesController {
   /**
-   * Update a specific reply comment in the community_platform_comments table
-   * identified by post, parent comment, and reply IDs.
-   *
    * Update a specific reply on a post comment while ensuring that it remains
    * correctly scoped under the specified post and parent comment and that all
    * business rules on editing are respected.
@@ -80,9 +77,6 @@ export class CommunityplatformAdminuserPostsCommentsRepliesController {
   }
 
   /**
-   * Delete a specific reply from the community_platform_comments table under
-   * a given post and parent comment.
-   *
    * Delete a specific reply on a post under a given parent comment.
    *
    * This operation targets the `community_platform_comments` model, which

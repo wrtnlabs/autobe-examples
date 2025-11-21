@@ -9,8 +9,6 @@ import { IDiscussionBoardPost } from "../../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/search/posts")
 export class DiscussionboardSearchPostsController {
   /**
-   * Search and retrieve filtered discussion board posts with pagination.
-   *
    * This operation enables users to search through discussion board posts using
    * advanced filtering criteria and pagination controls. It supports searching
    * by post title, content text, channel categorization, section organization,

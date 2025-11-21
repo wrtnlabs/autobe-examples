@@ -8,9 +8,6 @@ import { IPageIDiscussionBoardArticle } from "../../../structures/IPageIDiscussi
 export * as attachments from "./attachments/index";
 
 /**
- * Retrieve a filtered, paginated list of articles from
- * discussion_board_articles.
- *
  * Query and retrieve a paginated list of discussion articles from the system.
  *
  * This operation enables searching, filtering, and paginating the main
@@ -116,9 +113,6 @@ export namespace index {
 }
 
 /**
- * Fetch complete detail for a single discussion board article by articleId
- * (discussion_board_articles).
- *
  * Retrieve the complete detail record for a single discussion board article
  * using its unique articleId (UUID primary key).
  *

@@ -9,8 +9,6 @@ export * as comments from "./comments/index";
 export * as attachments from "./attachments/index";
 
 /**
- * Create a new article in the discussion_board_articles table.
- *
  * Create a new discussion board article using the discussion_board_articles
  * model.
  *
@@ -135,8 +133,6 @@ export namespace create {
 }
 
 /**
- * Update an existing article in the discussion_board_articles table by its id.
- *
  * Update an existing discussion board article stored in the
  * discussion_board_articles model.
  *

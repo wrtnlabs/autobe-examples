@@ -5,9 +5,6 @@ import typia from "typia";
 import { ICommunityPlatformErrorLogOverview } from "../../../../../structures/ICommunityPlatformErrorLogOverview";
 
 /**
- * Get an analytical overview of recent error activity based on the
- * community_platform_error_logs table.
- *
  * Retrieve an analytical overview of technical error activity recorded in the
  * community_platform_error_logs table.
  *

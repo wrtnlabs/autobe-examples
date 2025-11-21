@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardContentReport } from "../../../../../structures/IDiscussionBoardContentReport";
 
 /**
- * Create a new content report for an article flagging potential policy
- * violations.
- *
  * Submit a new content report flagging an article for potential policy
  * violations or inappropriate content.
  *

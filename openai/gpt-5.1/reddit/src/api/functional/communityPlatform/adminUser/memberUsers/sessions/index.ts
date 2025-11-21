@@ -7,9 +7,6 @@ import { ICommunityPlatformMemberuserSession } from "../../../../../structures/I
 import { IPageICommunityPlatformMemberuserSession } from "../../../../../structures/IPageICommunityPlatformMemberuserSession";
 
 /**
- * Search and retrieve a paginated list of member user session summaries from
- * community_platform_memberuser_sessions.
- *
  * Retrieve a filtered, paginated list of session records for a specific member
  * user identified by username.
  *
@@ -162,9 +159,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific member user session from
- * community_platform_memberuser_sessions.
- *
  * Retrieve detailed information about a single session for a specific member
  * user, identified by username and sessionId.
  *
@@ -305,9 +299,6 @@ export namespace at {
 }
 
 /**
- * Erase a specific session record for a member user in the
- * community_platform_memberuser_sessions table.
- *
  * Erase a specific session belonging to a given member user by username and
  * session identifier.
  *

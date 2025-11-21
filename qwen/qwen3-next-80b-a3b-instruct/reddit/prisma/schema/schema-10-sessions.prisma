@@ -1,0 +1,13 @@
+/// Placeholder model to satisfy schema requirement for non-empty models
+/// array. This component intentionally contains no actual tables as session
+/// management is exclusively handled by the Actors component.
+///
+/// @namespace Sessions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+}

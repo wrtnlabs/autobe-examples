@@ -8,9 +8,6 @@ import { IShoppingMallInventoryAdjustment } from "../../../../../api/structures/
 @Controller("/shoppingMall/admin/analytics/sellerInventoryAdjustments")
 export class ShoppingmallAdminAnalyticsSellerinventoryadjustmentsController {
   /**
-   * Retrieve aggregated analytics for seller inventory adjustments based on
-   * shopping_mall_inventory_adjustments and related tables.
-   *
    * Retrieve aggregated analytics for seller inventory adjustments recorded
    * in the shoppingMall platform.
    *

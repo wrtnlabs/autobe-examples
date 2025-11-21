@@ -13,8 +13,6 @@ import { IEconomicDiscussionComment } from "../../../../../api/structures/IEcono
 @Controller("/economicDiscussion/member/articles/:articleId/comments")
 export class EconomicdiscussionMemberArticlesCommentsController {
   /**
-   * Add a new comment to an article with automatic member attribution.
-   *
    * Add a new comment to an existing discussion article in the economic and
    * political discussion platform. This operation allows authenticated members
    * to provide textual feedback, opinions, and responses to published articles,
@@ -106,8 +104,6 @@ export class EconomicdiscussionMemberArticlesCommentsController {
   }
 
   /**
-   * Update an existing comment on an economic discussion article.
-   *
    * This operation allows authenticated economic discussion members to edit
    * their own comments on articles within the political discussion platform.
    * The update process maintains content integrity while providing users the
@@ -158,8 +154,6 @@ export class EconomicdiscussionMemberArticlesCommentsController {
   }
 
   /**
-   * Delete a comment from an economic discussion article.
-   *
    * This operation enables deletion of comments from economic and political
    * discussion articles on the platform. Members can delete their own comments
    * to remove content they no longer wish to share, while moderators have

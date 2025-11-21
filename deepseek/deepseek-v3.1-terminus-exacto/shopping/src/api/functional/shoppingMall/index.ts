@@ -1,0 +1,11 @@
+export * as channels from "./channels/index";
+export * as admin from "./admin/index";
+export * as categories from "./categories/index";
+export * as products from "./products/index";
+export * as seller from "./seller/index";
+export * as customer from "./customer/index";
+export * as orders from "./orders/index";
+export * as coupons from "./coupons/index";
+export * as rewards from "./rewards/index";
+export * as articles from "./articles/index";
+export * as reviews from "./reviews/index";

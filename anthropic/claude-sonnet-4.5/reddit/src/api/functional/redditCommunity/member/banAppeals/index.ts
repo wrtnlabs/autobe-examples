@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityBanAppeal } from "../../../../structures/IRedditCommunityBanAppeal";
 
 /**
- * Retrieve detailed information about a specific ban appeal.
- *
  * Retrieve comprehensive details about a specific ban appeal using its unique
  * identifier. This operation provides access to the complete appeal record
  * including the user's appeal reason, current review status, moderator response

@@ -7,9 +7,6 @@ import { IShoppingMallSellerEarningsSummary } from "../../../../../../api/struct
 @Controller("/shoppingMall/admin/analytics/sellerEarnings/summary")
 export class ShoppingmallAdminAnalyticsSellerearningsSummaryController {
   /**
-   * Return a summarized view of seller earnings aggregated from
-   * shopping_mall_seller_earnings.
-   *
    * Provide an aggregated analytical summary of seller earnings based on data
    * from the shopping_mall_seller_earnings table and its related payout and
    * order entities.

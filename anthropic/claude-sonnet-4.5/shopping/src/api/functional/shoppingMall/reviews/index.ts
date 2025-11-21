@@ -10,8 +10,6 @@ export * as sellerResponse from "./sellerResponse/index";
 export * as helpfulnessVotes from "./helpfulnessVotes/index";
 
 /**
- * Search and retrieve a filtered, paginated list of product reviews.
- *
  * Retrieve a comprehensive, filterable list of product reviews from the
  * shopping mall platform. This operation provides advanced search and filtering
  * capabilities for discovering reviews based on multiple criteria including
@@ -128,8 +126,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific product review.
- *
  * Retrieve complete details of a single product review identified by its unique
  * ID. This operation returns comprehensive review information including the
  * review content, star rating, reviewer details, purchase verification status,

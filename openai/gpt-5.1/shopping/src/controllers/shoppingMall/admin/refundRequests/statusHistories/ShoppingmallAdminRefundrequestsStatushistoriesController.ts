@@ -10,9 +10,6 @@ import { IShoppingMallRefundRequestStatusHistory } from "../../../../../api/stru
 )
 export class ShoppingmallAdminRefundrequestsStatushistoriesController {
   /**
-   * Search and list status history records for a refund request from the
-   * shopping_mall_refund_request_status_histories table.
-   *
    * Retrieve a paginated list of status history entries for a specific refund
    * request, with support for rich filtering and sorting criteria.
    *
@@ -82,9 +79,6 @@ export class ShoppingmallAdminRefundrequestsStatushistoriesController {
   }
 
   /**
-   * Get a specific status history record for a refund request from
-   * shopping_mall_refund_request_status_histories.
-   *
    * Fetch a detailed status history record for a specific refund request to
    * understand a particular lifecycle transition event.
    *

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
 
 /**
- * Register a new platform admin in the shopping_mall_admins table and issue JWT
- * tokens.
- *
  * This API operation allows registration of new admin accounts into the system
  * by collecting required credentials such as username, email, and password, as
  * specified in the 'shopping_mall_admins' Prisma schema. All input fields are
@@ -126,9 +123,6 @@ export namespace join {
 }
 
 /**
- * Authenticate admin credentials and issue new JWT tokens via the
- * shopping_mall_admins table.
- *
  * This API authenticates an admin account using credentials such as email and
  * password (or only those that exist in the 'shopping_mall_admins' schema). It
  * validates admin credentials against the stored database record, using secure
@@ -237,9 +231,6 @@ export namespace login {
 }
 
 /**
- * Renew admin JWT tokens via secure token refresh using the
- * shopping_mall_admins table.
- *
  * This API receives a valid refresh token for a platform admin, validates the
  * token against the session context and the 'shopping_mall_admins' schema, and
  * issues a new authentication token set. The token rotation logic is

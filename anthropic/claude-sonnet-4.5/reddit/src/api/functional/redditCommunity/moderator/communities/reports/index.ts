@@ -8,9 +8,6 @@ import { IPageIRedditCommunityReport } from "../../../../../structures/IPageIRed
 export * as statistics from "./statistics/index";
 
 /**
- * Search and retrieve filtered, paginated list of community content violation
- * reports.
- *
  * Retrieve a filtered and paginated list of content violation reports for a
  * specific community.
  *

@@ -7,9 +7,6 @@ import { IRedditCommunityComment } from "../../../api/structures/IRedditCommunit
 @Controller("/redditCommunity/comments/:commentId")
 export class RedditcommunityCommentsController {
   /**
-   * Retrieve detailed information for a specific community comment including
-   * content, voting statistics, and moderation status.
-   *
    * Retrieve complete details for a specific community comment by its unique
    * identifier. This operation provides comprehensive comment information
    * including the full textual content, voting statistics, authorship

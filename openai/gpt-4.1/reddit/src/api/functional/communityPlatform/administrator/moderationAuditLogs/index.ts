@@ -7,9 +7,6 @@ import { ICommunityPlatformModerationAuditLog } from "../../../../structures/ICo
 import { IPageICommunityPlatformModerationAuditLog } from "../../../../structures/IPageICommunityPlatformModerationAuditLog";
 
 /**
- * Retrieves a paginated, filterable list of moderation audit log records from
- * community_platform_moderation_audit_logs.
- *
  * Fetch a paginated list of moderation audit log records, supporting advanced
  * filtering and searching.
  *
@@ -118,9 +115,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single moderation audit log record by ID from the
- * community_platform_moderation_audit_logs table.
- *
  * Fetch a detailed moderation audit log entry using its unique identifier. This
  * operation allows administrators to review the specifics of any moderation
  * activity, such as actions taken in response to reports, escalations, or

@@ -15,9 +15,6 @@ import { IPageIShoppingMallShipmentTrackingHistory } from "../../../../../api/st
 @Controller("/shoppingMall/admin/shipments/:shipmentId/trackingHistories")
 export class ShoppingmallAdminShipmentsTrackinghistoriesController {
   /**
-   * Create a new shipment tracking history event beneath
-   * shopping_mall_shipments.
-   *
    * Append a new shipment tracking event to a specific existing shipment for
    * complete carrier/logistics event journaling.
    *
@@ -68,9 +65,6 @@ export class ShoppingmallAdminShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Retrieve paginated tracking history events for a specific shipment from
-   * shopping_mall_shipment_tracking_histories.
-   *
    * This endpoint returns the list of tracking status history events for a
    * given shipment. It provides all carrier or warehouse updates from dispatch
    * through delivery, showing detailed status codes, event times, locations,
@@ -119,9 +113,6 @@ export class ShoppingmallAdminShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Retrieve a specific shipment tracking event detail from
-   * shopping_mall_shipment_tracking_histories.
-   *
    * Fetch a detailed tracking event update for a specific shipment in the order
    * fulfillment system.
    *
@@ -174,9 +165,6 @@ export class ShoppingmallAdminShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Update a tracking history record in
-   * shopping_mall_shipment_tracking_histories.
-   *
    * Update an existing shipment tracking history record.
    *
    * This operation enables authorized users to amend details of a previously
@@ -231,9 +219,6 @@ export class ShoppingmallAdminShipmentsTrackinghistoriesController {
   }
 
   /**
-   * Permanently delete a tracking history record in
-   * shopping_mall_shipment_tracking_histories.
-   *
    * Delete (erase) an existing shipment tracking history record.
    *
    * This operation enables authorized administrators to irrevocably remove a

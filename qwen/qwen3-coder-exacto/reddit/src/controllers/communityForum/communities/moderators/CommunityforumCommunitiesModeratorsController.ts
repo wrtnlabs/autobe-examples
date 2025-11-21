@@ -8,8 +8,6 @@ import { ICommunityForumCommunityModerator } from "../../../../api/structures/IC
 @Controller("/communityForum/communities/:communityId/moderators/:moderatorId")
 export class CommunityforumCommunitiesModeratorsController {
   /**
-   * Get specific community moderator information.
-   *
    * Retrieve information about a specific community moderator.
    *
    * This endpoint returns detailed information about a user's moderator status

@@ -7,71 +7,54 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoListUserTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUserTodo";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function putTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
-  body: ITodoListTodo.IUpdate;
-}): Promise<ITodoListTodo> {
-  const input = props.body ?? {};
-  // Ensure at least one valid updatable field is present
-  const hasValidField =
-    input.title !== undefined ||
-    input.description !== undefined ||
-    input.completed !== undefined ||
-    input.due_date !== undefined;
-  if (!hasValidField) {
-    throw new HttpException(
-      "At least one updatable field (title, description, completed, due_date) must be provided.",
-      400,
-    );
-  }
-
-  // Fetch the todo for this user and todoId
-  const existing = await MyGlobal.prisma.todo_list_todos.findFirst({
+  body: ITodoListUserTodo.IUpdate;
+}): Promise<ITodoListUserTodo> {
+  // Verify the todo item exists and belongs to the authenticated user
+  const existingTodo = await MyGlobal.prisma.todo_list_todos.findFirst({
     where: {
       id: props.todoId,
-      user_id: props.user.id,
+      todo_list_user_id: props.user.id,
+      deleted_at: null,
     },
   });
-  if (!existing) {
-    throw new HttpException("Todo not found or not owned by user.", 404);
+
+  if (!existingTodo) {
+    throw new HttpException("Todo item not found or access denied", 404);
   }
 
-  // Prepare update values -- don't allow changing user_id
-  const updateData: Record<string, unknown> = {
-    ...(input.title !== undefined ? { title: input.title } : {}),
-    ...(input.description !== undefined
-      ? { description: input.description }
-      : {}),
-    ...(input.completed !== undefined ? { completed: input.completed } : {}),
-    ...(input.due_date !== undefined ? { due_date: input.due_date } : {}),
-    updated_at: toISOStringSafe(new Date()),
-  };
-
-  const updated = await MyGlobal.prisma.todo_list_todos.update({
+  // Perform the update operation with inline parameters
+  const updatedTodo = await MyGlobal.prisma.todo_list_todos.update({
     where: {
       id: props.todoId,
     },
-    data: updateData,
+    data: {
+      ...(props.body.title !== undefined && { title: props.body.title }),
+      ...(props.body.completed !== undefined && {
+        completed: props.body.completed,
+      }),
+      updated_at: toISOStringSafe(new Date()),
+    },
   });
 
-  // Compose user summary
-  const userSummary: ITodoListUser.ISummary = {
-    id: props.user.id,
-  };
-
+  // Return the updated todo item with proper type conversions
   return {
-    id: updated.id,
-    title: updated.title,
+    id: updatedTodo.id,
+    todo_list_user_id: updatedTodo.todo_list_user_id,
+    title: updatedTodo.title,
     description:
-      updated.description === null ? null : (updated.description ?? undefined),
-    completed: updated.completed,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    user: userSummary,
+      updatedTodo.description === null ? undefined : updatedTodo.description,
+    completed: updatedTodo.completed,
+    created_at: toISOStringSafe(updatedTodo.created_at),
+    updated_at: toISOStringSafe(updatedTodo.updated_at),
+    deleted_at:
+      updatedTodo.deleted_at === null
+        ? undefined
+        : toISOStringSafe(updatedTodo.deleted_at),
   };
 }

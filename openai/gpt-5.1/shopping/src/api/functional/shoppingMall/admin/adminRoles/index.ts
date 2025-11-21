@@ -8,8 +8,6 @@ import { IPageIShoppingMallAdminRole } from "../../../../structures/IPageIShoppi
 export * as assignments from "./assignments/index";
 
 /**
- * Create a new admin role record in the shopping_mall_admin_roles table.
- *
  * Create a new administrator role definition in the shopping mall RBAC system.
  *
  * This operation is designed to work with the `shopping_mall_admin_roles`
@@ -137,9 +135,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of admin roles from
- * shopping_mall_admin_roles.
- *
  * Retrieve a paginated and filterable list of administrative role definitions
  * from the `shopping_mall_admin_roles` table.
  *
@@ -261,9 +256,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information for a single admin role from
- * shopping_mall_admin_roles by code.
- *
  * Retrieve the full definition of a specific admin role from the
  * `shopping_mall_admin_roles` table using its unique role code.
  *
@@ -372,9 +364,6 @@ export namespace at {
 }
 
 /**
- * Update an existing admin role in the shopping_mall_admin_roles table by its
- * unique role code.
- *
  * Update an existing administrative role definition identified by its unique
  * role code.
  *
@@ -522,9 +511,6 @@ export namespace update {
 }
 
 /**
- * Erase a shopping_mall_admin_roles entry by its unique adminRoleCode,
- * following the model’s configured deletion strategy.
- *
  * Erase an administrative role identified by its stable business code from the
  * shoppingMall RBAC roles catalog.
  *

@@ -7,9 +7,6 @@ import { ICommunityPlatformMemberPreference } from "../../../../../api/structure
 @Controller("/communityPlatform/member/members/:memberId/preferences")
 export class CommunityplatformMemberMembersPreferencesController {
   /**
-   * Retrieve member preferences and settings from
-   * community_platform_member_preferences.
-   *
    * This operation fetches the complete preference record for an
    * authenticated member, including all notification settings, display
    * preferences, privacy controls, and content filtering options stored in
@@ -57,9 +54,6 @@ export class CommunityplatformMemberMembersPreferencesController {
   }
 
   /**
-   * Update member preferences and settings in
-   * community_platform_member_preferences.
-   *
    * This operation updates preference settings for an authenticated member,
    * allowing modification of notification preferences, display settings,
    * privacy controls, and content filtering options stored in the

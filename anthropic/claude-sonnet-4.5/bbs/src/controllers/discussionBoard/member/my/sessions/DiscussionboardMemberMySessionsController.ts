@@ -8,9 +8,6 @@ import { IDiscussionBoardMemberSession } from "../../../../../api/structures/IDi
 @Controller("/discussionBoard/member/my/sessions")
 export class DiscussionboardMemberMySessionsController {
   /**
-   * Retrieve paginated list of authentication sessions for the authenticated
-   * member.
-   *
    * Retrieve a filtered and paginated list of authentication sessions for the
    * currently authenticated member from the discussion board platform.
    *

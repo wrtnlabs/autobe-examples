@@ -1,7 +1,23 @@
-/// Main order entity representing customer purchases. Contains order header
-/// information and status tracking. Each order is associated with a specific
-/// customer and sale, and contains temporal information for lifecycle
-/// management.
+/// Customer orders containing order items and payment information.
+///
+/// Stores complete order details including customer information, shipping
+/// address,
+/// order status, and payment status. Each order is associated with a specific
+/// customer and contains one or more order items. The order status tracks the
+/// current state of the order (e.g., pending, processing, shipped, delivered,
+/// cancelled). The payment status indicates whether the order has been paid
+/// for.
+///
+/// The order table serves as the central entity for order management, providing
+/// a complete record of all order-related information. It references the
+/// customer
+/// who placed the order and contains the shipping address details. The order
+/// status and payment status fields track the progression of the order
+/// through the
+/// fulfillment process.
+///
+/// This table is the primary entity for order management and is referenced by
+/// other order-related tables such as order items and payments.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -12,91 +28,73 @@ model shopping_mall_orders {
   /// Primary Key.
   id String @id
   
-  /// Customer who placed the order. {@link shopping_mall_customers.id}
+  /// Belonged customer's {@link shopping_mall_customers.id}
   shopping_customer_id String
   
-  /// Customer session during order placement. {@link
-  /// shopping_mall_customer_sessions.id}
-  shopping_customer_session_id String
+  /// Unique order code for tracking and reference.
+  code String
   
-  /// Sale that the order is based on. {@link shopping_mall_sales.id}
-  shopping_sale_id String
-  
-  /// Current order status. Valid values: pending, processing, shipped,
-  /// delivered, cancelled
+  /// Current order status (pending, processing, shipped, delivered, cancelled).
   status String
   
-  /// Business workflow status. Valid values: normal, hold, return_requested,
-  /// refunded
-  business_status String
+  /// Payment status of the order (pending, paid, failed).
+  payment_status String
   
-  /// Order creation timestamp
+  /// Shipping address for the order.
+  shipping_address String
+  
+  /// Total amount of the order.
+  total_amount Float
+  
+  /// Timestamp when the order was created.
   created_at DateTime
   
-  /// Last update timestamp
+  /// Timestamp when the order was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp
+  /// Timestamp when the order was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_customer_session_id], references: [id], onDelete: Cascade)
-  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_order_snapshots shopping_mall_order_snapshots[]
   shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_order_payments shopping_mall_order_payments[]
+  shopping_mall_payments shopping_mall_payments[]
   shopping_mall_coupon_usages shopping_mall_coupon_usages[]
   shopping_mall_coin_transactions shopping_mall_coin_transactions[]
   
-  @@index([shopping_customer_session_id])
-  @@index([shopping_sale_id])
-  
+  @@unique([code])
   @@index([shopping_customer_id, created_at])
-  @@index([status, created_at])
+  @@index([status])
+  @@index([payment_status])
 }
 
-/// Historical states of orders for audit trails and reconciliation. Captures
-/// point-in-time states of orders including status and business status. Each
-/// snapshot is associated with a specific order and contains temporal
-/// information for historical tracking.
+/// Individual items within a customer order.
 ///
-/// @namespace Orders
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_order_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Order that this snapshot represents. {@link shopping_mall_orders.id}
-  shopping_mall_order_id String
-  
-  /// Order status at snapshot time
-  status String
-  
-  /// Business workflow status at snapshot time
-  business_status String
-  
-  /// Snapshot creation timestamp
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_snapshots_shopping_mall_order_id_c_07acd28a")
-}
-
-/// Order items representing purchased products. Contains product information
-/// and quantity. Each item is associated with a specific order and sale
-/// unit, and contains temporal information for lifecycle management.
+/// Stores details of each item purchased in an order, including the product,
+/// quantity, price, and any discounts applied. Each order item is associated
+/// with a
+/// specific order and product. The quantity field indicates the number of
+/// units of
+/// the product purchased. The price field stores the price of the product at
+/// the time
+/// of purchase. The discount field records any discounts applied to the item.
+///
+/// The order item table serves as a supporting entity for order management,
+/// providing
+/// detailed information about each item in an order. It references the order
+/// to which
+/// the item belongs and the product that was purchased. The quantity, price,
+/// and
+/// discount fields provide the necessary information for calculating the
+/// total cost of
+/// the order.
+///
+/// This table is a subsidiary entity for order management and is referenced
+/// by the
+/// order table.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -107,22 +105,28 @@ model shopping_mall_order_items {
   /// Primary Key.
   id String @id
   
-  /// Order that this item belongs to. {@link shopping_mall_orders.id}
+  /// Belonged order's {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Sale unit that was purchased. {@link shopping_mall_sale_units.id}
+  /// Belonged sale unit's {@link shopping_mall_sale_units.id}
   shopping_sale_unit_id String
   
-  /// Quantity of the product purchased
+  /// Quantity of the product purchased.
   quantity Int
   
-  /// Item creation timestamp
+  /// Price of the product at the time of purchase.
+  price Float
+  
+  /// Discount applied to the item.
+  discount Float?
+  
+  /// Timestamp when the order item was created.
   created_at DateTime
   
-  /// Last update timestamp
+  /// Timestamp when the order item was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp
+  /// Timestamp when the order item was deleted (soft delete).
   deleted_at DateTime?
   
   //----
@@ -131,41 +135,64 @@ model shopping_mall_order_items {
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   saleUnit shopping_mall_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
   
+  @@index([shopping_mall_order_id])
   @@index([shopping_sale_unit_id])
-  
-  @@index([shopping_mall_order_id, created_at])
 }
 
-/// Payment information for orders. Contains payment method and amount. Each
-/// payment is associated with a specific order, and contains temporal
-/// information for lifecycle management.
+/// Payment transactions for customer orders.
+///
+/// Stores details of payment transactions, including the payment method,
+/// amount,
+/// and status. Each payment is associated with a specific order. The payment
+/// method
+/// field indicates the method used for the payment (e.g., credit card, PayPal,
+/// bank transfer). The amount field stores the total amount paid. The status
+/// field
+/// indicates the current status of the payment (e.g., pending, completed,
+/// failed).
+///
+/// The payment table serves as a supporting entity for order management,
+/// providing
+/// detailed information about payment transactions. It references the order
+/// to which the
+/// payment belongs. The payment method, amount, and status fields provide the
+/// necessary information for tracking and managing payment transactions.
+///
+/// This table is a subsidiary entity for order management and is referenced
+/// by the
+/// order table.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_order_payments {
+model shopping_mall_payments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Order that this payment belongs to. {@link shopping_mall_orders.id}
+  /// Belonged order's {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Payment method used. Valid values: credit_card, bank_transfer,
-  /// digital_wallet
-  method String
+  /// Payment method used (credit card, PayPal, bank transfer).
+  payment_method String
   
-  /// Payment amount
+  /// Amount paid.
   amount Float
   
-  /// Payment creation timestamp
+  /// Payment status (pending, completed, failed).
+  status String
+  
+  /// Unique transaction ID from the payment gateway.
+  transaction_id String?
+  
+  /// Timestamp when the payment was created.
   created_at DateTime
   
-  /// Last update timestamp
+  /// Timestamp when the payment was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp
+  /// Timestamp when the payment was deleted (soft delete).
   deleted_at DateTime?
   
   //----
@@ -173,8 +200,7 @@ model shopping_mall_order_payments {
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_payments_shopping_mall_order_id_cr_915f286a")
+  @@unique([transaction_id])
+  @@index([shopping_mall_order_id])
+  @@index([status])
 }

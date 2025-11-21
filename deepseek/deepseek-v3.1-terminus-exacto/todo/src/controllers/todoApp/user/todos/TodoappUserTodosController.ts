@@ -15,8 +15,6 @@ import { IPageITodoAppTodo } from "../../../../api/structures/IPageITodoAppTodo"
 @Controller("/todoApp/user/todos")
 export class TodoappUserTodosController {
   /**
-   * Create a new todo item with the specified text content.
-   *
    * This operation creates a new todo item in the todo_app_todos table based on
    * the provided creation data. The operation validates that the todo text
    * meets the required length constraints (1-500 characters) as specified in
@@ -62,8 +60,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Search and retrieve a filtered, paginated list of todo items.
-   *
    * This operation provides comprehensive search capabilities for todo items
    * within the system. Users can filter todos by text content using full-text
    * search, completion status, creation date ranges, and ownership criteria.
@@ -107,8 +103,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Retrieve a specific todo item by its unique identifier.
-   *
    * This operation retrieves detailed information about a single todo item
    * identified by its unique UUID. The todo is fetched from the todo_app_todos
    * table which stores core todo items created and managed by authenticated
@@ -154,8 +148,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Update an existing todo item.
-   *
    * Update the properties of an existing todo item identified by its unique
    * identifier. This operation allows authenticated users to modify their todo
    * items including the text description, completion status, and other editable
@@ -204,8 +196,6 @@ export class TodoappUserTodosController {
   }
 
   /**
-   * Permanently delete a todo item.
-   *
    * Permanently remove a todo item from the system. This operation performs a
    * hard deletion that completely removes the todo record from the database.
    * Unlike soft deletion approaches that mark records as deleted while

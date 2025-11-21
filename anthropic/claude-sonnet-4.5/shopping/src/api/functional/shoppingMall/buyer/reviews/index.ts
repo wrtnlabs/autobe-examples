@@ -9,8 +9,6 @@ export * as helpfulnessVotes from "./helpfulnessVotes/index";
 export * as reports from "./reports/index";
 
 /**
- * Submit a new product review for a purchased item.
- *
  * Create a new product review for an item that the authenticated buyer has
  * purchased and received. This operation allows buyers to share their
  * experience with a product by providing a star rating (1-5), review title,
@@ -125,8 +123,6 @@ export namespace create {
 }
 
 /**
- * Update an existing product review submitted by the authenticated buyer.
- *
  * Update an existing product review that was previously submitted by the
  * authenticated buyer. This operation allows buyers to modify their review
  * rating, title, content, and associated images after initial submission.
@@ -236,8 +232,6 @@ export namespace update {
 }
 
 /**
- * Delete a product review from the system.
- *
  * Delete an existing product review from the shopping marketplace platform.
  * This operation permanently removes the review record from the database
  * including all associated review images and metadata.

@@ -10,8 +10,6 @@ import { ICommunityForumCommunityGroup } from "../../../api/structures/ICommunit
 @Controller("/communityForum/communities")
 export class CommunityforumCommunitiesController {
   /**
-   * Search and retrieve a paginated list of forum communities.
-   *
    * Retrieve a filtered and paginated list of forum communities from the
    * platform. This operation provides advanced search capabilities for
    * discovering communities based on multiple criteria including keyword search
@@ -58,8 +56,6 @@ export class CommunityforumCommunitiesController {
   }
 
   /**
-   * Get community details by slug.
-   *
    * Retrieve detailed information about a specific community using its unique
    * slug identifier.
    *

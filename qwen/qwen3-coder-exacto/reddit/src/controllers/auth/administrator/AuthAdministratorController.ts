@@ -12,9 +12,6 @@ import { ICommunityForumCommunityAdministrator } from "../../../api/structures/I
 @Controller("/auth/administrator")
 export class AuthAdministratorController {
   /**
-   * Register a new system administrator account. This operation is associated
-   * with the community_forum_administrators table.
-   *
    * This endpoint enables the registration of new system administrators on the
    * platform. Administrators are users with the highest level of permissions,
    * allowing them to manage all aspects of the community forum including user
@@ -63,9 +60,6 @@ export class AuthAdministratorController {
   }
 
   /**
-   * Authenticate an existing administrator and generate access tokens. This
-   * operation is associated with the community_forum_administrators table.
-   *
    * This endpoint provides authentication for existing system administrators.
    * It validates the administrator's credentials and, upon successful
    * verification, generates new JWT authorization tokens that grant access to
@@ -115,10 +109,6 @@ export class AuthAdministratorController {
   }
 
   /**
-   * Refresh administrator access tokens using a valid refresh token. This
-   * operation is associated with the community_forum_administrator_sessions
-   * table.
-   *
    * This endpoint allows authenticated administrators to refresh their access
    * tokens using a valid refresh token. It extends the administrator's session
    * without requiring them to re-enter their credentials, providing a seamless

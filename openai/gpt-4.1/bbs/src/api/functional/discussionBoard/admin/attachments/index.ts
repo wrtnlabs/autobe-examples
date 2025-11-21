@@ -7,9 +7,6 @@ import { IDiscussionBoardAttachment } from "../../../../structures/IDiscussionBo
 import { IPageIDiscussionBoardAttachment } from "../../../../structures/IPageIDiscussionBoardAttachment";
 
 /**
- * Register a new discussion board attachment metadata record for file/image
- * uploads.
- *
  * Registers and records technical metadata for a new file or image uploaded to
  * the discussion board platform. This call initializes a persistent attachment
  * entry, storing user-provided details and internal storage references.
@@ -112,9 +109,6 @@ export namespace create {
 }
 
 /**
- * List, search, or filter all attachments in discussion_board_attachments
- * (paginated, admin only).
- *
  * Retrieve a filtered, searchable, and paginated list of all attachments
  * managed by the discussion board system. Every uploaded attachment, whether
  * actively linked to content or soft-deleted, is discoverable via this
@@ -218,8 +212,6 @@ export namespace index {
 }
 
 /**
- * Retrieve metadata for a single discussion_board_attachments record by ID.
- *
  * Retrieve the complete technical metadata and storage characteristics for a
  * specific attachment associated with the discussion board platform. This
  * operation allows clients to fetch all details for a single file or image via
@@ -318,8 +310,6 @@ export namespace at {
 }
 
 /**
- * Update metadata for a specific discussion_board_attachments record.
- *
  * Update the metadata (technical information) of an attachment object in the
  * discussion board system.
  *
@@ -433,8 +423,6 @@ export namespace update {
 }
 
 /**
- * Soft-delete (mark as deleted) a discussion_board_attachments record by ID.
- *
  * Mark an attachment as deleted in the discussion board system (soft delete
  * only).
  *

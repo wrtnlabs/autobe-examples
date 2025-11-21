@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommunitySettings } from "../../../../structures/ICommunityPlatformCommunitySettings";
 
 /**
- * Retrieve community settings configuration from
- * community_platform_community_settings.
- *
  * Fetch the extended configuration options for a specific community, including
  * moderation preferences, accessibility controls, and display settings.
  *
@@ -123,9 +120,6 @@ export namespace at {
 }
 
 /**
- * Update community settings configuration in
- * community_platform_community_settings.
- *
  * Modify the extended configuration options for a specific community, including
  * moderation preferences, accessibility controls, and display settings.
  *

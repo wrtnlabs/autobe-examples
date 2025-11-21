@@ -10,9 +10,6 @@ import { ITodoListUser } from "../../../../api/structures/ITodoListUser";
 @Controller("/auth/user/change-password")
 export class AuthUserChange_passwordController {
   /**
-   * Changes password for authenticated user in todo_list_users after current
-   * password verification.
-   *
    * Allows a logged-in user to change their account password by submitting both
    * the current password and a valid new password. The operation compares the
    * submitted current password against the cryptographic hash in

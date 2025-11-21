@@ -13,8 +13,6 @@ import { IEconomicDiscussionAttachment } from "../../../../../api/structures/IEc
 @Controller("/economicDiscussion/moderator/articles/:articleId/attachments")
 export class EconomicdiscussionModeratorArticlesAttachmentsController {
   /**
-   * Upload and attach files to an economic discussion article.
-   *
    * This operation enables members and moderators to upload file attachments to
    * economic discussion articles. The system enforces strict file type and size
    * restrictions while providing immediate upload confirmation.
@@ -68,8 +66,6 @@ export class EconomicdiscussionModeratorArticlesAttachmentsController {
   }
 
   /**
-   * Get file attachment metadata for an economic discussion article.
-   *
    * Retrieve detailed metadata for a specific file attachment associated with
    * an economic discussion article. This operation provides access to
    * attachment information including filename, file size, MIME type, upload
@@ -122,8 +118,6 @@ export class EconomicdiscussionModeratorArticlesAttachmentsController {
   }
 
   /**
-   * Update file attachment metadata for an economic discussion article.
-   *
    * Update metadata for an existing file attachment associated with an economic
    * discussion article. This operation allows authorized users to modify
    * attachment properties while preserving the original file content.\n\nThe
@@ -177,8 +171,6 @@ export class EconomicdiscussionModeratorArticlesAttachmentsController {
   }
 
   /**
-   * Delete a file attachment from an article.
-   *
    * Remove a file attachment from an economic/political discussion article.
    * This operation allows article owners to delete their own attachments, or
    * moderators to remove inappropriate content.

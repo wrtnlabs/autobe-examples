@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardComment } from "../../../../../structures/IDiscussionBoardComment";
 
 /**
- * Create a new discussion_board_comments record attached to a specific article.
- *
  * Create a new comment on a specific discussion board article identified by its
  * article ID.
  *
@@ -160,9 +158,6 @@ export namespace create {
 }
 
 /**
- * Update an existing discussion_board_comments record for a given article and
- * comment pair.
- *
  * Update an existing comment that belongs to a specific discussion board
  * article.
  *

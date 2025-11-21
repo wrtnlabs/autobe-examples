@@ -11,8 +11,6 @@ import { IDiscussionBoardArticle } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/memberUser/articles")
 export class DiscussionboardMemberuserArticlesController {
   /**
-   * Create a new article in the discussion_board_articles table.
-   *
    * Create a new discussion board article using the discussion_board_articles
    * model.
    *
@@ -79,9 +77,6 @@ export class DiscussionboardMemberuserArticlesController {
   }
 
   /**
-   * Update an existing article in the discussion_board_articles table by its
-   * id.
-   *
    * Update an existing discussion board article stored in the
    * discussion_board_articles model.
    *

@@ -11,8 +11,6 @@ import { IShoppingMallReview } from "../../../../../api/structures/IShoppingMall
 @Controller("/shoppingMall/admin/buyers/:buyerId/reviews")
 export class ShoppingmallAdminBuyersReviewsController {
   /**
-   * Retrieve filtered and paginated reviews written by a specific buyer.
-   *
    * Retrieve a comprehensive list of all product reviews authored by a specific
    * buyer account with advanced filtering and search capabilities. This
    * operation enables buyers to view and manage their complete review history

@@ -11,8 +11,6 @@ import { IDiscussionBoardArticleVersion } from "../../../../../api/structures/ID
 @Controller("/discussionBoard/moderator/articles/:articleId/versions")
 export class DiscussionboardModeratorArticlesVersionsController {
   /**
-   * Retrieve a paginated list of article versions with search and filtering.
-   *
    * This operation returns a paginated list of article versions for the
    * specified articleId. It supports complex search queries, filtering, and
    * sorting. The results are paginated to allow for efficient retrieval of

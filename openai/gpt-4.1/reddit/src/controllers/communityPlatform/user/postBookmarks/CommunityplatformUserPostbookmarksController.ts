@@ -15,8 +15,6 @@ import { IPageICommunityPlatformPostBookmark } from "../../../../api/structures/
 @Controller("/communityPlatform/user/postBookmarks")
 export class CommunityplatformUserPostbookmarksController {
   /**
-   * Create a new post bookmark in the community_platform_post_bookmarks table.
-   *
    * Create a new bookmark for a post on behalf of the authenticated user.
    *
    * A user can use this operation to bookmark a post for easy access or later
@@ -62,9 +60,6 @@ export class CommunityplatformUserPostbookmarksController {
   }
 
   /**
-   * Search or index post bookmarks belonging to the authenticated user in
-   * community_platform_post_bookmarks.
-   *
    * Retrieves a list of post bookmarks created by the currently authenticated
    * user, supporting advanced querying such as filtering by post, sorting by
    * recency, and custom pagination settings. This enables users to efficiently
@@ -105,9 +100,6 @@ export class CommunityplatformUserPostbookmarksController {
   }
 
   /**
-   * Retrieve details of a specific post bookmark from
-   * community_platform_post_bookmarks table.
-   *
    * Retrieve the detailed information of a specific post bookmark identified by
    * its primary key.
    *
@@ -153,9 +145,6 @@ export class CommunityplatformUserPostbookmarksController {
   }
 
   /**
-   * Update an existing post bookmark record in the
-   * community_platform_post_bookmarks table.
-   *
    * Update details or metadata for a post bookmark. This operation allows an
    * authenticated user to modify an existing post bookmark, reflecting changes
    * such as restoring a previously soft-deleted bookmark, or refreshing its
@@ -199,9 +188,6 @@ export class CommunityplatformUserPostbookmarksController {
   }
 
   /**
-   * Erase (soft-delete) an existing post bookmark record in the
-   * community_platform_post_bookmarks table.
-   *
    * Erase (soft-delete) a bookmark for a post. The operation sets the
    * 'deleted_at' timestamp so that the bookmark no longer appears in the user's
    * visible bookmarks, but is retained for potential restoration or auditing.

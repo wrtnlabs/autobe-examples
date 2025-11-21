@@ -7,8 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../api/structures/IComm
 @Controller("/communityPlatform/auth/member/email-verify/send")
 export class CommunityplatformAuthMemberEmail_verifySendController {
   /**
-   * Send email verification token to member's registered email address.
-   *
    * Initiates the email verification process by generating a unique
    * verification token and sending it to the member's registered email
    * address. This operation is part of the account verification workflow

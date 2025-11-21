@@ -12,8 +12,6 @@ import { IEconomicBoardModerationAction } from "../../../../../api/structures/IE
 @Controller("/economicBoard/moderator/moderation/actions")
 export class EconomicboardModeratorModerationActionsController {
   /**
-   * Search and retrieve a filtered, paginated list of moderation actions.
-   *
    * Retrieve a filtered and paginated list of moderation actions from the
    * system. This operation provides advanced search capabilities for finding
    * moderation events based on multiple criteria including targeted citizens,
@@ -63,8 +61,6 @@ export class EconomicboardModeratorModerationActionsController {
   }
 
   /**
-   * Retrieve a specific moderation action by its unique ID.
-   *
    * Retrieve detailed information about a specific moderation action by its
    * unique identifier from the economic_board_moderation_actions table.
    *

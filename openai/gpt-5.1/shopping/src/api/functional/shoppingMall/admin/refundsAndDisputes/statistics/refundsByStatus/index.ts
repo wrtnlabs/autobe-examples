@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallRefundsByStatusStatistics } from "../../../../../../structures/IShoppingMallRefundsByStatusStatistics";
 
 /**
- * Get aggregated refund statistics grouped by status derived from
- * refund-related Prisma tables.
- *
  * Retrieve aggregated refund statistics grouped by refund status across the
  * shoppingMall platform.
  *

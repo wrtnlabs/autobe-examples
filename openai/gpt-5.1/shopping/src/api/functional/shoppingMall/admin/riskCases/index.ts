@@ -8,9 +8,6 @@ import { IPageIShoppingMallRiskCase } from "../../../../structures/IPageIShoppin
 export * as events from "./events/index";
 
 /**
- * Create a new risk case record in the shopping_mall_risk_cases table for the
- * ShoppingMall platform.
- *
  * Create a new high-level risk or fraud case in the ShoppingMall platform so
  * that governance and risk teams can investigate and track it over time.
  *
@@ -134,9 +131,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of risk cases from the
- * shopping_mall_risk_cases table.
- *
  * Search and retrieve a filtered, paginated list of risk cases from the
  * `shopping_mall_risk_cases` model.
  *
@@ -268,9 +262,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single risk case from the shopping_mall_risk_cases table by its
- * business riskCaseCode.
- *
  * Retrieve detailed information about a single risk case identified by its
  * business code from the `shopping_mall_risk_cases` model.
  *
@@ -386,9 +377,6 @@ export namespace at {
 }
 
 /**
- * Update an existing shopping_mall_risk_cases record identified by its business
- * riskCaseCode.
- *
  * Update an existing risk case identified by its business-level riskCaseCode,
  * reflecting changes to status, severity, ownership, or descriptive metadata in
  * the shopping_mall_risk_cases table.
@@ -514,9 +502,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a risk case from the shopping_mall_risk_cases table by its
- * business riskCaseCode.
- *
  * Delete a specific risk case record from the `shopping_mall_risk_cases` table
  * using its unique business code.
  *

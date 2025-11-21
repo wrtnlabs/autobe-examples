@@ -15,9 +15,6 @@ import { IPageICommunityPlatformEnvironment } from "../../../../api/structures/I
 @Controller("/communityPlatform/administrator/environments")
 export class CommunityplatformAdministratorEnvironmentsController {
   /**
-   * Create a new deployment or configuration environment
-   * (community_platform_environments table).
-   *
    * Create a new environment entry in the community platform's system
    * environments database.
    *
@@ -65,9 +62,6 @@ export class CommunityplatformAdministratorEnvironmentsController {
   }
 
   /**
-   * Search, filter, and list platform-wide deployment environments
-   * (community_platform_environments table).
-   *
    * Retrieve a paginated and filterable list of deployment environments that
    * exist within the platform for system-level use. This operation enables
    * platform administrators to search, browse, and audit all configured
@@ -116,9 +110,6 @@ export class CommunityplatformAdministratorEnvironmentsController {
   }
 
   /**
-   * Get detailed information about a deployment environment
-   * (community_platform_environments table) by its env_key.
-   *
    * Obtain a detailed view of a specific platform environment by providing its
    * globally unique key (env_key) as a path parameter. The detail response
    * includes all major attributes: env_key, display_name, description, creation
@@ -162,9 +153,6 @@ export class CommunityplatformAdministratorEnvironmentsController {
   }
 
   /**
-   * Update metadata or soft-delete an environment
-   * (community_platform_environments table, identified by env_key).
-   *
    * Update attributes for an existing environment in the system environments
    * registry.
    *
@@ -213,9 +201,6 @@ export class CommunityplatformAdministratorEnvironmentsController {
   }
 
   /**
-   * Permanently retire an environment using the community_platform_environments
-   * table.
-   *
    * Permanently retires a specific operational environment on the platform by
    * marking it as deleted. This operation utilizes the
    * community_platform_environments table and affects configuration scoping,

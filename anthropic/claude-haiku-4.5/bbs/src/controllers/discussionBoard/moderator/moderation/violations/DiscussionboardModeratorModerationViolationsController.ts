@@ -8,9 +8,6 @@ import { IDiscussionBoardContentViolationRecord } from "../../../../../api/struc
 @Controller("/discussionBoard/moderator/moderation/violations")
 export class DiscussionboardModeratorModerationViolationsController {
   /**
-   * Retrieve filtered and paginated list of content policy violations with
-   * enforcement history and contributor context.
-   *
    * This operation provides moderators access to violation records across the
    * platform, enabling comprehensive monitoring of content policy enforcement
    * and contributor behavior patterns. The violation records table maintains

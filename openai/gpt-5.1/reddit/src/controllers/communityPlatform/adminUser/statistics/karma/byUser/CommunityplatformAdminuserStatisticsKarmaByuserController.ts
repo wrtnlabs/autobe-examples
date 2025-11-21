@@ -8,9 +8,6 @@ import { ICommunityPlatformKarmaByUserStatistics } from "../../../../../../api/s
 @Controller("/communityPlatform/adminUser/statistics/karma/byUser")
 export class CommunityplatformAdminuserStatisticsKarmaByuserController {
   /**
-   * Retrieve paginated user-level karma analytics derived from
-   * community_platform_user_karmas.
-   *
    * Retrieve aggregated karma statistics grouped by user, returning a
    * paginated and filterable analytical view based primarily on the
    * `community_platform_user_karmas` Prisma table and secondarily on the

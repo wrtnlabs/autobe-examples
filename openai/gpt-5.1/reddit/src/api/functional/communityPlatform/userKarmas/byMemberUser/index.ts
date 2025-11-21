@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformUserKarma } from "../../../../structures/ICommunityPlatformUserKarma";
 
 /**
- * Get the aggregated karma record from `community_platform_user_karmas` for a
- * specific member user.
- *
  * Retrieve the current aggregated karma record for a specific member user from
  * the `community_platform_user_karmas` table.
  *

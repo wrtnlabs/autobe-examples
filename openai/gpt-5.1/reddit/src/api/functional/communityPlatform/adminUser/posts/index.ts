@@ -9,9 +9,6 @@ export * as comments from "./comments/index";
 export * as editHistories from "./editHistories/index";
 
 /**
- * Permanently delete a post record from the community_platform_posts table by
- * ID.
- *
  * Delete a single post from the community platform by its unique identifier.
  *
  * This operation targets the `community_platform_posts` table, which stores the
@@ -133,9 +130,6 @@ export namespace erase {
 }
 
 /**
- * Unlock a locked post in the community_platform_posts table to re-enable new
- * comments and interactions.
- *
  * Unlock a previously locked post in the community platform so that new
  * comments and interactions become possible again.
  *

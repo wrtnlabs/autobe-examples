@@ -9,8 +9,6 @@ export * as statistics from "./statistics/index";
 export * as bulk from "./bulk/index";
 
 /**
- * Create a new todo task for the authenticated user.
- *
  * Create a new personal todo task with essential productivity features
  * including title, description, priority levels, and optional due date
  * management. This operation enables users to organize their daily activities
@@ -212,8 +210,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details for a specific todo task.
- *
  * Get complete details for a specific todo task identified by its unique UUID.
  * This operation returns the task's title, description, status, priority level,
  * due date, creation date, completion date, and all associated metadata for
@@ -307,8 +303,6 @@ export namespace at {
 }
 
 /**
- * Update an existing todo task.
- *
  * Update an existing personal todo task with modified information including
  * title, description, status, priority levels, and due date. This operation
  * enables users to keep their task information current and accurate while
@@ -412,8 +406,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a task from memory.
- *
  * Permanently delete a task from the user's todo list by removing the task
  * record completely from the database. This operation performs a hard delete,
  * permanently eliminating the task data without the possibility of recovery.

@@ -7,8 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../../api/structures/IC
 @Controller("/communityPlatform/moderator/auth/moderator/password-change")
 export class CommunityplatformModeratorAuthModeratorPassword_changeController {
   /**
-   * Change moderator account password with current password verification.
-   *
    * Allows an authenticated moderator to change their account password
    * securely. This operation validates the moderator's current password and
    * replaces it with a new Bcrypt-hashed password (cost factor 12) stored in

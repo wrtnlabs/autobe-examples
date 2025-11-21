@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicBoardAttachment } from "../../../../../structures/IEconomicBoardAttachment";
 
 /**
- * Upload a file attachment to a discussion post.
- *
  * Uploads a file attachment to a specified discussion post. This operation
  * accepts multipart-form upload data containing the file and allows the client
  * to associate metadata with the uploaded file.
@@ -126,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Permanently remove an attachment from visibility (soft delete) by a
- * moderator.
- *
  * Permanently remove an attachment from visibility by marking it as deleted.
  *
  * This operation performs a soft delete on a specific attachment record,

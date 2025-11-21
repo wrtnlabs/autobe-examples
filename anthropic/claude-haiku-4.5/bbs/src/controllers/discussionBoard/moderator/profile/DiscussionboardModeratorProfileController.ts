@@ -7,8 +7,6 @@ import { IDiscussionBoardUser } from "../../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/moderator/profile")
 export class DiscussionboardModeratorProfileController {
   /**
-   * Retrieve the authenticated user's complete profile information.
-   *
    * Fetch the current authenticated user's profile including account details,
    * email, username, account status, and verification state.
    *

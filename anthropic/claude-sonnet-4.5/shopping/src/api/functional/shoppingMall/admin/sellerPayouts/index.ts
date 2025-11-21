@@ -7,8 +7,6 @@ import { IShoppingMallSellerPayout } from "../../../../structures/IShoppingMallS
 import { IPageIShoppingMallSellerPayout } from "../../../../structures/IPageIShoppingMallSellerPayout";
 
 /**
- * Create a new seller payout transaction for earnings settlement.
- *
  * Create a new seller payout transaction to settle accumulated earnings for a
  * seller account. This operation initiates the payout process by creating a
  * payout record that represents the transfer of seller earnings from the
@@ -115,9 +113,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated list of seller payout records for earnings settlement
- * tracking.
- *
  * Retrieve a filtered and paginated list of seller payout records from the
  * shopping mall platform. This operation provides advanced search capabilities
  * for finding seller payouts based on multiple criteria including payout
@@ -234,8 +229,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific seller payout transaction.
- *
  * Retrieve comprehensive details about a specific seller payout transaction
  * from the shopping mall platform. This operation provides complete information
  * about a payout including the payout amount, current status, creation and
@@ -332,8 +325,6 @@ export namespace at {
 }
 
 /**
- * Update an existing seller payout record.
- *
  * Update the details of an existing seller payout transaction in the platform.
  * This operation allows administrators to modify payout information including
  * payment status updates, transaction reference updates, and payout amount

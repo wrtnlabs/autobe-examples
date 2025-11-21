@@ -7,9 +7,6 @@ import { ICommunityPlatformNotificationSettings } from "../../../../structures/I
 import { IPageICommunityPlatformNotificationSettings } from "../../../../structures/IPageICommunityPlatformNotificationSettings";
 
 /**
- * Search and retrieve a paginated list of user notification settings
- * (community_platform_notification_settings).
- *
  * Retrieve a paginated list of user notification settings from the platform's
  * configuration.
  *
@@ -117,9 +114,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detail of a single user notification setting
- * (community_platform_notification_settings) by internal ID.
- *
  * Retrieve the full details of a specific notification settings record for a
  * user given its unique identifier.
  *
@@ -218,9 +212,6 @@ export namespace at {
 }
 
 /**
- * Permanently delete a user's notification settings by notificationSettingsId
- * (community_platform_notification_settings table).
- *
  * Permanently delete a user's notification settings, removing all messaging,
  * email, push, and other notification delivery rules from the system.
  *

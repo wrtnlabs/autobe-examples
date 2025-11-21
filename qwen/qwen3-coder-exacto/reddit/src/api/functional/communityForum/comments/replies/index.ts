@@ -7,8 +7,6 @@ import { ICommunityForumPostComment } from "../../../../structures/ICommunityFor
 import { IPageICommunityForumPostComment } from "../../../../structures/IPageICommunityForumPostComment";
 
 /**
- * Retrieve paginated replies to a community forum comment.
- *
  * Retrieve paginated replies to a specific forum comment with advanced
  * filtering and sorting capabilities.
  *

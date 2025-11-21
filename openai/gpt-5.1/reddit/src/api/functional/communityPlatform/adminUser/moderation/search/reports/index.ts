@@ -7,9 +7,6 @@ import { ICommunityPlatformPostReport } from "../../../../../../structures/IComm
 import { IPageICommunityPlatformPostReport } from "../../../../../../structures/IPageICommunityPlatformPostReport";
 
 /**
- * Search moderation reports across report tables (community_platform_*_reports)
- * with filtering and pagination.
- *
  * Search and retrieve a filtered, paginated list of moderation reports across
  * all reportable entities in the community platform.
  *

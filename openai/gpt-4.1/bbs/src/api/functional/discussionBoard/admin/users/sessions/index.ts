@@ -7,8 +7,6 @@ import { IDiscussionBoardUserSession } from "../../../../../structures/IDiscussi
 import { IPageIDiscussionBoardUserSession } from "../../../../../structures/IPageIDiscussionBoardUserSession";
 
 /**
- * Admin: Search and paginate discussion board user sessions for audit/security.
- *
  * Search and retrieve session records for any discussion board user, supporting
  * advanced filters and pagination for admin audits.
  *
@@ -111,9 +109,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a user session by ID for audit/administration
- * (discussion_board_user_sessions).
- *
  * Retrieve detailed information about a single login session record for a
  * discussion board user. This endpoint is intended for administrative access
  * and provides insight into user authentication activity within the discussion
@@ -221,9 +216,6 @@ export namespace at {
 }
 
 /**
- * Update session metadata or expiration for a user session
- * (discussion_board_user_sessions).
- *
  * Update the metadata of a particular discussion board user session, including
  * (but not limited to) setting the expired_at timestamp to force session
  * termination or modifying trace data for audit reasons. Administrative
@@ -345,9 +337,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific user login session (discussion_board_user_sessions) by
- * session and user ID.
- *
  * Permanently remove a specific user session from the discussion board
  * authentication system.
  *

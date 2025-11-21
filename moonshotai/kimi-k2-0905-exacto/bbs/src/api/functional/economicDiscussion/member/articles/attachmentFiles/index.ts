@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IEconomicDiscussionAttachment } from "../../../../../structures/IEconomicDiscussionAttachment";
 
 /**
- * Create a new file attachment for an article.
- *
  * Create a new file attachment for a specific economic discussion article. This
  * operation allows authenticated users to upload and attach files (images,
  * documents, spreadsheets) to their own articles.
@@ -110,8 +108,6 @@ export namespace create {
 }
 
 /**
- * Delete a file attachment from an article.
- *
  * Permanently remove a file attachment from a specific economic discussion
  * article. This operation allows users to delete their own attachments while
  * moderators can remove any attachment for content moderation purposes.

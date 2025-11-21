@@ -8,8 +8,6 @@ import { IDiscussionBoardArticle } from "../../../api/structures/IDiscussionBoar
 @Controller("/discussionBoard/discussionBoardArticles/:id")
 export class DiscussionboardDiscussionboardarticlesController {
   /**
-   * Get a specific discussion board article by its UUID.
-   *
    * Retrieve detailed information of a discussion board article by its unique
    * identifier.
    *

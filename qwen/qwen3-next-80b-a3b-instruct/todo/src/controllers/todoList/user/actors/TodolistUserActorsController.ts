@@ -12,8 +12,6 @@ import { IPageITodoListUser } from "../../../../api/structures/IPageITodoListUse
 @Controller("/todoList/user/actors")
 export class TodolistUserActorsController {
   /**
-   * Retrieve a specific user account by userId.
-   *
    * Retrieve detailed information for a specific user account identified by
    * userId.
    *
@@ -61,8 +59,6 @@ export class TodolistUserActorsController {
   }
 
   /**
-   * Search and retrieve paginated list of user accounts.
-   *
    * Perform comprehensive search, filtering, sorting, and pagination of user
    * accounts.
    *

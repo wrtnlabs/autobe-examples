@@ -7,9 +7,6 @@ import { IShoppingMallAdminActivityStatistics } from "../../../../../api/structu
 @Controller("/shoppingMall/admin/statistics/adminActivities")
 export class ShoppingmallAdminStatisticsAdminactivitiesController {
   /**
-   * Retrieve aggregated admin activity statistics and governance KPIs derived
-   * from audit and snapshot tables.
-   *
    * Retrieve aggregated statistics about administrative activities and
    * related governance KPIs in the shoppingMall platform.
    *

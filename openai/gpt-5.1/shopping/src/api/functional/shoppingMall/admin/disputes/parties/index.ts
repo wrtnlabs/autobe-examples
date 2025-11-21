@@ -7,9 +7,6 @@ import { IShoppingMallDisputeParty } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallDisputeParty } from "../../../../../structures/IPageIShoppingMallDisputeParty";
 
 /**
- * Create a new dispute party record in the shopping_mall_dispute_parties table
- * for a given dispute code.
- *
  * Create a new dispute party for an existing dispute by specifying the dispute
  * via its business code and providing party details in the request body.
  *
@@ -139,9 +136,6 @@ export namespace create {
 }
 
 /**
- * Search and list parties of a dispute from `shopping_mall_dispute_parties`
- * using disputeCode and rich filters.
- *
  * Retrieve a filtered and paginated list of parties for a specific dispute from
  * the `shopping_mall_dispute_parties` table.
  *
@@ -277,9 +271,6 @@ export namespace index {
 }
 
 /**
- * Get a specific dispute party from the shopping_mall_dispute_parties table for
- * a given dispute code.
- *
  * Retrieve a specific dispute party record for a given dispute using the
  * dispute's business code and the party's UUID identifier.
  *
@@ -408,9 +399,6 @@ export namespace at {
 }
 
 /**
- * Update a dispute party record in the shopping_mall_dispute_parties table for
- * a given dispute.
- *
  * Update an existing dispute party associated with a specific dispute, allowing
  * governance or operations staff to adjust party attributes without changing
  * its identity.
@@ -560,9 +548,6 @@ export namespace update {
 }
 
 /**
- * Delete a dispute party record from the shopping_mall_dispute_parties table
- * for a given dispute.
- *
  * Remove a specific dispute party from a dispute so that the party is no longer
  * tracked as a participant in the dispute’s lifecycle.
  *

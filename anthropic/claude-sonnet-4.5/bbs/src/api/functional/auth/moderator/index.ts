@@ -8,8 +8,6 @@ export * as password from "./password/index";
 export * as email from "./email/index";
 
 /**
- * Register a new moderator account with authentication tokens.
- *
  * Creates a new moderator account for trusted administrators with elevated
  * privileges for content moderation and community management.
  *
@@ -126,8 +124,6 @@ export namespace join {
 }
 
 /**
- * Authenticate moderator and issue JWT tokens.
- *
  * Authenticates a moderator using email and password credentials and issues JWT
  * tokens for secure access to moderation tools.
  *
@@ -240,8 +236,6 @@ export namespace login {
 }
 
 /**
- * Refresh moderator access tokens using refresh token.
- *
  * Refreshes moderator access tokens using a valid refresh token to extend the
  * authenticated session.
  *

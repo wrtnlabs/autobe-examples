@@ -7,9 +7,6 @@ import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCateg
 import { IPageIShoppingMallCategory } from "../../../../structures/IPageIShoppingMallCategory";
 
 /**
- * List child categories of a specific parent category by unique name
- * (shopping_mall_categories).
- *
  * Retrieve a filtered and paginated list of direct child categories under a
  * specific parent category, identified by its unique name.
  *

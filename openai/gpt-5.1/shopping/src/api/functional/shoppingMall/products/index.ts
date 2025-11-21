@@ -12,9 +12,6 @@ export * as reviews from "./reviews/index";
 export * as ratingAggregates from "./ratingAggregates/index";
 
 /**
- * Search and paginate products based on filters using the
- * shopping_mall_products table.
- *
  * Search and retrieve a filtered, paginated list of products from the
  * ShoppingMall catalog.
  *
@@ -139,9 +136,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single product detail from the shopping_mall_products table by
- * productId.
- *
  * Retrieve detailed information for a single ShoppingMall product identified by
  * its unique product identifier.
  *

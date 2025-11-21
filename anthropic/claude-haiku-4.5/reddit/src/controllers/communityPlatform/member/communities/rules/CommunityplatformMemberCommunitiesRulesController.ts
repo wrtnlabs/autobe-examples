@@ -7,8 +7,6 @@ import { ICommunityPlatformCommunityRule } from "../../../../../api/structures/I
 @Controller("/communityPlatform/member/communities/:communityId/rules/:ruleId")
 export class CommunityplatformMemberCommunitiesRulesController {
   /**
-   * Update an existing community rule.
-   *
    * Modify a community rule's title and description to clarify expectations
    * or adjust community standards. This operation updates the
    * community_platform_community_rules table and returns the updated rule
@@ -64,8 +62,6 @@ export class CommunityplatformMemberCommunitiesRulesController {
   }
 
   /**
-   * Delete a specific community rule from the rule set.
-   *
    * Delete a community rule by its ID from the specified community. This
    * operation permanently removes the rule from the community's rule set,
    * which is immediately reflected in the community page where rules are

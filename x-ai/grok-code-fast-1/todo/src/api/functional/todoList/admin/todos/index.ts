@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListTodo } from "../../../../structures/ITodoListTodo";
 
 /**
- * Update attributes of an existing todo item in the todo_list_todos table.
- *
  * Update an existing todo item, enforcing all business and field-level
  * validation rules.
  *
@@ -116,9 +114,6 @@ export namespace update {
 }
 
 /**
- * Delete a specific todo item by ID, using soft deletion logic in the
- * todo_list_todos table.
- *
  * Deletes a single todo item belonging to the authenticated user, or any user
  * if performed by an admin.
  *

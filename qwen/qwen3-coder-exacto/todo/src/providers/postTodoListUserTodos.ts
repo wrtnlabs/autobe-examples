@@ -7,35 +7,38 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoListUserTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUserTodo";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postTodoListUserTodos(props: {
   user: UserPayload;
-  body: ITodoListTodo.ICreate;
-}): Promise<ITodoListTodo> {
+  body: ITodoListUserTodo.ICreate;
+}): Promise<ITodoListUserTodo> {
   const now = toISOStringSafe(new Date());
+
   const created = await MyGlobal.prisma.todo_list_todos.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: props.user.id,
       title: props.body.title,
-      description:
-        props.body.description === undefined ? null : props.body.description,
+      description: undefined,
       completed: false,
       created_at: now,
       updated_at: now,
-      user_id: props.user.id,
+      deleted_at: null,
     },
   });
 
   return {
     id: created.id,
+    todo_list_user_id: created.todo_list_user_id,
     title: created.title,
-    description: created.description === null ? undefined : created.description,
+    description: created.description ?? undefined,
     completed: created.completed,
     created_at: toISOStringSafe(created.created_at),
     updated_at: toISOStringSafe(created.updated_at),
-    user: { id: created.user_id },
+    deleted_at: created.deleted_at
+      ? toISOStringSafe(created.deleted_at)
+      : undefined,
   };
 }

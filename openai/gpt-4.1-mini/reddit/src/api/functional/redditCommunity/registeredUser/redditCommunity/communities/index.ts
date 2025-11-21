@@ -7,8 +7,6 @@ import { IRedditCommunityCommunity } from "../../../../../structures/IRedditComm
 export * as communitySubscriptions from "./communitySubscriptions/index";
 
 /**
- * Create a new RedditCommunity community.
- *
  * Create a new community within the RedditCommunity platform.
  *
  * This operation enables authenticated users to establish a new space for
@@ -105,8 +103,6 @@ export namespace create {
 }
 
 /**
- * Update RedditCommunity community details.
- *
  * Update an existing RedditCommunity community by its unique communityName.
  *
  * This operation allows authorized users to change details of a community such

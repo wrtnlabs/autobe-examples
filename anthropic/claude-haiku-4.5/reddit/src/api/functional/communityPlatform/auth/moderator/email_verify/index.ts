@@ -7,8 +7,6 @@ import { ICommunityPlatformModerator } from "../../../../../structures/ICommunit
 export * as send from "./send/index";
 
 /**
- * Confirm moderator email address verification with verification token.
- *
  * Confirm email verification for a moderator account by submitting the
  * verification token sent to their registered email address. This operation
  * marks the email as verified, enabling full access to moderation capabilities.

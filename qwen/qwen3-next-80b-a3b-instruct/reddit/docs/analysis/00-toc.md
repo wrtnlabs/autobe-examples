@@ -1,249 +1,112 @@
-# Requirements Analysis Report
+# Service Overview
 
 ## Service Vision
 
-CommunityPlatform exists to empower users to form passionate, self-organizing communities around shared interests, fostering authentic discussion, knowledge sharing, and social connection through anonymous yet reputation-weighted interaction. This service transforms casual internet users into engaged community members by rewarding meaningful participation through a transparent karma system, while protecting community integrity through distributed moderation and user-driven content curation. Unlike centralized social networks focused on viral content and algorithmic manipulation, CommunityPlatform prioritizes sustained community health, organic discovery, and user sovereignty over content visibility.
+The communityBBS is a decentralized, participatory forum designed to foster authentic civic dialogue among local residents. Unlike commercial social platforms that prioritize engagement metrics and advertising revenue, communityBBS exists solely to facilitate meaningful, moderated conversations about local issues — from neighborhood safety and public infrastructure to school funding and environmental concerns. The system is built on the principle that healthy democracy thrives when citizens can communicate directly, transparently, and respectfully with their peers — without algorithmic distortion or corporate surveillance.
 
-## Problem Being Solved
+## Problem Statement
 
-Existing online discussion platforms suffer from three core failures:
+Existing online forums either rely on corporate platforms (e.g., Facebook Groups, Reddit) that lack local governance control, exploit user data for profit, and prioritize viral content over substantive discussion — or they are technically outdated, poorly moderated, and inaccessible to non-technical users. Communities lack a dedicated, trustworthy digital space where:
 
-1. **Centrally Controlled Algorithms**: Content visibility is determined by opaque corporate algorithms designed to maximize engagement, often promoting outrage, misinformation, and low-effort content over meaningful dialogue.
+- Residents can discuss hyperlocal issues without interference from trolls or bots
+- Content moderation is transparent, community-informed, and accountable
+- Participation is encouraged without gamification or attention-driven incentives
+- User data is not harvested, sold, or analyzed for advertising
+- Moderation authority resides with trusted peers, not corporate algorithms
 
-2. **Ephemeral Communities**: Users cannot form lasting, self-governed spaces. Communities are fragmented across platforms, lack persistent identity, and die when moderators leave or platforms change policies.
-
-3. **Lack of Incentive for Quality**: Users have no meaningful reward for creating insightful posts or helpful comments. Participation is driven by vanity metrics (likes, followers) rather than reputation earned through consistent contribution.
-
-CommunityPlatform solves these problems by:
-- Giving users direct control over content ranking through upvote/downvote mechanisms
-- Enabling self-sustaining communities governed by their members
-- Rewarding high-quality, consistent contribution with karma reputation that follows users across communities
-- Eliminating corporate algorithmic manipulation in favor of user-driven curation
+The absence of such a platform results in fragmented communication, misinformation spread on non-local platforms, declining civic engagement, and a growing disconnect between residents and their shared physical environment.
 
 ## Core Value Proposition
 
-CommunityPlatform delivers value through a unique combination of user empowerment and trust preservation:
+communityBBS delivers four unique value pillars that distinguish it from all existing alternatives:
 
-1. **User-Centric Curation**: Every user is a curator. Content rises or falls based on community consensus, not corporate ad revenue goals. This ensures high-quality, relevant, and diverse content surfaces organically.
+1. **Civic Integrity Over Engagement**: The platform intentionally minimizes metrics like likes, shares, or follower counts. Posts are surfaced based on community flagging and moderator review — not popularity algorithms. This prevents outrage-driven content from dominating discourse.
 
-2. **Persistent Identity & Reputation**: A user’s karma—earned through valuable posts and comments—travels across all communities, creating lasting reputation that incentivizes responsible, thoughtful participation.
+2. **Local Autonomy**: Each community (e.g., a neighborhood or town) operates its own independently moderated instance. Administrative control, moderation policies, and user guidelines are set by local volunteers — not by a central corporation.
 
-3. **Decentralized Moderation**: While administrators ensure legal compliance, community-specific moderators are elected by members to enforce rules and maintain healthy discourse within their domains.
+3. **Ethical Data Practices**: No user data is sold. No behavior is tracked for advertising. No third-party analytics are employed. All data remains under the jurisdiction and control of the local user community. Email verification is required for posting, but personal identifiers beyond email are never collected.
 
-4. **Zero-Click Discovery**: Through intelligent sorting (Hot, New, Top, Controversial), users can effortlessly find the most relevant content without needing to follow specific users or accounts. Content discovery is based entirely on community interactions.
+4. **Participatory Moderation**: Moderators are not hired employees — they are elected or appointed by the community from among long-term, trusted participants (citizens). Their actions are transparent, logged, and subject to community review. Administrators exist only to ensure legal compliance and system integrity — never to censor speech.
 
-5. **Minimalist, Focused Experience**: Unlike feature-bloated social media platforms, CommunityPlatform focuses exclusively on text, links, and image-based discussion with no stories, reels, DMs, or influencer marketing mechanics.
+## Target Audience
 
-## Target Users
+The platform is designed specifically for:
 
-### Primary Users
-- **Casual Enthusiasts**: Users passionate about niche topics (e.g., vintage cameras, obscure metal bands, local history) seeking a space to share knowledge and connect with like-minded individuals.
-- **Daily Contributors**: Users who post weekly or daily, seeking to build reputation and influence within their communities.
-- **Knowledge Seekers**: Users coming to the platform to learn, research, and find deep, well-reasoned answers to questions.
+- **Residents**: Ordinary citizens who want to participate in local governance — parents, retirees, small business owners, students, and public servants — who seek a space to voice concerns, share information, and collaborate on community improvements.
+- **Community Leaders**: Volunteers who organize neighborhood cleanups, advocate for local policy, or run civic initiatives and need an open, reliable communication channel.
+- **Local Organizations**: Non-profits, PTA groups, and grassroots movements that seek to inform and mobilize local residents without relying on commercial platforms.
 
-### Secondary Users
-- **Moderators**: Dedicated community members selected by peers to maintain order, remove spam, and enforce rules — often long-term, respected users.
-- **Administrators**: Platform operators who handle abuse reports, legal compliance, and critical system maintenance.
-- **Guest Browsers**: Casual observers who consume content without registering. The platform is designed to provide significant value to guests, encouraging conversion to members.
+The platform is NOT designed for:
+- Professional journalists or content creators seeking viral exposure
+- Businesses seeking advertising or customer outreach
+- Government agencies using it as an official bulletin board
+- Political campaigns seeking fundraising or voter targeting
 
-### User Motivations
-- **Social Connection**: To find others who share their interests.
-- **Knowledge Acquisition**: To access curated, community-vetted information.
-- **Reputation Building**: To develop a reputation for expertise or insight.
-- **Creative Expression**: To share perspectives, creativity, or passion.
-
-## Key Differentiators
-
-CommunityPlatform stands apart from competing platforms through these unique design choices:
-
-| Feature | CommunityPlatform | Reddit | Hacker News | Other Forums |
-|--------|-------------------|--------|-------------|--------------|
-| Upvote/Downvote System | YES — Direct user control over content ranking | YES | YES | LIMITED or absent |
-| Cross-Community Karma | YES — Reputation follows user everywhere | YES | NO | NO |
-| Content Sorting | Hot, New, Top, Controversial — All algorithms public and transparent | YES | YES | LIMITED |
-| JWT Authentication | YES — Secure, stateless sessions with refresh tokens | YES | YES | SOMETIMES |
-| Community Moderation | YES — Moderators appointed by community, not admin selection | YES | NO | YES (but central) |
-| Image/Link Posting | YES — Native support for text, URLs, and images | YES | YES | LIMITED |
-| Nested Replies | YES — Unlimited comment thread depth | YES | LIMITED | YES |
-| Reporting System | YES — User-initiated reports with transparent moderation workflow | YES | YES | SOMETIMES |
-| Anonymous Browsing | YES — Full content visibility without registration | YES | NO | SOMETIMES |
-| No Ads or Sponsored Content | YES — No corporate advertising or promoted posts | YES — Heavy ads | NO — Sponsored posts | Varies |
-
-**Core Differentiator**: CommunityPlatform is the only platform that combines *persistent, cross-community reputation* with *fully transparent, user-controlled content curation* and *massive, unchained nested commenting*, all within a *no-ad, public-interest-first* model.
-
-## Business Model
-
-### Why This Service Exists
-
-The modern web has abandoned meaningful public discourse. Social media platforms are designed to extract attention for advertising, creating a toxic environment of outrage, polarization, and shallow engagement. Users are increasingly disillusioned with platforms that prioritize profit over community well-being. CommunityPlatform fills this void by creating a sustainable, ad-free, community-owned digital commons for thoughtful discussion.
-
-### Revenue Strategy
-
-The communityPlatform will implement a diversified revenue strategy to ensure sustainable financial growth while preserving user experience. The platform will generate revenue through three integrated channels: advertising, premium subscriptions, and optional monetization features for content creators.
-
-#### Advertising Model
-
-THE system SHALL offer non-intrusive, contextually relevant advertising to guests and free-tier members to generate primary revenue.
-
-WHEN a user views a post listing (home feed, community feed, or search results), THE system SHALL insert one (1) promoted post every 10th position in the feed.
-
-THE promoted post SHALL be clearly labeled with a "Sponsored" badge in a muted color (e.g., #757575) and shall not support voting or commenting.
-
-THE displayed sponsored content SHALL be targeted based on community affinity, post keywords, and user subscription history, but shall NOT use personal data (email, IP, device ID) for targeting.
-
-IF a user reports a sponsored post as inappropriate, THEN THE system SHALL immediately remove the post from rotation and initiate a review by the moderation team.
-
-#### Premium Subscription (CommunityPlus)
-
-WHEN a member upgrades to CommunityPlus, THE system SHALL remove all advertisements from all user interfaces and enable exclusive features.
-
-THE subscription SHALL be offered at a monthly rate of $4.99 or an annual rate of $49.99 (16% discount).
-
-A trial period of 14 days SHALL be offered to all new members, during which they can access all premium features at no cost.
-
-During the trial period, users SHALL NOT be charged unless they explicitly confirm payment details.
-
-WHEN a user cancels their CommunityPlus subscription, THE system SHALL continue premium access until the end of the current billing cycle and then downgrade the account to free tier.
-
-WHILE a user has an active CommunityPlus subscription, THE system SHALL:
-
-- Display all posts with no advertisements
-- Allow no ads in any community feed, profile page, or notification center
-- Permit viewing of full-size images without any watermarking or branding
-- Enable enhanced profile customization options (custom badge, profile banner, color themes)
-- Allow extended post editing window (48 hours instead of 24 hours)
-- Unlock advanced post sorting filters (e.g., show only posts with 100+ votes)
-
-#### Content Creator Monetization
-
-WHERE a member has posted at least 50 accepted posts or comments that received at least 1,000 total upvotes combined, THE system SHALL allow them to apply for Creator Monetization.
-
-WHEN approved as a Creator, THE system SHALL allow them to attach an optional "Support Me" tip button to their profile.
-
-WHEN a user clicks the "Support Me" button, THE system SHALL redirect to a secure third-party payment processor (e.g., Stripe)
-
-THE platform SHALL retain 10% service fee on all tips received by creators, with the remaining 90% paid directly to the creator.
-
-Creators SHALL be able to view cumulative tip earnings in their profile dashboard but SHALL NOT be allocated any advertising revenue.
-
-### User Acquisition Channels
-
-THE platform SHALL acquire new users through organic, social, and referral-based methods.
-
-THE system SHALL contain no paid advertising campaigns during the first 12 months of operation.
-
-WHEN a member invites a friend to join using the built-in referral system, THE system SHALL award both users with +250 karma points.
-
-A referral code SHALL be automatically generated for each member upon registration and shall be accessible via their profile settings.
-
-WHEN a new user registers with a valid referral code, THE system SHALL auto-apply the referral bonus after email verification.
-
-WHEN a community reaches 1,000 active subscribers, THE system SHALL automatically generate a "Featured Community" badge for that community and display it on the front page.
-
-WHERE a community has been tagged as "New" for fewer than 14 days and has received at least 50 posts from 10 unique members within 7 days, THEN THE system SHALL highlight it in the "Discover" section.
-
-### Growth Strategy
-
-THE platform SHALL prioritize network effects and community-driven growth over paid user acquisition.
-
-WHILE the total number of active communities exceeds 10,000, THE system SHALL gradually introduce a "Explore Trending" section on the homepage.
-
-THE trending section SHALL be populated based on the 20 most-voted posts across all communities in the past 12 hours.
-
-WHEN a post receives at least 500 upvotes within the first 60 minutes of being posted, THE system SHALL feature it in the "Trending»" banner on the top navigation bar.
-
-WHILE a user remains logged in and active for more than 10 minutes, THE system SHALL recommend 3 additional communities based on their subscription history, post interactions, and search queries.
-
-WHEN a user subscribes to a new community, THE system SHALL automatically suggest the top 3 most similar communities based on keyword overlap and membership overlap.
-
-WHERE a member has been active for over 180 days and has participated in at least 50 unique communities, THEN THE system SHALL notify them that they qualify for a "Community Expert" title and badge.
-
-THE system SHALL display the top 100 creators by total tip revenue on a standalone "Top Creators" page.
-
-### Monetization Timeline
-
-WHEN the platform reaches 50,000 monthly active users (MAU), THEN THE system SHALL launch the CommunityPlus subscription package.
-
-WHEN the MAU reaches 150,000, THEN THE system SHALL automatically activate the Creator Monetization program for eligible users.
-
-WHEN the platform reaches 500,000 MAU, THEN THE system SHALL analyze advertising performance and SHALL consider introducing targeted sponsored search results.
-
-WHILE the percentage of paid subscribers exceeds 8% of total users, THE system SHALL NOT introduce any additional advertisements or sponsored content.
-
-WHEN annual revenue per active user exceeds $35, THEN THE system SHALL allocate 10% of that surplus to community development grants.
-
-### Cost Structure
-
-THE platform SHALL incur fixed costs related to:
-
-- Cloud hosting (compute, storage, and bandwidth)
-- Domain registration and SSL certificates
-- Email delivery services (for verification and notifications)
-- Moderation tooling and support staff salaries
-- Payment processor fees (Stripe, PayPal)
-- Legal compliance and data privacy audits
-
-THE system SHALL be optimized for cost efficiency by:
-
-- Implementing image compression and caching for media assets
-- Automatically archiving inactive communities after 365 days of inactivity
-- Using serverless functions for non-critical background tasks (e.g., karma recalculation)
-- Limiting database indexing to high-use fields only
-- Deploying read replicas for high-demand endpoints (feed, search)
-
-WHERE storage usage exceeds 100 TB, THEN THE system SHALL initiate automated data pruning of deleted posts and low-activity user accounts older than 2 years.
-
-### Partnerships and Integrations
-
-THE system SHALL integrate with the following external services:
-
-- **Email delivery service**: SendGrid or Mailgun for email verification, password reset, and notifications
-- **Media storage**: AWS S3 or Cloudinary for secure, scalable image hosting
-- **Search engine**: Elasticsearch or Meilisearch for full-text search across posts and comments
-- **Payment processing**: Stripe for subscription billing and creator tipping
-- **Analytics**: Amplitude or Mixpanel for user behavior tracking (non-personalized analytics only)
-- **Moderation AI**: Perspective API or similar for content risk scoring (opt-in only)
-
-WHERE an external service becomes unavailable for more than 2 hours, THEN THE system SHALL display a maintenance banner and continue functioning in offline mode with reduced features (e.g., caching feed, disabling uploads).
-
-THE platform SHALL NOT integrate with any identity providers (e.g., Google, Facebook, Apple) during Phase 1 to preserve user privacy and control.
-
-WHEN any third-party service changes terms of service to require personal data sharing or behavioral tracking, THEN THE system SHALL migrate to an alternative provider within 30 days or disable the integration.
-
-THE system SHALL never share user data with advertising partners.
-
-THE system SHALL NOT use any third-party advertising network (e.g., Google AdSense, Taboola) for content monetization.
-
-THE system SHALL maintain all content moderation policies internally and shall not outsource moderation to third-party companies.
+Users are not employees, contractors, or paid contributors. All participants are voluntary community members with equal standing in the digital public square.
 
 ## Success Metrics
 
-Success for CommunityPlatform is measured not by growth or profit, but by community health and user autonomy:
+The success of communityBBS is measured not by user growth or page views, but by the quality and sustainability of civic engagement:
 
-| Metric | Target | Reason |
-|--------|--------|--------|
-| Monthly Active Users (MAU) | 1,000,000 in 24 months | Scale needed for sustainability |
-| Daily Active Users (DAU) | 30% of MAU | Healthy engagement rate |
-| Content Creation Rate | 50,000 posts per day | Sufficient activity for relevance |
-| Average Comments per Post | 8.5 | Indicates deep conversation |
-| Reported Content Rate | < 0.1% of total posts | Low bad actor penetration |
-| Resolution Time for Reports | < 4 hours | Efficient moderation |
-| Premium Subscription Rate | 3–5% of members | Monetization without coercion |
-| Community Retention Rate | 70% of communities retain moderators after 12 months | Self-sustainability |
-| Guest-to-Member Conversion Rate | 12% | The platform is valuable even without registration |
-| Platform Uptime | 99.95% | High reliability for trust |
-| User Satisfaction (NPS) | +50 | Strong community loyalty |
+### Usage Metrics
+
+- **Active Local Communities**: The number of independent town/neighborhood instances with at least 50 registered citizens
+- **Monthly Active Members (MAM)**: Number of unique citizens posting or commenting each month in active communities
+- **Mean Reply Duration**: Average time between a post and its first response — targets under 4 hours to indicate lively discourse
+- **Moderator Response Rate**: Percentage of flagged content reviewed within 24 hours — target: ≥95%
+- **Content Persistence Ratio**: Percentage of posts that remain visible after moderation review (>70% indicates balanced moderation)
+
+### Behavioral Metrics
+
+- **Post-to-Comment Ratio**: Ratio of original posts to comments — target ≥1:3 indicates active discussion
+- **Repeat Contributor Rate**: Percentage of contributors who post more than once per month — target ≥40%
+- **Cross-Community Engagement**: Number of users participating in more than one community — indicates trust and network effects
+- **Moderator Tenure**: Average duration of moderator service — target ≥12 months (high tenure indicates legitimacy and trust)
+
+### Ethical and Compliance Metrics
+
+- **Data Deletion Requests Fulfilled**: Percentage of user-initiated deletion requests completed within 30 days — target: 100%
+- **No PII Storage**: Absolute guarantee that no personally identifiable information beyond email is retained after 30 days of account deletion
+- **Transparency Report Frequency**: Number of public transparency reports published annually (target: 1 per community, 4x per year system-wide)
+- **Audited Access Logs**: Percentage of admin actions logged and subject to independent audit — target: 100%
 
 ## Related Documents
 
-For technical implementation details, see the following companion documents:
+The following companion documents provide detailed specifications for implementation:
 
-- [User Actor Structure and Permissions](./02-user-actors.md)
-- [Core Functional Requirements in EARS Format](./03-functional-requirements.md)
-- [User Journey and Workflow Mapping](./04-user-journey.md)
-- [Business Rules and Validation Logic](./05-business-rules.md)
-- [Performance and Response Time Expectations](./06-performance-requirements.md)
-- [Error Handling and Recovery Procedures](./07-error-handling.md)
-- [Business Model and Monetization Strategy](./01-business-model.md)
+- [Functional Requirements Document](./01-functional-requirements.md) — Defines all user-initiated actions and system behaviors in EARS format
+- [User Journey Documentation](./02-user-journey.md) — Maps the complete end-to-end experience from registration to posting to moderation
+- [Authentication Flow Guide](./03-authentication-flow.md) — Specifies JWT-based login, session management, and password recovery flows
+- [Permission Matrix](./04-permission-matrix.md) — Details exactly which actions citizens, moderators, and administrators can and cannot perform
+- [Business Rules Document](./05-business-rules.md) — Describes content visibility policies, reputation systems, spam detection, and edit deletion windows
+- [Error Handling Specification](./07-error-handling.md) — Outlines all user-facing error messages and recovery paths
+- [Performance Requirements](./08-performance-requirements.md) — Sets page load, API response, and concurrency targets
+- [Compliance Requirements](./10-compliance-requirements.md) — Lists GDPR-style data rights, data retention policies, and accessibility obligations
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+
+## Service Overview - Enhanced
+
+The communityBBS service transforms how local communities engage with one another through digital dialogue. Unlike commercial platforms that monetize attention, communityBBS preserves authenticity by design. It does not track user behavior, sell data, or amplify outrage. Instead, it creates isolated, self-governing civic spaces where residents — not algorithms — decide what matters.
+
+When a new resident registers, they are not prompted to follow influencers or like trending posts. Instead, they are invited to join conversations about potholes on Maple Street, school budget votes, or neighborhood bike lanes. Every feature of the system serves this singular purpose: to empower ordinary citizens to speak, listen, and act together.
+
+The service distinguishes itself by rejecting engagement-based ranking. Instead of showing top posts by popularity, it surfaces conversations that are being actively moderated, discussed, and flagged by users themselves. A post about a broken streetlight may not get many likes, but if five residents report it and a moderator reviews it, it becomes visible because it represents a shared community need — not viral potential.
+
+Each community instance (e.g., "Downtown Oakville") is governed by its own volunteers who establish rules, define acceptable language, and set thresholds for what counts as spam or harassment. There is no central team dictating policy. Local moderators are selected from within the community — often retired teachers, local librarians, small business owners — not hired professionals. Their authority comes from trust, not corporate appointment.
+
+All user data remains under local control. Emails are used only for verification and cannot be used to search or profile users. No location data is collected. No device fingerprinting occurs. No behavioral analytics exist. The system does not know which posts a user reads, what time they log in, or what they search for — because it does not collect or store that information.
+
+The registration process is minimal: only an email and a username. No phone number. No social media account. No government ID. Users are citizens, not products. Their identity is bound to their participation, not their profile picture or follower count.
+
+When users post a comment, they are not rewarded with badges or streaks. Their only reward is being heard. When they report a harmful message, they are not given points or visibility — they are simply told their report was received, and when action was taken. There is no leaderboard. No rankings. No "You're a Top Contributor" emails. The system does not incentivize volume — it incentivizes responsibility.
+
+Moderation is a shared civic duty. A user who has been active for two years, posted thoughtful comments, and earned the trust of neighbors may be invited to become a moderator. Their actions are logged and reviewed. They can remove a post, but cannot delete a user account. Only administrators — a small, accountable group bound by legal oversight — can ban users permanently. These roles are not automatic — they are granted with transparency and community awareness.
+
+The service’s architecture ensures that no single actor has overwhelming power. A moderator can temporarily hide a post, but cannot silence a user permanently. An admin can ban, but must provide an auditable reason. The system logs every action, and every user may request a transparency report showing which posts were removed and why.
+
+CommunityBBS does not have a corporate parent. It does not appear in app stores or run advertisements. It does not partner with data brokers. It is funded by municipal grants and small community donations. There is no monetization. There is no shareholder pressure. The only goal is to make civic space more honest, more accessible, and more human.
+
+This service ensures that when parents in a neighborhood want to organize a school cleanup, they don’t need to create a Facebook group that will be flooded with ads and bots. When activists want to share information about a zoning council meeting, they don’t need to risk their message being buried under cat videos or political spam. They have a place where the conversation matters, not the algorithm.
+
+The service does not grow through manipulation. It grows through trust. It does not compete for attention — it earns it. And because it refuses to participate in the global attention economy, it becomes precisely what local democracy needs: a quiet, persistent, and unyielding space for truth to emerge.

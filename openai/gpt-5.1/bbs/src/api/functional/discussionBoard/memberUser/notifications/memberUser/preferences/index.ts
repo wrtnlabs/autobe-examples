@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMemberuserNotificationPreference } from "../../../../../../structures/IDiscussionBoardMemberuserNotificationPreference";
 
 /**
- * Get notification preferences for the current member user from
- * discussion_board_memberuser_notification_preferences.
- *
  * Get the notification preference settings for the currently authenticated
  * member user.
  *
@@ -91,9 +88,6 @@ export namespace at {
 }
 
 /**
- * Update notification preferences for the current member user in
- * discussion_board_memberuser_notification_preferences.
- *
  * Change the notification preference settings for the currently authenticated
  * member user.
  *

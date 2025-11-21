@@ -7,8 +7,6 @@ import { ICommunityForumCommunityModerator } from "../../../../../structures/ICo
 import { IPageICommunityForumCommunityModerator } from "../../../../../structures/IPageICommunityForumCommunityModerator";
 
 /**
- * Create a new moderator for a community.
- *
  * Assign a user as moderator for a specific community.
  *
  * This endpoint creates a new moderator association between a user and a
@@ -120,9 +118,6 @@ export namespace create {
 }
 
 /**
- * Retrieve paginated list of moderators for a specific community with search
- * capabilities.
- *
  * Retrieve a filtered and paginated list of moderator accounts assigned to a
  * specific community. This operation provides community owners and
  * administrators with the ability to view all moderators assigned to a
@@ -231,8 +226,6 @@ export namespace index {
 }
 
 /**
- * Add a user as moderator to a community.
- *
  * Add a user as a moderator to a community.
  *
  * This operation creates a new moderator relationship between a user and a

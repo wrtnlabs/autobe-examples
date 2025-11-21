@@ -7,9 +7,6 @@ import { IShoppingMallPolicyStatistics } from "../../../../../api/structures/ISh
 @Controller("/shoppingMall/admin/statistics/policies")
 export class ShoppingmallAdminStatisticsPoliciesController {
   /**
-   * Get aggregated statistics for business policies from
-   * shopping_mall_business_policies.
-   *
    * Retrieve aggregated statistical information about business policies
    * configured in the shopping mall platform.
    *

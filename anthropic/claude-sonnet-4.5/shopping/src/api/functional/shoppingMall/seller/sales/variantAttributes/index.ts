@@ -7,8 +7,6 @@ import { IShoppingMallSaleVariantAttribute } from "../../../../../structures/ISh
 export * as values from "./values/index";
 
 /**
- * Create a new variant attribute definition for a product sale.
- *
  * Create a new variant attribute definition for a specific product sale,
  * establishing the foundational structure for product variations.
  *
@@ -126,8 +124,6 @@ export namespace create {
 }
 
 /**
- * Update a variant attribute for a specific product sale.
- *
  * Update the properties of an existing variant attribute for a specific product
  * sale in the shopping mall marketplace.
  *
@@ -251,8 +247,6 @@ export namespace update {
 }
 
 /**
- * Delete a variant attribute from a specific product sale.
- *
  * Permanently remove a variant attribute from a specific product sale in the
  * shopping mall marketplace.
  *

@@ -101,8 +101,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated list of Reddit Community Administrators.
- *
  * Retrieve a filtered, paginated list of Reddit Community Administrators.
  *
  * This endpoint offers advanced search capabilities for admin accounts,
@@ -195,8 +193,6 @@ export namespace index {
 }
 
 /**
- * Get a Reddit Community Administrator by ID.
- *
  * Retrieve detailed information for a specific Reddit Community Administrator
  * identified by their unique UUID.
  *
@@ -289,8 +285,6 @@ export namespace at {
 }
 
 /**
- * Update an existing Reddit community administrator account.
- *
  * Update the details of an existing Reddit community administrator account
  * identified by its UUID.
  *
@@ -394,8 +388,6 @@ export namespace update {
 }
 
 /**
- * Delete a reddit community administrator by ID.
- *
  * This operation permanently deletes a reddit community administrator from the
  * system.
  *

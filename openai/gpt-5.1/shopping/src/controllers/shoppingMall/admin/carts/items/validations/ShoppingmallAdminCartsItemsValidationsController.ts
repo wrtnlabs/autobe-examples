@@ -8,9 +8,6 @@ import { IShoppingMallCartItemValidation } from "../../../../../../api/structure
 @Controller("/shoppingMall/admin/carts/:cartId/items")
 export class ShoppingmallAdminCartsItemsValidationsController {
   /**
-   * Search and retrieve paginated validation records for all items in a
-   * specific cart from shopping_mall_cart_item_validations.
-   *
    * Retrieve a filtered, paginated list of validation records for all items
    * within a specific shopping cart.
    *
@@ -71,9 +68,6 @@ export class ShoppingmallAdminCartsItemsValidationsController {
   }
 
   /**
-   * Search and retrieve paginated validation records for a specific cart item
-   * from shopping_mall_cart_item_validations.
-   *
    * Retrieve a filtered, paginated list of validation records for a specific
    * cart item within a given shopping cart.
    *

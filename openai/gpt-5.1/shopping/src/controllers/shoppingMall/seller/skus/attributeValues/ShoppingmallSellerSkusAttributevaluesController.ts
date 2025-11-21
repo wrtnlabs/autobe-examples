@@ -8,9 +8,6 @@ import { IPageIShoppingMallSkuAttributeValue } from "../../../../../api/structur
 @Controller("/shoppingMall/seller/skus/:skuId/attributeValues")
 export class ShoppingmallSellerSkusAttributevaluesController {
   /**
-   * Create a SKU attribute value association for a specific SKU using the
-   * shopping_mall_sku_attribute_values table.
-   *
    * Create SKU attribute value associations for a specific SKU using the
    * `shopping_mall_sku_attribute_values` junction table.
    *
@@ -80,9 +77,6 @@ export class ShoppingmallSellerSkusAttributevaluesController {
   }
 
   /**
-   * Search and list shopping_mall_sku_attribute_values records for a specific
-   * shopping_mall_skus SKU.
-   *
    * Retrieve a paginated list of attribute value links for a specific SKU,
    * using the shopping_mall_sku_attribute_values subsidiary table scoped by a
    * parent SKU in shopping_mall_skus.
@@ -148,9 +142,6 @@ export class ShoppingmallSellerSkusAttributevaluesController {
   }
 
   /**
-   * Retrieve one shopping_mall_sku_attribute_values record for a SKU by
-   * skuAttributeValueId.
-   *
    * Get detailed information about a single SKU attribute value link
    * belonging to a specific SKU, using the shopping_mall_sku_attribute_values
    * subsidiary table as the underlying data source.
@@ -207,9 +198,6 @@ export class ShoppingmallSellerSkusAttributevaluesController {
   }
 
   /**
-   * Update an existing SKU attribute value association for a specific SKU in
-   * the shopping_mall_sku_attribute_values table.
-   *
    * Update a specific SKU attribute value association belonging to a given
    * SKU using the `shopping_mall_sku_attribute_values` table.
    *

@@ -12,9 +12,6 @@ export * as chargebacks from "./chargebacks/index";
 export * as reconciliationEvents from "./reconciliationEvents/index";
 
 /**
- * Search and list order payments from the shopping_mall_order_payments table
- * with filtering and pagination.
- *
  * Search and retrieve a paginated list of order payment records from the
  * shopping mall platform.
  *
@@ -136,9 +133,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single order payment from the
- * shopping_mall_order_payments table.
- *
  * Retrieve the detailed information of a single order payment record by its
  * unique identifier.
  *

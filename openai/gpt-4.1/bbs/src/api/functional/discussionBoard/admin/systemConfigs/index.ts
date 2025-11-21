@@ -7,8 +7,6 @@ import { IDiscussionBoardSystemConfig } from "../../../../structures/IDiscussion
 import { IPageIDiscussionBoardSystemConfig } from "../../../../structures/IPageIDiscussionBoardSystemConfig";
 
 /**
- * Create a new system configuration entry in discussion_board_system_configs.
- *
  * Create a new configuration entry for system scope in the discussion board
  * backend. The primary purpose of this endpoint is to introduce a new global
  * key-value setting, governing aspects like maintenance mode, feature
@@ -111,9 +109,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a paginated, filterable list of board system
- * configuration settings (discussion_board_system_configs).
- *
  * Retrieve a paginated, filterable list of all system-level configuration
  * entries currently active in the discussion board platform.
  *
@@ -213,9 +208,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a single board system configuration entry
- * (discussion_board_system_configs) by unique configKey.
- *
  * Retrieve all details for a specific board system configuration setting by
  * providing the configuration's unique key as a path parameter.
  *
@@ -311,9 +303,6 @@ export namespace at {
 }
 
 /**
- * Update an existing system configuration entry in
- * discussion_board_system_configs by config_key.
- *
  * Update the value and/or metadata of an existing system configuration entry by
  * specifying its config_key. This endpoint is intended for administrative
  * management of board-wide settings such as feature flags, runtime limits, or
@@ -425,9 +414,6 @@ export namespace update {
 }
 
 /**
- * Remove a system configuration setting from the
- * discussion_board_system_configs table.
- *
  * Permanently remove a system configuration entry identified by its unique key
  * from the board's global settings. This operation is crucial for managing and
  * cleaning up deprecated, obsolete, or insecure settings without losing

@@ -12,8 +12,6 @@ import { IRedditCommunityRegisteredUser } from "../../../../api/structures/IRedd
 )
 export class RedditcommunityRegistereduserRedditcommunityregisteredusersController {
   /**
-   * Update redditCommunity user account by ID.
-   *
    * Update an existing registered user account identified by ID.
    *
    * This operation allows changing the user's email and password hash, updating

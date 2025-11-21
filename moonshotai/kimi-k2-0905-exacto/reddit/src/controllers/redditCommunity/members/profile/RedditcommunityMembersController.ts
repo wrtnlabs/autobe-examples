@@ -7,8 +7,6 @@ import { IRedditCommunityUserProfiles } from "../../../../api/structures/IReddit
 @Controller("/redditCommunity/members/:memberId/profile")
 export class RedditcommunityMembersController {
   /**
-   * Retrieve member profile information linked by member ID.
-   *
    * Retrieve complete profile information for a specific community member
    * identified by their member ID. This operation returns all publicly
    * available profile data linked through the member_id foreign key

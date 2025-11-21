@@ -7,9 +7,6 @@ import { ICommunityPlatformGuestuser } from "../../../api/structures/ICommunityP
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Create a new community_platform_guestusers surrogate record and issue
-   * guestUser authorization tokens via a public join endpoint.
-   *
    * This operation creates a new surrogate guestUser record in the
    * `community_platform_guestusers` table and returns an authorized context
    * for an unauthenticated visitor. The underlying Prisma model defines `id`
@@ -86,9 +83,6 @@ export class AuthGuestuserController {
   }
 
   /**
-   * Refresh guestUser authorization tokens for an existing active surrogate
-   * record in community_platform_guestusers.
-   *
    * This operation refreshes the authorization tokens for a guestUser
    * pseudo-account backed by the `community_platform_guestusers` table. When
    * a client presents a valid refresh token, the system extracts the

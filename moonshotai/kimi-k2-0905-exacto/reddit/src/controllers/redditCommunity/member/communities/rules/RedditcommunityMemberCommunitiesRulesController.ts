@@ -7,8 +7,6 @@ import { IRedditCommunityCommunityRule } from "../../../../../api/structures/IRe
 @Controller("/redditCommunity/member/communities/:communityName/rules/:ruleId")
 export class RedditcommunityMemberCommunitiesRulesController {
   /**
-   * Retrieve a specific community rule with detailed information.
-   *
    * Retrieve detailed information about a specific community rule including
    * its display order, title, description, and violation consequences. This
    * operation enables community moderators and members to review individual

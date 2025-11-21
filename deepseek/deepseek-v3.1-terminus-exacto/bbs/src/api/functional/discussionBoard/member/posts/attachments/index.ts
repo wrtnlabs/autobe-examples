@@ -7,8 +7,6 @@ import { IDiscussionBoardPostAttachment } from "../../../../../structures/IDiscu
 import { IPageIDiscussionBoardPostAttachment } from "../../../../../structures/IPageIDiscussionBoardPostAttachment";
 
 /**
- * Create a new file attachment for a discussion board post.
- *
  * Upload and associate a new file attachment with an existing discussion board
  * post. This operation allows authenticated users to add supporting materials
  * such as images, documents, or research files to their posts.
@@ -111,9 +109,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of attachments for a specific
- * discussion board post.
- *
  * This operation provides advanced search capabilities for finding file
  * attachments associated with a specific discussion board post. Users can
  * filter attachments by file type, upload status, security scan result, and
@@ -222,9 +217,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific file attachment for a
- * discussion board post.
- *
  * This operation provides complete metadata and information about a specific
  * file attachment linked to a discussion board post. It returns detailed
  * information including the original file name, MIME type, file size, storage
@@ -328,8 +320,6 @@ export namespace at {
 }
 
 /**
- * Update an existing file attachment for a discussion board post.
- *
  * Modify metadata and properties of an existing file attachment associated with
  * a discussion board post. This operation allows users to update attachment
  * descriptions, file information, or other metadata while maintaining the
@@ -436,8 +426,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a specific attachment from a discussion board post.
- *
  * This operation permanently removes a file attachment from a discussion board
  * post. The attachment is identified by its unique identifier within the
  * context of a specific post.

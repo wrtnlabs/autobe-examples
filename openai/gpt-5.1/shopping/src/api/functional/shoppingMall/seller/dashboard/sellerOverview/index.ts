@@ -5,9 +5,6 @@ import typia from "typia";
 import { IShoppingMallSellerOverviewDashboard } from "../../../../../structures/IShoppingMallSellerOverviewDashboard";
 
 /**
- * Get a consolidated seller overview dashboard aggregating data from
- * ShoppingMall seller-related tables.
- *
  * Retrieve a consolidated seller dashboard overview aggregating KPIs and status
  * summaries from multiple ShoppingMall domain tables.
  *

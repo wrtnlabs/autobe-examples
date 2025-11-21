@@ -7,8 +7,6 @@ import { IShoppingMallCategoryHierarchy } from "../../../../../structures/IShopp
 import { IPageIShoppingMallCategoryHierarchy } from "../../../../../structures/IPageIShoppingMallCategoryHierarchy";
 
 /**
- * Create a new category hierarchy link under the specified category.
- *
  * Create a new link in the category hierarchy connecting a parent category to a
  * child category.
  *
@@ -116,9 +114,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of category hierarchies scoped by parent
- * category name.
- *
  * Retrieve a filtered and paginated list of category hierarchy entries where
  * the specified category (identified by its unique category name) acts as the
  * parent category.
@@ -239,9 +234,6 @@ export namespace index {
 }
 
 /**
- * Get detailed information of a specific category hierarchy entry by its ID
- * scoped under a category.
- *
  * Retrieve detailed information of a specific category hierarchy entry
  * identified by its unique ID within the scope of the specified parent
  * category.
@@ -345,8 +337,6 @@ export namespace at {
 }
 
 /**
- * Update an existing category hierarchy link.
- *
  * Update an existing link in the category hierarchy between a specified parent
  * category and a child category.
  *

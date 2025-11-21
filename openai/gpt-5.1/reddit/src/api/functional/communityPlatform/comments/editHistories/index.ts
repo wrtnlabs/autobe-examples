@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformCommentEditHistory } from "../../../../structures/ICommunityPlatformCommentEditHistory";
 
 /**
- * Get a specific comment edit history record from
- * community_platform_comment_edit_histories.
- *
  * Retrieve the details of a specific comment edit history entry associated with
  * a given comment.
  *

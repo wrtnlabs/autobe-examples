@@ -15,8 +15,6 @@ import { IPageIShoppingMallShippingPartner } from "../../../../api/structures/IP
 @Controller("/shoppingMall/admin/shippingPartners")
 export class ShoppingmallAdminShippingpartnersController {
   /**
-   * Create a new shipping partner (shopping_mall_shipping_partners) record.
-   *
    * Create a new entry for an official platform shipping or logistics partner
    * available for use in buyer and seller order flows on the shopping mall.
    *
@@ -59,9 +57,6 @@ export class ShoppingmallAdminShippingpartnersController {
   }
 
   /**
-   * Search, filter, and list all shipping partners in the platform registry
-   * (shopping_mall_shipping_partners).
-   *
    * Retrieve a filtered and paginated list of logistics/shipping partners
    * currently registered on the platform for use in buyer and seller flows.
    *
@@ -103,9 +98,6 @@ export class ShoppingmallAdminShippingpartnersController {
   }
 
   /**
-   * Retrieve all details of a single shipping partner from
-   * shopping_mall_shipping_partners by its unique integration code.
-   *
    * Fetch all descriptive and operational fields for a specific
    * logistics/shipping partner identified by its unique integration code.
    * Reference the Prisma schema for all available partner-related data fields,
@@ -145,9 +137,6 @@ export class ShoppingmallAdminShippingpartnersController {
   }
 
   /**
-   * Update the information on a shipping partner
-   * (shopping_mall_shipping_partners) by its code.
-   *
    * Update the registration details of a previously onboarded
    * shipping/logistics partner on the shopping mall platform by specifying its
    * unique partner_code.
@@ -192,9 +181,6 @@ export class ShoppingmallAdminShippingpartnersController {
   }
 
   /**
-   * Permanently remove a shipping partner by partnerCode (hard delete) from
-   * shopping_mall_shipping_partners table.
-   *
    * Remove an existing shipping partner from the platform's official registry
    * by permanently and irreversibly deleting their record based on the unique
    * partnerCode. This API is restricted to administrative users and is used

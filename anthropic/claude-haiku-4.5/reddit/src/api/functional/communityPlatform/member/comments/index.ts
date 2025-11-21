@@ -8,8 +8,6 @@ export * as comments from "./comments/index";
 export * as votes from "./votes/index";
 
 /**
- * Create a new comment on a post or existing comment in the community platform.
- *
  * Create a new user-generated comment in the community_platform_comments table.
  * This operation enables members to contribute to discussions by posting
  * comments on posts or replying to existing comments with nested threading
@@ -132,8 +130,6 @@ export namespace create {
 }
 
 /**
- * Update an existing comment with new content or status changes.
- *
  * Update a specific community platform comment identified by commentId. This
  * operation modifies the comment content, status, or metadata in the
  * community_platform_comments table. Regular members can only edit their own
@@ -256,8 +252,6 @@ export namespace update {
 }
 
 /**
- * Delete a community platform comment by ID.
- *
  * Delete a specific comment from the community platform, marking it as deleted
  * in the database while preserving the record for audit purposes and thread
  * structure integrity.

@@ -7,9 +7,6 @@ import { IShoppingMallSkuExternalId } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallSkuExternalId } from "../../../../../structures/IPageIShoppingMallSkuExternalId";
 
 /**
- * Create a new SKU external identifier record in the
- * shopping_mall_sku_external_ids table for the specified SKU.
- *
  * Create a new external system identifier mapping for a specific SKU by
  * inserting a record into the shopping_mall_sku_external_ids table.
  *
@@ -147,9 +144,6 @@ export namespace create {
 }
 
 /**
- * Search and list `shopping_mall_sku_external_ids` records for a specific SKU
- * with filtering and pagination.
- *
  * Retrieve a paginated list of external identifier mappings for a specific SKU
  * from the `shopping_mall_sku_external_ids` model.
  *
@@ -275,9 +269,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific SKU external identifier record from the
- * shopping_mall_sku_external_ids table.
- *
  * Retrieve detailed information about a specific external system identifier
  * associated with a given SKU from the shopping_mall_sku_external_ids table.
  *
@@ -410,9 +401,6 @@ export namespace at {
 }
 
 /**
- * Update an existing SKU external identifier record in the
- * shopping_mall_sku_external_ids table for a given SKU.
- *
  * Update an existing SKU external identifier associated with a given SKU within
  * the shoppingMall catalog integration context.
  *
@@ -568,9 +556,6 @@ export namespace update {
 }
 
 /**
- * Delete an existing SKU external identifier record from the
- * shopping_mall_sku_external_ids table for a given SKU.
- *
  * Erase an existing SKU external identifier mapping for a given SKU from the
  * shoppingMall integration metadata.
  *

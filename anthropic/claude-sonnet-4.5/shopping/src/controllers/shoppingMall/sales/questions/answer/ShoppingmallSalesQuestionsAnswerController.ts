@@ -8,8 +8,6 @@ import { IShoppingMallSaleQuestionAnswer } from "../../../../../api/structures/I
 @Controller("/shoppingMall/sales/:saleCode/questions/:questionId/answer")
 export class ShoppingmallSalesQuestionsAnswerController {
   /**
-   * Retrieve the seller's answer to a specific product question.
-   *
    * Retrieve the seller's response to a customer question posted on a specific
    * product sale listing.
    *

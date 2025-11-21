@@ -7,9 +7,6 @@ import { IShoppingMallOrderItemSeller } from "../../../../../../api/structures/I
 @Controller("/shoppingMall/admin/orders/:orderCode/items/:orderItemId/seller")
 export class ShoppingmallAdminOrdersItemsSellerController {
   /**
-   * Get seller mapping for an order item from
-   * shopping_mall_order_item_sellers via orderCode and orderItemId.
-   *
    * Fetch the seller mapping for a specific order item within a customer
    * order using the business order code and order item identifier.
    *
@@ -77,9 +74,6 @@ export class ShoppingmallAdminOrdersItemsSellerController {
   }
 
   /**
-   * Update the seller mapping for an order item in
-   * shopping_mall_order_item_sellers using orderCode and orderItemId.
-   *
    * Update the seller mapping entry for a specific order line item identified
    * by a business order code and an order item UUID.
    *
@@ -148,9 +142,6 @@ export class ShoppingmallAdminOrdersItemsSellerController {
   }
 
   /**
-   * Remove a seller mapping for a specific order item in
-   * shopping_mall_order_item_sellers.
-   *
    * Erase the seller association mapping for a specific order item under a
    * given order.
    *

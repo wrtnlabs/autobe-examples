@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallGuestSession } from "../../../../structures/IShoppingMallGuestSession";
 
 /**
- * Create a new shopping mall guest session.
- *
  * Create a new session record for a shopping mall guest.
  *
  * This API allows the creation of a session linked to a purchasing or browsing

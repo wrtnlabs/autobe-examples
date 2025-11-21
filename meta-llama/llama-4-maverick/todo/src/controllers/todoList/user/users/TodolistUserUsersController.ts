@@ -13,8 +13,6 @@ import { ITodoListUser } from "../../../../api/structures/ITodoListUser";
 @Controller("/todoList/user/users")
 export class TodolistUserUsersController {
   /**
-   * Search and retrieve a filtered, paginated list of users.
-   *
    * Retrieve a filtered and paginated list of users from the system. This
    * operation provides advanced search capabilities for finding users based on
    * multiple criteria including partial name matching, email domain filtering,
@@ -58,8 +56,6 @@ export class TodolistUserUsersController {
   }
 
   /**
-   * Retrieve a single user by ID.
-   *
    * Retrieve detailed information about a specific user identified by their
    * unique user ID. This operation returns the user's profile data, related
    * entities, and other relevant information as defined in the Prisma schema.
@@ -95,8 +91,6 @@ export class TodolistUserUsersController {
   }
 
   /**
-   * Update user information.
-   *
    * This operation updates the details of an existing user identified by their
    * user ID. It requires appropriate authorization and follows the
    * IUser.IUpdate schema for the request body. The user ID is a path parameter

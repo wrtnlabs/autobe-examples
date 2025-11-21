@@ -7,8 +7,6 @@ import { IRedditCommunityCommunityRule } from "../../../../../structures/IReddit
 import { IPageIRedditCommunityCommunityRule } from "../../../../../structures/IPageIRedditCommunityCommunityRule";
 
 /**
- * Search and filter community rules with pagination.
- *
  * Search and retrieve community rules with advanced filtering and pagination
  * capabilities. This operation provides community moderators with tools to
  * manage, review, and organize community-specific rules and guidelines.
@@ -123,8 +121,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific community rule with detailed information.
- *
  * Retrieve detailed information about a specific community rule including its
  * display order, title, description, and violation consequences. This operation
  * enables community moderators and members to review individual rules and their

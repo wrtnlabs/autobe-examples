@@ -7,9 +7,6 @@ import { IShoppingMallAdminSession } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallAdminSession } from "../../../../../structures/IPageIShoppingMallAdminSession";
 
 /**
- * Search and retrieve paginated admin session logs from
- * shopping_mall_admin_sessions.
- *
  * Retrieve a filtered and paginated list of all authenticated session logs
  * belonging to a specific shopping mall platform administrator.
  *
@@ -119,9 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific admin session from
- * shopping_mall_admin_sessions.
- *
  * View a detailed record of an individual admin dashboard/API session by
  * specifying both the target admin's UUID and the session's UUID as path
  * parameters.
@@ -223,9 +217,6 @@ export namespace at {
 }
 
 /**
- * Erase a specific admin session record from the shopping_mall_admin_sessions
- * table by admin and session ID.
- *
  * Erase (delete) a specific admin session record associated with a particular
  * admin account from the platform.
  *

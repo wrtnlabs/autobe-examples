@@ -8,8 +8,6 @@ export * as attachments from "./attachments/index";
 export * as comments from "./comments/index";
 
 /**
- * Update article status and moderation metadata as moderator.
- *
  * Update an existing discussion board article's status, approval notes, pins,
  * and locks as a moderator. This operation allows moderators to approve or
  * reject articles, add approval feedback, pin articles for featured display,
@@ -129,8 +127,6 @@ export namespace updateByModerator {
 }
 
 /**
- * Delete an article (moderator).
- *
  * Remove a discussion board article from the system as a moderator using soft
  * deletion (preserving record for compliance) or permanent deletion (erase all
  * data). Only moderators can execute this operation. Moderators can delete any
@@ -234,8 +230,6 @@ export namespace eraseByModerator {
 }
 
 /**
- * Approve a pending article for publication with optional moderator notes.
- *
  * Approve a discussion board article that is currently in pending_approval
  * status, transitioning it to published status for public visibility.
  * Moderators use this operation after reviewing article content for compliance
@@ -346,8 +340,6 @@ export namespace approve {
 }
 
 /**
- * Reject a pending article with required moderator feedback.
- *
  * Reject a discussion board article that is currently in pending_approval
  * status, transitioning it to rejected status and preventing publication.
  * Moderators use this operation after reviewing article content and determining
@@ -460,8 +452,6 @@ export namespace reject {
 }
 
 /**
- * Archive a discussion board article and remove it from active listings.
- *
  * Perform a moderation action to archive a discussion board article. This
  * operation transitions an article from published or pending_approval status to
  * archived status, effectively removing it from user-facing listings and search
@@ -573,8 +563,6 @@ export namespace archive {
 }
 
 /**
- * Pin a discussion board article to featured display at top of listings.
- *
  * Perform a moderation action to pin a discussion board article to the top of
  * content listings for featured visibility. This operation marks the article as
  * pinned, causing it to appear above all unpinned articles in category
@@ -673,8 +661,6 @@ export namespace pin {
 }
 
 /**
- * Unpin a featured article from discussion board listings.
- *
  * Remove a pinned article from featured display at the top of article listings.
  * This moderator action returns the article to normal chronological sorting
  * with other articles.
@@ -857,8 +843,6 @@ export namespace lock {
 }
 
 /**
- * Unlock a discussion board article to allow new comments.
- *
  * Unlock a discussion board article, enabling contributors to post new comments
  * on it again.
  *

@@ -6,9 +6,6 @@ import { ITodoAppActorCurrent } from "../../../../../structures/ITodoAppActorCur
 export * as sessions from "./sessions/index";
 
 /**
- * Get the currently authenticated actor’s unified representation, not bound to
- * a single Prisma table.
- *
  * Retrieve a representation of the actor that is currently authenticated in the
  * todoApp service, aggregating identity and role information from the active
  * security context rather than a single Prisma table.

@@ -7,9 +7,6 @@ import { ICommunityPlatformMember } from "../../../../../../../api/structures/IC
 @Controller("/communityPlatform/member/auth/member/email-change/request")
 export class CommunityplatformMemberAuthMemberEmail_changeRequestController {
   /**
-   * Request email address change for authenticated member with password
-   * verification.
-   *
    * Initiates the email change process for an authenticated member by
    * validating the current password and new email address. This operation
    * requires the member to provide their current password for security

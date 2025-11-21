@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallCustomer } from "../../../structures/IShoppingMallCustomer";
 
 /**
- * Register new customer account in shopping_mall_customers.
- *
  * Customer registration operation enabling new customers to create accounts.
  * This API securely collects and stores email and hashed password fields as
  * defined in the shopping_mall_customers Prisma schema. It integrates tightly
@@ -115,8 +113,6 @@ export namespace join {
 }
 
 /**
- * Authenticate customer and issue JWT tokens.
- *
  * Customer login operation validating email and password against stored hashed
  * password as defined in shopping_mall_customers Prisma schema. Successful
  * authentication results in issuance of JWT tokens granting access to secured
@@ -221,8 +217,6 @@ export namespace login {
 }
 
 /**
- * Refresh customer access tokens via refresh token.
- *
  * Customer token refresh endpoint allowing renewal of access tokens using a
  * valid refresh token. This API enhances session longevity without requiring
  * re-authentication via credentials.

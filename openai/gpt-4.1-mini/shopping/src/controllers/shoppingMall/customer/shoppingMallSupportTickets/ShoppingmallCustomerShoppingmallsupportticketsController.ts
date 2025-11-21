@@ -14,8 +14,6 @@ import { IPageIShoppingMallSupportTicket } from "../../../../api/structures/IPag
 @Controller("/shoppingMall/customer/shoppingMallSupportTickets")
 export class ShoppingmallCustomerShoppingmallsupportticketsController {
   /**
-   * Create a new shopping mall support ticket.
-   *
    * Create a new support ticket for customers or sellers in the ShoppingMall
    * platform.
    *
@@ -55,8 +53,6 @@ export class ShoppingmallCustomerShoppingmallsupportticketsController {
   }
 
   /**
-   * Search and retrieve a paginated list of shopping mall support tickets.
-   *
    * Retrieve a paginated and filtered list of shopping mall support tickets
    * from the system. This operation supports complex search criteria, including
    * filtering by ticket status and submitter type (customer or seller).
@@ -95,8 +91,6 @@ export class ShoppingmallCustomerShoppingmallsupportticketsController {
   }
 
   /**
-   * Retrieve detailed information of a shopping mall support ticket by ID.
-   *
    * Retrieve detailed information about a single shopping mall support ticket
    * by its ID. The operation fetches full details including the submitter
    * (customer or seller), the issue description, status, and timestamps.
@@ -137,8 +131,6 @@ export class ShoppingmallCustomerShoppingmallsupportticketsController {
   }
 
   /**
-   * Update shopping mall support ticket by ID.
-   *
    * Update an existing shopping mall support ticket specified by the ticket ID.
    *
    * This operation allows modification of ticket details including title,

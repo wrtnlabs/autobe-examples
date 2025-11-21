@@ -7,8 +7,6 @@ import { ICommunityPlatformUserReport } from "../../../../structures/ICommunityP
 import { IPageICommunityPlatformUserReport } from "../../../../structures/IPageICommunityPlatformUserReport";
 
 /**
- * Create a new user report row in the community_platform_user_reports table.
- *
  * Create a new user-level report capturing a complaint about a member account’s
  * behavior.
  *
@@ -135,9 +133,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate user reports stored in the
- * community_platform_user_reports table for administrative review.
- *
  * Retrieve a filtered, paginated list of user report records from the
  * `community_platform_user_reports` table for administrative review.
  *
@@ -251,9 +246,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single user report record from the
- * community_platform_user_reports table.
- *
  * Retrieve full details of a single user report entity from the
  * `community_platform_user_reports` table by its unique identifier.
  *
@@ -363,9 +355,6 @@ export namespace at {
 }
 
 /**
- * Update an existing user report row in the community_platform_user_reports
- * table by its id.
- *
  * Modify the details, triage metadata, or lifecycle state of an existing user
  * report entry.
  *
@@ -497,9 +486,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a single user report record from the
- * community_platform_user_reports table by id.
- *
  * Delete an existing user report from the `community_platform_user_reports`
  * table by its unique identifier.
  *

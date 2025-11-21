@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardModerationStatistics } from "../../../../../structures/IDiscussionBoardModerationStatistics";
 
 /**
- * Retrieve aggregated moderation statistics and analytics for moderation
- * oversight.
- *
  * This operation provides comprehensive moderation statistics by aggregating
  * data from the moderation workflow tables. It generates key performance
  * indicators that help moderators monitor moderation effectiveness, identify

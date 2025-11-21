@@ -8,9 +8,6 @@ import { IShoppingMallOrderPayment } from "../../../../api/structures/IShoppingM
 @Controller("/shoppingMall/admin/payments")
 export class ShoppingmallAdminPaymentsController {
   /**
-   * Search and list order payments from the shopping_mall_order_payments
-   * table with filtering and pagination.
-   *
    * Search and retrieve a paginated list of order payment records from the
    * shopping mall platform.
    *
@@ -67,9 +64,6 @@ export class ShoppingmallAdminPaymentsController {
   }
 
   /**
-   * Retrieve detailed information for a single order payment from the
-   * shopping_mall_order_payments table.
-   *
    * Retrieve the detailed information of a single order payment record by its
    * unique identifier.
    *

@@ -8,9 +8,6 @@ import { IPageIShoppingMallPaymentAuditLog } from "../../../../../structures/IPa
 import { IShoppingMallOrderAuditLog } from "../../../../../structures/IShoppingMallOrderAuditLog";
 
 /**
- * List and search audit log records for a payment from
- * shopping_mall_payment_audit_logs.
- *
  * Retrieve a filtered, paginated list of all audit log records associated with
  * a specific payment.
  *
@@ -120,9 +117,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific order audit log event by payment and audit log ID from
- * shopping_mall_order_audit_logs.
- *
  * Retrieve detailed information about a single audit log entry connected to the
  * lifecycle of an order, identified by the provided payment and audit log
  * UUIDs.

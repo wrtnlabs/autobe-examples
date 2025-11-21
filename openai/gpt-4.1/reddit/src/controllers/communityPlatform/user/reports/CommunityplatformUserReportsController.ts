@@ -10,8 +10,6 @@ import { ICommunityPlatformReport } from "../../../../api/structures/ICommunityP
 @Controller("/communityPlatform/user/reports")
 export class CommunityplatformUserReportsController {
   /**
-   * Create a new report (community_platform_reports table).
-   *
    * Create a new report by submitting the necessary fields for the
    * community_platform_reports table, following all business rules and
    * validation requirements.

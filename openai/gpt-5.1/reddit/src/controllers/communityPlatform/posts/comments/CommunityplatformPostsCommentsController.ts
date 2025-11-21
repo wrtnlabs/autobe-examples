@@ -7,9 +7,6 @@ import { ICommunityPlatformComment } from "../../../../api/structures/ICommunity
 @Controller("/communityPlatform/posts/:postId/comments/:commentId")
 export class CommunityplatformPostsCommentsController {
   /**
-   * Get a specific comment from the community_platform_comments table for a
-   * given post.
-   *
    * Retrieve detailed information about a specific comment associated with a
    * given post.
    *

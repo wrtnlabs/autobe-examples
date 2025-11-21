@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSaleQuestionAnswer } from "../../../../../structures/IShoppingMallSaleQuestionAnswer";
 
 /**
- * Retrieve the seller's answer to a specific product question.
- *
  * Retrieve the seller's response to a customer question posted on a specific
  * product sale listing.
  *

@@ -5,9 +5,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 export * as replies from "./replies/index";
 
 /**
- * Permanently delete a specific comment from the community_platform_comments
- * table for a given post.
- *
  * Erase a specific comment row from the community_platform_comments table for a
  * given post.
  *

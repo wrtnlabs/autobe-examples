@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListUser } from "../../../../../../structures/ITodoListUser";
 
 /**
- * Retrieve the authenticated user's profile information.
- *
  * Get the complete profile of the currently authenticated user. This operation
  * returns all available user account information including email address,
  * account creation and update timestamps, and last login history.
@@ -73,8 +71,6 @@ export namespace at {
 }
 
 /**
- * Update the authenticated user's profile information.
- *
  * Update the profile information of the currently authenticated user. This
  * operation allows users to modify their account details such as email address
  * while maintaining account security and data integrity.

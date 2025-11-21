@@ -8,8 +8,6 @@ import { IDiscussionBoardEmailVerification } from "../../../api/structures/IDisc
 @Controller("/discussionBoard/emailVerifications")
 export class DiscussionboardEmailverificationsController {
   /**
-   * Create email verification token for member registration.
-   *
    * Create a new email verification record and send verification email to a
    * member's registered email address. This operation generates a unique
    * verification token valid for 24 hours and sends it to the member's email.

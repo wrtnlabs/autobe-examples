@@ -9,8 +9,6 @@ import { ICommunityPlatformAdministrator } from "../../../../../../../api/struct
 )
 export class CommunityplatformAdministratorAuthAdministratorEmail_verifyConfirmController {
   /**
-   * Confirm administrator email verification using verification token.
-   *
    * Completes the email verification process for platform administrators by
    * validating a verification token received via email. This operation is the
    * second step in the email verification workflow and confirms that the

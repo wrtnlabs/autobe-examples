@@ -7,8 +7,6 @@ import { IShoppingMallMileage } from "../../../../structures/IShoppingMallMileag
 import { IPageIShoppingMallMileage } from "../../../../structures/IPageIShoppingMallMileage";
 
 /**
- * Create a new customer mileage record in shopping mall system.
- *
  * Create a new mileage record linked to a shopping mall customer.
  *
  * This operation allows authorized users to add a mileage record, representing
@@ -105,8 +103,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve a filtered, paginated list of shopping mall mileages.
- *
  * Retrieve a filtered and paginated list of mileage records accumulated by
  * customers in the shopping mall platform. This operation supports complex
  * filtering criteria including customer ID, point ranges, expiration dates, and
@@ -202,8 +198,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific shopping mall mileage record.
- *
  * Retrieve detailed information for a single mileage record identified by its
  * unique mileage ID. This includes total points accumulated, expiration date if
  * any, customer association, and timestamps for creation, update, and
@@ -290,8 +284,6 @@ export namespace at {
 }
 
 /**
- * Update a customer mileage record by ID.
- *
  * Update an existing mileage record by ID.
  *
  * This operation enables authorized users to modify mileage points, expiration

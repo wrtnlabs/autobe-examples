@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallInventoryReservation } from "../../../../structures/IShoppingMallInventoryReservation";
 
 /**
- * Retrieve detailed information about a specific inventory reservation.
- *
  * Retrieve complete details of a specific inventory reservation record from the
  * system. This operation provides comprehensive information about a temporary
  * inventory hold that was created during the checkout process to prevent

@@ -10,8 +10,6 @@ import { IPageIDiscussionBoardChannelStatistics } from "../../../../../api/struc
 @Controller("/discussionBoard/moderator/statistics/postsByChannel")
 export class DiscussionboardModeratorStatisticsPostsbychannelController {
   /**
-   * Retrieve statistical breakdown of posts by discussion board channel.
-   *
    * This operation provides statistical analytics showing how posts are
    * distributed across different discussion board channels. It aggregates post
    * data from the discussion_board_posts table and groups results by channel to

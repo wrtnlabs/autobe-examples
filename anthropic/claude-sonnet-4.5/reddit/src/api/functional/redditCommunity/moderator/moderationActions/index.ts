@@ -7,8 +7,6 @@ import { IRedditCommunityModerationAction } from "../../../../structures/IReddit
 import { IPageIRedditCommunityModerationAction } from "../../../../structures/IPageIRedditCommunityModerationAction";
 
 /**
- * Search and retrieve a filtered, paginated list of moderation actions.
- *
  * Retrieve a comprehensive audit log of moderation actions with advanced
  * filtering, searching, sorting, and pagination capabilities. This operation
  * provides visibility into all moderator activities across the platform.
@@ -118,8 +116,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific moderation action.
- *
  * Retrieve comprehensive details of a single moderation action identified by
  * its unique action ID. This operation provides complete information about what
  * moderation action was taken, by which moderator, on which content, and when.

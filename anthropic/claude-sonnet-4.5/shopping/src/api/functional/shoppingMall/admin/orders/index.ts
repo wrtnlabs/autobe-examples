@@ -13,8 +13,6 @@ export * as refundTransactions from "./refundTransactions/index";
 export * as platformCommissions from "./platformCommissions/index";
 
 /**
- * Search and retrieve a filtered, paginated list of orders.
- *
  * Retrieve a comprehensive, filtered, and paginated list of orders from the
  * marketplace. This operation provides advanced search capabilities for finding
  * orders based on multiple criteria including order number, status, creation
@@ -133,8 +131,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific order.
- *
  * Retrieve comprehensive details of a specific order identified by its unique
  * order ID. This operation provides complete order information including buyer
  * information, current order status, payment details, shipping address,
@@ -233,8 +229,6 @@ export namespace at {
 }
 
 /**
- * Soft delete an order from the system (admin).
- *
  * Mark an order record as deleted in the shopping mall platform by setting the
  * deleted_at timestamp. This administrative operation uses soft deletion to
  * preserve the order record for historical, legal, and compliance purposes

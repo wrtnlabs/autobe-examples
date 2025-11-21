@@ -7,9 +7,6 @@ import { ICommunityPlatformMemberuser } from "../../../../api/structures/ICommun
 @Controller("/communityPlatform/memberUser/memberUsers/:username")
 export class CommunityplatformMemberuserMemberusersController {
   /**
-   * Update an existing community platform member user in the
-   * `community_platform_memberusers` table using their username.
-   *
    * Update an existing member user record in the community platform, using
    * the member's globally unique username as the primary identifier in the
    * URL path.
@@ -71,9 +68,6 @@ export class CommunityplatformMemberuserMemberusersController {
   }
 
   /**
-   * Delete a community platform member user from the
-   * `community_platform_memberusers` table using their username.
-   *
    * Delete a member user account from the community platform by specifying
    * its globally unique username in the request path.
    *

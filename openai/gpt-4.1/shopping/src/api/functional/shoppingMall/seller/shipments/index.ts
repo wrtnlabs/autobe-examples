@@ -7,8 +7,6 @@ import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipm
 export * as trackingHistories from "./trackingHistories/index";
 
 /**
- * Create a new shipment record for an order item (shopping_mall_shipments).
- *
  * Create a new shipment record for an order item, referencing a specific order
  * and assigning fulfillment responsibility to a shipping partner. This
  * operation requires that the target order and order item are valid and not yet
@@ -117,8 +115,6 @@ export namespace create {
 }
 
 /**
- * Update shipment record and logistics status (shopping_mall_shipments).
- *
  * Update shipment details—such as status, carrier tracking, manifests,
  * delivery/cancellation timestamps, or API provider result—by specifying the
  * shipmentId of the target shipment record. This operation allows status
@@ -232,8 +228,6 @@ export namespace update {
 }
 
 /**
- * Delete a shipment record from the shopping_mall_shipments table.
- *
  * This endpoint deletes a shipment record from the system by its unique
  * identifier. Deleting a shipment is an irreversible operation and should only
  * be performed when the shipment has not been delivered, is not in transit, or

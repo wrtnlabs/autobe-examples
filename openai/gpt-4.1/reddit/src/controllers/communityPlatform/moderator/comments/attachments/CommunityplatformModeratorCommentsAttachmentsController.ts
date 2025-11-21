@@ -13,9 +13,6 @@ import { ICommunityPlatformCommentAttachment } from "../../../../../api/structur
 )
 export class CommunityplatformModeratorCommentsAttachmentsController {
   /**
-   * Update a specific comment attachment
-   * (community_platform_comment_attachments).
-   *
    * Update properties and URI of a single attachment on a comment. The update
    * operation affects only the metadata linked to the given attachmentId under
    * commentId, ensuring the attachment is properly referenced by the comment in
@@ -73,9 +70,6 @@ export class CommunityplatformModeratorCommentsAttachmentsController {
   }
 
   /**
-   * Erase (delete) a specific comment attachment
-   * (community_platform_comment_attachments).
-   *
    * Permanently removes an attachment record from a comment, erasing its
    * metadata association from the community_platform_comment_attachments table.
    * The operation unlinks the specified attachment by ID from the comment

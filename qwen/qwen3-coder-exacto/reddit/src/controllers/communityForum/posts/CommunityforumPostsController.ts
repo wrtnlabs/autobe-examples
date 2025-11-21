@@ -8,8 +8,6 @@ import { ICommunityForumCommunityPost } from "../../../api/structures/ICommunity
 @Controller("/communityForum/posts/:postId")
 export class CommunityforumPostsController {
   /**
-   * Retrieve a specific community forum post by its unique identifier.
-   *
    * Fetch detailed information about a specific post in the community forum
    * platform. This endpoint returns comprehensive post details including
    * content type, title, body (for text posts), URL (for link posts), image URI

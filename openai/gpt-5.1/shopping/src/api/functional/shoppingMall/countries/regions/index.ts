@@ -8,9 +8,6 @@ import { IPageIShoppingMallRegion } from "../../../../structures/IPageIShoppingM
 export * as shippingPolicies from "./shippingPolicies/index";
 
 /**
- * List regions for a specific country from shopping_mall_regions with filtering
- * and pagination.
- *
  * Retrieve a paginated, filterable list of regions that belong to a specific
  * country in the shoppingMall platform.
  *
@@ -151,9 +148,6 @@ export namespace index {
 }
 
 /**
- * Get detailed configuration of a specific region from shopping_mall_regions by
- * countryCode and regionCode.
- *
  * Retrieve detailed information about a single region belonging to a specific
  * country in the shoppingMall platform.
  *

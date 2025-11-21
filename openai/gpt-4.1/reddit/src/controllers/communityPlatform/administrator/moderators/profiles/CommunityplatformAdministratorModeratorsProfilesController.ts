@@ -14,9 +14,6 @@ import { ICommunityPlatformModeratorProfile } from "../../../../../api/structure
 @Controller("/communityPlatform/administrator/moderators/:moderatorId/profiles")
 export class CommunityplatformAdministratorModeratorsProfilesController {
   /**
-   * Search and retrieve the paginated list of
-   * community_platform_moderator_profiles for admin audit and lookup.
-   *
    * Search and retrieve a filtered, paginated list of all community platform
    * moderator profiles. This operation exposes advanced search capability for
    * display usernames, profile status, creation times, or other moderator
@@ -65,9 +62,6 @@ export class CommunityplatformAdministratorModeratorsProfilesController {
   }
 
   /**
-   * Retrieve a specific moderator profile by moderatorId/profileId
-   * (community_platform_moderator_profiles).
-   *
    * Retrieve a specific moderator profile given both the moderator and profile
    * unique identifiers.
    *
@@ -120,9 +114,6 @@ export class CommunityplatformAdministratorModeratorsProfilesController {
   }
 
   /**
-   * Update moderator profile fields for a moderator/profile pair
-   * (community_platform_moderator_profiles).
-   *
    * Update a moderator profile for a specific moderator/profile combination,
    * supporting changes to the moderator display username, profile image,
    * biography, and status fields.
@@ -175,9 +166,6 @@ export class CommunityplatformAdministratorModeratorsProfilesController {
   }
 
   /**
-   * Permanently deletes a community platform moderator's profile by moderator
-   * and profile IDs (community_platform_moderator_profiles table).
-   *
    * Permanently erase a specific moderator's profile record from the system.
    * This function supports administrative workflows for handling moderator
    * resignation, profile deactivation upon misconduct, or profile clean-up as

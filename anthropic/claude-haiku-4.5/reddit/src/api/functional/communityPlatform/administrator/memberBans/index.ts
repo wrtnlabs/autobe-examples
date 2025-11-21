@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformMemberBan } from "../../../../structures/ICommunityPlatformMemberBan";
 
 /**
- * Create a new member ban record.
- *
  * Create a new member ban for disciplinary purposes. This operation allows
  * moderators or administrators to ban a member from the platform or from
  * specific communities. The ban can be temporary (with an expiration date) or
@@ -115,8 +113,6 @@ export namespace create {
 }
 
 /**
- * Retrieve a specific member ban record by ID.
- *
  * Retrieve detailed information about a specific member ban using its unique
  * identifier. This operation provides comprehensive ban details including the
  * member who was banned, the community affected (if applicable), the ban reason

@@ -7,8 +7,6 @@ import { IRedditCommunityComment } from "../../../../../structures/IRedditCommun
 import { IPageIRedditCommunityComment } from "../../../../../structures/IPageIRedditCommunityComment";
 
 /**
- * Retrieve paginated list of comments for a specific post.
- *
  * Retrieve a paginated list of comments for the given post ID in the
  * redditCommunity platform.
  *

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSellerEarningsStatistics } from "../../../../../structures/IShoppingMallSellerEarningsStatistics";
 
 /**
- * Retrieve aggregated seller earnings statistics with filtering and time-based
- * aggregation.
- *
  * Retrieve comprehensive statistical analysis of seller earnings across the
  * shopping mall platform. This operation provides aggregated financial metrics
  * that help administrators and analysts understand seller revenue patterns,

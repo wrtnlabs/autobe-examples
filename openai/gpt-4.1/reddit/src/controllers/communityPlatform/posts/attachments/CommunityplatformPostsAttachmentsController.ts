@@ -8,9 +8,6 @@ import { ICommunityPlatformPostAttachment } from "../../../../api/structures/ICo
 @Controller("/communityPlatform/posts/:postId/attachments/:attachmentId")
 export class CommunityplatformPostsAttachmentsController {
   /**
-   * Get a specific attachment of a community platform post by ID
-   * (community_platform_post_attachments).
-   *
    * Fetch detailed information about a specific attachment related to a post.
    * This includes the attachment's public URI, mimetype for rendering or
    * downloading, and the timestamp it was uploaded.

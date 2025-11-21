@@ -12,9 +12,6 @@ import { IShoppingMallProductRating } from "../../../../api/structures/IShopping
 @Controller("/shoppingMall/customer/productRatings")
 export class ShoppingmallCustomerProductratingsController {
   /**
-   * Create a new product rating for a purchased product SKU using the
-   * shopping_mall_product_ratings table.
-   *
    * Create a new standalone product rating entry linked to a given customer,
    * product SKU, and order item.
    *
@@ -61,9 +58,6 @@ export class ShoppingmallCustomerProductratingsController {
   }
 
   /**
-   * Update a shopping mall product rating (shopping_mall_product_ratings table)
-   * by ID.
-   *
    * Update an existing product rating record associated with a customer,
    * product, SKU, and order details. This operation enables a customer to
    * modify their previously submitted rating value, for example if they wish to
@@ -111,9 +105,6 @@ export class ShoppingmallCustomerProductratingsController {
   }
 
   /**
-   * Soft delete a shopping mall product rating (shopping_mall_product_ratings
-   * table) by ID.
-   *
    * Erase an existing shopping mall product rating, identified by its unique
    * ID. This operation is typically performed when a customer wishes to
    * withdraw their rating, or in rare situations where an invalid or

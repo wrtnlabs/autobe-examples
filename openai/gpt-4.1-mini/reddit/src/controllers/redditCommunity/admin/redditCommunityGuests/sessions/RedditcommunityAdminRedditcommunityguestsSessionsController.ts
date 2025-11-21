@@ -13,8 +13,6 @@ import { IRedditCommunityGuestSession } from "../../../../../api/structures/IRed
 )
 export class RedditcommunityAdminRedditcommunityguestsSessionsController {
   /**
-   * Retrieve paginated list of sessions for a Reddit community guest.
-   *
    * This operation retrieves a paginated list of active and expired sessions
    * associated with a specific Reddit community guest.
    *

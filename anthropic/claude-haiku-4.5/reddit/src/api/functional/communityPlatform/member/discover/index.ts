@@ -5,8 +5,6 @@ import typia from "typia";
 import { ICommunityPlatformTrendingContent } from "../../../../structures/ICommunityPlatformTrendingContent";
 
 /**
- * Retrieve personalized trending and recommended posts for content discovery.
- *
  * Retrieve a curated feed of trending posts and community recommendations
  * tailored to the authenticated member's interests and engagement history. This
  * operation fetches posts from communities the member subscribes to, combined

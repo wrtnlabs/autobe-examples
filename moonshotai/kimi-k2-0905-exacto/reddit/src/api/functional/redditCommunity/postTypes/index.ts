@@ -7,8 +7,6 @@ import { IRedditCommunityPostType } from "../../../structures/IRedditCommunityPo
 import { IPageIRedditCommunityPostType } from "../../../structures/IPageIRedditCommunityPostType";
 
 /**
- * Search and retrieve a filtered, paginated list of Reddit post types.
- *
  * Retrieve a comprehensive paginated list of Reddit post type classifications
  * available across the platform. This operation provides advanced search
  * capabilities for finding post types based on multiple criteria including name
@@ -102,8 +100,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific post type.
- *
  * Retrieve comprehensive details about a specific Reddit post type
  * configuration. This operation provides complete information about the post
  * type including its name, description, content capabilities, and validation

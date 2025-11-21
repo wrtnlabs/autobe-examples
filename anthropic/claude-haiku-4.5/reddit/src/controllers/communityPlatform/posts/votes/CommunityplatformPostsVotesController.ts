@@ -8,8 +8,6 @@ import { ICommunityPlatformVote } from "../../../../api/structures/ICommunityPla
 @Controller("/communityPlatform/posts/:postId/votes")
 export class CommunityplatformPostsVotesController {
   /**
-   * Search and retrieve a paginated list of votes cast on a specific post.
-   *
    * Retrieve a filtered and paginated list of votes cast on a specific post
    * from the community platform. This operation provides advanced search and
    * filtering capabilities for analyzing voting patterns on individual posts,

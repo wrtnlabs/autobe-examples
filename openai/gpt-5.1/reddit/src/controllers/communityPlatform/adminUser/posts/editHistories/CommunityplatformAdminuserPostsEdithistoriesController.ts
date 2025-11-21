@@ -8,9 +8,6 @@ import { ICommunityPlatformPostEditHistory } from "../../../../../api/structures
 @Controller("/communityPlatform/adminUser/posts/:postId/editHistories")
 export class CommunityplatformAdminuserPostsEdithistoriesController {
   /**
-   * List edit history snapshots for a specific post from
-   * community_platform_post_edit_histories.
-   *
    * Retrieve a paginated, filterable list of edit history snapshots for a
    * specific post.
    *

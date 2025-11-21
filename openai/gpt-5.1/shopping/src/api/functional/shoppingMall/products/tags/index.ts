@@ -7,9 +7,6 @@ import { IPageIShoppingMallProductTag } from "../../../../structures/IPageIShopp
 import { IShoppingMallProductTagLink } from "../../../../structures/IShoppingMallProductTagLink";
 
 /**
- * List product tags linked to a specific product using
- * shopping_mall_product_tags and shopping_mall_product_tag_links.
- *
  * Retrieve the list of tags currently associated with a specific product,
  * leveraging the shopping_mall_product_tags and shopping_mall_product_tag_links
  * Prisma models.
@@ -134,8 +131,6 @@ export namespace index {
 }
 
 /**
- * Get a single product–tag association from shopping_mall_product_tag_links.
- *
  * Retrieve the detailed association record for a single product–tag link from
  * the shopping_mall_product_tag_links table.
  *

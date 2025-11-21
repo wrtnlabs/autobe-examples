@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ICommunityPlatformSubscriptionAuditLog } from "../../../../../structures/ICommunityPlatformSubscriptionAuditLog";
 
 /**
- * Retrieve a specific audit log entry for a community subscription
- * (community_platform_subscription_audit_logs table).
- *
  * Fetch a single audit log detail for a community subscription event, providing
  * full context of the user action for transparency and compliance review.
  *

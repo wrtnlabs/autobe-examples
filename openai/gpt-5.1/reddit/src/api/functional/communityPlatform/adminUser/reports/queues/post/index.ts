@@ -7,9 +7,6 @@ import { ICommunityPlatformPostReport } from "../../../../../../structures/IComm
 import { IPageICommunityPlatformPostReport } from "../../../../../../structures/IPageICommunityPlatformPostReport";
 
 /**
- * Search and retrieve a paginated queue of post reports from the
- * community_platform_post_reports table for moderation.
- *
  * Retrieve a filtered and paginated queue of post reports from the
  * community_platform_post_reports table for moderation review.
  *

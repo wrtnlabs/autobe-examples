@@ -7,9 +7,6 @@ import { ICommunityPlatformPost } from "../../../../../api/structures/ICommunity
 @Controller("/communityPlatform/adminUser/posts/:postId/lock")
 export class CommunityplatformAdminuserPostsLockController {
   /**
-   * Update the lock status of a post record in the community_platform_posts
-   * table.
-   *
    * Lock or unlock a post in the community platform by updating its
    * moderation or interaction status.
    *

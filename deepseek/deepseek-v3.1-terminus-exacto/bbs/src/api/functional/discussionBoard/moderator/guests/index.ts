@@ -7,8 +7,6 @@ import { IDiscussionBoardGuest } from "../../../../structures/IDiscussionBoardGu
 import { IPageIDiscussionBoardGuest } from "../../../../structures/IPageIDiscussionBoardGuest";
 
 /**
- * Search and retrieve a filtered, paginated list of discussion board guests.
- *
  * This operation allows administrators to search and filter guest accounts
  * registered on the discussion board platform. Guests are anonymous users who
  * can browse content without authentication but may register for full access.
@@ -110,8 +108,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific discussion board guest.
- *
  * This operation provides comprehensive details for a specific guest account
  * identified by their unique guest token. Guest accounts represent anonymous
  * users who can browse discussion board content without authentication
@@ -209,8 +205,6 @@ export namespace at {
 }
 
 /**
- * Update an existing guest user record.
- *
  * Update the information for an existing guest user identified by their unique
  * guest token. This operation allows modification of guest account details
  * while preserving the core guest_token identifier which cannot be changed.
@@ -320,8 +314,6 @@ export namespace update {
 }
 
 /**
- * Soft delete a guest user record by marking as deleted.
- *
  * Perform a soft delete operation on a guest user record by setting the
  * deleted_at timestamp to the current time. This operation marks the guest
  * record as deleted while preserving it in the database for audit and recovery

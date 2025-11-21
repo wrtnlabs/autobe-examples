@@ -7,9 +7,6 @@ import { IDiscussionBoardModerationLog } from "../../../../../structures/IDiscus
 import { IPageIDiscussionBoardModerationLog } from "../../../../../structures/IPageIDiscussionBoardModerationLog";
 
 /**
- * Search and retrieve paginated moderation action logs for audit and
- * accountability.
- *
  * Retrieve a filtered, sorted, and paginated list of moderation action log
  * entries, providing comprehensive access to the platform's moderation audit
  * trail. This operation supports searching and filtering moderation logs by

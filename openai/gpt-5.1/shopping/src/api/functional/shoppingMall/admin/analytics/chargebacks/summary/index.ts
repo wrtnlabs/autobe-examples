@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallChargebackAnalyticsSummary } from "../../../../../../structures/IShoppingMallChargebackAnalyticsSummary";
 
 /**
- * Retrieve an analytical summary of chargeback activity aggregated from
- * shopping_mall_payment_chargebacks.
- *
  * Retrieve a flexible, filterable analytical summary of chargeback activity
  * across the shoppingMall platform, based on the
  * shopping_mall_payment_chargebacks table and its related payment and order

@@ -12,9 +12,6 @@ import { IShoppingMallOrderShipment } from "../../../../../api/structures/IShopp
 @Controller("/shoppingMall/customer/orders/:orderNumber/shipments")
 export class ShoppingmallCustomerOrdersShipmentsController {
   /**
-   * Search and retrieve a paginated list of shopping mall order shipments for a
-   * given order (shopping_mall_order_shipments).
-   *
    * Return a paginated, filterable list of all shipment (fulfillment batch)
    * entities associated with a single shopping mall order. Each shipment record
    * tracks detailed shipping, carrier, and status information relevant to one
@@ -61,9 +58,6 @@ export class ShoppingmallCustomerOrdersShipmentsController {
   }
 
   /**
-   * Retrieve detail of a single order shipment for a particular order
-   * (shopping_mall_order_shipments).
-   *
    * Fetch the comprehensive detail of a specific shipment (fulfillment batch),
    * using both the parent order's platform-unique order number and shipment's
    * unique identifier. This information includes all pertinent shipment fields

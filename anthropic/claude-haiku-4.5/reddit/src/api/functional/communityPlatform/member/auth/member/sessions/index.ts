@@ -8,8 +8,6 @@ import { ICommunityPlatformMemberSession } from "../../../../../../structures/IC
 export * as logout_all from "./logout_all/index";
 
 /**
- * Retrieve all active member sessions across devices.
- *
  * Retrieve a complete list of all active sessions for the authenticated member
  * across multiple devices. This operation provides visibility into where and
  * when the member is logged in, enabling device management and security

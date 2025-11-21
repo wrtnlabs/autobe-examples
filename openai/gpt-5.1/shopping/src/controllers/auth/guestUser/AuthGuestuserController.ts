@@ -7,9 +7,6 @@ import { IShoppingMallGuestUser } from "../../../api/structures/IShoppingMallGue
 @Controller("/auth/guestUser")
 export class AuthGuestuserController {
   /**
-   * Create a new guest user identity in shopping_mall_guestusers and issue
-   * initial JWT tokens for the guestUser actor.
-   *
    * This API operation creates a new logical guest user identity in the
    * shoppingMall platform using the shopping_mall_guestusers table and
    * immediately issues initial JWT tokens for subsequent guestUser
@@ -90,9 +87,6 @@ export class AuthGuestuserController {
   }
 
   /**
-   * Refresh JWT tokens for an existing guest user identity in
-   * shopping_mall_guestusers, updating guest session state as needed.
-   *
    * This API operation refreshes JWT tokens for an existing guestUser actor
    * by validating a refresh token, reusing the existing logical identity
    * stored in the shopping_mall_guestusers table, and returning a new

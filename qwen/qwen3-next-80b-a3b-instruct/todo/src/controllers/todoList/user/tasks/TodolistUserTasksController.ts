@@ -61,9 +61,6 @@ export class TodolistUserTasksController {
   }
 
   /**
-   * Search and retrieve paginated list of user tasks with filtering and
-   * sorting.
-   *
    * Retrieve a paginated list of user tasks with advanced filtering, searching,
    * and sorting capabilities.
    *
@@ -118,8 +115,6 @@ export class TodolistUserTasksController {
   }
 
   /**
-   * Retrieve a specific todo task by its ID.
-   *
    * Retrieve a specific todo task by its unique identifier from the
    * todo_list_task table. This operation allows an authenticated user to view
    * detailed information about a single task that they own. The task is
@@ -164,8 +159,6 @@ export class TodolistUserTasksController {
   }
 
   /**
-   * Update an existing todo list task's description or completion status.
-   *
    * Update an existing todo list task identified by its unique taskId. This
    * operation allows users to modify the description or completion status of
    * their personal tasks. The task must exist and be owned by the authenticated
@@ -223,8 +216,6 @@ export class TodolistUserTasksController {
   }
 
   /**
-   * Permanently delete a todo list task.
-   *
    * Permanently delete a todo list task identified by its unique taskId. This
    * operation permanently removes the task from the system's dataset.
    *

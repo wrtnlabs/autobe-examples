@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallGuest } from "../../../../structures/IShoppingMallGuest";
 
 /**
- * Update a shopping mall guest by ID.
- *
  * Update an existing shopping mall guest record by its unique id.
  *
  * This operation allows guest users to modify guest session details and
@@ -111,8 +109,6 @@ export namespace update {
 }
 
 /**
- * Delete a shopping mall guest by ID.
- *
  * Permanently delete a shopping mall guest identified by its unique id.
  *
  * This operation allows guest users to remove guest session data from the

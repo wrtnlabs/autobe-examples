@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
 
 /**
- * Create a new admin account and issue JWT authorization tokens, relating to
- * shopping_mall_admins.
- *
  * This API operation handles administrator account registration for the
  * shopping mall platform. It uses the shopping_mall_admins table wherein each
  * admin has a unique email used as their login ID and a hashed password stored
@@ -108,9 +105,6 @@ export namespace join {
 }
 
 /**
- * Authenticate admin credentials and issue JWT authorization tokens, relating
- * to shopping_mall_admins.
- *
  * This API operation enables administrators to login to the shopping mall
  * platform. It verifies the admin's email and password against hashed
  * credentials in the shopping_mall_admins table. Upon successful
@@ -205,9 +199,6 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for admin users to maintain authorized access, relating to
- * shopping_mall_admins.
- *
  * This API operation refreshes JWT tokens for authenticated administrators on
  * the shopping mall platform. Using a valid refresh token, it issues a new set
  * of access and refresh tokens for continued secure access. The operation

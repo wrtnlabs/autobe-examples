@@ -7,9 +7,6 @@ import { ICommunityPlatformUserAchievement } from "../../../../structures/ICommu
 import { IPageICommunityPlatformUserAchievement } from "../../../../structures/IPageICommunityPlatformUserAchievement";
 
 /**
- * Search and retrieve paginated user achievements from
- * community_platform_user_achievements for a profile handle.
- *
  * Retrieve a filtered and paginated list of achievements associated with a
  * specific user profile handle.
  *
@@ -152,9 +149,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single community_platform_user_achievements record by profile
- * handle and achievement code.
- *
  * Retrieve detailed information about a single achievement belonging to a
  * specific user profile, identified by profile handle and achievement code.
  *

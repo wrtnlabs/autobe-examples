@@ -7,9 +7,6 @@ import { IDiscussionBoardAdminSession } from "../../../../../structures/IDiscuss
 import { IPageIDiscussionBoardAdminSession } from "../../../../../structures/IPageIDiscussionBoardAdminSession";
 
 /**
- * Search and list all admin account sessions (discussion_board_admin_sessions),
- * filtered by adminId.
- *
  * Retrieve a detailed, paginated list of all login sessions recorded for a
  * specific administrator account in the discussion board system.
  *
@@ -121,9 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific administrator session record from
- * discussion_board_admin_sessions.
- *
  * Retrieve complete information for a single administrator login session for
  * auditing and session management purposes.
  *
@@ -228,9 +222,6 @@ export namespace at {
 }
 
 /**
- * Update (force expire) a specific admin session in
- * discussion_board_admin_sessions.
- *
  * Update an administrator login session record, primarily to force session
  * expiration as part of privilege or incident response workflows.
  *
@@ -348,9 +339,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete an admin login session record from
- * discussion_board_admin_sessions.
- *
  * Remove an existing administrator login session.
  *
  * This operation allows an admin to permanently delete (invalidate) a single

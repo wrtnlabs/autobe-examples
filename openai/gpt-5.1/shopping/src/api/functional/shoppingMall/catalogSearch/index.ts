@@ -7,9 +7,6 @@ import { IShoppingMallCatalogSearchIndexEntry } from "../../../structures/IShopp
 import { IPageIShoppingMallCatalogSearchIndexEntry } from "../../../structures/IPageIShoppingMallCatalogSearchIndexEntry";
 
 /**
- * Perform an advanced catalog search using the
- * shopping_mall_catalog_search_index_entries backed search index.
- *
  * Execute an advanced catalog search over products and SKUs using the
  * denormalized search index maintained in the
  * shopping_mall_catalog_search_index_entries table.

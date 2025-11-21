@@ -7,9 +7,6 @@ import { ICommunityPlatformCommentEditHistory } from "../../../../../structures/
 import { IPageICommunityPlatformCommentEditHistory } from "../../../../../structures/IPageICommunityPlatformCommentEditHistory";
 
 /**
- * Retrieve edit history records for a specific comment from
- * community_platform_comment_edit_history.
- *
  * Retrieve the full list of edit history records for a specific comment, sorted
  * chronologically. This operation allows platform users and moderators to audit
  * all modifications made to the content or metadata of a specific threaded
@@ -121,9 +118,6 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single comment edit event from
- * community_platform_comment_edit_history.
- *
  * Fetch a single edit history event associated with a specific comment and edit
  * history identifier. This detailed view operation exposes all relevant data
  * for the modification: the editor's session, the linked snapshot, the

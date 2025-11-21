@@ -6,8 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { ITodoListGuest } from "../../../structures/ITodoListGuest";
 
 /**
- * Register a new guest user account in the todo_list_users table.
- *
  * Creates a new guest user account in the todo_list_users table with email and
  * password credentials. This endpoint is publicly accessible and allows
  * unauthenticated users to register for temporary access to the Todo List
@@ -123,9 +121,6 @@ export namespace join {
 }
 
 /**
- * Refresh expired JWT tokens for a guest user session in the todo_list_sessions
- * table.
- *
  * Renews JWT access tokens for a guest user by validating the provided refresh
  * token against the session and token management system. This endpoint is
  * publicly accessible for guests with valid refresh tokens obtained from the

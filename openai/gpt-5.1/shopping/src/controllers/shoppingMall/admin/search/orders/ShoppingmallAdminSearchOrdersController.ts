@@ -8,9 +8,6 @@ import { IShoppingMallOrderSearch } from "../../../../../api/structures/IShoppin
 @Controller("/shoppingMall/admin/search/orders")
 export class ShoppingmallAdminSearchOrdersController {
   /**
-   * Search orders in shopping_mall_orders with rich administrative filters
-   * and pagination.
-   *
    * Search and retrieve a paginated list of orders based on complex criteria
    * such as status, customer, seller, payment, and shipment attributes.
    *

@@ -7,9 +7,6 @@ import { IShoppingMallPaymentRefund } from "../../../../../structures/IShoppingM
 import { IPageIShoppingMallPaymentRefund } from "../../../../../structures/IPageIShoppingMallPaymentRefund";
 
 /**
- * Initiate and register a new payment refund (shopping_mall_payment_refunds)
- * for an existing payment.
- *
  * Create a new payment refund linked to the specified payment record in the
  * system.
  *
@@ -127,9 +124,6 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of refund records for a specific payment
- * (shopping_mall_payment_refunds).
- *
  * Retrieve a filtered, paginated list of all refund records associated with a
  * specific payment on the shopping mall platform.
  *
@@ -244,9 +238,6 @@ export namespace index {
 }
 
 /**
- * Retrieve a single refund record's details for a payment
- * (shopping_mall_payment_refunds).
- *
  * Retrieve the detailed data for a specific refund issued against a particular
  * payment within the e-commerce platform.
  *
@@ -349,9 +340,6 @@ export namespace at {
 }
 
 /**
- * Update an existing payment refund (shopping_mall_payment_refunds) linked to a
- * payment by refundId.
- *
  * Update a specific payment refund record for a given payment, using explicit
  * IDs for both the payment and refund.
  *
@@ -469,9 +457,6 @@ export namespace update {
 }
 
 /**
- * Permanently remove a payment refund from shopping_mall_payment_refunds (soft
- * delete).
- *
  * Remove a payment refund from the payment component of the shopping mall
  * platform.
  *

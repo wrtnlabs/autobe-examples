@@ -12,9 +12,6 @@ export * as appeals from "./appeals/index";
 export * as metrics from "./metrics/index";
 
 /**
- * Create a new moderation action header row in
- * community_platform_moderation_actions.
- *
  * Create a new atomic moderation action header associated with a moderation
  * case in the community platform.
  *
@@ -145,9 +142,6 @@ export namespace create {
 }
 
 /**
- * Search and paginate community_platform_moderation_actions for administrative
- * moderation history views.
- *
  * Retrieve a filtered, sorted, and paginated list of moderation actions from
  * the community_platform_moderation_actions table.
  *
@@ -288,9 +282,6 @@ export namespace index {
 }
 
 /**
- * Get a single community_platform_moderation_actions record by its
- * moderationActionId for admin review.
- *
  * Retrieve detailed information for a single moderation action from the
  * community_platform_moderation_actions table.
  *
@@ -412,9 +403,6 @@ export namespace at {
 }
 
 /**
- * Update an existing moderation action header row in
- * community_platform_moderation_actions.
- *
  * Update the metadata of an existing moderation action header in the
  * community_platform_moderation_actions table.
  *
@@ -553,9 +541,6 @@ export namespace update {
 }
 
 /**
- * Permanently delete a moderation action record from the
- * community_platform_moderation_actions table by ID.
- *
  * Delete a specific moderation action record from the
  * `community_platform_moderation_actions` table using its unique identifier.
  *

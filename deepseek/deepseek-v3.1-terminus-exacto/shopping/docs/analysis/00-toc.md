@@ -1,126 +1,122 @@
-# E-commerce Shopping Mall Platform - Documentation Table of Contents
+# Shopping Mall E-commerce Platform Documentation
 
-## Project Overview
+## Documentation Overview
 
-This documentation suite provides comprehensive requirements and specifications for building a complete e-commerce shopping mall platform. The platform enables businesses to sell products online while providing customers with a seamless shopping experience including product discovery, purchasing, and order tracking.
+This documentation set provides comprehensive specifications for building a complete e-commerce shopping mall platform. The documentation follows a structured waterfall approach, starting with business requirements and progressing through detailed technical specifications.
 
-## Document Structure
+### Documentation Philosophy
+- **Business-First Approach**: All documentation begins with business requirements before technical implementation
+- **Complete Coverage**: Each document addresses a specific domain with comprehensive detail
+- **Implementation-Ready**: Backend developers can start coding immediately after reading
+- **Single Source of Truth**: All requirements are documented once, completely
 
-The project documentation is organized into 12 comprehensive documents that cover all aspects of the e-commerce platform:
+## Document List with Descriptions
 
-### Core Documentation
+### [Service Overview Document](./01-service-overview.md)
+Defines the business vision, market positioning, and strategic goals for the e-commerce platform. This document establishes the "why" behind the platform and provides the business context for all technical decisions.
 
-1. **[Service Overview](./01-service-overview.md)** - Business vision, market positioning, and strategic goals
-2. **[User Actors & Authentication](./02-user-actors-authentication.md)** - User roles, authentication flows, and permission hierarchies
-3. **[Product Catalog Requirements](./03-product-catalog-requirements.md)** - Product organization, variants, inventory management
-4. **[Shopping Cart & Order Flow](./04-shopping-cart-order-flow.md)** - Cart management, order placement, payment processing
-5. **[Order Tracking & Shipping](./05-order-tracking-shipping.md)** - Order status, shipping integration, customer notifications
+### [User Actors and Authentication Requirements](./02-user-actors-authentication.md)
+Specifies all user types (customer, seller, admin) with detailed authentication flows, permission matrices, and security requirements. This document defines the foundation of user access control.
 
-### Specialized Documentation
+### [Product Catalog Requirements](./03-product-catalog-requirements.md)
+Details the product management system including categorization, attributes, search functionality, and inventory tracking. This is the core of the e-commerce product experience.
 
-6. **[Seller Management](./06-seller-management.md)** - Seller account setup, product management, order fulfillment
-7. **[Reviews & Ratings](./07-reviews-ratings.md)** - Customer feedback system, content moderation, review analytics
-8. **[Customer Account Management](./08-customer-account-management.md)** - Profile management, address book, order history
-9. **[Admin Dashboard](./09-admin-dashboard.md)** - Platform administration, user management, analytics
+### [Shopping Cart and Order Processing](./04-shopping-cart-order-processing.md)
+Defines the complete shopping experience from cart management through checkout, payment processing, and order fulfillment workflows.
 
-### Technical & Integration Documentation
+### [Seller Management Requirements](./05-seller-management-requirements.md)
+Specifies seller-specific functionality including product listing management, inventory control, order fulfillment, and sales analytics.
 
-10. **[Non-Functional Requirements](./10-non-functional-requirements.md)** - Performance, scalability, security, compliance
-11. **[External Integrations](./11-external-integrations.md)** - Payment gateways, shipping carriers, third-party APIs
+### [User Account Management](./06-user-account-management.md)
+Details user registration, profile management, order history, wishlist functionality, and personal data management features.
+
+### [Payment Processing Requirements](./07-payment-processing-requirements.md)
+Defines payment gateway integration, transaction security, refund processing, and financial reporting requirements.
+
+### [Admin System Management](./08-admin-system-management.md)
+Specifies administrative functions for user management, product catalog administration, order oversight, and system configuration.
+
+### [Non-Functional Requirements](./09-non-functional-requirements.md)
+Details performance standards, scalability requirements, security measures, availability guarantees, and data management policies.
 
 ## Navigation Guide
 
-### For Business Stakeholders
-Start with these documents to understand the business context:
-- **[Service Overview](./01-service-overview.md)** - Business model and revenue strategy
-- **[Non-Functional Requirements](./10-non-functional-requirements.md)** - Performance and scalability targets
+### Recommended Reading Order
 
-### For Development Teams
-Follow this recommended reading order for implementation:
-1. **[User Actors & Authentication](./02-user-actors-authentication.md)** - Foundation for user management
-2. **[Product Catalog Requirements](./03-product-catalog-requirements.md)** - Core data structures
-3. **[Shopping Cart & Order Flow](./04-shopping-cart-order-flow.md)** - Main business workflows
-4. **[External Integrations](./11-external-integrations.md)** - Third-party service connections
+For **Business Stakeholders**:
+1. Start with [Service Overview Document](./01-service-overview.md) for business context
+2. Review [User Actors and Authentication Requirements](./02-user-actors-authentication.md) for user model understanding
+3. Reference specific functional documents as needed
 
-### For Technical Architects
-Focus on these key documents:
-- **[Non-Functional Requirements](./10-non-functional-requirements.md)** - System architecture constraints
-- **[External Integrations](./11-external-integrations.md)** - API design and integration patterns
-- **[Admin Dashboard](./09-admin-dashboard.md)** - Platform management capabilities
+For **Development Teams**:
+1. Begin with [Service Overview Document](./01-service-overview.md) for project context
+2. Study [User Actors and Authentication Requirements](./02-user-actors-authentication.md) for security foundation
+3. Proceed through functional documents in logical order:
+   - [Product Catalog Requirements](./03-product-catalog-requirements.md)
+   - [Shopping Cart and Order Processing](./04-shopping-cart-order-processing.md)
+   - [Seller Management Requirements](./05-seller-management-requirements.md)
+   - [User Account Management](./06-user-account-management.md)
+   - [Payment Processing Requirements](./07-payment-processing-requirements.md)
+   - [Admin System Management](./08-admin-system-management.md)
+4. Conclude with [Non-Functional Requirements](./09-non-functional-requirements.md) for quality standards
 
-## Document Relationships
+### Document Relationships
 
-### Core Dependencies
 ```mermaid
 graph LR
-    A["01-Service Overview"] --> B["02-User Actors"]
-    B --> C["03-Product Catalog"]
-    C --> D["04-Shopping Cart"]
-    D --> E["05-Order Tracking"]
-    C --> F["06-Seller Management"]
-    C --> G["07-Reviews & Ratings"]
-    B --> H["08-Customer Account"]
-    B --> I["09-Admin Dashboard"]
-    A --> J["10-Non-Functional"]
-    D --> K["11-External Integrations"]
-    E --> K
+    A["01-service-overview.md"] --> B["02-user-actors-authentication.md"]
+    B --> C["03-product-catalog-requirements.md"]
+    C --> D["04-shopping-cart-order-processing.md"]
+    D --> E["05-seller-management-requirements.md"]
+    B --> F["06-user-account-management.md"]
+    D --> G["07-payment-processing-requirements.md"]
+    B --> H["08-admin-system-management.md"]
+    A --> I["09-non-functional-requirements.md"]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style I fill:#fff3e0
 ```
 
-### Functional Groupings
+### Cross-Referencing Guidelines
 
-**Customer-Facing Features:**
-- Product discovery and purchasing (Documents 03, 04, 05)
-- Account management and reviews (Documents 08, 07)
+When working with specific functional areas:
+- **Product Management**: Always reference [Product Catalog Requirements](./03-product-catalog-requirements.md) for product-related specifications
+- **User Authentication**: Consult [User Actors and Authentication Requirements](./02-user-actors-authentication.md) for all security and permission questions
+- **Order Processing**: Use [Shopping Cart and Order Processing](./04-shopping-cart-order-processing.md) for checkout and fulfillment workflows
+- **Payment Integration**: Refer to [Payment Processing Requirements](./07-payment-processing-requirements.md) for financial transaction specifications
 
-**Seller Management Features:**
-- Product catalog and inventory (Document 06)
-- Order fulfillment and analytics (Documents 06, 05)
+## Document Maintenance
 
-**Platform Administration:**
-- System management and monitoring (Document 09)
-- User and content administration (Document 09)
+### Version Control
+- All documents are maintained in a single repository
+- Document updates follow a change management process
+- Version history is tracked for audit purposes
 
-**Technical Infrastructure:**
-- Performance and security (Document 10)
-- External service integration (Document 11)
+### Contribution Guidelines
+- New requirements are documented in the appropriate existing document
+- Major feature additions may require new document creation
+- All documentation follows the established structure and formatting standards
 
-## How to Use This Documentation
+### Quality Assurance
+- Each document undergoes peer review before finalization
+- Technical accuracy is validated by subject matter experts
+- Business requirements are confirmed by product stakeholders
 
-### Reading Strategies
+## Getting Started
 
-**Sequential Approach:** Read documents in numerical order (01-11) for comprehensive understanding
+For new team members or stakeholders:
+1. Read this table of contents to understand the documentation structure
+2. Follow the recommended reading order based on your role
+3. Use the cross-referencing guidelines to navigate between related documents
+4. Contact the documentation maintainer for clarification or updates
 
-**Role-Based Approach:** Focus on documents relevant to your specific responsibilities
+## Support and Feedback
 
-**Problem-Solving Approach:** Use the table of contents to locate specific functionality
-
-### Document Characteristics
-
-Each document includes:
-- Clear business requirements in natural language
-- Specific functional specifications
-- User scenarios and workflows
-- Technical constraints and considerations
-- Relationship references to other documents
-
-### Update and Maintenance
-
-This table of contents will be updated as new documents are added or existing documents are modified. Always refer to this document for the most current documentation structure.
-
-## Document Quick Reference
-
-| Document | Primary Focus | Key Audience | Related Documents |
-|----------|---------------|--------------|-------------------|
-| [01-Service Overview](./01-service-overview.md) | Business strategy | Stakeholders | [10-Non-Functional](./10-non-functional-requirements.md) |
-| [02-User Actors](./02-user-actors-authentication.md) | Authentication | Developers | [08-Customer Account](./08-customer-account-management.md), [09-Admin Dashboard](./09-admin-dashboard.md) |
-| [03-Product Catalog](./03-product-catalog-requirements.md) | Product management | Product Team | [04-Shopping Cart](./04-shopping-cart-order-flow.md), [06-Seller Management](./06-seller-management.md) |
-| [04-Shopping Cart](./04-shopping-cart-order-flow.md) | Order processing | Developers | [05-Order Tracking](./05-order-tracking-shipping.md), [11-External Integrations](./11-external-integrations.md) |
-| [05-Order Tracking](./05-order-tracking-shipping.md) | Shipping & delivery | Operations | [04-Shopping Cart](./04-shopping-cart-order-flow.md), [11-External Integrations](./11-external-integrations.md) |
-| [06-Seller Management](./06-seller-management.md) | Seller operations | Sellers | [03-Product Catalog](./03-product-catalog-requirements.md), [05-Order Tracking](./05-order-tracking-shipping.md) |
-| [07-Reviews & Ratings](./07-reviews-ratings.md) | Customer feedback | Marketing | [03-Product Catalog](./03-product-catalog-requirements.md) |
-| [08-Customer Account](./08-customer-account-management.md) | User profiles | Customers | [02-User Actors](./02-user-actors-authentication.md) |
-| [09-Admin Dashboard](./09-admin-dashboard.md) | Platform admin | Administrators | [02-User Actors](./02-user-actors-authentication.md), [06-Seller Management](./06-seller-management.md) |
-| [10-Non-Functional](./10-non-functional-requirements.md) | System quality | Architects | [01-Service Overview](./01-service-overview.md) |
-| [11-External Integrations](./11-external-integrations.md) | Third-party APIs | Developers | [04-Shopping Cart](./04-shopping-cart-order-flow.md), [05-Order Tracking](./05-order-tracking-shipping.md) |
+For questions about documentation structure or content:
+- Review the specific document first for detailed explanations
+- Check document relationships for related information
+- Contact the project documentation lead for clarification
+- Submit documentation improvement requests through the established process
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

@@ -6,9 +6,6 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardContributor } from "../../../structures/IDiscussionBoardContributor";
 
 /**
- * Retrieve a specific discussion board contributor's detailed account
- * information.
- *
  * Fetch complete information about a discussion board contributor account by
  * their unique identifier. This operation returns all relevant contributor
  * metadata including email address, username, account status, email

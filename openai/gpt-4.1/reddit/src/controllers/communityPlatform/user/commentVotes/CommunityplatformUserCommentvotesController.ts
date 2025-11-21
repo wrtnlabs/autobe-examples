@@ -12,9 +12,6 @@ import { ICommunityPlatformCommentVote } from "../../../../api/structures/ICommu
 @Controller("/communityPlatform/user/commentVotes")
 export class CommunityplatformUserCommentvotesController {
   /**
-   * Create a new comment vote in community_platform_comment_votes (upvote or
-   * downvote).
-   *
    * Create a new vote (upvote or downvote) for a specific comment by an
    * authenticated user.
    *
@@ -54,8 +51,6 @@ export class CommunityplatformUserCommentvotesController {
   }
 
   /**
-   * Update a comment vote entry in the community_platform_comment_votes table.
-   *
    * Update the properties of an existing comment vote, such as changing the
    * vote type from upvote to downvote or vice versa. This operation allows
    * users to reverse their previous voting decision, updating the stored vote
@@ -104,9 +99,6 @@ export class CommunityplatformUserCommentvotesController {
   }
 
   /**
-   * Erase (soft delete) a comment vote in the community_platform_comment_votes
-   * table.
-   *
    * Erase (soft delete) a comment vote record. This disables the vote by
    * setting the deleted_at timestamp, ensuring the user's vote no longer
    * affects comment ranking, karma, or sorting. The erased record is retained

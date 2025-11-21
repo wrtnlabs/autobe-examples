@@ -17,8 +17,6 @@ import { IPageIShoppingMallAdminSession } from "../../../../../api/structures/IP
 )
 export class ShoppingmallAdminShoppingmalladminsShoppingmalladminsessionsController {
   /**
-   * Create admin session for a platform administrator.
-   *
    * Create a new session record for a platform administrator in the shopping
    * mall.
    *
@@ -64,8 +62,6 @@ export class ShoppingmallAdminShoppingmalladminsShoppingmalladminsessionsControl
   }
 
   /**
-   * List all shopping mall admin sessions for a given admin.
-   *
    * Retrieve a filtered and paginated list of shopping mall administrator
    * sessions for a specific administrator. This endpoint enables querying
    * session records, including connection context and expiration status.
@@ -115,8 +111,6 @@ export class ShoppingmallAdminShoppingmalladminsShoppingmalladminsessionsControl
   }
 
   /**
-   * Get details of a specific shopping mall admin session.
-   *
    * Retrieve detailed information of a specific shopping mall administrator
    * session by its unique session ID and associated admin ID.
    *
@@ -206,8 +200,6 @@ export class ShoppingmallAdminShoppingmalladminsShoppingmalladminsessionsControl
   }
 
   /**
-   * Delete a specific shopping mall admin session.
-   *
    * Delete a single shopping mall administrator session by its unique
    * identifier.
    *
