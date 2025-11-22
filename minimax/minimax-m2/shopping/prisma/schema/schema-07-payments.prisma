@@ -1,0 +1,713 @@
+/// Customer payment method storage with secure tokenization for PCI
+/// compliance. Stores encrypted payment tokens instead of sensitive card
+/// data, supports multiple payment types, and provides audit capabilities
+/// for financial compliance. Payment methods are linked to customer accounts
+/// and can be set as default preferences for faster checkout.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this payment method. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Optional order associated with this payment method (for one-time
+  /// payments). {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String?
+  
+  /// Type of payment method: credit_card, debit_card, digital_wallet,
+  /// bank_transfer, cryptocurrency, etc.
+  payment_type String
+  
+  /// Encrypted payment token or payment method identifier from payment
+  /// processor (never store actual card numbers).
+  payment_token String
+  
+  /// Payment processor provider: stripe, paypal, square, etc.
+  payment_provider String
+  
+  /// Last four digits of payment method for customer reference (if applicable).
+  last_four_digits String?
+  
+  /// Payment method brand: visa, mastercard, amex, paypal, etc.
+  brand String?
+  
+  /// Expiration month for cards (1-12).
+  expiration_month Int?
+  
+  /// Expiration year for cards (4-digit year).
+  expiration_year Int?
+  
+  /// Name on billing address for this payment method.
+  billing_name String?
+  
+  /// Email associated with billing address for this payment method.
+  billing_email String?
+  
+  /// Whether this is the customer's default payment method for faster checkout.
+  is_default Boolean
+  
+  /// Whether this payment method has been verified (e.g., through small charge
+  /// or verification process).
+  is_verified Boolean
+  
+  /// Status of payment method verification: pending, verified, failed, expired.
+  verification_status String
+  
+  /// Payment method status: active, inactive, expired, suspended,
+  /// failed_verification.
+  status String
+  
+  /// Unique fingerprint of payment method for fraud detection and duplicate
+  /// prevention.
+  fingerprint String?
+  
+  /// First line of billing address for this payment method.
+  billing_address_line1 String?
+  
+  /// Second line of billing address for this payment method.
+  billing_address_line2 String?
+  
+  /// City of billing address for this payment method.
+  billing_city String?
+  
+  /// State/province of billing address for this payment method.
+  billing_state String?
+  
+  /// Postal code of billing address for this payment method.
+  billing_postal_code String?
+  
+  /// Country code of billing address for this payment method.
+  billing_country String?
+  
+  /// Timestamp when payment method was added to account.
+  created_at DateTime
+  
+  /// Timestamp when payment method was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit compliance (financial records
+  /// retention).
+  deleted_at DateTime?
+  
+  /// JSON metadata for additional payment method information (payment
+  /// processor specific data).
+  metadata String?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders? @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_transactions ecommerce_mall_transactions[]
+  ecommerce_mall_payment_audits ecommerce_mall_payment_audits[]
+  
+  @@index([ecommerce_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_customer_id, payment_token], map: "ecommerce_mall_payment_methods_ecommerce_mall_customer_40640f79")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, is_default], map: "ecommerce_mall_payment_methods_ecommerce_mall_customer_aee7a8f3")
+  @@index([status, is_verified])
+}
+
+/// Core transaction records for all financial activities including customer
+/// payments, seller payouts, and platform fees. Contains comprehensive
+/// payment processing details with status tracking, fraud detection, and
+/// audit compliance. Each transaction represents a complete financial event
+/// with detailed logging for dispute resolution and financial
+/// reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order this transaction is associated with. {@link
+  /// ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Customer who made the payment. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller receiving payment (for customer-to-seller transactions). {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Payment method used for this transaction (if applicable). {@link
+  /// ecommerce_mall_payment_methods.id}
+  ecommerce_mall_payment_method_id String?
+  
+  /// Type of transaction: payment, refund, chargeback, payout, fee,
+  /// commission, etc.
+  transaction_type String
+  
+  /// Transaction amount in base currency (positive for credits, negative for
+  /// debits).
+  amount Float
+  
+  /// ISO currency code for transaction amount (USD, EUR, GBP, etc.).
+  currency String
+  
+  /// Exchange rate used if transaction involves currency conversion.
+  exchange_rate Float?
+  
+  /// Transaction amount in user's currency (if different from base currency).
+  amount_in_currency Float?
+  
+  /// Transaction status: pending, processing, completed, failed, cancelled,
+  /// disputed, refunded.
+  status String
+  
+  /// Business workflow status: authorized, captured, settled, voided,
+  /// chargeback_pending, etc.
+  business_status String
+  
+  /// Payment processor or gateway used: stripe, paypal, square, authorize_net,
+  /// etc.
+  payment_gateway String
+  
+  /// Transaction ID from payment gateway (external reference).
+  gateway_transaction_id String?
+  
+  /// Response code from payment gateway indicating success/failure reason.
+  gateway_response_code String?
+  
+  /// Response message from payment gateway with detailed status.
+  gateway_response_message String?
+  
+  /// Authorization code from payment processor for approved transactions.
+  authorization_code String?
+  
+  /// Batch ID for settlement processing in payment gateway.
+  settlement_batch_id String?
+  
+  /// Detailed reason for transaction failure or cancellation.
+  failure_reason String?
+  
+  /// Fraud detection score (0.0 to 1.0) from payment processor or internal
+  /// systems.
+  fraud_score Float?
+  
+  /// JSON array of fraud indicators detected during transaction processing.
+  fraud_indicators String?
+  
+  /// Risk level assessment: low, medium, high, critical.
+  risk_level String
+  
+  /// IP address used for transaction (for fraud analysis and audit).
+  ip_address String?
+  
+  /// User agent string from device used for transaction.
+  user_agent String?
+  
+  /// Whether billing address was verified against payment processor records.
+  billing_address_verified Boolean
+  
+  /// Whether CVV verification passed during transaction.
+  cvv_verified Boolean
+  
+  /// 3D Secure authentication status: not_required, successful, failed,
+  /// challenged.
+  three_d_secure_status String?
+  
+  /// JSON metadata for additional transaction information (gateway-specific
+  /// data, custom fields, etc.).
+  metadata String?
+  
+  /// Internal notes about transaction for customer service and dispute
+  /// resolution.
+  notes String?
+  
+  /// Timestamp when transaction was processed/settled by payment gateway.
+  processed_at DateTime?
+  
+  /// Timestamp when transaction funds were settled to merchant account.
+  settled_at DateTime?
+  
+  /// Timestamp when transaction record was created.
+  created_at DateTime
+  
+  /// Timestamp when transaction record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  paymentMethod ecommerce_mall_payment_methods? @relation(fields: [ecommerce_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_refunds ecommerce_mall_refunds[]
+  ecommerce_mall_disputes ecommerce_mall_disputes[]
+  ecommerce_mall_payment_audits ecommerce_mall_payment_audits[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_payment_method_id], map: "ecommerce_mall_transactions_ecommerce_mall_payment_met_8bb9a9e8")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_id, transaction_type, gateway_transaction_id], map: "ecommerce_mall_transactions_ecommerce_mall_order_id_tr_3670e253")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, status], map: "ecommerce_mall_transactions_ecommerce_mall_customer_id_38d92c3b")
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([payment_gateway, status])
+  @@index([transaction_type, status])
+  @@index([created_at])
+}
+
+/// Refund transaction records linked to original orders and payments. Tracks
+/// refund processing with status workflows, approval chains, and settlement
+/// tracking. Supports both automatic and manual refund processing with
+/// detailed audit trails for compliance and customer service. Each refund
+/// maintains reference to original transaction and provides complete
+/// financial reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original transaction being refunded. {@link
+  /// ecommerce_mall_transactions.id}
+  ecommerce_mall_transaction_id String
+  
+  /// Order associated with this refund. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Customer receiving the refund. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller responsible for processing the refund. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Administrator who processed this refund (for manual refunds). {@link
+  /// ecommerce_mall_administrators.id}
+  ecommerce_mall_administrator_id String?
+  
+  /// Type of refund: full, partial, exchange, store_credit, warranty,
+  /// chargeback_response.
+  refund_type String
+  
+  /// Refund amount in base currency.
+  amount Float
+  
+  /// ISO currency code for refund amount.
+  currency String
+  
+  /// Refund amount in customer's currency (if different from base currency).
+  amount_in_currency Float?
+  
+  /// Predefined reason code: changed_mind, damaged_product, wrong_item,
+  /// late_delivery, not_as_described, other.
+  reason_code String
+  
+  /// Detailed description of refund reason provided by customer or seller.
+  reason_details String?
+  
+  /// Refund status: pending_review, approved, rejected, processing, completed,
+  /// failed, cancelled.
+  status String
+  
+  /// Business workflow status: initiated, under_review, approved, in_progress,
+  /// settled, rejected.
+  business_status String
+  
+  /// Method of refund: original_payment, store_credit, bank_transfer, check,
+  /// digital_wallet.
+  refund_method String
+  
+  /// Whether this refund was processed automatically by system or manually by
+  /// administrator/seller.
+  is_automatic Boolean
+  
+  /// Whether this is a partial refund or full refund of the original
+  /// transaction.
+  is_partial Boolean
+  
+  /// Restocking fee deducted from refund amount (if applicable).
+  restocking_fee Float
+  
+  /// Return shipping cost deducted from refund amount (if customer
+  /// responsible).
+  return_shipping_cost Float
+  
+  /// Administrative fee deducted from refund amount (if applicable).
+  admin_fee Float
+  
+  /// Payment gateway handling the refund processing.
+  payment_gateway String?
+  
+  /// Refund transaction ID from payment gateway (external reference).
+  gateway_refund_id String?
+  
+  /// Batch ID for refund settlement in payment gateway.
+  settlement_batch_id String?
+  
+  /// Tracking number for return shipment (if physical return required).
+  return_tracking_number String?
+  
+  /// Shipping carrier used for return shipment.
+  return_carrier String?
+  
+  /// Timestamp when return shipment was delivered to seller.
+  return_delivered_at DateTime?
+  
+  /// Notes about condition of returned items from seller inspection.
+  return_condition_notes String?
+  
+  /// Date when returned items were inspected by seller.
+  inspection_date DateTime?
+  
+  /// Date when refund was approved for processing.
+  approval_date DateTime?
+  
+  /// Date when refund was submitted to payment gateway for processing.
+  processing_date DateTime?
+  
+  /// Date when refund was completed and funds were returned to customer.
+  completed_date DateTime?
+  
+  /// Reason for refund processing failure or rejection.
+  failure_reason String?
+  
+  /// Whether customer has been notified about refund status changes.
+  customer_notification_sent Boolean
+  
+  /// JSON metadata for additional refund information (images, documents,
+  /// custom fields).
+  metadata String?
+  
+  /// Timestamp when refund request was created.
+  created_at DateTime
+  
+  /// Timestamp when refund record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  originalTransaction ecommerce_mall_transactions @relation(fields: [ecommerce_mall_transaction_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  processedBy ecommerce_mall_administrators? @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_mall_order_id])
+  @@index([ecommerce_mall_administrator_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_transaction_id, refund_type], map: "ecommerce_mall_refunds_ecommerce_mall_transaction_id_r_e549ed04")
+  @@index([ecommerce_mall_customer_id, status])
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status, business_status])
+  @@index([refund_type, is_automatic])
+  @@index([created_at])
+}
+
+/// Payment dispute and chargeback records for transaction conflicts. Tracks
+/// complete dispute lifecycle from customer complaint through resolution,
+/// including evidence collection, communication logging, and financial
+/// impact tracking. Supports both internal disputes and external chargebacks
+/// with comprehensive audit trails for legal compliance and financial
+/// reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Transaction that is being disputed. {@link ecommerce_mall_transactions.id}
+  ecommerce_mall_transaction_id String
+  
+  /// Order associated with disputed transaction. {@link
+  /// ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Customer who initiated the dispute. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller involved in the dispute. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Administrator assigned to handle this dispute. {@link
+  /// ecommerce_mall_administrators.id}
+  ecommerce_mall_administrator_id String?
+  
+  /// Type of dispute: chargeback, payment_dispute, refund_dispute,
+  /// fraud_dispute, billing_error, product_not_received,
+  /// product_not_as_described.
+  dispute_type String
+  
+  /// Source of dispute: customer_service, payment_gateway,
+  /// credit_card_company, bank, internal_fraud_detection.
+  dispute_source String
+  
+  /// Reason code from dispute source: fraud, product_not_received,
+  /// product_not_as_described, duplicate_charge, incorrect_amount, other.
+  reason_code String
+  
+  /// Detailed description of dispute reason from customer or card issuer.
+  reason_details String
+  
+  /// Dispute status: opened, under_review, evidence_required,
+  /// evidence_submitted, won, lost, withdrawn, settled, expired.
+  status String
+  
+  /// Business workflow status: assigned, investigating, awaiting_response,
+  /// escalated, resolved.
+  business_status String
+  
+  /// Dispute priority level: low, medium, high, critical.
+  priority String
+  
+  /// Amount being disputed in base currency.
+  dispute_amount Float
+  
+  /// ISO currency code for dispute amount.
+  currency String
+  
+  /// Whether this dispute is related to suspected fraud.
+  is_fraud_related Boolean
+  
+  /// Whether this is an external chargeback (true) or internal dispute (false).
+  is_external Boolean
+  
+  /// Payment gateway managing the dispute process (for external disputes).
+  payment_gateway String?
+  
+  /// Dispute ID from payment gateway or card issuer (external reference).
+  gateway_dispute_id String?
+  
+  /// Credit card issuer name (for external chargebacks).
+  card_issuer String?
+  
+  /// Cardholder's statement about the dispute from card issuer.
+  cardholder_statement String?
+  
+  /// Deadline for submitting evidence to dispute (for external disputes).
+  evidence_deadline DateTime?
+  
+  /// Whether additional evidence is required to resolve the dispute.
+  evidence_required Boolean
+  
+  /// Timestamp when evidence was submitted to resolve the dispute.
+  evidence_submitted_at DateTime?
+  
+  /// Type of resolution: full_refund, partial_refund, no_action,
+  /// evidence_accepted, evidence_rejected, settled.
+  resolution_type String?
+  
+  /// Amount actually resolved/refunded in dispute.
+  resolution_amount Float?
+  
+  /// Detailed notes about dispute resolution and outcome.
+  resolution_notes String?
+  
+  /// Date when dispute was resolved.
+  resolution_date DateTime?
+  
+  /// Whether customer has been contacted about dispute status.
+  customer_contacted Boolean
+  
+  /// Whether seller has been contacted for evidence or response.
+  seller_contacted Boolean
+  
+  /// Deadline for seller response to dispute inquiry.
+  response_deadline DateTime?
+  
+  /// Seller's response or explanation regarding the dispute.
+  seller_response String?
+  
+  /// Internal notes for dispute handling team and legal review.
+  internal_notes String?
+  
+  /// Financial impact assessment: positive, negative, neutral (for platform
+  /// accounting).
+  financial_impact String
+  
+  /// JSON metadata for additional dispute information (evidence files,
+  /// correspondence, etc.).
+  metadata String?
+  
+  /// Timestamp when dispute was created.
+  created_at DateTime
+  
+  /// Timestamp when dispute record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  transaction ecommerce_mall_transactions @relation(fields: [ecommerce_mall_transaction_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  assignedTo ecommerce_mall_administrators? @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_payment_audits ecommerce_mall_payment_audits[]
+  
+  @@index([ecommerce_mall_order_id])
+  @@index([ecommerce_mall_administrator_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_transaction_id, dispute_type], map: "ecommerce_mall_disputes_ecommerce_mall_transaction_id__b60b71b6")
+  @@index([ecommerce_mall_customer_id, status])
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status, business_status])
+  @@index([dispute_type, priority])
+  @@index([is_external, status])
+  @@index([created_at])
+}
+
+/// System audit log for all payment-related actions and administrative
+/// changes. Records comprehensive audit trail for compliance, security
+/// monitoring, and financial reconciliation. Tracks administrative actions,
+/// system changes, security events, and regulatory compliance activities
+/// with detailed logging for forensic analysis and audit requirements.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payment_audits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the audited action (if applicable). {@link
+  /// ecommerce_mall_administrators.id}
+  ecommerce_mall_administrator_id String?
+  
+  /// Transaction related to this audit record (if applicable). {@link
+  /// ecommerce_mall_transactions.id}
+  ecommerce_mall_transaction_id String?
+  
+  /// Payment method related to this audit record (if applicable). {@link
+  /// ecommerce_mall_payment_methods.id}
+  ecommerce_mall_payment_method_id String?
+  
+  /// Dispute related to this audit record (if applicable). {@link
+  /// ecommerce_mall_disputes.id}
+  ecommerce_mall_dispute_id String?
+  
+  /// Type of audit event: payment_created, payment_updated, payment_deleted,
+  /// transaction_processed, refund_issued, dispute_opened, dispute_resolved,
+  /// admin_action, security_event, system_change, compliance_check.
+  audit_type String
+  
+  /// Specific action performed: create, update, delete, approve, reject,
+  /// process, refund, charge, investigate, etc.
+  action String
+  
+  /// Type of resource being audited: payment_method, transaction, refund,
+  /// dispute, commission, payout, system_config.
+  resource_type String
+  
+  /// ID of the resource being audited (matches appropriate table ID).
+  resource_id String
+  
+  /// JSON object containing previous values before change (for update
+  /// operations).
+  old_values String?
+  
+  /// JSON object containing new values after change (for create/update
+  /// operations).
+  new_values String?
+  
+  /// Human-readable summary of changes made during this audit event.
+  changes_summary String?
+  
+  /// IP address from which the audited action was performed.
+  ip_address String?
+  
+  /// User agent string from device used for the audited action.
+  user_agent String?
+  
+  /// Session ID during which the audited action was performed.
+  session_id String?
+  
+  /// Unique request ID for tracing the audited action across systems.
+  request_id String?
+  
+  /// API endpoint that was accessed during the audited action (if applicable).
+  api_endpoint String?
+  
+  /// HTTP method used for the audited action (GET, POST, PUT, DELETE).
+  http_method String?
+  
+  /// HTTP response status code for the audited action.
+  http_status Int?
+  
+  /// Execution time in milliseconds for the audited action.
+  execution_time_ms Int?
+  
+  /// Audit event severity: info, warning, error, critical, security.
+  severity String
+  
+  /// Audit category: security, compliance, financial, operational, system,
+  /// user_action.
+  category String
+  
+  /// JSON array of tags for categorization and filtering of audit events.
+  tags String?
+  
+  /// Detailed description of the audited action and its context.
+  description String
+  
+  /// Whether this audit event is relevant for regulatory compliance (PCI DSS,
+  /// SOX, etc.).
+  compliance_relevant Boolean
+  
+  /// Risk level assessment for this audit event: low, medium, high, critical.
+  risk_level String
+  
+  /// Additional metadata for the audit event (system-specific data, additional
+  /// context).
+  metadata String?
+  
+  /// Timestamp when this audit record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_mall_administrators? @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  transaction ecommerce_mall_transactions? @relation(fields: [ecommerce_mall_transaction_id], references: [id], onDelete: Cascade)
+  paymentMethod ecommerce_mall_payment_methods? @relation(fields: [ecommerce_mall_payment_method_id], references: [id], onDelete: Cascade)
+  dispute ecommerce_mall_disputes? @relation(fields: [ecommerce_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_id], map: "ecommerce_mall_payment_audits_ecommerce_mall_administr_78d7eee4")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_transaction_id], map: "ecommerce_mall_payment_audits_ecommerce_mall_transacti_4be6a1bf")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_payment_method_id], map: "ecommerce_mall_payment_audits_ecommerce_mall_payment_m_ab982d10")
+  @@index([ecommerce_mall_dispute_id])
+  
+  @@index([resource_type, resource_id])
+  @@index([audit_type, severity])
+  @@index([category, severity])
+  // spellchecker: ignore-next-line
+  @@index([compliance_relevant, created_at], map: "ecommerce_mall_payment_audits_compliance_relevant_crea_d80b849a")
+  @@index([created_at])
+}

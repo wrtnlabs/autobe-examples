@@ -1,0 +1,115 @@
+/// Global platform configuration settings that control system-wide behavior
+/// and features. Stores key-value pairs for configuration management
+/// including feature flags, system limits, and platform-wide parameters.
+/// Referenced by authentication services and content systems throughout the
+/// platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier for platform settings (e.g.,
+  /// 'max_upload_size', 'default_timezone').
+  key String
+  
+  /// Configuration value stored as string, can be parsed based on data_type
+  /// field.
+  value String
+  
+  /// Human-readable description explaining what this setting controls and its
+  /// impact on the platform.
+  description String
+  
+  /// Data type of the configuration value (string, number, boolean, json,
+  /// etc.) for proper validation and parsing.
+  data_type String
+  
+  /// Whether this setting is visible to regular users in the interface or only
+  /// accessible to administrators.
+  is_public Boolean
+  
+  /// Timestamp when the setting was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([is_public])
+  @@index([data_type])
+}
+
+/// System-wide announcements and communications displayed to users across
+/// the platform. Manages scheduled announcements, maintenance notices,
+/// feature updates, and important notifications with targeting and timing
+/// controls for different user audiences.
+///
+/// Removed the orphaned foreign key reference to
+/// reddit_platform_registeredusers and changed stance from subsidiary to
+/// primary, as announcements require independent user management
+/// capabilities.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_announcements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Announcement title displayed prominently to users with maximum 200
+  /// characters.
+  title String
+  
+  /// Full announcement content with detailed information, supporting up to
+  /// 10,000 characters.
+  content String
+  
+  /// Type of announcement for categorization and display styling (info,
+  /// warning, maintenance, feature_update, etc.).
+  announcement_type String
+  
+  /// Target audience specification (all_users, registered_users,
+  /// community_moderators, platform_administrators).
+  target_audience String
+  
+  /// Priority level for ordering announcements, higher numbers display first
+  /// (1-10 scale).
+  priority Int
+  
+  /// Whether this announcement is currently active and should be displayed to
+  /// users.
+  is_active Boolean
+  
+  /// When this announcement should start being displayed to users.
+  start_date DateTime
+  
+  /// When this announcement should stop being displayed (null for indefinite).
+  end_date DateTime?
+  
+  /// Timestamp when the announcement was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the announcement was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for announcement management and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([is_active, priority])
+  @@index([start_date, end_date])
+  @@index([announcement_type])
+  @@index([target_audience])
+}

@@ -1,0 +1,11 @@
+export * as registeredUser from "./registeredUser/index";
+export * as platformAdministrator from "./platformAdministrator/index";
+export * as communityModerator from "./communityModerator/index";
+export * as guestUser from "./guestUser/index";
+export * as communities from "./communities/index";
+export * as memberships from "./memberships/index";
+export * as posts from "./posts/index";
+export * as comments from "./comments/index";
+export * as users from "./users/index";
+export * as announcements from "./announcements/index";
+export * as platformSettings from "./platformSettings/index";

@@ -11,6 +11,7 @@ AI Model | Success | Score | FCSR | Status
 [`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 1 | 92.5 | 72% | 🟡
 [`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 2 | 90 | 76% | 🟡
 [`openai/gpt-5.1`](#openaigpt-51) | 2 | 90 | 85% | 🟡
+[`minimax/minimax-m2`](#minimaxminimax-m2) | 2 | 77.5 | 60% | 🟡
 [`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 1 | 72.5 | 40% | 🟡
 [`qwen/qwen3-coder-exacto`](#qwenqwen3-coder-exacto) | 1 | 57.5 | 51% | 🟡
 [`mistralai/codestral-2508`](#mistralaicodestral-2508) | 1 | 47.5 | 95% | 🟡
@@ -19,6 +20,7 @@ AI Model | Success | Score | FCSR | Status
 [`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 1 | 40 | 95% | 🟡
 [`google/gemini-2.5-pro`](#googlegemini-25-pro) | 1 | 27.5 | 53% | 🟡
 [`z-ai/glm-4.6-exacto`](#z-aiglm-46-exacto) | 1 | 25 | 93% | 🟡
+[`deepseek/deepseek-v3.2-exp`](#deepseekdeepseek-v32-exp) | 0 | 2.5 | 100% | ❌
 [`google/gemini-3-pro-preview`](#googlegemini-3-pro-preview) | 0 | 2.5 | 21% | ❌
 [`openai/gpt-oss-120b-exacto`](#openaigpt-oss-120b-exacto) | 0 | 2.5 | 89% | ❌
 
@@ -567,6 +569,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Realize |  |  |  | 
 
 
+## `minimax/minimax-m2`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./minimax/minimax-m2/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./minimax/minimax-m2/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./minimax/minimax-m2/reddit/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
+[`shopping`](./minimax/minimax-m2/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+### `minimax/minimax-m2` - `todo`
+
+- Source Code: [`minimax/minimax-m2/todo`](./minimax/minimax-m2/todo/)
+- Score: 100
+- Elapsed Time: 1h 37m 38s
+- Token Usage: 59.74M
+- Function Calling Success Rate: 69.89%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 11 | 2.08M | 6m 38s | 92%
+🟢 Prisma | `namespaces`: 3, `models`: 7 | 469.8K | 2m 56s | 87%
+🟢 Interface | `operations`: 45, `schemas`: 39 | 26.46M | 33m 27s | 65%
+🟢 Test | `functions`: 103 | 22.11M | 19m 23s | 66%
+🟢 Realize | `functions`: 45 | 6.41M | 18m 3s | 62%
+
+
+### `minimax/minimax-m2` - `bbs`
+
+- Source Code: [`minimax/minimax-m2/bbs`](./minimax/minimax-m2/bbs/)
+- Score: 100
+- Elapsed Time: 1h 10m 59s
+- Token Usage: 62.91M
+- Function Calling Success Rate: 70.91%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 11 | 591.8K | 6m 1s | 96%
+🟢 Prisma | `namespaces`: 2, `models`: 3 | 344.5K | 2m 20s | 100%
+🟢 Interface | `operations`: 39, `schemas`: 39 | 21.22M | 25m 37s | 68%
+🟢 Test | `functions`: 94 | 32.75M | 19m 34s | 68%
+🟢 Realize | `functions`: 39 | 8.01M | 17m 25s | 73%
+
+
+### `minimax/minimax-m2` - `reddit`
+
+- Source Code: [`minimax/minimax-m2/reddit`](./minimax/minimax-m2/reddit/)
+- Score: 80
+- Elapsed Time: 2h 40m 13s
+- Token Usage: 229.33M
+- Function Calling Success Rate: 52.93%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 11 | 1.21M | 8m 11s | 95%
+🟢 Prisma | `namespaces`: 7, `models`: 32 | 1.53M | 5m 41s | 84%
+🟢 Interface | `operations`: 170, `schemas`: 165 | 99.18M | 57m 0s | 64%
+🟢 Test | `functions`: 317 | 126.80M | 1h 20m 56s | 40%
+⚪ Realize |  |  |  | 
+
+
+### `minimax/minimax-m2` - `shopping`
+
+- Source Code: [`minimax/minimax-m2/shopping`](./minimax/minimax-m2/shopping/)
+- Score: 30
+- Elapsed Time: 44m 59s
+- Token Usage: 7.51M
+- Function Calling Success Rate: 85.37%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 2.02M | 10m 34s | 95%
+🟢 Prisma | `namespaces`: 10, `models`: 58 | 4.16M | 14m 37s | 53%
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
 ## `anthropic/claude-haiku-4.5`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -1045,6 +1124,32 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Interface | `operations`: 28, `schemas`: 37 | 9.32M | 36m 47s | 87%
 🟢 Test | `functions`: 45 | 4.92M | 13m 57s | 96%
 🟢 Realize | `functions`: 28 | 1.79M | 26m 9s | 100%
+
+
+## `deepseek/deepseek-v3.2-exp`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+[`shopping`](./deepseek/deepseek-v3.2-exp/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+
+### `deepseek/deepseek-v3.2-exp` - `shopping`
+
+- Source Code: [`deepseek/deepseek-v3.2-exp/shopping`](./deepseek/deepseek-v3.2-exp/shopping/)
+- Score: 10
+- Elapsed Time: 20m 48s
+- Token Usage: 1.03M
+- Function Calling Success Rate: 100.00%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.03M | 20m 48s | 100%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
 
 
 ## `google/gemini-3-pro-preview`

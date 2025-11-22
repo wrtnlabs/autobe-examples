@@ -1,0 +1,73 @@
+/// File and image attachments for economic and political discussion articles.
+///
+/// Stores uploaded files and images that users attach to their discussion
+/// posts, supporting rich media content in economic and political discourse.
+/// Each attachment includes comprehensive metadata for file management,
+/// security scanning, and content moderation.
+///
+/// Supports multiple file types including images (JPG, PNG, GIF, WebP up to
+/// 5MB) and documents (PDF, DOC, DOCX, TXT up to 10MB). Files are associated
+/// with specific discussion articles and include security scanning status
+/// and access controls.
+///
+/// The table maintains file metadata including original filename, MIME type,
+/// file size, and storage URL. All attachments are subject to content
+/// moderation and security scanning before becoming publicly accessible.
+///
+/// Attachments remain associated with articles even if original content is
+/// modified, providing historical context and supporting comprehensive
+/// discussion threads with multimedia content.
+///
+/// @namespace FileManagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_discussion_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the discussion article this attachment belongs to. {@link
+  /// econ_political_discussion_articles.id}.
+  econ_political_discussion_article_id String
+  
+  /// Original filename as uploaded by the user.
+  original_filename String
+  
+  /// MIME type or file extension indicating the type of file (e.g.,
+  /// 'image/jpeg', 'application/pdf').
+  file_type String
+  
+  /// File size in bytes for storage and bandwidth management.
+  file_size Int
+  
+  /// URL or path where the file is stored in the cloud storage system.
+  file_url String
+  
+  /// Timestamp when the file was uploaded to the system.
+  upload_date DateTime
+  
+  /// Name of the user who uploaded the file for attribution and contact
+  /// purposes.
+  uploader_name String
+  
+  /// Status of security scanning: 'pending', 'clean', 'flagged', or
+  /// 'quarantined'.
+  security_scan_status String
+  
+  /// Content moderation status: 'pending', 'approved', 'rejected', or
+  /// 'requires_review'.
+  moderation_status String
+  
+  /// Whether this file is publicly accessible or restricted to authorized
+  /// users only.
+  is_public Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  article econ_political_discussion_articles @relation(fields: [econ_political_discussion_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([econ_political_discussion_article_id, upload_date], map: "econ_political_discussion_attachments_econ_political_d_db469034")
+}

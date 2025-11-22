@@ -1,0 +1,370 @@
+/// Customer shopping cart storage with persistent cross-session state
+/// management.
+///
+/// Stores individual customer shopping carts that persist across browser
+/// sessions and devices. Each cart maintains its current state including
+/// total amounts, item counts, and last activity timestamps. Cart lifecycle
+/// is managed from creation through abandonment or conversion to orders.
+///
+/// Carts are automatically created when customers add their first item and
+/// persist until explicitly cleared or converted to orders. Cross-device
+/// synchronization ensures cart consistency across all customer touchpoints.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this shopping cart. {@link ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Customer session that created this cart for session tracking. {@link
+  /// ecommerce_mall_customer_sessions.id}.
+  ecommerce_mall_customer_session_id String
+  
+  /// Current cart status: active, abandoned, converted_to_order, expired.
+  /// Drives cart lifecycle management and cleanup operations.
+  status String
+  
+  /// Total cart value including items, taxes, and shipping estimates.
+  /// Calculated in real-time based on current item prices.
+  total_amount Float
+  
+  /// Total number of individual items in cart. Used for cart summary displays
+  /// and abandonment analysis.
+  total_items Int
+  
+  /// Currency code for cart totals (USD, EUR, etc.). Ensures consistent
+  /// pricing across multi-currency sessions.
+  currency String
+  
+  /// Optional reason for cart abandonment captured through customer feedback
+  /// or behavioral analysis.
+  abandonment_reason String?
+  
+  /// Whether recovery email or notification has been sent for this abandoned
+  /// cart.
+  recovery_attempted Boolean
+  
+  /// Timestamp of last cart activity (add, remove, modify items). Used for
+  /// cart expiration and abandonment tracking.
+  last_activity_at DateTime
+  
+  /// Cart expiration timestamp for automatic cleanup of stale carts. Null for
+  /// active carts.
+  expires_at DateTime?
+  
+  /// Cart creation timestamp. Used for analytics and cart lifecycle tracking.
+  created_at DateTime
+  
+  /// Last update timestamp for cart modifications and activity tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_stock_movements ecommerce_mall_stock_movements[]
+  ecommerce_mall_cart_items ecommerce_mall_cart_items[]
+  ecommerce_mall_cart_abandonment_tracking ecommerce_mall_cart_abandonment_tracking[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id], map: "ecommerce_mall_shopping_carts_ecommerce_mall_customer__7c8d9d37")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, status], map: "ecommerce_mall_shopping_carts_ecommerce_mall_customer__15931d9c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, ecommerce_mall_customer_session_id], map: "ecommerce_mall_shopping_carts_ecommerce_mall_customer__a1161a8d")
+  @@index([last_activity_at])
+  @@index([created_at])
+}
+
+/// Individual items within customer shopping carts with variant-specific
+/// tracking.
+///
+/// Stores detailed information for each item added to customer shopping
+/// carts, including specific product variant selections, quantities, and
+/// pricing at time of addition. Maintains referential integrity with product
+/// variants and shopping carts.
+///
+/// Cart items are automatically updated when product prices change and
+/// validated against current inventory availability. Items remain in cart
+/// until removed by customer or cart is converted to order.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping cart that contains this item. {@link
+  /// ecommerce_mall_shopping_carts.id}.
+  ecommerce_mall_shopping_cart_id String
+  
+  /// Specific product variant selected for this cart item. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Number of units requested for this cart item. Validated against available
+  /// inventory and cart quantity limits.
+  quantity Int
+  
+  /// Price per unit at time of addition to cart. Used for total calculation
+  /// and price change tracking.
+  unit_price Float
+  
+  /// Total price for this item (quantity × unit_price). Calculated
+  /// automatically and used for cart totals.
+  total_price Float
+  
+  /// Optional customer notes or special instructions for this cart item.
+  notes String?
+  
+  /// Item status: active, removed, out_of_stock, price_changed. Drives item
+  /// availability and cart integrity.
+  status String
+  
+  /// Timestamp when item was added to cart. Used for cart analytics and item
+  /// lifecycle tracking.
+  added_at DateTime
+  
+  /// Last update timestamp for item modifications including quantity changes
+  /// and status updates.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart ecommerce_mall_shopping_carts @relation(fields: [ecommerce_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_product_varia_26d98cb2")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shopping_cart_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_shopping_cart_e30eba73")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shopping_cart_id, status], map: "ecommerce_mall_cart_items_ecommerce_mall_shopping_cart_96ba81af")
+  @@index([added_at])
+}
+
+/// Customer wishlist collections for product preference management and gift
+/// planning.
+///
+/// Stores customer-created wishlist collections that allow customers to save
+/// products for future consideration, sharing, and purchase planning.
+/// Supports multiple wishlists per customer for different occasions and
+/// categories.
+///
+/// Wishlists provide long-term product preference storage with sharing
+/// capabilities and price tracking notifications. Customers can create
+/// unlimited wishlists with custom names and privacy settings.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Custom name for this wishlist (e.g., 'Birthday Gifts', 'Home Office',
+  /// 'Wedding Registry'). Used for wishlist identification and organization.
+  name String
+  
+  /// Optional description explaining the purpose or occasion for this wishlist.
+  description String?
+  
+  /// Wishlist privacy level: private, public, shared_with_link. Controls who
+  /// can view and access this wishlist.
+  privacy_setting String
+  
+  /// Unique token for sharing wishlist via direct link. Generated when
+  /// privacy_setting allows sharing.
+  share_token String?
+  
+  /// Whether this is the customer's default wishlist. Default wishlist is used
+  /// for quick product saves.
+  is_default Boolean
+  
+  /// Wishlist creation timestamp. Used for analytics and wishlist lifecycle
+  /// tracking.
+  created_at DateTime
+  
+  /// Last update timestamp for wishlist modifications and item changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_wishlist_items ecommerce_mall_wishlist_items[]
+  
+  @@unique([ecommerce_mall_customer_id, name])
+  @@index([ecommerce_mall_customer_id])
+  @@index([privacy_setting])
+  @@index([created_at])
+}
+
+/// Individual products within customer wishlists with priority and tracking
+/// information.
+///
+/// Stores detailed information for each product added to customer wishlists,
+/// including specific variant selections, customer priorities, and
+/// notification preferences. Maintains long-term product interest tracking
+/// independent of inventory status.
+///
+/// Wishlist items persist indefinitely until manually removed and provide
+/// price tracking, availability notifications, and easy conversion to cart
+/// items. Items track customer interest across product lifecycle changes.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist that contains this item. {@link ecommerce_mall_wishlists.id}.
+  ecommerce_mall_wishlist_id String
+  
+  /// Specific product variant saved to this wishlist. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Customer priority ranking for this item (1 = highest priority). Used for
+  /// wishlist sorting and organization.
+  priority Int
+  
+  /// Customer notes about this wishlist item including reasons for interest or
+  /// specific requirements.
+  notes String?
+  
+  /// Whether customer wants notifications when this item's price changes or
+  /// goes on sale.
+  price_alert_enabled Boolean
+  
+  /// Whether customer wants notifications when this item becomes available
+  /// after being out of stock.
+  availability_alert_enabled Boolean
+  
+  /// Timestamp when item was added to wishlist. Used for analytics and
+  /// interest tracking over time.
+  added_at DateTime
+  
+  /// Last update timestamp for item modifications including priority changes
+  /// and note updates.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist ecommerce_mall_wishlists @relation(fields: [ecommerce_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_wishlist_items_ecommerce_mall_product_v_64d19d73")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_wishlist_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__c8d5dd86")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_wishlist_id, priority], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__1b0ed9b0")
+  @@index([added_at])
+}
+
+/// Analytics and marketing data for abandoned shopping carts with recovery
+/// information.
+///
+/// Stores comprehensive tracking data for abandoned shopping carts to
+/// support recovery campaigns, customer behavior analysis, and conversion
+/// optimization. Captures cart state snapshots and customer engagement
+/// metrics for targeted marketing efforts.
+///
+/// Data supports automated email recovery campaigns, behavioral analysis,
+/// and cart abandonment rate optimization. Maintains historical snapshots
+/// for trend analysis and campaign performance measurement.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_abandonment_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping cart that was abandoned. {@link
+  /// ecommerce_mall_shopping_carts.id}.
+  ecommerce_mall_shopping_cart_id String
+  
+  /// Customer who abandoned the cart. {@link ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Timestamp when cart was determined to be abandoned (no activity for
+  /// extended period).
+  abandoned_at DateTime
+  
+  /// JSON snapshot of cart contents at abandonment including items, prices,
+  /// and quantities for recovery campaigns.
+  cart_snapshot String
+  
+  /// Total cart value at time of abandonment. Used for recovery campaign
+  /// prioritization and analytics.
+  cart_value Float
+  
+  /// Stage where abandonment occurred: browsing, cart_view, checkout_started,
+  /// payment_info, payment_failed. Used for funnel optimization.
+  abandonment_stage String
+  
+  /// Whether recovery email has been sent to customer for this abandoned cart.
+  recovery_email_sent Boolean
+  
+  /// Timestamp when recovery email was sent if applicable.
+  recovery_email_sent_at DateTime?
+  
+  /// Number of recovery attempts made for this abandoned cart (emails,
+  /// notifications, etc.).
+  recovery_attempts Int
+  
+  /// Whether this abandoned cart resulted in a completed order after recovery
+  /// efforts.
+  recovered Boolean
+  
+  /// Timestamp of successful recovery if cart was converted to order.
+  recovered_at DateTime?
+  
+  /// Record creation timestamp for tracking and analytics purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart ecommerce_mall_shopping_carts @relation(fields: [ecommerce_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shopping_cart_id], map: "ecommerce_mall_cart_abandonment_tracking_ecommerce_mal_1dc61570")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, abandoned_at], map: "ecommerce_mall_cart_abandonment_tracking_ecommerce_mal_bad397d1")
+  // spellchecker: ignore-next-line
+  @@index([recovered, recovered_at], map: "ecommerce_mall_cart_abandonment_tracking_recovered_rec_a3a509ce")
+  @@index([abandonment_stage])
+  @@index([created_at])
+}

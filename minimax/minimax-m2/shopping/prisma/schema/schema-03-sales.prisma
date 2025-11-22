@@ -1,0 +1,362 @@
+/// Main product catalog entity representing individual products in the
+/// marketplace. Each product is created and managed by verified sellers and
+/// represents a distinct offering in the marketplace. Products include basic
+/// information, descriptions, category assignments, and serve as the
+/// foundation for variant management and inventory tracking.
+///
+/// Products support the complete product lifecycle from creation through
+/// variants, pricing, and inventory management. They are independent
+/// business entities that require their own management interfaces and API
+/// endpoints for CRUD operations, search, and filtering.
+///
+/// Products link to categories for organization, sellers for ownership
+/// verification, inventory systems for stock tracking, and review systems
+/// for customer feedback integration.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category classification. {@link ecommerce_mall_categories.id}
+  ecommerce_mall_category_id String
+  
+  /// Product owner and manager. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Base SKU prefix for variant generation (seller-specific product
+  /// identifier)
+  sku_base String
+  
+  /// Product title/name for display and search
+  title String
+  
+  /// Detailed product description with features and specifications
+  description String
+  
+  /// Product brand or manufacturer name
+  brand String?
+  
+  /// Product model number or identifier
+  model_number String?
+  
+  /// Base product price before variants and discounts
+  base_price Float
+  
+  /// Currency code for pricing (ISO 4217)
+  currency String
+  
+  /// Product weight in grams for shipping calculations
+  weight Float?
+  
+  /// Product length in centimeters
+  dimensions_length Float?
+  
+  /// Product width in centimeters
+  dimensions_width Float?
+  
+  /// Product height in centimeters
+  dimensions_height Float?
+  
+  /// Product status: draft, active, inactive, discontinued
+  status String
+  
+  /// SEO-optimized page title
+  meta_title String?
+  
+  /// SEO meta description
+  meta_description String?
+  
+  /// Product creation timestamp
+  created_at DateTime
+  
+  /// Product last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trails
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_product_variants ecommerce_mall_product_variants[]
+  ecommerce_mall_product_images ecommerce_mall_product_images[]
+  ecommerce_mall_product_specifications ecommerce_mall_product_specifications[]
+  ecommerce_mall_product_tags ecommerce_mall_product_tags[]
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  ecommerce_mall_reviews ecommerce_mall_reviews[]
+  ecommerce_mall_ratings ecommerce_mall_ratings?
+  
+  @@unique([ecommerce_mall_seller_id, sku_base])
+  @@index([status, created_at])
+  @@index([ecommerce_mall_category_id, status])
+}
+
+/// Product variant combinations representing specific purchasable products
+/// with unique SKUs. Each variant represents a specific combination of
+/// product options (size, color, material, etc.) and maintains independent
+/// inventory tracking and pricing.
+///
+/// Variants are supporting entities that depend on their parent products for
+/// context and are managed through product management interfaces rather than
+/// independent operations. Each variant has unique inventory tracking,
+/// pricing modifications, and availability status.
+///
+/// Variants link to their parent products for product information, inventory
+/// tracking systems for stock management, and order systems for fulfillment
+/// coordination.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product reference. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Unique SKU identifier for this variant combination
+  sku String
+  
+  /// Size variant option (XS, S, M, L, XL, etc.)
+  size String?
+  
+  /// Color variant option with hex code support
+  color String?
+  
+  /// Material variant option (cotton, leather, etc.)
+  material String?
+  
+  /// Style variant option (classic, modern, etc.)
+  style String?
+  
+  /// JSON string for custom variant attributes
+  custom_options String?
+  
+  /// Price adjustment from base product price (+/- amount)
+  price_modifier Float
+  
+  /// Calculated final price including modifier
+  final_price Float
+  
+  /// Weight adjustment from base product weight (+/- grams)
+  weight_modifier Float
+  
+  /// Calculated final weight including modifier
+  final_weight Float
+  
+  /// Current availability status for customer purchase
+  is_available Boolean
+  
+  /// Display order for variant selection interface
+  sort_order Int
+  
+  /// Variant creation timestamp
+  created_at DateTime
+  
+  /// Variant last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_product_images ecommerce_mall_product_images[]
+  ecommerce_mall_inventory_tracking ecommerce_mall_inventory_tracking?
+  ecommerce_mall_stock_movements ecommerce_mall_stock_movements[]
+  ecommerce_mall_reorder_suggestions ecommerce_mall_reorder_suggestions[]
+  ecommerce_mall_cart_items ecommerce_mall_cart_items[]
+  ecommerce_mall_wishlist_items ecommerce_mall_wishlist_items[]
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, sku], map: "ecommerce_mall_product_variants_ecommerce_mall_product_6bcff0d5")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, size, color, material, style], map: "ecommerce_mall_product_variants_ecommerce_mall_product_f4467ed5")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, is_available], map: "ecommerce_mall_product_variants_ecommerce_mall_product_555c9785")
+  @@index([sku])
+}
+
+/// Product image assets supporting product presentation and marketing.
+/// Images are associated with both main products and specific variants to
+/// provide comprehensive visual representation for customer decision-making.
+///
+/// Images are supporting media assets that are managed through product
+/// management interfaces rather than independent operations. They provide
+/// visual context for products and variants, supporting customer engagement
+/// and conversion.
+///
+/// Images link to products and variants for visual context, support SEO and
+/// marketing through proper optimization, and integrate with the broader
+/// media management system.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated product. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Associated variant (optional for variant-specific images). {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String?
+  
+  /// Primary image URL for display
+  image_url String
+  
+  /// Optimized thumbnail URL for listings
+  thumbnail_url String
+  
+  /// High-resolution image URL for zoom functionality
+  zoom_url String?
+  
+  /// Alt text for accessibility and SEO
+  alt_text String
+  
+  /// Image type: main, gallery, lifestyle, detail
+  image_type String
+  
+  /// Display order within product image gallery
+  sort_order Int
+  
+  /// Image file size in bytes
+  file_size Int?
+  
+  /// Image MIME type for format validation
+  mime_type String?
+  
+  /// Image upload timestamp
+  created_at DateTime
+  
+  /// Image last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants? @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, sort_order], map: "ecommerce_mall_product_images_ecommerce_mall_product_i_c02fae18")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_product_images_ecommerce_mall_product_v_64900677")
+}
+
+/// Technical specifications and detailed product information supporting
+/// comprehensive product understanding. Specifications provide structured
+/// data about product features, technical details, and compliance
+/// information for customer decision-making and regulatory requirements.
+///
+/// Specifications are supporting data that enhance product understanding and
+/// are managed through product management interfaces. They provide detailed
+/// technical context that complements basic product descriptions.
+///
+/// Specifications link to products for technical context, support compliance
+/// and regulatory requirements through structured data, and enable advanced
+/// filtering and search capabilities based on technical attributes.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_specifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated product. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Specification name (e.g., 'Material', 'Warranty', 'Dimensions')
+  spec_name String
+  
+  /// Specification value (e.g., '100% Cotton', '2 years', '10x15x5 cm')
+  spec_value String
+  
+  /// Unit of measurement (e.g., 'cm', 'kg', 'months')
+  spec_unit String?
+  
+  /// Specification category (general, technical, compliance, warranty)
+  spec_category String
+  
+  /// Display order for specification presentation
+  sort_order Int
+  
+  /// Whether specification should be included in search indexing
+  is_searchable Boolean
+  
+  /// Specification creation timestamp
+  created_at DateTime
+  
+  /// Specification last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, spec_name], map: "ecommerce_mall_product_specifications_ecommerce_mall_p_72b4ef40")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, spec_category], map: "ecommerce_mall_product_specifications_ecommerce_mall_p_46feaaf9")
+  @@index([spec_category])
+}
+
+/// Product tagging system enabling flexible categorization and enhanced
+/// discoverability beyond formal category hierarchy. Tags provide additional
+/// search and filtering capabilities for products based on themes, features,
+/// occasions, and other business-relevant criteria.
+///
+/// Tags are supporting metadata that enhance product discoverability and are
+/// managed through product and tag management interfaces. They enable
+/// flexible categorization without modifying the formal category structure.
+///
+/// Tags link to products for enhanced categorization, support flexible
+/// search and filtering through tag-based queries, and integrate with
+/// recommendation systems for improved product discovery.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tagged product. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Tag name for categorization and search functionality.
+  tag_name String
+  
+  /// Tag assignment timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, tag_name], map: "ecommerce_mall_product_tags_ecommerce_mall_product_id__9a3c4b83")
+}

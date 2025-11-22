@@ -1,0 +1,404 @@
+/// Tracks comprehensive earnings information for each seller including total
+/// earnings, pending amounts, and paid amounts with currency support and
+/// financial audit trails.
+///
+/// This entity serves as the central financial record for each seller,
+/// aggregating earnings from all transactions while maintaining detailed
+/// breakdowns for payout processing and financial reporting. The model
+/// tracks three key financial states: total accumulated earnings across all
+/// time, pending earnings awaiting payout processing, and paid earnings that
+/// have been distributed to the seller.
+///
+/// The earnings tracking supports multiple currencies for international
+/// sellers and includes comprehensive audit fields for financial compliance
+/// and dispute resolution. Status tracking enables proper financial workflow
+/// management from earnings accumulation through payout completion.
+///
+/// Related to seller account management through ecommerce_mall_sellers and
+/// forms the foundation for payout processing workflows.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_earnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated seller's earnings record. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Total accumulated earnings from all transactions for this seller in base
+  /// currency.
+  total_earnings Float
+  
+  /// Earnings accumulated but not yet paid out to the seller.
+  pending_earnings Float
+  
+  /// Total amount already paid out to the seller through payout processing.
+  paid_earnings Float
+  
+  /// Three-letter ISO currency code (e.g., USD, EUR, KRW) for earnings
+  /// tracking.
+  currency String
+  
+  /// Current earnings status: active, suspended, closed, under_review for
+  /// financial compliance.
+  status String
+  
+  /// Date when the last payout was processed for this seller.
+  last_payout_date DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_payouts ecommerce_mall_payouts[]
+  
+  @@unique([ecommerce_mall_seller_id])
+  @@index([status])
+  @@index([last_payout_date])
+}
+
+/// Records commission calculations for individual transactions with detailed
+/// breakdowns of commission rates, base amounts, and processing status for
+/// audit and reporting purposes.
+///
+/// This entity captures the detailed commission information for each
+/// transaction processed through the marketplace. Every order generates
+/// commission records that track the applicable commission rate, calculated
+/// commission amount, and the base transaction amount from which the
+/// commission was derived.
+///
+/// The commission records support comprehensive audit trails and financial
+/// reporting by maintaining detailed information about commission
+/// calculations, processing status, and associated transaction details.
+/// Status tracking enables proper workflow management from commission
+/// calculation through settlement.
+///
+/// Commission records are automatically generated during order processing
+/// and serve as the foundation for both seller earnings calculations and
+/// platform revenue tracking.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_commissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order for which this commission was calculated. {@link
+  /// ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Seller who earned this commission. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Applied commission rate as percentage (e.g., 8.5 for 8.5% commission
+  /// rate).
+  commission_rate Float
+  
+  /// Calculated commission amount in base currency.
+  commission_amount Float
+  
+  /// Base transaction amount from which commission was calculated.
+  base_amount Float
+  
+  /// Three-letter ISO currency code for this commission transaction.
+  currency String
+  
+  /// Commission processing status: pending, processed, settled, reversed for
+  /// audit tracking.
+  status String
+  
+  /// Timestamp when commission was calculated during order processing.
+  calculated_at DateTime
+  
+  /// Timestamp when commission was processed and included in seller earnings.
+  processed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_mall_order_id])
+  @@index([ecommerce_mall_seller_id])
+  @@index([status])
+  @@index([calculated_at])
+}
+
+/// Manages seller payout processing with detailed tracking of payout
+/// amounts, methods, status workflows, and audit information for financial
+/// compliance and transparency.
+///
+/// This entity handles the complete payout processing workflow for
+/// marketplace sellers, tracking each individual payout transaction from
+/// initiation through completion. The model captures payout amounts,
+/// processing methods, status changes, and comprehensive audit information
+/// to ensure financial transparency and regulatory compliance.
+///
+/// Payout records support multiple payout methods and currencies while
+/// maintaining detailed audit trails for financial reconciliation and
+/// dispute resolution. Status tracking enables proper workflow management
+/// from payout initiation through completion and settlement.
+///
+/// Each payout is linked to seller earnings records and includes
+/// comprehensive processing metadata for audit purposes and operational
+/// oversight.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller earnings record from which this payout was processed. {@link
+  /// ecommerce_mall_seller_earnings.id}
+  ecommerce_mall_seller_earning_id String
+  
+  /// Amount being paid out to the seller in payout currency.
+  payout_amount Float
+  
+  /// Three-letter ISO currency code for this payout transaction.
+  currency String
+  
+  /// Method used for payout: bank_transfer, paypal, check, wire_transfer,
+  /// cryptocurrency.
+  payout_method String
+  
+  /// Payout processing status: pending, processing, completed, failed,
+  /// cancelled.
+  status String
+  
+  /// Scheduled date for this payout to be processed.
+  payout_date DateTime
+  
+  /// Actual timestamp when payout was processed and completed.
+  processed_at DateTime?
+  
+  /// External reference number from payment processor or bank for tracking.
+  reference_number String?
+  
+  /// Detailed reason for payout failure when status is failed.
+  failure_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  sellerEarning ecommerce_mall_seller_earnings @relation(fields: [ecommerce_mall_seller_earning_id], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@index([payout_date])
+  @@index([ecommerce_mall_seller_earning_id])
+}
+
+/// Defines flexible commission rate structures for different product
+/// categories, seller performance tiers, and promotional periods with
+/// effective date management and audit tracking.
+///
+/// This configuration entity manages the marketplace's commission rate
+/// structure, enabling flexible pricing models based on product categories,
+/// seller performance tiers, and promotional periods. The model supports
+/// time-based commission rate changes and category-specific pricing
+/// strategies.
+///
+/// Commission rates are applied during order processing to calculate
+/// appropriate commission amounts for each transaction. The system supports
+/// different commission rates for different categories and seller
+/// performance levels, enabling sophisticated revenue optimization
+/// strategies.
+///
+/// Effective date management ensures proper commission rate application and
+/// historical tracking for audit purposes and financial reporting
+/// compliance.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_commission_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category for this commission rate (null for platform-wide rates).
+  /// {@link ecommerce_mall_categories.id}
+  ecommerce_mall_category_id String?
+  
+  /// Seller performance tier: bronze, silver, gold, platinum for tiered
+  /// commission rates.
+  seller_tier String
+  
+  /// Commission rate as percentage (e.g., 8.5 for 8.5% commission rate).
+  commission_percentage Float
+  
+  /// Date when this commission rate becomes effective.
+  effective_date DateTime
+  
+  /// Date when this commission rate expires (null for permanent rates).
+  expiry_date DateTime?
+  
+  /// Whether this commission rate is currently active and applicable.
+  is_active Boolean
+  
+  /// Optional description explaining the rationale for this commission rate.
+  description String?
+  
+  //----
+  // RELATIONS
+  //----
+  category ecommerce_mall_categories? @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_category_id, seller_tier, effective_date], map: "ecommerce_mall_commission_rates_ecommerce_mall_categor_6c5b2e5d")
+  @@index([is_active])
+  @@index([effective_date])
+  @@index([seller_tier])
+}
+
+/// Generates comprehensive tax reporting records for sellers and platform
+/// operations with detailed tax calculations, period tracking, and
+/// compliance status management.
+///
+/// This entity manages tax reporting requirements for both marketplace
+/// sellers and platform operations, generating detailed tax reports for
+/// specified reporting periods. The model captures tax calculations,
+/// applicable tax rates, tax types, and comprehensive reporting data for
+/// regulatory compliance.
+///
+/// Tax reports support various tax types including sales tax, income tax,
+/// VAT, and other applicable taxes based on jurisdiction and business
+/// requirements. The system tracks report generation, submission, approval,
+/// and compliance status throughout the tax reporting workflow.
+///
+/// Comprehensive reporting data includes detailed breakdowns of taxable
+/// transactions, tax calculations, applicable rates, and supporting
+/// documentation for audit and compliance purposes.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_tax_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller for whom this tax report is generated. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Tax reporting period identifier (e.g., '2024-Q1', '2024-03', '2024').
+  tax_period String
+  
+  /// Total tax amount calculated for this reporting period.
+  tax_amount Float
+  
+  /// Applied tax rate as percentage for this reporting period.
+  tax_rate Float
+  
+  /// Type of tax: sales_tax, income_tax, vat, gst, other for compliance
+  /// tracking.
+  tax_type String
+  
+  /// Three-letter ISO currency code for this tax report.
+  currency String
+  
+  /// JSON string containing detailed tax report data for audit and compliance.
+  report_data String
+  
+  /// Tax report status: generated, submitted, approved, rejected, amended for
+  /// workflow tracking.
+  status String
+  
+  /// Timestamp when tax report was submitted to tax authorities.
+  submitted_at DateTime?
+  
+  /// Timestamp when tax report was approved by tax authorities.
+  approved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, tax_period, tax_type], map: "ecommerce_mall_tax_reports_ecommerce_mall_seller_id_ta_9872b9b9")
+  @@index([status])
+  @@index([tax_period])
+}
+
+/// Stores comprehensive financial analytics and business intelligence data
+/// including revenue metrics, commission tracking, payout summaries, and
+/// seller performance indicators for reporting periods.
+///
+/// This analytics entity captures key financial metrics and business
+/// intelligence data for marketplace operations, providing aggregated
+/// insights into platform financial performance, seller activity, and growth
+/// metrics. The model stores calculated analytics data for specific
+/// reporting periods to support business intelligence and strategic
+/// decision-making.
+///
+/// Financial analytics include platform-wide revenue metrics, commission
+/// tracking, payout summaries, seller activity indicators, and growth
+/// metrics. This data supports executive reporting, financial planning, and
+/// marketplace optimization strategies.
+///
+/// The analytics model enables trend analysis, performance benchmarking, and
+/// strategic planning through comprehensive historical financial data
+/// storage and query capabilities.
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_financial_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Analytics reporting period identifier (e.g., '2024-Q1', '2024-03',
+  /// '2024-01-15').
+  reporting_period String
+  
+  /// Total platform revenue (gross merchandise value) for this reporting
+  /// period.
+  total_revenue Float
+  
+  /// Total commission revenue earned by platform during this reporting period.
+  total_commissions Float
+  
+  /// Total amount paid out to sellers during this reporting period.
+  total_payouts Float
+  
+  /// Total number of active sellers on the platform during this period.
+  total_sellers Int
+  
+  /// Number of sellers who processed at least one order during this period.
+  active_sellers Int
+  
+  /// Number of new sellers who joined the platform during this reporting
+  /// period.
+  new_sellers Int
+  
+  /// Average order value across all transactions during this reporting period.
+  average_order_value Float
+  
+  /// Three-letter ISO currency code for all financial metrics in this
+  /// analytics record.
+  currency String
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([reporting_period])
+}

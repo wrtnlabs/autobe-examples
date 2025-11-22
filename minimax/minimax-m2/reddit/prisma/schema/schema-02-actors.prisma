@@ -1,0 +1,525 @@
+/// Unauthenticated visitors who can browse public communities and content
+/// without registration.
+///
+/// Represents individuals who access the platform without creating accounts.
+/// Guest users have limited read-only access to public communities, posts,
+/// and comments. They can browse trending content, discover communities, and
+/// view public user information without authentication. Guest users are
+/// encouraged to register for full platform participation including content
+/// creation, voting, and commenting capabilities.
+///
+/// Guest browsing is essential for user acquisition and platform discovery.
+/// These users contribute to public community visibility and can convert to
+/// registered users through the platform's content quality and community
+/// engagement features.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_guestusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Guest user's IP address for session tracking and analytics.
+  ip_address String?
+  
+  /// Browser or device information for guest session identification.
+  user_agent String?
+  
+  /// JSON field storing guest user's browsing preferences and interests.
+  browsing_preferences String?
+  
+  /// Number of guest sessions for analytics and engagement tracking.
+  session_count Int
+  
+  /// Timestamp of last guest session activity for engagement tracking.
+  last_activity DateTime
+  
+  /// Guest user creation timestamp for analytics and retention tracking.
+  created_at DateTime
+  
+  /// Last update timestamp for guest user activity tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([ip_address, created_at])
+  @@index([last_activity])
+}
+
+/// Authenticated community members who can create content, vote, comment,
+/// and participate in platform communities.
+///
+/// Core platform participants who have completed registration and email
+/// verification. Registered users gain full platform access including
+/// content creation (text, links, images), community participation through
+/// voting and commenting, subscription management for personalized feeds,
+/// and karma building through positive community engagement. They can create
+/// communities, participate in discussions, and build reputation through
+/// quality contributions.
+///
+/// This entity represents the primary user base and drives platform
+/// engagement through active participation in communities, content
+/// consumption, and social interactions that create value for the entire
+/// platform ecosystem.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_registeredusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for platform identification and @mention functionality.
+  username String
+  
+  /// Email address for authentication, notifications, and password recovery.
+  email String
+  
+  /// Securely hashed password for authentication using industry-standard
+  /// algorithms.
+  password_hash String
+  
+  /// Public display name different from username for user recognition.
+  display_name String?
+  
+  /// Personal description and interests for community connection and social
+  /// features.
+  bio String?
+  
+  /// Optional geographic location for community discovery and local content.
+  location String?
+  
+  /// Personal or professional website link for profile enrichment and
+  /// verification.
+  website_url String?
+  
+  /// Profile picture URL for user identification and social features.
+  avatar_url String?
+  
+  /// Total karma points earned through quality contributions and community
+  /// engagement.
+  karma_score Int
+  
+  /// Account lifecycle status: active, suspended, banned, or restricted.
+  account_status String
+  
+  /// Business workflow status for account management and activation processes.
+  business_status String
+  
+  /// Email verification status required for full platform access and features.
+  email_verified Boolean
+  
+  /// Two-factor authentication status for enhanced account security.
+  two_factor_enabled Boolean
+  
+  /// Last successful login timestamp for activity tracking and engagement
+  /// analytics.
+  last_login DateTime
+  
+  /// Total number of successful logins for engagement and activity analytics.
+  login_count Int
+  
+  /// Failed login attempt count for security monitoring and account protection.
+  failed_login_attempts Int
+  
+  /// Original account creation timestamp for reputation and community standing
+  /// calculation.
+  account_created DateTime
+  
+  /// Email verification completion timestamp for account activation tracking.
+  email_verified_at DateTime?
+  
+  /// Temporary suspension end date for account restriction management.
+  suspended_until DateTime?
+  
+  /// Record creation timestamp for audit trails and compliance requirements.
+  created_at DateTime
+  
+  /// Last update timestamp for change tracking and audit trail maintenance.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account recovery and compliance requirements.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_platform_communitymoderators reddit_platform_communitymoderators?
+  reddit_platform_platformadministrators reddit_platform_platformadministrators?
+  reddit_platform_registereduser_sessions reddit_platform_registereduser_sessions[]
+  reddit_platform_communities reddit_platform_communities[]
+  reddit_platform_community_memberships reddit_platform_community_memberships[]
+  reddit_platform_community_subscription_junction reddit_platform_community_subscription_junction[]
+  reddit_platform_posts reddit_platform_posts[]
+  reddit_platform_comments reddit_platform_comments[]
+  reddit_platform_post_votes reddit_platform_post_votes[]
+  reddit_platform_comment_votes reddit_platform_comment_votes[]
+  reddit_platform_user_karma reddit_platform_user_karma[]
+  reddit_platform_content_engagement reddit_platform_content_engagement[]
+  reddit_platform_user_activities reddit_platform_user_activities[]
+  reddit_platform_report_of_registeredusers reddit_platform_report_of_registeredusers[]
+  reddit_platform_moderation_actions reddit_platform_moderation_actions[]
+  reddit_platform_user_activity_logs reddit_platform_user_activity_logs[]
+  reddit_platform_karma_calculations reddit_platform_karma_calculations[]
+  
+  @@unique([username])
+  @@unique([email])
+  // spellchecker: ignore-next-line
+  @@index([account_status, business_status], map: "reddit_platform_registeredusers_account_status_busines_ad90aaa8")
+  @@index([karma_score])
+  @@index([email_verified])
+  @@index([last_login])
+  @@index([created_at])
+}
+
+/// Trusted community members who help maintain community standards and
+/// facilitate discussions within their assigned communities.
+///
+/// Registered users who have demonstrated consistent quality participation
+/// and received community appointment as moderators. They inherit all
+/// registered user capabilities plus enhanced community management tools
+/// including content moderation (post and comment removal), user management
+/// (warnings and temporary bans), community rule enforcement, and post
+/// pinning capabilities. Moderators maintain community health, enforce
+/// guidelines, and help resolve conflicts while building positive community
+/// environments.
+///
+/// Community moderators serve as bridges between community members and
+/// platform administrators, providing localized governance while maintaining
+/// platform-wide standards and policies.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_communitymoderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to base registered user account for authentication and profile
+  /// information. {@link reddit_platform_registeredusers.id}
+  reddit_platform_registereduser_id String
+  
+  /// JSON field containing specific moderation capabilities and community
+  /// access levels.
+  moderation_permissions String
+  
+  /// JSON array of community IDs where user has moderation privileges.
+  assigned_communities String
+  
+  /// Total moderation actions performed for performance tracking and
+  /// accountability.
+  moderation_count Int
+  
+  /// Timestamp of most recent moderation activity for engagement tracking.
+  last_moderation_action DateTime
+  
+  /// Quality score based on moderation effectiveness and community
+  /// satisfaction.
+  moderation_score Int
+  
+  /// Identifier of user or system who appointed this moderator.
+  appointed_by String
+  
+  /// Moderator appointment timestamp for authority tracking and accountability.
+  appointed_at DateTime
+  
+  /// Moderator status: active, inactive, suspended, or resigned.
+  active_status String
+  
+  /// Record creation timestamp for audit trails and moderation history.
+  created_at DateTime
+  
+  /// Last update timestamp for change tracking and permission updates.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser reddit_platform_registeredusers @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_communitymoderator_sessions reddit_platform_communitymoderator_sessions[]
+  reddit_platform_report_of_communitymoderators reddit_platform_report_of_communitymoderators[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_registereduser_id], map: "reddit_platform_communitymoderators_reddit_platform_re_bfd980c1")
+  
+  @@index([active_status])
+  @@index([moderation_score])
+  @@index([assigned_communities])
+  @@index([appointed_at])
+}
+
+/// System operators with comprehensive oversight capabilities to ensure
+/// platform integrity and policy enforcement across all communities.
+///
+/// Users with highest level of platform access and control. They inherit all
+/// registered user and community moderator capabilities plus complete
+/// platform management including user account management (suspensions and
+/// bans), community oversight (creation, modification, suspension), content
+/// removal across all communities, platform-wide policy enforcement, and
+/// system configuration. Administrators handle escalations, compliance
+/// matters, and ensure platform health while coordinating with community
+/// moderators.
+///
+/// Platform administrators maintain platform integrity, enforce terms of
+/// service, handle legal and compliance requirements, and serve as the final
+/// authority for platform governance and user disputes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_platformadministrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to base registered user account for authentication and profile
+  /// information. {@link reddit_platform_registeredusers.id}
+  reddit_platform_registereduser_id String
+  
+  /// Administrator privilege level: super_admin, admin, or moderator_admin for
+  /// permission hierarchy.
+  administrator_level String
+  
+  /// JSON field containing system-level permissions and access capabilities.
+  system_permissions String
+  
+  /// JSON array of community IDs with special administrative oversight.
+  managed_communities String?
+  
+  /// Total administrative actions performed for audit and performance tracking.
+  administrative_actions Int
+  
+  /// Timestamp of most recent administrative activity for audit trails.
+  last_administrative_action DateTime
+  
+  /// System access scope: global, regional, or community-specific
+  /// administrative access.
+  access_level String
+  
+  /// Security clearance level for sensitive operations and compliance access.
+  security_clearance String
+  
+  /// Identifier of higher-level administrator who granted these privileges.
+  appointed_by String
+  
+  /// Administrator appointment timestamp for authority verification and
+  /// accountability.
+  appointed_at DateTime
+  
+  /// Administrator status: active, inactive, suspended, or terminated.
+  active_status String
+  
+  /// Record creation timestamp for audit trails and compliance documentation.
+  created_at DateTime
+  
+  /// Last update timestamp for change tracking and permission modifications.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser reddit_platform_registeredusers @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_platformadministrator_sessions reddit_platform_platformadministrator_sessions[]
+  reddit_platform_report_of_platformadministrators reddit_platform_report_of_platformadministrators[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_registereduser_id], map: "reddit_platform_platformadministrators_reddit_platform_6d22ea67")
+  
+  @@index([administrator_level])
+  @@index([access_level])
+  @@index([active_status])
+  @@index([appointed_at])
+}
+
+/// Session management for authenticated registered users to track login
+/// activities and maintain secure access across the platform.
+///
+/// Tracks authenticated user sessions for registered users, providing secure
+/// session management, activity logging, and user behavior analytics. Each
+/// session records connection context including IP address, connection URL,
+/// and referrer information for security monitoring and analytics. Sessions
+/// have creation timestamps for audit trails and optional expiration
+/// timestamps for automatic logout and security enforcement.
+///
+/// Sessions are subsidiary entities managed through identity flows and
+/// provide essential audit tracing capabilities for security monitoring,
+/// compliance requirements, and user activity analysis without requiring
+/// independent API operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_registereduser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated registered user for session ownership and user
+  /// activity tracking. {@link reddit_platform_registeredusers.id}
+  reddit_platform_registereduser_id String
+  
+  /// User's IP address at session creation for security monitoring and
+  /// geographic analytics.
+  ip String
+  
+  /// Connection URL showing where user accessed the platform from for
+  /// analytics.
+  href String
+  
+  /// Referrer URL indicating how user arrived at the platform for traffic
+  /// analysis.
+  referrer String
+  
+  /// Session creation timestamp for audit trails and user activity tracking.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic logout and security management.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser reddit_platform_registeredusers @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_content_reports reddit_platform_content_reports[]
+  reddit_platform_moderation_appeals reddit_platform_moderation_appeals[]
+  reddit_platform_user_activity_logs reddit_platform_user_activity_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_registereduser_id, created_at], map: "reddit_platform_registereduser_sessions_reddit_platfor_21d0d19a")
+}
+
+/// Session management for authenticated community moderators to track
+/// administrative activities and maintain secure access for moderation
+/// tools.
+///
+/// Tracks authenticated user sessions specifically for community moderators,
+/// providing enhanced security monitoring for users with elevated
+/// privileges. Each session records detailed connection context including IP
+/// address, connection URL, and referrer information for security monitoring
+/// of moderator activities. Sessions include creation and expiration
+/// timestamps for proper session lifecycle management and automatic logout
+/// procedures.
+///
+/// Sessions are subsidiary entities managed through identity flows and
+/// support audit tracing of moderation activities and administrative access
+/// without requiring independent API operations, maintaining security and
+/// accountability for privileged user actions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_communitymoderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated community moderator for session ownership and
+  /// moderation activity tracking. {@link
+  /// reddit_platform_communitymoderators.id}
+  reddit_platform_communitymoderator_id String
+  
+  /// Moderator's IP address for enhanced security monitoring and access
+  /// control.
+  ip String
+  
+  /// Connection URL showing moderator access point for security analytics and
+  /// monitoring.
+  href String
+  
+  /// Referrer URL indicating how moderator accessed administrative interface
+  /// for security tracking.
+  referrer String
+  
+  /// Session creation timestamp for audit trails and moderator activity
+  /// monitoring.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic logout and enhanced security
+  /// management.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityModerator reddit_platform_communitymoderators @relation(fields: [reddit_platform_communitymoderator_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_moderation_actions reddit_platform_moderation_actions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_communitymoderator_id, created_at], map: "reddit_platform_communitymoderator_sessions_reddit_pla_1ee55a9b")
+}
+
+/// Session management for authenticated platform administrators to track
+/// system access and maintain secure administrative operations.
+///
+/// Tracks authenticated user sessions for platform administrators with
+/// highest security monitoring requirements. Each session records
+/// comprehensive connection context including IP address, connection URL,
+/// and referrer information for enhanced security monitoring and compliance
+/// requirements. Sessions include creation and expiration timestamps for
+/// strict session lifecycle management and automatic logout procedures to
+/// maintain system security.
+///
+/// Sessions are subsidiary entities managed through identity flows and
+/// provide critical audit tracing for administrative access and system
+/// operations without requiring independent API operations, ensuring
+/// accountability and security for platform management activities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_platformadministrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated platform administrator for session ownership
+  /// and administrative activity tracking. {@link
+  /// reddit_platform_platformadministrators.id}
+  reddit_platform_platformadministrator_id String
+  
+  /// Administrator's IP address for maximum security monitoring and compliance
+  /// tracking.
+  ip String
+  
+  /// Connection URL showing administrative access point for security analysis
+  /// and compliance.
+  href String
+  
+  /// Referrer URL indicating administrative interface access source for
+  /// security monitoring.
+  referrer String
+  
+  /// Session creation timestamp for comprehensive audit trails and
+  /// administrative activity monitoring.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic logout and maximum security
+  /// enforcement.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformAdministrator reddit_platform_platformadministrators @relation(fields: [reddit_platform_platformadministrator_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_moderation_appeals reddit_platform_moderation_appeals[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_platformadministrator_id, created_at], map: "reddit_platform_platformadministrator_sessions_reddit__43b60e35")
+}

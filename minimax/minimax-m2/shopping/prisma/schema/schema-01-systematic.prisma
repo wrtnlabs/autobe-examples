@@ -1,0 +1,240 @@
+/// Global platform configuration settings that control system-wide
+/// parameters and behavior.
+///
+/// Stores essential platform-wide configuration values including business
+/// rules, feature toggles, tax rates, shipping settings, and other
+/// operational parameters that affect all users and transactions. This
+/// foundational table enables centralized platform management without
+/// requiring code changes for configuration modifications.
+///
+/// The settings are referenced throughout the system for commission
+/// calculations, tax processing, shipping configurations, and other core
+/// platform functions. Administrators can modify these values to adjust
+/// platform behavior, implement policy changes, and manage operational
+/// parameters.
+///
+/// Soft deletion is not applicable as configuration settings are permanent
+/// platform data with full audit trail through updated_at timestamps.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier key for the configuration setting (e.g.,
+  /// 'default_commission_rate', 'tax_rate_us', 'max_file_upload_size'). Used
+  /// for programmatic access and validation.
+  setting_key String
+  
+  /// Configuration value stored as text string. Supports numeric values, JSON
+  /// objects, and text content. Values should be validated based on
+  /// setting_key requirements.
+  setting_value String
+  
+  /// Data type classification for the setting value (e.g., 'number',
+  /// 'boolean', 'json', 'string'). Used for validation and proper value
+  /// handling.
+  setting_type String
+  
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting. Provides context for administrators managing
+  /// platform settings.
+  description String
+  
+  /// Logical grouping identifier for organizing configuration settings (e.g.,
+  /// 'payment', 'shipping', 'tax', 'general'). Used for administrative
+  /// interface organization and bulk operations.
+  grouping_key String
+  
+  /// Whether this configuration setting is currently active and being applied
+  /// by the system. Inactive settings are preserved but not used in system
+  /// operations.
+  is_active Boolean
+  
+  /// Timestamp when this configuration setting was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration setting was last modified. Used for
+  /// audit trail and change tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([grouping_key, is_active])
+  @@index([setting_type])
+}
+
+/// Product category system providing hierarchical organization for
+/// marketplace products.
+///
+/// Stores the complete category taxonomy for organizing products within the
+/// marketplace. Categories support hierarchical parent-child relationships
+/// enabling multi-level navigation and filtering. Each category includes
+/// SEO-friendly slugs, display ordering, and activation status for flexible
+/// content management.
+///
+/// Categories are the primary organizational structure for product
+/// discovery, search filtering, and navigation. They support unlimited
+/// nesting depth while maintaining performance through efficient indexing
+/// and caching. Categories are referenced by products across the platform
+/// and serve as the foundation for customer browsing experiences.
+///
+/// Soft deletion support allows categories to be disabled without losing
+/// historical product associations and maintaining data integrity for
+/// existing products.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent category for hierarchical organization. Null for
+  /// top-level categories. {@link ecommerce_mall_categories.id}
+  parent_category_id String?
+  
+  /// Category display name shown to customers (e.g., 'Electronics', 'Clothing
+  /// & Fashion', 'Home & Garden'). Should be descriptive and
+  /// customer-friendly.
+  name String
+  
+  /// Detailed description of the category explaining its scope and product
+  /// types. Used for SEO and customer understanding of category contents.
+  description String
+  
+  /// URL-friendly identifier for category pages (e.g., 'electronics',
+  /// 'clothing-fashion'). Must be unique across all categories and used in
+  /// SEO-friendly URLs.
+  slug String
+  
+  /// Numerical order for category display in lists and navigation. Lower
+  /// numbers appear first. Used for consistent category ordering across the
+  /// platform.
+  display_order Int
+  
+  /// Whether this category is active and visible to customers. Inactive
+  /// categories are hidden from browsing but preserved for existing product
+  /// associations.
+  is_active Boolean
+  
+  /// Whether this category should be featured prominently in homepage displays
+  /// and promotional areas. Used for highlighting important categories.
+  is_featured Boolean
+  
+  /// SEO-optimized title for category pages used by search engines and social
+  /// media. Should be compelling and keyword-rich for better search
+  /// visibility.
+  meta_title String
+  
+  /// SEO meta description providing category summary for search engine
+  /// results. Should be concise, informative, and encourage clicks.
+  meta_description String
+  
+  /// Optional category banner or featured image URL for visual category
+  /// representation in navigation and promotional displays.
+  image_url String?
+  
+  /// Timestamp when this category was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified. Used for tracking
+  /// category evolution and change history.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Categories are not physically deleted but marked
+  /// as deleted to preserve product associations and maintain referential
+  /// integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_categories[] @relation("recursive")
+  ecommerce_mall_category_hierarchies_of_parent_category_id ecommerce_mall_category_hierarchies[] @relation("ecommerce_mall_category_hierarchies_of_parent_category_id")
+  ecommerce_mall_category_hierarchies_of_child_category_id ecommerce_mall_category_hierarchies[] @relation("ecommerce_mall_category_hierarchies_of_child_category_id")
+  ecommerce_mall_products ecommerce_mall_products[]
+  ecommerce_mall_commission_rates ecommerce_mall_commission_rates[]
+  
+  @@unique([slug])
+  @@index([parent_category_id, display_order])
+  @@index([is_active, is_featured])
+  @@index([deleted_at])
+}
+
+/// Parent-child relationship mappings supporting complex category hierarchy
+/// structures.
+///
+/// Manages explicit parent-child relationships between categories to support
+/// complex hierarchical structures beyond simple parent references. This
+/// table enables many-to-many relationships allowing categories to appear in
+/// multiple hierarchy paths and supports complex organizational structures.
+///
+/// The hierarchy system enables categories to have multiple parents,
+/// creating flexible organizational structures where products can be
+/// discovered through multiple navigation paths. This design supports
+/// advanced filtering, cross-category product placement, and sophisticated
+/// search capabilities.
+///
+/// This subsidiary table is managed automatically by the system and provides
+/// the relationship mapping needed for efficient hierarchy traversal and
+/// category organization. It supports the recursive relationships defined in
+/// the parent category references.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_category_hierarchies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent category in the hierarchy relationship. {@link
+  /// ecommerce_mall_categories.id}
+  parent_category_id String
+  
+  /// Reference to child category in the hierarchy relationship. {@link
+  /// ecommerce_mall_categories.id}
+  child_category_id String
+  
+  /// Numerical depth level in the hierarchy (0 for immediate parent-child, 1
+  /// for grandparent-grandchild, etc.). Used for efficient hierarchy traversal
+  /// and level-based operations.
+  hierarchy_level Int
+  
+  /// Ordering sequence for sibling categories at the same hierarchy level.
+  /// Used for consistent display ordering within parent categories.
+  sort_order Int
+  
+  /// Timestamp when this hierarchy relationship was initially established.
+  created_at DateTime
+  
+  /// timestamp when this hierarchy relationship was last modified. Used for
+  /// tracking relationship changes and maintaining consistency.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory ecommerce_mall_categories @relation("ecommerce_mall_category_hierarchies_of_parent_category_id", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  childCategory ecommerce_mall_categories @relation("ecommerce_mall_category_hierarchies_of_child_category_id", fields: [child_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([parent_category_id, child_category_id], map: "ecommerce_mall_category_hierarchies_parent_category_id_a2c38b49")
+  // spellchecker: ignore-next-line
+  @@index([parent_category_id, hierarchy_level], map: "ecommerce_mall_category_hierarchies_parent_category_id_04748d4b")
+  @@index([sort_order])
+  // spellchecker: ignore-next-line
+  @@index([child_category_id, hierarchy_level], map: "ecommerce_mall_category_hierarchies_child_category_id__bf50e7d0")
+}

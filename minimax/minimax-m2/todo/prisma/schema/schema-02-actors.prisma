@@ -1,0 +1,278 @@
+/// User profile information with separated concerns for enhanced security
+/// and proper 3NF normalization.
+///
+/// Contains only profile data (names, contact info, status) that directly
+/// relates to member identity and user experience. Authentication security
+/// is handled by separate authentication table to prevent transitive
+/// dependencies and security vulnerabilities.
+///
+/// Profile data is independent of authentication mechanisms and can be
+/// updated without affecting login credentials. This separation supports
+/// better security practices and enables flexible authentication
+/// implementations.
+///
+/// The profile maintains soft deletion capability for account recovery while
+/// ensuring profile operations don't impact authentication security. Status
+/// tracking enables proper user lifecycle management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member email address used for account identification and communication.
+  /// Must be unique across all members for account differentiation and contact
+  /// purposes.
+  email String
+  
+  /// Member's first name for personalization and user interface display. Used
+  /// for addressing the user in communications and displaying personalized
+  /// content.
+  first_name String?
+  
+  /// Member's last name for complete user identification and family name
+  /// tracking. Works with first name for full name display and formal
+  /// communications.
+  last_name String?
+  
+  /// Current account status for lifecycle management. Valid values: active,
+  /// suspended, deactivated. Controls member access to Todo management
+  /// functionality and system features.
+  status String
+  
+  /// Member profile creation timestamp. Records when the member account was
+  /// initially created and registered in the system for audit trail purposes.
+  created_at DateTime
+  
+  /// Last profile modification timestamp. Updates whenever member profile
+  /// information is changed to maintain accurate audit trail and change
+  /// history.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account recovery. Null when account is
+  /// active, contains deletion timestamp when account is soft deleted for
+  /// recoverable account management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_audit_logs_of_actor_member_id todo_app_audit_logs[] @relation("todo_app_audit_logs_of_actor_member_id")
+  todo_app_audit_logs_of_target_member_id todo_app_audit_logs[] @relation("todo_app_audit_logs_of_target_member_id")
+  todo_app_member_sessions todo_app_member_sessions[]
+  todo_app_todos todo_app_todos[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// System administrators with elevated permissions to manage all users,
+/// system operations, and provide oversight of the entire TodoApp system.
+///
+/// Represents administrative users who can access all user data, manage
+/// member accounts, monitor system performance, and perform administrative
+/// functions. Administrators have system-wide privileges while maintaining
+/// secure authentication and session management.
+///
+/// Administrative accounts include enhanced security measures and
+/// comprehensive audit logging for all administrative actions. These
+/// accounts can manage user lifecycle, system configuration, and provide
+/// user support through full system access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email address for secure authentication and administrative
+  /// access. Must be unique across all administrators for security and
+  /// accountability.
+  email String
+  
+  /// Encrypted password hash for administrative authentication. Uses strong
+  /// hashing algorithm to protect administrative accounts from unauthorized
+  /// access.
+  password_hash String
+  
+  /// Administrator's first name for identification and audit logging. Used for
+  /// accountability and administrative user interface display.
+  first_name String?
+  
+  /// Administrator's last name for complete identification. Works with first
+  /// name for comprehensive administrator identification in audit trails.
+  last_name String?
+  
+  /// Administrative role level for permission management. Valid values:
+  /// super_admin, admin, moderator. Controls the scope of administrative
+  /// privileges.
+  role_level String
+  
+  /// Current administrative account status. Valid values: active, suspended,
+  /// deactivated. Controls access to administrative functions and system
+  /// oversight.
+  status String
+  
+  /// Administrative account creation timestamp. Records when the administrator
+  /// account was created for audit and compliance tracking.
+  created_at DateTime
+  
+  /// Last administrative account modification timestamp. Updates when role
+  /// level, status, or other administrative fields are changed.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for administrative account recovery. Null when
+  /// account is active, contains deletion timestamp when account is soft
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_audit_logs todo_app_audit_logs[]
+  todo_app_administrator_sessions todo_app_administrator_sessions[]
+  todo_app_todos todo_app_todos[]
+  
+  @@unique([email])
+  @@index([role_level])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Independent session management for authenticated member users with
+/// comprehensive security tracking and operational oversight.
+///
+/// Manages secure session records for individual members, providing
+/// authentication context for Todo operations and enabling comprehensive
+/// security monitoring. Each session supports independent management for
+/// cross-member analytics, security incident investigation, and
+/// administrative oversight.
+///
+/// Sessions include detailed connection metadata for security monitoring,
+/// audit trail support for user activity tracking, and independent
+/// operational management for compliance and security requirements.
+/// Essential for maintaining system security while enabling member
+/// functionality.
+///
+/// Primary stance ensures sessions can be independently queried, managed,
+/// and audited without requiring nested operations through member accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account that owns this session. {@link
+  /// todo_app_members.id}. Each session belongs to exactly one member account
+  /// for proper security isolation.
+  member_id String
+  
+  /// Member's IP address for connection tracking and security monitoring. Used
+  /// to identify session origin, detect suspicious login patterns, and support
+  /// geographic security analysis.
+  ip String
+  
+  /// Connection URL where the session was established. Records the originating
+  /// URL or endpoint for session audit, security analysis, and user experience
+  /// tracking.
+  href String
+  
+  /// Referrer URL that led to the session creation. Provides context for how
+  /// the member accessed the system for security analysis, marketing
+  /// attribution, and user journey tracking.
+  referrer String
+  
+  /// Session creation timestamp. Records when the member successfully
+  /// authenticated and established this session for audit trail and session
+  /// lifecycle management.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic cleanup and access control.
+  /// When session expires, member must re-authenticate to continue accessing
+  /// Todo functionality.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member todo_app_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id, created_at])
+}
+
+/// Independent session management for authenticated administrator users with
+/// enhanced security oversight and comprehensive audit capabilities.
+///
+/// Manages secure session records for administrative users, providing
+/// authentication context for system-wide management operations with
+/// independent operational oversight. Each session supports comprehensive
+/// security monitoring, cross-administrator analytics, and detailed audit
+/// requirements for privileged access.
+///
+/// Administrative sessions include enhanced connection metadata for security
+/// tracking, comprehensive audit trail support for compliance, and
+/// independent session management capabilities. Critical for maintaining
+/// system security while enabling full administrative functionality.
+///
+/// Primary stance ensures administrative sessions can be independently
+/// monitored, audited, and managed for security compliance and operational
+/// oversight without requiring nested administrative account operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator account that owns this session. {@link
+  /// todo_app_administrators.id}. Each session belongs to exactly one
+  /// administrative account for proper security isolation and accountability.
+  administrator_id String
+  
+  /// Administrator's IP address for security tracking and audit logging.
+  /// Monitors administrative access patterns, detects potential security
+  /// threats, and supports forensic investigation of administrative actions.
+  ip String
+  
+  /// Connection URL for administrative session establishment. Records
+  /// administrative access origin for security analysis, compliance reporting,
+  /// and administrative activity attribution.
+  href String
+  
+  /// Referrer URL for administrative session context. Provides administrative
+  /// access analytics, security investigation capabilities, and administrative
+  /// user journey understanding.
+  referrer String
+  
+  /// Administrative session creation timestamp. Records when administrator
+  /// successfully authenticated and gained system management access for
+  /// comprehensive audit trail.
+  created_at DateTime
+  
+  /// Administrative session expiration timestamp for privileged access control
+  /// and security best practices. Automatic expiration ensures administrative
+  /// accounts don't remain indefinitely logged in.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator todo_app_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id, created_at])
+}

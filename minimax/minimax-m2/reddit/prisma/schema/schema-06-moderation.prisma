@@ -1,0 +1,401 @@
+/// Content reports submitted by users for policy violations and community
+/// guidelines.
+///
+/// Serves as the main entity for the polymorphic reporting system, storing
+/// shared report attributes and actor type information. Reports can be
+/// submitted by registered users, community moderators, or platform
+/// administrators, with each actor type having specific contextual data
+/// stored in corresponding subtype entities.
+///
+/// Reports track content violations including spam, harassment,
+/// misinformation, NSFW content, and community rule violations. Each report
+/// includes detailed information about the violation, evidence, and
+/// processing status through the moderation workflow.
+///
+/// Soft deletion support maintains audit trails while allowing content
+/// moderation. Reports are critical for maintaining community standards and
+/// platform safety through user-driven content oversight.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reported post content. {@link reddit_platform_posts.id}
+  content_id String
+  
+  /// Session that submitted the report. {@link
+  /// reddit_platform_registereduser_sessions.id}
+  reporter_session_id String
+  
+  /// Type of actor submitting report: 'registered_user',
+  /// 'community_moderator', 'platform_administrator'
+  actor_type String
+  
+  /// Category of violation: spam, harassment, hate_speech, misinformation,
+  /// nsfw, copyright, community_rule_violation, other
+  report_category String
+  
+  /// Detailed description of the violation and evidence
+  description String
+  
+  /// Report processing status: pending, under_review, resolved, dismissed,
+  /// escalated
+  status String
+  
+  /// Report priority level: low, medium, high, critical
+  priority String
+  
+  /// Internal notes from moderators reviewing the report
+  moderator_notes String?
+  
+  /// Timestamp when report was resolved
+  resolved_at DateTime?
+  
+  /// Timestamp when report was submitted
+  created_at DateTime
+  
+  /// Timestamp when report was last modified
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  content reddit_platform_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  reporterSession reddit_platform_registereduser_sessions @relation(fields: [reporter_session_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_report_of_registeredusers reddit_platform_report_of_registeredusers?
+  reddit_platform_report_of_communitymoderators reddit_platform_report_of_communitymoderators?
+  reddit_platform_report_of_platformadministrators reddit_platform_report_of_platformadministrators?
+  
+  @@index([reporter_session_id])
+  
+  @@index([content_id, status])
+  @@index([actor_type, status])
+  @@index([report_category, status])
+  @@index([priority, status])
+  @@index([created_at])
+}
+
+/// Registered user submitted content reports with user-specific context.
+///
+/// Subtype entity storing additional contextual information for reports
+/// submitted by registered platform users. Contains user identification and
+/// session details specific to registered users, maintaining 1:1
+/// relationship with the main content_reports entity.
+///
+/// Registered user reports are the most common type, representing
+/// community-driven content oversight. These reports include user
+/// authentication details and session context for tracking and
+/// accountability purposes.
+///
+/// Managed through content reporting APIs and interfaces, not independently
+/// created. Supports the platform's community-driven moderation approach by
+/// enabling regular users to report violations.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_of_registeredusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated content report. {@link reddit_platform_content_reports.id}
+  reddit_platform_content_report_id String
+  
+  /// Registered user submitting the report. {@link
+  /// reddit_platform_registeredusers.id}
+  reddit_platform_registereduser_id String
+  
+  /// Timestamp when report was submitted by registered user
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport reddit_platform_content_reports @relation(fields: [reddit_platform_content_report_id], references: [id], onDelete: Cascade)
+  registeredUser reddit_platform_registeredusers @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_content_report_id], map: "reddit_platform_report_of_registeredusers_reddit_platf_745d710d")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_registereduser_id, created_at], map: "reddit_platform_report_of_registeredusers_reddit_platf_c1679093")
+}
+
+/// Community moderator submitted content reports with moderator-specific
+/// context.
+///
+/// Subtype entity storing additional contextual information for reports
+/// submitted by community moderators. Contains moderator identification and
+/// session details specific to moderator users, maintaining 1:1 relationship
+/// with the main content_reports entity.
+///
+/// Community moderator reports carry higher authority and priority in the
+/// moderation workflow, representing professional content oversight within
+/// specific communities. These reports include both user identification and
+/// community context for proper routing and escalation.
+///
+/// Managed through moderator interfaces and APIs, not independently created.
+/// Supports the platform's hierarchical moderation approach by enabling
+/// community representatives to escalate issues.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_of_communitymoderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated content report. {@link reddit_platform_content_reports.id}
+  reddit_platform_content_report_id String
+  
+  /// Community moderator submitting the report. {@link
+  /// reddit_platform_communitymoderators.id}
+  reddit_platform_communitymoderator_id String
+  
+  /// Timestamp when report was submitted by community moderator
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport reddit_platform_content_reports @relation(fields: [reddit_platform_content_report_id], references: [id], onDelete: Cascade)
+  communityModerator reddit_platform_communitymoderators @relation(fields: [reddit_platform_communitymoderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_content_report_id], map: "reddit_platform_report_of_communitymoderators_reddit_p_99fde2df")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_communitymoderator_id, created_at], map: "reddit_platform_report_of_communitymoderators_reddit_p_42321347")
+}
+
+/// Platform administrator submitted content reports with admin-specific
+/// context.
+///
+/// Subtype entity storing additional contextual information for reports
+/// submitted by platform administrators. Contains administrator
+/// identification and session details specific to admin users, maintaining
+/// 1:1 relationship with the main content_reports entity.
+///
+/// Platform administrator reports represent the highest authority level in
+/// the moderation system, typically used for platform-wide policy
+/// violations, legal compliance issues, or emergency content removal. These
+/// reports include full administrative context and override community-level
+/// moderation decisions.
+///
+/// Managed through administrative interfaces and APIs, not independently
+/// created. Supports the platform's ultimate oversight authority and
+/// emergency response capabilities.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_of_platformadministrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated content report. {@link reddit_platform_content_reports.id}
+  reddit_platform_content_report_id String
+  
+  /// Platform administrator submitting the report. {@link
+  /// reddit_platform_platformadministrators.id}
+  reddit_platform_platformadministrator_id String
+  
+  /// Timestamp when report was submitted by platform administrator
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport reddit_platform_content_reports @relation(fields: [reddit_platform_content_report_id], references: [id], onDelete: Cascade)
+  platformAdministrator reddit_platform_platformadministrators @relation(fields: [reddit_platform_platformadministrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_content_report_id], map: "reddit_platform_report_of_platformadministrators_reddi_758b10e9")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_platformadministrator_id, created_at], map: "reddit_platform_report_of_platformadministrators_reddi_7f61c140")
+}
+
+/// Moderation actions taken on content and users for policy violations.
+///
+/// Tracks enforcement actions including content removal, user warnings,
+/// suspensions, and bans. Records details about the violation, action taken,
+/// duration, and administrative notes for transparency and accountability.
+///
+/// Actions support graduated response system from warnings to permanent
+/// bans, with proper documentation and appeal processes. Each action
+/// includes moderator identification and reasoning for consistency and
+/// oversight.
+///
+/// Critical for maintaining community standards and platform safety through
+/// documented enforcement mechanisms. Supports both automated and manual
+/// moderation workflows with proper audit trails.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content affected by action (null for user-only actions). {@link
+  /// reddit_platform_posts.id}
+  content_id String?
+  
+  /// User affected by action (null for content-only actions). {@link
+  /// reddit_platform_registeredusers.id}
+  user_id String?
+  
+  /// Moderator session taking the action. {@link
+  /// reddit_platform_communitymoderator_sessions.id}
+  moderator_session_id String
+  
+  /// Type of moderation action: content_removal, user_warning, content_lock,
+  /// user_suspension, user_ban, community_quarantine
+  action_type String
+  
+  /// Detailed reason for the action taken
+  reason String
+  
+  /// Duration for temporary actions in hours (null for permanent actions)
+  duration_hours Int?
+  
+  /// Whether action was taken automatically by system
+  is_automated Boolean
+  
+  /// Action status: active, expired, overturned, pending_appeal
+  status String
+  
+  /// Internal administrative notes and context
+  admin_notes String?
+  
+  /// Number of appeals filed against this action
+  appeal_count Int
+  
+  /// Timestamp when action was taken
+  created_at DateTime
+  
+  /// Timestamp when action was last modified
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  content reddit_platform_posts? @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  user reddit_platform_registeredusers? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderatorSession reddit_platform_communitymoderator_sessions @relation(fields: [moderator_session_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_moderation_appeals reddit_platform_moderation_appeals[]
+  
+  @@index([user_id, status])
+  @@index([content_id, status])
+  @@index([action_type, status])
+  // spellchecker: ignore-next-line
+  @@index([moderator_session_id, created_at], map: "reddit_platform_moderation_actions_moderator_session_i_1d911ce3")
+  @@index([status, created_at])
+}
+
+/// Appeals filed against moderation decisions for fairness and transparency.
+///
+/// Provides formal process for users to contest moderation actions including
+/// content removals, user warnings, suspensions, and bans. Each appeal
+/// includes detailed reasoning, evidence, and review status through the
+/// appeal workflow.
+///
+/// Appeals support the platform's commitment to fair moderation and user
+/// rights, with structured review processes and clear resolution
+/// communication. Multiple appeal levels allow for thorough review and
+/// escalation when necessary.
+///
+/// Critical for maintaining user trust and platform fairness through
+/// documented appeal processes and transparency in moderation decisions.
+/// Supports both content-related and user-related moderation appeals.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_moderation_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderation action being appealed. {@link
+  /// reddit_platform_moderation_actions.id}
+  moderation_action_id String
+  
+  /// User session filing the appeal. {@link
+  /// reddit_platform_registereduser_sessions.id}
+  appellant_session_id String
+  
+  /// Administrator session reviewing the appeal (null until assigned). {@link
+  /// reddit_platform_platformadministrator_sessions.id}
+  reviewer_session_id String?
+  
+  /// Detailed reason for appealing the moderation action
+  appeal_reason String
+  
+  /// Additional evidence or context provided with appeal
+  additional_evidence String?
+  
+  /// Appeal status: pending, under_review, approved, denied, withdrawn,
+  /// escalated
+  status String
+  
+  /// Review notes and decision rationale from administrators
+  review_notes String?
+  
+  /// Final decision and reasoning for appeal resolution
+  decision_reason String?
+  
+  /// Appeal level: initial, secondary, final
+  appeal_level String
+  
+  /// Whether appeal was escalated to higher level review
+  is_escalated Boolean
+  
+  /// Timestamp when appeal was filed
+  created_at DateTime
+  
+  /// Timestamp when appeal was last modified
+  updated_at DateTime
+  
+  /// Timestamp when appeal was resolved
+  resolved_at DateTime?
+  
+  /// Soft deletion timestamp for audit trail
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction reddit_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  appellantSession reddit_platform_registereduser_sessions @relation(fields: [appellant_session_id], references: [id], onDelete: Cascade)
+  reviewerSession reddit_platform_platformadministrator_sessions? @relation(fields: [reviewer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id, status], map: "reddit_platform_moderation_appeals_moderation_action_i_7a3eea3b")
+  // spellchecker: ignore-next-line
+  @@index([appellant_session_id, status], map: "reddit_platform_moderation_appeals_appellant_session_i_5c212cf7")
+  // spellchecker: ignore-next-line
+  @@index([reviewer_session_id, status], map: "reddit_platform_moderation_appeals_reviewer_session_id_2fe0cc2b")
+  @@index([status, created_at])
+  @@index([appeal_level, status])
+}

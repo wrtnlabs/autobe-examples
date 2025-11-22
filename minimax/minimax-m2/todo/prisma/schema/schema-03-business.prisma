@@ -1,0 +1,92 @@
+/// Core business entity representing personal task items managed by users in
+/// the TodoApp system.
+///
+/// Stores individual todo items that users create, manage, and organize to
+/// improve their productivity and task completion rates. Each todo item is
+/// owned by a specific user (member or administrator) and contains all
+/// necessary information for effective task management including title,
+/// description, completion status, priority level, and categorization.
+///
+/// Todo items support the complete task lifecycle from creation through
+/// completion, with proper tracking of creation timestamps, modification
+/// history, and optional due dates for deadline management. The system
+/// enables users to organize their personal tasks efficiently while
+/// maintaining data isolation between different users.
+///
+/// Soft deletion is supported to maintain audit trails while allowing task
+/// removal when no longer needed.
+///
+/// @namespace Business
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who owns this todo item. Null when todo is owned
+  /// by an administrator.
+  todo_app_member_id String?
+  
+  /// Reference to the administrator who owns this todo item. Null when todo is
+  /// owned by a member.
+  todo_app_administrator_id String?
+  
+  /// Todo task title describing the specific task or objective. Required field
+  /// between 1-200 characters.
+  title String
+  
+  /// Optional detailed description providing additional context, requirements,
+  /// or notes for the todo task. Maximum 1000 characters.
+  description String?
+  
+  /// Current status of the todo item. Values: 'pending', 'in_progress',
+  /// 'completed', 'cancelled'. Default: 'pending'.
+  status String
+  
+  /// Business workflow status for advanced task tracking. Values: 'active',
+  /// 'on_hold', 'archived'. Default: 'active'.
+  business_status String
+  
+  /// Task priority level for organization and focus management. Values: 'low',
+  /// 'medium', 'high', 'urgent'. Default: 'medium'.
+  priority String
+  
+  /// Optional category or tag for task grouping and organization. Maximum 50
+  /// characters.
+  category String?
+  
+  /// Optional due date for task deadline management. Must be current date or
+  /// future date.
+  due_date DateTime?
+  
+  /// Timestamp when the todo item was marked as completed. Null for incomplete
+  /// items.
+  completed_at DateTime?
+  
+  /// Task creation timestamp showing when the todo item was originally created.
+  created_at DateTime
+  
+  /// Last modification timestamp showing when the todo item was most recently
+  /// updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for maintaining audit trails. Null for active tasks.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member todo_app_members? @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  administrator todo_app_administrators? @relation(fields: [todo_app_administrator_id], references: [id], onDelete: Cascade)
+  
+  todo_app_audit_logs todo_app_audit_logs[]
+  
+  @@index([todo_app_member_id, status])
+  @@index([todo_app_administrator_id, status])
+  @@index([status, created_at])
+  @@index([priority, created_at])
+  @@index([due_date])
+  @@index([category])
+}

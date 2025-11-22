@@ -1,0 +1,392 @@
+/// Comprehensive user behavior tracking and activity analytics for platform
+/// optimization.
+///
+/// Stores detailed logs of user interactions, session data, page views, and
+/// behavioral patterns to enable platform optimization and user experience
+/// improvements. Each log entry captures specific user actions, timestamps,
+/// contextual information, and session details for comprehensive behavioral
+/// analysis.
+///
+/// This analytics table supports understanding user engagement patterns,
+/// identifying popular features, detecting usage trends, and optimizing
+/// platform performance based on actual user behavior rather than
+/// assumptions.
+///
+/// Links to user accounts and sessions through foreign key relationships for
+/// comprehensive user activity tracking.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_user_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated registered user's {@link reddit_platform_registeredusers.id}.
+  reddit_platform_registereduser_id String?
+  
+  /// Associated user session's {@link
+  /// reddit_platform_registereduser_sessions.id}.
+  reddit_platform_registereduser_session_id String?
+  
+  /// Associated community's {@link reddit_platform_communities.id} if activity
+  /// is community-specific.
+  reddit_platform_community_id String?
+  
+  /// Associated post's {@link reddit_platform_posts.id} if activity is
+  /// post-specific.
+  reddit_platform_post_id String?
+  
+  /// Associated comment's {@link reddit_platform_comments.id} if activity is
+  /// comment-specific.
+  reddit_platform_comment_id String?
+  
+  /// Type of user activity: page_view, post_view, comment_view, vote,
+  /// post_create, comment_create, subscription, unsubscribe, search,
+  /// profile_view, community_browse.
+  activity_type String
+  
+  /// JSON data containing detailed activity information, metadata, and context
+  /// specific to the activity type.
+  activity_data String?
+  
+  /// User's IP address at time of activity for geographic and security
+  /// analytics.
+  ip_address String?
+  
+  /// User agent string for device and browser analytics.
+  user_agent String?
+  
+  /// Referrer URL showing how user arrived at the page or action.
+  referrer String?
+  
+  /// Session duration in seconds for session analytics and engagement
+  /// measurement.
+  session_duration Int?
+  
+  /// Activity timestamp for time-series analytics and trend analysis.
+  created_at DateTime
+  
+  /// Soft delete timestamp for data retention compliance and cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_registeredusers? @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  session reddit_platform_registereduser_sessions? @relation(fields: [reddit_platform_registereduser_session_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities? @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts? @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments? @relation(fields: [reddit_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_registereduser_session_id], map: "reddit_platform_user_activity_logs_reddit_platform_reg_9e5a1107")
+  @@index([reddit_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_comment_id], map: "reddit_platform_user_activity_logs_reddit_platform_com_8ab4d464")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_registereduser_id, created_at], map: "reddit_platform_user_activity_logs_reddit_platform_reg_5e1c2758")
+  @@index([activity_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id, created_at], map: "reddit_platform_user_activity_logs_reddit_platform_com_d1d658f5")
+}
+
+/// Historical karma calculation tracking and reputation system analytics.
+///
+/// Maintains comprehensive records of karma calculations, changes, and
+/// reputation system analytics to support user reputation management, karma
+/// algorithm optimization, and community trust metrics. Each calculation
+/// record captures the factors, source data, and reasoning behind karma
+/// score changes.
+///
+/// This analytics table enables tracking user reputation trends, analyzing
+/// karma algorithm effectiveness, understanding community trust patterns,
+/// and providing transparency into reputation systems for both users and
+/// administrators.
+///
+/// Supports reputation analysis, karma algorithm validation, and trust
+/// metric calculations through detailed calculation tracking.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_karma_calculations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma was calculated in {@link
+  /// reddit_platform_registeredusers.id}.
+  reddit_platform_registereduser_id String
+  
+  /// Associated post if karma change was from {@link reddit_platform_posts.id}
+  /// votes.
+  reddit_platform_post_id String?
+  
+  /// Associated comment if karma change was from {@link
+  /// reddit_platform_comments.id} votes.
+  reddit_platform_comment_id String?
+  
+  /// Community context for community-specific karma changes in {@link
+  /// reddit_platform_communities.id}.
+  reddit_platform_community_id String?
+  
+  /// Type of karma calculation: vote_received, vote_cast, moderation_bonus,
+  /// penalty, community_karma, total_update.
+  calculation_type String
+  
+  /// Karma point change (positive or negative) resulting from this calculation.
+  karma_change Int
+  
+  /// User's karma score before this calculation.
+  karma_before Int
+  
+  /// User's karma score after this calculation.
+  karma_after Int
+  
+  /// JSON data containing calculation factors, weights, and algorithm
+  /// parameters used.
+  calculation_factors String?
+  
+  /// Karma of the user who cast the vote (if applicable) for vote weighting.
+  voter_karma Int?
+  
+  /// Voter's karma specifically in the relevant community for community
+  /// weighting.
+  voter_community_karma Int?
+  
+  /// Precise timestamp when the karma calculation was performed.
+  calculation_timestamp DateTime
+  
+  /// Record creation timestamp for analytics and audit purposes.
+  created_at DateTime
+  
+  /// Soft delete timestamp for data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_registeredusers @relation(fields: [reddit_platform_registereduser_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts? @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments? @relation(fields: [reddit_platform_comment_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities? @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_comment_id], map: "reddit_platform_karma_calculations_reddit_platform_com_a05ad995")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_registereduser_id, calculation_timestamp], map: "reddit_platform_karma_calculations_reddit_platform_reg_8f9d131c")
+  // spellchecker: ignore-next-line
+  @@index([calculation_type, calculation_timestamp], map: "reddit_platform_karma_calculations_calculation_type_ca_913fe40e")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id, calculation_timestamp], map: "reddit_platform_karma_calculations_reddit_platform_com_655d574d")
+}
+
+/// Content performance tracking and engagement analytics for optimization.
+///
+/// Comprehensive content analytics tracking engagement metrics, performance
+/// indicators, and user interaction patterns to support content
+/// optimization, recommendation algorithms, and creator insights. Each
+/// record captures detailed performance metrics and engagement data for
+/// posts and comments.
+///
+/// This analytics table enables understanding content performance trends,
+/// optimizing recommendation algorithms, providing creator analytics,
+/// identifying high-performing content patterns, and supporting data-driven
+/// content strategy decisions.
+///
+/// Supports content performance analysis, creator feedback systems, and
+/// algorithm optimization through detailed engagement tracking.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_content_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post's {@link reddit_platform_posts.id} for post analytics.
+  reddit_platform_post_id String?
+  
+  /// Associated comment's {@link reddit_platform_comments.id} for comment
+  /// analytics.
+  reddit_platform_comment_id String?
+  
+  /// Associated community's {@link reddit_platform_communities.id} for
+  /// community context.
+  reddit_platform_community_id String
+  
+  /// Type of content: post_text, post_link, post_image, post_video, comment.
+  content_type String
+  
+  /// Total number of content views and impressions.
+  view_count Int
+  
+  /// Number of unique users who viewed the content.
+  unique_view_count Int
+  
+  /// Current upvote count for engagement measurement.
+  upvote_count Int
+  
+  /// Current downvote count for engagement measurement.
+  downvote_count Int
+  
+  /// Total number of comments on this content.
+  comment_count Int
+  
+  /// Number of times content was shared or cross-posted.
+  share_count Int
+  
+  /// Number of users who saved/bookmarked this content.
+  save_count Int
+  
+  /// Number of user reports filed against this content.
+  report_count Int
+  
+  /// Calculated engagement rate (interactions / views) for performance
+  /// analysis.
+  engagement_rate Float?
+  
+  /// Virality coefficient based on sharing and cross-community spread.
+  virality_score Float?
+  
+  /// Average time users spent viewing this content.
+  view_duration_avg Float?
+  
+  /// Percentage of users who viewed and immediately left.
+  bounce_rate Float?
+  
+  /// Content creation timestamp for time-series analysis.
+  created_at DateTime
+  
+  /// Last analytics update timestamp for tracking data freshness.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when content is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_platform_posts? @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments? @relation(fields: [reddit_platform_comment_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_comment_id], map: "reddit_platform_content_analytics_reddit_platform_comm_f8d5fa25")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id, updated_at], map: "reddit_platform_content_analytics_reddit_platform_comm_df27f068")
+  // spellchecker: ignore-next-line
+  @@index([engagement_rate, updated_at], map: "reddit_platform_content_analytics_engagement_rate_upda_0a32de3a")
+  @@index([view_count, updated_at])
+}
+
+/// Community health metrics and growth analytics for community management.
+///
+/// Tracks comprehensive community performance metrics, health indicators,
+/// growth statistics, and engagement patterns to support community
+/// management, growth strategies, and health monitoring. Each record
+/// provides detailed analytics for specific time periods and community
+/// activities.
+///
+/// This analytics table enables monitoring community health trends,
+/// identifying growth opportunities, optimizing community management
+/// strategies, understanding member engagement patterns, and supporting
+/// data-driven community governance decisions.
+///
+/// Supports community performance analysis, growth tracking, health
+/// monitoring, and management optimization through comprehensive metrics.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_community_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated community's {@link reddit_platform_communities.id} for
+  /// community-specific analytics.
+  reddit_platform_community_id String
+  
+  /// Time period for analytics: daily, weekly, monthly, quarterly, yearly.
+  analytics_period String
+  
+  /// Total number of community members at period end.
+  member_count Int
+  
+  /// Number of new members added during this period.
+  new_member_count Int
+  
+  /// Number of members with meaningful activity during this period.
+  active_member_count Int
+  
+  /// Total number of posts created during this period.
+  post_count Int
+  
+  /// Total number of comments created during this period.
+  comment_count Int
+  
+  /// Average engagement rate across all community content.
+  average_engagement_rate Float?
+  
+  /// Average karma earned per post for content quality assessment.
+  average_karma_per_post Float?
+  
+  /// Number of moderation actions taken during this period.
+  moderation_action_count Int
+  
+  /// Number of content reports filed during this period.
+  report_count Int
+  
+  /// Calculated community quality score based on engagement and moderation.
+  quality_score Float?
+  
+  /// Member growth rate percentage during this period.
+  growth_rate Float?
+  
+  /// Member retention rate for this period.
+  retention_rate Float?
+  
+  /// Overall community activity score combining multiple metrics.
+  activity_score Float?
+  
+  /// Start timestamp of the analytics period.
+  period_start DateTime
+  
+  /// End timestamp of the analytics period.
+  period_end DateTime
+  
+  /// Analytics record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for analytics data freshness.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for data retention compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_community_id, analytics_period, period_start], map: "reddit_platform_community_analytics_reddit_platform_co_29cd1254")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id, period_start], map: "reddit_platform_community_analytics_reddit_platform_co_24ca63e5")
+  // spellchecker: ignore-next-line
+  @@index([quality_score, period_start], map: "reddit_platform_community_analytics_quality_score_peri_47b30cc8")
+  // spellchecker: ignore-next-line
+  @@index([growth_rate, period_start], map: "reddit_platform_community_analytics_growth_rate_period_456efe8b")
+}
