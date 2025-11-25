@@ -18,7 +18,7 @@ subgraph "Backend Coding Agent"
 end
 subgraph "Functional Agents"
   coder --"Requirements Analysis"--> analyze("✅ Analyze")
-  coder --"ERD"--> prisma("❌ Prisma")
+  coder --"ERD"--> prisma("✅ Prisma")
   coder --"API Design"--> interface("⬜ Interface")
   coder --"Test Codes" --> test("⬜ Test")
   coder --"Main Program" --> realize("⬜ Realize")
@@ -42,7 +42,7 @@ Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
 Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | ❌ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
 Design          | ⬜ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
 Development     | ⬜ Realize      | [API Provider Functions](src/providers)
 Testing         | ⬜ Test         | [E2E Test Functions](test/features/api)
@@ -114,7 +114,7 @@ When you've created a new backend project through this template project, you can
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
 ✅ analyze | actors: 3, documents: 4 | 111.11 % | 197,633 | 76 sec
-❌ prisma | namespaces: 6, models: 16 | 100.00 % | 509,736 | 525 sec
+✅ prisma | namespaces: 6, models: 16 | 100.00 % | 509,736 | 525 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 
