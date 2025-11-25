@@ -34,7 +34,7 @@ export type IRedditCommunityUserProfiles = {
   bio?: (string & tags.MaxLength<500>) | undefined;
 
   /** ISO 8601 timestamp when the profile was created. */
-  created_at: string & tags.Format<"date-time">;
+  readonly created_at: string & tags.Format<"date-time">;
 
   /**
    * Public display name visible to other users. Serves as the primary
@@ -67,7 +67,7 @@ export type IRedditCommunityUserProfiles = {
     | undefined;
 
   /** ISO 8601 timestamp when the profile was last updated. */
-  updated_at: string & tags.Format<"date-time">;
+  readonly updated_at: string & tags.Format<"date-time">;
 
   /**
    * Personal website or external portfolio URL. May include personal blog,
