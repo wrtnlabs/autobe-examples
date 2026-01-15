@@ -1,218 +1,782 @@
-/// System-defined categories for tagging and filtering discussion posts.
+/// System-wide configuration settings and feature flags controlling platform
+/// behavior.
 ///
-/// Contains the predefined set of topics used to classify and search content
-/// on the economic and political discussion board. These categories are
-/// immutable core system values that enable consistent tagging and filtering
-/// across the platform. Citizens can filter posts by these categories, and
-/// moderators use them to organize content.
+/// Manages customizable platform parameters that determine feature
+/// availability, performance limits, moderation thresholds, and system
+/// behavior. These configurations are independently managed by
+/// administrators through direct UI or API interactions, allowing dynamic
+/// control of platform functionality without code deployments.
 ///
-/// Each category has a human-readable name and a unique code used in API
-/// calls and search queries. Change to this list requires
-/// administrator-level deployment and is not editable by users or moderators
-/// through the UI.
+/// Each configuration setting is a key-value pair that can be toggled,
+/// modified, or deactivated. Configurations affect the entire platform and
+/// are cached for performance. Changes take effect immediately across all
+/// users and sessions.
+///
+/// Examples include: comment character limits, attachment size restrictions,
+/// posting frequency caps, moderation automation thresholds, and feature
+/// flags for experimental functionality.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_board_categories {
+model discussion_board_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Human-readable name of the category (e.g., "economy", "politics"). Must
-  /// be unique within the system.
-  name String
-  
-  /// Machine-readable code identifier for the category (e.g., "economy",
-  /// "politics"). Must be unique and used in search and filtering APIs.
-  code String
-  
-  /// Detailed description of the category's scope and usage guidelines. Used
-  /// for internal documentation and moderator reference.
-  description String?
-  
-  /// Timestamp when this category was created in the system.
-  created_at DateTime
-  
-  /// Timestamp when this category was last updated. System field maintained
-  /// automatically.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  economic_board_posts economic_board_posts[]
-  economic_board_search_tags economic_board_search_tags[]
-  
-  @@unique([name])
-  @@unique([code])
-}
-
-/// Global configuration settings for the economic board platform.
-///
-/// Stores critical system-wide parameters that control the behavior, limits,
-/// and features of the discussion board. These are configuration values that
-/// determine how the system operates, such as character limits, time
-/// windows, and feature toggles.
-///
-/// This table serves as the single source of truth for all system
-/// configuration parameters. Modifications require administrative access and
-/// should be made with extreme caution as they affect all users. Values are
-/// read by the application during runtime to enforce business rules and
-/// behavioral constraints.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_board_system_config {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Configuration key name (e.g., "comment_max_length", "edit_window_hours").
-  /// Must be unique.
+  /// Unique configuration identifier (e.g., "comment_max_length",
+  /// "attachment_file_size_limit"). Must be unique across all configurations.
   key String
   
-  /// JSON-serialized value of the configuration setting (e.g., "500", "24",
-  /// "true"). Can be string, number, boolean, or complex JSON object.
+  /// Configuration value stored as string for flexibility. Can represent
+  /// boolean ("true"/"false"), numeric ("100"), or string values ("default").
   value String
   
-  /// Human-readable description of what this configuration controls and its
-  /// business purpose.
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting.
   description String?
   
-  /// Timestamp when this configuration entry was added to the system.
+  /// Whether this configuration is currently active and applied to the system.
+  /// When false, system falls back to default behavior.
+  is_enabled Boolean
+  
+  /// Timestamp when this configuration was initially created and added to the
+  /// system.
   created_at DateTime
   
-  /// Timestamp when this configuration entry was last modified. System field
-  /// maintained automatically.
+  /// Timestamp when this configuration was last modified by an administrator.
   updated_at DateTime
+  
+  /// Timestamp when this configuration was soft-deleted. NULL indicates active
+  /// configuration. Used for audit trails and potential recovery.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
+  @@index([is_enabled, updated_at])
+  @@index([deleted_at])
+  @@index([key, is_enabled])
 }
 
-/// Timezone configuration for user-facing timestamp display.
+/// Data channels for organizing content categories such as Economics,
+/// Politics, and Society.
 ///
-/// Contains supported timezone identifiers that the system uses to convert
-/// UTC timestamps to local time for display to users. The system stores all
-/// timestamps internally in UTC, but presents them in the user's local
-/// timezone.
+/// Defines hierarchical and thematic categories that organize all
+/// user-generated content on the platform. Each channel represents a
+/// distinct topic area where citizens can post articles, engage in
+/// discussions, and find relevant content. Channels serve as the primary
+/// organizational structure for content discovery and navigation.
 ///
-/// This table ensures consistency in time representation across the
-/// platform. The system endpoint for user timezone registration uses values
-/// from this table to validate user selections. Only timezones listed here
-/// can be selected by users.
+/// Channels are created and managed by moderators with appropriate
+/// permissions. Citizens can browse and search content by channel, but
+/// cannot create or delete channels. Each article belongs to exactly one
+/// channel, and the channel metadata (name, description) remains consistent
+/// even if the content within changes.
 ///
-/// The primary timezone ("Asia/Seoul") is pre-configured and required for
-/// the system to function correctly in the target market.
+/// Soft deletion is supported to maintain audit trails while allowing for
+/// channel deactivation or reorganization.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_board_timezone_settings {
+model discussion_board_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Full timezone name from the IANA timezone database (e.g., "Asia/Seoul",
-  /// "America/New_York"). Must be a valid timezone identifier.
+  /// Unique display name of the channel (e.g., "Economics", "Politics",
+  /// "Society"). Used for URL routing and category selection.
   name String
   
-  /// Short identifier for the timezone (e.g., "KST", "EST"). Used for display
-  /// in the UI where space is limited.
-  code String
-  
-  /// UTC offset in format +09:00 or -05:00 representing the timezone
-  /// difference from UTC.
-  offset String
-  
-  /// Indicates whether this timezone is the system default (true) or an
-  /// optional selection (false). Exactly one record should have
-  /// is_default=true.
-  is_default Boolean
-  
-  /// Timestamp when this timezone setting was added to the system.
-  created_at DateTime
-  
-  /// Timestamp when this timezone setting was last modified. System field
-  /// maintained automatically.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([name])
-  @@unique([code])
-  @@unique([is_default])
-}
-
-/// System-defined content flag categories for automated and manual moderation.
-///
-/// Contains categories of content violations that trigger automated
-/// detection or manual moderation actions. These flags are used to identify
-/// potentially problematic posts such as hate speech, threats, doxxing, or
-/// false information.
-///
-/// When a post is flagged by automated systems or user reports, a matching
-/// flag from this table is applied to trigger moderation workflows. Each
-/// flag defines the violation type, severity level, and automated handling
-/// rules.
-///
-/// This table serves as the authoritative reference for moderation systems
-/// and must be maintained with care by administrators.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_board_content_flags {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Human-readable name of the content flag category (e.g., "hate_speech",
-  /// "doxxing"). Must be unique.
-  name String
-  
-  /// Machine-readable code identifier for the flag (e.g., "hate_speech",
-  /// "doxxing"). Used by detection systems and moderation APIs.
-  code String
-  
-  /// Severity level of the violation: "low", "medium", or "high". Determines
-  /// automated response and moderator priority.
-  severity String
-  
-  /// Detailed explanation of what types of content this flag identifies and
-  /// examples of violations.
+  /// Detailed description explaining what topics this channel covers, any
+  /// specific rules, and target audience. Provides context for users browsing
+  /// available channels.
   description String?
   
-  /// Whether this flag type is actively monitored by automated detection
-  /// systems.
-  auto_flag_enabled Boolean
+  /// Determines whether the channel is visible to citizens. True = visible in
+  /// listings and search results. False = hidden from general browsing (but
+  /// existing content remains accessible).
+  visibility_flag Boolean
   
-  /// Whether posts flagged with this type should be automatically rejected
-  /// (instead of just flagged for review).
-  auto_reject_enabled Boolean
-  
-  /// Timestamp when this flag type was added to the system.
+  /// Timestamp when the channel was created. Immutable and used for audit
+  /// trails and chronological sorting.
   created_at DateTime
   
-  /// Timestamp when this flag type was last modified. System field maintained
-  /// automatically.
+  /// Timestamp when the channel's name or description was last modified.
+  /// Updated when moderators edit channel metadata.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the channel is considered archived and
+  /// hidden from all user interfaces. Used for content moderation without
+  /// permanent data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_posts discussion_board_posts[]
+  discussion_board_audit_events discussion_board_audit_events[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([visibility_flag])
+  @@index([deleted_at])
+}
+
+/// Metadata for media attachments including file type, size, and upload
+/// timestamp.
+///
+/// Stores technical information about files uploaded by users to associate
+/// with posts, articles, or other content entities. Each attachment is
+/// linked to a parent content item and contains only metadata information,
+/// not the actual file content which is stored separately in object storage.
+///
+/// Attachment records track file characteristics (MIME type, size) and
+/// timing for operational, billing, and compliance purposes. The actual file
+/// data resides in external object storage systems referenced by storage
+/// paths.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post that this attachment belongs to. {@link
+  /// discussion_board_posts.id}.
+  discussion_board_posts_id String?
+  
+  /// Parent article that this attachment belongs to. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_articles_id String?
+  
+  /// Parent comment that this attachment belongs to. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comments_id String?
+  
+  /// MIME type of the uploaded file (e.g., image/jpeg, application/pdf). Used
+  /// for content type validation and client rendering.
+  mime_type String
+  
+  /// Size of the uploaded file in bytes. Used for storage quota calculation
+  /// and upload validation against system limits.
+  file_size Int
+  
+  /// Original filename of the uploaded file. Preserved for user reference and
+  /// download purposes.
+  file_name String
+  
+  /// Path to the actual file in the external object storage system. Used to
+  /// retrieve the file content from CDN or storage service.
+  storage_path String
+  
+  /// SHA-256 hash of the uploaded file content. Used for integrity
+  /// verification and duplicate detection across uploads.
+  file_hash String
+  
+  /// Timestamp when the attachment record was created. Immutable record of
+  /// upload time for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the attachment record was last updated. Used for tracking
+  /// metadata changes (e.g., renaming).
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was logically deleted (soft delete). Null
+  /// if still active. Used for compliance and recovery workflows.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_posts_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [discussion_board_articles_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comments_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_thumbnails discussion_board_thumbnails?
+  discussion_board_article_files discussion_board_article_files[]
+  
+  @@unique([file_hash])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_posts_id, created_at], map: "discussion_board_attachments_discussion_board_posts_id_76073e8e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_articles_id, created_at], map: "discussion_board_attachments_discussion_board_articles_a538f453")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comments_id, created_at], map: "discussion_board_attachments_discussion_board_comments_b718c3ac")
+  @@index([mime_type])
+  @@index([storage_path])
+  @@index([deleted_at])
+}
+
+/// Immutable audit trail of all moderation actions taken on the platform.
+///
+/// Stores a complete historical record of moderator decisions including
+/// deletions, warnings, suspensions, and other enforcement actions. This
+/// table serves as the primary compliance mechanism for regulatory
+/// requirements, providing an unalterable log of all content modifications
+/// and user sanctions.
+///
+/// Each audit entry records which moderator performed the action, what
+/// content or user was targeted, the specific action taken, the reason
+/// provided, and the exact timestamp. The table uses soft delete to maintain
+/// audit integrity while allowing for system cleanup of obsolete records.
+///
+/// All entries are timestamped at creation and cannot be modified after
+/// logging - even if the target content is later restored or deleted, the
+/// audit trail remains intact for forensic review.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link discussion_board_moderator.id}.
+  moderator_id String
+  
+  /// Unique identifier of the content or user targeted by the moderation
+  /// action. This may reference a post, comment, user account, or other entity
+  /// depending on the action type. {@link discussion_board_posts.id} or {@link
+  /// discussion_board_comments.id} or {@link discussion_board_users.id}.
+  target_id String
+  
+  /// Type of moderation action performed. Valid values: 'delete', 'warn',
+  /// 'suspend', 'ban', 'unhide', 'approve'.
+  action_type String
+  
+  /// Detailed reason for the moderation action, including policy violation
+  /// details and moderator justification.
+  reason String
+  
+  /// Timestamp when the moderation action was logged. The immutable
+  /// point-in-time when this audit record was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this audit record, typically used if
+  /// metadata is corrected after initial logging.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit record lifecycle management in compliance
+  /// with data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetRecord discussion_board_posts @relation(fields: [target_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id, created_at])
+  @@index([target_id, created_at])
+  @@index([action_type, created_at])
+}
+
+/// Persistent records of all citizen-authored posts, including title,
+/// content, and timestamp.
+///
+/// Stores user-generated content created by citizens on the discussion board
+/// platform. Each post represents a complete message with title and body
+/// text, linked to a specific author and category channel. Posts are the
+/// primary content entities that users create, browse, search, and interact
+/// with.
+///
+/// Posts remain accessible even if their associated channel is modified,
+/// ensuring content persistency. Authors can edit their own posts, and posts
+/// may be hidden or deleted based on moderation actions, which are tracked
+/// separately in the Moderation component.
+///
+/// This table supports comprehensive search and filtering across all posts
+/// regardless of channel context, enabling users to find content by author,
+/// keyword, date, or other criteria independently.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who authored this post. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// The content channel where this post is published. {@link
+  /// discussion_board_channels.id}.
+  discussion_board_channel_id String
+  
+  /// The subject or heading of the post. Must be concise and descriptive,
+  /// typically limited to 150 characters.
+  title String
+  
+  /// The main content body of the post. Contains the full text of the user's
+  /// message without formatting.
+  body String
+  
+  /// Timestamp when the post was initially created. Used for ordering and
+  /// chronological display.
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified. Updated whenever the user
+  /// edits the title or body content.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. If null, the post is active.
+  /// Enables content recovery and moderation audit trails.
+  deleted_at DateTime?
+  
+  /// Current publication status of the post. Valid values: draft, pending,
+  /// published, hidden. Used to enforce workflow control and moderation
+  /// decisions. Post visibility and accessibility are determined by status
+  /// rather than deletion. This field separates workflow state from
+  /// soft-deletion mechanism.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  channel discussion_board_channels @relation(fields: [discussion_board_channel_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  discussion_board_archives discussion_board_archives[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_attachment_files discussion_board_attachment_files[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_moderation_audit_trails discussion_board_moderation_audit_trails[]
+  discussion_board_notification_records discussion_board_notification_records[]
+  
+  @@index([discussion_board_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_channel_id, created_at], map: "discussion_board_posts_discussion_board_channel_id_cre_c4184281")
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([status])
+}
+
+/// Tracks authentication sessions and login events for security auditing.
+///
+/// Records every successful and failed authentication attempt by citizens
+/// and moderators, providing critical security audit trails for compliance
+/// and forensic analysis. Each entry links to an authenticated actor
+/// (citizen or moderator) and captures connection context including IP
+/// address, requested URL, and referrer information.
+///
+/// This table is append-only for audit integrity and supports soft deletion
+/// only for compliance archival purposes. It does not store authentication
+/// credentials but references the primary actor entities in the Actors
+/// component.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_authentication_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the citizen entity if the login was performed by a citizen.
+  /// {@link discussion_board_citizen.id}.
+  discussion_board_citizen_id String?
+  
+  /// References the moderator entity if the login was performed by a
+  /// moderator. {@link discussion_board_moderator.id}.
+  discussion_board_moderator_id String?
+  
+  /// Indicates the actor type that performed this authentication: 'citizen' or
+  /// 'moderator'. Used for polymorphic relationship with actor_id fields.
+  actor_type String
+  
+  /// The IP address from which the authentication attempt originated.
+  ip String
+  
+  /// The URL the user was accessing when authentication occurred. Should
+  /// include full path.
+  href String
+  
+  /// The previous webpage URL from which the user navigated to this
+  /// authentication endpoint.
+  referrer String?
+  
+  /// Timestamp when this authentication event was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this authentication event was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this authentication record was soft-deleted for archival
+  /// purposes. Null indicates the record is active.
+  deleted_at DateTime?
+  
+  /// Timestamp when this authentication session expired. Null indicates the
+  /// session is still active or session expiration isn't applicable.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen? @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderator? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_citizen_id, created_at], map: "discussion_board_authentication_logs_discussion_board__629f86bf")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_authentication_logs_discussion_board__79702176")
+  @@index([actor_type, created_at])
+}
+
+/// Storage system for user email addresses and hashed credentials for secure
+/// authentication.
+///
+/// Contains the core identity information for citizens who register and
+/// authenticate to use the discussion board platform.
+/// Each record represents a unique user account with an email address and
+/// securely hashed password.
+///
+/// This table is the foundation of user authentication across the entire
+/// system, referenced by session tables in the Actors component.
+/// Email addresses are enforced as unique to prevent duplicate registrations.
+///
+/// Soft delete support is provided through deleted_at field to maintain
+/// audit trails while allowing account removal.
+/// All authentication logic and user session management occur through this
+/// entity.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address for authentication and communication. Must be
+  /// globally unique across the platform.
+  email String
+  
+  /// BCrypt-hashed password for secure authentication. Never stores plaintext
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated (e.g., password change).
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft-deleted. Null indicates active
+  /// account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_posts discussion_board_posts[]
+  discussion_board_moderator discussion_board_moderator?
+  discussion_board_comment_notifications discussion_board_comment_notifications[]
+  discussion_board_attachment_files discussion_board_attachment_files[]
+  discussion_board_notification_records discussion_board_notification_records[]
+  discussion_board_security_logs discussion_board_security_logs[]
+  
+  @@unique([email])
+  @@index([deleted_at])
+  @@index([created_at])
+}
+
+/// Historical archive of deleted or hidden content for compliance and audit
+/// requirements.
+///
+/// Stores immutable snapshots of content (posts, comments, attachments)
+/// after they have been removed or hidden by moderators. Each archive record
+/// captures the complete state of an entity at the moment of deletion,
+/// preserving data for legal compliance, moderation review, and historical
+/// analysis.
+///
+/// Archives are automatically created by the system following moderation
+/// actions (hide, delete) and are only accessible to moderators and
+/// auditors. This table is strictly read-only from a user perspective and
+/// serves solely as a regulatory audit trail.
+///
+/// Content type is indicated by the content_type field, which references the
+/// original entity's table (posts, comments, attachment_images,
+/// attachment_files). The content_id field links to the original entity's
+/// primary key before deletion.
+///
+/// Entries in this table are append-only, never modified or deleted once
+/// created, ensuring integrity of the audit trail.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_archives {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the archived post. {@link discussion_board_posts.id}.
+  discussion_board_posts_id String?
+  
+  /// Reference to the archived comment. {@link discussion_board_comments.id}.
+  discussion_board_comments_id String?
+  
+  /// Reference to the archived image attachment. {@link
+  /// discussion_board_attachment_images.id}.
+  discussion_board_attachment_images_id String?
+  
+  /// Reference to the archived file attachment. {@link
+  /// discussion_board_attachment_files.id}.
+  discussion_board_attachment_files_id String?
+  
+  /// Reference to the moderation action that triggered this archive. {@link
+  /// discussion_board_moderation_actions.id}.
+  discussion_board_moderation_actions_id String
+  
+  /// Type of archived content ("post", "comment", "image", "file"). Used to
+  /// determine which foreign key field contains the reference.
+  content_type String
+  
+  /// The original entity's ID before deletion (as stored in the original
+  /// table). Used along with content_type to reconstruct context.
+  content_id String
+  
+  /// JSON-encoded string containing the complete state of the archived content
+  /// at the time of deletion, including all fields.
+  content_data String
+  
+  /// Timestamp when this archive record was created.
+  created_at DateTime
+  
+  /// Timestamp when this archive record was last updated (typically only when
+  /// metadata is added).
+  updated_at DateTime
+  
+  /// The username or identifier of the moderator who triggered the archive
+  /// action, if available.
+  archived_by String?
+  
+  /// The exact timestamp when the original content was removed or hidden by
+  /// moderation action.
+  archived_at DateTime
+  
+  /// Reason provided by the moderator for archiving this content, extracted
+  /// from the moderation action.
+  reason String?
+  
+  /// Standardized code representing the reason for archiving, mapped from
+  /// moderation action reason (e.g., "abuse", "spam", "inappropriate",
+  /// "copyright").
+  archive_reason_code String
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_posts_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comments_id], references: [id], onDelete: Cascade)
+  image discussion_board_attachment_images? @relation(fields: [discussion_board_attachment_images_id], references: [id], onDelete: Cascade)
+  file discussion_board_attachment_files? @relation(fields: [discussion_board_attachment_files_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions @relation(fields: [discussion_board_moderation_actions_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_posts_id])
+  @@index([discussion_board_comments_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_attachment_images_id], map: "discussion_board_archives_discussion_board_attachment__554f555e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_attachment_files_id], map: "discussion_board_archives_discussion_board_attachment__43f0360c")
+  
+  @@index([created_at])
+  @@index([archived_at])
+  @@index([content_type, content_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderation_actions_id], map: "discussion_board_archives_discussion_board_moderation__7bfa8987")
+  @@index([archive_reason_code])
+}
+
+/// Tracks user behavior and activity patterns for rate-limiting enforcement
+/// and platform usage monitoring.
+///
+/// Records all significant user actions that may trigger rate-limiting
+/// mechanisms, such as frequent post creation, comment submissions, or
+/// report submissions. This log is used by the platform's operational
+/// systems to detect abusive behavior patterns and enforce usage policies.
+///
+/// Each record captures the actor (citizen or moderator) who performed the
+/// action, the type of activity, the timestamp, and an optional context
+/// field for additional details.
+///
+/// This table is append-only for audit purposes and supports soft deletion
+/// for compliance with data retention requirements.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who performed the activity. {@link
+  /// discussion_board_citizen.id}.
+  discussion_board_citizen_id String?
+  
+  /// The moderator who performed the activity. {@link
+  /// discussion_board_moderator.id}.
+  discussion_board_moderator_id String?
+  
+  /// Type of user activity being logged. Examples: 'post_creation',
+  /// 'comment_submission', 'report_submission', 'upload_attempt',
+  /// 'login_failed'.
+  action_type String
+  
+  /// Optional context information about the activity, such as specific content
+  /// IDs, error codes, or additional metadata.
+  context String?
+  
+  /// Timestamp when the activity was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion, enabling audit trail preservation while
+  /// allowing content moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen? @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderator? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_citizen_id, created_at], map: "discussion_board_activity_logs_discussion_board_citize_f8b5c64b")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_activity_logs_discussion_board_modera_41ee38e3")
+  @@index([action_type, created_at])
+  @@index([created_at])
+}
+
+/// System status recordings including uptime, maintenance windows, and error
+/// events.
+///
+/// Tracks operational health and diagnostic events of the discussion board
+/// platform. These are system-generated records used for monitoring,
+/// incident analysis, and maintenance tracking. Each entry captures the
+/// state of the system at a specific moment with detailed context.
+///
+/// These logs are append-only and immutable - once recorded, status entries
+/// are never modified or deleted. They provide the foundation for system
+/// reliability reporting and operational audits.
+///
+/// Events are categorized by type (uptime, maintenance, error) and include a
+/// human-readable message and technical context for troubleshooting.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_status_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category of the system status event. Valid values: "uptime",
+  /// "maintenance", "error". Indicates the nature of the system event being
+  /// logged.
+  status_type String
+  
+  /// Human-readable description of the system status event. Provides brief
+  /// context about what occurred, such as "System restarted after update" or
+  /// "Database connection timeout".
+  message String
+  
+  /// JSON-formatted technical details about the system event. Contains
+  /// structured data for automated analysis, such as error codes, stack
+  /// traces, affected services, or metrics. May include system environment
+  /// info, server identifiers, or request IDs.
+  context String?
+  
+  /// Timestamp when this system status event was recorded. Indicates the exact
+  /// moment the system captured this status change or event.
+  created_at DateTime
+  
+  /// Timestamp when this record was last modified in the database. For system
+  /// logs, this is typically the same as created_at since these records are
+  /// immutable, but maintained for consistency with database patterns.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([name])
-  @@unique([code])
-  @@index([severity])
-  @@index([auto_flag_enabled])
-  @@index([auto_reject_enabled])
+  @@index([created_at])
+}
+
+/// Metadata for automatically generated image thumbnails used in display
+/// previews.
+///
+/// Contains resized versions of uploaded images optimized for quick loading
+/// in listings and feeds. Thumbnails are automatically created when an image
+/// attachment is uploaded and are deleted when the source attachment is
+/// removed. This table enables faster UI rendering by serving pre-scaled
+/// images instead of processing original uploads on-demand.
+///
+/// Each thumbnail record is uniquely linked to a single image attachment
+/// through a foreign key relationship and cannot exist independently. No
+/// direct user interaction occurs with thumbnail records - they are managed
+/// entirely by the system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_thumbnails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source image attachment that generated this thumbnail.
+  /// {@link discussion_board_attachments.id}.
+  discussion_board_attachment_id String
+  
+  /// Width of the thumbnail image in pixels. Standardized dimensions for UI
+  /// display consistency.
+  width Int
+  
+  /// Height of the thumbnail image in pixels. Standardized dimensions for UI
+  /// display consistency.
+  height Int
+  
+  /// Absolute path or URL to the thumbnail file in the content delivery
+  /// network (CDN).
+  file_path String
+  
+  /// MIME type of the thumbnail image (e.g., 'image/jpeg', 'image/png'). Must
+  /// match the source file format.
+  mime_type String
+  
+  /// Timestamp when the thumbnail was generated and stored in the system.
+  /// Follows system-wide temporal field pattern.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment discussion_board_attachments @relation(fields: [discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_attachment_id])
+  @@index([created_at])
 }

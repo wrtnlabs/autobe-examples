@@ -1,0 +1,205 @@
+/// Core member account details for authenticated users.
+///
+/// Stores authentication credentials, basic profile information, and
+/// membership status for registered members.
+///
+/// Each member has a unique email address for login and profile management.
+/// Account status tracks validity (active, suspended, banned), supporting
+/// moderation workflows.
+///
+/// Email is required for login and must be unique. Password is securely
+/// hashed, and temporal fields track creation/modification with soft delete
+/// capability for data integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's display name for public profiles, may be left blank.
+  name String?
+  
+  /// Member's email address used for authentication. Must be unique across all
+  /// members.
+  email String
+  
+  /// Securely hashed password for authentication. Never stored in plain text.
+  password_hash String
+  
+  /// Current membership status indicating account validity (active, suspended,
+  /// banned).
+  status String
+  
+  /// Timestamp when member account was created.
+  created_at DateTime
+  
+  /// Timestamp of last account modification.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion to preserve audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_member_sessions discussion_board_member_sessions[]
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_moderation_queue discussion_board_moderation_queue[]
+  
+  @@unique([email])
+}
+
+/// Administrative accounts with elevated system privileges and moderation
+/// capabilities.
+///
+/// Stores accounts for system administrators who can manage user content,
+/// configure system settings, and perform moderation actions. Each admin
+/// account includes authentication credentials, access level configuration,
+/// and system role details.
+///
+/// Admins have distinct capabilities compared to regular members, with
+/// permissions for full system access and moderation workflows.
+/// Scenario: An admin account created by superadmin for system management
+/// requires secure password storage and predefined access levels.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin email address used for authentication and account recovery. Must be
+  /// unique across all administrative accounts.
+  email String
+  
+  /// Password hash storing the admin's authentication credentials. Does not
+  /// store plaintext passwords for security reasons.
+  password_hash String
+  
+  /// Administrative access level representing the privileges granted to this
+  /// account. Valid values: 'superadmin', 'full-access', 'moderation-only'.
+  system_access_level String
+  
+  /// Indicates if the admin account has moderation capabilities. True for
+  /// admins who can review and manage content.
+  moderation_capabilities Boolean?
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Tracks active login sessions for members, including expiration timestamps
+/// and device information.
+///
+/// Records session details for authenticated members to enable secure
+/// session management and activity tracking. Each session links to a
+/// specific member through the primary account.
+///
+/// Supports session duration tracking, device identification (IP address),
+/// and connection context (URLs and referrers) necessary for security
+/// monitoring and user activity audits.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's account identifier. {@link discussion_board_members.id}.
+  discussion_board_members_id String
+  
+  /// IP address associated with the session connection.
+  ip String
+  
+  /// Full URL used for the connection.
+  href String
+  
+  /// URL that referred to the current connection.
+  referrer String
+  
+  /// Timestamp of session creation.
+  created_at DateTime
+  
+  /// Timestamp when session expires (nullable if session is ongoing).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_members_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_members_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_87557db0")
+}
+
+/// Tracks active admin login sessions with connection details for audit and
+/// activity tracking.
+///
+/// Maintains session connection context including client IP, URL, and
+/// referrer information. Session data is managed through admin identity
+/// flows rather than standalone operations.
+///
+/// Includes session creation and expiration timestamps for activity
+/// monitoring and session management.
+///
+/// Required fields follow exact session table specification without
+/// additional metadata. Composite index on [admin_id, created_at] ensures
+/// efficient query patterns for activity streams.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated admin account. {@link discussion_board_admins.id}.
+  admin_id String
+  
+  /// IP address of client connecting to system.
+  ip String
+  
+  /// Connection URL for session tracking.
+  href String
+  
+  /// Referrer URL from which session was initiated.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}

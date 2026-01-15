@@ -1,16 +1,84 @@
-/// Main product catalog entries representing distinct product offerings.
+/// Hierarchical product categories for organizing products in catalog.
 ///
-/// Each product represents a unique item available for sale with its
-/// defining attributes like title, description, price, and category.
-/// Products are created and managed by sellers and serve as the parent
-/// entity for product variants (SKUs). Products can be published or archived
-/// based on seller status and compliance.
+/// Stores the taxonomy structure of products with parent-child relationships
+/// that enable multi-level navigation. Categories form the foundation of
+/// product discovery, allowing users to browse products organized by type,
+/// function, or other meaningful groupings.
 ///
-/// When a product is published, it becomes visible to customers for browsing
-/// and purchasing. Archived products remain in the system for historical
-/// tracking and audit purposes but are not visible to customers. Products
-/// are linked to categories and tags for improved discoverability and
-/// search.
+/// Each category can have a parent category, creating a tree structure for
+/// hierarchical classification. The category hierarchy supports
+/// drag-and-drop reordering for business users to customize catalog
+/// organization. Soft deletion is enabled to allow safe removal of
+/// categories while preserving historical references in products and orders.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_categories.id}. Non-nullable to
+  /// enforce hierarchy root with explicit null reference.
+  parent_id String?
+  
+  /// Display name of the category shown to customers. Max 100 characters. Must
+  /// be unique within same parent level.
+  name String
+  
+  /// Detailed description of the category's purpose and contents. Used for SEO
+  /// and category landing pages.
+  description String?
+  
+  /// Position for sorting categories within parent. Lower numbers appear
+  /// first. Used for manual catalog organization.
+  ordering Int
+  
+  /// Timestamp when this category was created. Standard temporal field for all
+  /// business entities.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified. Standard temporal field
+  /// for all business entities.
+  updated_at DateTime
+  
+  /// Timestamp when this category was logically deleted. Enables soft deletion
+  /// for moderation purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_product_secondary_categories shopping_mall_product_secondary_categories[]
+  
+  @@unique([parent_id, name])
+  @@index([parent_id, ordering])
+  @@index([name])
+}
+
+/// Core product entities with metadata including title, description, status,
+/// images, and primary category reference.
+///
+/// Represents individual products offered for sale on the platform. Each
+/// product serves as a catalog entry that can have multiple variants (SKUs)
+/// defined in the shopping_mall_product_variants table. Product metadata is
+/// displayed during customer browsing, search, and filtering operations.
+///
+/// Products maintain relationship with primary shopping_mall_categories and
+/// optionally with multiple shopping_mall_product_secondary_categories for
+/// improved discoverability. Product status determines visibility to
+/// customers. The associated shopping_mall_product_images collection defines
+/// the visual representation.
+///
+/// Soft deletion is enabled to allow content moderation without permanent
+/// data loss. Audit trail of changes is maintained through update_at
+/// timestamp.
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -21,139 +89,265 @@ model shopping_mall_products {
   /// Primary Key.
   id String @id
   
-  /// Owner seller. {@link shopping_mall_sellers.id}.
-  shopping_mall_seller_id String
+  /// Primary category this product belongs to. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
   
-  /// Tax classification category. {@link shopping_mall_tax_categories.id}.
-  shopping_mall_tax_category_id String
+  /// Product display name shown to customers.
+  name String
   
-  /// Product title displayed to customers. Must be 3-100 characters.
-  title String
-  
-  /// Detailed product description visible to customers. Minimum 20 characters,
-  /// maximum 2000 characters.
+  /// Detailed product description explaining features, specification, and
+  /// usage instructions.
   description String
   
-  /// Base price of the product in USD. Minimum $0.01, maximum $5000.00.
-  price Float
-  
-  /// Product availability status. Valid values: 'draft', 'published',
-  /// 'archived'. Determines visibility to customers.
+  /// Current product visibility status. Valid values: active, inactive, draft,
+  /// discontinued.
   status String
   
-  /// Timestamp when the product was created. Always recorded.
+  /// Timestamp when the product record was initially created.
   created_at DateTime
   
-  /// Timestamp of the last product update. Always updated on any modification.
+  /// Timestamp when the product record was last modified.
   updated_at DateTime
   
-  /// Timestamp when the product was marked for deletion. Indicates soft delete
-  /// status. Null means product is active.
+  /// Timestamp when the product was logically deleted (soft delete). Null
+  /// indicates active record.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  taxCategory shopping_mall_tax_categories @relation(fields: [shopping_mall_tax_category_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_secondary_categories shopping_mall_product_secondary_categories[]
   shopping_mall_product_images shopping_mall_product_images[]
-  shopping_mall_product_tags_products shopping_mall_product_tags_products[]
-  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_product_questions shopping_mall_product_questions[]
+  shopping_mall_product_view_stats shopping_mall_product_view_stats[]
+  shopping_mall_product_sales_stats shopping_mall_product_sales_stats[]
+  shopping_mall_product_snapshots shopping_mall_product_snapshots[]
+  shopping_mall_product_variants shopping_mall_product_variants[]
   shopping_mall_reviews shopping_mall_reviews[]
-  shopping_mall_data_change_logs shopping_mall_data_change_logs[]
   
-  @@index([shopping_mall_tax_category_id])
-  
-  @@unique([shopping_mall_seller_id, title])
+  @@index([shopping_mall_category_id])
   @@index([status])
-  @@index([shopping_mall_seller_id, created_at])
-  @@index([price])
+  @@index([created_at])
+  @@index([deleted_at])
 }
 
-/// Product variants (SKUs) that represent distinct inventory items with
-/// unique pricing and stock levels.
+/// Junction table linking products to secondary categories for improved
+/// discoverability.
 ///
-/// Each variant represents a specific configuration of a main product with
-/// different attributes such as color, size, or style. Variants are
-/// independent entities with their own pricing and inventory management,
-/// allowing for precise stock control and personalized pricing.
+/// This table establishes a many-to-many relationship between products and
+/// secondary categories, enabling products to belong to multiple category
+/// paths beyond their primary category. This facilitates flexible product
+/// organization and enhanced user navigation in the product catalog.
 ///
-/// Variants are always linked to a single parent product and cannot exist
-/// without one. They enable the platform to handle complex products with
-/// multiple options while maintaining accurate inventory and pricing data
-/// for each configuration.
+/// Each record represents a single association between a product and a
+/// secondary category, with no additional attributes beyond the foreign
+/// keys. This ensures strict normalization and prevents data redundancy. The
+/// table is managed exclusively through product management interfaces and
+/// does not require direct user interaction.
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_variants {
+model shopping_mall_product_secondary_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent product this variant belongs to. {@link shopping_mall_products.id}.
+  /// Product being associated with a secondary category. {@link
+  /// shopping_mall_products.id}.
   shopping_mall_product_id String
   
-  /// Unique Stock Keeping Unit identifier for this variant. Must be globally
-  /// unique across all products and variants.
-  sku String
-  
-  /// Variant-specific title that describes the configuration (e.g., 'Red, Size
-  /// M').
-  title String
-  
-  /// Specific price for this variant. Can differ from parent product base
-  /// price.
-  price Float
-  
-  /// Current available stock quantity for this variant. Must be 0 or greater.
-  inventory_count Int
-  
-  /// JSON-formatted string containing variant attributes (e.g., {"color":
-  /// "red", "size": "M"}). Used for filtering and display.
-  attributes String
-  
-  /// Timestamp when the variant was created. Always recorded.
-  created_at DateTime
-  
-  /// Timestamp of the last variant update. Always updated on any modification.
-  updated_at DateTime
-  
-  /// Timestamp when the variant was marked for deletion. Indicates soft delete
-  /// status. Null means variant is active.
-  deleted_at DateTime?
+  /// Secondary category that this product belongs to. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
   
   //----
   // RELATIONS
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_product_images shopping_mall_product_images[]
-  shopping_mall_cart_items shopping_mall_cart_items[]
-  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_inventory_units shopping_mall_inventory_units?
-  
-  @@unique([sku])
-  @@unique([shopping_mall_product_id, sku])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, inventory_count], map: "shopping_mall_product_variants_shopping_mall_product_i_6ad2277c")
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_secondary_categories_shopping_ma_022bb1e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_secondary_categories_shopping_ma_6045e5e6")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id], map: "shopping_mall_product_secondary_categories_shopping_ma_ac8c3374")
 }
 
-/// Product image files associated with products and variants.
+/// Definable attribute types for product variants such as color, size,
+/// material, and other product characteristics.
 ///
-/// Stores image metadata and file references for all visual content
-/// associated with products. Each product may have multiple images, and each
-/// image is linked to either a product or variant. Images are managed
-/// through their parent entity and only exist in relation to a product.
+/// Each attribute type represents a category of product characteristics that
+/// can be assigned to products to enable variant creation. Administrators
+/// define these attribute types in the system to standardize product
+/// configuration across the catalog. Attribute types serve as the foundation
+/// for product variants, where specific combinations of attribute values
+/// create unique SKUs.
 ///
-/// Image files are referenced by URL or path, but actual file storage is
-/// handled externally. This model ensures each image is properly attributed
-/// and can be retrieved efficiently for display in product listings and
-/// detail pages.
+/// Attributes are reference data that remain stable over time and are used
+/// by product management interfaces to construct product variants. They are
+/// not directly modified by customers or sellers, but are managed by
+/// platform administrators through the administrative dashboard.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The name of the attribute type (e.g., 'Color', 'Size', 'Material'). Must
+  /// be unique across all attribute types to ensure consistent identification
+  /// for variant creation. Used as a display name in product configuration
+  /// interfaces.
+  name String
+  
+  /// Detailed explanation of what this attribute type represents and how it
+  /// should be used in product configuration. Provides guidance for
+  /// administrators creating attribute values and helps ensure consistent
+  /// usage across the catalog.
+  description String
+  
+  /// Numeric value that determines the display order of attribute types in
+  /// product configuration interfaces. Lower values appear first. This allows
+  /// administrators to control the sequence in which attributes are presented
+  /// to users when configuring products or variants.
+  sort_order Int
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_product_attribute_values shopping_mall_product_attribute_values[]
+  
+  @@unique([name])
+}
+
+/// Specific values for product attribute types (e.g., 'Red', 'Large',
+/// 'Cotton').
+///
+/// Stores the possible values that can be assigned to product attributes,
+/// enabling the creation of unique product variants. Each value is
+/// associated with a specific attribute type from
+/// shopping_mall_product_attributes and forms the building blocks for
+/// variant combinations through shopping_mall_product_variant_attributes.
+///
+/// This table provides the reference data that allows customers to select
+/// options like color, size, or material from predefined lists. Values are
+/// managed by administrators through product catalog tools and never
+/// directly edited by end users. The table supports text search for
+/// filtering products by attribute values in the frontend UI.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attribute_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product attribute type this value belongs to. {@link
+  /// shopping_mall_product_attributes.id}.
+  shopping_mall_product_attribute_id String
+  
+  /// The actual attribute value (e.g., 'Red', 'Large', 'Cotton'). Must be
+  /// unique per attribute type to avoid duplication.
+  value String
+  
+  /// Additional context about this attribute value when the value alone is not
+  /// descriptive enough (e.g., 'Dark Red' for a color).
+  description String?
+  
+  /// Timestamp of when this attribute value was created in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last time this attribute value was modified in the
+  /// system.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attribute shopping_mall_product_attributes @relation(fields: [shopping_mall_product_attribute_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variant_attributes shopping_mall_product_variant_attributes[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_attribute_id, value], map: "shopping_mall_product_attribute_values_shopping_mall_p_c8de6afa")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_attribute_id], map: "shopping_mall_product_attribute_values_shopping_mall_p_dbe71e38")
+}
+
+/// Junction table mapping each product variant to its specific attribute
+/// values (SKU to attribute-value pairs).
+///
+/// Defines the exact combination of attribute values that constitute each
+/// product variant. This table establishes the relationship between a
+/// product variant and the specific values of product attributes (e.g.,
+/// size=Large, color=Blue) that define that variant's configuration.
+///
+/// Each row represents a single attribute-value assignment to a variant.
+/// This allows a product to have multiple variants with different
+/// combinations of attributes while ensuring data consistency and reducing
+/// duplication.
+///
+/// The table is purely associative with no business state of its own - it
+/// enables the product_variants system by providing the precise attribute
+/// definitions for each variant SKU.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant being configured. {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Specific attribute value assigned to the variant. {@link
+  /// shopping_mall_product_attribute_values.id}.
+  product_attribute_value_id String
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  attributeValue shopping_mall_product_attribute_values @relation(fields: [product_attribute_value_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([product_variant_id, product_attribute_value_id], map: "shopping_mall_product_variant_attributes_product_varia_0fa045c3")
+  @@index([product_variant_id])
+  // spellchecker: ignore-next-line
+  @@index([product_attribute_value_id], map: "shopping_mall_product_variant_attributes_product_attri_b0367a4f")
+}
+
+/// Gallery images for products including primary image and up to five
+/// additional images.
+///
+/// Stores digital media assets associated with products in the catalog. Each
+/// image is linked to a single product and can be designated as the primary
+/// display image for product listings. The system allows multiple images per
+/// product to provide comprehensive visual representation of products,
+/// including different angles, details, and usage scenarios.
+///
+/// Image URLs are stored as URIs and can reference hosted images on CDN or
+/// internal storage systems. Images undergo content moderation and may be
+/// soft-deleted based on policy violations or product updates. The primary
+/// image field indicates which image should be displayed by default in
+/// product listings and search results, ensuring consistent presentation
+/// across the platform.
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -164,136 +358,698 @@ model shopping_mall_product_images {
   /// Primary Key.
   id String @id
   
-  /// Parent product this image belongs to. {@link shopping_mall_products.id}.
-  shopping_mall_product_id String?
+  /// Reference to the product this image belongs to. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
   
-  /// Parent variant this image belongs to. {@link
-  /// shopping_mall_product_variants.id}.
-  shopping_mall_product_variant_id String?
-  
-  /// Public URL path to the image file. Must be a valid URI format.
+  /// URL of the product image stored in the media system. Must be a valid URI
+  /// to image file (PNG, JPEG, GIF, WebP).
   image_url String
   
-  /// Alternative text description for accessibility and SEO purposes.
-  alt_text String?
+  /// Display order of the image among product's images. Lower numbers shown
+  /// first in product gallery. Range: 1-99.
+  image_order Int
   
-  /// Display order priority for viewing. Lower numbers display first. Must be
-  /// 0 or greater.
-  sort_order Int
-  
-  /// Flag indicating if this is the primary image for the product or variant.
-  /// Only one per product/variant can be primary.
+  /// Indicates if this is the primary image for the product. Only one image
+  /// per product should be marked as primary. Used for product listings and
+  /// search results.
   is_primary Boolean
   
-  /// Timestamp when the image was added to the product or variant.
+  /// Timestamp when the image was first uploaded to the system.
   created_at DateTime
   
-  /// Timestamp of the last update to the image record. Always updated on any
-  /// modification.
+  /// Timestamp when the image metadata was last modified (e.g., order or
+  /// primary flag changes).
   updated_at DateTime
   
-  /// Timestamp when the image record was marked for deletion. Indicates soft
-  /// delete status. Null means image is active.
+  /// Timestamp when the image was soft-deleted, typically due to moderation
+  /// action or product update. Null indicates active status.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  variant shopping_mall_product_variants? @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, is_primary], map: "shopping_mall_product_images_shopping_mall_product_id__c9f2dc21")
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_variant_id, is_primary], map: "shopping_mall_product_images_shopping_mall_product_var_1364c257")
   @@index([shopping_mall_product_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_images_shopping_mall_product_var_b99b425a")
-  @@index([sort_order])
+  @@index([is_primary])
 }
 
-/// Junction table for many-to-many relationship between products and tags.
+/// Tags for products to mark promotions, featured items, or new arrivals
+/// (e.g., 'New', 'Best Seller').
 ///
-/// Enables flexible tagging system where products can have multiple tags and
-/// tags can be applied to multiple products. This table creates the link
-/// between product catalog entries and their textual tags for improved
-/// search, filtering, and categorization.
-///
-/// Tags are defined in the shopping_mall_product_tags table and represent
-/// keywords or categories that help customers discover products. This
-/// junction table allows for dynamic tagging without requiring schema
-/// changes and supports complex queries on product attributes.
+/// Provides metadata labels that can be assigned to products for
+/// categorization, promotional display, and enhanced filtering. Tags are
+/// managed exclusively through product management interfaces and are not
+/// independently created or modified by end users. This table enables
+/// dynamic categorization without requiring structural changes to the
+/// product catalog.
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_tags_products {
+model shopping_mall_product_tags {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Product associated with this tag. {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// The tag name used for product categorization (e.g., 'New', 'Best Seller',
+  /// 'Sale'). Must be unique within the system to avoid ambiguity in product
+  /// listings.
+  name String
   
-  /// Tag applied to this product. {@link shopping_mall_product_tags.id}.
-  shopping_mall_product_tag_id String
-  
-  /// Timestamp when the tag was applied to the product.
+  /// Timestamp when the tag was created in the system. Used for tracking when
+  /// promotional or featured status was initiated.
   created_at DateTime
+  
+  /// Timestamp when the tag was last modified. Updated whenever the tag name
+  /// is changed or its assignment to products is updated.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  tag shopping_mall_product_tags @relation(fields: [shopping_mall_product_tag_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, shopping_mall_product_tag_id], map: "shopping_mall_product_tags_products_shopping_mall_prod_41e45d1e")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id], map: "shopping_mall_product_tags_products_shopping_mall_prod_9cf289e1")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_tag_id], map: "shopping_mall_product_tags_products_shopping_mall_prod_f6655af3")
+  @@unique([name])
 }
 
-/// Junction table linking products to categories through a many-to-many
-/// relationship.
+/// Customer reviews and ratings for products with text content and numeric
+/// ratings.
 ///
-/// Enables products to belong to multiple categories (e.g., a product can be
-/// both 'Electronics' and 'Gifts'). Category hierarchy is managed in
-/// shopping_mall_categories table, and this junction table defines the
-/// association between products and their categories.
+/// Stores feedback provided by customers who have purchased products. Each
+/// review represents a single assessment of a product, containing a numeric
+/// rating (1-5) and optional textual feedback. Reviews must be verified by
+/// the system to ensure the reviewer has completed a purchase of the
+/// product.
 ///
-/// This approach allows flexible product categorization without duplicating
-/// data and enables comprehensive category-based navigation and filtering in
-/// the product catalog.
+/// Reviews remain visible to all users and can be flagged for moderation.
+/// Moderators may approve, reject, or delete reviews based on community
+/// guidelines. Reviewers can edit their reviews until they are moderated.
+/// Each review is uniquely tied to both the product and the customer who
+/// created it.
+///
+/// The review status field indicates whether the review is pending review
+/// (moderation), approved, or rejected. Soft deletion is supported for
+/// moderation purposes while preserving audit trails.
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_categories {
+model shopping_mall_product_reviews {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Product associated with this category. {@link shopping_mall_products.id}.
+  /// Reference to the reviewed product's {@link shopping_mall_products.id}.
   shopping_mall_product_id String
   
-  /// Category this product belongs to. {@link shopping_mall_categories.id}.
-  shopping_mall_category_id String
+  /// Reference to the review author's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Timestamp when the product was assigned to this category.
+  /// Numerical rating given by the customer, from 1 (lowest) to 5 (highest).
+  /// Must be an integer between 1 and 5 inclusive.
+  rating Int
+  
+  /// Textual content of the customer review. Must be between 50 and 2000
+  /// characters long, containing the customer's detailed feedback about the
+  /// product.
+  review_text String
+  
+  /// Current review status: 'pending' (awaiting moderation), 'approved'
+  /// (publicly visible), or 'rejected' (hidden from view).
+  status String
+  
+  /// Timestamp when the review was originally submitted by the customer.
   created_at DateTime
+  
+  /// Timestamp when the review was last modified by the customer or moderator.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft-deleted by a moderator. If null, the
+  /// review is active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_review_votes shopping_mall_product_review_votes[]
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_shopping_mall_product_b5030199")
-  @@index([shopping_mall_product_id])
-  @@index([shopping_mall_category_id])
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_product_id_20a1ef06")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_customer_i_71cc7be0")
+}
+
+/// Tracks helpful/unhelpful votes on product reviews to surface the most
+/// valuable customer feedback.
+///
+/// Each vote represents a customer's assessment of whether a specific
+/// product review was helpful or unhelpful. This system enables community
+/// moderation by identifying high-quality reviews that receive multiple
+/// helpful votes, while low-quality or irrelevant reviews receive unhelpful
+/// votes. The counts of helpful versus unhelpful votes determine which
+/// reviews are prominently surfaced to other customers.
+///
+/// Votes are immutable once recorded - customers can only vote once per
+/// review, and votes cannot be changed or revoked. This table strictly
+/// supports the primary product_reviews entity and has no independent
+/// business operations.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product review being voted on. {@link
+  /// shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// The customer who cast this vote. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// The type of vote cast by the customer. Valid values: 'helpful' or
+  /// 'unhelpful'. Represents the customer's assessment of the review's
+  /// quality.
+  vote_type String
+  
+  /// Timestamp when the vote was submitted by the customer. Records when the
+  /// community feedback was provided for audit and sorting purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  voter shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_review_id, shopping_mall_customer_id], map: "shopping_mall_product_review_votes_shopping_mall_produ_6f930ae3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id], map: "shopping_mall_product_review_votes_shopping_mall_produ_35c41bdc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_product_review_votes_shopping_mall_custo_4538067c")
+}
+
+/// Customer questions about products listed for sale.
+///
+/// Stores inquiries from customers seeking additional product information
+/// before making a purchase decision. Each question is associated with a
+/// specific product and created by an authenticated customer through their
+/// active session.
+///
+/// Questions remain attached to the sale even if the product details change,
+/// providing historical context. Customers can ask multiple questions per
+/// product, and each question can receive one answer from the seller.
+///
+/// The question content includes title and body fields for structured
+/// inquiry formatting. Soft deletion is supported to maintain audit trails
+/// while allowing content moderation.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_questions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this question pertains to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// The customer who created this question. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Short title summarizing the customer's question about the product.
+  title String
+  
+  /// Detailed description of the customer's question about the product.
+  body String
+  
+  /// Timestamp when this question was created.
+  created_at DateTime
+  
+  /// Timestamp when this question was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this question was soft-deleted (for moderation). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_answers shopping_mall_product_answers?
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_questions_shopping_mall_product__c8a17f12")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_product_questions_shopping_mall_customer_cfb66e09")
+  @@index([created_at])
+}
+
+/// Seller responses to customer questions about products.
+///
+/// Stores answers provided by sellers to questions raised by customers
+/// regarding specific product listings. Each answer is linked to a single
+/// product question and the responding seller, maintaining clear ownership
+/// and auditability. Answers remain associated with the question even if the
+/// product details change, providing historical context for the interaction.
+///
+/// Seller responses are visible to the customer who asked the question and
+/// to other potential buyers, influencing purchasing decisions. The content
+/// includes a title for quick summary and a body for detailed information.
+/// Answers support soft deletion for moderation purposes, allowing removal
+/// while preserving audit trails.
+///
+/// This entity enables direct communication between sellers and customers,
+/// increasing product transparency and consumer trust.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_answers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product question this answer responds to. {@link
+  /// shopping_mall_product_questions.id}.
+  shopping_mall_product_question_id String
+  
+  /// The seller who provided this answer. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Brief summary of the answer, used for quick readability and search
+  /// indexing.
+  title String
+  
+  /// Detailed response content from the seller to the customer's product
+  /// question.
+  body String
+  
+  /// Timestamp when the answer was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the answer was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the answer was soft-deleted (for moderation purposes). If
+  /// null, the answer is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  question shopping_mall_product_questions @relation(fields: [shopping_mall_product_question_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_question_id], map: "shopping_mall_product_answers_shopping_mall_product_qu_f35b8355")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_question_id, deleted_at], map: "shopping_mall_product_answers_shopping_mall_product_qu_ed572e4f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_product_answers_shopping_mall_seller_id__b0f9dff4")
+  @@index([created_at])
+}
+
+/// Analytics tracking product views, click-through rates, and engagement
+/// metrics.
+///
+/// System-generated statistics that record how users interact with products
+/// in the catalog.
+/// Tracks the number of times a product is viewed, the rate at which users
+/// click through to product detail pages, and an overall engagement score
+/// based on interaction patterns.
+///
+/// Data is automatically updated by the system when products are displayed
+/// to users.
+/// Each record represents a snapshot of engagement metrics for a specific
+/// product at a point in time.
+/// This data supports product discovery optimization and recommendations
+/// systems.
+///
+/// The table is updated frequently but never modified or deleted after
+/// creation, making it append-only for analytical purposes.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being tracked. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Total number of times this product has been viewed in the catalog.
+  view_count Int
+  
+  /// Percentage of users who clicked through from product listing to product
+  /// detail page.
+  click_through_rate Float
+  
+  /// Composite score measuring overall user engagement with this product
+  /// (0.0-1.0).
+  engagement_score Float
+  
+  /// Timestamp when the view statistics record was created.
+  created_at DateTime
+  
+  /// Timestamp when the view statistics record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_view_stats_shopping_mall_product_a7a4cab3")
+}
+
+/// Sales performance statistics aggregated per product to track units sold,
+/// revenue, and conversion rates.
+///
+/// This table provides analytical insights into product market performance.
+/// It is automatically updated by the system when orders are completed,
+/// capturing the number of units sold, total revenue generated, and
+/// conversion rate (sales over views) for each product.
+///
+/// Sales statistics are maintained independently from product metadata to
+/// prevent data duplication and ensure consistent reporting, even if product
+/// details change later.
+///
+/// The table is updated only by system processes and is not directly
+/// modifiable by users or administrators. It enables performance analytics
+/// dashboards, inventory forecasting, and marketing evaluation.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_sales_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product this sales statistic belongs to. {@link
+  /// shopping_mall_products.id}.
+  product_id String
+  
+  /// Total number of units of this product sold.
+  units_sold Int
+  
+  /// Total revenue generated from sales of this product, in USD with exactly
+  /// two decimal places.
+  total_revenue Float
+  
+  /// Conversion rate as a decimal (e.g., 0.05 for 5%), calculated as
+  /// units_sold divided by product views (from
+  /// shopping_mall_product_view_stats).
+  conversion_rate Float
+  
+  /// Timestamp when this sales statistic record was created.
+  created_at DateTime
+  
+  /// Timestamp when this sales statistic record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete flag. Null means active; a timestamp indicates the record was
+  /// retired for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_id, created_at])
+}
+
+/// Audit trail snapshots of product state at time of order to preserve
+/// historical product information.
+///
+/// Captures immutable copies of product details as they existed at the
+/// moment of purchase, ensuring accurate historical records for order
+/// reconciliation, returns, and compliance audits. This table preserves
+/// product titles, descriptions, images, categories, and other metadata even
+/// when the master product record is modified or deleted.
+///
+/// Each snapshot is linked to the original product via
+/// shopping_mall_products.id and represents the entire product state at
+/// snapshot creation time. The table is designed to be append-only with soft
+/// deletes to support moderation of inappropriate product representations in
+/// historical orders.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original product entity whose state was captured in this
+  /// snapshot. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Product title as it appeared at time of snapshot creation. Copy of
+  /// shopping_mall_products.title at the moment this snapshot was taken.
+  title String
+  
+  /// Product description as it appeared at time of snapshot creation. Copy of
+  /// shopping_mall_products.description at the moment this snapshot was taken.
+  description String
+  
+  /// Current product status (active/inactive) at time of snapshot. Copy of
+  /// shopping_mall_products.status to maintain business state context for
+  /// historical orders.
+  status String
+  
+  /// Primary category ID reference as it existed at time of snapshot. Copy of
+  /// shopping_mall_products.primary_category_id. Can be null if product had no
+  /// primary category assigned.
+  primary_category_id String?
+  
+  /// Brand ID reference as it existed at time of snapshot. Copy of
+  /// shopping_mall_products.brand_id. Can be null if product had no brand
+  /// assigned.
+  brand_id String?
+  
+  /// Timestamp when this snapshot was created (i.e., when the product state
+  /// was captured). This is not the product's creation date, but the snapshot
+  /// creation time.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated. For immutable snapshots,
+  /// this typically equals created_at but is included for system consistency.
+  updated_at DateTime
+  
+  /// Soft delete flag indicating when this snapshot was marked for deletion.
+  /// Used for moderation of inappropriate product representations in
+  /// historical orders. If null, the record is considered active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_snapshots_shopping_mall_product__cc038f1c")
+}
+
+/// Brand entities associated with products including name and optional logo
+/// URL.
+///
+/// Represents manufacturers, designers, or product lines that produce or
+/// market products in the catalog. Each brand serves as a categorization and
+/// marketing anchor for associated products, helping customers identify and
+/// trust product origins.
+///
+/// Brands are independently managed by administrators - new brands can be
+/// created, existing ones can be updated, and brand information can be
+/// removed from the catalog entirely. While products reference brands for
+/// categorization, the brand entities themselves have independent lifecycle
+/// management.
+///
+/// The logo URL field is optional to accommodate brands that don't have
+/// official visual identities or when logo images are managed through
+/// separate asset systems.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_brands {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Official name of the brand. Must be unique across the system to ensure
+  /// consistent product categorization and branding.
+  name String
+  
+  /// URL to the brand's official logo image. This is optional as some brands
+  /// may not have digital logos or may use alternative branding systems.
+  logo_url String?
+  
+  /// Timestamp when this brand was created in the system. Used for audit trail
+  /// and chronological sorting.
+  created_at DateTime
+  
+  /// Timestamp when this brand was last modified. Updated on any change to
+  /// brand name or logo.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([logo_url])
+}
+
+/// Tracks real-time inventory count and state for each product variant (SKU).
+///
+/// This table provides granular inventory management at the SKU level,
+/// enabling accurate stock visibility, low-stock alerts, and sales
+/// forecasting. Each record corresponds to exactly one product variant and
+/// maintains its current inventory status.
+///
+/// Inventory state transitions (Available → Low → Out of Stock → Backordered
+/// → Discontinued) are driven by order fulfillment, returns, and restocking
+/// operations. The system automatically updates inventory counts and states
+/// without direct user intervention.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// inventory records to be logically removed when variants are discontinued
+/// permanently.
+///
+/// All inventory changes are tracked and verified through the
+/// product_variant system to ensure transactional integrity.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant this inventory record belongs to. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Current quantity available in inventory. Must be non-negative. Updated
+  /// automatically through order, return, and restocking workflows.
+  inventory_count Int
+  
+  /// Current inventory state following state machine: Available, Low, Out of
+  /// Stock, Backordered, Discontinued. State transitions occur automatically
+  /// based on inventory count thresholds and business rules.
+  state String
+  
+  /// Timestamp when this inventory record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated, including count or
+  /// state changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, record is active. If set, record is
+  /// logically deleted but preserved for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_product_variant_inventory_shopping_mall__d4a58b59")
+  @@index([state])
+  @@index([created_at])
+}
+
+/// Stores individual prices for each product variant (SKU), overriding base
+/// product price when specified.
+///
+/// This table enables variant-level pricing strategy where each unique SKU
+/// can have its own price independent of the base product's default price.
+/// The pricing data is used for product display, cart calculations, and
+/// checkout processing.
+///
+/// Each price entry is associated with exactly one product variant via the
+/// variant_id foreign key. In cases where no variant-specific price exists,
+/// the base product price is used as fallback. This design allows for
+/// flexible pricing tactics including promotional pricing, bulk discounts,
+/// and special edition offerings.
+///
+/// All prices are stored in USD with exactly two decimal places as required.
+/// The table supports soft deletion to maintain audit trails while allowing
+/// for price adjustments or removal.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_pricing {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant this pricing record belongs to. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Price of this product variant in USD, with exactly two decimal places.
+  /// Must be non-negative. This overrides the base product price when
+  /// specified.
+  price Float
+  
+  /// Timestamp when this pricing record was created. Always populated at
+  /// record creation.
+  created_at DateTime
+  
+  /// Timestamp when this pricing record was last updated. Automatically
+  /// updated whenever the price changes.
+  updated_at DateTime
+  
+  /// Timestamp when this pricing record was soft-deleted. Null if the record
+  /// is still active. Used for audit trail and potential recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_product_variant_pricing_shopping_mall_pr_de9e1b0f")
+  @@index([created_at])
+  @@index([updated_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_product_variant_pricing_shopping_mall_pr_aa2b9576")
 }

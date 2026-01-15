@@ -1,0 +1,157 @@
+/// Platform-wide content channels representing thematic communities or
+/// content groups with branding and configuration.
+///
+/// Channels are the top-level content organization units for the platform,
+/// allowing users to categorize and discover content by topics, interests,
+/// or communities. Each channel has a unique name, descriptive content, and
+/// configurable settings.
+///
+/// Channels support basic CRUD operations: creation, viewing, updating, and
+/// soft deletion for moderation purposes. The name field must be globally
+/// unique across all channels.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique channel name for display and routing.
+  name String
+  
+  /// Description of the channel's purpose and content focus.
+  description String?
+  
+  /// Channel creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if marked for deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_platform_sections reddit_platform_sections[]
+  
+  @@unique([name])
+}
+
+/// Sections representing hierarchical organizational units within content
+/// channels for structured content grouping and visibility control.
+///
+/// Provides granular categorization of content under broader channel
+/// structures with distinct settings and visibility rules. Each section
+/// belongs to a single channel and can contain multiple sub-sections.
+///
+/// Maintains historical context through temporal fields, allowing audit
+/// trails of section creation, modification, and removal. Supports
+/// channel-specific navigation and content discovery, with unique section
+/// names within each channel context.
+///
+/// Sections operate as independently managed entities with their own
+/// configuration settings, separate from channel-level governance but nested
+/// within channel hierarchies.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent channel's {@link reddit_platform_channels.id}.
+  channel_id String
+  
+  /// Section name as visible to users and appearing in channel navigation.
+  /// Must be unique within channel scope for proper content organization.
+  name String
+  
+  /// Detailed explanation of section purpose and content guidelines. Used for
+  /// channel administrators to understand section context and user visibility.
+  description String?
+  
+  /// Hierarchy level in channel structure (1 for top-level, 2 for subsections,
+  /// etc.). Determines visual placement and nesting depth in channel
+  /// navigation.
+  level Int
+  
+  /// Timestamp when the section was created. Used for sorting and historical
+  /// reference.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified. Tracks changes for
+  /// moderation and audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when the section was marked for deletion (soft delete). Allows
+  /// recovery without data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel reddit_platform_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([channel_id, name])
+  @@index([channel_id])
+}
+
+/// System-wide platform configuration settings for feature toggles and
+/// operational parameters. Provides API endpoints for managing platform
+/// settings across all components.
+///
+/// Stores key-value pairs for configuration options that control platform
+/// behavior, including feature flags, environmental settings, and runtime
+/// parameters. Each configuration option has a descriptive explanation to
+/// guide administrators in setting values.
+///
+/// This table supports independent management of configuration settings with
+/// dedicated CRUD endpoints, making it a core component for platform
+/// administration. All changes are tracked through temporal fields for audit
+/// purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key identifier. Must be unique across all configuration
+  /// items in system.
+  key String
+  
+  /// Configuration value. Can be a boolean string representation, JSON object,
+  /// or simple value.
+  value String
+  
+  /// Human-readable explanation of the configuration purpose and usage context.
+  description String
+  
+  /// Timestamp when configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when configuration was marked for deletion. Null indicates
+  /// active configuration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+  @@index([updated_at])
+}

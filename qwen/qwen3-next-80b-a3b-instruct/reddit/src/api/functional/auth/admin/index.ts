@@ -3,39 +3,33 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ICommunityBBSAdmin } from "../../../structures/ICommunityBBSAdmin";
+import { ICommunityPlatformAdmin } from "../../../structures/ICommunityPlatformAdmin";
 
 /**
- * Register a new system administrator account. This operation creates an
- * administrator entry in the community_bbs_admin table with initial
- * credentials. The schema requires email and password fields for registration,
- * which are validated against the underlying database constraints. All new
- * admin accounts are created in inactive state and require manual activation by
- * existing admins.
+ * Registers a new admin account in the system. This operation creates an admin
+ * entity in the community_platform_admin table using the provided email and
+ * password values. The account is initialized with default admin permissions
+ * and is immediately eligible for authentication. This operation is public and
+ * accessible to unauthenticated users seeking to become system administrators.
+ * The operation maps directly to the community_platform_admin table's
+ * registration workflow and creates the initial admin record that will later be
+ * linked to an admin session.
  *
- * Security implementation uses bcrypt password hashing with 12 rounds as
- * specified in the community_bbs_admin schema's password field. The operation
- * uses the exact field names from the schema: email, hashedPassword, createdAt,
- * and updatedAt. Additional fields like lastLoginAt and failedLoginAttempts are
- * initialized to null/0 as per schema defaults.
+ * The password is stored using a secure hashing algorithm and is not stored in
+ * plaintext. After successful registration, an initial access token and refresh
+ * token pair are issued to the admin user for subsequent authenticated
+ * interactions.
  *
- * This operation is specifically designed for system administrator registration
- * and follows strict security protocols. New admins must be manually verified
- * by existing admins before they can authenticate. The email address field is
- * required and must be unique according to the schema's unique index
- * constraint.
+ * The system enforces email uniqueness through the
+ * community_platform_admin.email field, preventing duplicate registration.
  *
- * Authentication tokens are issued following the ICommunityBBSAdmin.IAuthorized
- * response type format, containing the access_token, refresh_token, and
- * admin_id fields. The token structure matches exactly what the
- * community_bbs_admin table supports.
- *
- * This join operation is the only way to create administrator accounts, as
- * direct database manipulation is prohibited. Look for the corresponding login
- * and refresh operations for complete authentication workflow.
+ * This join operation is the only way to create a new admin account in the
+ * system, ensuring that all administrators are formally registered rather than
+ * manually inserted into the database.
  *
  * @param props.connection
- * @param props.body Data required to create a new system administrator account.
+ * @param props.body Request body containing credentials to create a new admin
+ *   account.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -70,11 +64,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Data required to create a new system administrator account. */
-    body: ICommunityBBSAdmin.ICreate;
+    /** Request body containing credentials to create a new admin account. */
+    body: ICommunityPlatformAdmin.IJoin;
   };
-  export type Body = ICommunityBBSAdmin.ICreate;
-  export type Response = ICommunityBBSAdmin.IAuthorized;
+  export type Body = ICommunityPlatformAdmin.IJoin;
+  export type Response = ICommunityPlatformAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -90,8 +84,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/admin/join";
-  export const random = (): ICommunityBBSAdmin.IAuthorized =>
-    typia.random<ICommunityBBSAdmin.IAuthorized>();
+  export const random = (): ICommunityPlatformAdmin.IAuthorized =>
+    typia.random<ICommunityPlatformAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -118,35 +112,26 @@ export namespace join {
 }
 
 /**
- * Authenticate an administrator user and issue JWT tokens. This operation
- * validates the provided email and password against the community_bbs_admin
- * table's credentials. The schema includes hashedPassword, email, is_active,
- * lastLoginAt, and failedLoginAttempts fields which are all utilized in
- * authentication logic.
+ * Authenticates an existing admin user by validating their email and password
+ * credentials against the community_platform_admin table records. This
+ * operation retrieves the admin record by email and compares the provided
+ * password with the stored hash using a secure algorithm. If credentials are
+ * valid, an access token and refresh token are generated and returned.
  *
- * Authentication uses the exact field names from the schema: email for
- * identification and hashedPassword for password validation. The operation
- * checks is_active status to prevent login for suspended accounts. The
- * lastLoginAt field is updated after successful authentication, and
- * failedLoginAttempts is incremented for failed attempts.
+ * The session is tracked via the community_platform_admin_sessions table, which
+ * stores the refresh token hash and associated metadata to enable token
+ * revocation and session management. The access token has a shorter lifespan
+ * (typically 15-30 minutes) while the refresh token is longer-lived (typically
+ * 7 days) but requires periodic renewal.
  *
- * The operation returns a token structure that matches the
- * ICommunityBBSAdmin.IAuthorized response type, which corresponds to the
- * schema's structure. The security system uses the same session management
- * patterns as defined in the community_bbs_admin_sessions model, which links to
- * the primary admin table.
- *
- * This login operation is exclusively for administrator accounts as defined by
- * the actor specification. It follows the same pattern as user login operations
- * but is isolated to the admin actor context. Access tokens are time-limited
- * (15 minutes) and refresh tokens are valid for 7 days as per system policy.
- *
- * The same authentication token response type is used across all authentication
- * operations for admin actors, ensuring consistent interface design. This
- * operation must be preceded by successful registration via the join endpoint.
+ * This login operation is public and does not require prior authentication. The
+ * system supports brute-force protection mechanisms that temporarily lock
+ * accounts after multiple failed attempts, using the login attempt tracking in
+ * the database.
  *
  * @param props.connection
- * @param props.body Credentials required to authenticate an administrator user.
+ * @param props.body Request body containing email and password to authenticate
+ *   the admin user.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -181,11 +166,14 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Credentials required to authenticate an administrator user. */
-    body: ICommunityBBSAdmin.ILogin;
+    /**
+     * Request body containing email and password to authenticate the admin
+     * user.
+     */
+    body: ICommunityPlatformAdmin.ILogin;
   };
-  export type Body = ICommunityBBSAdmin.ILogin;
-  export type Response = ICommunityBBSAdmin.IAuthorized;
+  export type Body = ICommunityPlatformAdmin.ILogin;
+  export type Response = ICommunityPlatformAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -201,8 +189,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/admin/login";
-  export const random = (): ICommunityBBSAdmin.IAuthorized =>
-    typia.random<ICommunityBBSAdmin.IAuthorized>();
+  export const random = (): ICommunityPlatformAdmin.IAuthorized =>
+    typia.random<ICommunityPlatformAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -229,32 +217,29 @@ export namespace login {
 }
 
 /**
- * Refresh an expired access token using a valid refresh token. This operation
- * validates the refresh token against the community_bbs_admin_sessions table,
- * which stores session information linked to the community_bbs_admin table. The
- * schema includes sessionToken, expiresAt, and adminId fields that are all
- * utilized in this process.
+ * Refreshes the access token for an authenticated admin user by validating the
+ * provided refresh token against the community_platform_admin_sessions table.
+ * This operation verifies the refresh token's signature and expiration, then
+ * issues a new access token while potentially renewing the refresh token if
+ * it's close to expiration.
  *
- * The refresh operation checks the sessionToken value for validity and ensures
- * it hasn't expired (based on expiresAt field). It validates that the session
- * is still active and linked to a valid admin user in the community_bbs_admin
- * table. The ability to refresh is directly derived from the presence of the
- * session management schema entries.
+ * The refresh token is stored in the community_platform_admin_sessions table as
+ * a hash for security. The operation checks the status and validity of the
+ * refresh token, ensuring the session has not been revoked or compromised. If
+ * the refresh token is valid, a new access token is issued immediately.
  *
- * Upon validation, a new access token is generated with the same admin_id
- * context and issued in the ICommunityBBSAdmin.IAuthorized response format. The
- * refresh token is replaced with a new one as part of rotation policy for
- * security. The system uses the exact field names from the schema:
- * sessionToken, expiresAt, adminId, and createdAt for tracking all refresh
- * events.
+ * This operation is used when the access token expires, allowing the user to
+ * maintain their session without re-entering credentials. The refresh token has
+ * a longer expiration period (typically 7 days) and can be used multiple times
+ * within that period, subject to session rules and security policies.
  *
- * This refresh endpoint is the only authorized way to extend session duration
- * without re-authentication. It follows the same pattern used by other actor
- * types for consistent API design. The operation requires a valid refresh token
- * that was issued during a successful login or previous refresh operation.
+ * This refresh operation is critical for maintaining seamless user experience
+ * while ensuring security. It prevents the need for users to re-authenticate
+ * frequently while maintaining a robust token rotation strategy.
  *
  * @param props.connection
- * @param props.body Refresh token required to obtain a new access token.
+ * @param props.body Request body containing the refresh token to obtain a new
+ *   access token.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -289,11 +274,14 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token required to obtain a new access token. */
-    body: ICommunityBBSAdmin.IRefresh;
+    /**
+     * Request body containing the refresh token to obtain a new access
+     * token.
+     */
+    body: ICommunityPlatformAdmin.IRefresh;
   };
-  export type Body = ICommunityBBSAdmin.IRefresh;
-  export type Response = ICommunityBBSAdmin.IAuthorized;
+  export type Body = ICommunityPlatformAdmin.IRefresh;
+  export type Response = ICommunityPlatformAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -309,8 +297,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/admin/refresh";
-  export const random = (): ICommunityBBSAdmin.IAuthorized =>
-    typia.random<ICommunityBBSAdmin.IAuthorized>();
+  export const random = (): ICommunityPlatformAdmin.IAuthorized =>
+    typia.random<ICommunityPlatformAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,
@@ -332,6 +320,73 @@ export namespace refresh {
         data: exp.toJSON().message,
       } as any;
     }
+    return random();
+  };
+}
+
+/**
+ * Retrieves detailed information about the admin user's account including
+ * permissions, activity status, and access levels. This operation validates the
+ * admin's session and returns their current authorization profile from the
+ * community_platform_admin table. Designed for administrative dashboards and
+ * system monitoring tools to display real-time admin status without modifying
+ * data.
+ *
+ * The operation uses the admin's authentication token to look up their record
+ * in the community_platform_admin table, returning only public fields and their
+ * assigned permission flags. This endpoint supports the admin's need to
+ * self-verify their access level and permissions without requiring additional
+ * authentication. This null-authorizationType operation is the only way for an
+ * admin to obtain a detailed read of their own administrative profile without
+ * triggering data modification side effects.
+ *
+ * For security, this endpoint returns only the admin's own profile and does not
+ * allow viewing other admins' data. The audit logs in
+ * community_platform_admin_sessions track when this profile is accessed. This
+ * enables comprehensive accountability for admin access review activities.
+ *
+ * @param props.connection
+ * @path /auth/admin/profile
+ * @accessor api.functional.auth.admin.profile
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function profile(
+  connection: IConnection,
+): Promise<profile.Response> {
+  return true === connection.simulate
+    ? profile.simulate(connection)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...profile.METADATA,
+          path: profile.path(),
+          status: null,
+        },
+      );
+}
+export namespace profile {
+  export type Response = ICommunityPlatformAdmin.IProfile;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/auth/admin/profile",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/auth/admin/profile";
+  export const random = (): ICommunityPlatformAdmin.IProfile =>
+    typia.random<ICommunityPlatformAdmin.IProfile>();
+  export const simulate = (_connection: IConnection): Response => {
     return random();
   };
 }

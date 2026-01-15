@@ -1,0 +1,222 @@
+/// Configuration records for low stock alerts that trigger notifications
+/// when inventory for a product variant falls below a defined threshold.
+/// Each alert is associated with a specific product variant and defines the
+/// stock threshold, notification channel, and activation status.
+///
+/// Enables sellers to customize alert behavior for different product
+/// variants based on business needs and inventory policies. Alerts can be
+/// enabled/disabled to control notification frequency and reduce system
+/// noise during promotions or sales events.
+///
+/// The threshold field specifies the minimum inventory level that triggers
+/// an alert, while notification channels determine how the alert is
+/// delivered (email, SMS, etc.). All configuration changes are tracked
+/// through the temporal fields for audit purposes.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_low_stock_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant this alert applies to. {@link shopping_mall_products.id}.
+  shopping_mall_product_variants_id String
+  
+  /// Minimum inventory level that triggers alert for this variant. Must be a
+  /// positive integer representing stock quantity.
+  threshold Int
+  
+  /// Preferred delivery method for alerts (e.g., 'email', 'sms', 'slack').
+  notification_channel String
+  
+  /// Active status of this alert configuration. True = active, False =
+  /// disabled.
+  enabled Boolean
+  
+  /// Timestamp when the alert configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the alert configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_products @relation(fields: [shopping_mall_product_variants_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variants_id], map: "shopping_mall_low_stock_alerts_shopping_mall_product_v_b7ff745a")
+  @@index([created_at])
+}
+
+/// Audit trail recording all inventory changes including updates,
+/// adjustments, and stock deductions.
+///
+/// This table captures historical modifications to product inventory levels,
+/// providing a complete record of stock movements for audit purposes. Each
+/// log entry is linked to a specific product variant inventory record and
+/// documents the nature of changes, performers, and timestamps.
+///
+/// The audit trail supports compliance requirements by tracking who
+/// performed inventory operations and when, while maintaining read-only
+/// access to historical change records.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related inventory variant record. {@link
+  /// shopping_mall_variant_inventories.id}
+  shopping_mall_variant_inventories_id String
+  
+  /// Specific details of inventory change including quantities and reasons for
+  /// the adjustment.
+  change_description String
+  
+  /// User role who performed the inventory operation (seller, admin).
+  actor_type String
+  
+  /// Identifier of the actor performing the inventory change.
+  actor_id String
+  
+  /// Timestamp when the inventory activity was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the inventory activity log was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the log record was marked for deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_variant_inventories @relation(fields: [shopping_mall_variant_inventories_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_variant_inventories_id], map: "shopping_mall_inventory_logs_shopping_mall_variant_inv_c3c6e4ab")
+  
+  @@index([actor_type])
+}
+
+/// Manual inventory adjustments recorded by sellers for product variants.
+///
+/// Tracks sellers' actions to modify product variant stock levels, capturing
+/// the type of adjustment (increase/decrease), quantity, and business
+/// reason. Each record links to the specific product variant and seller,
+/// enabling audit trails and reconciliation against automatic stock updates.
+/// Adjustments are soft-deleted to maintain historical context while
+/// allowing content moderation for internal review processes.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant being adjusted. {@link shopping_mall_products.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Seller who performed the adjustment. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Type of adjustment, such as 'increase' or 'decrease'.
+  adjustment_type String
+  
+  /// Magnitude of the stock change (positive for increase, negative for
+  /// decrease).
+  quantity Int
+  
+  /// Business justification for the adjustment, such as 'manual stock count',
+  /// 'returned items', or 'trial adjustment'.
+  reason String?
+  
+  /// Timestamp when the adjustment record was created.
+  created_at DateTime
+  
+  /// Timestamp when the adjustment record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the adjustment record was soft-deleted (null indicates
+  /// active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_products @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_inventory_adjustments_shopping_mall_prod_62779307")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_inventory_adjustments_shopping_mall_sell_20b17550")
+}
+
+/// Tracks real-time stock levels and availability status for each product
+/// variant.
+///
+/// Monitors inventory quantities and status changes for product variants,
+/// enabling immediate stock updates and visibility. Each record represents a
+/// single product variant's current inventory state, independent of other
+/// variants. This table supports real-time inventory checks during checkout
+/// and purchase processes.
+///
+/// Status values include 'in_stock', 'out_of_stock', 'low_stock', and
+/// 'discontinued'. Stock level changes are recorded as audit events in
+/// 'shopping_mall_inventory_logs' for traceability.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_inventories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant record. {@link shopping_mall_products.id}
+  shopping_mall_product_variants_id String
+  
+  /// Current available quantity of the product variant. Must be zero or
+  /// positive.
+  current_stock Float
+  
+  /// Current inventory status. Valid values: 'in_stock', 'out_of_stock',
+  /// 'low_stock', 'discontinued'.
+  status String
+  
+  /// When this inventory record was created.
+  created_at DateTime
+  
+  /// When this inventory record was last updated.
+  updated_at DateTime
+  
+  /// When this inventory record was soft-deleted. Null indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_products @relation(fields: [shopping_mall_product_variants_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_logs shopping_mall_inventory_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variants_id], map: "shopping_mall_variant_inventories_shopping_mall_produc_ae6f36ad")
+  @@index([status])
+}

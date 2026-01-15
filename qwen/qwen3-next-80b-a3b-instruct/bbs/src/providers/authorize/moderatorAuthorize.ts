@@ -15,16 +15,14 @@ export async function moderatorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const moderator = await MyGlobal.prisma.economic_board_moderators.findFirst({
+  const moderator = await MyGlobal.prisma.discussion_board_moderator.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      status: "active",
     },
   });
 
   if (moderator === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("You're not enrolled as a moderator");
   }
 
   return payload;

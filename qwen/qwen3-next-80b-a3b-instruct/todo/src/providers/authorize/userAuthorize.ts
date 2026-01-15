@@ -15,16 +15,16 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
-  const user = await MyGlobal.prisma.todo_list_user.findFirst({
+  // Query user_session to verify active session and link to user
+  const userSession = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
-      id: payload.id,
+      id: payload.session_id,
+      todo_list_user_id: payload.id, // Correct field name from schema
     },
   });
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (userSession === null) {
+    throw new ForbiddenException("You're not enrolled or session is invalid");
   }
 
   return payload;

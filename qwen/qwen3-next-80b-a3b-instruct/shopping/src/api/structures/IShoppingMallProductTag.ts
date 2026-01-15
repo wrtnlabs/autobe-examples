@@ -1,86 +1,271 @@
 import { tags } from "typia";
 
+import { IShoppingMallProduct } from "./IShoppingMallProduct";
+
 /**
- * Complete representation of a product tag entity.
+ * Represents a product tag association in the shoppingMall platform, linking
+ * products to their categorization tags through a many-to-many relationship.
+ * This entity defines the core product tagging functionality that enables
+ * enhanced product discoverability, filtering, and categorization across the
+ * e-commerce platform.
  *
- * Defines a standardized tag for product categorization and search filtering in
- * the shoppingMall platform. Tags serve as controlled vocabulary keywords that
- * help customers discover products through enhanced search and filtering
- * functionality.
+ * The IShoppingMallProductTag schema represents the junction between products
+ * and tags in the shopping_mall_product_tags table, which establishes a
+ * many-to-many relationship allowing products to have multiple tags and tags to
+ * be assigned to multiple products. This design enables powerful product
+ * classification capabilities across product catalogs.
  *
- * Each tag is uniquely identified by its name and slug, ensuring consistency in
- * tag usage across products. The slug field is URL-safe and used in product
- * URLs for search filtering and navigation purposes.
+ * The tag association is identified by unique identifiers for both the product
+ * and the tag, with a timestamp indicating when the association was
+ * established. This entity is referenced by product detail pages to display
+ * category tags and by search/filter interfaces to enable users to find
+ * products by tag. It also serves as the core data model for product tagging
+ * operations that allow customers and sellers to assign, update, or remove
+ * product tags.
  *
- * The display_order field controls the sequence of tags in UI displays,
- * ensuring logical grouping and user-friendly presentation. Tags can be
- * activated or deactivated via the is_active flag, allowing system
- * administrators to control which tags are available for product association
- * without permanently removing them from the system.
+ * All product tags are publicly visible metadata intended for user discovery
+ * and filtering purposes, and the system ensures each tag-product relationship
+ * is unique to prevent duplicate tagging. The entity structure is consistent
+ * across all product tagging operations including POST (add), PUT (update), and
+ * GET (retrieve) endpoints.
  *
- * This schema matches exactly with the shopping_mall_product_tags table in the
- * Prisma schema. It includes all fields and constraints from that model. Tags
- * are associated with products through the shopping_mall_product_tags_products
- * junction table, enabling many-to-many relationships.
- *
- * This schema corresponds to the shopping_mall_product_tags Prisma model.
- *
- * All properties are included with their exact types and formats as defined in
- * the Prisma schema.
- *
- * All properties are required because, according to the Prisma schema, they are
- * all non-nullable (nothing is marked as optional or has a default).
- *
- * No additionalProperties are allowed to ensure strict schema compliance.
- *
- * Properties:
- *
- * - Id: UUID identifier for the tag
- * - Name: Human-readable tag name
- * - Slug: URL-safe alias for the tag (unique)
- * - Display_order: Integer for ordering in UIs
- * - Is_active: Boolean flag for enabling/disabling tags
- * - Description: Detailed description of the tag's meaning and usage
- *
- * All properties are non-nullable and must be included in API responses
- * according to Prisma schema.
- *
- * Schema complies with OpenAPI v3.1 specification using standard type system
- * and format annotations. No circular references or invalid types are present.
- *
- * No x-autobe-prisma-schema needed since this is a top-level entity schema with
- * no parent-child relationships requiring FK transformation.
- *
- * All constraints and requirements from the Prisma schema are fully implemented
- * in this OpenAPI schema.
- *
- * NO additional properties allowed, ensuring type safety for all consumers.
- *
- * Request and response DTOs based on this schema will maintain data integrity
- * and avoid null errors because all required fields are enforced at both schema
- * and database levels.
- *
- * The description field was previously missing, which violated the completeness
- * of the DTO for a read response.
- *
- * The 'required' array now correctly includes all fields since they are all
- * required by the database schema.
- *
- * The required array was previously missing from the top level of the schema
- * object, which was a structural violation of the AutoBeOpenApi specification.
- *
- * The schema is now fully compliant with OpenAPI v3.1 and
- * AutoBeOpenApi.IJsonSchemaDescriptive.IObject requirements.
- *
- * All properties are defined with proper formats and types as in Prisma schema.
- *
- * The description property is now correctly located at the top level of the
- * schema object, and the required array is correctly present at the top level
- * outside the properties object.
+ * This schema excludes sensitive or private information as product tags are
+ * designed as public-facing metadata. The tag association does not contain any
+ * personally identifiable information or system-level secrets, making it
+ * suitable for public API access with no authentication requirement for read
+ * operations.
  *
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export type IShoppingMallProductTag = string &
-  tags.JsonSchemaPlugin<{
-    "x-autobe-prisma-schema": "shopping_mall_product_tags";
-  }>;
+export type IShoppingMallProductTag = {
+  /**
+   * Unique identifier for the product-tag association record in the
+   * shopping_mall_product_tags table. This is the primary key that uniquely
+   * identifies each product-tag relationship instance in the database.
+   */
+  id: string & tags.Format<"uuid">;
+
+  /**
+   * Unique identifier of the product to which this tag is associated. This
+   * references the id field in the shopping_mall_products table and
+   * establishes the relationship from this tag association to a specific
+   * product entity.
+   */
+  productId: string & tags.Format<"uuid">;
+
+  /**
+   * Unique identifier of the tag that is associated with the product. This
+   * references the id field in the shopping_mall_product_tags table and
+   * establishes the relationship from this product to a specific tag entity.
+   */
+  tagId: string & tags.Format<"uuid">;
+
+  /**
+   * Complete tag metadata associated with this product-tag relationship. This
+   * reference provides the full tag details including code, display name,
+   * color, description, and active status, enabling full product
+   * categorization display without requiring additional API calls. The tag
+   * data enriches the product listing with contextual categorization
+   * information that enhances search, filtering, and recommendation systems.
+   * Each tag represents a thematic attribute such as "sale", "new",
+   * "organic", or custom merchant-defined labels that help customers find
+   * relevant products.
+   *
+   * The reference to IShoppingMallProductTag.ISummary ensures that only
+   * essential tag information (not full detail) is included to maintain
+   * performance in list and response payloads. This design optimizes API
+   * response times while maintaining functionality for product display and
+   * browsing. Tag metadata is immutable once created and serves as persistent
+   * classification data throughout the product lifecycle.
+   */
+  tag: IShoppingMallProductTag.ISummary;
+
+  /**
+   * Complete product metadata associated with this tag relationship. This
+   * reference provides the product summary including id, title, price, and
+   * other essential details, enabling comprehensive product display with tag
+   * context without additional API calls. Including the product summary
+   * directly in this association object avoids the need for separate product
+   * lookups when displaying product tags on catalog pages, search results,
+   * and product detail views.
+   *
+   * The IShoppingMallProduct.ISummary structure includes only essential
+   * information needed for listing displays (name, price, image, category,
+   * brand, ratings) while excluding detailed descriptions, variant
+   * information, and inventory details that would bloat response payloads.
+   * This design pattern optimizes performance for customer-facing interfaces
+   * where product tag information is displayed alongside product details.
+   *
+   * The relationship ensures context preservation even when product details
+   * change over time, as the tag association maintains a snapshot of the
+   * product state at the time of tagging. This prevents confusion when a
+   * product's name or image changes after the tag has been applied.
+   */
+  product: IShoppingMallProduct.ISummary;
+};
+export namespace IShoppingMallProductTag {
+  /**
+   * Update request for product tag associations in the shopping mall
+   * platform. This schema defines the optional fields that can be modified to
+   * update the relationship between a product and a tag.
+   *
+   * This DTO is used in PUT operations on
+   * /shoppingMall/customer/products/{productId}/tags/{tagId} and
+   * /shoppingMall/seller/products/{productId}/tags/{tagId} endpoints. It
+   * allows authorized users (customers or sellers) to update tag associations
+   * with the specified product.
+   *
+   * In practice, this DTO enables the removal of a tag association by
+   * omitting any fields (as an empty object represents no changes) or
+   * maintaining the existing association. The system uses the productId and
+   * tagId from the path parameters to identify the specific association to be
+   * updated. No new entities are created; this operation only modifies the
+   * existing relationship.
+   *
+   * The schema follows the currency standard for update DTOs: all properties
+   * are optional, allowing partial updates where the client can specify only
+   * the fields they wish to change, or send an empty object to maintain the
+   * existing state. This empty-object pattern is intentional and represents a
+   * "no-op" update that preserves the current association while complying
+   * with the API's required request body structure.
+   *
+   * Clients should understand that since no fields are mutable in this
+   * association (the productId and tagId are determined by the endpoint
+   * path), the only meaningful operation is to send an empty object to
+   * confirm the association remains unchanged. Sending any properties would
+   * be semantically incorrect since there are no modifiable fields in the
+   * association record itself — only the existence of the relationship
+   * matters.
+   */
+  export type IUpdate = {};
+
+  /**
+   * Request DTO for adding one or more tags to a specific product. This
+   * object contains an array of tag names to be associated with a product
+   * entity in the system. The operation requires authentication as only
+   * registered users may assign tags to products. The system prevents
+   * duplicate tagging by ensuring each tag-product relationship is unique.
+   *
+   * Tagging functionality improves product SEO, enables personalized
+   * recommendations, and enhances user experience through improved
+   * discoverability. Related operations include GET
+   * /products/{productId}/tags (retrieve all tags for a product), DELETE
+   * /products/{productId}/tags/{tag} (remove a specific tag association), and
+   * GET /products?tag={tag} (search products by tag).
+   *
+   * Tag names follow strict character constraints: only alphanumeric
+   * characters, hyphens, and underscores are allowed. Spaces, commas, and
+   * special characters are prohibited to ensure URL safety and consistent
+   * parsing. Each tag name must be at least 1 character and no more than 100
+   * characters. At least one tag must be provided in the array for the
+   * operation to succeed.
+   *
+   * This schema defines the structure of the request body for the POST
+   * /shoppingMall/customer/products/{productId}/tags endpoint. The tag
+   * relationships are created atomically within a single database transaction
+   * to ensure data consistency.
+   */
+  export type IRequest = {
+    /**
+     * A list of tag names to apply to a specific product. Each tag is a
+     * string representing a keyword or category to associate with the
+     * product. Tag names are case-sensitive and must be non-empty strings
+     * up to 100 characters long. Allowed characters include alphanumeric
+     * characters, hyphens, and underscores. Special characters and commas
+     * are not permitted.
+     */
+    tag_names: (string & tags.MinLength<1> & tags.MaxLength<100>)[] &
+      tags.MinItems<1>;
+  };
+
+  /**
+   * Summary representation of a product tag for list displays and embedded
+   * references.
+   *
+   * A product tag is a keyword or label assigned to products to improve
+   * discoverability, enabling filtering and categorization of products in the
+   * shopping catalog. Tags are hierarchical and can be grouped by category
+   * for organizational purposes.
+   *
+   * Tags are created and managed by administrators and sellers, and are
+   * assigned to products to facilitate customer search and browsing. Each tag
+   * can be associated with multiple products, and products can have multiple
+   * tags. Tags should support partial matching for search functionality and
+   * maintain usage statistics for popularity-based ordering.
+   *
+   * Summary format is optimized for performance in large list responses,
+   * including only essential identifying and descriptive fields without
+   * detailed relationship data or metadata that would bloat response size.
+   */
+  export type ISummary = {
+    /** Unique identifier for the product tag. */
+    id: string & tags.Format<"uuid">;
+
+    /**
+     * The display name of the tag. Must be unique within the system and
+     * cannot be empty. Used in product search and filtering interfaces.
+     * Should follow standard title case capitalization.
+     *
+     * Example: "Eco-Friendly", "Best Seller", "New Arrival".
+     */
+    name: string & tags.MinLength<1> & tags.MaxLength<100>;
+
+    /**
+     * URL-friendly version of the tag name, used in semantic URLs for
+     * tag-based filtering. Must be unique and contain only lowercase
+     * alphanumeric characters and hyphens. Generated automatically from the
+     * name field.
+     *
+     * Example: "eco-friendly", "best-seller", "new-arrival".
+     */
+    slug: string &
+      tags.MinLength<1> &
+      tags.MaxLength<100> &
+      tags.Pattern<"^[a-z0-9]+(?:-[a-z0-9]+)*$">;
+
+    /**
+     * The category or group to which this tag belongs, used to organize
+     * tags into logical groupings (e.g., "Attributes", "Brand",
+     * "Features"). This allows for hierarchical organization and filtering
+     * of tags in the admin dashboard.
+     *
+     * Example: "Attributes", "Brand", "Features".
+     */
+    category: string & tags.MinLength<1> & tags.MaxLength<50>;
+
+    /**
+     * The number of products currently assigned this tag. Used for
+     * popularity ranking and auto-suggestions in search interfaces. Updated
+     * in real-time as products are tagged or untagged.
+     */
+    usage_count: number & tags.Type<"int32"> & tags.Minimum<0>;
+
+    /**
+     * Reference to a parent tag if this tag is a child in a hierarchical
+     * structure. Used to create nested taxonomy systems (e.g., "Color" >
+     * "Red") where child tags inherit properties from their parents.
+     *
+     * When null, this is a root-level tag in the hierarchy.
+     */
+    parent_tag_id?: (string & tags.Format<"uuid">) | undefined;
+
+    /**
+     * Timestamp when this tag was created in the system. Used for audit
+     * trails and to determine tag age for retirement decisions.
+     *
+     * Format follows ISO 8601 standard with timezone
+     * (YYYY-MM-DDTHH:mm:ss.sssZ).
+     */
+    created_at: string & tags.Format<"date-time">;
+
+    /**
+     * Indicates whether this tag is currently active and available for
+     * selection on new products. Inactive tags are hidden from
+     * customer-facing interfaces but preserved in historical product data.
+     *
+     * Active tags can be assigned to new products; inactive tags can only
+     * be referenced in existing product relationships.
+     */
+    is_active: boolean;
+  };
+}

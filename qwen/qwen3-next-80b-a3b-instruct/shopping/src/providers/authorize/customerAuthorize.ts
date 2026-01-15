@@ -16,11 +16,10 @@ export async function customerAuthorize(request: {
   }
 
   // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
+  // Query using foreign key relationship from customer_sessions to shopping_mall_customers
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
-      status: "active",
       deleted_at: null,
     },
   });

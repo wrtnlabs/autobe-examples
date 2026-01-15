@@ -15,18 +15,20 @@ export async function sellerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query directly against seller table since it's the primary identity model
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+  // seller_sessions table links to shopping_mall_sellers via seller_id
+  // payload.id contains top-level user ID from shopping_mall_sellers table
+  const sellerSession = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-      status: "active",
+      id: payload.session_id,
+      seller: {
+        id: payload.id,
+        deleted_at: null,
+      },
     },
   });
 
-  if (seller === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (sellerSession === null) {
+    throw new ForbiddenException("You're not enrolled or your account is inactive");
   }
 
   return payload;

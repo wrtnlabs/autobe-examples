@@ -1,0 +1,651 @@
+/// Stores definable attribute types for product variants (size, color,
+/// material, etc.) with validation rules and sortable order.
+///
+/// This table defines the taxonomy of variant attributes that can be applied
+/// to products across the catalog. Each row represents a distinct attribute
+/// type (e.g., 'Color', 'Size', 'Material') with associated characteristics
+/// that govern how values can be selected and validated.
+///
+/// Attribute types serve as templates for variant creation - they determine
+/// what kind of options can be assigned to product variants. For example, a
+/// 'Color' attribute type might require users to select from a predefined
+/// set of values, while a 'Memory Capacity' attribute type might accept
+/// numeric input with validation constraints.
+///
+/// The order_number field controls the display sequence of attribute types
+/// on product detail pages and during variant selection workflows.
+///
+/// The validator field contains JSON-formatted rules that specify
+/// constraints for attribute values (minimum/maximum values, allowed
+/// patterns, required formats), enabling dynamic UI validation for variant
+/// selection.
+///
+/// This table is managed exclusively by administrators and contains
+/// system-wide reference data that is referenced by all product variants in
+/// the system.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name for the attribute type (e.g., "Color", "Size",
+  /// "Material"). Must be human-readable and consistent across the system.
+  name String
+  
+  /// Detailed explanation of the attribute type's purpose, usage, and business
+  /// context. May describe expected value patterns or system-wide conventions.
+  description String?
+  
+  /// Data type category for values of this attribute (e.g., "select", "text",
+  /// "number", "boolean"). Determines UI input type and validation logic.
+  type String
+  
+  /// JSON-formatted validation rules for attribute values. May include
+  /// minimum/maximum values, allowed patterns, required formats, or allowed
+  /// value sets depending on type.
+  validator String?
+  
+  /// Integer sequence number that determines the display order of attribute
+  /// types on product pages and variant selection interfaces. Lower numbers
+  /// appear first.
+  order_number Int
+  
+  /// Timestamp when this attribute type was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this attribute type was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_variant_attribute_values shopping_mall_variant_attribute_values[]
+  
+  @@unique([name])
+  @@index([order_number])
+}
+
+/// Individual valid values for each product variant attribute type, ensuring
+/// consistency and preventing duplicates across products.
+///
+/// Each record represents a single possible value for a variant attribute
+/// (e.g., 'Red' for color, 'Large' for size, 'Cotton' for material). Values
+/// are strictly controlled by their parent attribute type to maintain data
+/// integrity across the product catalog. This table serves as the
+/// authoritative reference for available attribute values,
+/// ensuring that when customers filter products or select variant
+/// combinations, they only see valid, pre-approved options.
+///
+/// Values are managed through the variant_attributes system and are not
+/// directly created by end users. This prevents inconsistent or invalid
+/// attribute values from polluting the product catalog.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_attribute_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The variant attribute this value belongs to. {@link
+  /// shopping_mall_variant_attributes.id}.
+  shopping_mall_variant_attribute_id String
+  
+  /// The actual value of this attribute option (e.g., 'Red', 'Large',
+  /// 'Cotton'). Must be unique within its attribute type and contain only
+  /// alphanumeric characters, spaces, hyphens, and underscores.
+  value String
+  
+  /// Determines the sort order in which this attribute value appears in user
+  /// interfaces (e.g., product filters, variant selectors). Lower numbers
+  /// appear first.
+  display_order Int
+  
+  /// Timestamp when this attribute value was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this attribute value was last modified.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp marking when this attribute value was deactivated.
+  /// Null means active. Used for audit trail and potential reactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variantAttribute shopping_mall_variant_attributes @relation(fields: [shopping_mall_variant_attribute_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_variant_compatibility_of_subject_attribu_ef397b36 shopping_mall_variant_compatibility[] @relation("shopping_mall_variant_compatibility_of_subject_attribu_ef397b36")
+  shopping_mall_variant_compatibility_of_object_attribut_664f8f74 shopping_mall_variant_compatibility[] @relation("shopping_mall_variant_compatibility_of_object_attribut_664f8f74")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_variant_attribute_id, value], map: "shopping_mall_variant_attribute_values_shopping_mall_v_77b4b531")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_variant_attribute_id, display_order], map: "shopping_mall_variant_attribute_values_shopping_mall_v_dc7e323b")
+  @@index([deleted_at])
+}
+
+/// Represents each unique product variant as an independent entity with its
+/// own SKU, pricing, and inventory state.
+///
+/// This table stores the core variant identity without storing attribute
+/// relationships directly. Each variant represents a complete product
+/// configuration that customers can select and purchase. Attributes are
+/// managed separately via variant_attribute_combinations, enabling support
+/// for multiple attribute selections (e.g., Size: Large AND Color: Blue AND
+/// Material: Cotton) that are essential for modern e-commerce catalogs.
+///
+/// Variant combinations are formed dynamically through references to
+/// variant_attribute_combinations, which maintain the many-to-many
+/// relationship between product variants and their attribute values. This
+/// separation follows 3NF normalization by decoupling variant definition
+/// from attribute selection.
+///
+/// The variant is a primary entity requiring independent API access:
+/// customers select variants directly, add them to cart, and checkout with
+/// individual variant selections. Each variant must be uniquely
+/// identifiable, queryable outside context of parent product, and support
+/// individual inventory and pricing management.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this variant belongs to. {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Timestamp when this variant combination was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this variant combination was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this variant combination was logically deleted (soft
+  /// delete), or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variant_attributes shopping_mall_product_variant_attributes[]
+  shopping_mall_product_variant_inventory shopping_mall_product_variant_inventory?
+  shopping_mall_product_variant_pricing shopping_mall_product_variant_pricing?
+  shopping_mall_variant_skus shopping_mall_variant_skus?
+  shopping_mall_variant_inventory shopping_mall_variant_inventory?
+  shopping_mall_variant_pricing shopping_mall_variant_pricing?
+  shopping_mall_variant_templates shopping_mall_variant_templates[]
+  shopping_mall_variant_audit_logs shopping_mall_variant_audit_logs[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([product_id])
+}
+
+/// Stores generated SKUs for product variants with encoding rules for
+/// human-readable identification.
+///
+/// Each SKU is a unique identifier automatically generated by the system for
+/// a specific combination of product attributes. SKU values follow
+/// consistent encoding patterns to be readable and searchable, linking
+/// directly to a single product variant.
+///
+/// This table is subsidiary because SKUs are system-generated and never
+/// managed independently by users - they are always accessed through their
+/// parent product_variants record. The system generates SKUs once when a
+/// variant is created and never modifies them, ensuring stability in
+/// inventory records and external systems that reference them.
+///
+/// The encoding rules used to construct each SKU are now normalized into a
+/// separate encoding_rules table, referenced by ID to avoid duplication and
+/// ensure consistent encoding logic across all SKUs.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the product variant this SKU is generated for. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The unique stock keeping unit (SKU) generated for this product variant,
+  /// formatted according to the referenced encoding rule. This field must be
+  /// globally unique across all product variants.
+  sku String
+  
+  /// Timestamp when this SKU was generated and registered in the system.
+  /// Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this record. Used for audit purposes and
+  /// cache invalidation, though SKU content never changes after creation.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_variant_skus_shopping_mall_product_varia_fb0e0344")
+  
+  @@unique([sku])
+}
+
+/// Tracks real-time inventory count per variant SKU with state machines for
+/// available, low stock, out of stock, and backordered conditions.
+///
+/// Maintains current stock levels for each product variant (SKU) with status
+/// indicators for inventory management workflows. The inventory state is
+/// updated automatically when orders are placed, cancelled, or returned, and
+/// when stock adjustments are made by administrators.
+///
+/// Each record is uniquely tied to a product variant and tracks the current
+/// quantity available for sale along with its status. This table supports
+/// the real-time display of inventory status on product pages through the
+/// variant_availability table and the automated triggering of low-stock
+/// alerts to inventory managers.
+///
+/// Inventory changes are audited in shopping_mall_variant_audit_logs, so
+/// this table stores only the current state as a performance optimization.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the product variant this inventory record belongs to. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variants_id String
+  
+  /// Current stock quantity for this variant. Must be a non-negative integer
+  /// reflecting available items. Negative values indicate backordered items
+  /// beyond on-hand inventory.
+  quantity Int
+  
+  /// Current inventory state with controlled values: 'available' (in stock),
+  /// 'low' (below reorder threshold), 'out_of_stock' (zero quantity),
+  /// 'backordered' (negative quantity meaning customer orders exceed on-hand
+  /// inventory).
+  status String
+  
+  /// Timestamp when this inventory record was initially created. Records the
+  /// moment inventory tracking was activated for this variant.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated. Updated
+  /// automatically whenever quantity or status changes due to sales, returns,
+  /// or manual adjustments.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variants_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_variant_availability shopping_mall_variant_availability?
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variants_id], map: "shopping_mall_variant_inventory_shopping_mall_product__48652f9c")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variants_id], map: "shopping_mall_variant_inventory_shopping_mall_product__a3a41049")
+}
+
+/// Manages variant-specific pricing independent of base product prices,
+/// including overrides, discounts, and zero-price out-of-stock flags.
+///
+/// Each variant can have its own price that overrides the parent product's
+/// base price. This enables dynamic pricing strategies such as seasonal
+/// discounts, promotional pricing, or out-of-stock status indication. Price
+/// changes are tracked with full audit capability through the associated
+/// audit log system.
+///
+/// The pricing system supports both positive prices for available variants
+/// and zero-price flags for out-of-stock variants, providing a unified
+/// pricing model that can handle all inventory states. Pricing data is
+/// updated in real-time as inventory changes or promotions are applied.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_pricing {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant this pricing applies to. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The current price of this product variant. Positive values indicate
+  /// available price, zero value indicates out-of-stock status
+  /// (is_out_of_stock = true). Prices are stored in USD with exactly two
+  /// decimal places.
+  price Float
+  
+  /// The original price before any discount was applied. Used for calculating
+  /// discount percentages and showing 'was' pricing in UI. Null when no
+  /// discount has been applied.
+  original_price Float?
+  
+  /// The percentage discount applied to the original price. Used for
+  /// promotional pricing calculations. Null when no discount is active. Value
+  /// between 0.0 and 100.0 representing percentage.
+  discount_percentage Float?
+  
+  /// Human-readable reason for the price change, stored for audit trail
+  /// purposes. Examples: 'Seasonal promotion', 'Inventory clearance',
+  /// 'Supplier price change', 'Manual adjustment by admin'.
+  price_change_reason String?
+  
+  /// Timestamp when this pricing record was created. Used for audit trail and
+  /// chronological ordering of pricing changes.
+  created_at DateTime
+  
+  /// Timestamp when this pricing record was last updated. Used for tracking
+  /// when pricing changes occurred and for conflict resolution.
+  updated_at DateTime
+  
+  /// Timestamp when this pricing record was logically deleted. Implements soft
+  /// delete for audit trail preservation. Null indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_variant_pricing_shopping_mall_product_va_5fd9bf10")
+  @@index([price])
+}
+
+/// Defines dynamic compatibility rules between product variant attribute
+/// combinations to disable unattainable selections in the UI.
+///
+/// Manages business rules that determine which combinations of attribute
+/// values are permitted or prohibited when customers interact with product
+/// variations. These rules prevent customers from selecting variant
+/// combinations that are unavailable due to inventory constraints or
+/// technical incompatibilities, improving user experience and preventing
+/// invalid orders.
+///
+/// Each rule explicitly links a source attribute value with a target
+/// attribute value that must be excluded when the source is selected. For
+/// example: if color=red is selected, then size=large may be disabled if
+/// inventory for red+large is unavailable.
+///
+/// This table enables real-time UI feedback during product configuration,
+/// reducing cart abandonment and support inquiries from frustrated customers
+/// trying to select impossible combinations.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_compatibility {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The attribute value that triggers the compatibility rule. {@link
+  /// shopping_mall_variant_attribute_values.id}.
+  subject_attribute_value_id String
+  
+  /// The attribute value that is forbidden when the subject value is selected.
+  /// {@link shopping_mall_variant_attribute_values.id}.
+  object_attribute_value_id String
+  
+  /// Timestamp when the compatibility rule was created.
+  created_at DateTime
+  
+  /// Timestamp when the compatibility rule was last updated.
+  updated_at DateTime
+  
+  /// Whether this compatibility rule is active and enforced in the UI. When
+  /// false, the rule is ignored during product configuration, allowing
+  /// previously blocked combinations. This enables temporary rule disablement
+  /// without deletion for testing or emergency overrides.
+  is_active Boolean
+  
+  /// Optional administrative notes explaining the business rationale for this
+  /// compatibility rule (e.g., "Inventory sold out for this combination",
+  /// "Technical incompatibility between materials")
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  subjectAttributeValue shopping_mall_variant_attribute_values @relation("shopping_mall_variant_compatibility_of_subject_attribu_ef397b36", fields: [subject_attribute_value_id], references: [id], onDelete: Cascade)
+  objectAttributeValue shopping_mall_variant_attribute_values @relation("shopping_mall_variant_compatibility_of_object_attribut_664f8f74", fields: [object_attribute_value_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([subject_attribute_value_id, object_attribute_value_id], map: "shopping_mall_variant_compatibility_subject_attribute__6746905f")
+  // spellchecker: ignore-next-line
+  @@index([subject_attribute_value_id, is_active], map: "shopping_mall_variant_compatibility_subject_attribute__b68d0c49")
+  // spellchecker: ignore-next-line
+  @@index([object_attribute_value_id, is_active], map: "shopping_mall_variant_compatibility_object_attribute_v_38fdc329")
+  @@index([created_at])
+  @@index([is_active])
+}
+
+/// Presets of attribute combinations for commonly used products to
+/// accelerate variant creation for administrators with predefined templates.
+///
+/// Stores reusable combinations of variant attributes (size, color,
+/// material, etc.) as templates that administrators can apply to new
+/// products, reducing manual configuration time. Each template references a
+/// specific product variant combination and includes metadata for
+/// identification and organization.
+///
+/// Templates are never exposed to end customers but are used exclusively by
+/// admin users during product onboarding. They maintain no direct
+/// relationship with inventory or pricing - those are derived from the
+/// referenced product variant when the template is applied.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant this template represents. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Human-readable name for this template (e.g., 'Standard T-Shirt Sizes',
+  /// 'Premium Laptop Configurations').
+  name String
+  
+  /// Detailed description of what this template includes and when it should be
+  /// used, for administrative clarity.
+  description String?
+  
+  /// Timestamp when this template was created.
+  created_at DateTime
+  
+  /// Timestamp when this template was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp - when this template was archived. Null if active.
+  deleted_at DateTime?
+  
+  /// Reference to the admin user who created this template. This references
+  /// shopping_mall_admin.id from the Admin component.
+  created_by_admin_id String
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_variant_templates_shopping_mall_product__b498fbc3")
+  
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([created_by_admin_id, created_at], map: "shopping_mall_variant_templates_created_by_admin_id_cr_fcd99564")
+  @@index([deleted_at])
+}
+
+/// Tracks real-time variant availability status (green/yellow/red/gray)
+/// displayed to users on product pages, updated immediately after inventory
+/// changes.
+///
+/// This table provides a denormalized status indicator for customer-facing
+/// display purposes. The availability status (red, yellow, green, gray) is
+/// automatically calculated from the corresponding
+/// shopping_mall_variant_inventory record, avoiding complex real-time
+/// calculations during product page rendering.
+///
+/// Each record corresponds exactly to one product variant's inventory state
+/// and is updated in real-time whenever inventory changes occur. The system
+/// uses this table for high-performance display of availability status on
+/// product pages without requiring joins or calculations during customer
+/// browsing.
+///
+/// Note: This is a subsidiary table that is entirely maintained by system
+/// processes responding to inventory changes in
+/// shopping_mall_variant_inventory.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_availability {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the variant inventory record from which this availability
+  /// status is calculated. {@link shopping_mall_variant_inventory.id}.
+  shopping_mall_variant_inventory_id String
+  
+  /// Current availability status displayed to users. Valid values: 'green' (in
+  /// stock), 'yellow' (low stock), 'red' (out of stock), 'gray'
+  /// (unavailable/discontinued).
+  status String
+  
+  /// Timestamp when this availability status record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this availability status was last updated in response to
+  /// inventory changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_variant_inventory @relation(fields: [shopping_mall_variant_inventory_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_variant_inventory_id], map: "shopping_mall_variant_availability_shopping_mall_varia_39ccb1fc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_variant_inventory_id, status], map: "shopping_mall_variant_availability_shopping_mall_varia_f0cc9e46")
+}
+
+/// Immutable audit trail recording all changes to product variants,
+/// including inventory, pricing, and attribute modifications.
+///
+/// Captures comprehensive historical data about every modification made to
+/// variants, including who made the change, what property was changed, the
+/// previous and new values, and the type of change operation. Essential for
+/// compliance, debugging, and reconstruction of variant state over time.
+///
+/// Each audit record is immutable and created only when a change occurs. The
+/// table follows an append-only pattern where records are never updated or
+/// deleted. Soft delete capability is included for system-level purging
+/// while maintaining legal compliance requirements.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant that was modified. {@link
+  /// shopping_mall_product_variants.id}.
+  variant_id String
+  
+  /// Reference to the user who made the change (admin, seller, or customer).
+  /// {@link shopping_mall_admin.id} if admin, {@link shopping_mall_sellers.id}
+  /// if seller, {@link shopping_mall_customers.id} if customer. Nullable if
+  /// system-triggered change.
+  user_id String?
+  
+  /// The specific field that was modified (e.g., 'inventory_count', 'price',
+  /// 'attribute_values').
+  field_name String
+  
+  /// Type of change operation performed: 'create', 'update', or 'delete'.
+  change_type String
+  
+  /// JSON string representation of the property's value before the change.
+  /// Null for create operations.
+  old_value String?
+  
+  /// JSON string representation of the property's value after the change. Null
+  /// for delete operations.
+  new_value String?
+  
+  /// Optional human-provided reason for the change, such as 'Price adjustment
+  /// for sale', 'Corrected inventory count', or 'Removed discontinued
+  /// variant'.
+  change_reason String?
+  
+  /// Timestamp when the audit record was created, representing when the change
+  /// occurred.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this audit record (though records are
+  /// immutable, this field is kept for system consistency).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for system-level purging while maintaining
+  /// compliance requirements (GDPR, CCPA, tax jurisdiction retention laws).
+  /// Records are logically deleted but physically maintained to support audit
+  /// and legal requirements. This field is null for active records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  user shopping_mall_admin? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([variant_id, created_at])
+  @@index([user_id, created_at])
+  @@index([change_type, created_at])
+}

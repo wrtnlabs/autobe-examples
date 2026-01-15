@@ -1,0 +1,887 @@
+/// Admin user accounts with credentials, permissions, and authentication
+/// metadata.
+///
+/// Represents platform administrators with full system control and
+/// moderation privileges across the entire shopping_mall ecosystem. This
+/// entity serves as the authoritative source for administrative access,
+/// enabling secure management of users, products, orders, configurations,
+/// and system policies.
+///
+/// Each admin account is linked to a dedicated session table for
+/// authentication tracking and security auditing. Admin accounts have the
+/// highest privilege level and can perform any operation within the system,
+/// including modifying other admins' permissions. Access is strictly
+/// controlled through authentication and authorization mechanisms.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin email address used for authentication and communication. Must be
+  /// unique across all admin accounts.
+  email String
+  
+  /// Cryptographic hash of the admin's password for secure authentication.
+  /// Never stored in plain text.
+  password_hash String
+  
+  /// Timestamp when the admin account was created. Used for auditing and
+  /// compliance tracking.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated. Used for tracking
+  /// changes to admin metadata.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was logically deleted. Supports soft
+  /// deletion for audit trails while maintaining referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_variant_audit_logs shopping_mall_variant_audit_logs[]
+  shopping_mall_audit_logs shopping_mall_audit_logs[]
+  shopping_mall_compliance_records shopping_mall_compliance_records[]
+  shopping_mall_config_history shopping_mall_config_history[]
+  shopping_mall_data_exports shopping_mall_data_exports[]
+  shopping_mall_monitoring_alerts shopping_mall_monitoring_alerts[]
+  shopping_mall_user_flags shopping_mall_user_flags[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Immutable audit logs recording all administrative actions, including
+/// actor, timestamp, IP, and change details.
+///
+/// Stores a comprehensive and tamper-proof history of all operations
+/// performed by platform administrators. Each log entry captures what action
+/// was taken, which admin performed it, what record was affected, and from
+/// which IP address the action originated. This table serves as the primary
+/// audit trail for compliance, security investigations, and operational
+/// transparency.
+///
+/// Logs are immutable - once created, they are never modified or deleted
+/// (though they may be logically soft-deleted to maintain audit integrity).
+/// The description field captures rich context about the action performed,
+/// enabling forensic analysis and regulatory reporting.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The admin user who performed the audited action. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Type of administrative action performed. Standardized values include:
+  /// create, update, delete, activate, deactivate, modify, approve, reject,
+  /// reset, export, configure, alert. Used for categorization and automated
+  /// alerting.
+  action_type String
+  
+  /// Detailed textual description of the administrative action and its
+  /// context. May include specific values changed, affected record
+  /// identifiers, and reason for the action. Used for forensic analysis and
+  /// compliance reporting.
+  description String
+  
+  /// Name of the database table that was affected by this administrative
+  /// action (e.g., 'shopping_mall_users', 'shopping_mall_products',
+  /// 'shopping_mall_platform_configurations'). Enables quick identification of
+  /// impacted entities.
+  affected_table_name String
+  
+  /// Primary key identifier of the specific record that was affected by this
+  /// administrative action, if applicable. Null when the action affects
+  /// multiple records or system-wide settings.
+  affected_record_id String?
+  
+  /// IP address from which the administrative action was initiated. Essential
+  /// for security monitoring, geolocation analysis, and detecting unauthorized
+  /// access patterns.
+  ip_address String
+  
+  /// Timestamp when this audit log entry was created. Always populated at the
+  /// moment the action occurred.
+  created_at DateTime
+  
+  /// Timestamp when this audit log entry was logically soft-deleted. Used to
+  /// maintain audit trail integrity while allowing compliance with data
+  /// retention policies and regulatory requirements.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([admin_id, created_at])
+  @@index([action_type, created_at])
+  @@index([affected_table_name, created_at])
+}
+
+/// Platform-wide configuration settings including branding, payment,
+/// shipping, and security parameters.
+///
+/// Stores core operational parameters that control system-wide behavior
+/// across all components including customer experience, payment processing,
+/// shipping integrations, and administrative security policies. This entity
+/// represents the master configuration for the entire e-commerce platform
+/// and is managed exclusively through the admin dashboard by platform
+/// administrators.
+///
+/// Configuration values override default system behaviors and are loaded at
+/// runtime by all services. Changes to this configuration are tracked in the
+/// shopping_mall_config_history table to maintain audit trails and support
+/// rollback capabilities. This table does not store historical versions but
+/// rather the current active configuration state.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platform_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary brand name displayed throughout the platform. Used in headers,
+  /// emails, and UI elements. Must reflect the official company brand
+  /// identity.
+  branding_title String
+  
+  /// HTTP/HTTPS URL pointing to the platform's primary logo image. Used in UI
+  /// headers and email templates. Must be a publicly accessible, properly
+  /// formatted URI.
+  branding_logo_url String?
+  
+  /// Primary payment gateway identifier (e.g., 'stripe', 'paypal',
+  /// 'razorpay'). Determines the default payment processing provider for all
+  /// transactions when not overridden per region or method.
+  payment_gateway_primary String
+  
+  /// Secondary payment gateway identifier for failover purposes. Used when
+  /// primary gateway is unavailable. Must be a valid identifier from supported
+  /// payment providers.
+  payment_gateway_secondary String?
+  
+  /// Primary shipping carrier identifier (e.g., 'fedex', 'ups', 'dhl',
+  /// 'usps'). Used for default shipping method selection and rate calculation
+  /// when no specific carrier is chosen by the customer.
+  shipping_carrier_primary String
+  
+  /// Secondary shipping carrier identifier for fallback purposes. Used when
+  /// the primary carrier is unavailable or has service disruptions.
+  shipping_carrier_secondary String?
+  
+  /// Base currency code (ISO 4217) used for all financial transactions on the
+  /// platform. Common values: USD, EUR, GBP, JPY. All monetary values are
+  /// stored in this currency unless overridden by multi-currency support.
+  currency_code String
+  
+  /// Method for calculating sales tax: 'origin', 'destination',
+  /// 'business_address'. Determines whether tax is calculated based on seller
+  /// location, customer location, or registered business location.
+  tax_calculation_strategy String
+  
+  /// Domain used as the sender domain for all platform emails (e.g.,
+  /// 'notifications.shoppingmallsystem.com'). Must be DNS-verified and
+  /// configured with correct SPF/DKIM records for deliverability.
+  email_sender_domain String
+  
+  /// Default language and region locale for users who haven't set preferences.
+  /// Format: ISO 639-1 language code plus ISO 3166-1 alpha-2 country code
+  /// (e.g., 'en-US', 'ja-JP').
+  default_locale String
+  
+  /// Maximum session duration in minutes for all user types (customers,
+  /// sellers, admins) before requiring re-authentication. Enforces security
+  /// policy for session management.
+  max_session_duration_minutes Int
+  
+  /// Inactivity timeout period in minutes after which user sessions are
+  /// automatically expired. Applies to all actor types regardless of session
+  /// type.
+  session_inactivity_timeout_minutes Int
+  
+  /// Minimum character length required for passwords across all user types.
+  /// Enforces basic password strength standards.
+  password_complexity_min_length Int
+  
+  /// Indicates whether passwords must contain at least one uppercase letter.
+  /// Part of password complexity rules enforced during registration and
+  /// password changes.
+  password_complexity_require_uppercase Boolean
+  
+  /// Indicates whether passwords must contain at least one lowercase letter.
+  /// Part of password complexity rules enforced during registration and
+  /// password changes.
+  password_complexity_require_lowercase Boolean
+  
+  /// Indicates whether passwords must contain at least one numeric digit. Part
+  /// of password complexity rules enforced during registration and password
+  /// changes.
+  password_complexity_require_numbers Boolean
+  
+  /// Indicates whether passwords must contain at least one special symbol
+  /// (e.g., !@#$%^&*). Part of password complexity rules enforced during
+  /// registration and password changes.
+  password_complexity_require_symbols Boolean
+  
+  /// Maximum number of failed login attempts allowed before account locking
+  /// mechanism activates. Prevents brute force attacks on user credentials.
+  login_failed_attempts_threshold Int
+  
+  /// Duration in minutes that an account remains locked after exceeding the
+  /// failed login attempts threshold. Provides temporary protection against
+  /// automated attacks.
+  login_lockout_duration_minutes Int
+  
+  /// Enables or disables automated IP blocking system that detects and blocks
+  /// malicious or suspicious IP addresses based on behavior patterns.
+  ip_blocking_enabled Boolean
+  
+  /// Enables or disables real-time fraud detection system that analyzes
+  /// transaction patterns, shipping addresses, and device fingerprints for
+  /// potential fraudulent activity.
+  fraud_detection_enabled Boolean
+  
+  /// Requires all new customers and sellers to verify their email address
+  /// before their accounts can be fully activated and utilized for
+  /// transactions.
+  email_verification_required Boolean
+  
+  /// Enables or disables the product search functionality across all
+  /// storefronts. When disabled, product discovery is limited to category
+  /// browsing.
+  product_search_enabled Boolean
+  
+  /// Controls whether customers can submit product reviews. When disabled, all
+  /// review submission features are hidden and disabled throughout the
+  /// platform.
+  review_submissions_enabled Boolean
+  
+  /// Timestamp when this configuration record was created. Immutable record of
+  /// when the current configuration set became active.
+  created_at DateTime
+  
+  /// Timestamp when this configuration record was last modified. Updated
+  /// automatically whenever any configuration field changes.
+  updated_at DateTime
+  
+  /// Optional soft delete timestamp for audit purposes. When non-null,
+  /// indicates this configuration set has been retired and is no longer
+  /// active. Never deleted permanently.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_config_history shopping_mall_config_history[]
+  
+  @@unique([branding_title])
+  // spellchecker: ignore-next-line
+  @@unique([payment_gateway_primary], map: "shopping_mall_platform_configurations_payment_gateway__bf2fb2d8")
+  // spellchecker: ignore-next-line
+  @@unique([shipping_carrier_primary], map: "shopping_mall_platform_configurations_shipping_carrier_229d3087")
+  @@unique([currency_code])
+  @@unique([email_sender_domain])
+  @@unique([default_locale])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([payment_gateway_primary, payment_gateway_secondary], map: "shopping_mall_platform_configurations_payment_gateway__b7fda005")
+  // spellchecker: ignore-next-line
+  @@index([shipping_carrier_primary, shipping_carrier_secondary], map: "shopping_mall_platform_configurations_shipping_carrier_f3330740")
+  // spellchecker: ignore-next-line
+  @@index([password_complexity_min_length, password_complexity_require_uppercase, password_complexity_require_lowercase, password_complexity_require_numbers, password_complexity_require_symbols], map: "shopping_mall_platform_configurations_password_complex_b58d7cc1")
+  // spellchecker: ignore-next-line
+  @@index([login_failed_attempts_threshold, login_lockout_duration_minutes], map: "shopping_mall_platform_configurations_login_failed_att_f1c37840")
+}
+
+/// Email templates for administrative, customer, and seller notifications
+/// with customizable content and trigger configurations.
+///
+/// Stores predefined email message templates used by the platform to send
+/// automated notifications to users. These templates include subject lines
+/// and body content that can be dynamically populated with user-specific
+/// data. Admins can create, edit, and enable/disable templates for various
+/// business scenarios such as order confirmations, password resets, policy
+/// updates, and system alerts.
+///
+/// Templates are version-controlled through the platform's configuration
+/// history system. The template content is separate from actual sent email
+/// records to allow for template modifications without affecting historical
+/// communications. Each template has a unique name used to reference it
+/// programmatically.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_email_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the template used in code and configuration. Must
+  /// be machine-readable and unique across all templates.
+  name String
+  
+  /// The email subject line that will be used. May contain placeholders for
+  /// dynamic content such as {{user_name}} or {{order_id}}.
+  subject String
+  
+  /// The complete HTML content of the email template. Supports dynamic
+  /// placeholders that will be replaced with actual values when the email is
+  /// sent.
+  body String
+  
+  /// The business event that triggers this template to be sent. Examples:
+  /// 'order_confirmation', 'password_reset', 'new_product_alert',
+  /// 'policy_update'.
+  trigger String
+  
+  /// The intended recipient category for this template. Values: 'admin',
+  /// 'customer', 'seller'. Determines which users should receive this
+  /// notification.
+  context String
+  
+  /// Timestamp when this email template was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this email template was last modified.
+  updated_at DateTime
+  
+  /// Timestamp marking when this template was logically deleted. Null
+  /// indicates the template is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@unique([trigger, context])
+  @@index([trigger])
+  @@index([context])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Platform-wide security policies governing admin login and session behavior.
+///
+/// Defines mandatory rules for password complexity, authentication session
+/// duration, and IP access restrictions for all administrators. These
+/// policies are enforced system-wide and managed independently by senior
+/// administrators.
+///
+/// The policy record is versioned to maintain audit history of security
+/// changes. When updated, the new policy replaces the previous active
+/// version, while old versions are preserved for compliance audits. The
+/// policy can be disabled by setting deleted_at, but never deleted
+/// permanently to preserve audit trail.
+///
+/// This table does not store admin credentials - those reside in
+/// shopping_mall_admin. This table defines the security rules those
+/// credentials must meet and how sessions behave.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_security_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Required password complexity pattern using regex (e.g.,
+  /// '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{12,}
+  /// '). Enforces mandatory character types and minimum length.
+  password_complexity String
+  
+  /// Minimum number of characters required in admin passwords. Must be at
+  /// least 12 according to enterprise security standards.
+  min_password_length Int
+  
+  /// Maximum age in days before admin passwords expire and must be changed.
+  /// Enforces regular credential rotation for security.
+  max_password_age Int
+  
+  /// Duration in minutes of inactivity after which admin sessions will expire
+  /// and require re-authentication. Applies to all admin sessions.
+  session_timeout_minutes Int
+  
+  /// Comma-separated list of allowed IP addresses or CIDR ranges (e.g.,
+  /// '192.168.1.0/24, 203.0.113.10'). Admins can only log in from these IPs if
+  /// list is defined.
+  ip_allow_list String?
+  
+  /// Comma-separated list of denied IP addresses or CIDR ranges (e.g.,
+  /// '192.0.2.1, 203.0.113.0/24'). Admins are blocked from logging in from
+  /// these IPs.
+  ip_deny_list String?
+  
+  /// Sequential version number for policy changes. Higher numbers indicate
+  /// newer policies. Used to identify the currently active security policy.
+  version Int
+  
+  /// Flag indicating whether this policy version is currently active and
+  /// enforced. Only one policy can be active at a time.
+  is_active Boolean
+  
+  /// Timestamp when this security policy version was created and initialized.
+  created_at DateTime
+  
+  /// Timestamp when this security policy version was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this policy version was logically deleted (soft delete).
+  /// Used to maintain audit history without permanent removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([version])
+  @@unique([is_active, version])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  @@index([version, created_at])
+  @@index([is_active, created_at])
+}
+
+/// Immutable audit trail of regulatory compliance documentation for GDPR,
+/// CCPA, and tax jurisdiction requirements.
+///
+/// Records all compliance-related documentation timestamps, jurisdiction
+/// codes, and administrative verification details. Each record represents a
+/// point-in-time snapshot of regulatory compliance status at the moment an
+/// admin or system process confirms adherence to specific legal frameworks.
+///
+/// This table is append-only and never modified after creation. Deleted
+/// records maintain their data with deleted_at timestamps to ensure complete
+/// auditability for regulators. The table serves as legal evidence of
+/// compliance and must preserve historical accuracy regardless of subsequent
+/// system changes.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_compliance_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrative user who verified or recorded this compliance
+  /// document. {@link shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Regulatory jurisdiction code (e.g., 'GDPR-EU', 'CCPA-CA', 'Tax-GB')
+  /// identifying the compliance standard being documented.
+  jurisdiction String
+  
+  /// Type of compliance document (e.g., 'Data Processing Agreement', 'Privacy
+  /// Policy', 'Tax Registration Certificate').
+  document_type String
+  
+  /// Unique identifier or file reference for the compliance document (e.g.,
+  /// 'DOC-2026-001', 'GDPR-2026-ABCD').
+  document_reference String
+  
+  /// The date and time from which this compliance record is legally effective.
+  effective_from DateTime
+  
+  /// The date and time until which this compliance record remains valid (null
+  /// if perpetual).
+  effective_to DateTime?
+  
+  /// URL to the stored document or digital certificate in the secure
+  /// compliance vault.
+  document_url String?
+  
+  /// Detailed explanation provided by the admin or system regarding how this
+  /// record demonstrates compliance with the specified jurisdiction.
+  justification String
+  
+  /// Timestamp when this compliance record was first created and recorded in
+  /// the system.
+  created_at DateTime
+  
+  /// Timestamp when this compliance record was last updated (only for
+  /// metadata, never for document content).
+  updated_at DateTime
+  
+  /// Timestamp when this record was marked as deleted (soft delete) for audit
+  /// trail purposes. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([document_reference])
+  // spellchecker: ignore-next-line
+  @@unique([jurisdiction, document_type, effective_from, deleted_at], map: "shopping_mall_compliance_records_jurisdiction_document_35e269b9")
+  @@index([admin_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([jurisdiction, effective_from], map: "shopping_mall_compliance_records_jurisdiction_effectiv_a0dee880")
+  @@index([effective_to, deleted_at])
+}
+
+/// Historical snapshots of platform configuration changes for audit and
+/// rollback purposes.
+///
+/// Records point-in-time states of platform-wide settings whenever changes
+/// are made by administrators. Each entry captures the previous and current
+/// values of a configuration along with metadata about the changer and
+/// timestamp. This enables full audit trails, rollback capabilities, and
+/// historical analysis of configuration evolution.
+///
+/// Used to track system-wide changes including branding, payment, shipping,
+/// security parameters, and other platform configurations. The table follows
+/// append-only pattern with no updates to existing records - new snapshots
+/// are created for each configuration modification.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_config_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration being modified. {@link
+  /// shopping_mall_platform_configurations.id}.
+  platform_configuration_id String
+  
+  /// Admin who made the configuration change. {@link shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Type of change performed: 'created', 'updated', or 'deleted'.
+  change_type String
+  
+  /// JSON string representation of configuration values before the change.
+  /// Null for 'created' changes.
+  old_value String?
+  
+  /// JSON string representation of configuration values after the change. Null
+  /// only for 'deleted' changes.
+  new_value String
+  
+  /// Human-readable description of the change reason or context provided by
+  /// the administrator.
+  description String
+  
+  /// Timestamp when this configuration snapshot was created. Never updated -
+  /// immutable record of change time.
+  created_at DateTime
+  
+  /// Soft delete flag for compliance with audit trail requirements. Null
+  /// indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformConfiguration shopping_mall_platform_configurations @relation(fields: [platform_configuration_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([platform_configuration_id, created_at], map: "shopping_mall_config_history_platform_configuration_id_c2da48bf")
+  @@index([admin_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Admin-initiated data export requests for compliance, reporting, or
+/// migration purposes.
+///
+/// Tracks requests made by administrators to export system data in specified
+/// formats with filters and preferences. Each record represents a single
+/// export job lifecycle from initiation to delivery. Export data is not
+/// stored directly in this table but referenced via file paths or URLs.
+///
+/// Exports are triggered for compliance audits, data migration, analytics
+/// reporting, or system backups. Administrators must specify format (CSV,
+/// JSON, Excel), selection filters, and delivery method. System generates
+/// the export asynchronously and records the outcome.
+///
+/// Export jobs may fail due to resource constraints, invalid filters, or
+/// system errors. Successful exports are delivered via email attachment or
+/// secure S3 link with optional encryption for sensitive data.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_data_exports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin user who initiated this export request. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Additional JSON metadata about the export request (e.g., custom filters,
+  /// advanced options). Store as serialized JSON string.
+  request_metadata String?
+  
+  /// Target export format (CSV, JSON, Excel). Valid values: 'csv', 'json',
+  /// 'excel'.
+  format String
+  
+  /// Comma-separated list of fields requested for export (e.g.,
+  /// 'id,email,created_at,order_total').
+  requested_fields String?
+  
+  /// JSON string encoding filters applied to data (e.g., status='completed',
+  /// date_range='2024-01-01..2024-12-31').
+  filters String?
+  
+  /// Current status of the export request. Valid values: 'requested',
+  /// 'processing', 'completed', 'failed', 'delivered'.
+  status String
+  
+  /// Method used to deliver the exported file. Valid values: 'email', 's3',
+  /// 'download_url'.
+  delivery_method String
+  
+  /// Email address to which the exported file was sent (if
+  /// delivery_method='email').
+  email String?
+  
+  /// Full S3 filepath where the exported file is stored (if
+  /// delivery_method='s3').
+  file_path String?
+  
+  /// Temporary secure URL to download the exported file (if
+  /// delivery_method='download_url').
+  download_url String?
+  
+  /// Whether the exported file was encrypted for security purposes.
+  encrypted Boolean
+  
+  /// Reference ID for the encryption key used (if encrypted=true). Links to
+  /// key management system.
+  encryption_key_reference String?
+  
+  /// Timestamp when the file was encrypted (if encrypted=true).
+  encrypted_at DateTime?
+  
+  /// Timestamp when the export generation completed successfully.
+  completed_at DateTime?
+  
+  /// Timestamp when the export failed (if status='failed').
+  failed_at DateTime?
+  
+  /// Timestamp when the file was successfully delivered or made available for
+  /// download.
+  delivered_at DateTime?
+  
+  /// Detailed error message explaining why the export failed (if
+  /// status='failed').
+  error_message String?
+  
+  /// Timestamp when this export request was created.
+  created_at DateTime
+  
+  /// Timestamp when this export record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, used to mark records as logically deleted without
+  /// purging.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+  @@index([status, created_at])
+}
+
+/// System-generated alerts triggered by anomalies including inventory
+/// errors, fraud detection, and performance thresholds.
+///
+/// Tracks critical system events that require administrative attention,
+/// serving as a monitoring and alerting layer for platform governance.
+/// Alerts are immutable system-generated events that are consumed through
+/// administrative dashboards and reports, not user-managed entities.
+///
+/// Each alert includes type, severity, message, affected entity context, and
+/// timestamps for detection and resolution. The system automatically
+/// generates alerts based on predefined thresholds and anomaly detection
+/// rules, creating an audit trail for operational oversight and incident
+/// response.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_monitoring_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who resolved this alert, if applicable. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String?
+  
+  /// Category of the alert (e.g., 'low_inventory', 'fraud_attempt',
+  /// 'payment_timeout'). Must be one of predefined system alert types for
+  /// consistent categorization.
+  alert_type String
+  
+  /// Criticality level of the alert ('low', 'medium', 'high', 'critical').
+  /// Determines priority for administrative response and escalation paths.
+  severity String
+  
+  /// Detailed description of the alert including error codes, context, and
+  /// system-generated diagnostic information.
+  message String
+  
+  /// Type of system entity affected by the alert (e.g., 'product_variant',
+  /// 'order', 'payment', 'user', 'system').
+  entity_type String
+  
+  /// ID of the specific system entity affected by this alert, if applicable
+  /// (e.g., product_variant_id, order_id). {@link
+  /// shopping_mall_product_variants.id} or other relevant entity. Null when
+  /// alert is system-wide.
+  entity_id String?
+  
+  /// Timestamp when the alert was detected by monitoring systems. This
+  /// represents the moment the anomaly was identified.
+  detected_at DateTime
+  
+  /// Timestamp when the alert was resolved or acknowledged by an admin. Null
+  /// if still active. Indicates duration of alert exposure.
+  resolved_at DateTime?
+  
+  /// JSON string containing additional structured context about the alert
+  /// (e.g., thresholds breached, metrics values, system state). For
+  /// machine-readable details beyond the message field.
+  metadata String?
+  
+  /// Timestamp when this alert record was created in the database. Always
+  /// matches detected_at but represents database insertion time.
+  created_at DateTime
+  
+  /// Timestamp when this alert record was last updated (typically when
+  /// resolved). Used for change tracking and audit.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([alert_type, entity_type, entity_id, detected_at], map: "shopping_mall_monitoring_alerts_alert_type_entity_type_76314c63")
+  @@index([detected_at])
+  @@index([severity])
+  @@index([entity_type, entity_id])
+  @@index([resolved_at])
+}
+
+/// User activity flags raised by admin monitoring for suspicious behavior,
+/// duplicate accounts, and policy violations.
+///
+/// Tracks administrative flags on customer and seller accounts when systemic
+/// anomalies, policy violations, or potential fraud are detected. Each flag
+/// represents a potential security or compliance issue requiring review by
+/// platform administrators.
+///
+/// Flags are created manually by admins during monitoring activities or
+/// automatically by system alerts. They link to the specific user account
+/// being flagged and capture the reason, type, and current status of the
+/// flag. This table enables comprehensive monitoring, audit trails, and
+/// targeted investigations by the security team.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who created this flag. {@link shopping_mall_admin.id}.
+  flagged_by_admin_id String
+  
+  /// The customer account that was flagged. {@link shopping_mall_customers.id}.
+  flagged_customer_id String?
+  
+  /// The seller account that was flagged. {@link shopping_mall_sellers.id}.
+  flagged_seller_id String?
+  
+  /// Type of actor being flagged: 'customer' or 'seller'. Used to determine
+  /// which foreign key field contains the targeted entity.
+  actor_type String
+  
+  /// Category of the flag - e.g., 'duplicate_account', 'fraudulent_activity',
+  /// 'policy_violation', 'suspicious_behavior', 'inappropriate_content'.
+  flag_type String
+  
+  /// Detailed description of the flagged activity, including observations,
+  /// evidence, and context for investigation.
+  description String
+  
+  /// Current status of the flag: 'active', 'resolved', or 'cancelled'. Only
+  /// active flags are considered for operational purposes.
+  status String
+  
+  /// Timestamp when this flag was created by the admin.
+  created_at DateTime
+  
+  /// Timestamp when this flag was last updated (e.g., status change).
+  updated_at DateTime
+  
+  /// Timestamp when this flag was removed from active monitoring (soft
+  /// delete). If null, flag remains active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  flagger shopping_mall_admin @relation(fields: [flagged_by_admin_id], references: [id], onDelete: Cascade)
+  flaggedCustomer shopping_mall_customers? @relation(fields: [flagged_customer_id], references: [id], onDelete: Cascade)
+  flaggedSeller shopping_mall_sellers? @relation(fields: [flagged_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([flagged_customer_id, flag_type, status], map: "shopping_mall_user_flags_flagged_customer_id_flag_type_78e06267")
+  @@unique([flagged_seller_id, flag_type, status])
+  // spellchecker: ignore-next-line
+  @@unique([flagged_by_admin_id, flagged_customer_id, flag_type], map: "shopping_mall_user_flags_flagged_by_admin_id_flagged_c_83237aa2")
+  // spellchecker: ignore-next-line
+  @@unique([flagged_by_admin_id, flagged_seller_id, flag_type], map: "shopping_mall_user_flags_flagged_by_admin_id_flagged_s_e9822de4")
+  @@index([status, created_at])
+  @@index([actor_type, flag_type, status])
+  @@index([flagged_by_admin_id, created_at])
+  @@index([flagged_customer_id, created_at])
+  @@index([flagged_seller_id, created_at])
+  @@index([updated_at])
+}

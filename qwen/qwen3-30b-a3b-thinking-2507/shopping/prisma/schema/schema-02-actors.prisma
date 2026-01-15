@@ -1,0 +1,425 @@
+/// Core customer accounts with profile information and login credentials for
+/// shopping platform users.
+///
+/// Manages user authentication details, profile data, and account status.
+/// Each customer has a unique email address and securely hashed password for
+/// login. Supports soft deletion for account management without permanent
+/// data loss.
+///
+/// Email verification tokens are managed separately in a dedicated table to
+/// maintain clean separation of identity and session administration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address used for login and notifications. Must be unique
+  /// across all customers to ensure account uniqueness.
+  email String
+  
+  /// Securely hashed password using industry-standard algorithms. Never stores
+  /// plaintext passwords.
+  password_hash String
+  
+  /// Account creation timestamp. Always populated when account is created.
+  created_at DateTime
+  
+  /// Last updated timestamp for account modifications. Automatically updated
+  /// on any change to profile or security settings.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp indicating when account was marked for deletion
+  /// (not immediately removed).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
+  shopping_mall_login_attempts shopping_mall_login_attempts[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@unique([email])
+}
+
+/// Authentication sessions tracking valid login states and tokens for
+/// customer accounts. Each session is linked to a specific customer and
+/// includes connection context for audit and security purposes. Session
+/// tokens expire after configured intervals to maintain security. The table
+/// enables tracking login locations, sources, and session duration for
+/// security analysis and user activity monitoring.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's authentication session. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// IP address from which the session was established.
+  ip String
+  
+  /// Connection URL used for session establishment.
+  href String
+  
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires for security. Must be specified, no
+  /// unlimited sessions.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id, created_at])
+}
+
+/// Seller accounts for business entities listing and managing products on
+/// the platform.
+///
+/// Manages registered business accounts that can list products, manage their
+/// commerce storefronts, and handle product inventory. Each seller has a
+/// unique email with verification requirements to prevent fake accounts.
+///
+/// Sellers can independently access their account settings, product
+/// listings, and order management without dependency on other entity
+/// contexts. All seller accounts follow the authentication security policies
+/// including automatic account lockouts after failed login attempts.
+///
+/// Seller authentication requires password hashing following industry
+/// security standards, and account status tracks verification progress from
+/// registration through final approval.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business or company name of the seller, used for public display in
+  /// product listings and storefronts.
+  name String
+  
+  /// Seller's primary email address for account authentication and
+  /// communication. Must be globally unique across all sellers.
+  email String
+  
+  /// Securely hashed password for authentication. Never stores plaintext
+  /// credentials. Follows bcrypt standard for password security.
+  password_hash String
+  
+  /// Current verification status of the seller account. Valid values:
+  /// 'unverified', 'pending', 'active', 'suspended', 'banned'. Tracks
+  /// progression through the verification workflow.
+  status String
+  
+  /// Timestamp when the seller account was initially created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to seller account details or
+  /// status.
+  updated_at DateTime
+  
+  /// Timestamp indicating when the seller account was soft-deleted. Null
+  /// indicates active account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Authentication sessions tracking valid login states and tokens
+/// specifically for seller accounts.
+///
+/// This table stores all active sessions for seller users, including
+/// connection context and security-relevant metadata. Each session is
+/// authenticated through a corresponding seller account and requires
+/// explicit expiration to maintain security compliance.
+///
+/// Session data includes IP address, connection URL, and referrer for audit
+/// trails. It strictly follows the required session table pattern with no
+/// denormalized data or additional fields, supporting the platform's
+/// security policies around session management and account protection.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account this session belongs to. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// IP address of the device from which the session was started.
+  ip String
+  
+  /// Connection URL used to establish the client session.
+  href String
+  
+  /// Referrer URL that led to the session establishment.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires (enforced by system policy).
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+}
+
+/// Administrator accounts with elevated privileges for platform management
+/// and oversight.
+///
+/// Stores core admin account information including authentication
+/// credentials for secure login and access to platform management features.
+/// Requires email verification before session establishment and supports
+/// password reset functionality. Each admin account has a dedicated
+/// authentication session recorded in shopping_mall_admin_sessions table.
+///
+/// The administrator role allows full system control including user
+/// management, content moderation, and platform configuration access. Admin
+/// accounts are managed independently from customer and seller accounts with
+/// distinct permission levels.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email address used for authentication and system
+  /// notifications. Must be unique across all administrator accounts to ensure
+  /// proper login functionality.
+  email String
+  
+  /// Securely hashed password for administrator authentication. Must follow
+  /// security policies with strong hashing algorithms to prevent credential
+  /// exposure.
+  password_hash String
+  
+  /// Timestamp when the admin account was created. Used for audit trails and
+  /// determining account age.
+  created_at DateTime
+  
+  /// Timestamp when the admin account data was last modified. Tracks account
+  /// updates for security and audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was deleted (soft delete). Null means
+  /// account is active, otherwise represents termination date.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_admin_sessions shopping_mall_admin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Authentication sessions tracking valid login states and tokens for admin
+/// accounts.
+///
+/// Manages authentication sessions for administrator accounts, recording
+/// connection metadata including IP address, URL context, and session
+/// lifetimes. Each session is uniquely tied to one administrator account
+/// through the admin_id foreign key.
+///
+/// Session management enforces security policies by requiring session
+/// expiration (expired_at NOT NULL), preventing permanent sessions that
+/// could compromise platform security. The table captures essential audit
+/// information including connection source (referrer), URL path (href), and
+/// session creation timestamp.
+///
+/// This table follows the standardized session pattern established for all
+/// actor types (customers, sellers, admins) with consistent naming and field
+/// structure throughout the Actors component.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin account owner. {@link shopping_mall_admins.id}.
+  admin_id String
+  
+  /// IP address of the session connection.
+  ip String
+  
+  /// Connection URL for the session.
+  href String
+  
+  /// Referrer URL that led to this session.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp (required for platform security).
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}
+
+/// Tracks failed login attempts for security policy enforcement.
+///
+/// Records each authentication failure event including user context, IP
+/// address, and failure reason to enable the system's automatic account
+/// lockout policy after 5 consecutive failures within 15 minutes.
+///
+/// The table supports real-time security monitoring of authentication
+/// attempts and provides necessary data for forensic analysis of potential
+/// brute force attacks. Each login attempt record is timestamped for the
+/// 15-minute window requirement of the security policy.
+///
+/// Soft deletion preserves audit trails while allowing security operations
+/// to mark attempts as irrelevant without removing historical data.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_login_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account identifier for login attempts. {@link
+  /// shopping_mall_customers.id.}
+  user_id String?
+  
+  /// Source IP address of the failed login attempt.
+  ip_address String
+  
+  /// Reason for authentication failure (e.g., 'invalid password', 'account
+  /// locked').
+  failure_reason String
+  
+  /// Exact timestamp of the failed login attempt.
+  failed_at DateTime
+  
+  /// Date and time when the login attempt record was created.
+  created_at DateTime
+  
+  /// Date and time when the login attempt record was last modified.
+  updated_at DateTime
+  
+  /// Date and time when the login attempt record was deleted for audit
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, ip_address, failed_at])
+  @@index([user_id, failed_at])
+  @@index([ip_address, failed_at])
+}
+
+/// Email verification tokens for new account registration and account updates.
+///
+/// Stores one-time tokens used during email verification processes to
+/// confirm user-provided email addresses. Each token is associated with a
+/// specific email address and is valid until expiration or usage. Tokens are
+/// generated upon registration or email update requests, sent to the user,
+/// and consumed upon successful verification.
+///
+/// The verification process validates the token against the associated
+/// email, checks expiration time, and marks the token as used to prevent
+/// reuse. This table enables the system to securely link email verification
+/// with user identity without requiring persistent stored passwords during
+/// the registration flow.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_email_verification_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address associated with the verification token. Required for
+  /// identifying verification context.
+  email String
+  
+  /// One-time verification token generated for email confirmation. Must be
+  /// unique across all tokens.
+  token String
+  
+  /// Timestamp indicating when the token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Flag indicating if the token has been successfully used for email
+  /// verification.
+  is_used Boolean
+  
+  /// Timestamp when the verification token record was created.
+  created_at DateTime
+  
+  /// Timestamp when the verification token record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the verification token record was soft-deleted. Null
+  /// indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([token])
+  @@index([email])
+}

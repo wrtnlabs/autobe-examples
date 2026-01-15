@@ -5,52 +5,53 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallProduct } from "../../../structures/IShoppingMallProduct";
 import { IPageIShoppingMallProduct } from "../../../structures/IPageIShoppingMallProduct";
+export * as secondary_categories from "./secondary_categories/index";
+export * as attributes from "./attributes/index";
 export * as variants from "./variants/index";
+export * as reviews from "./reviews/index";
 export * as images from "./images/index";
 export * as tags from "./tags/index";
-export * as categories from "./categories/index";
+export * as questions from "./questions/index";
+export * as snapshots from "./snapshots/index";
+export * as skus from "./skus/index";
+export * as inventory from "./inventory/index";
+export * as pricing from "./pricing/index";
+export * as compatibilities from "./compatibilities/index";
+export * as templates from "./templates/index";
+export * as availabilities from "./availabilities/index";
+export * as enriched from "./enriched/index";
 
 /**
- * Retrieve a filtered, sorted, and paginated list of all products in the
- * shoppingMall platform.
+ * Retrieve a filtered and paginated list of product entities from the shopping
+ * mall catalog. This operation operates on the shopping_mall_products table
+ * from the database schema and provides advanced search capabilities for
+ * finding products based on multiple criteria including category, brand, price
+ * range, attribute values, and product tags. The response returns a paginated
+ * summary of products with core information optimized for display in product
+ * listings, while detailed product information can be retrieved via the
+ * /products/{productId} endpoint.
  *
- * This operation performs a complex search across the shopping_mall_products
- * table to return products based on dynamic criteria. It supports advanced
- * filtering by status, price range, category, seller, and search keywords.
- * Results are sorted by relevance, price, rating, or creation date and returned
- * in paginated form with configurable page size.
+ * The operation supports comprehensive pagination with configurable page sizes
+ * and sorting options. Products can be sorted by name, price, rating, creation
+ * date, or popularity metrics in ascending or descending order. Search
+ * parameters include category ID, brand ID, minimum/maximum price, product
+ * tags, and attribute value filters.
  *
- * The operation matches products by partial name match, category similarity,
- * and seller association. It excludes archived products unless specifically
- * requested. Products are ordered by a combination of sales volume, popularity,
- * and freshness.
+ * Security considerations include rate limiting for search operations and
+ * appropriate filtering of sensitive product information based on the
+ * requesting user's authorization level. All products are publicly accessible
+ * to guest users, but advanced filtering features may be restricted to
+ * authenticated users.
  *
- * Security considerations: This is a public endpoint available to all users,
- * including unauthenticated guests. Product visibility is determined by product
- * status (published, archived) rather than user authentication. The operation
- * does not expose sensitive product data like seller contact information or
- * inventory levels.
- *
- * Implementation details: This endpoint uses a composite query that joins
- * shopping_mall_products with shopping_mall_categories and
- * shopping_mall_sellers tables to enrich results with category names and seller
- * names. The search algorithm prioritizes exact name matches over partial
- * matches and considers product rating and sales history in relevance scoring.
- * It has a maximum limit of 100 results per page and supports cursor-based
- * pagination.
- *
- * Related operations: POST /products creates a new product (requires seller
- * authentication), PATCH /products/{productId} retrieves a specific product by
- * ID, and GET /products/{productId}/reviews retrieves product reviews.
- *
- * Performance considerations: This operation is optimized for handling datasets
- * up to 100,000 products and returns results within 500ms under normal load
- * conditions. Aggregation operations are performed using database-level
- * indexing on status, price, and created_at fields.
+ * This operation integrates with the shopping_mall_products table as defined in
+ * the database schema and leverages the shopping_mall_categories,
+ * shopping_mall_product_brands, shopping_mall_product_tags,
+ * shopping_mall_product_attributes, and shopping_mall_product_variant_inventory
+ * tables for comprehensive filtering and product availability checks.
  *
  * @param props.connection
- * @param props.body Search, filter, and pagination parameters for product
- *   listing.
+ * @param props.body Search criteria and pagination parameters for product
+ *   filtering
  * @path /shoppingMall/products
  * @accessor api.functional.shoppingMall.products.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,7 +80,7 @@ export async function index(
 }
 export namespace index {
   export type Props = {
-    /** Search, filter, and pagination parameters for product listing. */
+    /** Search criteria and pagination parameters for product filtering */
     body: IShoppingMallProduct.IRequest;
   };
   export type Body = IShoppingMallProduct.IRequest;
@@ -127,58 +128,43 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific product from the shoppingMall
- * product catalog.
+ * Retrieve detailed information about a specific product from the shopping mall
+ * catalog. This operation queries the shopping_mall_products table in the
+ * database, returning comprehensive product details including name,
+ * description, pricing, inventory status, and associated images.
  *
- * This operation fetches a single product entity identified by its unique
- * identifier, returning all available product details including title,
- * description, price, tax category, and associated images. The product data
- * comes from the shopping_mall_products Prisma model and is optimized for
- * display in product detail pages.
+ * The product is identified by a unique product identifier, which maps directly
+ * to the product_id field in the shopping_mall_products table. The operation
+ * supports fetching product information regardless of inventory status,
+ * allowing customers to view product details even for out-of-stock items.
  *
- * Security: The operation is publicly accessible - any user can view product
- * details. Product visibility is determined by its status field ('published')
- * in the database, where only published products are returned. Archived or
- * drafted products will return a 404 error.
+ * Security considerations include restricting access to product information
+ * based on user authorization, with all product data being publicly readable.
+ * Product descriptions, images, and pricing are validated at the database level
+ * and stored as authoritative sources of truth.
  *
- * The response includes a complete product object with all textual and numeric
- * fields from the shopping_mall_products table, including created_at and
- * updated_at timestamps. Product status is included to inform clients about
- * availability.
- *
- * Associated data: The product's primary image is included in the response as a
- * full URL to the image file. This reference comes from the
- * shopping_mall_product_images table, where the is_primary flag is used to
- * identify the main product image. Related data from other tables (categories,
- * tags, variants) is not included in this response for performance
- * optimization.
- *
- * Related operations: The GET /products endpoint provides a list of products in
- * summary format. The PATCH /products endpoint allows searching products with
- * filters.
- *
- * Performance: This operation returns data from a single database record with a
- * single join to product_images. Database queries are optimized with indexes on
- * id and status fields to ensure sub-100ms response times even at high traffic
- * volumes.
- *
- * Error handling: Returns 404 Not Found if no product exists with the provided
- * ID or if the product status is not 'published'.
+ * This operation is fundamental to the shopping experience, enabling customers
+ * to examine individual products before adding them to their cart. It is often
+ * called following product listing searches and is used to populate product
+ * detail pages in the user interface. Related operations include updating
+ * product information (requires admin role) and searching multiple products
+ * (PATCH /products).
  *
  * @param props.connection
- * @param props.productId Unique identifier of the target product in UUID
- *   format. This corresponds to the id field in the shopping_mall_products
- *   Prisma model.
+ * @param props.productId Unique identifier of the target product in the
+ *   shopping_mall_products table. This identifier corresponds to the product_id
+ *   field in the database and is used to retrieve the specific product details.
+ *   The identifier is required to locate the exact product record for display.
  * @path /shoppingMall/products/:productId
- * @accessor api.functional.shoppingMall.products.at
+ * @accessor api.functional.shoppingMall.products.getByProductid
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function at(
+export async function getByProductid(
   connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
+  props: getByProductid.Props,
+): Promise<getByProductid.Response> {
   return true === connection.simulate
-    ? at.simulate(connection, props)
+    ? getByProductid.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -188,18 +174,20 @@ export async function at(
           },
         },
         {
-          ...at.METADATA,
-          path: at.path(props),
+          ...getByProductid.METADATA,
+          path: getByProductid.path(props),
           status: null,
         },
       );
 }
-export namespace at {
+export namespace getByProductid {
   export type Props = {
     /**
-     * Unique identifier of the target product in UUID format. This
-     * corresponds to the id field in the shopping_mall_products Prisma
-     * model.
+     * Unique identifier of the target product in the shopping_mall_products
+     * table. This identifier corresponds to the product_id field in the
+     * database and is used to retrieve the specific product details. The
+     * identifier is required to locate the exact product record for
+     * display.
      */
     productId: string & tags.Format<"uuid">;
   };
@@ -221,16 +209,113 @@ export namespace at {
     typia.random<IShoppingMallProduct>();
   export const simulate = (
     connection: IConnection,
-    props: at.Props,
+    props: getByProductid.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: at.path(props),
+      path: getByProductid.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a specific product listing from the shopping mall catalog. This
+ * operation queries the shopping_mall_products table and returns detailed
+ * product information based on the product's unique business code identifier.
+ * The product code serves as a human-readable, persistent identifier that
+ * remains stable across product updates, replacements, and system migrations,
+ * unlike UUID-based identifiers which are opaque and non-meaningful to users.
+ *
+ * The operation verifies that the requested product exists and is currently
+ * active, returning a 404 response if the product does not exist or has been
+ * deactivated. It applies business rules to ensure the product is accessible to
+ * the requesting user based on product visibility rules and catalog
+ * permissions.
+ *
+ * The product information returned includes all core attributes: name,
+ * description, pricing, inventory status, primary image, and category
+ * association. This operation is the primary mechanism for accessing detailed
+ * product information in the shopping mall platform, serving both
+ * customer-facing product detail pages and backend catalog maintenance tools.
+ *
+ * Related operations: List products (PATCH /products), Search products (PATCH
+ * /products), Product variants (GET /products/{productCode}/variants).
+ *
+ * @param props.connection
+ * @param props.productCode Unique business identifier code of the target
+ *   product (global scope)
+ * @path /shoppingMall/products/:productCode
+ * @accessor api.functional.shoppingMall.products.getByProductcode
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function getByProductcode(
+  connection: IConnection,
+  props: getByProductcode.Props,
+): Promise<getByProductcode.Response> {
+  return true === connection.simulate
+    ? getByProductcode.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...getByProductcode.METADATA,
+          path: getByProductcode.path(props),
+          status: null,
+        },
+      );
+}
+export namespace getByProductcode {
+  export type Props = {
+    /** Unique business identifier code of the target product (global scope) */
+    productCode: string;
+  };
+  export type Response = IShoppingMallProduct;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/products/:productCode",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/products/${encodeURIComponent(props.productCode ?? "null")}`;
+  export const random = (): IShoppingMallProduct =>
+    typia.random<IShoppingMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: getByProductcode.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: getByProductcode.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productCode")(() => typia.assert(props.productCode));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -7,47 +7,47 @@ import { IShoppingMallWishlistItem } from "../../../../../structures/IShoppingMa
 import { IPageIShoppingMallWishlistItem } from "../../../../../structures/IPageIShoppingMallWishlistItem";
 
 /**
- * Add a new product variant to a customer's wishlist.
+ * Create a new item for a specific wishlist in the shopping mall system. This
+ * operation allows authenticated customers to add products to their personal
+ * wishlists, enabling them to save items they're considering for future
+ * purchase. This operation operates on the shopping_mall_wishlist_items table,
+ * which represents the junction between wishlists and product variants, with
+ * each entry tracking a specific product variant added to a wishlist.
  *
- * This operation allows authenticated customers to save a specific product
- * variant to one of their existing wishlists for future consideration. The
- * customer must specify both the target wishlist ID and the product variant ID
- * to be added. This creates a new entry in the shopping_mall_wishlist_items
- * table that links the customer, wishlist, and product variant.
+ * The wishlist item includes all necessary metadata for item identification and
+ * management, including the product variant reference, added timestamp, and any
+ * optional notes. The operation validates that the wishlist exists and belongs
+ * to the requesting customer, ensuring proper ownership and access control.
  *
- * The operation validates that the specified wishlist exists and belongs to the
- * authenticated customer, and that the product variant is a valid, active
- * product in the catalog. Duplicate entries are blocked through a unique
- * constraint on the combination of wishlist_id and product_variant_id -
- * attempting to add the same product variant to the same wishlist will result
- * in a failure. No delegation or side effects occur from this operation; it
- * simply creates the relationship record.
+ * The product variant reference is mandatory and must point to a valid product
+ * variant in the shopping_mall_product_variants table. This ensures that only
+ * actual product variants from the catalog can be added to wishlists. The
+ * creation of wishlist items does not affect inventory or pricing as these are
+ * purely observational entries for customer use.
  *
- * The request body must include the product_variant_id field for the target
- * product variant. Optional fields like note can be included to provide
- * customer context for the item. This operation is primarily used as a
- * bookmarking mechanism rather than a purchasing action. The system does not
- * reserve inventory, adjust pricing, or notify the seller upon adding an item
- * to wishlist. Customer preferences and notes are preserved as-is.
+ * To prevent duplication, the system prevents adding the same product variant
+ * to the same wishlist more than once. Customers can later remove items from
+ * their wishlists using the erase operation on the same path with the DELETE
+ * method.
  *
- * Upon successful completion, the operation returns the complete details of the
- * newly created wishlist item with its system-generated ID and creation
- * timestamp. The operation operates on the shopping_mall_wishlist_items table
- * and references the shopping_mall_wishlists and shopping_mall_product_variants
- * tables through foreign keys. No response body is included if the operation
- * fails due to validation errors or duplicate entries.
+ * This business function supports customer decision-making by providing a
+ * persistent, organized way to track potential purchases without requiring
+ * immediate commitment. Customers can revisit their wishlists later when making
+ * purchasing decisions, potentially cross-referencing with reviews, price
+ * history, or inventory status. This improves customer retention by creating a
+ * continuous engagement channel between the user and the platform.
  *
- * Related operations: Retrieve single wishlist item (GET
- * /wishlists/{wishlistId}/items/{itemId}), List all items in a wishlist (PATCH
- * /wishlists/{wishlistId}/items), Remove item from wishlist (DELETE
- * /wishlists/{wishlistId}/items/{itemId}).
+ * Related operations: GET /shoppingMall/customer/wishlists/{wishlistId}/items
+ * (index), DELETE /shoppingMall/customer/wishlists/{wishlistId}/items (erase).
  *
  * @param props.connection
- * @param props.wishlistId Unique identifier of the wishlist to which the
- *   product variant should be added. This must be the ID of a wishlist owned by
- *   the authenticated customer.
- * @param props.body The product variant to add to the wishlist along with
- *   optional customer note.
+ * @param props.wishlistId Unique identifier of the target wishlist that is
+ *   being updated. This represents the primary key for the
+ *   shopping_mall_wishlists table as defined in the database schema. The
+ *   wishlist must exist and belong to the authenticated customer, otherwise the
+ *   operation will fail with a 404 or 403 error.
+ * @param props.body The request body defines the product variant to add to the
+ *   wishlist.
  * @path /shoppingMall/customer/wishlists/:wishlistId/items
  * @accessor api.functional.shoppingMall.customer.wishlists.items.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -77,16 +77,15 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the wishlist to which the product variant should
-     * be added. This must be the ID of a wishlist owned by the
-     * authenticated customer.
+     * Unique identifier of the target wishlist that is being updated. This
+     * represents the primary key for the shopping_mall_wishlists table as
+     * defined in the database schema. The wishlist must exist and belong to
+     * the authenticated customer, otherwise the operation will fail with a
+     * 404 or 403 error.
      */
     wishlistId: string & tags.Format<"uuid">;
 
-    /**
-     * The product variant to add to the wishlist along with optional
-     * customer note.
-     */
+    /** The request body defines the product variant to add to the wishlist. */
     body: IShoppingMallWishlistItem.ICreate;
   };
   export type Body = IShoppingMallWishlistItem.ICreate;
@@ -136,42 +135,37 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of all items in a specific wishlist, supporting
- * search, filtering, and sorting functionality. This operation operates on the
- * shopping_mall_wishlist_items model and returns all product variants
- * associated with the specified wishlist.
+ * Retrieve a filtered and paginated list of wishlist items associated with a
+ * specific wishlist. This operation operates on the
+ * shopping_mall_wishlist_items database table and provides advanced search
+ * capabilities for retrieving wishlist items based on multiple criteria
+ * including product variant details, pricing, availability, and item creation
+ * date ranges.
  *
- * The operation first validates that the authenticated user is the owner of the
- * wishlist by comparing the user ID from the authentication token with the
- * shopping_mall_customer_id field in the corresponding shopping_mall_wishlists
- * record. If the user is not the owner, the operation fails with access denied
- * error.
+ * The operation supports comprehensive pagination with configurable page sizes
+ * and sorting options. Items can be sorted by creation date, product name,
+ * price, or other relevant fields in ascending or descending order. Filtering
+ * options allow users to find items by specific product variants, price ranges,
+ * or availability status.
  *
- * Search functionality allows users to filter items by product name,
- * description, or custom note using text matching. Filters can be applied to
- * product categories, price ranges, or availability status. Results can be
- * sorted by creation date (newest/oldest), product name (A-Z/Z-A), or price
- * (low-high/high-low).
+ * Security considerations include rate limiting for search operations and
+ * appropriate filtering of private wishlist data based on the requesting user's
+ * authorization level. Only authenticated customers can access their own
+ * wishlists, with proper ownership verification enforced at the business logic
+ * layer.
  *
- * The response includes pagination metadata with the total count of items,
- * current page, page size, and total pages to support client-side navigation.
- * This operation does not modify any data and is read-only.
- *
- * This operation retrieves data from the shopping_mall_wishlist_items model and
- * joins with shopping_mall_product_variants to provide comprehensive product
- * information. The response uses the IPageIShoppingMallWishlistItem.ISummary
- * type for efficient data transmission with optimized fields for list display.
- *
- * Note that the wishlist items are not soft-deleted - only the wishlist itself
- * can be deleted, but items can have modified status through deletion (via
- * deleted_at field).
+ * This operation integrates with the shopping_mall_wishlist_items table as
+ * defined in the database schema, incorporating all available wishlist item
+ * fields and relationships to products and variants. The response includes
+ * wishlist item summary information optimized for list displays, with options
+ * to include additional details based on authorization level and specific
+ * filter criteria.
  *
  * @param props.connection
- * @param props.wishlistId Unique identifier of the wishlist whose items are
- *   being retrieved. This is the primary key of the shopping_mall_wishlists
- *   model and establishes the parent context for all returned items.
- * @param props.body Search criteria, filters, and pagination parameters for
- *   retrieving wishlist items.
+ * @param props.wishlistId Unique identifier of the target wishlist (global
+ *   scope)
+ * @param props.body Filtering criteria, sorting options, and pagination
+ *   parameters for wishlist item retrieval
  * @path /shoppingMall/customer/wishlists/:wishlistId/items
  * @accessor api.functional.shoppingMall.customer.wishlists.items.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -200,16 +194,12 @@ export async function index(
 }
 export namespace index {
   export type Props = {
-    /**
-     * Unique identifier of the wishlist whose items are being retrieved.
-     * This is the primary key of the shopping_mall_wishlists model and
-     * establishes the parent context for all returned items.
-     */
-    wishlistId: string;
+    /** Unique identifier of the target wishlist (global scope) */
+    wishlistId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria, filters, and pagination parameters for retrieving
-     * wishlist items.
+     * Filtering criteria, sorting options, and pagination parameters for
+     * wishlist item retrieval
      */
     body: IShoppingMallWishlistItem.IRequest;
   };
@@ -260,40 +250,29 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific item from a customer's wishlist.
+ * Retrieve a specific item from a user's wishlist. This operation accesses the
+ * shopping_mall_wishlist_items table to fetch individual wishlist item details
+ * by their unique identifier. The operation requires the wishlistId and itemId
+ * path parameters to locate the exact item within the user's wishlist.
  *
- * This operation fetches detailed information about a single product variant
- * that has been saved to a specific wishlist by a customer. The item
- * information includes the product variant details and any optional
- * user-provided note. This endpoint allows customers to view individual
- * wishlist items for review or reconsideration.
+ * Security is enforced through the customer actor authorization, ensuring only
+ * the authenticated customer who owns the wishlist can retrieve its items. The
+ * system verifies that the requested item belongs to the customer's wishlist by
+ * validating the wishlistId against the authenticated customer's account.
  *
- * The operation requires both the wishlist ID and item ID in the path
- * parameters to uniquely identify the wishlist item. Only the owner of the
- * wishlist can access items within their wishlist. The item's product variant
- * data is returned with current pricing and availability information at the
- * time of retrieval, as product details may change since the item was added to
- * the wishlist.
+ * The returned item data includes the product variant information, quantity,
+ * and creation timestamp from the shopping_mall_wishlist_items table. This is a
+ * read-only operation with no side effects.
  *
- * The returned data includes the product variant's name, product catalog
- * details, current price, stock status, and any custom note provided by the
- * customer. The operation operates on the shopping_mall_wishlist_items table
- * and joins with the shopping_mall_product_variants table to provide
- * comprehensive item details. No request body is required for this read
- * operation.
- *
- * Related operations: List all items in a wishlist (POST
- * /wishlists/{wishlistId}/items), Add item to wishlist (POST
- * /wishlists/{wishlistId}/items), Remove item from wishlist (DELETE
- * /wishlists/{wishlistId}/items/{itemId}).
+ * Related operations: [GET] /wishlists/{wishlistId} to retrieve the entire
+ * wishlist summary, or [DELETE] /wishlists/{wishlistId}/items/{itemId} to
+ * remove the item from the wishlist.
  *
  * @param props.connection
- * @param props.wishlistId Unique identifier of the wishlist containing the
- *   target item. This must be the ID of a wishlist owned by the authenticated
- *   customer.
- * @param props.itemId Unique identifier of the specific wishlist item to
- *   retrieve. This identifies the individual entry in the wishlist joining the
- *   customer with a specific product variant.
+ * @param props.wishlistId Unique identifier of the target wishlist (global
+ *   scope)
+ * @param props.itemId Unique identifier of the target wishlist item (global
+ *   scope)
  * @path /shoppingMall/customer/wishlists/:wishlistId/items/:itemId
  * @accessor api.functional.shoppingMall.customer.wishlists.items.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -321,18 +300,11 @@ export async function at(
 }
 export namespace at {
   export type Props = {
-    /**
-     * Unique identifier of the wishlist containing the target item. This
-     * must be the ID of a wishlist owned by the authenticated customer.
-     */
-    wishlistId: string & tags.Format<"uuid">;
+    /** Unique identifier of the target wishlist (global scope) */
+    wishlistId: string;
 
-    /**
-     * Unique identifier of the specific wishlist item to retrieve. This
-     * identifies the individual entry in the wishlist joining the customer
-     * with a specific product variant.
-     */
-    itemId: string & tags.Format<"uuid">;
+    /** Unique identifier of the target wishlist item (global scope) */
+    itemId: string;
   };
   export type Response = IShoppingMallWishlistItem;
 
@@ -377,152 +349,34 @@ export namespace at {
 }
 
 /**
- * Update an individual product item within a wishlist with new annotations or
- * priority.
+ * Delete a specific item from a customer's wishlist. This operation removes a
+ * product variant from the wishlist_items table. The operation requires the
+ * wishlistId to identify the target wishlist and itemId to identify the
+ * specific wishlist item to delete.
  *
- * This operation allows a customer to modify any attribute of a specific
- * product item in their wishlist, including adding or updating a personal note.
- * The operation validates that both the wishlist and product variant referenced
- * exist, are owned by the authenticated customer, and are not deleted. This
- * action does not affect inventory or pricing, as wishlist items are for
- * interest tracking rather than purchase. If a customer removes or updates a
- * note, this change is persistent and immediately visible across all their
- * sessions. This operation is designed to support personalization of wishlists
- * without triggering any business logic related to purchasing or inventory
- * management.
+ * This is a simple deletion operation that removes the database row
+ * representing the relationship between a customer's wishlist and a product
+ * variant. The operation is performed on the shopping_mall_wishlist_items
+ * table, which links customers to their wanted product items.
  *
- * Note: This is NOT a product update - product pricing and availability remain
- * dynamic. Only metadata about the wishlist item (the customer's note) can be
- * modified. The system tracks when this update occurred for audit purposes.
+ * Security: Only the owner of the wishlist (customer) can delete items from it.
+ * The system validates that the wishlist_id belongs to the authenticated
+ * customer before allowing deletion. This prevents unauthorized access to other
+ * customers' wishlists.
  *
- * Related operations: DELETE /wishlists/{wishlistId}/items/{itemId} (removes
- * item from wishlist).
+ * The deletion is immediate and permanent. There is no soft delete mechanism on
+ * this table. Once deleted, the item will no longer appear in the customer's
+ * wishlist. This action does not affect the product inventory or any other
+ * system records.
  *
- * @param props.connection
- * @param props.wishlistId Unique identifier of the target wishlist. Must belong
- *   to the authenticated user.
- * @param props.itemId Unique identifier of the target wishlist item. Must be
- *   associated with the specified wishlist and owned by the authenticated
- *   user.
- * @param props.body Updated information for the wishlist item, primarily
- *   focused on the customer's personal note.
- * @path /shoppingMall/customer/wishlists/:wishlistId/items/:itemId
- * @accessor api.functional.shoppingMall.customer.wishlists.items.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the target wishlist. Must belong to the
-     * authenticated user.
-     */
-    wishlistId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the target wishlist item. Must be associated
-     * with the specified wishlist and owned by the authenticated user.
-     */
-    itemId: string & tags.Format<"uuid">;
-
-    /**
-     * Updated information for the wishlist item, primarily focused on the
-     * customer's personal note.
-     */
-    body: IShoppingMallWishlistItem.IUpdate;
-  };
-  export type Body = IShoppingMallWishlistItem.IUpdate;
-  export type Response = IShoppingMallWishlistItem;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/customer/wishlists/:wishlistId/items/:itemId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/customer/wishlists/${encodeURIComponent(props.wishlistId ?? "null")}/items/${encodeURIComponent(props.itemId ?? "null")}`;
-  export const random = (): IShoppingMallWishlistItem =>
-    typia.random<IShoppingMallWishlistItem>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("wishlistId")(() => typia.assert(props.wishlistId));
-      assert.param("itemId")(() => typia.assert(props.itemId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Permanently remove an individual product item from a customer's wishlist.
- *
- * This operation allows a customer to delete a specific product item from their
- * wishlist, effectively removing their expression of interest in that product.
- * The delete operation is immediate and irreversible. After deletion, the item
- * is marked with a soft-delete timestamp (deleted_at) to maintain audit trails
- * without permanently erasing historical data. The deletion does not affect
- * inventory levels or related purchase data, as wishlist items are purely for
- * tracking interest, not transactions.
- *
- * Soft delete behavior: The item's deleted_at field is set to the current
- * timestamp, and the item is filtered out of response queries, but is not
- * physically removed from the database.
- *
- * Related operations: PUT /wishlists/{wishlistId}/items/{itemId} (updates item
- * information).
+ * Related operations: GET /wishlists/{wishlistId} to view the entire wishlist,
+ * PATCH /wishlists/{wishlistId}/items to add new items to the wishlist.
  *
  * @param props.connection
- * @param props.wishlistId Unique identifier of the target wishlist from which
- *   the item should be removed. Must belong to the authenticated user.
- * @param props.itemId Unique identifier of the wishlist item to be removed.
- *   Must be associated with the specified wishlist and owned by the
- *   authenticated user.
+ * @param props.wishlistId Unique identifier of the wishlist from which to
+ *   remove the item (global scope)
+ * @param props.itemId Unique identifier of the item to remove from the wishlist
+ *   (global scope)
  * @path /shoppingMall/customer/wishlists/:wishlistId/items/:itemId
  * @accessor api.functional.shoppingMall.customer.wishlists.items.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -551,17 +405,16 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the target wishlist from which the item should
-     * be removed. Must belong to the authenticated user.
+     * Unique identifier of the wishlist from which to remove the item
+     * (global scope)
      */
-    wishlistId: string & tags.Format<"uuid">;
+    wishlistId: string;
 
     /**
-     * Unique identifier of the wishlist item to be removed. Must be
-     * associated with the specified wishlist and owned by the authenticated
-     * user.
+     * Unique identifier of the item to remove from the wishlist (global
+     * scope)
      */
-    itemId: string & tags.Format<"uuid">;
+    itemId: string;
   };
 
   export const METADATA = {

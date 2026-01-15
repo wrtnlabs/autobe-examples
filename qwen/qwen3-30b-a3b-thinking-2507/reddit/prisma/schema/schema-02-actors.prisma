@@ -1,0 +1,233 @@
+/// Active authentication sessions for standard users, tracking login state
+/// and tokens.
+///
+/// Stores each user's active session context including connection details
+/// (IP address, URL, referrer), session creation time, and expiration time.
+/// Each session is linked to a specific user account and expires after a
+/// defined period for security.
+///
+/// Session management enables tracking user activity for audit purposes and
+/// security features like preventing session hijacking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's account identifier {@link reddit_platform_users.id}.
+  user_id String
+  
+  /// IP address of the client connecting to the session.
+  ip String
+  
+  /// Connection URL for the session.
+  href String
+  
+  /// Referrer URL that initiated the session.
+  referrer String
+  
+  /// Time when the session was created.
+  created_at DateTime
+  
+  /// Time when the session expires for security purposes.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}
+
+/// System records for community administrators who manage specific platform
+/// communities.
+///
+/// Stores identification and core administrative metadata for users
+/// designated as community managers. Each community admin record represents
+/// a distinct administrative identity within a community context.
+///
+/// Admins can create, manage, and moderate content within their assigned
+/// communities. This system tracks community admin status, assigned
+/// community boundaries, and moderation thresholds without storing
+/// authentication credentials.
+///
+/// The community admin identity is maintained separately from general user
+/// identity and authentication, allowing for clear role specialization and
+/// permissions management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_communityadmins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the community admin record was created.
+  created_at DateTime
+  
+  /// Timestamp when the community admin record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community admin record was soft-deleted (null
+  /// indicates active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_platform_communityadmin_sessions reddit_platform_communityadmin_sessions[]
+}
+
+/// Active authentication sessions for community administrators, tracking
+/// login state and security context for community management operations.
+///
+/// Manages authentication tokens and session context specifically for
+/// community administrator roles with dedicated session tracking. Each
+/// session is linked to a community administrator's account and includes
+/// comprehensive connection metadata for security monitoring and audit
+/// trails.
+///
+/// Session management follows standard security practices with expiration
+/// time and connection details for all community administrator sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_communityadmin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community administrator account's {@link
+  /// reddit_platform_communityadmins.id}.
+  communityadmin_id String
+  
+  /// IP address from which session was initiated.
+  ip String
+  
+  /// Connection URL used to establish session.
+  href String
+  
+  /// Referrer URL from which session originated.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp (required, never NULL).
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  communityadmin reddit_platform_communityadmins @relation(fields: [communityadmin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([communityadmin_id, created_at], map: "reddit_platform_communityadmin_sessions_communityadmin_a9166b7f")
+}
+
+/// Platform-wide administrators with system-level permissions and control
+/// capabilities.
+///
+/// Represents the main account data for users with full administrative
+/// access across the entire platform. Each site admin has a unique email for
+/// authentication, with password hashing for secure login. Supports soft
+/// deletion for account management without permanent data loss.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_siteadmins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication and system notifications. Must
+  /// follow business email domain requirements.
+  email String
+  
+  /// Secure hash of the user's password for authentication. Never store
+  /// plaintext passwords.
+  password_hash String
+  
+  /// Timestamp when the site admin account was created. Used for audit and
+  /// activity tracking.
+  created_at DateTime
+  
+  /// Timestamp when the site admin account was last updated. Reflects changes
+  /// to profile or authentication data.
+  updated_at DateTime
+  
+  /// Timestamp when the site admin account was deleted. Soft deletion allows
+  /// for recovery without data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_platform_siteadmin_sessions reddit_platform_siteadmin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Active authentication sessions for site administrators tracking login
+/// state and security parameters.
+///
+/// Stores session records for platform-wide administrators who have
+/// system-level permissions and control capabilities. Each session is
+/// associated with a specific site administrator account and includes
+/// connection context for audit purposes.
+///
+/// Sessions require expiration for security, with both creation and
+/// expiration timestamps recorded. Multiples sessions per siteadmin are
+/// supported, which is why foreign key relationships have the 1:N pattern.
+///
+/// The session data structure follows the required pattern strictly: IP,
+/// connection URL, referrer, timestamps, and non-nullable expired_at for
+/// security compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_siteadmin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Site administrator account who owns this session. {@link
+  /// reddit_platform_siteadmins.id}.
+  siteadmin_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// Connection URL used for session establishment.
+  href String
+  
+  /// Referrer URL that led to the session initiation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires for security reasons. Mandatory
+  /// non-nullable value.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  siteadmin reddit_platform_siteadmins @relation(fields: [siteadmin_id], references: [id], onDelete: Cascade)
+  
+  @@index([siteadmin_id, created_at])
+}

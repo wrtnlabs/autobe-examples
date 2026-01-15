@@ -1,0 +1,537 @@
+/// Records all user reports on posts and comments including reason,
+/// timestamp, and anonymous reporter ID.
+///
+/// Tracks violations reported by citizens or moderators against platform
+/// content (articles, comments). Each report contains the reporting actor's
+/// identifier, the targeted content identifier, and a detailed reason for
+/// the violation. Reports remain in system regardless of target content
+/// being deleted, preserving audit trail for compliance and moderation
+/// reviews.
+///
+/// Supports both citizen and moderator reporting. The system does not store
+/// the report content itself but captures the reason and context. Reports
+/// are processed by moderation team through independent workflows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who submitted this report. {@link
+  /// discussion_board_citizen.id}. Nullable because moderators can also report
+  /// content.
+  reporter_id String?
+  
+  /// The moderator who submitted this report. {@link
+  /// discussion_board_moderator.id}. Nullable because citizens can also report
+  /// content.
+  moderator_reporter_id String?
+  
+  /// Type of content being reported. Valid values: 'article', 'comment'.
+  /// Required to identify the target context for the report.
+  target_type String
+  
+  /// ID of the content being reported. References either
+  /// discussion_board_articles.id or discussion_board_comments.id depending on
+  /// target_type. Required for linking report to specific content.
+  target_id String
+  
+  /// The reason provided for the report. User-entered text describing why the
+  /// content was reported. Must include sufficient detail for moderation
+  /// review.
+  reason String
+  
+  /// The timestamp when the report was submitted. Always recorded and cannot
+  /// be null.
+  created_at DateTime
+  
+  /// The timestamp when the report was last updated. Tracks when moderation
+  /// actions modify the report status.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, indicates this report has been archived
+  /// for compliance or resolution. Records when the report was removed from
+  /// active queue.
+  deleted_at DateTime?
+  
+  /// Current state of the report. Valid values: 'pending', 'reviewed',
+  /// 'dismissed', 'action_taken'. Tracks moderation workflow status for
+  /// reporting system.
+  report_state String
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_citizen? @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  moderatorReporter discussion_board_moderator? @relation(fields: [moderator_reporter_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_moderation_audit_trails discussion_board_moderation_audit_trails[]
+  discussion_board_notification_records discussion_board_notification_records[]
+  discussion_board_compliance_records discussion_board_compliance_records[]
+  
+  @@unique([reporter_id, target_type, target_id])
+  // spellchecker: ignore-next-line
+  @@unique([moderator_reporter_id, target_type, target_id], map: "discussion_board_reports_moderator_reporter_id_target__55352283")
+  @@index([created_at])
+  @@index([target_type, target_id])
+  @@index([report_state, created_at])
+}
+
+/// Records every moderator action (dismiss, remove, warn) with reason,
+/// timestamp, moderator ID, and target content ID.
+///
+/// Tracks all actions taken by moderators on reported content such as posts,
+/// comments, or user accounts. Each action is logged with a specific type
+/// (dismiss, remove, warn), reason for the action, the moderator who
+/// performed it, and the target entity that was acted upon. This table
+/// serves as the primary audit trail for moderation activities across the
+/// entire platform.
+///
+/// Actions can be viewed independently by moderators for review, analytics,
+/// and performance evaluation. The target entity can be any content type
+/// (discussion_board_posts, discussion_board_comments, etc.) using a generic
+/// target_id with target_type discrimination. Soft delete capability allows
+/// for moderation reversal with full historical preservation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator who performed this moderation action. {@link
+  /// discussion_board_moderator.id}.
+  moderator_id String
+  
+  /// The user report that triggered this moderation action, if any. {@link
+  /// discussion_board_reports.id}.
+  report_id String?
+  
+  /// Generic ID of the target entity (post, comment, user, etc.) that was
+  /// moderated. {@link discussion_board_posts.id} or other relevant entity if
+  /// target_type matches.
+  target_id String?
+  
+  /// Type of moderation action taken. Valid values: 'dismiss', 'remove',
+  /// 'warn', 'suspend', 'ban'. Represents the specific action performed by the
+  /// moderator.
+  action_type String
+  
+  /// Detailed reason for the moderation action, including policy violation
+  /// specifics. Required for transparency and appeal review.
+  reason String
+  
+  /// Type of the target entity being moderated. Valid values: 'post',
+  /// 'comment', 'user', 'account', 'attachment'. Indicates what kind of
+  /// content was acted upon.
+  target_type String
+  
+  /// Timestamp when the moderation action was performed. Tracks exact moment
+  /// of moderator decision.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action record was last updated. Tracks
+  /// changes to action details like reason revision.
+  updated_at DateTime
+  
+  /// Timestamp when this moderation action was logically deleted (soft
+  /// delete). Null if action is still active. Preserves audit trail even when
+  /// reversed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  report discussion_board_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  target discussion_board_posts? @relation(fields: [target_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_archives discussion_board_archives[]
+  discussion_board_comment_mod_actions discussion_board_comment_mod_actions[]
+  discussion_board_moderation_audit_trails discussion_board_moderation_audit_trails[]
+  discussion_board_citizen_violations discussion_board_citizen_violations[]
+  discussion_board_notification_records discussion_board_notification_records[]
+  
+  @@index([target_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([target_type, target_id])
+  @@index([action_type, created_at])
+  @@index([report_id])
+}
+
+/// Tracks user warnings for policy violations, including count, date,
+/// severity level, and moderator-provided reason.
+///
+/// Used by moderators to document and track violations committed by
+/// citizens. Each warning is associated with a specific citizen and records
+/// the severity level (e.g., low, medium, high) and a justification from the
+/// moderator. Warnings contribute to reputation scores and suspension
+/// decisions.
+///
+/// Warnings remain active until expiring or being lifted through appeal.
+/// Multiple warnings can exist for one citizen, but only one active warning
+/// per citizen at a time. Deleted warnings preserve audit history for
+/// compliance purposes.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who received this warning. {@link
+  /// discussion_board_citizen.id}.
+  discussion_board_citizen_id String
+  
+  /// Cumulative warning count for this citizen at time of issuing. Used to
+  /// determine escalation thresholds for suspensions.
+  warning_count Int
+  
+  /// Severity level of the warning. Values are: low, medium, high. Determines
+  /// impact on reputation score and suspension eligibility.
+  severity String
+  
+  /// Moderator-provided explanation for issuing this warning. Must include
+  /// specific policy violation reference.
+  reason String
+  
+  /// Timestamp when this warning was issued by the moderator.
+  created_at DateTime
+  
+  /// Timestamp when this warning was last updated (e.g., edited by moderator).
+  updated_at DateTime
+  
+  /// Timestamp when this warning was administratively removed. Soft delete
+  /// preserves audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_citizen_id, deleted_at], map: "discussion_board_warnings_discussion_board_citizen_id__b5d29331")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_citizen_id, created_at], map: "discussion_board_warnings_discussion_board_citizen_id__ea5d0271")
+  @@index([severity, created_at])
+}
+
+/// Manages temporary account suspensions for policy violations with defined
+/// start and end dates.
+///
+/// Tracks periods during which citizens are temporarily restricted from
+/// platform access due to moderation decisions. Suspensions are initiated by
+/// moderators and maintain audit trails through temporal fields. Each
+/// suspension is linked to a specific citizen and includes a reason for the
+/// action, as well as the status of any related appeals. The system supports
+/// resumption of access through the unsuspended_at field, which may be null
+/// if the suspension is still active or indefinite.
+///
+/// Suspensions are managed entirely through the moderation workflow and have
+/// no direct interaction or management by citizens. This ensures that access
+/// restrictions follow proper bureaucratic procedures and are not bypassed
+/// by users. All suspension records are preserved for compliance and audit
+/// purposes, even after suspension periods end.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen whose account has been suspended. {@link
+  /// discussion_board_citizen.id}.
+  discussion_board_citizen_id String
+  
+  /// Timestamp when the suspension took effect. Always set when a suspension
+  /// is applied by a moderator.
+  suspended_at DateTime
+  
+  /// Timestamp when the suspension ends and access is restored. If null, the
+  /// suspension is still active or indefinite.
+  unsuspended_at DateTime?
+  
+  /// Detailed explanation of the policy violation that led to the suspension.
+  /// Must be specific enough for audit trail purposes.
+  reason String
+  
+  /// Current status of any appeal against this suspension. Valid values:
+  /// pending, approved, denied. Used to track user appeals and resolution
+  /// pathways.
+  appeal_status String
+  
+  /// Timestamp when the suspension record was created in the system. Immutable.
+  created_at DateTime
+  
+  /// Timestamp when the suspension record was last modified (e.g., appeal
+  /// status changed).
+  updated_at DateTime
+  
+  /// Soft delete marker. When set, indicates the suspension record has been
+  /// logically removed but retained for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_citizen_id, suspended_at], map: "discussion_board_suspensions_discussion_board_citizen__ce0611cf")
+  @@index([unsuspended_at])
+  @@index([appeal_status])
+  @@index([suspended_at, unsuspended_at])
+}
+
+/// Permanent account bans as a final moderation action.
+///
+/// Records permanent removals of citizens from the discussion board as a
+/// consequence of policy violations. Each ban represents a final moderation
+/// decision that is immutable unless formally appealed and overturned
+/// through the appeals process.
+///
+/// Bans are created by moderators based on accumulated violations, serious
+/// misconduct, or repeated policy breaches. The ban record includes the
+/// justification for the decision, the initiating moderator, and the target
+/// citizen account.
+///
+/// Bans may eventually be appealed through the discussion_board_appeals
+/// table, but the ban record itself remains as a permanent audit trail.
+///
+/// Soft deletion is supported to maintain data integrity while allowing for
+/// potential reversal in exceptional circumstances.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator who issued the permanent ban. {@link
+  /// discussion_board_moderator.id}.
+  moderator_id String
+  
+  /// The citizen account that was permanently banned. {@link
+  /// discussion_board_citizen.id}.
+  citizen_id String
+  
+  /// Timestamp when the permanent ban was issued by the moderator.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last modified (e.g., when appeal status
+  /// changed).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail maintenance. Null means ban is
+  /// active - non-null indicates ban has been lifted or reversed.
+  deleted_at DateTime?
+  
+  /// Current state of the ban. Valid values: 'active', 'appealed', 'lifted'.
+  /// Indicates whether the ban is ongoing, under appeal, or has been reversed.
+  status String
+  
+  /// Detailed explanation of why the permanent ban was issued. Must include
+  /// specific policy violations, accumulated violations, or misconduct
+  /// evidence that led to this final decision.
+  justification String
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  citizen discussion_board_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id, created_at])
+  @@index([citizen_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Stores user appeals of moderation decisions with explanation text and
+/// final moderator resolution.
+///
+/// Allows citizens to formally appeal moderation actions taken against their
+/// content or accounts. Each appeal contains a detailed explanation of why
+/// the user believes the moderation decision was incorrect or unfair.
+/// Moderators review these appeals and issue resolutions with justification.
+///
+/// Appeals are independent entities with their own lifecycle: submitted by a
+/// citizen, reviewed by a moderator, and resolved with a final outcome. The
+/// system tracks the status of each appeal and preserves historical records
+/// for audit.
+///
+/// This table supports direct user-facing UI for submitting appeals and
+/// moderator workflows for handling them, requiring independent CRUD API
+/// endpoints.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who submitted the appeal. {@link discussion_board_citizen.id}.
+  reporter_id String
+  
+  /// The moderation report this appeal is addressing. {@link
+  /// discussion_board_reports.id}.
+  target_id String
+  
+  /// The moderator who resolved this appeal. {@link
+  /// discussion_board_moderator.id}. Null until resolved.
+  moderator_id String?
+  
+  /// The user's explanation for why they are appealing the moderation
+  /// decision. Must contain specific details about the perceived error or
+  /// unfairness.
+  reason String
+  
+  /// The moderator's formal resolution and justification for their final
+  /// decision. Null until the appeal is resolved.
+  resolution String?
+  
+  /// Current status of the appeal. Valid values: pending (awaiting moderator
+  /// review), under_review (actively being reviewed), resolved (moderator made
+  /// a decision), withdrawn (user withdrew the appeal).
+  status String
+  
+  /// Timestamp when the appeal was created. Always recorded when user submits
+  /// the appeal.
+  created_at DateTime
+  
+  /// Timestamp when the appeal was last modified (e.g., when status changed or
+  /// resolution was added). Updated on every state transition.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for compliance and audit trail purposes. Null
+  /// if appeal is active, set when formally deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_citizen @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  target discussion_board_reports @relation(fields: [target_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderator? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_notification_records discussion_board_notification_records[]
+  
+  @@index([moderator_id])
+  
+  @@unique([target_id])
+  @@index([status, created_at])
+  @@index([reporter_id, status])
+}
+
+/// Comprehensive audit log preserving complete original content, metadata,
+/// and moderation history for all removed or hidden items.
+///
+/// This snapshot table captures the exact state of content before moderation
+/// actions, providing a permanent compliance record of what existed before
+/// deletion, hiding, or modification. Used for legal compliance, dispute
+/// resolution, and auditing purposes. Records are append-only and cannot be
+/// modified after creation.
+///
+/// Each audit record links to a specific moderation action and preserves the
+/// complete state of the original content (title, body, attachments,
+/// metadata, timestamps) as it appeared prior to the moderation decision.
+/// This ensures transparency and accountability in platform governance.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_audit_trails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation action that triggered this audit record. {@link
+  /// discussion_board_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// The original post that was moderated, if applicable. {@link
+  /// discussion_board_posts.id}.
+  post_id String?
+  
+  /// The original comment that was moderated, if applicable. {@link
+  /// discussion_board_comments.id}.
+  comment_id String?
+  
+  /// The user report that initiated this moderation action, if applicable.
+  /// {@link discussion_board_reports.id}.
+  report_id String?
+  
+  /// The type of content being audited (e.g., "post", "comment", "profile").
+  /// Used for quick filtering and type-specific processing.
+  content_type String
+  
+  /// The original unique identifier of the content being audited (independent
+  /// of foreign keys to allow referencing different content types).
+  content_id String?
+  
+  /// The exact title of the content before moderation. Preserved for
+  /// historical accuracy and context.
+  original_title String?
+  
+  /// The complete original body text of the content before any moderation
+  /// action. Preserved exactly as submitted by the user.
+  original_body String?
+  
+  /// The exact timestamp when this audit record was created, capturing when
+  /// the moderation decision was enacted.
+  created_at DateTime
+  
+  /// Soft delete flag to maintain audit trail integrity while managing record
+  /// lifecycle. If null, record is active and preserved.
+  deleted_at DateTime?
+  
+  /// JSON string containing original content metadata (tags, categories,
+  /// attachment references, etc.) preserved in its original format.
+  original_metadata String?
+  
+  /// The specific reason provided for the moderation action taken on this
+  /// content. Includes policy violation details.
+  reason_for_modification String
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  post discussion_board_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  report discussion_board_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([content_type, created_at], map: "discussion_board_moderation_audit_trails_content_type__64e9e598")
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id, created_at], map: "discussion_board_moderation_audit_trails_moderation_ac_55aa82bd")
+  @@index([post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "discussion_board_moderation_audit_trails_comment_id_cr_42eb9915")
+  // spellchecker: ignore-next-line
+  @@index([report_id, created_at], map: "discussion_board_moderation_audit_trails_report_id_cre_ff99bbb2")
+}

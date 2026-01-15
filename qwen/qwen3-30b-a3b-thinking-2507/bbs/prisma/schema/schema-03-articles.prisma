@@ -1,0 +1,176 @@
+/// Core table storing article content and moderation workflow states.
+///
+/// Articles represent user-generated content in the discussion board. Each
+/// article is authored by a member, contains a title, content body, and
+/// follows a moderation workflow from submission to publication.
+///
+/// Article content remains intact even if the author is deleted or changes
+/// their status, ensuring historical record integrity. Moderation status
+/// tracks the article's progression through review queues and final
+/// publication state.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the article. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Article title reflecting core content.
+  title String
+  
+  /// Main article content body with markdown support.
+  content String
+  
+  /// Current status in moderation workflow. Valid values: pending, approved,
+  /// rejected.
+  moderation_status String
+  
+  /// Article creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp for soft delete implementation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_images discussion_board_article_images[]
+  discussion_board_article_files discussion_board_article_files[]
+  discussion_board_attachment_images discussion_board_attachment_images[]
+  discussion_board_attachment_files discussion_board_attachment_files[]
+  discussion_board_moderation_queue discussion_board_moderation_queue[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  
+  @@index([discussion_board_member_id])
+  
+  @@index([moderation_status])
+}
+
+/// Stores uploaded images associated with discussion board articles.
+/// Contains file metadata, dimensions for display purposes, and automatic
+/// resizing parameters for optimized content delivery.
+///
+/// Each image record is created when media is uploaded to an article. Images
+/// can be deleted independently but remain linked to their parent article
+/// for historical consistency. The table supports batch image uploads and
+/// individual image management through the article's media interface.
+///
+/// All image metadata is stored at original resolution to enable consistent
+/// scaling across different display contexts. The table design allows for
+/// efficient filtering by article ID and upload timestamp.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article this image belongs to. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Full URL path to the image file in storage.
+  url String
+  
+  /// Image width in pixels at original resolution.
+  width Int
+  
+  /// Image height in pixels at original resolution.
+  height Int
+  
+  /// MIME type of the image file (e.g., image/jpeg).
+  mime_type String
+  
+  /// File size in bytes.
+  size Int
+  
+  /// Timestamp when image was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when image metadata was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when image was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_images_discussion_board_artic_cbcc380c")
+}
+
+/// Stores uploaded files attached to articles with type, size, and display
+/// information for PDF, DOCX, and XLSX formats.
+///
+/// Maintains complete metadata for all file attachments across articles,
+/// including file type constraints and display preferences. Each file
+/// attachment is uniquely associated with a specific article through the
+/// system's reference structure. Supports soft deletion for content
+/// moderation while preserving historical attachment records. File size and
+/// type validations enforce platform-wide attachment rules established in
+/// the Attachment component.
+///
+/// Independent file listing and filtering capabilities allow users to access
+/// all attachments across articles regardless of their parent article
+/// context. The attachment metadata enables sorting and filtering based on
+/// file type and size, supporting use cases across different content types.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article this file belongs to. {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// MIME type identifier for the file. Valid values: application/pdf,
+  /// application/vnd.ms-excel,
+  /// application/vnd.openxmlformats-officedocument.wordprocessingml.document.
+  file_type String
+  
+  /// File size in bytes. Follows platform size limits of maximum 50MB.
+  file_size Int
+  
+  /// User-visible name for the file. Used in UI for attachment listings and
+  /// downloads.
+  display_name String
+  
+  /// Timestamp of when the file was attached to the article.
+  created_at DateTime
+  
+  /// Timestamp of last modification to attachment metadata.
+  updated_at DateTime
+  
+  /// Timestamp when attachment was soft-deleted. Null indicates active
+  /// attachment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+  @@index([file_type, file_size])
+}

@@ -1,92 +1,90 @@
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
 import typia, { tags } from "typia";
-
 import api from "@ORGANIZATION/PROJECT-api";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 export async function test_api_admin_login_success(
   connection: api.IConnection,
-) {
+): Promise<void> {
+  // Step 1: Create new administrator account
+  const adminConnection: api.IConnection = { host: connection.host };
   const adminCredentials = {
     email: typia.random<string & tags.Format<"email">>(),
-    password_hash: "Password123!",
-  } satisfies IShoppingMallAdmin.IRequest;
-
-  // Create admin account first
-  const createdAdmin = await api.functional.auth.admin.join(connection, {
-    body: {
-      email: adminCredentials.email,
-      password: "Password123!",
-      first_name: RandomGenerator.name(),
-      last_name: RandomGenerator.name(),
-      role: "super_admin",
-    } satisfies IShoppingMallAdmin.ICreate,
-  });
-  typia.assert(createdAdmin);
-
-  // Ensure account is active
-  TestValidator.equals(
-    "admin account status should be active",
-    createdAdmin.status,
-    "active",
-  );
-
-  // Attempt login with valid credentials
-  const loggedinAdmin = await api.functional.auth.admin.login(connection, {
+    password: RandomGenerator.alphaNumeric(16),
+    href: "https://example.com/admin/join",
+    referrer: "https://example.com/admin/signup",
+  } satisfies IShoppingMallAdmin.IJoin;
+  const registeredAdmin = await authorize_admin_join(adminConnection, {
     body: adminCredentials,
   });
-  typia.assert(loggedinAdmin);
-
-  // Validate login response contains required fields
+  typia.assert(registeredAdmin);
+  // Step 2: Use the registered admin credentials for login
+  const loginConnection: api.IConnection = { host: connection.host };
+  const loginCredentials = {
+    email: registeredAdmin.email,
+    password: adminCredentials.password,
+  } satisfies IShoppingMallAdmin.ILogin;
+  const loginResult = await authorize_admin_login(loginConnection, {
+    body: loginCredentials,
+  });
+  typia.assert(loginResult);
+  // Step 3: Validate the login result contains all required business properties
   TestValidator.equals(
-    "login email matches created email",
-    loggedinAdmin.email,
-    createdAdmin.email,
+    "admin ID matches registered admin ID",
+    loginResult.id,
+    registeredAdmin.id,
   );
   TestValidator.equals(
-    "login first_name matches created first_name",
-    loggedinAdmin.first_name,
-    createdAdmin.first_name,
+    "admin name matches",
+    loginResult.name,
+    registeredAdmin.name,
   );
   TestValidator.equals(
-    "login last_name matches created last_name",
-    loggedinAdmin.last_name,
-    createdAdmin.last_name,
+    "admin email matches",
+    loginResult.email,
+    registeredAdmin.email,
   );
   TestValidator.equals(
-    "login role matches created role",
-    loggedinAdmin.role,
-    createdAdmin.role,
+    "admin created_at matches",
+    loginResult.createdAt,
+    registeredAdmin.createdAt,
   );
   TestValidator.equals(
-    "login status should be active",
-    loggedinAdmin.status,
-    "active",
+    "admin role matches",
+    loginResult.role,
+    registeredAdmin.role,
+  );
+  TestValidator.equals("admin status is active", loginResult.status, "active");
+  TestValidator.equals(
+    "permissions array length matches",
+    loginResult.permissions.length,
+    registeredAdmin.permissions.length,
+  );
+  // Validate token structure
+  TestValidator.equals(
+    "access token exists",
+    loginResult.token.access.length > 0,
+    true,
+  );
+  TestValidator.equals(
+    "refresh token exists",
+    loginResult.token.refresh.length > 0,
+    true,
+  );
+  const now = new Date();
+  TestValidator.predicate(
+    "expired_at is in future",
+    new Date(loginResult.token.expired_at) > now,
   );
   TestValidator.predicate(
-    "token access should exist",
-    () => loggedinAdmin.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "token refresh should exist",
-    () => loggedinAdmin.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "token expired_at should be valid date-time",
-    () =>
-      loggedinAdmin.token.expired_at &&
-      typia.is<string & tags.Format<"date-time">>(
-        loggedinAdmin.token.expired_at,
-      ),
-  );
-  TestValidator.predicate(
-    "token refreshable_until should be valid date-time",
-    () =>
-      loggedinAdmin.token.refreshable_until &&
-      typia.is<string & tags.Format<"date-time">>(
-        loggedinAdmin.token.refreshable_until,
-      ),
+    "refreshable_until is in future",
+    new Date(loginResult.token.refreshable_until) > now,
   );
 }

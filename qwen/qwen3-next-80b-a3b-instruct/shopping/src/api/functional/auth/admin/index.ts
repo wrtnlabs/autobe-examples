@@ -4,39 +4,40 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
+export * as account from "./account/index";
 
 /**
- * Registers a new admin account for platform administrators. This operation
- * creates a new administrative identity with the provided email and password
- * hash, initializing system access for privileged operations. The operation
- * requires email validation through an out-of-band process, as admin accounts
- * are manually created through secure internal procedures and cannot be
- * self-registered publicly. The account begins in 'pending_verification' status
- * until manually approved by an existing admin through the administrative
- * console, after which status transitions to 'active'. All admin accounts must
- * have a unique email, enforced by the unique index on
- * shopping_mall_admins.email field. The password_hash field is stored as a
- * BCrypt hash, never in plain text, as required by security protocols
- * referenced in the security_and_compliance.md requirements document. When a
- * new admin is created, the system automatically logs this event in the
- * shopping_mall_audit_logs table for compliance tracking. This operation should
- * be triggered by platform administrators through secure HR onboarding systems,
- * not through public API endpoints.
+ * Creates a new administrator account through registration. The system
+ * validates the email format and uniqueness, requires password with minimum
+ * 8-character complexity, and sets initial account status to
+ * 'pending_email_verification'. An email verification token is generated and
+ * sent to the provided email address. The actual implementation uses the
+ * 'email' and 'password' fields from the shopping_mall_admin table to store
+ * user data. Subsequent email verification activates the account. This
+ * operation is publicly accessible and generates JWT access and refresh tokens
+ * upon successful registration. This operation is required for system
+ * administration access.
  *
- * Security considerations: This is a privileged operation requiring human
- * approval and secure channel verification. Access to this endpoint is
- * restricted to internal systems with physical and network security controls.
+ * Account registration must occur through this endpoint; administrators cannot
+ * be created via database inserts or direct API calls for security compliance.
  *
- * Relationship: This operation directly creates records in the
- * shopping_mall_admins table. The account's status will be initialized as
- * 'pending_verification' and must be manually upgraded to 'active' by an
- * existing admin.
+ * Security considerations include limiting concurrent registration attempts per
+ * IP, rate-limiting to prevent brute-force attacks, and mandatory password
+ * complexity requirements that enforce upper/lowercase, numbers, and special
+ * characters.
  *
- * Related operations: Once the account is active, the admin can use the
- * /auth/admin/login operation to authenticate.
+ * Related operations include POST /auth/admin/login for authentication after
+ * registration and POST /auth/admin/refresh for token renewal. Email
+ * verification must be completed before full permissions are granted.
+ *
+ * Account status and email fields must be populated correctly to ensure proper
+ * workflow integration.
+ *
+ * Must reference email and password column expectations from the database
+ * schema.
  *
  * @param props.connection
- * @param props.body Registration parameters for creating a new admin account.
+ * @param props.body Credentials for administrator account creation.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -71,10 +72,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Registration parameters for creating a new admin account. */
-    body: IShoppingMallAdmin.ICreate;
+    /** Credentials for administrator account creation. */
+    body: IShoppingMallAdmin.IJoin;
   };
-  export type Body = IShoppingMallAdmin.ICreate;
+  export type Body = IShoppingMallAdmin.IJoin;
   export type Response = IShoppingMallAdmin.IAuthorized;
 
   export const METADATA = {
@@ -119,35 +120,31 @@ export namespace join {
 }
 
 /**
- * Authenticates an admin user by verifying their email and password against the
- * system database. This operation checks the provided email against the unique
- * index on shopping_mall_admins.email field and validates the BCrypt-hashed
- * password against the stored password_hash value. If authentication is
- * successful, the user's status field must be 'active' to proceed; accounts
- * with 'suspended' or 'pending_verification' status are denied access. On
- * successful authentication, a new session record is created in the
- * shopping_mall_admin_sessions table with the client's IP address, referrer
- * URL, and href details. The session expires according to the platform's
- * security policy (typically 8 hours of inactivity). The operation returns a
- * refresh token and access token that are cryptographically signed and valid
- * for subsequent API calls.
+ * Authenticates an administrator user by validating their email and password
+ * against the stored credentials in the shopping_mall_admin table. The system
+ * checks for active account status and enforces security policies including
+ * account lockout after 5 failed attempts. Upon successful authentication, a
+ * secure JWT access token with 15-minute expiration and a refresh token stored
+ * in an httpOnly cookie are issued.
  *
- * Security considerations: All login attempts are logged in the
- * shopping_mall_access_logs table for audit purposes. Multiple failed attempts
- * within 10 minutes trigger account lockout for 15 minutes, as defined by the
- * security_and_compliance.md requirements. This operation requires secure HTTPS
- * transmission and does not allow requests from untrusted domains.
+ * This operation uses the 'email' and 'password' fields from the
+ * shopping_mall_admin table for validation and the 'last_login_at' field to
+ * record authentication timestamp.
  *
- * Relationship: This operation reads from shopping_mall_admins table and
- * creates records in shopping_mall_admin_sessions table. The operation is
- * restricted to admin actors only.
+ * Security considerations include requiring HTTPS, implementing IP-based rate
+ * limiting, using time-based one-time passwords (TOTP) as secondary
+ * authentication where necessary, and invalidating all previous sessions after
+ * password change.
  *
- * Related operations: After successful login, admins can use the refresh
- * operation to renew their access token, and the logout operation (if
- * implemented) to terminate the session.
+ * Related operations include POST /auth/admin/join for initial registration and
+ * POST /auth/admin/refresh for token renewal. Account suspension or
+ * deactivation (is_active=false) prevents login attempts.
+ *
+ * Must reference email and password column expectations from the database
+ * schema.
  *
  * @param props.connection
- * @param props.body Authentication parameters for admin login.
+ * @param props.body Login credentials for administrator account.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -182,10 +179,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Authentication parameters for admin login. */
-    body: IShoppingMallAdmin.IRequest;
+    /** Login credentials for administrator account. */
+    body: IShoppingMallAdmin.ILogin;
   };
-  export type Body = IShoppingMallAdmin.IRequest;
+  export type Body = IShoppingMallAdmin.ILogin;
   export type Response = IShoppingMallAdmin.IAuthorized;
 
   export const METADATA = {
@@ -230,35 +227,30 @@ export namespace login {
 }
 
 /**
- * Renews the access token for an authenticated admin session using a valid
- * refresh token. This operation validates the refresh token against the
- * system's token store, verifies that the associated
- * shopping_mall_admin_sessions record is still active (expired_at is null), and
- * checks that the admin account status is active. Upon validation, a new access
- * token and refresh token pair are generated, extending the session duration
- * according to the session timeout policy. The existing refresh token is
- * invalidated and replaced with a new one following best practices for token
- * rotation. The operation logs the refresh event in the
- * shopping_mall_access_logs table for audit trail purposes.
+ * Renews the administrator's access token by validating the refresh token
+ * stored in the httpOnly cookie. This operation maintains session continuity
+ * without requiring re-entry of credentials. The system checks the validity of
+ * the refresh token and ensures it hasn't been revoked or expired. Upon
+ * success, a new access token is issued with a fresh 15-minute expiration while
+ * the refresh token remains unchanged, maintaining session state.
  *
- * Security considerations: Refresh tokens must be stored securely and should
- * never be transmitted over insecure channels. Refresh token rotation prevents
- * replay attacks and mitigates token theft risks. After successful token
- * refresh, a new session record is created while the old one is marked for
- * cleanup. This operation has an additional security layer requiring MFA
- * validation if the user has configured it in their preferences, as referenced
- * in the Authentication_Requirements.md document.
+ * This operation references the shopping_mall_admin_sessions table for refresh
+ * token validation and ties expiration to the user's session context from the
+ * shopping_mall_admin table's 'id' and 'is_active' fields.
  *
- * Relationship: This operation validates against shopping_mall_admin_sessions
- * and shopping_mall_admins tables. It does not directly modify user data but
- * updates authentication session state.
+ * Security considerations include cookie flag security (httpOnly, secure,
+ * sameSite=strict), refresh token revocation on logout or password change, and
+ * refresh token expiration after 7 days of inactivity.
  *
- * Related operations: This operation typically follows login. Once the access
- * token expires, it's the only way to continue the session without
- * re-authenticating with credentials.
+ * Related operations include POST /auth/admin/login for initial authentication
+ * and POST /auth/admin/logout for explicit session termination. A refresh token
+ * must be present in the httpOnly cookie for this operation to succeed.
+ *
+ * Must reference session and active status expectations from the database
+ * schema.
  *
  * @param props.connection
- * @param props.body Refresh token for extending authenticated session.
+ * @param props.body Refresh token from cookies for token renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -293,7 +285,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for extending authenticated session. */
+    /** Refresh token from cookies for token renewal. */
     body: IShoppingMallAdmin.IRefresh;
   };
   export type Body = IShoppingMallAdmin.IRefresh;

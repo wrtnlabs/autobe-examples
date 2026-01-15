@@ -4,38 +4,63 @@ import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallProductVariant } from "../../../../../structures/IShoppingMallProductVariant";
+export * as attributes from "./attributes/index";
 
 /**
- * Create a new product variant (SKU) for an existing product.
+ * Create a new product variant for the specified product in the shoppingMall
+ * platform. This operation allows sellers to add new product variants (such as
+ * different sizes, colors, or configurations) to an existing product listing.
+ * Each variant is uniquely identified by a generated SKU and maintains its own
+ * inventory, pricing, and attribute values independent of the base product.
  *
- * This operation allows sellers to define specific configurations of a product
- * (e.g., color, size, style) as distinct inventory items with unique pricing
- * and stock levels. Each variant is uniquely identified by its SKU (Stock
- * Keeping Unit) and is linked to the parent product.
+ * The operation strictly adheres to the shopping_mall_product_variants database
+ * schema and requires the product to exist in the shopping_mall_products table.
+ * The product identifier is provided via the {productId} path parameter, which
+ * must correspond to a valid product in the shopping_mall_products table. When
+ * creating a variant, sellers must specify the variant attributes (size, color,
+ * etc.) that differentiate this variant from other variants of the same
+ * product, and provide unique pricing and inventory quantities. The system
+ * automatically generates a unique SKU based on the product's base SKU and the
+ * selected attribute values.
  *
- * The operation validates that:
+ * This API operation does not allow creation of variants with duplicate
+ * attribute combinations for the same product. The system enforces this
+ * constraint at the database level through a composite unique constraint on
+ * (product_id, attribute_values) in the shopping_mall_product_variants table.
+ * The operation validates that the specified variant attributes exist in the
+ * shopping_mall_variant_attributes table and that the attribute values provided
+ * are valid options from the shopping_mall_variant_attribute_values table.
  *
- * 1. The specified parent product exists and is published (status: 'published')
- * 2. The SKU is globally unique across all products and variants
- * 3. The price is within acceptable business limits ($0.01 to $5000.00)
- * 4. The inventory_count is non-negative
- * 5. The attributes JSON string is properly formatted
+ * Successive attempts to create variants with identical attribute combinations
+ * will be rejected with a 409 Conflict error. The variant creation process
+ * maintains data integrity by linking the variant to the correct product
+ * through foreign key relationships and automatically updates the product's
+ * variant count counter in the shopping_mall_products table.
  *
- * This creates an independent inventory unit that can be tracked and sold
- * separately from the parent product. The new variant inherits product metadata
- * (title, description, tax category) but maintains separate pricing and stock.
- * Once created, the variant immediately becomes available for sale and appears
- * in product search results with its specific configuration.
+ * Security: Only authenticated sellers can create product variants. The seller
+ * authorization is verified through the JWT token, and the product must belong
+ * to the seller's catalog (verified through the shopping_mall_products table
+ * linking the product to the seller).
  *
- * Related operations:
- *
- * - GET /products/{productId}/variants: Retrieve all variants of a product
- * - PUT /products/{productId}/variants/{variantId}: Update an existing variant
+ * Related operations: GET /shoppingMall/seller/products/{productId}/variants
+ * (to list all variants of a product), PATCH
+ * /shoppingMall/seller/products/{productId}/variants/{variantId} (to update
+ * variant details), DELETE
+ * /shoppingMall/seller/products/{productId}/variants/{variantId} (to remove a
+ * variant).
  *
  * @param props.connection
- * @param props.productId Unique identifier of the parent product to which this
- *   variant belongs. Must match an existing published product.
- * @param props.body Creation data for the new product variant.
+ * @param props.productId Unique identifier of the product for which to create a
+ *   new variant. This must correspond to an existing product in the
+ *   shopping_mall_products table.
+ * @param props.body Details for creating a new product variant. Must include
+ *   variant attribute selections with valid values, pricing information, and
+ *   inventory quantity. The attributes field must be an object mapping
+ *   attribute names (from shopping_mall_variant_attributes) to attribute value
+ *   IDs (from shopping_mall_variant_attribute_values) to ensure compliance with
+ *   the composite unique constraint on (product_id, attribute_values). Example:
+ *   {"size": "7b8a3c4d", "color": "9e2f5a1b"}. Also include standard fields:
+ *   price (numeric), and quantity (integer).
  * @path /shoppingMall/seller/products/:productId/variants
  * @accessor api.functional.shoppingMall.seller.products.variants.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -65,12 +90,23 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the parent product to which this variant
-     * belongs. Must match an existing published product.
+     * Unique identifier of the product for which to create a new variant.
+     * This must correspond to an existing product in the
+     * shopping_mall_products table.
      */
     productId: string & tags.Format<"uuid">;
 
-    /** Creation data for the new product variant. */
+    /**
+     * Details for creating a new product variant. Must include variant
+     * attribute selections with valid values, pricing information, and
+     * inventory quantity. The attributes field must be an object mapping
+     * attribute names (from shopping_mall_variant_attributes) to attribute
+     * value IDs (from shopping_mall_variant_attribute_values) to ensure
+     * compliance with the composite unique constraint on (product_id,
+     * attribute_values). Example: {"size": "7b8a3c4d", "color":
+     * "9e2f5a1b"}. Also include standard fields: price (numeric), and
+     * quantity (integer).
+     */
     body: IShoppingMallProductVariant.ICreate;
   };
   export type Body = IShoppingMallProductVariant.ICreate;
@@ -120,40 +156,165 @@ export namespace create {
 }
 
 /**
- * Update an existing product variant (SKU) with new configuration details.
+ * Retrieve all variants of a specific product identified by productId. This
+ * endpoint operates on the shopping_mall_product_variants table and returns a
+ * list of all variants associated with the given product. Each variant
+ * represents a distinct combination of attributes such as size, color,
+ * material, and other customizable features that a product may offer, with each
+ * variant having its own inventory, pricing, and availability status.
  *
- * This operation allows sellers to modify the attributes of an existing product
- * variant such as price, inventory count, or variant-specific title. Changes
- * take effect immediately, affecting product display, search results, and
- * purchase availability.
+ * This operation is crucial for product detail pages where customers need to
+ * see all available configurations of a product before making a purchase. The
+ * system retrieves all variants from the shopping_mall_product_variants table
+ * and joins with related tables including
+ * shopping_mall_product_variant_pricing,
+ * shopping_mall_product_variant_inventory,
+ * shopping_mall_product_variant_attributes, and shopping_mall_products to
+ * provide comprehensive variant information. The response includes variant
+ * identifiers, attribute values, pricing information, inventory levels, and
+ * availability status for each variant.
  *
- * The operation validates that:
+ * Product variants allow customers to select specific configurations while
+ * maintaining a single product listing. Each variant is uniquely identified by
+ * a SKU (stock keeping unit), and inventory is tracked independently for each
+ * variant. The system applies business rules to determine variant availability
+ * based on inventory thresholds and product visibility settings. In cases where
+ * a variant has zero inventory but is still offered for sale (pre-order or
+ * backorder), it will be marked with appropriate availability status. Variants
+ * are returned sorted by attribute priority and value order as defined in the
+ * product configuration.
  *
- * 1. The target variant exists and belongs to the specified parent product
- * 2. The parent product is still published (status: 'published')
- * 3. The SKU cannot be changed (it is immutable after creation)
- * 4. Updated price is within acceptable business limits ($0.01 to $5000.00)
- * 5. Updated inventory_count is non-negative
- * 6. The attributes JSON string, if updated, is properly formatted
+ * Related operations: GET /shoppingMall/seller/products/{productId} which
+ * returns the base product information without variants, and PATCH
+ * /shoppingMall/seller/products/{productId}/variants which allows for bulk
+ * update of variant inventory and pricing.
  *
- * Important: Only attributes specific to the variant can be modified. The
- * parent product's core information (title, description, tax category) remains
- * unchanged. Modified variants maintain their association with the parent
- * product and remain subject to the parent's active status. Inventory changes
- * trigger automated inventory transaction logs for audit purposes.
+ * @param props.connection
+ * @param props.productId Unique identifier of the target product whose variants
+ *   are being retrieved. This corresponds to the id field in the
+ *   shopping_mall_products table. The value must be a valid UUID that exists in
+ *   the system's product database.
+ * @path /shoppingMall/seller/products/:productId/variants
+ * @accessor api.functional.shoppingMall.seller.products.variants.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Unique identifier of the target product whose variants are being
+     * retrieved. This corresponds to the id field in the
+     * shopping_mall_products table. The value must be a valid UUID that
+     * exists in the system's product database.
+     */
+    productId: string;
+  };
+  export type Response = IShoppingMallProductVariant;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/seller/products/:productId/variants",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants`;
+  export const random = (): IShoppingMallProductVariant =>
+    typia.random<IShoppingMallProductVariant>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update a specific product variant with precise inventory, pricing, and
+ * attribute configurations.
  *
- * Related operations:
+ * This operation allows authorized sellers to modify the pricing and inventory
+ * for individual product variants using their unique SKU identifier. Variants
+ * represent configurable options of a product such as color, size, or material
+ * combinations, and each variant has its own distinct inventory count and
+ * price.
  *
- * - POST /products/{productId}/variants: Create a new variant
- * - GET /products/{productId}/variants: Retrieve all variants of a product
+ * The variant ID used in the path must correspond exactly to the unique SKU
+ * generated for that specific attribute combination. This ensures that updates
+ * are applied to the exact variant intended by the seller, preventing pricing
+ * or inventory mismatches that could lead to incorrect customer charges or
+ * stock inaccuracies.
+ *
+ * Product variants are managed independently from the main product, enabling
+ * sellers to offer different pricing for different sizes or colors of the same
+ * product. This operation validates that the variant exists, belongs to the
+ * authenticated seller's product catalog, and has not been archived or
+ * discontinued.
+ *
+ * Security measures include verifying that the authenticated user has seller
+ * privileges and owns the product containing the variant. The variant's SKU
+ * must be properly formed for the product and cannot be modified through this
+ * endpoint—the SKU serves as an immutable identifier.
+ *
+ * The system records an audit trail of the modification, and real-time
+ * inventory changes trigger notifications to customers when a product moves
+ * from 'out of stock' to 'available.' This ensures accurate product visibility
+ * on storefronts.
+ *
+ * Related operations: Get variant details (GET
+ * /products/{productId}/variants/{variantId}), Create new variant (POST
+ * /products/{productId}/variants), List all variants (GET
+ * /products/{productId}/variants).
  *
  * @param props.connection
  * @param props.productId Unique identifier of the parent product that contains
- *   the target variant.
- * @param props.variantId Unique identifier of the product variant being
- *   updated.
- * @param props.body Update data for the product variant. Only fields that can
- *   be modified are included.
+ *   this variant (must be a valid product owned by the authenticated seller)
+ * @param props.variantId Unique SKU identifier of the specific product variant
+ *   to be updated (immutable string identifier generated from attribute
+ *   combinations)
+ * @param props.body The updated pricing and inventory details for the product
+ *   variant.
  * @path /shoppingMall/seller/products/:productId/variants/:variantId
  * @accessor api.functional.shoppingMall.seller.products.variants.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,18 +344,18 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the parent product that contains the target
-     * variant.
+     * Unique identifier of the parent product that contains this variant
+     * (must be a valid product owned by the authenticated seller)
      */
     productId: string & tags.Format<"uuid">;
 
-    /** Unique identifier of the product variant being updated. */
-    variantId: string & tags.Format<"uuid">;
-
     /**
-     * Update data for the product variant. Only fields that can be modified
-     * are included.
+     * Unique SKU identifier of the specific product variant to be updated
+     * (immutable string identifier generated from attribute combinations)
      */
+    variantId: string;
+
+    /** The updated pricing and inventory details for the product variant. */
     body: IShoppingMallProductVariant.IUpdate;
   };
   export type Body = IShoppingMallProductVariant.IUpdate;
@@ -231,125 +392,6 @@ export namespace update {
       assert.param("productId")(() => typia.assert(props.productId));
       assert.param("variantId")(() => typia.assert(props.variantId));
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Permanently delete a specific product variant from the shoppingMall catalog.
- * This operation removes the variant record entirely from the database and
- * cancels all associated inventory allocations and reservations. This action is
- * irreversible and affects the product's availability to customers.
- *
- * The variant must not have any pending orders or active checkouts associated
- * with it. If any linked cart items or order items reference this variant, the
- * deletion will fail with an appropriate error code.
- *
- * This operation does not affect the parent product, only the specific variant
- * identified by variantId. The variant's inventory records will be purged from
- * shopping_mall_inventory_units, and all related inventory transactions will be
- * marked as cancelled. Any references to this variant in
- * shopping_mall_product_variants will be permanently removed.
- *
- * Successive attempts to access this variant from API endpoints
- * (products/{productId}/variants/{variantId}|at,
- * products/{productId}/variants|index) will return a 404 Not Found error.
- *
- * The deletion is flagged with the system's auditing system via
- * shopping_mall_data_change_logs, recording the actor who performed the
- * deletion and timestamp.
- *
- * This operation complements the product creation and update flows, allowing
- * sellers to remove outdated, discontinued, or erroneous product configurations
- * from their catalog. It follows a hard delete pattern as variants are
- * considered substitutable entities, and product variations should not persist
- * indefinitely in the system.
- *
- * @param props.connection
- * @param props.productId Unique identifier of the parent product containing
- *   this variant. Must reference a valid shopping_mall_products.id and be the
- *   parent of the specified variant.
- * @param props.variantId Unique identifier of the product variant to be
- *   permanently removed. Must reference a valid
- *   shopping_mall_product_variants.id and be directly linked to the specified
- *   productId.
- * @path /shoppingMall/seller/products/:productId/variants/:variantId
- * @accessor api.functional.shoppingMall.seller.products.variants.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the parent product containing this variant. Must
-     * reference a valid shopping_mall_products.id and be the parent of the
-     * specified variant.
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the product variant to be permanently removed.
-     * Must reference a valid shopping_mall_product_variants.id and be
-     * directly linked to the specified productId.
-     */
-    variantId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/shoppingMall/seller/products/:productId/variants/:variantId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("variantId")(() => typia.assert(props.variantId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

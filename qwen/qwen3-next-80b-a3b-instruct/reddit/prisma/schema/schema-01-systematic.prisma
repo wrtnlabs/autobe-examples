@@ -1,212 +1,506 @@
-/// Core system configuration settings that control platform-wide behavior
-/// and operational parameters.
+/// Channels for content delivery (e.g., web, mobile, API) with branding and
+/// configuration settings.
 ///
-/// This table stores critical system-level configuration values that apply
-/// across all communities and user interactions. Contains administrative
-/// controls for default behavior, rate limiting thresholds, and
-/// platform-wide settings managed by system administrators.
+/// Represents the primary access points for users to interact with the
+/// system content, such as web interface, mobile applications, or API
+/// endpoints. Each channel can have distinct branding, functionality, and
+/// configuration settings to serve different user segments or device types.
+///
+/// Channels are managed independently by administrators who can enable,
+/// disable, or modify channel-specific settings. Users select a channel when
+/// accessing the platform, and the system routes content and features
+/// accordingly. Channels can be hierarchical, with sections organizing
+/// content within each channel.
+///
+/// The channel configuration includes branding elements like logos, colors,
+/// and custom UI settings that adapt the platform experience per channel.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_system_config {
+model community_platform_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp when this system configuration was created.
-  created_at DateTime
+  /// Parent channel for hierarchical organization. {@link
+  /// community_platform_channels.id}.
+  parent_channel_id String?
   
-  /// Timestamp when this system configuration was last updated.
-  updated_at DateTime
-}
-
-/// Platform-wide configuration settings that define operational parameters
-/// for the entire communityBBS system.
-///
-/// Manages global configuration for platform features including posting
-/// limits, user permissions, system notifications, and default behavior for
-/// all communities. These settings override any community-specific
-/// configurations and are managed by system administrators.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_platform_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Timestamp when this platform setting was created.
-  created_at DateTime
-  
-  /// Timestamp when this platform setting was last updated.
-  updated_at DateTime
-}
-
-/// System-defined categories for organizing and classifying user-generated
-/// content.
-///
-/// Provides a standardized taxonomy for categorizing posts and other content
-/// types across the platform. Used for content filtering, moderation, and
-/// recommendation systems. Each category represents a broad theme for
-/// community discussion (e.g., "Technology", "Community News", "Events").
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_content_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Human-readable name of the content category.
+  /// Unique internal name for the channel (e.g., 'web', 'mobile', 'api').
   name String
   
-  /// Detailed description explaining the purpose and scope of this category.
+  /// Human-readable name shown to users (e.g., 'Web Portal', 'Mobile App').
+  display_name String
+  
+  /// Detailed description of the channel's purpose and target users.
   description String?
   
-  /// Timestamp when this content category was created.
+  /// Primary brand color code in hex format (e.g., '#3B82F6').
+  color_primary String?
+  
+  /// Secondary brand color code in hex format (e.g., '#10B981').
+  color_secondary String?
+  
+  /// Whether the channel is currently active and available to users.
+  is_enabled Boolean
+  
+  /// JSON configuration object for channel-specific settings and feature flags.
+  config String?
+  
+  /// Timestamp when this channel was created.
   created_at DateTime
   
-  /// Timestamp when this content category was last updated.
+  /// Timestamp when this channel was last updated.
   updated_at DateTime
+  
+  /// Timestamp when this channel was soft-deleted (null if active).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_bbs_communities community_bbs_communities[]
+  parent community_platform_channels? @relation("recursive", fields: [parent_channel_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_channels[] @relation("recursive")
+  community_platform_sections community_platform_sections[]
+  
+  @@index([parent_channel_id])
   
   @@unique([name])
+  @@index([is_enabled, created_at])
 }
 
-/// System-defined badge types that recognize user achievements and
-/// contributions within the community.
+/// Hierarchical sections within channels for organizing content, products,
+/// and community groupings.
 ///
-/// Provides a standardized set of achievement badges that can be awarded to
-/// citizens based on their activity and contributions. Each badge type
-/// represents a specific milestone or behavior (e.g., "First Post", "Trusted
-/// Contributor", "Moderator") and is displayed on user profiles.
+/// Each section belongs to a specific channel and can have nested child
+/// sections to create multi-level organizational structures. Sections define
+/// the navigation hierarchy for users and determine content categorization
+/// within a channel.
+///
+/// Sections are managed by administrators through channel configuration
+/// interfaces, but users directly navigate, search, and access sections via
+/// URL routing. Each section has a unique slug for clean URLs and is ordered
+/// visually by display_order.
+///
+/// This table is a primary entity because users independently interact with
+/// sections: accessing content by selecting sections, bookmarking, and
+/// navigating through the site structure.
+///
+/// Temporal fields:
+/// - created_at: Records when the section was created in the system
+/// - updated_at: Tracks the last modification of section metadata
+/// - deleted_at: NULL until soft-deleted for moderation purposes
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_badge_types {
+model community_platform_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Human-readable name of the badge type.
+  /// Channel that this section belongs to. {@link
+  /// community_platform_channels.id}.
+  community_platform_channel_id String
+  
+  /// Parent section for nesting. {@link community_platform_sections.id}.
+  /// Enables hierarchical structure.
+  parent_section_id String?
+  
+  /// Display name for the section shown to users.
   name String
   
-  /// Detailed explanation of the criteria for earning this badge.
+  /// URL-friendly identifier for routing, must be unique within channel.
+  slug String
+  
+  /// Detailed description of the section's purpose and content scope.
   description String?
   
-  /// Optional reference to icon asset for this badge type.
-  icon String?
+  /// Order position of this section relative to its siblings under the same
+  /// parent.
+  display_order Int
   
-  /// Timestamp when this badge type was created.
+  /// Whether this section is visible to users. Hidden sections can be
+  /// reactivated.
+  is_visible Boolean
+  
+  /// Timestamp of when this section was created.
   created_at DateTime
   
-  /// Timestamp when this badge type was last updated.
+  /// Timestamp of when this section was last updated.
   updated_at DateTime
+  
+  /// Soft delete timestamp for moderation. When set, section is hidden from
+  /// users.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_bbs_user_badges community_bbs_user_badges[]
+  channel community_platform_channels @relation(fields: [community_platform_channel_id], references: [id], onDelete: Cascade)
+  parent community_platform_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
   
-  @@unique([name])
+  recursive community_platform_sections[] @relation("recursive")
+  
+  @@index([parent_section_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_channel_id, slug], map: "community_platform_sections_community_platform_channel_1607a327")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_channel_id, parent_section_id], map: "community_platform_sections_community_platform_channel_26bd8152")
+  @@index([display_order])
 }
 
-/// System-defined reasons for reporting content, standardizing user feedback
-/// on inappropriate material.
+/// Global system configuration flags and feature toggles that control
+/// application behavior across all domains.
 ///
-/// Provides a comprehensive but standardized set of reasons users can select
-/// when reporting content violations. This ensures consistent categorization
-/// of reported content by moderators and enables effective content
-/// moderation patterns across the platform.
+/// Stores system-wide settings such as feature toggles, operational
+/// parameters, and administrative controls that govern how the platform
+/// functions across all components. These configurations are managed
+/// exclusively by administrators through administrative interfaces and are
+/// not directly manipulated by end users.
+///
+/// Configuration values include activation flags for features like comment
+/// moderation, karma calculation rules, content filtering sensitivity, and
+/// system-wide rate limits. All settings are applied globally and affect the
+/// behavior of every subsystem, including Notifications, Reporting, Sales,
+/// and Actors. Changes to configurations trigger immediate effects across
+/// the entire platform.
+///
+/// The table follows a snapshot-like pattern but is classified as subsidiary
+/// because it represents the current active configuration state rather than
+/// historical versions. Configuration changes are tracked through audit logs
+/// in other components rather than versioned in this table.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_report_reasons {
+model community_platform_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Human-readable name of the report reason.
-  name String
+  /// Enables or disables automated comment moderation system. When enabled,
+  /// AI-powered content analysis flags inappropriate comments for review.
+  feature_flag_comments_moderation Boolean
   
-  /// Detailed explanation of what constitutes a violation of this category.
-  description String?
+  /// Activates the karma reputation system that rewards user contributions.
+  /// When disabled, user reputation scores are not calculated or displayed.
+  feature_flag_karma_system Boolean
   
-  /// Severity level designation for this reason (e.g., low, medium, high).
-  severity_level String
+  /// Enables keyword-based content filtering to block prohibited terms across
+  /// all content types. When disabled, no automated filtering occurs.
+  feature_flag_content_filtering Boolean
   
-  /// Timestamp when this report reason was created.
+  /// Controls whether post view statistics and engagement metrics are
+  /// collected and stored for analytics purposes.
+  feature_flag_post_analytics Boolean
+  
+  /// Activates daily posting limits for member users to prevent spam and
+  /// maintain platform quality.
+  feature_flag_daily_limit_posts Boolean
+  
+  /// Enables or disables paid subscription features for premium content access
+  /// and monetization.
+  feature_flag_subscription_payments Boolean
+  
+  /// Controls whether administrators receive automated alerts for
+  /// high-priority moderation events such as content reports exceeding
+  /// thresholds.
+  feature_flag_moderator_notifications Boolean
+  
+  /// Enables access to system-wide analytics dashboards for administrators to
+  /// monitor platform health, user growth, and engagement trends.
+  feature_flag_analytics_dashboard Boolean
+  
+  /// Minimum karma score required before a user can report content. Prevents
+  /// abuse of reporting system by low-reputation users.
+  karma_threshold_report Int
+  
+  /// Minimum karma score required before a user can post comments. Reduces
+  /// spam by requiring community trust before allowing interaction.
+  karma_threshold_comments Int
+  
+  /// Minimum karma score required before a user can create new posts. Prevents
+  /// spam content from new or low-reputation users.
+  karma_threshold_post Int
+  
+  /// Number of reports required on content before automated moderation action
+  /// is triggered (e.g., hiding the content or suspending user).
+  report_threshold_moderation Int
+  
+  /// Number of reports required on a user before automatic suspension or
+  /// banning occurs based on cumulative offenses.
+  report_threshold_ban Int
+  
+  /// Maximum number of posts a member user can create per day when daily limit
+  /// feature is enabled.
+  daily_post_limit Int
+  
+  /// Maximum file upload size in bytes allowed for content attachments such as
+  /// images, videos, or documents.
+  max_file_upload_size Int
+  
+  /// Maximum nesting depth allowed for comment threads. Controls comment
+  /// hierarchy complexity to prevent excessive nesting.
+  max_comment_depth Int
+  
+  /// Time-to-live duration in seconds for search query results cache. Controls
+  /// how frequently search indexes are refreshed.
+  search_cache_ttl Int
+  
+  /// Duration in minutes after which a user session expires if there is no
+  /// activity. Defines session inactivity timeout.
+  session_timeout_minutes Int
+  
+  /// Global maintenance flag that temporarily disables user-facing operations
+  /// during system updates or repairs. When true, users see maintenance page.
+  maintenance_mode_enabled Boolean
+  
+  /// Maximum number of login attempts allowed from a single IP address within
+  /// a time window before temporary lockout.
+  rate_limit_login Int
+  
+  /// Maximum number of reports a single user can submit within a time window
+  /// to prevent report spamming.
+  rate_limit_reports Int
+  
+  /// Current system version identifier, used for tracking schema compatibility
+  /// and deployment status across distributed systems.
+  system_version String
+  
+  /// Timestamp indicating when this configuration set was created. Tracks when
+  /// these system settings were first applied.
   created_at DateTime
   
-  /// Timestamp when this report reason was last updated.
+  /// Timestamp indicating the last time this configuration set was modified.
+  /// Used for auditing configuration changes and cache invalidation.
   updated_at DateTime
+  
+  /// Soft delete timestamp for configuration records. When set, indicates the
+  /// configuration has been archived and is no longer active. Used for audit
+  /// trail and rollback capability.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_bbs_reports community_bbs_reports[]
-  
-  @@unique([name])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([feature_flag_comments_moderation, feature_flag_karma_system], map: "community_platform_configurations_feature_flag_comment_3df6b11a")
 }
 
-/// System-defined content moderation rules that define how the system
-/// automatically handles reported content and user behavior.
+/// Tracks anonymous visitors who view public content but have no
+/// authenticated identity.
 ///
-/// Contains the policy rules that govern automated moderation actions
-/// including when to hide content, issue warnings, suspend users, and
-/// escalate to human moderators. These rules are based on thresholds for
-/// reports, user reputation, time-based factors, and spam patterns across
-/// the platform.
+/// Records temporary access events from users who have not created an
+/// account or logged in. These records enable analytics on public content
+/// engagement and provide data for conversion funnel analysis.
+///
+/// Each guest record is uniquely identified and timestamped to track visit
+/// frequency and duration. Guest records are cleared after 30 days of
+/// inactivity as part of data retention policy, but always maintained in
+/// soft-deleted state for audit purposes.
+///
+/// This table is referenced by the community_platform_guest_sessions table
+/// to correlate anonymous sessions with guest visit history.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_content_moderation_rules {
+model community_platform_guest {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Human-readable name of this moderation rule.
-  name String
-  
-  /// Detailed explanation of this rule's purpose and trigger conditions.
-  description String?
-  
-  /// Type of trigger for this rule (e.g., report_count, reputation_threshold,
-  /// spam_pattern).
-  trigger_type String
-  
-  /// Threshold value that triggers this rule (e.g., 5 reports, reputation
-  /// below 0).
-  trigger_value Int
-  
-  /// Action to perform when rule is triggered (e.g., hide, warn, suspend,
-  /// delete).
-  action String
-  
-  /// Timestamp when this moderation rule was created.
+  /// Timestamp when this guest record was first created upon initial visit.
   created_at DateTime
   
-  /// Timestamp when this moderation rule was last updated.
+  /// Timestamp of the most recent activity associated with this guest record.
   updated_at DateTime
+  
+  /// Soft delete timestamp indicating when this guest record was marked for
+  /// removal as part of data retention policy. NULL means record is active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([name])
+  community_platform_guest_sessions community_platform_guest_sessions[]
+  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
+  community_platform_notification_events community_platform_notification_events[]
+  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
+  community_platform_email_notification_queue community_platform_email_notification_queue[]
+  community_platform_notification_optouts community_platform_notification_optouts?
+  
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Authenticated member accounts with profiles, karma scores, and
+/// subscription relationships.
+///
+/// Represents users who have registered and authenticated with the system,
+/// enabling full participation in the community including posting content,
+/// voting, commenting, and managing subscriptions.
+///
+/// Each member records persistent identity and engagement metrics that
+/// persist across sessions. Members can create communities, submit posts and
+/// comments, earn karma through community interactions, and subscribe to
+/// content channels.
+///
+/// The model tracks cryptographic password hashes for secure authentication,
+/// email for communication and recovery, and karma as a cumulative
+/// reputation score derived from community feedback.
+///
+/// Connections to authentication state are maintained through a 1:1
+/// relationship with community_platform_member_sessions, which handles
+/// active login sessions, while this table maintains the persistent identity
+/// profile.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Registered email address used for authentication, notifications, and
+  /// account recovery. Must be unique across all members.
+  email String
+  
+  /// BCrypt hash of the user's password. Never stored in plain text. Required
+  /// for secure login functionality.
+  password_hash String
+  
+  /// Cumulative reputation score earned through community interactions such as
+  /// helpful posts, upvotes from other members, and successful content
+  /// contributions. Positive values only.
+  karma Int
+  
+  /// Optional user-provided description about themselves. Can contain short
+  /// narratives, interests, or professional summaries.
+  bio String?
+  
+  /// Timestamp when the member account was created. Always set during initial
+  /// registration and never modified.
+  created_at DateTime
+  
+  /// Timestamp when the member profile was last updated (e.g., bio change,
+  /// email update). Automatically maintained by the system.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating when the member account was deactivated.
+  /// NULL means active account; non-NULL means account is archived and no
+  /// longer accessible.
+  deleted_at DateTime?
+  
+  /// Current account status. Valid values: active, suspended, disabled,
+  /// verified. Controls access permissions and moderation actions.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_member_sessions community_platform_member_sessions[]
+  communityplatformproductreviews communityplatformproductreviews?
+  communityplatformproductreviewvotes communityplatformproductreviewvotes[]
+  communityplatformsales communityplatformsales[]
+  communityplatformsalefavorites communityplatformsalefavorites[]
+  communityplatformproductwishlist communityplatformproductwishlist[]
+  community_platform_carts community_platform_carts[]
+  community_platform_orders community_platform_orders[]
+  community_platform_shipments community_platform_shipments[]
+  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
+  community_platform_user_notification_preferences community_platform_user_notification_preferences[]
+  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
+  community_platform_email_notification_queue community_platform_email_notification_queue[]
+  community_platform_notification_read_status community_platform_notification_read_status[]
+  community_platform_notification_retention_policies community_platform_notification_retention_policies[]
+  community_platform_notification_optouts community_platform_notification_optouts?
+  community_platform_reports community_platform_reports[]
+  community_platform_report_of_members community_platform_report_of_members[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// System administrators with elevated privileges for moderation,
+/// configuration, and user management.
+///
+/// Accounts with full access to system-wide configuration, content
+/// moderation, user management, and operational controls. These entities are
+/// granted permissions beyond regular members to ensure platform integrity
+/// and operational continuity.
+///
+/// Admins can perform actions across all domains: removing inappropriate
+/// content, banning users, adjusting karma scores, managing community rules,
+/// reviewing reports, and accessing system analytics. Each admin has a
+/// unique email and password for authentication, and all actions are
+/// auditable through session logging.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User-specific notification preferences controlling which alerts this
+  /// admin receives. {@link
+  /// community_platform_user_notification_preferences.id}.
+  user_notification_preference_id String
+  
+  /// Unique email address used for login and communication. Must be a valid
+  /// business email address associated with the administrator.
+  email String
+  
+  /// Securely hashed password for authentication. Never stored as plain text.
+  /// Created using bcrypt with salt.
+  password_hash String
+  
+  /// Timestamp when this admin account was created. Used for audit trails and
+  /// onboarding tracking.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this admin account. Updated whenever
+  /// profile or permissions change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, account is active. If set, account is
+  /// logically deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notificationPreferences community_platform_user_notification_preferences @relation(fields: [user_notification_preference_id], references: [id], onDelete: Cascade)
+  
+  community_platform_admin_sessions community_platform_admin_sessions[]
+  community_platform_shipments community_platform_shipments[]
+  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
+  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
+  community_platform_email_notification_queue community_platform_email_notification_queue[]
+  community_platform_notification_optouts community_platform_notification_optouts?
+  community_platform_moderation_logs community_platform_moderation_logs[]
+  
+  @@unique([user_notification_preference_id])
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
 }

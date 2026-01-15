@@ -1,0 +1,241 @@
+/// Main posts created by users, containing text content, links, and
+/// reference to associated images for community content.
+///
+/// This table stores the core content creation mechanism where authenticated
+/// users share posts with textual content, optional links, and references to
+/// image attachments. Each post is uniquely identified and managed by its
+/// creator with timestamp tracking for content evolution.
+///
+/// Posts remain associated with their original creator and content even if
+/// user accounts or post images change. The content structure allows for
+/// composition of posts using Markdown-style formatting for text
+/// representation while maintaining data integrity with image association
+/// metadata.
+///
+/// The soft delete mechanism enables content moderation without permanent
+/// data removal, preserving historical records for community management
+/// purposes.
+///
+/// @namespace PostComment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator of this post. {@link reddit_platform_users.id}.
+  user_id String
+  
+  /// Title of the post for user visibility and searchability. Must be
+  /// descriptive and concise to capture post essence.
+  title String
+  
+  /// Main body content of the post, supporting Markdown formatting for text
+  /// rendering. Contains complete message content.
+  content String
+  
+  /// Optional external link to related content or resources referenced in the
+  /// post. Must be valid URL format.
+  link String?
+  
+  /// Timestamp of post creation. Records when the content was first published.
+  created_at DateTime
+  
+  /// Timestamp of last modification. Updates when content is edited or
+  /// modified.
+  updated_at DateTime
+  
+  /// Timestamp when post was deleted (soft deletion). Null indicates active
+  /// post, not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_post_images reddit_platform_post_images[]
+  reddit_platform_comments reddit_platform_comments[]
+  reddit_platform_votes reddit_platform_votes[]
+  reddit_platform_karma_transactions reddit_platform_karma_transactions[]
+  reddit_platform_activity reddit_platform_activity[]
+  
+  @@index([user_id])
+}
+
+/// Image attachments associated with community posts, containing file
+/// metadata and storage information.
+///
+/// Stores images referenced in user posts, including the original filename,
+/// image format, size, and dimensions. Each image is tied to a specific post
+/// for context. The storage URL provides direct access to the image
+/// resource.
+///
+/// User-uploaded images have a soft deletion mechanism to prevent data loss
+/// during content moderation. System employs standard created_at and
+/// updated_at timestamps for tracking metadata changes.
+///
+/// @namespace PostComment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this image is attached to. {@link reddit_platform_posts.id}.
+  reddit_platform_post_id String
+  
+  /// Original filename from the user's device, including extension (e.g.,
+  /// 'cat.jpg').
+  original_filename String
+  
+  /// File format such as 'jpeg' or 'png' indicating the image type.
+  file_format String
+  
+  /// File size in bytes, representing the storage size of the image file.
+  file_size_in_bytes Int
+  
+  /// Image width in pixels. Can be null if dimensions aren't available.
+  width_px Int?
+  
+  /// Image height in pixels. Can be null if dimensions aren't available.
+  height_px Int?
+  
+  /// URI of the stored image file, used for direct HTTP access.
+  storage_url String
+  
+  /// Timestamp when the image was first uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the image metadata was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted (null for active images).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_post_id, created_at], map: "reddit_platform_post_images_reddit_platform_post_id_cr_f1a47a9a")
+}
+
+/// User comments on posts with hierarchical structure, supporting multiple
+/// nested reply levels and text content.
+///
+/// Comments represent user responses to forum posts and other comments. Each
+/// comment is associated with a specific post (parent post) and can have a
+/// parent comment (for threaded replies).
+///
+/// Comments require independent management for moderation workflows: users
+/// can search all comments across posts, moderate individual comments, and
+/// track comment activity. This requires a primary stance for API
+/// generation.
+///
+/// Each comment has a title for short summary and body for detailed content,
+/// along with creation and update timestamps for activity tracking.
+///
+/// @namespace PostComment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_platform_posts.id}.
+  posts_id String
+  
+  /// Parent comment's {@link reddit_platform_comments.id}.
+  parent_id String?
+  
+  /// Brief summary for comment, displayed in lists or preview views.
+  title String
+  
+  /// Detailed content of the comment, supporting markdown or rich text
+  /// formatting.
+  body String
+  
+  /// Time when the comment was created and posted.
+  created_at DateTime
+  
+  /// Last time the comment content was modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_platform_posts @relation(fields: [posts_id], references: [id], onDelete: Cascade)
+  parent reddit_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_platform_comments[] @relation("recursive")
+  reddit_platform_karma_transactions reddit_platform_karma_transactions[]
+  reddit_platform_activity reddit_platform_activity[]
+  
+  @@index([posts_id])
+  @@index([parent_id])
+}
+
+/// Upvotes and downvotes made by users on posts for engagement tracking.
+///
+/// Records individual user votes on posts with upvote/downvote indicators.
+/// Each vote is uniquely tied to a user and post to prevent duplicates, with
+/// timestamps capturing creation and modification.
+///
+/// Supports engagement metrics and content moderation through unique
+/// constraints and soft deletion for historical tracking. Votes are
+/// independent entities requiring separate management from posts and users.
+///
+/// Prevents duplicate votes through unique constraint on (user_id, post_id)
+/// while maintaining full auditability through temporal fields.
+///
+/// @namespace PostComment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's account {@link reddit_platform_users.id}.
+  user_id String
+  
+  /// Voted post {@link reddit_platform_posts.id}.
+  post_id String
+  
+  /// Indicates vote direction (true=upvote, false=downvote).
+  vote Boolean
+  
+  /// Timestamp when vote was created.
+  created_at DateTime
+  
+  /// Timestamp when vote was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when vote was soft-deleted for moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_karma_transactions reddit_platform_karma_transactions[]
+  reddit_platform_activity reddit_platform_activity[]
+  
+  @@index([post_id])
+  
+  @@unique([user_id, post_id])
+}

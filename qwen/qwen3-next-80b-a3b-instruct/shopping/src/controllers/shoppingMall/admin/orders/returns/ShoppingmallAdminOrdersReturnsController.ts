@@ -1,142 +1,119 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
 import typia from "typia";
-import { patchShoppingMallAdminOrdersOrderNumberReturns } from "../../../../../providers/patchShoppingMallAdminOrdersOrderNumberReturns";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { putShoppingMallAdminOrdersOrderNumberReturnsId } from "../../../../../providers/putShoppingMallAdminOrdersOrderNumberReturnsId";
 
-import { IPageIShoppingMallOrderReturn } from "../../../../../api/structures/IPageIShoppingMallOrderReturn";
 import { IShoppingMallOrderReturn } from "../../../../../api/structures/IShoppingMallOrderReturn";
 
-@Controller("/shoppingMall/admin/orders/:orderNumber/returns")
+@Controller("/shoppingMall/admin/orders/:orderCode/returns/:returnCode")
 export class ShoppingmallAdminOrdersReturnsController {
   /**
-   * Retrieve the current return request status and details for a specific
-   * order. This operation fetches all return records associated with the given
-   * order number and provides comprehensive information about each return
-   * request, including its current status, reason, refund amount, and
-   * processing progress.
+   * Retrieve the detailed return information for a specific order return using
+   * the order and return code identifiers.
    *
-   * The operation returns return data for all return requests issued against
-   * the specified order, supporting scenarios where multiple products may be
-   * returned in separate requests. Returns are sorted chronologically with the
-   * most recent first. Only returns with statuses 'requested', 'approved',
-   * 'awaiting_return', 'received', or 'refunded' will be included in the
-   * response; denied or completed returns may be excluded based on business
-   * policy.
+   * This operation retrieves a complete order return record from the
+   * shopping_mall_order_returns database table. The return is uniquely
+   * identified by the combination of an order code and a return code, which
+   * together form a composite unique constraint. Each return represents a
+   * customer-initiated return of items from a previously placed order.
    *
-   * This endpoint supports an authenticated user viewing their own return
-   * requests. Admins can view return requests for any order. The response
-   * includes full return details but excludes sensitive administrative notes
-   * that may be in the raw system logs.
+   * The system tracks return requests from initiation through processing and
+   * final resolution. This endpoint returns detailed return information
+   * including the return status, requested items, return reason, refund amount,
+   * return shipping details, and any associated notes. Return information is
+   * retained as part of the system's audit trail for financial reconciliation,
+   * customer service, and fraud prevention purposes.
    *
-   * Security: Users can only access return information for orders they have
-   * placed. Administrators can view return information for all orders. The
-   * system performs strict ownership validation before returning any data.
+   * Security considerations: Authorized customers can access their own returns,
+   * while administrators can view all returns for customer service and fraud
+   * investigation purposes. The operation ensures data integrity by verifying
+   * that the return code is associated with the specified order code. Only the
+   * customer who created the return or an administrator with appropriate
+   * permissions can access this information.
    *
-   * Implementation note: This operation retrieves data from the
-   * shopping_mall_order_returns table, joining with all related information
-   * such as the original order details and customer information when
-   * appropriate. The operation returns a complete Return entity for each return
-   * record, including timestamps, refund amounts, and status history.
-   *
-   * Related Operations: POST /orders/{orderNumber}/returns (to create a new
-   * return request), PUT /orders/{orderNumber}/returns (to update return
-   * request)
+   * Related operations: The PATCH /orders/{orderCode}/returns endpoint can be
+   * used to initiate new return requests, and the PUT
+   * /orders/{orderCode}/returns/{returnCode} endpoint can be used to update
+   * return details when additional information needs to be provided by the
+   * customer or seller.
    *
    * @param connection
-   * @param orderNumber Unique order identifier in format ORD-YYYYMMDD-NNNNN.
-   *   This must match exactly with the order_number field in the
-   *   shopping_mall_orders table.
+   * @param orderCode Unique business identifier code of the target order
+   *   (global scope)
+   * @param returnCode Unique business identifier code of the target return
+   *   within the order (scoped to order)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("orderNumber")
-    orderNumber: string,
-  ): Promise<IPageIShoppingMallOrderReturn> {
-    try {
-      return await patchShoppingMallAdminOrdersOrderNumberReturns({
-        admin,
-        orderNumber,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+  @TypedRoute.Get()
+  public async at(
+    @TypedParam("orderCode")
+    orderCode: string,
+    @TypedParam("returnCode")
+    returnCode: string,
+  ): Promise<IShoppingMallOrderReturn> {
+    orderCode;
+    returnCode;
+    return typia.random<IShoppingMallOrderReturn>();
   }
 
   /**
-   * Update the status and details of a specific order return.
+   * Update the return status and processing details for a specific order return
+   * in the shopping mall system. This operation operates on the
+   * shopping_mall_order_returns table and allows authorized parties to update
+   * the return's status from pending to processed, rejected, or completed,
+   * along with associated notes and financial adjustments.
    *
-   * This operation allows administrative users to update the status of a return
-   * request and provide additional processing information. The return can be
-   * approved, denied, or have its processing state updated (e.g., marking as
-   * received or refunded).
+   * The return must be associated with an existing order identified by its
+   * unique orderCode (not UUID) and the specific return identified by its
+   * returnCode, both of which are business identifiers rather than internal
+   * UUIDs. The system validates that the return request exists, has not already
+   * been finalized, and that the requested status transition is valid according
+   * to the return workflow state machine.
    *
-   * The update is contextual: only the return status and optional details can
-   * be modified. Fields such as return reason, original order reference, and
-   * refund amount cannot be changed after the return request has been created.
-   * The system prevents changes to immutable fields through validation.
+   * Security rules require the requester to be either the customer who
+   * initiated the return, an admin, or a seller associated with the order. All
+   * status changes are logged in the shopping_mall_order_events table as
+   * immutable audit records. Returns can be updated until they reach a final
+   * state such as 'completed', at which point no further modifications are
+   * allowed. This behavior reflects status management via state transitions,
+   * not soft deletion, as the shopping_mall_order_returns table has no
+   * soft-delete fields.
    *
-   * Security: Only administrators can update return records. Customer users
-   * cannot modify return status through this endpoint, even if they are the
-   * original purchaser of the order.
-   *
-   * Business Logic:
-   *
-   * - When status is updated to 'approved': system validates return is in
-   *   'requested' state, calculates potential refund amount based on return
-   *   method and product condition, and generates a return label if mail return
-   *   method is selected
-   * - When status is updated to 'received': system validates return is in
-   *   'approved' state, logs the receipt timestamp, and initiates the refund
-   *   process
-   * - When status is updated to 'refunded': system confirms the refund was
-   *   processed at payment gateway, updates the refund date, and sends
-   *   confirmation notification to customer
-   * - When status is updated to 'denied': system requires additional details
-   *   explaining the denial reason, notifies customer, and cancels any pending
-   *   refund
-   *
-   * Implementation Note: This operation requires the return to exist and belong
-   * to the specified order. The operation ignores any attempt to modify
-   * protected fields (return_reason, shopping_mall_order_id) and returns a 400
-   * error if these fields are included in the request body.
+   * The operation returns the updated return record with all fields, including
+   * computed fields like processedAt timestamp, totalRefundAmount, and any
+   * associated return-related notes. This ensures the client receives complete
+   * context after each update. Related operations: GET
+   * /orders/{orderCode}/returns/{returnCode} for viewing return status, GET
+   * /orders/{orderCode}/returns for listing all returns associated with an
+   * order.
    *
    * @param connection
-   * @param orderNumber Unique order identifier in format ORD-YYYYMMDD-NNNNN.
-   *   Must match the order_number field in shopping_mall_orders table.
-   * @param id Unique identifier of the return request. Must match the id field
-   *   in shopping_mall_order_returns table.
-   * @param body The update data for the return request. Contains the new status
-   *   and optional details for administrative use.
+   * @param orderCode Unique business identifier code of the target order
+   *   (global scope) used to locate the order associated with this return
+   *   request. This code is used instead of UUID for readability and business
+   *   traceability.
+   * @param returnCode Unique business identifier code of the target return
+   *   within the order (scoped to order) that identifies the specific return
+   *   instance to be updated. Return codes are system-generated and guaranteed
+   *   unique per order. This is a composite unique constraint since the same
+   *   returnCode may appear across different orders but is unique only within
+   *   the context of its parent order.
+   * @param body Update details for the return including status change, refund
+   *   amount, processing notes, and optional override reason for admin
+   *   actions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":id")
+  @TypedRoute.Put()
   public async update(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("orderNumber")
-    orderNumber: string,
-    @TypedParam("id")
-    id: string,
+    @TypedParam("orderCode")
+    orderCode: string,
+    @TypedParam("returnCode")
+    returnCode: string,
     @TypedBody()
     body: IShoppingMallOrderReturn.IUpdate,
   ): Promise<IShoppingMallOrderReturn> {
-    try {
-      return await putShoppingMallAdminOrdersOrderNumberReturnsId({
-        admin,
-        orderNumber,
-        id,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    orderCode;
+    returnCode;
+    body;
+    return typia.random<IShoppingMallOrderReturn>();
   }
 }

@@ -1,0 +1,205 @@
+/// Predefined content reporting categories for user content moderation.
+///
+/// This table stores all valid category types used when reporting content,
+/// including Spam, Hate Speech, Inappropriate Content, and Other. Each
+/// category allows system administrators to define reporting options with
+/// unique names and descriptive details.
+///
+/// Categories are managed independently by the platform, allowing for
+/// flexible addition of new reporting types without affecting content
+/// submission processes. The system ensures each category name is globally
+/// unique to prevent conflicting reporting options.
+///
+/// Temporal fields support audit tracking for category management history.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the category (e.g., 'Spam', 'Hate Speech'). Must be
+  /// short, clear, and match UX labels.
+  name String
+  
+  /// Detailed explanation of the category purpose and usage guidelines for
+  /// moderators and users.
+  description String
+  
+  /// Numeric priority for display ordering in UI selections, lower numbers
+  /// appear first.
+  sort_order Int
+  
+  /// Timestamp when the category was originally added to the system.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was marked as deleted (soft delete). Null
+  /// means active category.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([sort_order])
+}
+
+/// Tracks all user-reported content submissions, including content type,
+/// reporter ID, and current status.
+///
+/// A report is created when a user flags content as violating community
+/// guidelines. Each report is associated with a content item (post or
+/// comment) and has a status that progresses through the moderation
+/// workflow.
+///
+/// Reports are managed by community moderators and site administrators, and
+/// each report has a creation timestamp and optional resolution. Users can
+/// report the same content multiple times, so no unique constraint on
+/// (reporter_id, content_id).
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who reported the content. {@link reddit_platform_users.id}.
+  reporter_id String
+  
+  /// Type of content being reported, such as 'post' or 'comment'.
+  content_type String
+  
+  /// The unique identifier for the reported content item (e.g., post ID or
+  /// comment ID).
+  content_id String
+  
+  /// Current status of the report. Valid values: 'pending', 'under_review',
+  /// 'resolved', 'closed'.
+  status String
+  
+  /// Reason provided by the reporter for the report, such as 'spam', 'hate
+  /// speech', or other category.
+  reason String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft-deleted (nullable for soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_platform_users @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  
+  reddit_platform_report_history reddit_platform_report_history[]
+  reddit_platform_report_notifications reddit_platform_report_notifications[]
+  
+  @@index([reporter_id, created_at])
+}
+
+/// Report status change audit trail tracking the entire resolution process.
+///
+/// Stores all status changes made to user-reported content in the reporting
+/// system. Each entry records the status change, the reason for the change
+/// (if provided), and the exact timestamp of the transition.
+///
+/// The audit trail captures intermediate resolution steps including review
+/// stages and moderator actions, ensuring a clear record of how reports
+/// progressed from submission to final resolution. Each status transition
+/// represents a significant milestone in the moderation workflow.
+///
+/// Status values follow a logical progression: open → under_review →
+/// resolved or closed based on moderator decisions. This table is
+/// append-only with no modifications to historical entries.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the report being tracked. {@link reddit_platform_reports.id}.
+  reddit_platform_report_id String
+  
+  /// Current status of the report. Valid values: open, under_review, resolved,
+  /// closed, rejected.
+  status String
+  
+  /// Optional reason for the status change or additional context about the
+  /// moderation outcome.
+  status_reason String?
+  
+  /// Timestamp when the status change was recorded in the reporting system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report reddit_platform_reports @relation(fields: [reddit_platform_report_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_platform_report_id])
+  @@index([created_at])
+}
+
+/// Logs all notifications sent to users regarding report status updates,
+/// moderator actions, and resolution outcomes.
+///
+/// Serves as a persistent record of communication between the moderation
+/// system and users about reported content. Each notification entry
+/// represents a discrete message sent for a specific report in the workflow.
+///
+/// Notifications include both automated status changes (e.g., 'Report marked
+/// as resolved') and moderator actions (e.g., 'Comment removed per community
+/// guidelines'). All entries maintain historical context for user reference.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report this notification relates to. {@link reddit_platform_reports.id}
+  report_id String
+  
+  /// Notification type (status_update, resolution, reminder, warning).
+  type String
+  
+  /// Serialized JSON notification content including metadata and message
+  /// details.
+  payload String
+  
+  /// Timestamp when notification was created and sent.
+  created_at DateTime
+  
+  /// Timestamp of last modification to notification status or content.
+  updated_at DateTime
+  
+  /// Timestamp when notification was soft-deleted (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report reddit_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@index([report_id, created_at])
+}

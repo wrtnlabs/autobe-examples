@@ -1,0 +1,1834 @@
+/// Core product catalog entities with title, description, and category
+/// relationships.
+///
+/// Represents products available for sale on the platform. Each product has
+/// a unique identifier, descriptive title and body content, and belongs to a
+/// specific category for organized browsing and filtering.
+///
+/// Products are the central entities in the sales domain, forming the
+/// foundation for pricing, inventory, reviews, and sales transactions.
+/// Customers search, filter, and browse products independently, requiring
+/// full CRUD API support. Product information may change over time, but
+/// historical context is preserved through related entities like prices and
+/// variants rather than snapshotting this table.
+///
+/// The product record serves as a canonical reference point for all
+/// downstream sales activities including cart additions, orders, reviews,
+/// and question/answer interactions.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproducts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category this product belongs to. {@link
+  /// communityplatformproductcategories.id}.
+  communityplatformproductcategories_id String
+  
+  /// The product's official title as displayed to customers. Must be concise
+  /// and descriptive.
+  title String
+  
+  /// Detailed product description including features, specifications, and
+  /// usage information. May contain Markdown or HTML for formatting.
+  description String
+  
+  /// When the product record was first created in the system.
+  created_at DateTime
+  
+  /// Last time any attribute of this product was modified. Used to track
+  /// freshness and trigger cache invalidation.
+  updated_at DateTime
+  
+  /// Timestamp when this product was logically deleted. Used for soft delete
+  /// capability and audit trail. NULL means product is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category communityplatformproductcategories @relation(fields: [communityplatformproductcategories_id], references: [id], onDelete: Cascade)
+  
+  communityplatformproductvariants communityplatformproductvariants[]
+  communityplatformproductimages communityplatformproductimages[]
+  communityplatformproductspecifications communityplatformproductspecifications[]
+  communityplatformproductreviews communityplatformproductreviews[]
+  communityplatformproductquestions communityplatformproductquestions[]
+  communityplatformproductprices communityplatformproductprices[]
+  communityplatformproductpricerules communityplatformproductpricerules[]
+  communityplatformpromotions communityplatformpromotions[]
+  communityplatformsaleitems communityplatformsaleitems[]
+  communityplatformsalefavorites communityplatformsalefavorites[]
+  communityplatformsaleviewstats communityplatformsaleviewstats?
+  communityplatformproductwishlist communityplatformproductwishlist[]
+  community_platform_cart_items community_platform_cart_items[]
+  community_platform_inventory_items community_platform_inventory_items[]
+  community_platform_reports community_platform_reports[]
+  
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproductcategories_id], map: "communityplatformproducts_communityplatformproductcate_74f52393")
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Product variants for different sizes, colors, or configurations with
+/// separate pricing and inventory.
+///
+/// Each product can have multiple variants representing different
+/// specifications such as size, color, material, or configuration. Variants
+/// have independent pricing, inventory levels, and availability status
+/// separate from the parent product. This allows for fine-grained product
+/// management where different configurations can have different costs, stock
+/// levels, and availability.
+///
+/// Variants are managed by product administrators who create, edit, and
+/// disable specific variants independently. The system tracks historical
+/// pricing and inventory changes for each variant through temporal fields.
+/// Variants can be archived (soft-deleted) when discontinued without
+/// removing the parent product.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductvariants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent product this variant belongs to. {@link
+  /// communityplatformproducts.id}.
+  product_id String
+  
+  /// Reference to the inventory item tracking stock levels for this variant.
+  /// {@link community_platform_inventory_items.id}. Ensures exactly one
+  /// inventory record per variant.
+  inventory_item_id String
+  
+  /// Display name for the variant (e.g., 'Large Blue', 'Wireless Edition').
+  /// Used in product selection UI.
+  name String
+  
+  /// JSON representation of variant-specific attributes (e.g., {"size": "L",
+  /// "color": "blue", "material": "cotton"}). Used for product filtering and
+  /// display.
+  attributes String
+  
+  /// Regular price of this specific variant in the base currency. Used for
+  /// checkout calculation and comparison with discount price.
+  price Float
+  
+  /// Sale/discounted price of this variant when active. If null, regular price
+  /// applies. Used for promotional pricing.
+  discount_price Float?
+  
+  /// Availability status of this variant. When false, variant cannot be
+  /// purchased but remains in catalog for historical data.
+  available Boolean
+  
+  /// Timestamp when this variant was created in the system. Used for audit
+  /// trail and data analysis.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last modified. Used for tracking changes
+  /// and synchronization.
+  updated_at DateTime
+  
+  /// Timestamp when this variant was soft-deleted. When null, variant is
+  /// active. Used for inventory management and data recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  inventoryItem community_platform_inventory_items @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+  
+  communityplatformproductstocklevels communityplatformproductstocklevels?
+  
+  @@unique([inventory_item_id])
+  @@index([product_id, created_at])
+  @@index([product_id, available])
+  @@index([available, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([inventory_item_id, created_at], map: "communityplatformproductvariants_inventory_item_id_cre_f50fb024")
+}
+
+/// Product images for display in the sales catalog.
+///
+/// Stores and manages visual assets associated with products. Each image is
+/// linked to exactly one product and has an ordered position for display
+/// sequencing. Images are not independently managed by users but are
+/// created, updated, and deleted as part of product management workflows.
+///
+/// Image metadata includes file path, format, size, and display ordering.
+/// The system does not maintain historical versions of product images - when
+/// an image is replaced, the old one is removed and the new one takes its
+/// place.
+///
+/// This table is purely subsidiary to the product catalog, serving only to
+/// provide visual representation of products.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductimages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product this image belongs to. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproducts_id String
+  
+  /// Absolute file path or URL to the product image in storage. Format:
+  /// /images/products/{product_id}/filename.ext
+  file_path String
+  
+  /// Size of the image file in bytes. Used for storage planning and
+  /// performance optimization.
+  file_size Int
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png). Used to
+  /// determine rendering behavior and format support.
+  mime_type String
+  
+  /// Position index for display ordering of images within a product. First
+  /// image has order_index=0, second has 1, etc.
+  order_index Int
+  
+  /// Timestamp of when the image was uploaded and associated with the product.
+  /// Records creation time for audit purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproducts_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([communityplatformproducts_id, order_index], map: "communityplatformproductimages_communityplatformproduc_c4a6f4fb")
+  @@index([created_at])
+}
+
+/// Technical specifications for products stored as key-value pairs.
+///
+/// Represents detailed technical attributes of products such as dimensions,
+/// materials, power consumption, weight, and other measurable
+/// characteristics. This table enables flexible product categorization and
+/// filtering based on technical criteria without requiring schema changes
+/// for new specifications.
+///
+/// Each specification is associated with exactly one product and has a
+/// unique key-value pair. The specification keys are standardized within the
+/// admin system to ensure consistency (e.g., "weight", "dimensions",
+/// "battery_capacity").
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// specification cleanup or revision.
+///
+/// Detailed specification history is tracked through product snapshots in
+/// communityplatformproductsnapshots, so this table stores only current
+/// specifications.
+///
+/// This entity is managed independently by backend administrators and
+/// integration systems.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductspecifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this specification belongs to. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproduct_id String
+  
+  /// The attribute name of the specification (e.g., "weight", "dimensions",
+  /// "battery_capacity"). Standardized keys ensure consistency across products
+  /// and enable efficient searching and filtering.
+  key String
+  
+  /// The value of the specification in string format. This allows storing both
+  /// numeric and textual values (e.g., "1.5kg", "20cm x 15cm x 10cm",
+  /// "4000mAh").
+  value String
+  
+  /// Timestamp when this specification record was created.
+  created_at DateTime
+  
+  /// Timestamp when this specification record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this specification was logically deleted. NULL indicates
+  /// the specification is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproduct_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([communityplatformproduct_id, key], map: "communityplatformproductspecifications_communityplatfo_49776da0")
+}
+
+/// Product categorization hierarchy with parent-child relationships for
+/// navigation.
+///
+/// Stores the hierarchical structure of product categories that enables
+/// browsing and filtering in the product catalog. Each category can have
+/// multiple child categories, forming a tree structure that organizes
+/// products into logical groupings for users.
+///
+/// Categories are directly managed by administrators and serve as navigation
+/// roots for product discovery. New categories are created to accommodate
+/// new product lines, and existing ones are reorganized as the catalog
+/// evolves.
+///
+/// Categories can be soft-deleted to archive them while preserving
+/// historical association with products. The hierarchy supports unlimited
+/// nesting depth for complex classification needs.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductcategories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category that contains this category. {@link
+  /// communityplatformproductcategories.id}.
+  parent_id String?
+  
+  /// Display name of the category shown to users in navigation menus and
+  /// product filtering.
+  name String
+  
+  /// Detailed description of the category that may be displayed on category
+  /// landing pages or used for SEO metadata.
+  description String?
+  
+  /// Determines display order among sibling categories. Lower values appear
+  /// first in navigation.
+  order_index Int
+  
+  /// Timestamp when this category was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this category was soft-deleted. Nullable means the
+  /// category is active; non-null means archived.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent communityplatformproductcategories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  communityplatformproducts communityplatformproducts[]
+  recursive communityplatformproductcategories[] @relation("recursive")
+  communityplatformpromotions communityplatformpromotions[]
+  
+  @@unique([parent_id, name])
+  @@index([parent_id, order_index])
+  @@index([deleted_at])
+}
+
+/// Customer reviews and ratings for products with user attribution and
+/// timestamps.
+///
+/// Stores feedback from authenticated members about specific products they
+/// have purchased or experienced. Each review represents a single user's
+/// opinion with a numeric rating (1-5) and optional title/body text.
+///
+/// Reviews are independent entities that users can create, edit, and delete
+/// at any time. They remain attached to the product even if product details
+/// change, providing historical context for future buyers.
+///
+/// The review content reflects the member's authentic experience, subject to
+/// reporting and moderation. Reviews are not created by guests or
+/// administrators - only authenticated members can submit them, enforced via
+/// the member_subtype relationship.
+///
+/// All reviews are tracked with full audit trails via timestamps and soft
+/// delete capability for content moderation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductreviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product being reviewed. {@link communityplatformproducts.id}.
+  communityplatformproduct_id String
+  
+  /// The member who created this review. {@link community_platform_member.id}.
+  communityplatformmember_id String
+  
+  /// Numeric rating from 1 to 5. Must be an integer between 1 (poor) and 5
+  /// (excellent). Required for all reviews.
+  rating Int
+  
+  /// Brief headline or summary of the review. Must contain at least 3
+  /// characters and cannot be empty.
+  title String
+  
+  /// Detailed review content written by the member. Can be up to 2000
+  /// characters with rich text formatting.
+  body String
+  
+  /// Timestamp when the review was first created. Cannot be modified after
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified. Updated whenever title or
+  /// body is changed.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft-deleted (hidden from public view).
+  /// Null if active. Used for content moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproduct_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [communityplatformmember_id], references: [id], onDelete: Cascade)
+  
+  communityplatformproductreviewvotes communityplatformproductreviewvotes[]
+  
+  @@unique([communityplatformmember_id])
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproduct_id, created_at], map: "communityplatformproductreviews_communityplatformprodu_a510d613")
+  @@index([rating, created_at])
+}
+
+/// Helpful votes on product reviews to surface quality feedback.
+///
+/// Tracks member feedback on product reviews to identify the most useful
+/// content for other users. Each vote represents either a positive (helpful)
+/// or negative (abuse) assessment of a review's quality, enabling
+/// algorithmic surfacing of high-quality content.
+///
+/// Membership authentication required to cast votes - guests cannot provide
+/// feedback. Each member can vote only once per review to prevent
+/// manipulation. Votes are timestamped and support soft delete for
+/// moderation purposes, allowing abusive votes to be removed while
+/// maintaining audit trails.
+///
+/// This table enables reputation systems by determining which product
+/// reviews gain prominence through community assessment.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductreviewvotes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product review being voted on. {@link
+  /// communityplatformproductreviews.id}.
+  product_review_id String
+  
+  /// The member who cast this vote. {@link community_platform_member.id}.
+  member_id String
+  
+  /// Vote value indicating helpfulness: +1 for helpful vote, -1 for abuse
+  /// report (flag as helpful/no).
+  vote_value Int
+  
+  /// Timestamp when this vote was cast by the member.
+  created_at DateTime
+  
+  /// Timestamp when this vote was last modified or retracted.
+  updated_at DateTime
+  
+  /// Timestamp when this vote was soft-deleted (e.g., by moderator for abusive
+  /// behavior). If null, vote is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review communityplatformproductreviews @relation(fields: [product_review_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([product_review_id, member_id], map: "communityplatformproductreviewvotes_product_review_id__b91f9a9c")
+  @@index([product_review_id])
+  @@index([member_id, created_at])
+}
+
+/// Customer questions about products before purchase.
+///
+/// Stores inquiries from customers seeking additional product information
+/// before making a purchase decision. Each question is associated with a
+/// specific product and created by an authenticated actor (member, guest, or
+/// admin) through their active session.
+///
+/// Questions remain attached to the product even if the product details
+/// change, providing historical context. Customers can ask multiple
+/// questions per product, and each question can receive one answer from the
+/// seller or other actor.
+///
+/// The question content includes title and body fields for structured
+/// inquiry formatting. Soft deletion is supported to maintain audit trails
+/// while allowing content moderation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductquestions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that the question is about. {@link communityplatformproducts.id}.
+  product_id String
+  
+  /// Brief title summarizing the customer's question. Typically 1-5 words
+  /// describing the inquiry.
+  title String
+  
+  /// Detailed description of the customer's question. Contains the full
+  /// context of what the user wants to know about the product.
+  body String
+  
+  /// Timestamp when the question was originally created. Used for
+  /// chronological ordering and activity tracking.
+  created_at DateTime
+  
+  /// Timestamp when the question was last updated (e.g., edited by user or
+  /// moderated).
+  updated_at DateTime
+  
+  /// Timestamp when the question was soft-deleted (hidden). NULL indicates
+  /// active question. Used for content moderation and audit trails.
+  deleted_at DateTime?
+  
+  /// Type of actor who created this question (member, guest, or admin). Used
+  /// to route to appropriate subtype entity.
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  communityplatformproductquestionanswers communityplatformproductquestionanswers?
+  
+  @@index([product_id, created_at])
+  @@index([actor_type, created_at])
+  @@index([deleted_at])
+}
+
+/// Seller answers to customer product questions.
+///
+/// Stores responses from sellers to customer inquiries about products. Each
+/// answer is linked to exactly one product question and is associated with
+/// either a member seller or admin seller. Answers are visible to all users
+/// and can be edited by the original seller until the question is marked as
+/// resolved. Soft deletion allows for content moderation while preserving
+/// audit trails.
+///
+/// The seller_type field identifies whether the answer came from a member
+/// (merchant) or admin (support), and the corresponding subtype table
+/// (communityplatformproductquestionanswer_of_members or
+/// communityplatformproductquestionanswer_of_admins) contains the
+/// actor-specific context.
+///
+/// The system supports two types of sellers: registered merchant members and
+/// platform administrators. This pattern ensures referential integrity and
+/// prevents invalid combinations of actor types.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductquestionanswers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product question this answer responds to. {@link
+  /// communityplatformproductquestions.id}.
+  productquestion_id String
+  
+  /// The type of actor who created this answer: 'member' for seller members or
+  /// 'admin' for system administrators.
+  seller_type String
+  
+  /// Short title summarizing the answer content.
+  title String
+  
+  /// Full text response to the customer's question with detailed product
+  /// information.
+  body String
+  
+  /// Timestamp when this answer was originally created.
+  created_at DateTime
+  
+  /// Timestamp when this answer was last modified by the seller.
+  updated_at DateTime
+  
+  /// Timestamp when this answer was soft-deleted by moderation or by the
+  /// seller. Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productQuestion communityplatformproductquestions @relation(fields: [productquestion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([productquestion_id])
+  // spellchecker: ignore-next-line
+  @@index([seller_type, created_at], map: "communityplatformproductquestionanswers_seller_type_cr_4847cb28")
+  // spellchecker: ignore-next-line
+  @@index([productquestion_id, created_at], map: "communityplatformproductquestionanswers_productquestio_327ed937")
+}
+
+/// Historical pricing records for products, capturing price changes over
+/// time for audit and reporting.
+///
+/// Each record represents a specific price point for a product at a given
+/// time period, maintained to ensure accurate order fulfillment, financial
+/// reporting, and price comparison analytics. Prices are updated by system
+/// rules, promotions, or manual adjustments, creating a versioned history
+/// that survives product modifications.
+///
+/// Product prices are not stored in the main products table to preserve the
+/// integrity of historical transaction data. When a product's price changes,
+/// a new price record is created with a start date, and the previous
+/// record's end date is set to the change timestamp.
+///
+/// These records are crucial for accurately calculating past sales,
+/// generating price trend reports, and ensuring refunds/credits are based on
+/// the correct historical price rather than the current one.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductprices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product this price applies to. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproduct_id String
+  
+  /// The price value in the specified currency. Always stored as a positive
+  /// decimal number representing the unit cost.
+  price Float
+  
+  /// Currency code (ISO 4217) for the price. Examples: USD, EUR, JPY. Must be
+  /// a valid three-letter currency code.
+  currency String
+  
+  /// The date and time when this price became effective. Used to determine
+  /// which price applies during a given time period.
+  start_date DateTime
+  
+  /// The date and time when this price expired. Null indicates the price is
+  /// currently active. Set when a new price record is created for the same
+  /// product.
+  end_date DateTime?
+  
+  /// Origin of the price change. Values: 'system_rule', 'promotion',
+  /// 'manual_adjustment'. Indicates whether this price change was triggered
+  /// automatically by pricing rules, a promotional campaign, or an admin
+  /// manual override.
+  source String?
+  
+  /// Timestamp when this price record was created in the system. Used for
+  /// audit trail and sequence determination.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this price record. Changed whenever the
+  /// end_date is set (expiration) or source is updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail compliance. When set, the price
+  /// record is marked as deleted but preserved in the database. Never used to
+  /// remove historical pricing for reporting purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproduct_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([communityplatformproduct_id, start_date], map: "communityplatformproductprices_communityplatformproduc_f35258c2")
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproduct_id, end_date], map: "communityplatformproductprices_communityplatformproduc_eb26dfef")
+  @@index([start_date, end_date])
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproduct_id, start_date, end_date], map: "communityplatformproductprices_communityplatformproduc_e951be63")
+}
+
+/// Dynamic pricing rules that automatically adjust product prices based on
+/// defined conditions.
+///
+/// Defines business logic for applying discounts or price adjustments to
+/// products based on criteria such as volume, season, user segment, or
+/// promotional events. These rules are evaluated at runtime and can affect
+/// multiple products simultaneously. Admins manage these rules independently
+/// to control pricing strategy across the catalog without modifying
+/// individual product prices.
+///
+/// Rules are prioritized by numeric priority field, with higher values
+/// taking precedence. Only active rules are applied to products. Each rule
+/// has a defined duration and can be archived without deletion via soft
+/// delete mechanism.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductpricerules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product to which this pricing rule applies. References an existing
+  /// product in the catalog. {@link communityplatformproducts.id}.
+  communityplatformproduct_id String
+  
+  /// Human-readable name for the pricing rule, used in admin interfaces for
+  /// identification and management.
+  name String
+  
+  /// Detailed explanation of the pricing rule's conditions and business
+  /// intent. Optional field used for documentation and audit purposes.
+  description String?
+  
+  /// Numerical priority determining rule evaluation order. Higher values are
+  /// applied first. Essential for resolving conflicts when multiple rules
+  /// affect the same product.
+  priority Int
+  
+  /// JSON-formatted string describing the criteria that triggers this price
+  /// adjustment (e.g., {"min_quantity": 5, "user_segment": "premium"}).
+  trigger_condition String
+  
+  /// Percentage discount to apply to the base product price. Negative values
+  /// indicate price increases. Must be between -100 and 100, inclusive.
+  discount_percentage Float
+  
+  /// Date and time when the pricing rule becomes active and begins affecting
+  /// product prices.
+  start_date DateTime
+  
+  /// Date and time when the pricing rule expires and stops affecting product
+  /// prices. If null, rule remains active indefinitely.
+  end_date DateTime?
+  
+  /// Flag indicating whether the pricing rule is currently active and being
+  /// applied. Toggle functionality allows temporary disabling of rules without
+  /// deletion.
+  is_active Boolean
+  
+  /// Timestamp of when this pricing rule was created in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this pricing rule's configuration.
+  updated_at DateTime
+  
+  /// Soft delete timestamp marking when the rule was archived. Null means rule
+  /// is active; non-null means rule is logically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproduct_id], references: [id], onDelete: Cascade)
+  
+  @@unique([name])
+  @@index([priority, created_at])
+  // spellchecker: ignore-next-line
+  @@index([is_active, start_date, end_date], map: "communityplatformproductpricerules_is_active_start_dat_d5cf4f01")
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproduct_id, is_active], map: "communityplatformproductpricerules_communityplatformpr_15fe1871")
+}
+
+/// Active promotional campaigns with start/end dates, discount rules, and
+/// eligibility criteria.
+///
+/// Tracks marketing promotions that offer discounts to customers based on
+/// specific conditions. Promotions can be applied to specific products,
+/// categories, or all sales. Each promotion has defined start and end dates,
+/// discount parameters, and eligibility rules that determine which customers
+/// and products qualify for the discount.
+///
+/// Promotions are managed independently by administrators through the admin
+/// panel. They remain active within their date ranges and can be updated or
+/// deactivated as needed. Soft deletion is supported to maintain an audit
+/// trail of promotional history while allowing promotions to be logically
+/// removed from active status without data loss.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformpromotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product to which this promotion applies, if specific to a product. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproducts_id String?
+  
+  /// Product category to which this promotion applies, if specific to a
+  /// category. {@link communityplatformproductcategories.id}.
+  communityplatformproductcategories_id String?
+  
+  /// Name of the promotional campaign for internal reference and display.
+  name String
+  
+  /// Detailed description of the promotion including terms and conditions.
+  description String?
+  
+  /// Timestamp when the promotion becomes active.
+  start_date DateTime
+  
+  /// Timestamp when the promotion expires and becomes inactive.
+  end_date DateTime
+  
+  /// Type of discount offered. Valid values: 'percentage', 'fixed_amount',
+  /// 'buy_x_get_y'.
+  discount_type String
+  
+  /// The numerical value of the discount (e.g., 20 for 20% or 10 for $10
+  /// discount).
+  discount_value Float
+  
+  /// Minimum purchase amount required to qualify for the discount. Null means
+  /// no minimum.
+  min_purchase_amount Float?
+  
+  /// Maximum total discount amount allowed per transaction. Null means no
+  /// maximum limit.
+  max_discount_amount Float?
+  
+  /// JSON string containing complex eligibility rules for advanced promotion
+  /// logic (e.g., customer segments, time-based restrictions).
+  eligibility_rules String?
+  
+  /// Current state of the promotion. Valid values: 'draft', 'active',
+  /// 'inactive', 'expired', 'cancelled'.
+  status String
+  
+  /// Timestamp when the promotion was created.
+  created_at DateTime
+  
+  /// Timestamp when the promotion was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the promotion was logically deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts? @relation(fields: [communityplatformproducts_id], references: [id], onDelete: Cascade)
+  category communityplatformproductcategories? @relation(fields: [communityplatformproductcategories_id], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@index([start_date])
+  @@index([end_date])
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproducts_id, status], map: "communityplatformpromotions_communityplatformproducts__c0aba6bd")
+  // spellchecker: ignore-next-line
+  @@index([communityplatformproductcategories_id, status], map: "communityplatformpromotions_communityplatformproductca_ef024854")
+  @@index([created_at])
+  @@index([discount_type, status])
+}
+
+/// Completed sales transactions with total amount, payment status, and order
+/// reference.
+///
+/// Represents final, committed purchases made by customers. Each sale
+/// aggregates multiple line items from the shopping cart and captures the
+/// transaction state at the time of purchase.
+///
+/// Sales records serve as the primary audit trail for financial transactions
+/// and customer order history. They contain essential operational data
+/// including payment status, customer reference, and timestamps for
+/// reporting and reconciliation purposes.
+///
+/// Sales remain accessible even after related product information changes,
+/// ensuring historical accuracy for financial and customer service purposes.
+///
+/// The sale status tracks payment lifecycle: pending, completed, refunded,
+/// or cancelled. This table links to the customer via member_id and contains
+/// the associated products through the separate sale_items table.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who made this purchase. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// Payment status of the sale. Valid values: pending, completed, refunded,
+  /// cancelled. Tracks the financial state of the transaction lifecycle.
+  status String
+  
+  /// Timestamp when the sale was created and finalized. Records the exact
+  /// moment the transaction completed.
+  created_at DateTime
+  
+  /// Timestamp when the sale record was last updated, typically when status
+  /// changes (e.g., from pending to completed).
+  updated_at DateTime
+  
+  /// Optional soft delete timestamp. Used to mark sales as cancelled or purged
+  /// without removing data completely, preserving audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  communityplatformsaleitems communityplatformsaleitems[]
+  communityplatformsalesnapshots communityplatformsalesnapshots?
+  communityplatformsaleshipments communityplatformsaleshipments?
+  communityplatformsalesdiscountuses communityplatformsalesdiscountuses[]
+  communityplatformsalesrefunds communityplatformsalesrefunds[]
+  communityplatformsalesordernotes communityplatformsalesordernotes[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "communityplatformsales_community_platform_member_id_cr_a197eb98")
+  @@index([status, created_at])
+}
+
+/// Line items within completed sales transactions, capturing product
+/// details, quantities, and pricing at time of sale.
+///
+/// Each item represents a single product or variant purchased within a sale,
+/// recording the quantity and price at the time of purchase to maintain
+/// historical accuracy. These items are always managed through their parent
+/// sale transaction and are not independently accessed by users.
+///
+/// The price is captured as a snapshot to ensure accurate financial
+/// reporting even if product prices change after the sale. Inventory levels
+/// are not updated here as that occurs at the product level in
+/// communityplatformproductstocklevels.
+///
+/// Soft deletion is supported to preserve audit trails when sales are
+/// modified or canceled.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsaleitems {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent sale transaction. {@link
+  /// communityplatformsales.id}.
+  communityplatformsales_id String
+  
+  /// Reference to the product being purchased. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproducts_id String
+  
+  /// Number of units of the product purchased in this line item. Must be a
+  /// positive integer.
+  quantity Int
+  
+  /// Price per unit at time of sale, capturing the exact price paid. Stored as
+  /// decimal with currency precision.
+  unit_price Float
+  
+  /// Total amount for this line item (quantity × unit_price). Used for
+  /// financial reporting and tax calculations.
+  total_amount Float
+  
+  /// Timestamp when this line item was created as part of the sale transaction.
+  created_at DateTime
+  
+  /// Timestamp when this line item was last updated. Usually mirrors the
+  /// parent sale's update time.
+  updated_at DateTime
+  
+  /// Timestamp when this line item was soft-deleted. Used for audit trails
+  /// when sales are modified or canceled. NULL means item is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale communityplatformsales @relation(fields: [communityplatformsales_id], references: [id], onDelete: Cascade)
+  product communityplatformproducts @relation(fields: [communityplatformproducts_id], references: [id], onDelete: Cascade)
+  
+  @@index([communityplatformproducts_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([communityplatformsales_id, communityplatformproducts_id], map: "communityplatformsaleitems_communityplatformsales_id_c_a7c47d61")
+}
+
+/// Point-in-time snapshots of sales transactions for audit, reporting, and
+/// historical accuracy.
+///
+/// Captures the complete state of a sale at the moment the snapshot is
+/// taken, preserving pricing, quantities, and metadata for compliance and
+/// reconciliation purposes. Each snapshot corresponds to exactly one sales
+/// transaction and cannot be modified after creation, ensuring immutable
+/// audit trails.
+///
+/// Used for financial reporting, dispute resolution, historical analysis,
+/// and verification of transaction integrity. The snapshot data remains
+/// unchanged even if the original sale is updated, refunded, or canceled,
+/// maintaining a true record of what occurred at the time of the
+/// transaction.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalesnapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original sale that this snapshot represents. {@link
+  /// communityPlatformSales.id}.
+  communityplatformsales_id String
+  
+  /// Timestamp when this snapshot was created, capturing the exact state of
+  /// the sale at that moment.
+  snapshot_at DateTime
+  
+  /// Total monetary amount of the sale at time of snapshot, including all
+  /// adjustments, taxes, and discounts.
+  total_amount Float
+  
+  /// Three-letter ISO 4217 currency code that was in effect at the time of
+  /// snapshot.
+  currency String
+  
+  /// Total tax amount applied to the sale as calculated at time of snapshot.
+  tax_amount Float
+  
+  /// Total discount applied to the sale at time of snapshot, including
+  /// promotional codes and special offers.
+  discount_amount Float
+  
+  /// Shipping cost calculated at time of snapshot, including carrier and
+  /// service level selected.
+  shipping_amount Float
+  
+  /// Status of payment processing at time of snapshot (e.g., pending, paid,
+  /// failed, refunded).
+  payment_status String
+  
+  /// Status of the order at time of snapshot (e.g., new, confirmed, shipped,
+  /// delivered, canceled).
+  order_status String
+  
+  /// Customer ID who initiated the sale at time of snapshot. References
+  /// community_platform_member.id.
+  customer_id String
+  
+  /// Shipping address used at time of snapshot, preserving the exact
+  /// customer-provided address.
+  shipping_address String
+  
+  /// Billing address used at time of snapshot, preserving the exact
+  /// payment-provided address.
+  billing_address String
+  
+  /// Optional internal notes added at time of snapshot regarding special
+  /// conditions, exceptions, or instructions.
+  notes String?
+  
+  /// Timestamp when this snapshot record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated (only for metadata
+  /// corrections).
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot record was logically deleted for compliance
+  /// with data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale communityplatformsales @relation(fields: [communityplatformsales_id], references: [id], onDelete: Cascade)
+  
+  @@unique([communityplatformsales_id])
+  @@index([snapshot_at])
+  @@index([deleted_at])
+}
+
+/// Shipping details and carrier information for each completed sale.
+///
+/// Tracks the logistics execution of sales transactions with carrier
+/// assignments, tracking numbers, delivery status, and shipping addresses.
+/// Each shipment is uniquely associated with one sale and represents the
+/// physical delivery phase of the business transaction. Users can
+/// independently track shipment status, view estimated delivery times, and
+/// contact carriers directly through this system.
+///
+/// Shipment data is managed separately from the sales record to allow for
+/// multiple carriers per sale (in split shipments), independent status
+/// updates, and real-time tracking integration with external logistics
+/// providers. This table supports critical user-facing functionality for
+/// tracking and customer service.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsaleshipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sale this shipment belongs to. {@link communityplatformsales.id}.
+  communityplatformsales_id String
+  
+  /// Name of the logistics carrier (e.g., 'FedEx', 'UPS', 'DHL'). Must be a
+  /// supported carrier in the system.
+  carrier String
+  
+  /// Unique tracking number assigned by the carrier for this shipment. Used
+  /// for external tracking and customer inquiries.
+  tracking_number String
+  
+  /// Current status of the shipment. Valid values: pending, shipped,
+  /// out_for_delivery, delivered, failed, cancelled.
+  status String
+  
+  /// Full text address where the shipment is to be delivered. Includes
+  /// recipient name, street, city, state, postal code, and country.
+  ship_to_address String
+  
+  /// Full text address where the shipment originates (warehouse or fulfillment
+  /// center). Includes sender name, street, city, state, postal code, and
+  /// country.
+  ship_from_address String
+  
+  /// Estimated delivery date provided by the carrier. May be updated as
+  /// tracking progresses.
+  estimated_delivery_date DateTime?
+  
+  /// Actual date and time when the shipment was delivered, as confirmed by the
+  /// carrier. NULL until delivery is confirmed.
+  actual_delivery_date DateTime?
+  
+  /// Timestamp when the shipment record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the shipment record was last modified (e.g., status
+  /// update, address correction).
+  updated_at DateTime
+  
+  /// Timestamp when the shipment record was soft-deleted (for audit and
+  /// recovery purposes). NULL if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale communityplatformsales @relation(fields: [communityplatformsales_id], references: [id], onDelete: Cascade)
+  
+  communityplatformsaleshipmenttrackings communityplatformsaleshipmenttrackings[]
+  
+  @@unique([communityplatformsales_id])
+  
+  @@index([carrier])
+  @@index([status])
+  @@index([estimated_delivery_date])
+  @@index([actual_delivery_date])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Real-time tracking events and status updates for shipped items.
+///
+/// Records the chronological sequence of logistics events for each shipment
+/// as it progresses through the delivery network. Each tracking event
+/// captures the timestamp, physical location, carrier handling status, and
+/// any notable occurrences during transit.
+///
+/// This table is automatically populated by logistics API integrations as
+/// packages are scanned at warehouses, sorting centers, and delivery
+/// vehicles. It provides transparency to customers and operational
+/// visibility to logistics managers without requiring direct user
+/// interaction.
+///
+/// Event statuses include: pending, processed, in_transit, out_for_delivery,
+/// delivered, attempted_delivery, returned_to_sender, cancelled, and
+/// delayed. Carrier and location information is captured at each stage to
+/// enable accurate delivery estimates and exception handling.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsaleshipmenttrackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent shipment that this tracking event belongs to. {@link
+  /// communityplatformsaleshipments.id}.
+  communityplatformsaleshipments_id String
+  
+  /// The logistics carrier handling the package at this event stage. {@link
+  /// community_platform_carriers.id}.
+  community_platform_carriers_id String
+  
+  /// Current status of the shipment at this tracking event. Valid values:
+  /// pending, processed, in_transit, out_for_delivery, delivered,
+  /// attempted_delivery, returned_to_sender, cancelled, delayed.
+  status String
+  
+  /// Additional details about this tracking event, such as delivery
+  /// confirmation code, reason for delay, or exception messages. Optional
+  /// free-text field for carrier-provided commentary.
+  details String?
+  
+  /// Timestamp when this tracking event was recorded in the system. Always
+  /// corresponds to when the logistics provider scanned or reported the event.
+  created_at DateTime
+  
+  /// Timestamp when this tracking record was last updated. Used for detecting
+  /// stale or duplicated event records.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for audit compliance. Null indicates the record is
+  /// active; non-null indicates the event has been logically removed from
+  /// view.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shipment communityplatformsaleshipments @relation(fields: [communityplatformsaleshipments_id], references: [id], onDelete: Cascade)
+  carrier community_platform_carriers @relation(fields: [community_platform_carriers_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_carriers_id], map: "communityplatformsaleshipmenttrackings_community_platf_015757c2")
+  
+  // spellchecker: ignore-next-line
+  @@index([communityplatformsaleshipments_id, created_at], map: "communityplatformsaleshipmenttrackings_communityplatfo_ee00240f")
+}
+
+/// User preferences for products they've favorited or wishlisted.
+///
+/// Tracks products that members have marked as favorites for easy access and
+/// future consideration. Each favorite is a personal selection made by
+/// authenticated members, linking their account to specific products in the
+/// catalog.
+///
+/// Favoriting behavior is persistent across sessions and can be managed at
+/// any time - users can add products to favorites or remove them. This data
+/// powers the user's "Favorites" section in their profile and helps surface
+/// recommended products based on user preferences.
+///
+/// The table enforces uniqueness per user-product pair to prevent duplicate
+/// entries while allowing users to favorite any number of products across
+/// the platform.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalefavorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created this favorite. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// The product that has been favorited. {@link communityplatformproducts.id}.
+  product_id String
+  
+  /// Timestamp when the product was favorited.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this favorite record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  product communityplatformproducts @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, product_id])
+  @@index([product_id])
+  @@index([member_id])
+}
+
+/// Materialized view for aggregated product view counts to optimize
+/// reporting performance.
+///
+/// Stores pre-computed summary statistics of how many times products have
+/// been viewed across the platform. This table is updated asynchronously
+/// from the main product data to avoid impacting transactional performance
+/// during user browsing.
+///
+/// Used by analytics dashboards and recommendation engines to surface
+/// popular products without querying real-time view logs. The view counts
+/// are updated in batch intervals and represent cumulative totals since
+/// product creation.
+///
+/// This table is read-only from the application perspective and maintained
+/// automatically by background processes that aggregate view events from the
+/// system-wide activity logs.
+///
+/// It is referenced by other analytics models to generate insights on user
+/// engagement patterns without direct access to high-volume view event
+/// tables.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsaleviewstats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refers to the product this view statistic belongs to. {@link
+  /// communityplatformproducts.id}.
+  communityplatformproducts_id String
+  
+  /// Total number of times this product has been viewed across all user
+  /// sessions. Should be updated in batch modes only, not in real time.
+  view_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  product communityplatformproducts @relation(fields: [communityplatformproducts_id], references: [id], onDelete: Cascade)
+  
+  @@unique([communityplatformproducts_id])
+  @@index([view_count])
+}
+
+/// Tax rate configurations for sales transactions by geographic region and
+/// tax type.
+///
+/// Stores official sales tax rates applicable in different jurisdictions
+/// such as states, provinces, or regions. Used by the sales processing
+/// system to calculate accurate tax amounts on transactions based on
+/// customer location and product categories. Each tax rate has a unique
+/// identifier, jurisdictional scope, rate percentage, and effective period.
+///
+/// Tax rates are configuration data maintained by system administrators and
+/// rarely changed. Historical rates are preserved to ensure accurate
+/// financial reporting for past transactions. Tax rates do not have soft
+/// deletion - instead, rates with expiration dates become inactive and new
+/// rates are created for updated jurisdiction values.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalestaxrates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Geographic jurisdiction identifier (e.g., 'CA', 'US-CA', 'ON') that
+  /// defines the region this tax rate applies to.
+  jurisdiction String
+  
+  /// Classification of tax type (e.g., 'sales_tax', 'gst', 'hst', 'vat',
+  /// 'local_tax'). Distinguishes different tax categories that may apply
+  /// simultaneously.
+  tax_type String
+  
+  /// Tax rate expressed as percentage (e.g., 0.085 for 8.5%). Represents the
+  /// value by which the taxable amount is multiplied to calculate tax due.
+  rate_percentage Float
+  
+  /// Human-readable explanation of the tax rate's purpose, scope, or
+  /// applicable rules. For internal documentation and administrative
+  /// reference.
+  description String?
+  
+  /// Date and time when this tax rate became active. Used to determine which
+  /// rate applies to a transaction based on its timestamp.
+  effective_from DateTime
+  
+  /// Date and time when this tax rate expires and becomes inactive. NULL
+  /// indicates the rate has no expiration and remains in effect indefinitely.
+  effective_to DateTime?
+  
+  /// Timestamp when this tax rate configuration was created in the system.
+  /// Immutable for audit trail purposes.
+  created_at DateTime
+  
+  /// Timestamp when this tax rate configuration was last modified. Updated
+  /// whenever a new version replaces an existing rate.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([jurisdiction, tax_type, effective_from], map: "communityplatformsalestaxrates_jurisdiction_tax_type_e_4049689b")
+  @@index([jurisdiction, effective_from])
+  @@index([tax_type, effective_from])
+  @@index([effective_to])
+}
+
+/// Foreign exchange rates used in sales transactions across different
+/// currencies.
+///
+/// Stores current and historical exchange rates for converting between base
+/// currency and other currencies used in sales. These rates are used to
+/// calculate accurate pricing and amounts in multi-currency transactions,
+/// ensuring financial accuracy when customers pay in different currencies.
+///
+/// Rates are managed by system administrators and updated periodically based
+/// on market data. Each rate record represents the exchange rate valid for a
+/// specific currency on a specific date. The system uses the most recent
+/// effective rate for any given date in sales calculations.
+///
+/// Soft delete is supported to maintain an audit trail of rate changes over
+/// time, allowing historical sales to be recalculated with the rates that
+/// were effective at the time of transaction.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalescurrencyrates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ISO 4217 three-letter currency code (e.g., USD, EUR, JPY) representing
+  /// the target currency for this exchange rate.
+  currency_code String
+  
+  /// Exchange rate value representing how many units of the target currency
+  /// equal one unit of the base currency. This is the conversion factor used
+  /// in sales calculations.
+  rate Float
+  
+  /// Date and time when this exchange rate becomes effective. Used to
+  /// determine which rate applies to sales transactions on a specific date.
+  effective_date DateTime
+  
+  /// Name or identifier of the external financial service provider that
+  /// supplied this exchange rate data (e.g., 'fixer.io', 'exchangerate-api').
+  source_provider String?
+  
+  /// Timestamp when this exchange rate record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this exchange rate record was last updated or modified.
+  updated_at DateTime
+  
+  /// Timestamp when this exchange rate record was logically deleted. Allows
+  /// audit trail of rate changes while maintaining historical data integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([currency_code, effective_date], map: "communityplatformsalescurrencyrates_currency_code_effe_4224eaab")
+  @@index([effective_date])
+}
+
+/// Valid discount codes for sales transactions with usage limits and
+/// expiration dates.
+///
+/// System-generated discount codes that can be applied to sales transactions
+/// to provide promotions. Each code is uniquely identifiable and can be
+/// configured with fixed or percentage-based discounts with defined usage
+/// limits and expiration periods.
+///
+/// These codes are independent of specific sales and can be applied to
+/// multiple transactions until their usage limit is reached or they expire.
+/// The system tracks actual usage through the discount uses table, ensuring
+/// accurate limits and preventing abuse.
+///
+/// Discount codes are used for marketing campaigns, loyalty programs, and
+/// promotional events. Created by administrators and activated based on
+/// business rules.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalesdiscountcodes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique discount code string (e.g., 'SUMMER2024', 'SAVE10'). Must be
+  /// globally unique across all discount codes.
+  code String
+  
+  /// Type of discount applied. Valid values: 'percentage', 'fixed'. Determines
+  /// whether discount is applied as a percentage of total or fixed monetary
+  /// amount.
+  discount_type String
+  
+  /// Numeric value of discount. For percentage type: 0-100 (e.g., 20 = 20%).
+  /// For fixed type: monetary value (e.g., 10.00 = $10.00 off). Must be
+  /// non-negative.
+  discount_value Float
+  
+  /// Maximum number of times this discount code can be used across all sales.
+  /// Use 0 for unlimited usage.
+  usage_limit Int
+  
+  /// Date and time when this discount code expires and becomes invalid.
+  /// Expired codes cannot be applied to new transactions.
+  expires_at DateTime
+  
+  /// Whether the discount code is currently active and available for use.
+  /// Allows administrators to disable codes without deletion.
+  is_active Boolean
+  
+  /// Timestamp when this discount code was created in the system.
+  created_at DateTime
+  
+  /// Timestamp of last modification to this discount code configuration.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for archive purposes. Indicates when the code was
+  /// revoked or disabled permanently.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityplatformsalesdiscountuses communityplatformsalesdiscountuses[]
+  
+  @@index([expires_at])
+  @@index([is_active, expires_at])
+}
+
+/// Tracks individual usages of discount codes in sales transactions.
+///
+/// Records each instance where a discount code was applied to a specific
+/// sale, capturing the discount amount and usage timestamp. This table is
+/// used for audit trails, reporting on discount effectiveness, and verifying
+/// coupon redemption history.
+///
+/// Each record links a discount code to a specific sale, with references to
+/// the original discount code definition and the transaction where it was
+/// applied. Soft deletion is supported to maintain historical accuracy while
+/// allowing for data clean-up in moderation workflows.
+///
+/// This table is a supporting entity that exists purely to record historical
+/// discount application events and is managed through the sales and discount
+/// code processing workflows.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalesdiscountuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the discount code that was used. {@link
+  /// communityplatformsalesdiscountcodes.id}.
+  sales_discount_code_id String
+  
+  /// Reference to the sale where this discount was applied. {@link
+  /// communityplatformsales.id}.
+  sale_id String
+  
+  /// The currency amount of discount applied to this sale as a decimal value.
+  /// Represents the actual monetary benefit received from the discount code.
+  discount_amount Float
+  
+  /// The exact date and time when this discount code was applied to the sale.
+  used_at DateTime
+  
+  /// Record creation timestamp in the database.
+  created_at DateTime
+  
+  /// Last update timestamp for this usage record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp indicating when this record was marked for
+  /// deletion. Null means the record is active; non-null means the entry is
+  /// logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discountCode communityplatformsalesdiscountcodes @relation(fields: [sales_discount_code_id], references: [id], onDelete: Cascade)
+  sale communityplatformsales @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([sales_discount_code_id, sale_id], map: "communityplatformsalesdiscountuses_sales_discount_code_995f1a1f")
+  @@index([used_at])
+  @@index([sale_id, used_at])
+  // spellchecker: ignore-next-line
+  @@index([sales_discount_code_id, used_at], map: "communityplatformsalesdiscountuses_sales_discount_code_08f18e71")
+}
+
+/// Records all refund transactions processed against completed sales.
+///
+/// Tracks financial reversals for sales that have been returned, canceled,
+/// or otherwise invalidated. Each refund is tied to a specific sales
+/// transaction and references the original payment amount, reason for
+/// refund, and processing status.
+///
+/// Refunds are managed exclusively through their parent sales context and
+/// never operate as independent entities. This table preserves audit trails
+/// for accounting compliance and financial reconciliation.
+///
+/// Soft deletion is enabled to maintain historical integrity while allowing
+/// moderation of erroneous refund entries.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalesrefunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sales transaction being refunded. {@link communityplatformsales.id}.
+  sales_id String
+  
+  /// The exact monetary amount being refunded. Should match the refunded
+  /// portion of the original sale.
+  amount Float
+  
+  /// Reason code for the refund (e.g., 'customer_request', 'product_defect',
+  /// 'overcharge', 'order_cancellation'). Follows standardized refund reason
+  /// taxonomy.
+  reason String
+  
+  /// Current refund status: 'requested', 'approved', 'processed', 'failed',
+  /// 'cancelled'. Tracks lifecycle of refund request.
+  status String
+  
+  /// Timestamp when the refund record was created.
+  created_at DateTime
+  
+  /// Timestamp when the refund record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, the refund record has been marked for
+  /// deletion but remains in the database for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sales communityplatformsales @relation(fields: [sales_id], references: [id], onDelete: Cascade)
+  
+  @@index([sales_id, created_at])
+  @@index([status])
+}
+
+/// Real-time inventory levels and restock alerts for each product variant.
+///
+/// Tracks the available quantity for each product variant in real time,
+/// enabling accurate stock management.
+///
+/// Inventory levels are updated through automated warehouse systems and
+/// manual adjustments by inventory staff.
+///
+/// The system generates restock alerts based on configured thresholds, but
+/// these are handled by application logic rather than database fields.
+///
+/// This table is managed entirely through product variant operations and is
+/// not directly accessible to end users.
+///
+/// The inventory level must always be a non-negative integer representing
+/// available units.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductstocklevels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant this inventory level applies to. {@link
+  /// communityplatformproductvariants.id}.
+  product_variant_id String
+  
+  /// Current available quantity of the product variant. Must be a non-negative
+  /// integer representing units in stock.
+  stock_level Int
+  
+  /// Minimum inventory level that triggers a restock alert. When stock_level
+  /// falls at or below this value, the system initiates reordering processes.
+  reorder_threshold Int
+  
+  /// Timestamp when this inventory record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated. This happens when
+  /// stock_level changes due to sales, returns, or manual adjustments.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates this inventory record has been
+  /// logically removed (e.g., when a product variant is archived).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant communityplatformproductvariants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([product_variant_id])
+}
+
+/// User wishlists capturing products saved for potential future purchase.
+///
+/// Tracks products that users have explicitly saved to their personal
+/// wishlist for later consideration. Each user can maintain multiple
+/// wishlist items across different products. This table enables user-facing
+/// features like "Saved for Later" functionality, personalized
+/// recommendations based on saved items, and wishlist sharing.
+///
+/// Wishlist items are created when a user adds a product to their wishlist
+/// and can be removed at any time. Soft deletion is supported to maintain
+/// audit trails while allowing users to remove items.
+///
+/// The relationship is many-to-one with the member entity and many-to-one
+/// with the product entity. Each unique combination of user and product can
+/// appear only once in the wishlist.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformproductwishlist {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who saved this product to their wishlist. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// The product that has been added to the wishlist. {@link
+  /// communityplatformproducts.id}.
+  product_id String
+  
+  /// Timestamp when the product was added to the wishlist.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the wishlist item was deleted (soft delete). If null, the
+  /// item is still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  product communityplatformproducts @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_id])
+  
+  @@unique([member_id, product_id])
+  @@index([created_at])
+}
+
+/// Internal staff notes attached to sales transactions for context and
+/// follow-up.
+///
+/// Stores administrative and customer service notes related to specific
+/// sales transactions. These notes are used by support staff, fulfillment
+/// teams, and managers to document special instructions, customer
+/// communication summaries, operational issues, or follow-up items related
+/// to individual sales.
+///
+/// Notes are created and managed exclusively through the parent sales
+/// context and do not have standalone API endpoints. They serve as internal
+/// reference documentation that travels with the sale throughout its
+/// lifecycle, helping ensure continuity of customer service and operational
+/// awareness.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model communityplatformsalesordernotes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sales transaction this note is associated with. {@link
+  /// communityplatformsales.id}.
+  communityplatformsales_id String
+  
+  /// The content of the internal staff note. Contains free-form text
+  /// describing operational details, customer communication, or follow-up
+  /// requirements.
+  content String
+  
+  /// Timestamp when this note was created. Indicates when the staff member
+  /// documented this information.
+  created_at DateTime
+  
+  /// Timestamp when this note was last modified. Tracks updates made to the
+  /// note content.
+  updated_at DateTime
+  
+  /// Timestamp when this note was soft-deleted. NULL indicates the note is
+  /// active. Used for audit trails and potential recovery of deleted notes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale communityplatformsales @relation(fields: [communityplatformsales_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([communityplatformsales_id, created_at], map: "communityplatformsalesordernotes_communityplatformsale_68019cf8")
+}

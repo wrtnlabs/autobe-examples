@@ -1,11 +1,6 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
-import typia from "typia";
-import { postShoppingMallCustomerCartsCartIdItems } from "../../../../../providers/postShoppingMallCustomerCartsCartIdItems";
-import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
-import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { patchShoppingMallCustomerCartsCartIdItems } from "../../../../../providers/patchShoppingMallCustomerCartsCartIdItems";
-import { getShoppingMallCustomerCartsCartIdItemsItemId } from "../../../../../providers/getShoppingMallCustomerCartsCartIdItemsItemId";
+import typia, { tags } from "typia";
 
 import { IShoppingMallCartItem } from "../../../../../api/structures/IShoppingMallCartItem";
 import { IPageIShoppingMallCartItem } from "../../../../../api/structures/IPageIShoppingMallCartItem";
@@ -13,179 +8,226 @@ import { IPageIShoppingMallCartItem } from "../../../../../api/structures/IPageI
 @Controller("/shoppingMall/customer/carts/:cartId/items")
 export class ShoppingmallCustomerCartsItemsController {
   /**
-   * Add a new product variant to a customer's active shopping cart. This
-   * operation operates on the shopping_mall_cart_items table and creates a new
-   * cart item record that captures the product variant, quantity, and unit
-   * price at the exact moment of addition. This ensures price stability during
-   * checkout even if the product price changes later. The operation validates
-   * that the cart exists, is in an active status, and has sufficient inventory
-   * for the requested quantity.
+   * Add a product variant to a customer's shopping cart.
    *
-   * Security: Only authenticated customers can add items to their own active
-   * cart. The system automatically associates the cart item with the
-   * authenticated customer's cart_id. When a product is added to cart,
-   * inventory is not reserved immediately, but the system validates the current
-   * availability. If inventory becomes unavailable before checkout, the cart
-   * item status transitions to 'out_of_stock'. This operation integrates with
-   * the shopping_mall_cart_items table and references the shopping_mall_carts
-   * and shopping_mall_product_variants tables to ensure data integrity. No
-   * other endpoints need to be called to successfully execute this operation,
-   * but the associated cart must be in 'active' status.
+   * This operation allows authenticated customers to add a specific product
+   * variant to their active cart. The cart must be associated with the
+   * requesting customer, either through direct ownership for authenticated
+   * users or session linkage for guest users. When an item is added, the system
+   * verifies the variant's current availability (inventory > 0) and price,
+   * ensuring the customer receives accurate inventory and pricing information.
    *
-   * Related operations:
+   * The operation creates a cart item record linking the cart to the chosen
+   * product variant with quantity 1 by default, capturing the variant's current
+   * price at the time of addition to ensure price consistency even if the
+   * product's price changes afterward. The system does not allow duplicate
+   * entries for the same variant in a cart; instead, it increments the quantity
+   * of the existing item.
    *
-   * - GET /carts/{cartId}/items/{itemId} (at) - to view individual cart item
-   *   details
-   * - PATCH /carts/{cartId}/items/{itemId} - to update quantity of existing item
-   * - DELETE /carts/{cartId}/items/{itemId} - to remove item from cart
+   * Security: Only authenticated customers can add items to their own cart. The
+   * cart identifier in the path must correspond to a cart owned by the
+   * authenticating user. The system validates that the referenced product
+   * variant exists and is active before creating the cart item attachment.
+   *
+   * Business Logic: If the requested product variant is out of stock, the
+   * system returns a 400 error with the message "Product variant is out of
+   * stock." If the variant's price has changed since it was last viewed, the
+   * system uses the current price for the new cart entry and may notify the
+   * customer of price changes.
+   *
+   * Related Operations: GET /carts/{cartId} to view cart contents, PATCH
+   * /carts/{cartId}/items to update item quantity, DELETE
+   * /carts/{cartId}/items/{cartItemId} to remove items from cart.
    *
    * @param connection
-   * @param cartId Unique identifier of the shopping cart where the item will be
-   *   added. This must correspond to an active cart owned by the authenticated
-   *   customer.
-   * @param body Create request for a new cart item containing the product
-   *   variant and quantity.
+   * @param cartId Unique identifier of the target shopping cart. This must be a
+   *   cart belonging to the authenticated customer or an active guest cart
+   *   associated with the current session.
+   * @param body Details of the product variant to add to the cart.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @CustomerAuth()
-    customer: CustomerPayload,
     @TypedParam("cartId")
-    cartId: string,
+    cartId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallCartItem.ICreate,
   ): Promise<IShoppingMallCartItem> {
-    try {
-      return await postShoppingMallCustomerCartsCartIdItems({
-        customer,
-        cartId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    cartId;
+    body;
+    return typia.random<IShoppingMallCartItem>();
   }
 
   /**
-   * Retrieves all cart items associated with a specific shopping cart,
-   * providing a comprehensive view of the customer's current selections.
+   * Retrieve a paginated list of cart items associated with a specific shopping
+   * cart in the shoppingMall system. This operation operates on the
+   * shopping_mall_cart_items table and allows authorized users to fetch all
+   * products contained within a particular cart session.
    *
-   * This operation queries the shopping_mall_cart_items table to return all
-   * active items contained within the specified cart. It returns both the cart
-   * item details and links to the product variant information, allowing display
-   * of complete item information including product name, variant options,
-   * price, and quantity.
+   * The cart items are sorted by creation timestamp in descending order, with
+   * default pagination of 20 items per page. Each cart item includes detailed
+   * product variant information, quantity, pricing, and seller reference as
+   * captured at the time the item was added to the cart. This ensures
+   * consistency even if product prices or inventory levels change after the
+   * item was added to the cart.
    *
-   * The operation supports filtering of items by status (active, out_of_stock,
-   * removed, checked_out) through request parameters, though these parameters
-   * are typically not required for basic cart retrieval. The default behavior
-   * returns all cart items regardless of status. This endpoint is optimized for
-   * performance and returns results in a single query with appropriate joins to
-   * product variant data.
+   * Authorization requires active user authentication: only the cart owner
+   * (customer) or an administrator can access this data. For customer access,
+   * the system verifies that the requesting user's authenticated session
+   * matches the owner of the cart. Admins can view any cart's items for support
+   * and auditing purposes.
    *
-   * Security: The cart item access is owned by the cart, which is owned by the
-   * customer. The system verifies that the authenticated user owns the cart
-   * before returning any items. Unauthorized access to another user's cart
-   * items is strictly prohibited.
+   * This operation is primarily used by customers during the checkout process
+   * to review their selected items, and by platform administrators when
+   * assisting customers with order inquiries or troubleshooting cart-related
+   * issues. It integrates with the shopping_mall_carts and
+   * shopping_mall_product_variants tables to provide comprehensive cart
+   * context.
    *
-   * Performance: This endpoint is designed to be efficient since cart items are
-   * retrieved in a single query with a simple JOIN between
-   * shopping_mall_cart_items and shopping_mall_product_variants.
-   *
-   * Note: This operation differs from the DELETE /carts/{cartId} endpoint which
-   * removes the entire cart and all associated items. This endpoint only
-   * retrieves the items while preserving the cart structure and allowing
-   * modifications.
-   *
-   * Related operations: POST /carts/{cartId}/items (add items), PUT
-   * /carts/{cartId}/items/{item_id} (update item quantity), DELETE
-   * /carts/{cartId}/items/{item_id} (remove specific item).
+   * Related operations: Create cart item (POST /carts/{cartId}/items), Remove
+   * cart item (DELETE /carts/{cartId}/items/{itemId}), Update cart item
+   * quantity (PUT /carts/{cartId}/items/{itemId}).
    *
    * @param connection
-   * @param cartId Unique identifier of the cart whose items are to be
-   *   retrieved. This is the primary key (UUID) from the shopping_mall_carts
-   *   table.
-   * @param body Search criteria and filtering parameters for cart items.
+   * @param cartId Unique identifier of the target shopping cart in the
+   *   database. The cart_id is a UUID that uniquely identifies the
+   *   shopping_mall_carts record. This parameter is required to scope the cart
+   *   items to a specific cart session.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @CustomerAuth()
-    customer: CustomerPayload,
     @TypedParam("cartId")
-    cartId: string,
-    @TypedBody()
-    body: IShoppingMallCartItem.IRequest,
-  ): Promise<IPageIShoppingMallCartItem> {
-    try {
-      return await patchShoppingMallCustomerCartsCartIdItems({
-        customer,
-        cartId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    cartId: string & tags.Format<"uuid">,
+  ): Promise<IPageIShoppingMallCartItem.ISummary> {
+    cartId;
+    return typia.random<IPageIShoppingMallCartItem.ISummary>();
   }
 
   /**
-   * Retrieve a specific cart item from a customer's active shopping cart. This
-   * operation operates on the shopping_mall_cart_items table and returns
-   * detailed information about a single product variant selected by the
-   * customer. The cart item data includes the quantity, unit price (captured at
-   * time of addition), and current status to ensure price stability during
-   * checkout even if product prices change later. This endpoint is typically
-   * called when the customer examines individual items in their cart before
-   * proceeding to checkout. Security: Only the cart owner can access items in
-   * their own cart. The system validates that the cart_id in the path
-   * parameters corresponds to a cart owned by the authenticated customer. This
-   * operation integrates with the shopping_mall_cart_items table structure and
-   * references the shopping_mall_carts and shopping_mall_product_variants
-   * tables to ensure data consistency. When this operation is requested, no
-   * other endpoints need to be called directly, but the associated cart must be
-   * in 'active' status to return item details.
+   * Retrieve a specific cart item from the shopping mall system. This operation
+   * fetches the detailed information of a cart item identified by its unique
+   * item ID within a specific shopping cart. The cart item includes product
+   * variant details, quantity, pricing at the time of addition, and associated
+   * metadata.
    *
-   * When a customer views their cart, the system may call this operation
-   * multiple times to render each cart item individually, or alternatively
-   * customers may call the index operation to retrieve all items in a single
-   * request.
+   * This operation operates on the shopping_mall_cart_items table and requires
+   * both a shopping cart identifier and a cart item identifier to uniquely
+   * locate the specific cart item. The system verifies that the requesting user
+   * has ownership or access permissions to the parent shopping cart before
+   * returning the cart item details.
    *
-   * Related operations:
-   *
-   * - GET /carts/{cartId}/items (index) - to retrieve all cart items
-   * - PATCH /carts/{cartId}/items/{itemId} - to update cart item quantity
-   * - DELETE /carts/{cartId}/items/{itemId} - to remove item from cart
+   * Security implementation ensures that users cannot access cart items
+   * belonging to other customers' carts. The cart_id and item_id parameters
+   * must correspond to a valid cart item record in the database. The response
+   * contains the complete cart item data including product variant details,
+   * quantities, and pricing information captured at the time the item was added
+   * to the cart.
    *
    * @param connection
    * @param cartId Unique identifier of the shopping cart containing the target
-   *   item. This must correspond to a cart owned by the authenticated customer.
-   *   The cart must be in 'active' status to access items.
-   * @param itemId Unique identifier of the cart item to retrieve. This
-   *   identifies the specific product variant selected by the customer and must
-   *   belong to the cart specified by cartId.
+   *   item (scoped to customer)
+   * @param itemId Unique identifier of the specific cart item being retrieved
+   *   (scoped to cart)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":itemId")
   public async at(
-    @CustomerAuth()
-    customer: CustomerPayload,
+    @TypedParam("cartId")
+    cartId: string & tags.Format<"uuid">,
+    @TypedParam("itemId")
+    itemId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallCartItem> {
+    cartId;
+    itemId;
+    return typia.random<IShoppingMallCartItem>();
+  }
+
+  /**
+   * Update a specific cart item within the customer's shopping cart. This
+   * operation modifies the quantity of a product variant in an existing cart
+   * item identified by its unique item ID within the cart context. The cart
+   * item must belong to the authenticated customer's active cart. The operation
+   * validates that the item exists in the cart and that the requested quantity
+   * is within available inventory limits. The system will automatically
+   * recalculate the cart totals after the update.
+   *
+   * Security and authorization: Only authenticated customers can modify their
+   * own cart items. The cart item's cart_id must match the customer's active
+   * cart, and the system performs ownership verification using the JWT
+   * authentication token. The inventory system provides real-time validation to
+   * prevent over-purchasing beyond available stock.
+   *
+   * Business logic: When updating quantity, if the new quantity is zero, the
+   * cart item record is permanently removed from the database. If the quantity
+   * exceeds the available inventory, the system will return an error. The
+   * operation respects any quantity-based discounts that may apply to the cart.
+   * Cart item updates trigger real-time inventory updates to maintain data
+   * consistency across the platform.
+   *
+   * Related operations: This operation depends on GET /carts/{cartId} to
+   * validate cart existence and ownership before modification, and PATCH
+   * /carts/{cartId}/items to add new items if needed.
+   *
+   * @param connection
+   * @param cartId Unique identifier of the shopping cart (UUID) that contains
+   *   the item to be updated
+   * @param itemId Unique identifier of the cart item (UUID) within the
+   *   specified cart
+   * @param body Quantity update specification for the cart item
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":itemId")
+  public async update(
     @TypedParam("cartId")
     cartId: string,
     @TypedParam("itemId")
     itemId: string,
+    @TypedBody()
+    body: IShoppingMallCartItem.IRequest,
   ): Promise<IShoppingMallCartItem> {
-    try {
-      return await getShoppingMallCustomerCartsCartIdItemsItemId({
-        customer,
-        cartId,
-        itemId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    cartId;
+    itemId;
+    body;
+    return typia.random<IShoppingMallCartItem>();
+  }
+
+  /**
+   * Permanently removes a specific product item from a customer's shopping
+   * cart. This operation targets the shopping_mall_cart_items table in the
+   * database schema, which represents the junction between shopping_mall_carts
+   * and shopping_mall_product_variants. The deletion is immediate and
+   * irreversible, removing the association between the cart and the specific
+   * product variant without affecting the product inventory or other carts.
+   * This operation is only available to the cart owner, identified by JWT
+   * authentication.
+   *
+   * The cart must belong to the authenticated user - the system enforces
+   * ownership verification before deletion. Attempting to remove an item from
+   * another user's cart will result in a 403 Forbidden response. The item is
+   * permanently removed from the cart and cannot be restored through this API.
+   *
+   * This operation does not affect product inventory levels, as cart items
+   * represent temporary selections rather than committed purchases. Related
+   * operations: GET /carts/{cartId}/items (list all items), POST
+   * /carts/{cartId}/items (add new items).
+   *
+   * @param connection
+   * @param cartId Unique identifier of the shopping cart that contains the item
+   *   to be removed (global scope)
+   * @param itemId Unique identifier of the specific cart item to be removed
+   *   (global scope)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":itemId")
+  public async erase(
+    @TypedParam("cartId")
+    cartId: string,
+    @TypedParam("itemId")
+    itemId: string,
+  ): Promise<void> {
+    cartId;
+    itemId;
+    return typia.random<void>();
   }
 }

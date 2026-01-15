@@ -1,0 +1,308 @@
+/// Represents shipping carriers that deliver orders, including name and
+/// service details.
+///
+/// Stores identity and service information for third-party logistics
+/// providers that handle order delivery from warehouse to customer. Each
+/// carrier has a unique name and service description that defines its
+/// delivery capabilities and characteristics.
+///
+/// This entity is referenced by shopping_mall_order_shipments to associate
+/// orders with specific carriers. Carrier data is maintained by platform
+/// administrators and not directly modified by end users.
+///
+/// Common carriers include FedEx, UPS, DHL, and USPS. Service details may
+/// include delivery speed tiers, coverage areas, dimensional weight rules,
+/// and API integration endpoints.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carriers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Legal name of the shipping carrier (e.g., 'FedEx', 'UPS', 'DHL', 'USPS').
+  /// Must be unique across all carriers.
+  name String
+  
+  /// Detailed description of the carrier's service offerings, including
+  /// delivery speed options, packaging requirements, tracking capabilities,
+  /// and geographic coverage. Used to inform users during shipping method
+  /// selection.
+  service_details String
+  
+  /// Timestamp when the carrier record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the carrier record was last updated. Tracks administrative
+  /// changes to carrier information.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_order_shipments shopping_mall_order_shipments[]
+  
+  @@unique([name])
+}
+
+/// Stores shipping tracking numbers assigned to orders by carriers.
+///
+/// Contains the unique tracking identifiers provided by carriers (FedEx,
+/// UPS, DHL, USPS) that allow customers and system to monitor the physical
+/// delivery status of shipments. Each tracking number is bound to a specific
+/// order shipment and can be used to query the carrier's API for real-time
+/// location and delivery updates. This table serves as the core reference
+/// point for delivery status tracking.
+///
+/// Tracking numbers are immutable once created and are never modified.
+/// Status changes are tracked in the shopping_mall_delivery_events table,
+/// which references this table via foreign key. This ensures data integrity
+/// and maintains an audit trail of order delivery progress.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order shipment this tracking number belongs to. {@link
+  /// shopping_mall_order_shipments.id}.
+  shopping_mall_order_shipment_id String
+  
+  /// The unique tracking identifier provided by the shipping carrier. This is
+  /// the customer-facing number used to track the package through the
+  /// carrier's system. Format varies by carrier (e.g., 1Z9999999999999999 for
+  /// UPS, 999999999999 for FedEx).
+  tracking_number String
+  
+  /// Timestamp when this tracking record was created in the system. This
+  /// represents when the carrier provided the tracking number and the system
+  /// recorded it.
+  created_at DateTime
+  
+  /// Timestamp when this tracking record was last updated in the system. This
+  /// occurs when the tracking number is first created or if there are
+  /// corrections to the carrier information.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderShipment shopping_mall_order_shipments @relation(fields: [shopping_mall_order_shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_shipment_id], map: "shopping_mall_shipping_trackings_shopping_mall_order_s_99c1fe10")
+}
+
+/// Logs delivery status events received from shipping carriers for order
+/// shipments.
+///
+/// Tracks real-time status updates from carriers such as FedEx, UPS, DHL,
+/// and USPS at every milestone in the delivery process. Each event
+/// represents a single status change from the carrier system, providing an
+/// immutable audit trail of the shipment's journey.
+///
+/// This table is populated automatically by integration with carrier APIs
+/// and is never directly modified by users. Status values follow the order
+/// tracking workflow: "shipped", "in_transit", "out_for_delivery", and
+/// "delivered".
+///
+/// The notes field captures carrier-provided comments about delays, delivery
+/// attempts, or special conditions, enabling customer service teams to
+/// investigate delivery issues.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_delivery_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order shipment this delivery event belongs to. {@link
+  /// shopping_mall_order_shipments.id}.
+  shopping_mall_order_shipment_id String
+  
+  /// Current delivery status from carrier system. Valid values: 'shipped',
+  /// 'in_transit', 'out_for_delivery', 'delivered'.
+  status String
+  
+  /// Timestamp when the carrier system reported this status update. This
+  /// represents the actual time the event occurred in the carrier's system.
+  status_time DateTime
+  
+  /// Raw status update text received from carrier API for this event, used for
+  /// debugging and reference.
+  carrier_update String?
+  
+  /// Additional notes or comments provided by the carrier about this status
+  /// update, such as delivery attempt details, package damage, or special
+  /// instructions.
+  notes String?
+  
+  /// System timestamp when this delivery event record was created in our
+  /// database.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderShipment shopping_mall_order_shipments @relation(fields: [shopping_mall_order_shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_shipment_id, created_at], map: "shopping_mall_delivery_events_shopping_mall_order_ship_33e9ae73")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_shipment_id, status], map: "shopping_mall_delivery_events_shopping_mall_order_ship_1f09fbff")
+}
+
+/// Associates orders with specific carrier and tracking information for
+/// physical shipment management.
+///
+/// Captures critical logistics data linking orders to carriers, tracking
+/// numbers, and delivery expectations. This entity enables the shipping
+/// process by storing the connection between an order and its tracking
+/// details, allowing logistics teams, customer service, and customers to
+/// track shipment progress independently of the order system.
+///
+/// The tracking_number is a unique identifier assigned by the carrier that
+/// connects to carrier APIs for real-time status updates. The
+/// estimated_delivery_date represents the carrier's projected delivery date
+/// based on origin, destination, and service level. The actual_delivery_date
+/// is updated when the package is confirmed delivered.
+///
+/// This table is primary because logistics teams need to independently
+/// search, filter, and update shipment information without navigating
+/// through orders. It supports critical operations like: tracking specific
+/// shipments, updating tracking numbers, generating carrier reports, and
+/// identifying shipments with delivery delays.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this shipment pertains to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The carrier responsible for this shipment. {@link
+  /// shopping_mall_carriers.id}.
+  shopping_mall_carrier_id String
+  
+  /// Unique tracking number assigned by the carrier for this shipment. This
+  /// number is used to query carrier APIs for real-time delivery status
+  /// updates.
+  tracking_number String
+  
+  /// The carrier's projected delivery date based on shipping method, origin,
+  /// destination, and transit time. This value is typically populated when the
+  /// package is handed off to the carrier.
+  estimated_delivery_date DateTime?
+  
+  /// The date and time the shipment was confirmed delivered. Updated when the
+  /// carrier provides final delivery confirmation.
+  actual_delivery_date DateTime?
+  
+  /// Weight of the package in kilograms. Used by carriers to calculate
+  /// shipping rates and determine handling requirements.
+  package_weight Float
+  
+  /// Dimensions of the package in format "length x width x height" (e.g.,
+  /// "30x20x15cm"). Required for carrier shipping rate calculations and
+  /// handling specifications.
+  package_dimensions String
+  
+  /// Timestamp when this shipment record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this shipment record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates this shipment record has been
+  /// logically deleted but preserved for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_carriers @relation(fields: [shopping_mall_carrier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipping_trackings shopping_mall_shipping_trackings[]
+  shopping_mall_delivery_events shopping_mall_delivery_events[]
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@unique([tracking_number])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_shipments_shopping_mall_order_id_c_ac5c1ebb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_carrier_id, estimated_delivery_date], map: "shopping_mall_order_shipments_shopping_mall_carrier_id_74d8b105")
+  @@index([estimated_delivery_date])
+  @@index([actual_delivery_date])
+}
+
+/// Configuration options for available shipping methods that customers can
+/// select during checkout.
+///
+/// Provides predefined shipping alternatives with associated delivery times
+/// and costs. These methods are referenced by order_shipments to identify
+/// which shipping service was chosen for a given order.
+///
+/// Shipping methods are configured by administrators and are not
+/// independently managed by customers. Customer selection occurs through
+/// order shipment creation, not through direct interaction with this table.
+///
+/// This table serves as reference data for the shipping subsystem, enabling
+/// consistent pricing and delivery expectations across orders.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the shipping method (e.g., 'Standard Ground', 'Express
+  /// 2-Day'). Must be unique for clear customer identification.
+  name String
+  
+  /// Fixed shipping cost in USD for this method. Zero is allowed for free
+  /// shipping options. All values stored with exactly 2 decimal places for
+  /// currency precision.
+  cost Float
+  
+  /// Estimated number of business days for delivery using this method after
+  /// order processing. Used for delivery expectation management.
+  estimated_delivery_days Int
+  
+  /// Detailed description of the shipping method's features, conditions, or
+  /// restrictions (e.g., 'Available for orders over $50', 'Not available for
+  /// international shipments').
+  description String?
+  
+  /// Timestamp when this shipping method was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this shipping method was last modified. Always updated on
+  /// any change to record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([estimated_delivery_days])
+}

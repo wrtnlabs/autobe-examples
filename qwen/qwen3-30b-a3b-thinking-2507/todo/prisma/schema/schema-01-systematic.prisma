@@ -1,0 +1,48 @@
+/// Central storage for all system-wide configuration parameters, including
+/// capacity limits, performance thresholds, and uptime requirements that
+/// define the operating parameters for the application. This table is
+/// managed directly by administrators through dedicated API endpoints for
+/// system configuration management. Stores critical service parameters that
+/// affect platform behavior and user experience.
+///
+/// All configuration values are business-critical system settings that
+/// require administrative oversight and direct management. The singleton
+/// nature of this configuration table ensures central governance of system
+/// parameters while maintaining historical context through temporal fields.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_systematic_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Maximum number of registered users allowed in the system. Reflects
+  /// capacity limits for user management and resource allocation.
+  max_users Int
+  
+  /// Maximum acceptable response time in milliseconds for all user-facing API
+  /// operations. Sets performance requirements for system operations.
+  response_time_limit_ms Int
+  
+  /// Required system uptime percentage with measured over time periods.
+  /// Business metric for service availability commitments.
+  uptime_requirement Float
+  
+  /// Timestamp when the configuration record was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted. Empty indicates current
+  /// active configuration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}

@@ -1,3 +1,9 @@
+export * as sellers from "./sellers/index";
 export * as products from "./products/index";
+export * as brands from "./brands/index";
 export * as orders from "./orders/index";
-export * as inventory from "./inventory/index";
+export * as payments from "./payments/index";
+export * as carriers from "./carriers/index";
+export * as shipping_trackings from "./shipping_trackings/index";
+export * as reviews from "./reviews/index";
+export * as data from "./data/index";

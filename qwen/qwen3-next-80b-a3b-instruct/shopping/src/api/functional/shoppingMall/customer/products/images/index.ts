@@ -1,56 +1,72 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMallProductImage";
 import { IPageIShoppingMallProductImage } from "../../../../../structures/IPageIShoppingMallProductImage";
+import { IShoppingMallProduct } from "../../../../../structures/IShoppingMallProduct";
 
 /**
- * Retrieve a paginated and filtered list of product images associated with a
- * specific product. This endpoint provides a comprehensive view of all visual
- * assets linked to the product, enabling efficient browsing and management of
- * product media.
+ * Upload one or more images to associate with a specific product in the
+ * shopping mall platform. This operation creates new product image records
+ * linked to the specified product entity from the shopping_mall_products table.
+ * Each uploaded image is stored as a record in the shopping_mall_product_images
+ * table with a reference to the product ID, a unique identifier, and metadata
+ * about the image file.
  *
- * The operation queries the shopping_mall_product_images table to return images
- * associated with the specified product_id. Results can be filtered by primary
- * status, sort order, or other criteria to facilitate efficient media
- * selection. The response includes a pagination structure to handle products
- * with large image collections.
+ * This operation supports multiple image uploads in a single request and
+ * automatically assigns the images to the product with the matching productId
+ * path parameter. The system validates that the referenced product exists and
+ * that the requesting actor has appropriate permissions to modify the product
+ * images. Seller and admin actors can upload images for products they manage,
+ * while customers can upload images only for products they have purchased.
  *
- * Images returned may include both primary and secondary images, ordered by
- * sort_order ascending, with primary images (is_primary=true) appearing first
- * by default. Only images related to the specified product (and not its
- * variants) are returned. The operation excludes deleted images (where
- * deleted_at is not null).
+ * Each uploaded image must be a valid image file (JPEG, PNG, GIF) with a
+ * maximum size of 5MB. The system will generate unique file names and store the
+ * images in the designated cloud storage. The response contains the full
+ * metadata of all uploaded images, including their unique IDs, URLs, and
+ * ordering positions.
  *
- * This operation is commonly paired with GET /products/{productId} to present a
- * complete product view, and with POST /products/{productId}/images to upload
- * new images. The Shopify's media management approach inspired this design for
- * scalable image handling.
+ * Security: Only authenticated users with appropriate roles can upload images.
+ * The system verifies product ownership and prevents unauthorized image
+ * uploads. The product_id parameter must match an existing product in the
+ * shopping_mall_products table.
  *
- * Security enforcement ensures the requesting user has appropriate permissions
- * to view the product images via the authorizationActors. The result set can be
- * used by UI components to generate gallery views, carousel sliders, or media
- * selection interfaces.
+ * Related operations: GET /products/{productId}/images to retrieve product
+ * images, PATCH /products/{productId}/images/{imageId} to update image order or
+ * alt text, DELETE /products/{productId}/images/{imageId} to remove an image.
+ *
+ * Validation: The system checks for valid file types, file sizes, and existence
+ * of the target product. If the product does not exist, the operation returns a
+ * 404 error. File names that match prohibited patterns (such as executable
+ * files or scripts) are rejected.
+ *
+ * Business logic: Images are assigned sequential ordering positions based on
+ * upload order. The first uploaded image becomes the primary image for the
+ * product. Products can have a maximum of 10 images.
+ *
+ * Error handling: Invalid file types return 400 Bad Request. Files exceeding
+ * size limits return 413 Payload Too Large. If the product is not found or the
+ * user lacks permission, a 403 Forbidden or 404 Not Found error is returned.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose images are
- *   being retrieved. Must reference a valid shopping_mall_products.id. All
- *   returned images must be directly associated with this product, not its
- *   variants.
- * @param props.body Search, filter, and pagination parameters for product
- *   images
+ * @param props.productId Unique identifier of the target product being uploaded
+ *   to. This must correspond to an existing product in the
+ *   shopping_mall_products table with a primary key in snake_case format.
+ * @param props.body Form data containing one or more image files to upload for
+ *   the specified product. Each file must be a valid image format (JPEG, PNG,
+ *   GIF) with dimensions appropriate for product display.
  * @path /shoppingMall/customer/products/:productId/images
- * @accessor api.functional.shoppingMall.customer.products.images.index
+ * @accessor api.functional.shoppingMall.customer.products.images.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function create(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -60,27 +76,153 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the product whose images are being retrieved.
-     * Must reference a valid shopping_mall_products.id. All returned images
-     * must be directly associated with this product, not its variants.
+     * Unique identifier of the target product being uploaded to. This must
+     * correspond to an existing product in the shopping_mall_products table
+     * with a primary key in snake_case format.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
-    /** Search, filter, and pagination parameters for product images */
-    body: IShoppingMallProductImage.IRequest;
+    /**
+     * Form data containing one or more image files to upload for the
+     * specified product. Each file must be a valid image format (JPEG, PNG,
+     * GIF) with dimensions appropriate for product display.
+     */
+    body: IShoppingMallProductImage.ICreate;
   };
-  export type Body = IShoppingMallProductImage.IRequest;
-  export type Response = IPageIShoppingMallProductImage;
+  export type Body = IShoppingMallProductImage.ICreate;
+  export type Response = IPageIShoppingMallProductImage.ISummary;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/customer/products/:productId/images",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/customer/products/${encodeURIComponent(props.productId ?? "null")}/images`;
+  export const random = (): IPageIShoppingMallProductImage.ISummary =>
+    typia.random<IPageIShoppingMallProductImage.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update the product image associations for a specific product. This operation
+ * allows authenticated users to manage which images are associated with a
+ * product in the catalog. The endpoint targets the shopping_mall_product_images
+ * table which maintains the relationship between products and their associated
+ * images.
+ *
+ * For customers, this operation allows them to submit image modifications for
+ * product listings they own. Sellers can update the images of their own
+ * products, including adding new images, removing existing ones, or reordering
+ * the display sequence. Admin users have full authority to modify product
+ * images for any seller's products, which is essential for content moderation
+ * and compliance enforcement.
+ *
+ * The system enforces strict authorization controls: customers can only modify
+ * images for products they created, sellers can update images of their own
+ * products, and admins have unrestricted access. This ensures proper
+ * accountability and prevents unauthorized content changes.
+ *
+ * This operation assumes a many-to-many relationship between products and
+ * images via the shopping_mall_product_images junction table, where each image
+ * association records the product ID and image ID along with metadata like
+ * display order and status. The request body will specify the exact image IDs
+ * to associate with the product, effectively replacing the current set of
+ * associations.
+ *
+ * Security protocols include rate limiting for image modification operations
+ * and comprehensive audit logging of all image changes for regulatory
+ * compliance. The system validates that all image IDs in the request correspond
+ * to existing, approved images in the system to prevent invalid associations.
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the product for which image
+ *   associations are being updated (global scope)
+ * @param props.body List of image identifiers to associate with this product,
+ *   replacing the current set of associations
+ * @path /shoppingMall/customer/products/:productId/images
+ * @accessor api.functional.shoppingMall.customer.products.images.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * Unique identifier of the product for which image associations are
+     * being updated (global scope)
+     */
+    productId: string;
+
+    /**
+     * List of image identifiers to associate with this product, replacing
+     * the current set of associations
+     */
+    body: IShoppingMallProduct.IRequest;
+  };
+  export type Body = IShoppingMallProduct.IRequest;
+  export type Response = IShoppingMallProduct.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -97,21 +239,130 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/shoppingMall/customer/products/${encodeURIComponent(props.productId ?? "null")}/images`;
-  export const random = (): IPageIShoppingMallProductImage =>
-    typia.random<IPageIShoppingMallProductImage>();
+  export const random = (): IShoppingMallProduct.ISummary =>
+    typia.random<IShoppingMallProduct.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Delete a specific product image from the product catalog. This operation
+ * permanently removes the specified image file from the product's image
+ * collection in the shopping_mall_product_images database table.
+ *
+ * The operation targets a specific product-image relationship identified by the
+ * product ID and image ID. Since product images are managed as separate
+ * entities with their own unique identifiers, this deletion does not affect the
+ * product record itself. The product's image collection is automatically
+ * updated, and any references to this image in the frontend are invalidated.
+ *
+ * Security considerations include verifying that the requesting customer has
+ * ownership or access rights to the product. The system ensures that only the
+ * product owner or authorized users can delete associated images to prevent
+ * unauthorized content removal. The operation requires the user to be
+ * authenticated as a customer.
+ *
+ * This deletion is permanent and irreversible. The image file is removed from
+ * storage and all metadata is deleted from the database. There is no soft
+ * delete functionality for product images. Related operations include listing
+ * product images (GET /products/{productId}/images) and uploading new product
+ * images (POST /products/{productId}/images).
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the target product whose image
+ *   will be deleted (global scope)
+ * @param props.imageId Unique identifier of the target product image to be
+ *   deleted (global scope)
+ * @path /shoppingMall/customer/products/:productId/images/:imageId
+ * @accessor api.functional.shoppingMall.customer.products.images.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<erase.Response> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * Unique identifier of the target product whose image will be deleted
+     * (global scope)
+     */
+    productId: string;
+
+    /**
+     * Unique identifier of the target product image to be deleted (global
+     * scope)
+     */
+    imageId: string;
+  };
+  export type Response = IShoppingMallProductImage;
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/shoppingMall/customer/products/:productId/images/:imageId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/customer/products/${encodeURIComponent(props.productId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
+  export const random = (): IShoppingMallProductImage =>
+    typia.random<IShoppingMallProductImage>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("imageId")(() => typia.assert(props.imageId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

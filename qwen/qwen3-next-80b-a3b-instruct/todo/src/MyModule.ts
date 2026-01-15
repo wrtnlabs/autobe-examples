@@ -1,18 +1,18 @@
 import { Module } from "@nestjs/common";
 
-import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodolistUserActorsController } from "./controllers/todoList/user/actors/TodolistUserActorsController";
-import { TodolistActorsSessionsController } from "./controllers/todoList/actors/sessions/TodolistActorsSessionsController";
-import { TodolistUserActorsSessionsController } from "./controllers/todoList/user/actors/sessions/TodolistUserActorsSessionsController";
-import { TodolistUserTasksController } from "./controllers/todoList/user/tasks/TodolistUserTasksController";
+import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
+import { MyTodosController } from "./controllers/my/todos/MyTodosController";
+import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
+import { TodolistUserSessionsController } from "./controllers/todoList/user/sessions/TodolistUserSessionsController";
+import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
 
 @Module({
   controllers: [
-    AuthUserController,
-    TodolistUserActorsController,
-    TodolistActorsSessionsController,
-    TodolistUserActorsSessionsController,
-    TodolistUserTasksController,
+    AuthMemberController,
+    MyTodosController,
+    TodolistUserUsersController,
+    TodolistUserSessionsController,
+    TodolistUserTodosController,
   ],
 })
 export class MyModule {}

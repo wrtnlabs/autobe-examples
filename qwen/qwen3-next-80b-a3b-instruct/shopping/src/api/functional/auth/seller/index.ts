@@ -4,39 +4,40 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
+export * as products from "./products/index";
 
 /**
- * Register a new seller account on the shoppingMall platform. This operation
- * creates a seller record with initial status 'pending_verification'. The
- * seller must provide a unique business email and secure password, which are
- * stored in the email and password_hash fields respectively. The account is
- * initially suspended until an admin reviews the submitted business information
- * including business_name, business_address, and tax_id. The created_at
- * timestamp records the registration time, and deleted_at remains null
- * indicating the account is active but unverified. This operation is public and
- * does not require authentication.
+ * This operation allows a seller to register and create an account on the
+ * shoppingMall platform.
  *
- * Security considerations require password hashing using BCrypt algorithm as
- * specified in the schema. The email must be unique across the entire system as
- * enforced by the unique index on the email field. This operation creates a
- * foundational identity for the seller who will subsequently manage products,
- * inventory, and customer orders.
+ * Based on the shopping_mall_sellers database table, this registration flow
+ * collects the mandatory credentials required for seller authentication: email
+ * address, password hash, and seller-specific metadata. The email field is
+ * required in the sellers table to ensure unique identity verification, while
+ * the password field stores a cryptographically hashed value for secure
+ * authentication.
  *
- * The seller account is linked to the shopping_mall_seller_sessions table for
- * session management and to shopping_mall_products for product listings. Upon
- * successful registration, a temporary access token is issued for verification
- * purposes. If the account remains unverified, it may be auto-deleted after 30
- * days as per platform policy.
+ * Seller registration requires the seller's business name, contact email, and
+ * phone number as mandatory fields in the database schema, enabling
+ * comprehensive seller profiling and communication. The createdAt timestamp is
+ * automatically set by the system when registration completes, ensuring audit
+ * trail integrity.
  *
- * This operation must be completed before the seller can upload products or
- * access their storefront. The verification process requires submission of
- * supporting documents and may take 1-3 business days.
+ * This operation establishes the foundation for seller identity in the system,
+ * creating a persistent identifier that will be used across all subsequent
+ * seller-facing features. The generated refresh token is immediately issued to
+ * enable session persistence after registration, following the pattern
+ * established in the authentication architecture.
  *
- * No related API operations are required as prerequisites since this is the
- * initial entry point for seller onboarding.
+ * All data submitted in this operation maps directly to corresponding fields in
+ * the shopping_mall_sellers table, ensuring type safety and data integrity. The
+ * operation follows enterprise authentication standards with secure password
+ * encoding and email validation, consistent with the platform's security
+ * policy.
  *
  * @param props.connection
- * @param props.body Payload containing seller registration details.
+ * @param props.body Seller registration data including authentication
+ *   credentials and business information.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/join
@@ -71,10 +72,13 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Payload containing seller registration details. */
-    body: IShoppingMallSeller.ICreate;
+    /**
+     * Seller registration data including authentication credentials and
+     * business information.
+     */
+    body: IShoppingMallSeller.IJoin;
   };
-  export type Body = IShoppingMallSeller.ICreate;
+  export type Body = IShoppingMallSeller.IJoin;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {
@@ -119,34 +123,30 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing seller account using email and password credentials.
- * This operation validates the email and password_hash values against the
- * seller database record. When successful, the authentication system verifies
- * the account status is 'active' and deleted_at is null, ensuring the seller
- * account is not suspended or deactivated. The password must be verified using
- * BCrypt protocol as established in the schema.
+ * This login operation authenticates a seller using their registered email and
+ * password credentials.
  *
- * The authentication system enforces rate limiting on login attempts to prevent
- * brute force attacks. Each successful login creates a corresponding record in
- * the shopping_mall_seller_sessions table to track active sessions. The login
- * operation returns a refresh token that can be used to obtain new access
- * tokens without re-entering credentials.
+ * The shopping_mall_sellers table contains the necessary fields for
+ * authentication: email (primary identifier) and password (hashed), which are
+ * validated during this process. The system cross-references the credentials
+ * against the stored data in the sellers table to confirm identity.
  *
- * This operation is crucial for granting sellers access to their management
- * dashboard where they can perform product listing, order processing, and sales
- * analytics. Before login, the seller must have completed the registration
- * process and received admin approval, as indicated by a status value of
- * 'active'.
+ * Upon successful authentication, the server generates a new access token and
+ * refresh token pair as specified in the authentication architecture. The
+ * seller's ID from the sellers table is embedded in the token payload, enabling
+ * role-based access control throughout subsequent operations.
  *
- * Login attempts with invalid credentials are logged in the
- * shopping_mall_access_logs table for security auditing. Multiple failed
- * attempts trigger account lockout mechanisms. This operation has no
- * prerequisites since it is the primary authentication entry point for
- * sellers.
+ * The login operation maintains the system's security posture by enforcing rate
+ * limiting against brute force attacks and recording authentication events in
+ * the shopping_mall_seller_sessions table for audit purposes.
+ *
+ * This operation is specific to seller accounts and cannot be used for other
+ * actor types. It strictly validates data against the structure and constraints
+ * defined in the shopping_mall_sellers table, ensuring type-safe authentication
+ * flow.
  *
  * @param props.connection
- * @param props.body Request body containing the seller's email and password for
- *   authentication.
+ * @param props.body Authentication credentials for seller login.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/login
@@ -181,13 +181,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Request body containing the seller's email and password for
-     * authentication.
-     */
-    body: IShoppingMallSeller.IRequest;
+    /** Authentication credentials for seller login. */
+    body: IShoppingMallSeller.ILogin;
   };
-  export type Body = IShoppingMallSeller.IRequest;
+  export type Body = IShoppingMallSeller.ILogin;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {
@@ -232,32 +229,30 @@ export namespace login {
 }
 
 /**
- * Renew access to seller services using a valid refresh token without requiring
- * email and password re-entry. This operation validates the refresh token
- * against the shopping_mall_seller_sessions table to confirm the session is
- * active and authenticated. Upon validation, a new access token is issued with
- * a fresh lifecycle while maintaining the same seller identity.
+ * This refresh operation allows a seller to obtain a new access token using a
+ * valid refresh token without requiring re-authentication.
  *
- * The refresh token has a longer expiration period than the access token and
- * must be stored securely by the client application. This operation ensures
- * continuous access to seller management features without forcing frequent
- * re-authentication, which would disrupt business operations like order
- * fulfillment, inventory management, and customer communication.
+ * The operation verifies the provided refresh token against the valid sessions
+ * recorded in the shopping_mall_seller_sessions table in the database. When
+ * validated, a new access token is generated and issued with updated expiration
+ * settings.
  *
- * The refresh operation does not change the seller's account status, which must
- * remain 'active' with deleted_at = null for continued service. The refresh
- * token is invalidated if the seller changes their password, their account is
- * suspended by an admin, or if the session expires.
+ * Refresh tokens are designed to provide session persistence while maintaining
+ * security through token rotation. Upon successful refresh, the old refresh
+ * token is invalidated and a new one is issued, following the security model
+ * described in the authentication requirements.
  *
- * This operation is essential for maintaining uninterrupted seller experience
- * across multiple devices and sessions. It follows the OAuth 2.0 refresh token
- * pattern and complements the login operation. This operation has no
- * prerequisites as it is designed to work independently after initial
- * authentication.
+ * The system only accepts refresh tokens issued from the seller role, ensuring
+ * token isolation between actor types. The refresh operation does not require
+ * email or password re-submission, relying solely on the cryptographically
+ * validated refresh token from the session record.
+ *
+ * This operation is critical for maintaining seamless user experience while
+ * upholding the security policy of time-limited access tokens, in alignment
+ * with the shopping_mall_seller_sessions structure.
  *
  * @param props.connection
- * @param props.body Contains the refresh token obtained during the login
- *   operation.
+ * @param props.body Refresh token for obtaining a new access token.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/refresh
@@ -292,10 +287,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Contains the refresh token obtained during the login operation. */
-    body: IShoppingMallSeller.IRequest;
+    /** Refresh token for obtaining a new access token. */
+    body: IShoppingMallSeller.IRefresh;
   };
-  export type Body = IShoppingMallSeller.IRequest;
+  export type Body = IShoppingMallSeller.IRefresh;
   export type Response = IShoppingMallSeller.IAuthorized;
 
   export const METADATA = {

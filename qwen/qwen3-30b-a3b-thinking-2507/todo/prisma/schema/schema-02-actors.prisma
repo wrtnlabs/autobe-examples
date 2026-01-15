@@ -1,0 +1,99 @@
+/// Platform users with authentication credentials and profile information
+/// for the Todo application.
+///
+/// Represents authenticated users who can create, manage, and interact with
+/// to-do items within the platform. Users are the core entities for
+/// authentication, session management, and identity concerns.
+///
+/// Each user record contains secure password hashing for authentication,
+/// email for account identification, and temporal tracking for user
+/// lifecycle management. The system supports user account creation, login,
+/// and account management flows through this table.
+///
+/// Soft deletion is implemented to maintain audit trails while enabling
+/// account management operations such as temporary deactivation without data
+/// loss.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication. Must be unique across all
+  /// users.
+  email String
+  
+  /// Securely hashed password. Never store plaintext passwords.
+  password_hash String
+  
+  /// User account creation timestamp.
+  created_at DateTime
+  
+  /// Timestamp of the last account modification.
+  updated_at DateTime
+  
+  /// Timestamp when the account was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_user_sessions todo_user_sessions[]
+  
+  @@unique([email])
+}
+
+/// Authentication sessions for users, tracking login state and token validity.
+///
+/// This table stores session data for user authentication including
+/// connection context, IP tracking, and session management. Each session is
+/// explicitly linked to a user through the user_id foreign key, and sessions
+/// are managed through the identity system rather than being independently
+/// managed by users.
+///
+/// The table includes all required fields as specified in the session
+/// pattern documentation: IP address, connection URL, referrer, creation
+/// timestamp, and session expiration timestamp. Session timestamps are
+/// managed as required to enable tracking and expiry logic. The composite
+/// index on user_id and created_at facilitates efficient querying of active
+/// sessions and session history per user.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authenticated user's {@link todo_users.id}.
+  user_id String
+  
+  /// IP address of client connecting to the application.
+  ip String
+  
+  /// Connection URL used to establish the session.
+  href String
+  
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time. Allows for timer-based management to conserve
+  /// resources.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}

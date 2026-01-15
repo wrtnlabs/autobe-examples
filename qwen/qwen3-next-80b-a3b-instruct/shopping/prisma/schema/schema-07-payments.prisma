@@ -1,0 +1,1488 @@
+/// Stores supported payment methods with their configuration, enabled
+/// status, and regional availability.
+///
+/// Defines all payment processing options available on the platform
+/// including credit cards, digital wallets, bank transfers, and
+/// cryptocurrency. Each payment method has unique parameters that control
+/// how it functions, which currencies it supports, and which regions it's
+/// available in.
+///
+/// Payment methods are managed by administrators through the admin
+/// dashboard. When a payment method is enabled, it becomes available for
+/// customers to select during checkout. Each payment method can have
+/// arbitrary configuration parameters stored as JSON to accommodate
+/// different gateway requirements (e.g., Stripe, PayPal, CoinBase).
+///
+/// The enabled flag controls whether customers can use this payment method.
+/// The supported_currencies array defines which currencies this payment
+/// method can process in the platform's base currency context. The regions
+/// field defines geographic restrictions using ISO 3166 country codes.
+///
+/// All payment method modifications are tracked through the deleted_at field
+/// for audit compliance.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the payment method shown to customers (e.g., "Visa",
+  /// "Apple Pay", "Bank Transfer").
+  name String
+  
+  /// Classification type of payment method: "credit_card", "digital_wallet",
+  /// "bank_transfer", "cryptocurrency", "alternative_payment".
+  type String
+  
+  /// Detailed description explaining the payment method's usage, limitations,
+  /// and any customer instructions.
+  description String?
+  
+  /// Whether this payment method is currently available for customers to use
+  /// during checkout.
+  enabled Boolean
+  
+  /// JSON array of ISO 4217 currency codes (e.g., ["USD", "EUR", "JPY"]) that
+  /// this payment method supports.
+  supported_currencies String
+  
+  /// JSON array of ISO 3166-1 alpha-2 country codes (e.g., ["US", "CA", "JP"])
+  /// where this payment method is available.
+  regions String
+  
+  /// JSON object containing payment method-specific configuration parameters
+  /// (gateway IDs, API keys, rate limits, etc.).
+  configuration String
+  
+  /// Timestamp when this payment method was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this payment method was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this payment method was logically deleted (soft delete)
+  /// for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_payment_intents shopping_mall_payment_intents[]
+  shopping_mall_payment_regions shopping_mall_payment_regions[]
+  shopping_mall_payment_vault_entries shopping_mall_payment_vault_entries[]
+  shopping_mall_payment_surcharge_rules shopping_mall_payment_surcharge_rules[]
+  
+  @@unique([type, name])
+  @@index([enabled])
+  @@index([supported_currencies])
+  @@index([regions])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Represents payment authorization requests with unique intent IDs, cart
+/// totals, currency, and initial processing state before capture.
+///
+/// This table manages the authorization phase of payment processing, where a
+/// customer initiates payment for their cart but the funds are not yet
+/// captured. Each intent represents a pending payment transaction that may
+/// be captured, declined, or expired. The intent is linked to the specific
+/// cart being paid, the chosen payment method, and the customer authorizing
+/// the payment. Payment intents are ephemeral objects created during
+/// checkout and transition through states: pending → authorized → captured
+/// or declined/expired.
+///
+/// Intents are not part of the core order system but serve as the mechanism
+/// for external payment gateway authorization. They provide a standardized
+/// interface for processing payments while decoupling financial operations
+/// from order creation logic. The status field indicates the current
+/// lifecycle stage of the payment authorization.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_intents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shopping cart being processed for payment. {@link
+  /// shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Reference to the specific payment method selected for this authorization.
+  /// {@link shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
+  
+  /// Reference to the customer who initiated this payment authorization.
+  /// {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Unique identifier generated by the payment gateway for this authorization
+  /// request. Used for matching gateway responses and tracking in external
+  /// systems.
+  intent_id String
+  
+  /// The currency code for this payment (e.g., 'USD', 'EUR', 'JPY'). Must
+  /// match the platform's supported currencies.
+  currency String
+  
+  /// The total amount to be authorized in the specified currency. Must be
+  /// positive and include all cart items, taxes, and shipping charges at time
+  /// of authorization.
+  amount Float
+  
+  /// Current lifecycle status of this payment intent. Valid values: 'pending'
+  /// (created but not yet sent to gateway), 'authorized' (gateway has approved
+  /// the authorization), 'captured' (funds have been successfully settled),
+  /// 'declined' (gateway rejected authorization), 'expired' (authorization
+  /// timed out without capture).
+  status String
+  
+  /// Timestamp when this payment intent was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this payment intent was last updated (e.g., when status
+  /// changed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_payment_audit_logs shopping_mall_payment_audit_logs[]
+  shopping_mall_payment_gateway_logs shopping_mall_payment_gateway_logs[]
+  
+  @@unique([intent_id])
+  @@index([status, created_at])
+  @@index([shopping_mall_cart_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id], map: "shopping_mall_payment_intents_shopping_mall_payment_me_7ed505d7")
+  @@index([shopping_mall_customer_id])
+}
+
+/// Core payment records tracking transaction lifecycle: created, processing,
+/// authorized, captured, declined, refunded, or partially refunded status.
+///
+/// Stores individual payment transactions with their financial details and
+/// lifecycle status. Each payment is linked to a payment intent that
+/// captured the authorization request, and may be associated with a refund
+/// if the transaction is reversed. Payment status evolves through various
+/// states based on gateway responses and system validations.
+///
+/// This table forms the central record of completed payment operations and
+/// is queried independently by users to check payment status, retry failed
+/// payments, and view payment history.
+///
+/// The amount and currency are captured at transaction time to preserve
+/// historical accuracy regardless of later currency fluctuations. Status
+/// changes are tracked in the payment_audit_logs table for audit compliance.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authorization request that initiated this payment. {@link
+  /// shopping_mall_payment_intents.id}.
+  shopping_mall_payment_intent_id String
+  
+  /// Transaction amount in the specified currency. Captured at time of payment
+  /// processing to preserve historical accuracy regardless of later currency
+  /// fluctuations. Always expressed in the payment intent's currency.
+  amount Float
+  
+  /// ISO 4217 currency code for this transaction (e.g., USD, EUR, JPY).
+  /// Matches the currency of the linked payment intent and remains fixed for
+  /// historical accuracy.
+  currency String
+  
+  /// Current payment status. Valid values: created, processing, authorized,
+  /// captured, declined, refunded, partially_refunded. Follows payment
+  /// workflow: created -> processing -> (authorized -> captured) or declined
+  /// or voided. Refunded and partially_refunded indicate reversal of captured
+  /// amount.
+  status String
+  
+  /// Timestamp when this payment record was created in the system,
+  /// corresponding to the initial payment request.
+  created_at DateTime
+  
+  /// Timestamp when this payment record was last updated, typically when
+  /// status changes due to gateway response or system processing.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used to maintain audit trail compliance while
+  /// logically removing access to cancelled or invalidated payments. Payments
+  /// are never permanently deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  paymentIntent shopping_mall_payment_intents @relation(fields: [shopping_mall_payment_intent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_reconciliation shopping_mall_payment_reconciliation[]
+  shopping_mall_payment_disputes shopping_mall_payment_disputes[]
+  shopping_mall_payment_cryptocurrency_conversions shopping_mall_payment_cryptocurrency_conversions?
+  
+  @@unique([shopping_mall_payment_intent_id])
+  @@index([status, created_at])
+  @@index([updated_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_intent_id, created_at], map: "shopping_mall_payments_shopping_mall_payment_intent_id_f371ad5c")
+}
+
+/// Records refund requests initiated for processed payments, including
+/// amount, status, and gateway response.
+///
+/// Captures permanent records of money returned to customers after
+/// successful payment. Each refund is tied to an original payment
+/// transaction and may apply to one or more order items. Refunds are
+/// immutable financial records - once issued, their details cannot be
+/// changed.
+///
+/// Supports partial refunds (when only part of the payment is returned) and
+/// full refunds. The system tracks whether the refund was successfully
+/// processed, declined, or is pending. Gateway-specific responses and error
+/// codes are stored for reconciliation.
+///
+/// Refunds are never soft-deleted or updated - they form a permanent audit
+/// trail of returned funds. Querying by refund status, payment reference, or
+/// date range is common for finance reporting and dispute resolution.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original payment transaction being refunded. {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// The monetary value being refunded, expressed in the transaction's
+  /// original currency. Must be less than or equal to the original payment
+  /// amount.
+  refund_amount Float
+  
+  /// Current state of this refund request: 'pending', 'succeeded', 'failed',
+  /// or 'partially_succeeded'. Determines if funds have been returned to
+  /// customer.
+  refund_status String
+  
+  /// The raw error or success code returned by the payment gateway during
+  /// refund processing.
+  gateway_response_code String?
+  
+  /// Human-readable message from the payment gateway about the refund status
+  /// or reason for failure.
+  gateway_response_message String?
+  
+  /// Timestamp when this refund request was created in the system. Never
+  /// updated - immutable audit record.
+  created_at DateTime
+  
+  /// JSON array storing the list of order item IDs and refunded amounts for
+  /// partial refunds. Example: [{"order_item_id": "uuid", "amount": 25.50}].
+  refund_items String?
+  
+  /// Soft-delete timestamp for audit trail compliance. If null, record is
+  /// active. If populated, the record has been logically deleted for
+  /// compliance purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_audit_logs shopping_mall_payment_audit_logs[]
+  
+  @@index([shopping_mall_payment_id])
+  @@index([refund_status])
+  @@index([created_at])
+}
+
+/// Immutable audit trail of all payment status changes, including timestamp,
+/// actor, old/new values, and reason for change.
+///
+/// Records every state transition in the payment processing lifecycle for
+/// compliance, forensic analysis, and operational transparency. Each record
+/// captures the exact state change that occurred, by which actor, and why it
+/// happened.
+///
+/// The table uses a polymorphic actor reference system with actor_type and
+/// actor_id to track changes made by customers, sellers, or administrators
+/// without nullable fields. The payment_entity_type field identifies which
+/// payment entity (payment, intent, refund) was modified, while old_value
+/// and new_value store serialized JSON representations of the state before
+/// and after the change.
+///
+/// The table follows an append-only pattern - records are never updated or
+/// deleted, ensuring complete auditability. Each audit record is
+/// automatically generated by the system during payment state transitions,
+/// not initiated by direct user interaction.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who initiated the payment state change, if applicable.
+  /// {@link shopping_mall_admins.id}.
+  admin_id String?
+  
+  /// Customer involved in the payment state change, if applicable. {@link
+  /// shopping_mall_customers.id}.
+  customer_id String?
+  
+  /// Seller involved in the payment state change, if applicable. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String?
+  
+  /// The payment intent that was audited, if applicable. {@link
+  /// shopping_mall_payment_intents.id}.
+  payment_intent_id String?
+  
+  /// The payment refund that was audited, if applicable. {@link
+  /// shopping_mall_payment_refunds.id}.
+  payment_refund_id String?
+  
+  /// Type of actor who triggered the audit event (admin, customer, seller,
+  /// system). Used with actor_id to implement polymorphic ownership without
+  /// nullable foreign keys.
+  actor_type String
+  
+  /// Type of payment entity that was modified (payment, intent, refund). This
+  /// identifies which payment table the foreign key relates to for audit
+  /// context.
+  payment_entity_type String
+  
+  /// Serialized JSON representation of the payment entity state BEFORE the
+  /// change occurred. This immutable record captures the exact state that was
+  /// modified.
+  old_value String
+  
+  /// Serialized JSON representation of the payment entity state AFTER the
+  /// change occurred. This immutable record captures the new state that was
+  /// established.
+  new_value String
+  
+  /// Business reason for the payment state change. Examples: 'Customer
+  /// initiated refund', 'Payment gateway declined', 'System auto-retry',
+  /// 'Admin override'.
+  reason String
+  
+  /// Timestamp when this audit record was created. This is the point-in-time
+  /// when the payment state change was captured.
+  created_at DateTime
+  
+  /// Timestamp when this audit record was last updated. In append-only audit
+  /// systems, this is typically identical to created_at since records are
+  /// never modified.
+  updated_at DateTime
+  
+  /// Soft delete marker to maintain audit trail integrity. Even for audit
+  /// records, the system supports soft delete for compliance and data
+  /// retention policies without losing historical context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  paymentIntent shopping_mall_payment_intents? @relation(fields: [payment_intent_id], references: [id], onDelete: Cascade)
+  paymentRefund shopping_mall_payment_refunds? @relation(fields: [payment_refund_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  @@index([customer_id])
+  @@index([seller_id])
+  @@index([payment_intent_id])
+  @@index([payment_refund_id])
+  
+  @@index([created_at])
+  @@index([actor_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([payment_entity_type, payment_intent_id, created_at], map: "shopping_mall_payment_audit_logs_payment_entity_type_p_8410f3fb")
+  // spellchecker: ignore-next-line
+  @@index([payment_entity_type, payment_refund_id, created_at], map: "shopping_mall_payment_audit_logs_payment_entity_type_p_43b82522")
+}
+
+/// Logs all communication with payment gateways including request/response
+/// payloads, error codes, response times, and retry attempts.
+///
+/// Captures complete request and response data for every payment gateway
+/// interaction to enable troubleshooting, security audits, and compliance
+/// verification. Each log entry is tied to a specific payment intent,
+/// creating a verifiable audit trail of all gateway communications during
+/// payment processing.
+///
+/// The request and response payloads are stored as raw JSON strings to
+/// preserve exact gateway interaction details. Error codes capture
+/// standardized gateway responses while response_time_ms records performance
+/// metrics critical for SLA monitoring. Retry attempts track system recovery
+/// behaviors during gateway outages.
+///
+/// This table is purely operational logging and not directly user-managed.
+/// It serves as the foundation for payment gateway diagnostics and
+/// compliance reporting.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateway_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The payment intent that triggered this gateway communication. {@link
+  /// shopping_mall_payment_intents.id}.
+  payment_intent_id String
+  
+  /// Raw JSON payload sent to the payment gateway. Stored as string to
+  /// preserve exact formatting and content for audit purposes.
+  request_payload String
+  
+  /// Raw JSON response received from the payment gateway. Stored as string to
+  /// preserve exact formatting and content for audit purposes.
+  response_payload String
+  
+  /// Standardized error code returned by the payment gateway (e.g.,
+  /// 'gateway_timeout', 'insufficient_funds', 'card_declined'). Null when no
+  /// error occurred.
+  error_code String?
+  
+  /// Response time in milliseconds from gateway request to response receipt.
+  /// Used for performance monitoring and SLA compliance.
+  response_time_ms Int
+  
+  /// Number of retry attempts made for this gateway communication. First
+  /// attempt is 0, subsequent retries increment by 1.
+  retry_attempt Int
+  
+  /// Timestamp when this gateway communication log was created.
+  created_at DateTime
+  
+  /// Timestamp when this gateway communication log was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used to maintain audit trail while logically
+  /// removing records from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  paymentIntent shopping_mall_payment_intents @relation(fields: [payment_intent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_reconciliation shopping_mall_payment_reconciliation[]
+  
+  @@index([payment_intent_id])
+  @@index([created_at])
+  @@index([error_code])
+}
+
+/// Tracks payment reconciliation jobs comparing system records with gateway
+/// settlement reports, flagging discrepancies for finance team.
+///
+/// System-generated audit table that records periodic reconciliation tasks
+/// between the platform's payment records and external payment gateway
+/// settlement reports. Each record represents one reconciliation cycle,
+/// capturing the difference between internal ledger balances and external
+/// system balances, along with detailed discrepancy information.
+///
+/// Reconciliation jobs are automatically triggered by batch processes and
+/// serve as the primary source for financial audits. Finance teams use this
+/// data to identify and resolve inconsistencies between the platform's
+/// records and payment provider reports, ensuring monetary accuracy and
+/// regulatory compliance.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_reconciliation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the payment record being reconciled. {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String?
+  
+  /// Reference to the gateway settlement log record for comparison. {@link
+  /// shopping_mall_payment_gateway_logs.id}.
+  shopping_mall_payment_gateway_log_id String?
+  
+  /// Unique identifier for this reconciliation job, generated by the system.
+  job_id String
+  
+  /// Date and time when the reconciliation job was executed.
+  job_date DateTime
+  
+  /// Current state of the reconciliation job: 'pending', 'in_progress',
+  /// 'completed', 'failed'.
+  status String
+  
+  /// Total amount of payments expected from system records.
+  total_payments_expected Float
+  
+  /// Total amount reported by the payment gateway for the same period.
+  total_payments_received Float
+  
+  /// The monetary difference between expected and received amounts. Positive
+  /// means system has more than gateway, negative means gateway has more than
+  /// system.
+  difference_amount Float
+  
+  /// Number of individual payment transactions that did not match between
+  /// systems.
+  discrepancy_count Int
+  
+  /// Detailed description of reconciliation findings, including specific
+  /// transaction IDs that mismatched and reasons.
+  description String?
+  
+  /// Timestamp when this reconciliation record was created.
+  created_at DateTime
+  
+  /// Timestamp when this reconciliation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments? @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  gatewayLog shopping_mall_payment_gateway_logs? @relation(fields: [shopping_mall_payment_gateway_log_id], references: [id], onDelete: Cascade)
+  
+  @@index([job_date, status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_id, job_date], map: "shopping_mall_payment_reconciliation_shopping_mall_pay_ab87218a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_gateway_log_id, job_date], map: "shopping_mall_payment_reconciliation_shopping_mall_pay_0a3fbf62")
+}
+
+/// Mapping of permitted payment methods by country and currency to enforce
+/// regional restrictions automatically.
+///
+/// This configuration table defines which payment methods are available in
+/// specific geographic and monetary jurisdictions. It enforces compliance
+/// with regional payment regulations and merchant requirements by
+/// restricting available payment options based on the customer's country and
+/// transaction currency.
+///
+/// Each record represents a single permitted association between a payment
+/// method and a specific country-currency combination. When a customer
+/// initiates payment, the system queries this table to filter available
+/// payment methods based on their location and transaction currency,
+/// ensuring only compliant and supported methods are presented.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_regions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The payment method that is permitted in this region. {@link
+  /// shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
+  
+  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'JP', 'BR') where this
+  /// payment method is enabled.
+  country_code String
+  
+  /// ISO 4217 currency code (e.g., 'USD', 'JPY', 'BRL') of transactions where
+  /// this payment method is permitted.
+  currency_code String
+  
+  //----
+  // RELATIONS
+  //----
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_surcharge_rules shopping_mall_payment_surcharge_rules[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id], map: "shopping_mall_payment_regions_shopping_mall_payment_me_895a7ef0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([country_code, currency_code, shopping_mall_payment_method_id], map: "shopping_mall_payment_regions_country_code_currency_co_19174e4e")
+  @@index([country_code])
+  @@index([currency_code])
+}
+
+/// Manages gateway failover configuration and history, tracking
+/// primary/secondary/tertiary switches during outages.
+///
+/// Tracks the configuration of payment gateway failover hierarchy and
+/// historical failover events to ensure payment processing continuity during
+/// provider outages. Maintains the priority order of gateways (primary,
+/// secondary, tertiary) and logs the timing and frequency of failover events
+/// to support system reliability monitoring and incident analysis.
+///
+/// This is system configuration data accessed during payment processing but
+/// not directly manipulated by end users. It's configured by administrators
+/// through payment settings and directly referenced by the payment
+/// processing engine to determine fallback routing strategies.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateway_failovers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The primary payment gateway provider name that is used first for
+  /// processing payments.
+  primary_gateway String
+  
+  /// The secondary payment gateway provider name that is used as backup if the
+  /// primary fails.
+  secondary_gateway String?
+  
+  /// The tertiary payment gateway provider name that is used as final backup
+  /// if both primary and secondary fail.
+  tertiary_gateway String?
+  
+  /// Timestamp of the most recent gateway failover event, indicating when the
+  /// system switched from primary to secondary/tertiary.
+  last_failover_at DateTime?
+  
+  /// Total number of failover events recorded since configuration was created,
+  /// tracking system reliability.
+  failover_count Int
+  
+  /// Timestamp when this failover configuration was initially created in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when this failover configuration was last modified or updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([last_failover_at])
+}
+
+/// Securely stores tokenized payment credentials (card, wallet, crypto)
+/// linked to users who explicitly consented to save payment methods.
+///
+/// Enables PCI-DSS compliant storage of payment information by replacing
+/// sensitive data with tokens. Tokens are generated for customers and
+/// sellers who choose to save payment methods, allowing future transactions
+/// without re-entering card details. Each token is scoped to a specific
+/// actor and can be revoked by deleting the record.
+///
+/// This table does not store raw card numbers, CVVs, or full primary account
+/// numbers (PAN) — only masked representations and cryptographic tokens.
+/// Data is encrypted at rest using AES-256 with a key managed by the vault
+/// system.
+///
+/// Tokens are always accessed through their owning actor context (customer
+/// or seller), never independently. This table supports payment method
+/// management workflows where users add, remove, or update stored
+/// credentials via their account settings.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_tokenizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who owns this payment token. Only populated
+  /// when actor_type is 'customer'. {@link shopping_mall_customers.id}.
+  customer_payment_token_id String?
+  
+  /// Reference to the seller who owns this payment token. Only populated when
+  /// actor_type is 'seller'. {@link shopping_mall_sellers.id}.
+  seller_payment_token_id String?
+  
+  /// Type of actor who owns this token. Value is either 'customer' or
+  /// 'seller'. Determines which foreign key field is populated.
+  actor_type String
+  
+  /// Unique identifier assigned by the payment gateway for the tokenized
+  /// credential. This is the value returned by the payment processor and used
+  /// in subsequent transactions.
+  token_id String
+  
+  /// The actual encrypted token string provided by the gateway. May contain
+  /// masked card number (e.g., '****-****-****-1234') or wallet identifier.
+  /// Used for display and partial ID match during payment selection.
+  token_data String
+  
+  /// The AES-256 encrypted symmetric key used to decrypt the token_data,
+  /// stored separately for PCI-DSS compliance. Requires key management system
+  /// to decrypt.
+  encrypted_key String
+  
+  /// Indicates if this token is the default payment method for the actor. Only
+  /// one token per actor can be marked as default.
+  is_default Boolean
+  
+  /// Timestamp when the token was originally created and stored in the system.
+  created_at DateTime
+  
+  /// Timestamp when the token was last updated (e.g., when marked as default
+  /// or when metadata changed).
+  updated_at DateTime
+  
+  /// Timestamp when the token was logically deleted (soft delete). Indicates
+  /// the token is no longer valid. NULL if still active.
+  deleted_at DateTime?
+  
+  /// Type of payment method represented by this token: 'credit_card',
+  /// 'debit_card', 'digital_wallet', 'cryptocurrency'. Used for classification
+  /// and UI display.
+  payment_method_type String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [customer_payment_token_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_payment_token_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([customer_payment_token_id], map: "shopping_mall_payment_tokenizations_customer_payment_t_4ea159b3")
+  // spellchecker: ignore-next-line
+  @@index([seller_payment_token_id], map: "shopping_mall_payment_tokenizations_seller_payment_tok_4539642f")
+  
+  // spellchecker: ignore-next-line
+  @@unique([actor_type, customer_payment_token_id, token_id], map: "shopping_mall_payment_tokenizations_actor_type_custome_307cf7e5")
+  // spellchecker: ignore-next-line
+  @@unique([actor_type, seller_payment_token_id, token_id], map: "shopping_mall_payment_tokenizations_actor_type_seller__68eb9cd8")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, customer_payment_token_id, created_at], map: "shopping_mall_payment_tokenizations_actor_type_custome_d2638413")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, seller_payment_token_id, created_at], map: "shopping_mall_payment_tokenizations_actor_type_seller__2231b1ab")
+  @@index([deleted_at])
+}
+
+/// Handles chargeback and fraud disputes with status, evidence, associated
+/// transactions, and resolution outcomes.
+///
+/// Tracks formal dispute cases initiated by customers or sellers regarding
+/// payment transactions. Each dispute represents a formal challenge to a
+/// payment's validity with supporting documentation and a clear resolution
+/// path.
+///
+/// Disputes can be initiated by customers (claiming unauthorized charge,
+/// incorrect amount) or sellers (claiming goods were delivered). Each
+/// dispute is linked to a specific payment and may be assigned to an admin
+/// for investigation.
+///
+/// The system maintains an audit trail of all dispute actions and preserves
+/// evidence as referenced files or document links. Disputes progress through
+/// defined statuses (open, under_review, resolved, cancelled) with final
+/// outcomes recorded for financial reconciliation and compliance.
+///
+/// All dispute operations are managed independently - administrators can
+/// search, filter, and resolve disputes regardless of the associated payment
+/// or customer context.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated payment transaction being disputed. {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Customer who initiated the dispute. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Seller against whom the dispute is filed. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Administrator assigned to resolve this dispute. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
+  
+  /// Current status of the dispute. Valid values: open, under_review,
+  /// resolved, cancelled. Status transitions follow dispute workflow rules.
+  dispute_status String
+  
+  /// Category of dispute reason as defined by system standards (e.g.,
+  /// unauthorized_charge, goods_not_received, incorrect_amount,
+  /// duplicate_charge).
+  dispute_reason String
+  
+  /// Detailed textual description of the dispute issue, including timeline,
+  /// evidence references, and customer claims.
+  dispute_description String
+  
+  /// URL to external evidence (e.g., delivery confirmation, transaction
+  /// receipt, communication logs) uploaded by dispute party.
+  evidence_url String?
+  
+  /// Final resolution notes and decisions made by the assigned administrator.
+  resolution_notes String?
+  
+  /// Timestamp when the dispute was filed.
+  created_at DateTime
+  
+  /// Timestamp of the last status update or information update to this dispute.
+  updated_at DateTime
+  
+  /// Timestamp when this dispute record was soft-deleted (for audit purposes).
+  /// Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  assignee shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_payment_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_id, dispute_status], map: "shopping_mall_payment_disputes_shopping_mall_payment_i_6e994c25")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, dispute_status], map: "shopping_mall_payment_disputes_shopping_mall_customer__11ef97c1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, dispute_status], map: "shopping_mall_payment_disputes_shopping_mall_seller_id_9040aa9f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, dispute_status], map: "shopping_mall_payment_disputes_shopping_mall_admin_id__2a7d6702")
+  @@index([created_at])
+}
+
+/// Encrypted storage of sensitive payment data for PCI-DSS compliant
+/// handling, never storing full PANs or CVVs.
+///
+/// Maintains encrypted payment tokenization records for saved payment
+/// methods that customers have explicitly consented to store. This table
+/// serves as a secure vault for payment credentials, ensuring compliance
+/// with PCI-DSS standards by never storing raw card numbers or CVV codes.
+///
+/// Each entry is linked to a specific customer and payment method type. The
+/// encrypted_data field contains encrypted tokenized values that can be
+/// decrypted by the payment system's secure key management service when
+/// initiating transactions.
+///
+/// Access to this data is strictly controlled by internal service layer
+/// logic - customer or seller UIs never directly access vault entries. All
+/// operations occur through payment processing system APIs.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_vault_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this payment credential. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Type of payment method this vault entry stores (credit card, PayPal,
+  /// etc.). {@link shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
+  
+  /// AES-256 encrypted payload containing masked card number, expiry date, and
+  /// payment token. Never contains full PAN or CVV as required by PCI-DSS.
+  encrypted_data String
+  
+  /// Timestamp when this vault entry was created and stored in the system.
+  created_at DateTime
+  
+  /// Timestamp when this vault entry was last modified (e.g., when masked data
+  /// was updated).
+  updated_at DateTime
+  
+  /// Timestamp when this vault entry was logically deleted (soft delete). Null
+  /// if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_payment_vault_entries_shopping_mall_cust_97d7d262")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_method_id, created_at], map: "shopping_mall_payment_vault_entries_shopping_mall_paym_196fcd84")
+}
+
+/// Historical currency conversion rates locked at transaction time for
+/// accurate financial reconciliation.
+///
+/// Records official exchange rates used during payment processing, capturing
+/// the exact rate applied at the moment of transaction. These rates are
+/// immutable historical records, never updated after creation, to ensure
+/// audit-trail integrity for financial reporting and reconciliation.
+///
+/// Each entry represents a specific rate between two currencies as obtained
+/// from a designated external API source. The system locks these rates when
+/// a payment is processed, ensuring that the rate used for financial
+/// calculations remains unchanged even if market rates fluctuate later.
+///
+/// This table serves as the authoritative source for historical currency
+/// conversion values, critical for accounting, tax calculations, and
+/// financial audits that require precise, unaltered transaction data.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_exchange_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The base currency code (ISO 4217) being converted from. Examples: 'USD',
+  /// 'EUR', 'JPY'. This represents the currency of the original transaction
+  /// amount.
+  from_currency String
+  
+  /// The target currency code (ISO 4217) being converted to. Examples: 'USD',
+  /// 'EUR', 'JPY'. This represents the currency into which the original amount
+  /// was converted for the payment.
+  to_currency String
+  
+  /// The exchange rate used for conversion. Represents how much of the
+  /// to_currency equals one unit of from_currency. For example, if 1 USD = 1.2
+  /// EUR, then exchange_rate = 1.2. Stored as a double for precise financial
+  /// calculations.
+  exchange_rate Float
+  
+  /// The external financial API provider that supplied this exchange rate.
+  /// Examples: 'fixer.io', 'openexchangerates.org', 'currencyapi.com'. Used
+  /// for audit trail and to trace the source of rate data in case of disputes
+  /// or quality issues.
+  source_api String
+  
+  /// The precise timestamp when this exchange rate was locked for use in a
+  /// payment transaction. This is the critical point-in-time reference for
+  /// financial reconciliation. The rate at this exact moment is what was used
+  /// in the payment calculation and must remain unchanged forever.
+  locked_at DateTime
+  
+  /// Timestamp when this exchange rate record was stored in the system.
+  /// Indicates when the rate was fetched and persisted by the system. For
+  /// audit purposes to determine how recently the rate was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this exchange rate record was last modified. In this
+  /// immutable rate table, this field is set identical to created_at since
+  /// rates are never updated after creation. Included for schema consistency
+  /// with other tables.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([from_currency, to_currency, locked_at], map: "shopping_mall_payment_exchange_rates_from_currency_to__00b0ae04")
+  @@index([created_at])
+}
+
+/// Defines permitted surcharge amounts for specific payment methods by
+/// region, compliant with legal restrictions.
+///
+/// Stores configuration rules that specify how much additional fee can be
+/// applied to transactions based on the payment method and geographic
+/// region. These rules are used during payment processing to automatically
+/// calculate applicable surcharges while ensuring compliance with regional
+/// laws that restrict or prohibit certain surcharges.
+///
+/// Each rule applies to a specific payment method (e.g., credit card,
+/// digital wallet) in a specific country or region. The surcharge amount is
+/// stored as a decimal value representing the percentage or flat fee that
+/// can be added. Rules have effective dates to support historical tracking
+/// and future-dated policy changes.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_surcharge_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the payment method this surcharge rule applies to. {@link
+  /// shopping_mall_payment_methods.id}.
+  payment_method_id String
+  
+  /// Reference to the region this surcharge rule applies to. {@link
+  /// shopping_mall_payment_regions.id}.
+  region_id String
+  
+  /// The amount of surcharge that can be applied, expressed as a decimal
+  /// percentage or flat fee. Positive values only, representing the surcharge
+  /// against the transaction amount.
+  surcharge_amount Float
+  
+  /// The date and time when this surcharge rule becomes effective. Used for
+  /// managing future-dated policy changes and historical rule tracking.
+  effective_date DateTime
+  
+  /// Timestamp when this surcharge rule was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this surcharge rule was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  paymentMethod shopping_mall_payment_methods @relation(fields: [payment_method_id], references: [id], onDelete: Cascade)
+  region shopping_mall_payment_regions @relation(fields: [region_id], references: [id], onDelete: Cascade)
+  
+  @@index([region_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([payment_method_id, region_id], map: "shopping_mall_payment_surcharge_rules_payment_method_i_018285f2")
+  @@index([effective_date])
+}
+
+/// Tracks payment attempt rate limits per user and IP address to prevent
+/// abuse and brute force attacks.
+///
+/// This subsidiary table automatically monitors and enforces rate limits on
+/// payment operations by counting attempts made by authenticated users and
+/// anonymous IPs. Records expire after a configured time window and are
+/// automatically cleaned up, making this a transient tracking system without
+/// long-term retention requirements.
+///
+/// The system counts attempts per user (when authenticated) and per IP
+/// address (when anonymous), triggering system-level blocks when thresholds
+/// are exceeded. This supports the payment-processing.md requirement for
+/// rate limit enforcement without exposing internal thresholds to users or
+/// requiring direct management.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifies the authenticated user making payment attempts. This field is
+  /// null for anonymous users attempting payments. {@link
+  /// shopping_mall_customers.id}, {@link shopping_mall_sellers.id}, or {@link
+  /// shopping_mall_admins.id}.
+  user_id String?
+  
+  /// The client IP address making the payment attempt. This field is populated
+  /// for anonymous users and for tracking purposes even with authenticated
+  /// users.
+  ip String
+  
+  /// The number of payment attempts recorded within the current time window.
+  /// Resets upon expiration.
+  attempts Int
+  
+  /// The timestamp when this rate limit record was first created. Used for
+  /// determining the time window.
+  created_at DateTime
+  
+  /// The timestamp when this rate limit record will expire and be considered
+  /// stale. After this point, the attempt counter resets.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([ip, created_at])
+}
+
+/// Stores message templates and delivery logs for payment status
+/// notifications sent to customers via email and in-app alerts.
+///
+/// Records all system-generated notifications triggered by payment events
+/// including payment success, failure, refunds, and status changes. This
+/// table maintains an immutable audit trail of customer communications for
+/// compliance and support purposes.
+///
+/// Each record captures the notification template used, delivery method
+/// (email or app), recipient identifier, delivery status, and timestamps for
+/// when notifications were sent and read. External systems can query this
+/// table to verify communication occurred without exposing the actual
+/// message content to the API layer.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifier of the message template used for this notification (e.g.,
+  /// 'payment_success', 'refund_processed'). Reference to system-defined
+  /// notification templates.
+  template String
+  
+  /// Channel type used to deliver the notification: 'email' or 'app'. Defines
+  /// the delivery method and routing logic.
+  notification_type String
+  
+  /// Identifier of the recipient (customer or seller) who received the
+  /// notification. Links to customer_id or seller_id in Actors component.
+  recipient_id String
+  
+  /// Type of recipient: 'customer' or 'seller'. Distinguishes notification
+  /// target within the Actors component.
+  recipient_type String
+  
+  /// Delivery status of the notification: 'sent', 'delivered', 'open',
+  /// 'failed'. Tracks status through notification pipeline.
+  status String
+  
+  /// Timestamp when the notification was dispatched to the delivery system
+  /// (email gateway or push notification service).
+  sent_at DateTime
+  
+  /// Timestamp when the recipient opened or viewed the notification in the app
+  /// or email client. NULL if never opened.
+  read_at DateTime?
+  
+  /// Timestamp when this notification record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this notification record was last updated, typically when
+  /// status changes to 'delivered' or 'open'.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([recipient_id, sent_at])
+  @@index([status, sent_at])
+  // spellchecker: ignore-next-line
+  @@index([recipient_type, recipient_id, status], map: "shopping_mall_payment_notifications_recipient_type_rec_2ee6143b")
+}
+
+/// System-wide configuration for payment processing behavior including
+/// timeout values, retry policies, SLA thresholds, and admin-controlled
+/// feature flags.
+///
+/// This singleton configuration table controls global payment system
+/// behavior across the entire platform. It determines how the system handles
+/// payment timeouts, retry attempts, service level requirements, and which
+/// payment methods are enabled or disabled. Administrators use the admin
+/// dashboard to modify these settings, which take immediate effect
+/// system-wide.
+///
+/// Each configuration change is tracked through the
+/// created_at/updated_at/deleted_at temporal fields to maintain an audit
+/// trail of payment policy evolution. This table does not represent any
+/// business entity but rather the operational parameters controlling how
+/// payment transactions are processed.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Maximum time in seconds that a payment authorization request will wait
+  /// for gateway response before timing out. Default: 30 seconds.
+  payment_timeout_seconds Int
+  
+  /// Maximum number of retry attempts for failed payment transactions before
+  /// marking as declined. Default: 3 attempts.
+  max_retry_attempts Int
+  
+  /// Service Level Agreement threshold in minutes for payment processing
+  /// completion. If processing exceeds this time, monitoring alerts are
+  /// triggered. Default: 15 minutes.
+  sla_threshold_minutes Int
+  
+  /// Flag to disable all card-based payment methods (credit/debit)
+  /// system-wide. When true, card payments are not available for any customer.
+  disable_card_payments Boolean
+  
+  /// Flag to disable digital wallet payments (e.g. Apple Pay, Google Pay)
+  /// system-wide. When true, wallet payments are not available for any
+  /// customer.
+  disable_wallet_payments Boolean
+  
+  /// Flag to disable cryptocurrency payments system-wide. When true,
+  /// blockchain-based payments are not available for any customer.
+  disable_crypto_payments Boolean
+  
+  /// Flag to enable payment surcharges for specific payment methods as defined
+  /// in shopping_mall_payment_surcharge_rules table.
+  enable_surcharge Boolean
+  
+  /// Flag to enable rate limiting on payment attempts per user and IP address
+  /// to prevent abuse or brute force attacks.
+  enable_rate_limiting Boolean
+  
+  /// Flag to enable webhook notifications to external systems for real-time
+  /// payment status updates.
+  enable_webhooks Boolean
+  
+  /// Timestamp when this configuration was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration was logically deleted (soft delete),
+  /// allowing audit trail of configuration changes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([updated_at])
+}
+
+/// Records blockchain-based cryptocurrency payment conversions with locked
+/// exchange rates at transaction time.
+///
+/// Captures the exact fiat currency amount received after cryptocurrency
+/// conversion, using the exchange rate that was locked at the moment of
+/// payment authorization. This ensures precise financial reconciliation
+/// despite exchange rate volatility. Each record corresponds to exactly one
+/// payment transaction and is automatically created when a cryptocurrency
+/// payment is processed.
+///
+/// Tracks whether the customer explicitly confirmed the conversion amount
+/// before completing the payment. Records the final settlement outcome
+/// (success, failed, disputed) for accounting reconciliation. This table
+/// provides immutable audit trail for crypto payments, fulfilling regulatory
+/// compliance requirements for financial reporting and dispute resolution.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_cryptocurrency_conversions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The payment transaction this conversion record belongs to. {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// The equivalent fiat amount (in USD) received from the cryptocurrency
+  /// conversion, locked at the time of payment authorization.
+  fiat_amount Float
+  
+  /// The exchange rate (cryptocurrency per USD) that was locked at the time of
+  /// payment authorization. This ensures financial accuracy despite market
+  /// fluctuations.
+  locked_exchange_rate Float
+  
+  /// Whether the customer explicitly confirmed the conversion amount and rate
+  /// before completing the cryptocurrency payment transaction.
+  customer_confirmed Boolean
+  
+  /// The final settlement status of this cryptocurrency conversion. Possible
+  /// values: 'settled', 'failed', 'disputed'. Records the outcome for
+  /// accounting reconciliation.
+  settlement_outcome String
+  
+  /// Timestamp when this cryptocurrency conversion record was created by the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated (typically when
+  /// settlement_outcome changes).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_payment_id], map: "shopping_mall_payment_cryptocurrency_conversions_shopp_63940de1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_id, created_at], map: "shopping_mall_payment_cryptocurrency_conversions_shopp_9c6cbe0c")
+}
+
+/// Tracks external webhook endpoints registered to receive real-time payment
+/// status updates from the system.
+///
+/// Stores configuration for third-party systems that require asynchronous
+/// notifications about payment events such as authorization, capture,
+/// refund, or failure. These endpoints are automatically triggered by
+/// payment status changes and are managed by system administrators through
+/// the payment settings interface.
+///
+/// Each webhook represents a specific URL endpoint that receives HTTP POST
+/// requests with payment event payloads. The system tracks delivery status,
+/// retry attempts, and failures to ensure reliable event delivery. Webhooks
+/// are associated with specific event types for targeted notifications and
+/// are subject to delivery health monitoring.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// configuration cleanup.
+///
+/// System-managed entity that supports payment processing but does not
+/// require direct user interaction or independent API operations beyond
+/// administrative configuration.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_webhooks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The complete HTTPS endpoint URL where payment events will be delivered as
+  /// HTTP POST requests. Must be a valid, publicly accessible URL.
+  url String
+  
+  /// JSON array string containing the payment event types this webhook
+  /// subscribes to. Valid values: 'payment_created', 'payment_authorized',
+  /// 'payment_captured', 'payment_refunded', 'payment_declined',
+  /// 'payment_dispute_opened', 'payment_dispute_closed'.
+  event_types String
+  
+  /// Current status of the webhook endpoint. Valid values: 'active',
+  /// 'inactive', 'error', 'disabled'. Determines if delivery attempts will be
+  /// made.
+  status String
+  
+  /// Total number of delivery attempts made to this webhook endpoint since its
+  /// creation. Increments with each attempt regardless of success or failure.
+  delivery_count Int
+  
+  /// Timestamp of the most recent delivery attempt to this webhook. This helps
+  /// monitor endpoint health and recency of activity.
+  last_delivery_at DateTime?
+  
+  /// Human-readable description of the most recent delivery failure reason
+  /// (e.g., 'HTTP 500: Server Error', 'Connection timeout after 10s', 'SSL
+  /// certificate expired').
+  last_failure_reason String?
+  
+  /// Timestamp when this webhook configuration was initially registered in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this webhook configuration
+  /// (e.g., status change, URL update, event type modification).
+  updated_at DateTime
+  
+  /// Timestamp when this webhook configuration was marked for deletion,
+  /// enabling soft delete functionality for audit trail preservation. If null,
+  /// webhook is still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Logs execution of daily background jobs for endpoint monitoring, backup,
+/// reconciliation, and key rotation.
+///
+/// Tracks automated system processes that maintain payment system health,
+/// including monitoring checks, security key rotations, reconciliation
+/// procedures, and backup operations. Each entry represents a complete job
+/// execution instance with its outcome and diagnostic details.
+///
+/// This table supports operational visibility for system administrators by
+/// recording what jobs ran, when, how long they took, and whether they
+/// succeeded or failed with any error details.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_batch_job_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of batch job executed. Valid values: 'monitoring', 'backup',
+  /// 'reconciliation', 'key_rotation', 'data_cleanup'. Specifies the
+  /// operational category of the background job.
+  job_type String
+  
+  /// Execution status of the job. Valid values: 'success', 'failed',
+  /// 'partial_success', 'cancelled'. Indicates the final outcome of the batch
+  /// job execution.
+  status String
+  
+  /// Duration of the job execution in milliseconds. Measures performance and
+  /// helps identify slow operations requiring optimization.
+  job_duration_ms Int
+  
+  /// Detailed error message if the job failed. Contains error codes, stack
+  /// traces, and diagnostic information to aid troubleshooting.
+  error_message String?
+  
+  /// JSON-formatted metadata about the job execution context. Stores
+  /// extensible information such as system variables, configuration versions,
+  /// or process-specific parameters in structured format.
+  metadata String?
+  
+  /// Timestamp when the job execution was logged. Records when the batch job
+  /// completed and was recorded in the system for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([job_type, created_at])
+  @@index([status, created_at])
+  @@index([created_at])
+}

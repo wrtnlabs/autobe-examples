@@ -1,0 +1,296 @@
+/// Core product records with name, description, category association and
+/// base attributes.
+///
+/// Manages the primary product catalog including product details,
+/// descriptions, and their categorization for storefront organization. Each
+/// product entry represents a unique product within the platform, supporting
+/// search and filtering capabilities for customers.
+///
+/// Products are linked to their respective categories for hierarchical
+/// organization, facilitating product discovery and navigation across the
+/// catalog. Product variants (SKU) are managed separately per requirements,
+/// ensuring proper 3NF compliance.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category reference. {@link shopping_mall_product_categories.id}.
+  shopping_mall_product_category_id String
+  
+  /// Product name as displayed to customers. Must be descriptive and unique
+  /// within category for product identification.
+  name String
+  
+  /// Detailed product description including key features, benefits, and usage
+  /// instructions for customer information.
+  description String
+  
+  /// Product creation timestamp. Indicates when the product was added to the
+  /// catalog.
+  created_at DateTime
+  
+  /// Product last modification timestamp. Updates whenever product details
+  /// change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Marks when product was removed from catalog for
+  /// audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_product_specs shopping_mall_product_specs[]
+  shopping_mall_low_stock_alerts shopping_mall_low_stock_alerts?
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_variant_inventories shopping_mall_variant_inventories?
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@index([shopping_mall_product_category_id])
+}
+
+/// Main category records representing product organization hierarchy.
+///
+/// Supports nested categories with parent-child relationships and associated
+/// section classification for product grouping and filtering. Each category
+/// can have subcategories, and the section association enables
+/// categorization within specific market channels.
+///
+/// Categories serve as primary entities in the product catalog, requiring
+/// independent creation, search, and management capabilities across the
+/// platform.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. {@link
+  /// shopping_mall_product_categories.id}.
+  parent_id String?
+  
+  /// Section to which this category belongs for channel-specific organization.
+  /// {@link shopping_mall_sections.id}.
+  section_id String
+  
+  /// Category name used for display and user discovery. Must be unique within
+  /// a section (enforced via unique index).
+  name String
+  
+  /// Detailed explanation of the category purpose, content, and target
+  /// audience.
+  description String?
+  
+  /// Timestamp when category record was created. Used for sorting and
+  /// determining age of categories.
+  created_at DateTime
+  
+  /// Timestamp when category record was last modified. Tracks changes for
+  /// audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when category was logically deleted. Used with soft delete
+  /// pattern for audit preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@index([parent_id])
+  
+  @@unique([section_id, name])
+  @@index([section_id, created_at])
+}
+
+/// Product image files for catalog display and variant selection. Stores
+/// main product images, zoomable views, and image metadata for user-facing
+/// product pages. Images are associated with specific products to enable
+/// visual product representation across the shopping experience.
+///
+/// Images can be independently managed for catalog presentation, including
+/// adding new images, reordering existing ones, and removing obsolete images
+/// without affecting the core product data. The sort_order field enables
+/// intuitive gallery display ordering for users.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this image belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Full URL or storage path to the image file on the server.
+  image_url String
+  
+  /// Optional description of the image content for accessibility and SEO
+  /// purposes.
+  description String?
+  
+  /// Image width in pixels for responsive display.
+  width Int?
+  
+  /// Image height in pixels for responsive display.
+  height Int?
+  
+  /// Sequence number for displaying images in gallery order.
+  sort_order Int
+  
+  /// Image creation timestamp.
+  created_at DateTime
+  
+  /// Last image modification timestamp.
+  updated_at DateTime
+  
+  /// Timestamp when image was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, sort_order], map: "shopping_mall_product_images_shopping_mall_product_id__a574469b")
+}
+
+/// Customer reviews and ratings for products with moderation support.
+///
+/// Stores customer feedback on products including ratings, textual comments,
+/// and status tracking for moderation workflows. Each review is tied to a
+/// specific product and authenticated customer, enabling independent user
+/// management of reviews without requiring product context.
+///
+/// Reviews can be updated by the original poster, moderated by staff for
+/// content quality, and searched across products. The status field tracks
+/// moderation state (pending, approved, rejected) while temporal fields
+/// provide complete audit trails for review history.
+///
+/// This table supports the primary user scenario where customers provide
+/// feedback and businesses track review quality through moderation
+/// capabilities.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Customer who submitted the review. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Numerical rating for the product (1-5 scale). Valid values: 1-5 integer.
+  rating Int
+  
+  /// Customer's written feedback on the product. Includes attribution-specific
+  /// details and content for product validation.
+  comment String
+  
+  /// Current moderation status of the review. Valid values: 'pending',
+  /// 'approved', 'rejected'.
+  status String
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the review was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_id])
+  @@index([customer_id])
+  @@index([status])
+}
+
+/// Technical specifications and variant-specific details for products,
+/// including attributes like color, size, and material compositions. Each
+/// specification is linked to a specific product variant to enable detailed
+/// product information lookup and filtering during catalog browsing.
+///
+/// Specifications are exclusively used to display product variant details to
+/// customers and support search/filtering capabilities in the product
+/// catalog. The table follows strict 3NF by separating specification
+/// attributes from product base records and tying them directly to variant
+/// entities, avoiding any denormalization.
+///
+/// All specifications are stored in raw format to support dynamic display
+/// based on current product variant configuration, with no pre-computed
+/// values or calculated fields.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_specs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Link to product variant. {@link shopping_mall_products.id}.
+  product_variant_id String
+  
+  /// Name of the technical specification attribute (e.g., 'Color', 'Size',
+  /// 'Material').
+  spec_name String
+  
+  /// Value of the technical specification (e.g., 'Red', 'Medium', 'Cotton').
+  spec_value String
+  
+  /// Timestamp when the specification was created for the variant.
+  created_at DateTime
+  
+  /// Timestamp when the specification was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the specification was soft deleted for audit purposes.
+  /// Null indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_products @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([product_variant_id, spec_name])
+  @@index([product_variant_id])
+  @@index([spec_name])
+}

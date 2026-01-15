@@ -1,0 +1,642 @@
+/// Main order record containing customer, status, total, and metadata for
+/// each completed purchase transaction.
+///
+/// Stores the primary entity for all completed purchase transactions on the
+/// platform. Each order represents a buyer's commitment to purchase one or
+/// more products, with associated payment, shipping, and fulfillment
+/// information captured at the time of creation.
+///
+/// The order record serves as the central hub for the entire transaction
+/// lifecycle - connecting customers to their purchases, linking to payment
+/// records, and anchoring shipping addresses. Historical state preservation
+/// is maintained through immutable order items and address snapshots, while
+/// the order itself tracks the overall transaction status.
+///
+/// Soft deletion is supported to maintain audit trails while allowing for
+/// order cancellations and removals.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed this order. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Current state of the order in its lifecycle. Valid values: pending,
+  /// confirmed, shipped, delivered, cancelled, returned, refunded. Status
+  /// transitions follow defined business rules with audit trail in
+  /// shopping_mall_order_events.
+  status String
+  
+  /// Currency code in ISO 4217 format (e.g., USD, EUR, JPY) used for this
+  /// order.
+  currency String
+  
+  /// Total price of all items in this order at time of purchase, including
+  /// taxes and fees but excluding shipping costs.
+  total_amount Float
+  
+  /// Cost charged for shipping this order to the customer's address.
+  shipping_cost Float
+  
+  /// Total tax amount calculated and charged for this order based on
+  /// jurisdiction and product types.
+  tax_amount Float
+  
+  /// Unique human-readable order identifier generated after order
+  /// confirmation. Format: ORD-YYYYMMDD-XXXXX.
+  order_number String
+  
+  /// Timestamp when this order was initially created in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this order record
+  updated_at DateTime
+  
+  /// Timestamp when this order was soft-deleted (cancelled permanently). May
+  /// be null if order is still active.
+  deleted_at DateTime?
+  
+  /// Coupon code applied to this order, if any, for discount calculation.
+  coupon_discount_code String?
+  
+  /// Optional customer-provided notes or special instructions for this order.
+  notes String?
+  
+  /// Device or platform from which this order was placed (e.g., 'web',
+  /// 'android', 'ios').
+  placed_from String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_addresses shopping_mall_order_addresses?
+  shopping_mall_order_payments shopping_mall_order_payments?
+  shopping_mall_order_events shopping_mall_order_events[]
+  shopping_mall_order_returns shopping_mall_order_returns?
+  shopping_mall_order_refunds shopping_mall_order_refunds[]
+  shopping_mall_delivery_trackings shopping_mall_delivery_trackings[]
+  shopping_mall_order_shipments shopping_mall_order_shipments?
+  
+  @@unique([order_number])
+  @@unique([shopping_mall_customer_id, created_at])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, status, created_at], map: "shopping_mall_orders_shopping_mall_customer_id_status__74560cb9")
+  @@index([deleted_at])
+}
+
+/// Individual product items within an order, storing variant, quantity,
+/// price, and seller reference at time of purchase.
+///
+/// Captures the exact product variant details, quantity, and price as they
+/// existed at the time of order placement. This ensures historical accuracy
+/// for order fulfillment, financial reconciliation, and customer inquiries,
+/// even if product prices or inventory levels change later.
+///
+/// Each order item maintains a reference to its parent order, the specific
+/// product variant purchased, and the seller who fulfilled the item. The
+/// price is stored as a snapshot of the value at purchase time, not
+/// calculated dynamically from current pricing data.
+///
+/// This table supports business requirements for detailed order history
+/// analysis, refund processing, and accurate financial reporting based on
+/// actual transaction details.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order that contains this item. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Product variant that was purchased. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Seller who provided this product variant. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Number of units of the product variant purchased. Must be positive
+  /// integer.
+  quantity Int
+  
+  /// Unit price of the product variant at time of purchase. Stored as snapshot
+  /// value for historical accuracy.
+  price Float
+  
+  /// Total cost of this order item (quantity × price). Calculated at order
+  /// creation but stored for performance.
+  total_amount Float
+  
+  /// Timestamp when this order item was created. Always set at order placement.
+  created_at DateTime
+  
+  /// Timestamp when this order item was last updated. Typically same as
+  /// created_at, as order items are immutable after creation.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit trails and potential data purging
+  /// according to retention policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d221d815")
+  @@index([shopping_mall_product_variant_id])
+  @@index([shopping_mall_seller_id])
+}
+
+/// Shipping and billing address details captured at time of order placement,
+/// ensuring historical accuracy regardless of later profile changes.
+///
+/// This table stores a snapshot of the customer's address information at the
+/// exact moment an order is placed. Even if the customer later updates their
+/// profile address, this record remains unchanged to provide an accurate
+/// audit trail of what was specified during the purchase transaction.
+///
+/// This is a subsidiary table managed entirely through its parent order
+/// entity and does not have independent API endpoints. It serves as a
+/// critical component for order fulfillment, legal compliance, and financial
+/// auditing.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent order. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// First line of the street address (e.g., 123 Main Street). Required field.
+  address_line1 String
+  
+  /// Second line of the street address (e.g., Apt 5B, Suite 100). Optional
+  /// field for apartment or suite numbers.
+  address_line2 String?
+  
+  /// City or town name for the address. Required field.
+  city String
+  
+  /// State, province, or region name for the address. Required for countries
+  /// with subdivisions.
+  state String
+  
+  /// Postal or ZIP code for the address. Required field for accurate shipping
+  /// calculations.
+  postal_code String
+  
+  /// Country name in full form (e.g., United States, Canada). Required field.
+  country String
+  
+  /// Contact phone number for delivery notifications and carrier coordination.
+  /// Required field.
+  phone String
+  
+  /// Email address for order confirmation and shipping notifications. Required
+  /// field.
+  email String
+  
+  /// Timestamp when this address snapshot was created (when order was placed).
+  /// Always set to order creation time.
+  created_at DateTime
+  
+  /// Timestamp of last update to this address record. Usually same as
+  /// created_at as addresses are immutable after creation.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating when this record was logically deleted.
+  /// Never physically removes data to preserve audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@index([shopping_mall_order_id])
+  @@index([created_at])
+  @@index([country])
+  @@index([city, state])
+}
+
+/// Payment transaction details for orders, capturing method, status, gateway
+/// ID, and amount at the time of processing.
+///
+/// Records all payment attempts associated with orders including
+/// authorization, capture, refund, and failure states. Each payment record
+/// is linked to exactly one order and captures the payment details at the
+/// moment of transaction, ensuring historical accuracy even if payment
+/// methods are later modified.
+///
+/// Used for financial reconciliation, audit trails, and reporting on payment
+/// success rates. Integrates with payment gateways to store transaction IDs
+/// and status updates. Supports refund processing through linked
+/// shopping_mall_order_refunds table.
+///
+/// Important: This is a primary entity that requires independent management
+/// for payment reconciliation workflows and financial reporting across the
+/// entire system, not just within each order context.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this payment is associated with. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Type of payment method used (credit_card, paypal, bank_transfer, crypto,
+  /// gift_card).
+  payment_method String
+  
+  /// Current payment status: pending, processing, authorized, captured,
+  /// declined, refunded, partially_refunded.
+  status String
+  
+  /// Payment amount in USD, matching the order total at time of payment.
+  amount Float
+  
+  /// Unique transaction ID assigned by the payment gateway (e.g., Stripe,
+  /// PayPal).
+  gateway_id String
+  
+  /// Timestamp when this payment record was initially created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this payment record.
+  updated_at DateTime
+  
+  /// Timestamp when this payment record was logically deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  @@index([status])
+  @@index([created_at])
+  @@index([gateway_id])
+}
+
+/// Immutable audit log of all status changes and key events in order
+/// lifecycle, with timestamp and actor context.
+///
+/// Records every state transition in an order's journey, including who
+/// initiated the change (customer, seller, admin, or system) and any
+/// additional context. Essential for auditing, compliance, customer service
+/// investigations, and system analytics.
+///
+/// Each event represents a single point-in-time status change. Events are
+/// append-only and never modified after creation. The table supports
+/// comprehensive reporting on order lifecycle patterns, delay causes, and
+/// resolution times.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this event belongs to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The new status assigned to the order after this event. Valid values:
+  /// pending, confirmed, shipped, in_transit, out_for_delivery, delivered,
+  /// returned, cancelled, refunded.
+  status String
+  
+  /// Type of actor who initiated this event. Values: customer, seller, admin,
+  /// system.
+  actor_type String
+  
+  /// Additional context about the event, such as reason for cancellation,
+  /// message from seller, or system-generated notes.
+  details String?
+  
+  /// Timestamp when this event was created and recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this event record (rarely changed after
+  /// creation).
+  updated_at DateTime
+  
+  /// Soft delete marker for audit trail integrity. If set, indicates this
+  /// event was logically deleted (very rare).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id, status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_events_shopping_mall_order_id_crea_5ebfb5ab")
+  @@index([status, created_at])
+  @@index([actor_type, created_at])
+}
+
+/// Customer-initiated return requests for purchased items, tracking status,
+/// reason, and linkage to refund processing.
+///
+/// Captures the complete lifecycle of return requests initiated by customers
+/// after delivery of goods. Each return is tied to a specific order and may
+/// result in a corresponding refund.
+///
+/// Returns remain attached to the original order even if the order data
+/// changes, providing complete historical context for dispute resolution.
+/// Customers can submit one return request per order, and each request
+/// progresses through defined status stages from initiation to completion.
+///
+/// The reason field captures the customer's justification for return,
+/// subject to moderation if flagged. Status transitions are tracked with
+/// timestamps, and refunds are linked only when processed successfully.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_returns {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this return request applies to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Current status of the return request. Valid values: requested, approved,
+  /// rejected, processed, completed.
+  status String
+  
+  /// Customer's detailed explanation for the return request. Must be between
+  /// 50-2000 characters as defined in requirements.
+  reason String
+  
+  /// Timestamp when the return request was initially submitted.
+  created_at DateTime
+  
+  /// Timestamp of the last status change in this return request.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_refunds shopping_mall_order_refunds?
+  
+  @@unique([shopping_mall_order_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Records financial refunds issued for returned items or order adjustments.
+///
+/// Tracks the complete lifecycle of refund transactions initiated by
+/// customer return requests. Each refund record is directly linked to a
+/// specific return request and the parent order, ensuring traceability from
+/// return through payout. Refunds are never created independently - they can
+/// only be processed through the return workflow. The refund amount reflects
+/// the amount authorized for repayment, which may differ from original
+/// payment due to restocking fees or partial returns.
+///
+/// Status tracking allows accounting teams to reconcile refunds with bank
+/// processing, identify failed or reversed transactions, and generate
+/// financial reports.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The return request that triggered this refund. {@link
+  /// shopping_mall_order_returns.id}.
+  shopping_mall_order_return_id String
+  
+  /// The original order for which this refund was processed. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The total refund amount in USD. Equals the approved return amount minus
+  /// any restocking fees.
+  amount Float
+  
+  /// Current status of the refund. Valid values: pending (awaiting
+  /// processing), processed (successfully paid), failed (payment gateway
+  /// error), reversed (funds returned to platform).
+  status String
+  
+  /// The method used to issue the refund. Values: original_payment (reversed
+  /// to original payment method), store_credit (credited to account),
+  /// bank_transfer (direct to bank account), check (physical mailed check).
+  refund_method String
+  
+  /// The unique identifier assigned by the payment gateway for this refund
+  /// transaction. Useful for reconciliation and support.
+  gateway_reference_id String?
+  
+  /// Timestamp when the refund record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the refund record was last updated (e.g., status change).
+  updated_at DateTime
+  
+  /// Timestamp when this refund was logically deleted for audit compliance.
+  /// Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderReturn shopping_mall_order_returns @relation(fields: [shopping_mall_order_return_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_return_id])
+  @@index([shopping_mall_order_id])
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_return_id, status], map: "shopping_mall_order_refunds_shopping_mall_order_return_2731ee66")
+}
+
+/// Structured lookup table for predefined reasons why orders are cancelled.
+///
+/// Enables analytics, policy enforcement, and automated workflows by
+/// capturing standardized cancellation reasons. Admins can manage this list
+/// to control which reasons are available to customers and which trigger
+/// specific responses or reviews.
+///
+/// Each cancellation reason is associated with a category that groups
+/// similar reasons (e.g., inventory_issue, customer_request, fraud_risk).
+/// Reasons can be deactivated by setting active to false without deleting
+/// them, preserving audit history. This table is referenced by
+/// shopping_mall_orders when an order is cancelled.
+///
+/// This is a primary entity because admins must independently create,
+/// update, activate, deactivate, and search cancellation reasons in the
+/// administrative dashboard—each reason is a distinct policy control point
+/// that does not depend on any order.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellation_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The human-readable cancellation reason text presented to customers or
+  /// used in reports. Must be unique and descriptive.
+  reason String
+  
+  /// Categorization of the cancellation reason (e.g., customer_request,
+  /// inventory_issue, fraud_risk, pricing_error, duplicate_order). Used for
+  /// filtering and reporting.
+  category String
+  
+  /// Indicates whether the cancellation reason is currently active and
+  /// available for selection. Inactive reasons are preserved for historical
+  /// reporting.
+  active Boolean
+  
+  /// Timestamp when this cancellation reason was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation reason was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this cancellation reason was logically deleted (soft
+  /// delete). Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([reason])
+  @@index([category])
+  @@index([active])
+}
+
+/// Logs individual delivery status events with timestamps, location data,
+/// and carrier-provided updates for each order shipment.
+///
+/// Records every status change in the delivery lifecycle including shipped,
+/// in_transit, out_for_delivery, and delivered states. Each record
+/// represents a single point-in-time update from the carrier system,
+/// capturing tracking number, carrier name, estimated delivery date, actual
+/// delivery date, and location data as received directly from shipping
+/// providers.
+///
+/// This table is append-only - existing records are never modified or
+/// deleted. It serves as the official audit trail for delivery events,
+/// enabling customers to track order progress and providing data for
+/// analytics on delivery performance.
+///
+/// Records are created automatically by system integrations with FedEx, UPS,
+/// DHL, and USPS APIs as delivery status updates are received. All events
+/// are linked to their corresponding shopping_mall_orders record via foreign
+/// key.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_delivery_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this delivery tracking event belongs to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Unique tracking number assigned by the shipping carrier. This is the
+  /// primary identifier customers use to track their shipment.
+  tracking_number String
+  
+  /// Name of the shipping carrier (e.g., 'FedEx', 'UPS', 'DHL', 'USPS')
+  /// providing the delivery service.
+  carrier_name String
+  
+  /// Current delivery status of the shipment. Values: 'shipped', 'in_transit',
+  /// 'out_for_delivery', 'delivered'. Reflects the most recent update from the
+  /// carrier API.
+  status String
+  
+  /// Date and time when the carrier estimates the package will be delivered,
+  /// provided by the carrier system.
+  estimated_delivery_date DateTime?
+  
+  /// Date and time when the package was actually delivered, as confirmed by
+  /// the carrier. Null until delivery occurs.
+  actual_delivery_date DateTime?
+  
+  /// Geographical location where the status update occurred. Usually the city
+  /// and state of the most recent scan point.
+  location String?
+  
+  /// Weight of the package in kilograms as reported by the carrier system.
+  package_weight Float?
+  
+  /// Dimensions of the package as reported by the carrier system, formatted as
+  /// "length x width x height" units.
+  package_dimensions String?
+  
+  /// Timestamp when this delivery tracking event was recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when this delivery tracking event was last modified in the
+  /// system.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, status], map: "shopping_mall_delivery_trackings_shopping_mall_order_i_d848906d")
+  @@index([created_at])
+}

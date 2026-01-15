@@ -1,302 +1,153 @@
-/// Primary citizen actor in the community system. Represents a registered
-/// user who can participate in discussions, create posts, and comment on
-/// content. Each citizen has a unique username, email, and password_hash
-/// credential for authentication.
+/// Authentication sessions for guest users, tracking temporary access state.
+///
+/// Tracks temporary access for anonymous visitors who have not yet
+/// authenticated as members. Each session is created when a guest accesses
+/// the platform and expires after a defined period. Sessions enable
+/// personalized experiences and analytics while maintaining guest anonymity.
+///
+/// Sessions are managed automatically by the authentication system - users
+/// cannot create, delete, or extend them directly. They exist solely for
+/// tracking temporary user activity with IP addresses and access paths.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_citizen {
+model community_platform_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for authentication and account recovery. Must be
-  /// unique and verified.
-  email String
+  /// The guest user this session belongs to. {@link
+  /// community_platform_guest.id}.
+  community_platform_guest_id String
   
-  /// Public-facing username displayed in posts and comments. Must be unique
-  /// and follow naming conventions.
-  username String
-  
-  /// BCrypt-hashed password for secure authentication. Never stored in plain
-  /// text.
-  password_hash String
-  
-  /// Optional display name that may differ from username. Used in
-  /// notifications and UI.
-  nickname String?
-  
-  /// Timestamp when the citizen account was registered.
-  created_at DateTime
-  
-  /// Timestamp of the last update to citizen profile or authentication data.
-  updated_at DateTime
-  
-  /// Soft delete timestamp; null indicates account is active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community_bbs_citizen_sessions community_bbs_citizen_sessions?
-  community_bbs_communities community_bbs_communities[]
-  community_bbs_community_moderators community_bbs_community_moderators[]
-  community_bbs_community_subscribers community_bbs_community_subscribers[]
-  community_bbs_community_invitations_of_invited_citizen_id community_bbs_community_invitations[] @relation("community_bbs_community_invitations_of_invited_citizen_id")
-  community_bbs_community_invitations_of_invited_by_id community_bbs_community_invitations[] @relation("community_bbs_community_invitations_of_invited_by_id")
-  community_bbs_posts community_bbs_posts[]
-  community_bbs_comments community_bbs_comments[]
-  community_bbs_post_votes community_bbs_post_votes[]
-  community_bbs_comment_votes community_bbs_comment_votes[]
-  community_bbs_karma_history community_bbs_karma_history[]
-  community_bbs_subscriptions community_bbs_subscriptions[]
-  community_bbs_profiles community_bbs_profiles?
-  community_bbs_user_activity_summary community_bbs_user_activity_summary?
-  community_bbs_user_badges community_bbs_user_badges[]
-  community_bbs_user_karma_summary community_bbs_user_karma_summary?
-  community_bbs_user_followers_of_follower_citizen_id community_bbs_user_followers[] @relation("community_bbs_user_followers_of_follower_citizen_id")
-  community_bbs_user_followers_of_followed_citizen_id community_bbs_user_followers[] @relation("community_bbs_user_followers_of_followed_citizen_id")
-  community_bbs_reports community_bbs_reports[]
-  
-  @@unique([email])
-  @@unique([username])
-}
-
-/// Session record for citizen authentication. Each session represents an
-/// active login instance from a specific device or browser. Session data is
-/// ephemeral and tied to the citizen's identity for tracking authenticated
-/// interactions.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_citizen_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the citizen account this session belongs to. {@link
-  /// community_bbs_citizen.id}
-  community_bbs_citizen_id String
-  
-  /// IP address from which the session was initiated. Used for security and
-  /// geographic analysis.
+  /// The IP address from which the guest accessed the system. Used for
+  /// security analysis and geographic location approximation.
   ip String
   
-  /// Full URL of the page where the login occurred. Used for session context
-  /// tracking.
+  /// The URL path that the guest visited when this session was created.
+  /// Captures entry point into the system.
   href String
   
-  /// HTTP referrer URL indicating where the user came from before login.
+  /// The referrer URL indicating where the guest came from before accessing
+  /// the system. Useful for traffic source analysis.
   referrer String
   
-  /// Timestamp when the session was initiated.
+  /// The timestamp when this guest session was created. Records the exact
+  /// moment the guest first accessed the system during this session.
   created_at DateTime
   
-  /// Timestamp when this session expires or was manually revoked. Null if
-  /// still active.
-  expired_at DateTime?
+  /// The timestamp when this guest session will expire. Sessions expire after
+  /// a fixed duration for security. Always has a value - never NULL.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  citizen community_bbs_citizen @relation(fields: [community_bbs_citizen_id], references: [id], onDelete: Cascade)
-  
-  @@unique([community_bbs_citizen_id])
+  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([community_bbs_citizen_id, created_at], map: "community_bbs_citizen_sessions_community_bbs_citizen_i_d2f2f861")
+  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
 }
 
-/// Moderator actor with elevated permissions to review, hide, or remove
-/// content. Moderators are selected from trusted citizen users and given
-/// limited authority over community content. Their identity remains distinct
-/// from regular citizens.
+/// Authentication sessions for member users, storing JWT tokens and session
+/// state.
+///
+/// Tracks active and historical authentication sessions for authenticated
+/// members. Each session is associated with a specific member account and
+/// tracks the connection context including IP address, origin URL, and
+/// referrer. Sessions are automatically expired after a set duration for
+/// security compliance.
+///
+/// Used for security auditing, concurrent session detection, and identifying
+/// suspicious login patterns. Sessions are managed entirely by the
+/// authentication system and are not directly manipulated by end users.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_moderator {
+model community_platform_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for authentication and account recovery. Must be
-  /// unique and verified.
-  email String
+  /// Authentication member account this session belongs to. {@link
+  /// community_platform_member.id}.
+  member_id String
   
-  /// Public-facing username displayed in moderation logs and community
-  /// communications. Must be unique.
-  username String
-  
-  /// BCrypt-hashed password for secure authentication. Never stored in plain
-  /// text.
-  password_hash String
-  
-  /// Optional display name used in moderation notices and system notifications.
-  nickname String?
-  
-  /// Timestamp when the moderator account was activated.
-  created_at DateTime
-  
-  /// Timestamp of the last update to moderator profile or authentication data.
-  updated_at DateTime
-  
-  /// Soft delete timestamp; null indicates account is active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community_bbs_moderator_sessions community_bbs_moderator_sessions?
-  community_bbs_reports community_bbs_reports[]
-  
-  @@unique([email])
-  @@unique([username])
-}
-
-/// Session record for moderator authentication. Tracks each active login
-/// session for moderators, enabling accountability and security isolation
-/// from regular citizen sessions.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_moderator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the moderator account this session belongs to. {@link
-  /// community_bbs_moderator.id}
-  community_bbs_moderator_id String
-  
-  /// IP address from which the session was initiated. Used for security and
-  /// geographic analysis.
+  /// IP address from which the session was initiated.
   ip String
   
-  /// Full URL of the page where the login occurred. Used for session context
-  /// tracking.
+  /// URL of the page where the user initiated login or session creation.
   href String
   
-  /// HTTP referrer URL indicating where the user came from before login.
+  /// Referrer URL that led the user to the login page or application.
   referrer String
   
-  /// Timestamp when the session was initiated.
+  /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when this session expires or was manually revoked. Null if
-  /// still active.
-  expired_at DateTime?
+  /// Timestamp when the session will expire. Sessions must expire for security
+  /// compliance, so this field is required and never null.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  moderator community_bbs_moderator @relation(fields: [community_bbs_moderator_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
   
-  // spellchecker: ignore-next-line
-  @@unique([community_bbs_moderator_id], map: "community_bbs_moderator_sessions_community_bbs_moderat_c28514b2")
-  
-  // spellchecker: ignore-next-line
-  @@index([community_bbs_moderator_id, created_at], map: "community_bbs_moderator_sessions_community_bbs_moderat_19b73636")
+  @@index([member_id, created_at])
 }
 
-/// Administrator actor with full system access. Admins manage platform
-/// settings, handle legal compliance, oversee moderator actions, and resolve
-/// citizen disputes. Admin accounts are highly restricted and require
-/// multi-factor authentication.
+/// Authentication sessions for admin users, storing privileged access tokens
+/// and session metadata.
+///
+/// Tracks active authentication sessions for system administrators with
+/// elevated privileges. Each session is tied to a specific admin user and
+/// contains connection context for security auditing.
+///
+/// Sessions are automatically expired after a fixed duration (typically 2-8
+/// hours) for security. The system generates new sessions upon
+/// re-authentication.
+///
+/// These sessions are managed entirely by the system and are not directly
+/// modified or deleted by users. They are created during login and
+/// terminated upon expiration or logout.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_admin {
+model community_platform_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address used for authentication and system notifications. Must be
-  /// unique and verified.
-  email String
+  /// Admin user who owns this session. {@link community_platform_admin.id}.
+  admin_id String
   
-  /// Public-facing administrator username, used in audit logs and system
-  /// communications.
-  username String
-  
-  /// BCrypt-hashed password for secure authentication. Never stored in plain
-  /// text.
-  password_hash String
-  
-  /// Optional display name for administrative interfaces and internal notes.
-  nickname String?
-  
-  /// Timestamp when the admin account was created.
-  created_at DateTime
-  
-  /// Timestamp of the last update to admin profile or authentication data.
-  updated_at DateTime
-  
-  /// Soft delete timestamp; null indicates account is active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community_bbs_admin_sessions community_bbs_admin_sessions?
-  community_bbs_reports community_bbs_reports[]
-  
-  @@unique([email])
-  @@unique([username])
-}
-
-/// Session record for administrator authentication. Every admin login
-/// creates a session that is strictly tracked for security and audit
-/// purposes. Admin sessions are isolated from all other actor sessions to
-/// prevent privilege escalation.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_bbs_admin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the admin account this session belongs to. {@link
-  /// community_bbs_admin.id}
-  community_bbs_admin_id String
-  
-  /// IP address from which the session was initiated. Used for security and
-  /// geographic analysis.
+  /// IP address from which the session was established.
   ip String
   
-  /// Full URL of the page where the login occurred. Used for session context
-  /// tracking.
+  /// URL of the connection request (login endpoint).
   href String
   
-  /// HTTP referrer URL indicating where the user came from before login.
+  /// Referrer URL indicating the source page leading to login.
   referrer String
   
-  /// Timestamp when the session was initiated.
+  /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when this session expires or was manually revoked. Null if
-  /// still active.
-  expired_at DateTime?
+  /// Timestamp when the session expires. Sessions must have expiration for
+  /// security; unlimited sessions are prohibited by default.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  admin community_bbs_admin @relation(fields: [community_bbs_admin_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
-  @@unique([community_bbs_admin_id])
-  
-  // spellchecker: ignore-next-line
-  @@index([community_bbs_admin_id, created_at], map: "community_bbs_admin_sessions_community_bbs_admin_id_cr_389aee6a")
+  @@index([admin_id, created_at])
 }

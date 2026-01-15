@@ -1,0 +1,211 @@
+/// Product reviews and customer feedback records.
+///
+/// This table stores customer reviews for products, including ratings,
+/// titles, and detailed feedback. Each review is associated with a specific
+/// product and customer, allowing for independent management of feedback
+/// without requiring parent entity context.
+///
+/// Reviews can be created, edited, and deleted by customers directly through
+/// the application. The rating field provides a numeric score (1-5)
+/// reflecting the customer's satisfaction with the product. Textual feedback
+/// allows detailed descriptions of the customer's experience.
+///
+/// Unlike some entities where child records might be subsidiary, reviews
+/// require independent management as customers might want to search all
+/// reviews from a specific user, or filter reviews by rating across
+/// products.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this review is associated with. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Customer who created the review. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Numerical rating provided by customer (1-5). Higher values indicate
+  /// better satisfaction.
+  rating Float
+  
+  /// Brief summary or title for the review. Optional but recommended.
+  title String
+  
+  /// Detailed textual feedback from the customer about the product.
+  body String
+  
+  /// Timestamp of when the review was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the review.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_comments shopping_mall_review_comments[]
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_review_moderation_logs shopping_mall_review_moderation_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_customer_id], map: "shopping_mall_reviews_shopping_mall_product_id_shoppin_9076c2e1")
+  @@index([shopping_mall_product_id, created_at])
+  @@index([shopping_mall_customer_id, created_at])
+}
+
+/// Comments made on product reviews by customers or sellers.
+///
+/// Stores user comments on product reviews to enable
+/// discussion and feedback about the review itself.
+/// Each comment is associated with a specific review
+/// and can be made by either a customer or seller.
+///
+/// Comments remain attached to the review even if the review
+/// is edited or deleted, providing historical context.
+/// Users can reply to comments to create threaded discussions.
+/// The comment content includes body field for textual
+/// feedback. Soft deletion is supported to maintain audit
+/// trails while allowing comment moderation.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being commented on. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Type of actor making the comment (customer or seller).
+  actor_type String
+  
+  /// Text content of the comment.
+  body String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_comments_shopping_mall_review_id__a8b1edf1")
+}
+
+/// Tracks user votes on product reviews to indicate helpfulness
+/// (positive/negative).
+///
+/// Stores each vote as a separate record associated with a specific review.
+/// Each vote can be marked as positive or negative to help other users
+/// assess review quality.
+/// Votes are tracked using session IDs for user tracking but not directly
+/// tied to session IDs for this table.
+/// Users can only vote once per review through their sessions, and vote
+/// types can be revised.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being voted on. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Type of vote. Valid values: 'positive', 'negative'.
+  vote_type String
+  
+  /// When this vote was recorded.
+  created_at DateTime
+  
+  /// When this vote was last modified.
+  updated_at DateTime
+  
+  /// When this vote was soft-deleted (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_review_id])
+}
+
+/// Audit logs tracking all moderation actions taken on product reviews.
+///
+/// Captures details of review content modifications, flagging actions, and
+/// moderator decisions. Each log entry records when and by whom a moderation
+/// action was performed, with full audit trail capabilities for compliance
+/// and review purposes.
+///
+/// Logs are never edited directly by users - they are append-only historical
+/// records tied to the original review's state. The moderation log
+/// references the review itself to provide context for why an action was
+/// taken.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reviewed product review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Moderation action performed (e.g., 'flagged', 'hidden', 'approved',
+  /// 'edited').
+  action String
+  
+  /// Reason for the moderation action, including specific policy violations.
+  reason String?
+  
+  /// Moderator's identity (references to shopping_mall_admins or
+  /// shopping_mall_seller_sessions.id).
+  moderator_id String
+  
+  /// Timestamp of when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this log entry.
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was soft-deleted (for compliance audit
+  /// trails).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_moderation_logs_shopping_mall_rev_5a50c3b7")
+}

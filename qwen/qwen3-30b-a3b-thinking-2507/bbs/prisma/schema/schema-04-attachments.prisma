@@ -1,0 +1,124 @@
+/// Stores uploaded discussion board images along with their resolution and
+/// metadata for display purposes.
+///
+/// Each image attachment is independently managed but linked to a specific
+/// article through its foreign key reference. The resolution data (width,
+/// height) and file size support client-side display optimization and
+/// validation logic for image upload requirements. Soft deletion is
+/// supported via the deleted_at timestamp to maintain audit trails of image
+/// usage without permanently removing data.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachment_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated discussion board article. {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Original file name of the uploaded image.
+  filename String
+  
+  /// MIME type of the image (e.g., image/jpeg).
+  mime_type String
+  
+  /// Width of the image in pixels.
+  width Int
+  
+  /// Height of the image in pixels.
+  height Int
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  /// Timestamp when the attachment was created.
+  created_at DateTime
+  
+  /// Timestamp when the attachment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_attachment_images_discussion_board_ar_8b60d17b")
+}
+
+/// Stores file attachments with MIME type validation, size limits, and
+/// display information for PDF, DOCX, and XLSX formats.
+///
+/// This table manages all file attachments in the discussion board platform
+/// that are not restricted to specific content types. It captures essential
+/// metadata for user-facing file operations including download, preview, and
+/// display.
+///
+/// File attachments can be linked to discussion articles through a foreign
+/// key relationship. Each attachment record maintains its own metadata
+/// regardless of which article it's associated with, supporting features
+/// like global file search and independent file management.
+///
+/// The system validates file types to ensure PDF, DOCX, and XLSX formats are
+/// allowed in the standard library, making this table compatible with file
+/// processing workflows.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachment_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article attachment's lifetime is tied to the parent article. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Actual filename of the attached file stored on the server.
+  filename String
+  
+  /// MIME type of the document including format specification
+  /// (application/pdf, application/vnd.ms-excel).
+  mime_type String
+  
+  /// File size in bytes. Enforces size limits for different document types.
+  file_size Int
+  
+  /// The name shown to users when displaying the file to them.
+  display_name String
+  
+  /// Original filename as provided by the user during upload.
+  original_filename String
+  
+  /// Server path where the file is permanently stored.
+  stored_path String
+  
+  /// Timestamp when the attachment was first uploaded to the system.
+  created_at DateTime
+  
+  /// Timestamp when the attachment metadata was last modified, not including
+  /// content updates.
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was soft-deleted, or null indicating it's
+  /// still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_attachment_files_discussion_board_art_5973a1e4")
+  @@index([mime_type])
+}

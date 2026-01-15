@@ -1,287 +1,480 @@
 import { tags } from "typia";
 
+import { IShoppingMallProduct } from "./IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "./IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "./IShoppingMallSeller";
+
 /**
- * Represents a single cart item in a customer's shopping cart containing a
- * selected product variant, with its quantity and unit price captured at time
- * of addition.
+ * Shopping mall cart item entity representing a specific product variant added
+ * to a customer's shopping cart.
  *
- * Each cart item is an ephemeral record that belongs to exactly one active cart
- * and represents a product variant the customer intends to purchase. The cart
- * item permanently records the product's unit price and available inventory
- * count at the exact moment of addition to the cart, ensuring price stability
- * during checkout even if the product price changes later.
+ * This entity represents individual product items in a shopping cart with their
+ * quantities and pricing.
  *
- * Cart items can transition through several status states: 'active' (available
- * for checkout), 'out_of_stock' (inventory became unavailable), 'removed'
- * (customer manually deleted), or 'checked_out' (purchased in order). Only
- * active items are included in order creation.
+ * Key characteristics:
  *
- * The entity is directly mapped to the shopping_mall_cart_items database table
- * with corresponding field relationships. Cart items are always associated with
- * their parent cart and product variant through foreign keys.
+ * - Each cart item is associated with one product variant (SKU)
+ * - Cart items store the price at the time of addition for price protection
+ * - Quantity represents the number of units of the variant in the cart
+ * - Item is linked to a specific shopping cart through cart_id
+ * - Guest users have cart items linked to cart_session_id
+ * - Cart items are created when products are added to cart and removed when
+ *   quantity reaches zero
  *
- * IShoppingMallCartItem is the response DTO type for all cart item retrieval
- * operations, containing all public fields needed by the front-end to display
- * cart contents accurately and prevent pricing disputes.
+ * Related operations:
  *
- * The increasing trend of cart abandonment suggests reading detailed cart item
- * information is critical for conversion optimization and understanding
- * customer purchase intent before checkout.
+ * - POST /carts/{cartId}/items - creates cart items
+ * - GET /carts/{cartId}/items/{itemId} - retrieves cart items
+ * - PUT /carts/{cartId}/items/{itemId} - updates cart item quantities
+ * - DELETE /carts/{cartId}/items/{itemId} - removes cart items
  *
- * This type includes the core cart item properties as they exist in the
- * database, but excludes transient system fields and authentication fields. All
- * relations are expressed as references to summary types to prevent circular
- * references and reduce payload size.
- *
- * Use this type for successful cart item retrieval responses and for internal
- * representation across services that handle cart items.
- *
- * The cart item structure serves as the backbone of the shopping experience,
- * enabling precise inventory management with detailed tracking of product
- * selection and all state changes during the customer's shopping journey across
- * multiple sessions. Inconsistent cart item data can lead to pricing
- * inaccuracies and reduced customer trust, making this type definition
- * fundamentally important for system integrity.
- *
- * This type references other entities in the system: it requires the cart_id to
- * identify which customer's cart it belongs to (via IShoppingMallCart.ISummary)
- * and product_variant_id to identify the specific configuration of the product
- * being purchased (via IShoppingMallProductVariant.ISummary). These
- * relationships are structured so that the cart item can be retrieved,
- * displayed, and managed without risking circular references or excessive data
- * payloads.
- *
- * To enhance clear communication with customers, cart item data structures must
- * accurately reflect the actual product configuration and pricing. Introducing
- * inconsistent cart item structures can result in customer confusion,
- * complaints, and chargebacks, making this schema critical for user experience
- * and transactional accuracy.
- *
- * Backward compatibility is preserved in this schema definition as newer
- * versions of the API do not change existing property types or formats—only
- * additional optional properties may be added in future updates without
- * breaking existing clients.
- *
- * This type should be used exclusively for cart item entity retrieval and
- * should not be used for request bodies, which have dedicated ICreate and
- * IUpdate variants.
+ * This is a core entity in the shopping cart workflow, representing the state
+ * of customer selections before conversion to order.
  *
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
 export type IShoppingMallCartItem = {
   /**
-   * Unit price of the product variant at the time this cart item was created.
+   * Unique identifier for the cart item record in the
+   * shopping_mall_cart_items table.
    *
-   * This price is permanently captured when the item is added to the cart to
-   * ensure pricing stability during checkout, even if the product's regular
-   * price changes later.
+   * This UUID is automatically generated by the system upon creation and
+   * serves as the primary key for the cart item entity. It is used to
+   * uniquely identify and reference individual cart items across all
+   * operations including retrieval, update, and deletion.
    *
-   * This field is immutable after creation and reflects the transaction value
-   * at purchase decision time, not current market price. This prevents
-   * pricing disputes between customers and the system.
+   * The identifier is immutable and cannot be changed after creation. It is
+   * referenced in all operations that involve cart items, including GET
+   * /carts/{cartId}/items/{itemId}, PUT /carts/{cartId}/items/{itemId}, and
+   * DELETE /carts/{cartId}/items/{itemId} operations.
+   *
+   * This field is populated by the database system during item creation and
+   * is not included in request bodies for create/update operations.
    */
-  price: number;
+  id: string & tags.Format<"uuid">;
+
+  /**
+   * Unique identifier of the shopping cart that contains this item.
+   *
+   * This field establishes the relationship between the cart item and its
+   * parent shopping cart, linking to the shopping_mall_carts table. It is
+   * used to ensure proper ownership and authorization - a cart item can only
+   * be accessed by users who have permission to the associated cart.
+   *
+   * This field is populated during cart item creation and is immutable after
+   * creation. It is automatically set by the system based on the cartId path
+   * parameter in POST and PUT operations.
+   *
+   * Note: This field is not included in request bodies as it is determined by
+   * the path parameter in API operations.
+   */
+  cart_id: string & tags.Format<"uuid">;
+
+  /**
+   * Unique identifier of the product variant being added to the cart.
+   *
+   * This field references the shopping_mall_product_variants table and links
+   * the cart item to a specific product variant (SKU) with its particular
+   * attributes, pricing, and inventory state.
+   *
+   * The system uses this reference to validate the variant's existence,
+   * current pricing, and inventory availability when adding or updating cart
+   * items.
+   *
+   * This field is populated with the variantId from the request body during
+   * cart item creation and is immutable after creation.
+   */
+  product_variant_id: string & tags.Format<"uuid">;
+
+  /**
+   * Number of units of the product variant in this cart item.
+   *
+   * This field specifies how many items of the specified variant are in the
+   * cart. The range is constrained from 1 to 1000 to prevent unrealistic
+   * quantities while accommodating bulk purchases.
+   *
+   * When a cart item is created, the default quantity is 1. When updating a
+   * cart item, the quantity can be increased or decreased (including to 0,
+   * which triggers item deletion). The system validates against available
+   * inventory during updates.
+   *
+   * A quantity of 0 is not allowed in valid cart items; if update request
+   * sets quantity to 0, the system deletes the cart item instead.
+   *
+   * This value is critical for cart total calculations and inventory
+   * management.
+   */
+  quantity: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<1000>;
+
+  /**
+   * Price per unit of the product variant at the time the item was added to
+   * the cart.
+   *
+   * This field captures the price of the product variant as it existed when
+   * the customer added it to their cart, ensuring price consistency even if
+   * the product's price changes afterward.
+   *
+   * The price is captured from the IShoppingMallProductVariantPricing table
+   * at the time the cart item is created or updated, locking in the price at
+   * the moment of cart modification.
+   *
+   * This prevents customers from being charged prices that changed after they
+   * added items to their cart, providing price protection.
+   *
+   * The system enforces a maximum price of 1,000,000 (USD equivalent) to
+   * prevent erroneous entries and potential abuse.
+   *
+   * This is a critical financial field used in cart and order total
+   * calculations.
+   */
+  unit_price: number & tags.Minimum<0> & tags.Maximum<1000000>;
+
+  /**
+   * Timestamp when this cart item was created in the system.
+   *
+   * This field records the exact moment when the cart item was added to a
+   * cart, providing an audit trail of when items entered the cart.
+   *
+   * The timestamp is automatically generated by the database system at
+   * creation time and is immutable.
+   *
+   * This field is used for order history, cart aging analysis, and audit
+   * purposes. It is included in responses but not accepted in request
+   * bodies.
+   */
+  created_at: string & tags.Format<"date-time">;
+
+  /**
+   * Timestamp when this cart item was last modified in the system.
+   *
+   * This field records the most recent date and time when the cart item was
+   * changed (typically through quantity updates). It is automatically updated
+   * by the system when any modification occurs.
+   *
+   * The field is used to track the recency of cart modifications, determine
+   * cart activity status, and support concurrency control.
+   *
+   * This field is automatically generated and managed by the system; it is
+   * not included in request bodies for create or update operations.
+   *
+   * This field will always have a value after creation since updates create
+   * an updated_at, and creation creates an updated_at.
+   */
+  updated_at: string & tags.Format<"date-time">;
+
+  /**
+   * Identifier of the cart session if this item belongs to a guest user's
+   * cart.
+   *
+   * This field is used when the cart item is associated with a guest user
+   * session rather than an authenticated customer. It links to the
+   * shopping_mall_cart_sessions table to maintain cart persistence for
+   * anonymous users.
+   *
+   * For authenticated customers, this field is null as the cart ownership is
+   * determined by the customer_id in the cart record.
+   *
+   * This system allows guest users to add items to cart and retain them
+   * across sessions until they create an account or the session expires.
+   *
+   * The cart session identifier is automatically set by the system based on
+   * the user's session context
+   */
+  cart_session_id: string & tags.Format<"uuid">;
 };
 export namespace IShoppingMallCartItem {
   /**
-   * Request parameters for filtering and retrieving cart items in a shopping
-   * cart.
+   * Quantity update specification for the cart item. This schema defines the
+   * structure for updating the quantity of a product variant within a
+   * customer's shopping cart. The quantity must be a positive integer
+   * representing the new desired quantity of the item. If the quantity is set
+   * to zero, the cart item will be deleted from the cart. The system enforces
+   * inventory limits and validates that the requested quantity does not
+   * exceed available stock. This request body is used exclusively in PUT
+   * /shoppingMall/customer/carts/{cartId}/items/{itemId} operations where
+   * authenticated customers modify their own cart items.
    *
-   * This type defines the query parameters that control the retrieval of cart
-   * items for a cart, allowing filtering by status and pagination. These
-   * parameters are used in the GET
-   * /shoppingMall/customer/carts/{cartId}/items operation to retrieve a
-   * filtered, paginated list of cart items.
+   * When updating the cart item quantity, the following rules apply:
    *
-   * The request parameters are designed to provide flexible filtering
-   * capabilities while maintaining performance by limiting the scope of data
-   * returned. Filters are applied on the cart_items table and help surface
-   * items based on their current operational status, enabling customers to
-   * focus on active items or review items with issues.
+   * - Quantity must be >= 0
+   * - Quantity cannot exceed available inventory
+   * - Quantity of 0 results in item removal
+   * - Quantity updates trigger real-time inventory recalculations
+   * - The operation respects any quantity-based discounts or promotions
    *
-   * This is a query parameter object, not a representation of any cart_item
-   * entity, and is used exclusively in the request for the cart item index
-   * operation. It does not correspond to any Prisma table model and should
-   * not have x-autobe-prisma-schema.
+   * All operations using this schema require customer authentication through
+   * JWT token, and ownership verification ensures the cart item belongs to
+   * the authenticated customer's active cart.
    */
-  export type IRequest = string;
-
-  /**
-   * Request schema for adding a new product variant to a customer's active
-   * shopping cart.
-   *
-   * This schema defines the data required to create a cart item when a
-   * customer adds a product variant to their cart. It includes only the
-   * information the customer provides—specifically the selection of a product
-   * variant and the quantity desired. It excludes all system-managed fields,
-   * authentication contexts, and derived metadata.
-   *
-   * This schema responds to the POST /carts/{cartId}/items endpoint and
-   * verifies that the authenticated customer is authorized to modify their
-   * own cart. The system automatically provides the cart_id from the path
-   * parameter and associates the item with the authenticated customer’s cart
-   * based on JWT context. The price and status fields are captured and
-   * defaulted by the backend system based on current inventory and product
-   * pricing at the moment of addition, not provided by the client.
-   *
-   * The cart item status defaults to 'active' when inventory is available,
-   * and transitions to 'out_of_stock' if the requested quantity exceeds
-   * available inventory. The system validates inventory availability at time
-   * of cart addition for this object, but does not reserve the inventory
-   * until checkout.
-   *
-   * IMPORTANT SECURITY PRINCIPLE: The 'shopping_mall_customer_id' field that
-   * exists in the database is NOT included here because the customer’s
-   * identity is automatically inferred from their authenticated JWT session.
-   * The client cannot and should not specify their identity in the request
-   * body.
-   *
-   * Similarly, fields such as 'created_at', 'updated_at', 'deleted_at' and
-   * 'id' are omitted because they are system-generated identifiers and
-   * timestamps. The client never provides these values.
-   *
-   * The schema ensures atomicity and consistency by allowing a single API
-   * call to add an item to a cart with embedded validation against current
-   * inventory levels. This prevents race conditions and ensures that cart
-   * additions reflect real-time product availability.
-   *
-   * The quantity must be at least 1, though an upper limit is enforced
-   * server-side based on available inventory. The schema permits the identity
-   * of any product variant (by ID) to be specified, but the backend performs
-   * authorization to ensure the cart belongs to the authenticated user.
-   *
-   * This schema becomes the foundation for efficient cart management
-   * workflows that reduce checkout friction, increase conversion rates, and
-   * provide accurate product state information to users. A well-defined cart
-   * item creation schema is essential for building a reliable and
-   * user-friendly shopping experience.
-   *
-   * By returning the complete IShoppingMallCartItem object in response, the
-   * system guarantees consistency between what was requested and what was
-   * stored.
-   *
-   * The use of this schema supports irregular and complex product
-   * configurations, enabling customers to customize product variants and
-   * maintain their selections across sessions without loss of information or
-   * pricing discrepancies.
-   */
-  export type ICreate = {
+  export type IRequest = {
     /**
-     * Unique identifier of the product variant to add to the cart. This
-     * must correspond to an existing variant in the
-     * shopping_mall_product_variants table. The system validates that the
-     * product variant exists and is available before creating the cart
-     * item.
+     * The new desired quantity of the cart item. Must be a non-negative
+     * integer. A value of 0 will cause the cart item to be permanently
+     * removed from the cart. Values exceeding available inventory will be
+     * rejected by the system. This quantity represents the final state
+     * after the update operation, not a delta value.
      *
-     * This field establishes the relationship between the cart item and the
-     * specific product configuration being purchased. Product variants
-     * represent distinct SKUs with unique pricing, inventory levels, and
-     * attributes.
+     * The system enforces the following constraints:
      *
-     * The productVariantId is required because the cart item must reference
-     * a specific product variant to accurately capture pricing and
-     * inventory information at the moment of addition. This ensures price
-     * stability during checkout even if product prices change later.
+     * - Must be 0 or greater
+     * - Cannot exceed the available inventory for this product variant
+     * - Must be an integer (no fractional quantities allowed)
+     * - Zero value triggers item deletion
      *
-     * The system validates the existence of the product variant and checks
-     * inventory levels before creating the cart item. This prevents invalid
-     * cart additions and ensures data integrity between the cart and
-     * product catalog.
-     *
-     * Note: This field refers to product variant (SKU) ID, not the base
-     * product ID. A single product may have multiple variants (different
-     * sizes, colors, etc.), each with its own unique productVariantId.
+     * This property directly maps to the quantity field in the
+     * shopping_mall_cart_items database table.
      */
-    productVariantId: string & tags.Format<"uuid">;
+    quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
 
   /**
-   * Request schema for modifying an existing cart item in a customer's
-   * shopping cart.
+   * Lightweight summary representation of a cart item for list views and
+   * embeddings in the shoppingMall system.
    *
-   * This schema defines the mutable fields that a customer can modify for an
-   * item already in their active cart. Only the quantity and potentially the
-   * status (in cases like re-adding an item after it went out of stock) can
-   * be changed. All other fields—such as the cart item ID, product variant
-   * ID, price, and timestamps—are immutable once the cart item is created, as
-   * they reflect historical facts that must remain unchanged for
-   * consistency.
+   * This schema provides essential cart item information for display in
+   * product listings, order summaries, and customer cart interfaces without
+   * the full detail needed for individual item management. The summary
+   * excludes large text fields and complex nested relationships to optimize
+   * performance for list and page rendering.
    *
-   * This schema is used with the PUT /carts/{cartId}/items/{itemId} endpoint
-   * and accepts partial updates to existing cart items. All fields in this
-   * schema are optional, as per the PATCH-style design. If a field is
-   * omitted, it is left unchanged.
+   * Each cart item represents a specific product variant added to a
+   * customer's shopping cart at a point in time, capturing the product
+   * details, quantity, and pricing as they existed when added (historical
+   * snapshot). This ensures consistency even when product attributes or
+   * prices change after the item was added to the cart.
    *
-   * The system validates that the cart is still active before allowing any
-   * modifications and checks that the new quantity does not exceed the
-   * current available inventory. If the new quantity exceeds inventory
-   * availability, the status is automatically changed to 'out_of_stock'; if
-   * inventory becomes available again and the quantity is adjusted downward,
-   * the status returns to 'active'.
+   * Summaries are used when displaying the full cart contents, order
+   * confirmation pages, checkout summaries, and historical order tracking
+   * where detailed variant information is needed but full edit capabilities
+   * are not required.
    *
-   * The price field is excluded from this schema because, once captured at
-   * time of addition, it should not change. This ensures purchase guarantee
-   * for the customer—a declared price on the cart should always be honored
-   * even if product prices elsewhere change.
+   * This type is designed for high-performance list rendering and should be
+   * used any time a paginated list of cart items is displayed to customers or
+   * administrators, replacing the full IShoppingMallCartItem type to reduce
+   * payload size by approximately 60-80%.
    *
-   * IMPORTANT SECURITY PRINCIPLE: The 'shopping_mall_customer_id' field is
-   * omitted from this schema because the customer’s identity is asserted
-   * through authentication and verified against the cart's ownership. The
-   * cart’s customer_id is associated server-side from the JWT context.
+   * All relationships to other entities use the .ISummary variant to prevent
+   * circular references and ensure minimal payload size.
    *
-   * The system enforces that only the cart’s owner can modify its items, and
-   * the backend cross-validates the cart_id from the path parameter with the
-   * authenticated user’s identity. No cart item can be modified if it does
-   * not belong to the authenticated user’s cart.
-   *
-   * Status updates are allowed to transition from 'out_of_stock' → 'active'
-   * when inventory becomes available, or from 'active' → 'removed' if the
-   * customer explicitly removes the item. However, 'checked_out' is final and
-   * cannot be reverted.
-   *
-   * This schema is designed around zero-trust principles and ensures that the
-   * backend retains full control over system-managed fields while granting
-   * users only a bounded set of safe modification rights. Imperfect cart item
-   * updates can result in inventory misalignment and customer
-   * dissatisfaction, making strict schema controls vital.
-   *
-   * The use of optional fields enables a flexible, RESTful interface where
-   * clients can update only the fields they intend to change, promoting
-   * interface simplicity and network efficiency. Abuse of this endpoint via
-   * invalid status changes can disrupt inventory logic and cause operational
-   * issues, so this schema’s constraints are strictly limited to ensure
-   * system safety and integrity.
+   * Used by: GET /shoppingMall/customer/carts/{cartId}/items (customer
+   * access) Used by: GET /shoppingMall/admin/carts/{cartId}/items (admin
+   * access)
+   */
+  export type ISummary = {
+    /**
+     * Unique identifier of the cart item in the database.
+     *
+     * This UUID uniquely identifies the shopping_mall_cart_items record. It
+     * is used as the primary key in the database and as a reference in
+     * related operations such as updating or removing items from the cart.
+     *
+     * Note: This ID is not related to the product ID or cart ID, but is a
+     * unique identifier for the cart item record itself.
+     */
+    id: string & tags.Format<"uuid">;
+
+    /**
+     * The number of units of this product variant that were added to the
+     * cart.
+     *
+     * This value represents the quantity selected by the customer when
+     * adding the item to the cart. It is fixed at the time of addition to
+     * preserve historical accuracy, even if the customer later modifies the
+     * quantity (which creates a new cart item record with a new ID).
+     */
+    quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
+
+    /**
+     * The price of this product variant at the time it was added to the
+     * cart.
+     *
+     * This represents the exact price charged to the customer when the item
+     * was added, capturing any promotions, discounts, or dynamic pricing
+     * that was active at that moment. This ensures accurate historical
+     * accounting even if the product's base price changes after the item
+     * was added to the cart.
+     *
+     * This price is stored as a decimal value representing total amount in
+     * the system's base currency (USD).
+     */
+    price: number & tags.Minimum<0>;
+
+    /**
+     * The total cost of this cart item (price x quantity) at the time of
+     * addition.
+     *
+     * This is calculated as quantity multiplied by the item price when the
+     * cart item was created. It represents the total charge for this
+     * specific product variant before taxes or shipping.
+     *
+     * This value is preserved for historical accuracy in order tracking and
+     * financial reporting, even if the product's price changes after the
+     * item was added to the cart.
+     */
+    total: number & tags.Minimum<0>;
+
+    /**
+     * Reference to the product entity that this cart item represents.
+     *
+     * This UUID links to the shopping_mall_products table and identifies
+     * the base product that the purchased variant belongs to. It enables
+     * the system to reference the product's metadata (name, description,
+     * images) even if the exact variant information changes later.
+     *
+     * Used for: product detail links, search indexing, category filtering,
+     * and analytics reporting.
+     */
+    product_id: string & tags.Format<"uuid">;
+
+    /**
+     * Summary information about the product that this cart item represents.
+     *
+     * This reference provides essential product context including the
+     * title, image, and category without including detailed variant
+     * specifications, pricing, or inventory information that would be
+     * redundant in a cart item summary.
+     *
+     * The product summary includes only what's needed for visual display
+     * and identification of the product in cart views.
+     *
+     * The referenced IShoppingMallProduct.ISummary type excludes large text
+     * fields, variants, reviews, and detailed specifications to maintain
+     * optimal payload size for list rendering.
+     */
+    product: IShoppingMallProduct.ISummary;
+
+    /**
+     * Reference to the specific product variant that this cart item
+     * represents.
+     *
+     * This UUID links to the shopping_mall_product_variants table and
+     * identifies the exact configuration of the product selected by the
+     * customer (e.g., size, color, material, etc.).
+     *
+     * This field is critical for accurate order fulfillment, as it
+     * pinpoints the exact product variant that was added to the cart, even
+     * if the same product has multiple variants available.
+     */
+    variant_id: string & tags.Format<"uuid">;
+
+    /**
+     * Summary information about the specific product variant selected for
+     * this cart item.
+     *
+     * This reference provides details about the exact product configuration
+     * selected by the customer, including the variant name, attributes
+     * (size, color, etc.), SKU, and current pricing as they existed when
+     * the item was added.
+     *
+     * This is a crucial component of cart item summaries, as it enables
+     * accurate identification of the specific product variant being
+     * purchased, even though the full attribute details have been
+     * normalized into the IShoppingMallProductVariant.ISummary type to
+     * avoid redundancy.
+     *
+     * The variant summary includes the variant name, SKU, and any attribute
+     * values that provide meaningful distinction from other variants (e.g.,
+     * “Size: Large, Color: Blue”).
+     */
+    variant: IShoppingMallProductVariant.ISummary;
+
+    /**
+     * Identifier of the seller who is offering this product variant in
+     * their catalog.
+     *
+     * This UUID links to the shopping_mall_sellers table and identifies
+     * which business entity is responsible for fulfilling this product
+     * order. This is important for multi-vendor marketplace operations, as
+     * it determines which seller will receive the order notification and
+     * fulfillment responsibility.
+     *
+     * The seller_id may differ from the customer's own identity, as
+     * customers can purchase from multiple sellers within the same cart
+     * session.
+     */
+    seller_id: string & tags.Format<"uuid">;
+
+    /**
+     * Summary information about the seller offering this product variant.
+     *
+     * This reference provides essential seller context including the
+     * seller's name, store rating, and verification status without
+     * including detailed financial information, inventory management
+     * details, or business analytics.
+     *
+     * This seller summary enables customers to identify which business they
+     * are purchasing from and supports seller-specific features like store
+     * ratings and brand recognition.
+     *
+     * The seller summary is kept minimal to optimize payload size for cart
+     * list rendering.
+     */
+    seller: IShoppingMallSeller.ISummary;
+
+    /**
+     * Timestamp indicating when this cart item was added to the cart.
+     *
+     * This ISO 8601 formatted datetime captures the exact moment when the
+     * customer added or updated this product variant in their cart. It is
+     * used for sorting cart items chronologically and for auditing
+     * purposes.
+     *
+     * The creation time is critical for determining which pricing and
+     * inventory levels were applicable when this product was added to the
+     * cart, as these values may change over time.
+     */
+    created_at: string & tags.Format<"date-time">;
+  };
+
+  /**
+   * Request DTO for adding a product variant to a customer's shopping cart.
+   * The product variant must be active and have available inventory. The
+   * system validates that the referenced product variant exists and is active
+   * before creating the cart item attachment. The quantity must be at least 1
+   * and cannot exceed 999 units. This DTO is used exclusively in the POST
+   * /shoppingMall/customer/carts/{cartId}/items operation for authenticated
+   * customers.
+   */
+  export type ICreate = {
+    /**
+     * Unique identifier of the product variant to add to the cart.
+     * References the shopping_mall_product_variants table. Must be an
+     * active product variant with available inventory. This value is
+     * validated against the database to ensure the variant exists and is
+     * purchasable before creating the cart item.
+     */
+    product_variant_id: string & tags.Format<"uuid">;
+
+    /**
+     * Number of units of the product variant to add to the cart. Minimum
+     * value is 1, maximum is 999 to prevent excessive quantities and ensure
+     * inventory management stays within system limits. This field must be
+     * provisioned as an integer to maintain data consistency with database
+     * storage and calculation operations.
+     */
+    quantity: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<999>;
+  };
+
+  /**
+   * Update request for a cart item in the shopping cart. This schema defines
+   * the properties that can be modified for a cart item during a PUT
+   * operation on /shoppingMall/customer/carts/{cartId}/items/{itemId}. The
+   * primary mutable property is the quantity, which represents the number of
+   * units of the product variant to have in the cart. Other properties are
+   * immutable and cannot be updated.
    */
   export type IUpdate = {
     /**
-     * The new quantity for this cart item.
-     *
-     * This optional field allows customers to modify the number of units of
-     * a product variant they wish to purchase. When included, the system
-     * validates that the new quantity does not exceed available inventory.
-     *
-     * The quantity cannot be negative, and setting quantity to 0 will cause
-     * the cart item status to transition to 'removed'. The system tracks
-     * quantity changes to maintain accurate inventory and cart state
-     * information.
-     *
-     * The quantity must be an integer value representing whole units.
-     * Fractional quantities are not permitted as they would complicate
-     * inventory management and order fulfillment.
-     *
-     * The system automatically calculates inventory availability and
-     * updates the cart item status accordingly: if the new quantity exceeds
-     * available inventory, status will become 'out_of_stock'; if inventory
-     * becomes available and the quantity is adjusted to a feasible amount,
-     * status will return to 'active'.
-     *
-     * IMPORTANT: This field is optional to support partial updates. If
-     * omitted, the quantity remains unchanged.
-     *
-     * Note: Quantity changes reflect the customer's intent to modify their
-     * purchase, and are subject to real-time inventory availability
-     * validation.
+     * The new quantity of the product variant in the cart. This is the only
+     * modifiable property in this update request. Must be a positive
+     * integer between 1 and 1000 (inclusive). If set to 0, the cart item
+     * will be deleted instead of being updated. This field represents the
+     * total number of units desired for this product variant after the
+     * update operation.
      */
-    quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
+    quantity: number &
+      tags.Type<"int32"> &
+      tags.Minimum<1> &
+      tags.Maximum<1000>;
   };
 }

@@ -15,13 +15,11 @@ export async function citizenAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query citizen using top-level user ID from JWT payload
-  // Relationship: citizen_sessions.economic_board_citizen_id -> economic_board_citizens.id
-  const citizen = await MyGlobal.prisma.economic_board_citizens.findFirst({
+  // Citizen is standalone table - query directly using citizen fields
+  const citizen = await MyGlobal.prisma.discussion_board_citizen.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
-      status: "active",
     },
   });
 

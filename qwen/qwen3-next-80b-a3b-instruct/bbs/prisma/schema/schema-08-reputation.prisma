@@ -1,0 +1,312 @@
+/// Tracks violation records for citizens, including moderation actions and
+/// counts for suspension decisions.
+///
+/// Records specific violations committed by citizens that trigger reputation
+/// penalties and potential suspensions. Each violation is tied to a specific
+/// moderation action taken by a moderator and represents a concrete policy
+/// breach.
+///
+/// Violations persist as audit records even when associated content is
+/// removed. This table enables reputation scoring algorithms by providing a
+/// comprehensive history of citizen misconduct. The data in this table is
+/// critical for automated suspension decisions and manual review workflows.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_citizen_violations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Citizen who committed the violation. {@link discussion_board_citizen.id}.
+  discussion_board_citizen_id String
+  
+  /// Moderation action that resulted in this violation. {@link
+  /// discussion_board_moderation_actions.id}.
+  discussion_board_moderation_action_id String
+  
+  /// Concise summary of the violation reason, including the policy violated
+  /// (e.g., "Spam advertising", "Harassment", "Illegal content").
+  summary String
+  
+  /// Timestamp when this violation record was created, matching the time of
+  /// the moderation action.
+  created_at DateTime
+  
+  /// Timestamp when this violation record was last updated, typically when
+  /// additional context was added.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to maintain audit trail while allowing moderation
+  /// to 'hide' records when necessary.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions @relation(fields: [discussion_board_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_citizen_id, created_at], map: "discussion_board_citizen_violations_discussion_board_c_5b16c9c4")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderation_action_id], map: "discussion_board_citizen_violations_discussion_board_m_69165bb2")
+}
+
+/// Cumulative trust score for citizens based on approved content and
+/// positive interaction history.
+///
+/// Represents the system's calculated trust level for each citizen, derived
+/// from the quality of their posts, comments, moderation history, and report
+/// responses. Higher scores indicate more reliable and constructive
+/// community members. The score is algorithmically updated based on peer
+/// feedback, content moderation outcomes, and community engagement patterns.
+///
+/// This table supports features like trusted-user badges, priority content
+/// visibility, and reduced moderation scrutiny. It is not directly editable
+/// by users but is updated automatically in response to community
+/// interactions.
+///
+/// Each citizen has exactly one trust score record, creating a 1:1
+/// relationship with the citizen profile. The record is soft-deletable to
+/// maintain audit trails when citizen accounts are suspended or removed.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_citizen_trust_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Citizen profile this trust score belongs to. {@link
+  /// discussion_board_citizen.id}.
+  discussion_board_citizen_id String
+  
+  /// Current trust score value, calculated as a weighted average based on post
+  /// quality, comment reception, moderation history, and report outcomes.
+  /// Higher values indicate greater community trust.
+  trusted_score Float
+  
+  /// Timestamp when this trust score record was initially created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this trust score value.
+  updated_at DateTime
+  
+  /// Timestamp when this trust score was logically deleted (e.g., due to
+  /// citizen account suspension or removal). Null indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen @relation(fields: [discussion_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_citizen_id], map: "discussion_board_citizen_trust_scores_discussion_board_b8006c7e")
+  @@index([trusted_score])
+}
+
+/// Historical records of temporary suspensions imposed on citizens for
+/// policy violations.
+///
+/// Captures the complete history of account restrictions applied by
+/// moderators, providing an immutable audit trail for compliance and review.
+/// Each suspension represents a period during which a citizen's account was
+/// temporarily disabled due to accumulated violations or severe misconduct.
+///
+/// Suspension records are append-only and never modified after creation. The
+/// system uses these records to enforce access restrictions and determine
+/// eligibility for appeal or reinstatement. Querying this table allows
+/// moderators to analyze patterns of repeated behavior and assess the
+/// effectiveness of disciplinary actions.
+///
+/// This table is linked to the citizen entity via citizen_id, and each
+/// suspension has defined start and end timestamps to indicate the exact
+/// period of restriction.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_citizen_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who was suspended. {@link discussion_board_citizen.id}.
+  citizen_id String
+  
+  /// The exact date and time when the suspension took effect. This is the
+  /// moment access was revoked.
+  suspension_start DateTime
+  
+  /// The exact date and time when the suspension will expire and access will
+  /// be restored. This may be in the future or may have already passed.
+  suspension_end DateTime
+  
+  /// The specific reason for suspension as stated by the moderator. Must
+  /// follow standardized reasons from moderation policy documentation (e.g.,
+  /// 'repeated violations', 'inflammatory content', 'impersonation').
+  reason String
+  
+  /// Timestamp when this suspension record was created in the system. Matches
+  /// suspension_start in most cases.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this suspension record. Will be
+  /// updated if the suspension was modified (e.g., extended) by a moderator.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, the suspension record is logically deleted
+  /// but preserved for audit purposes. Only system administrators can perform
+  /// this.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen discussion_board_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([citizen_id, suspension_start], map: "discussion_board_citizen_suspensions_citizen_id_suspen_f16d7d24")
+  // spellchecker: ignore-next-line
+  @@index([suspension_start, suspension_end], map: "discussion_board_citizen_suspensions_suspension_start__cbe5903e")
+}
+
+/// Logs all moderation actions taken by moderators on content, user reports,
+/// or citizens.
+///
+/// Tracks every decision made by moderators including actions like
+/// dismissal, removal, warnings, suspensions, and bans. Each action is
+/// linked to a specific moderator, target entity (article, comment, report,
+/// or citizen), and includes the reason for the action. This table serves as
+/// the primary audit trail for moderation workflows and enables independent
+/// querying of moderation history by type, target, or moderator.
+///
+/// Moderators can search and filter actions across all content types, making
+/// this a core independent entity rather than a subsidiary of specific
+/// items. System reports and compliance audits rely on this table for
+/// visibility into moderation activities.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderator_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link discussion_board_moderator.id}.
+  discussion_board_moderator_id String
+  
+  /// Type of target entity being moderated. Valid values: article, comment,
+  /// report, citizen. Used for polymorphic relationship.
+  ///
+  /// Enforces business-rule validation to prevent invalid target values.
+  target_type String
+  
+  /// ID of the target entity being moderated (article, comment, report, or
+  /// citizen). Must correspond to target_type field.
+  ///
+  /// For example, if target_type is 'article', target_id references
+  /// discussion_board_articles.id.
+  target_id String
+  
+  /// Type of moderation action taken. Valid values: dismiss, remove, warn,
+  /// suspend, ban, approve.
+  status String
+  
+  /// Detailed reason for the moderation action, including policy violation and
+  /// context.
+  reason String
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action was last updated (e.g., if edited).
+  updated_at DateTime
+  
+  /// Timestamp when the record was logically deleted (soft delete). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderator_actions_discussion_board_mo_b6a26d23")
+  @@index([target_type, target_id])
+  @@index([status, created_at])
+  @@index([target_type, status])
+}
+
+/// Aggregates total reports per content item, triggering automated
+/// moderation when thresholds are exceeded.
+///
+/// System-generated aggregation that counts the total number of user reports
+/// submitted against each content item (article or comment). This table
+/// serves as the basis for automated moderation workflows - when report
+/// counts reach predefined thresholds, the system triggers review queues or
+/// automatic content actions.
+///
+/// The aggregation updates in real-time as new reports are submitted and
+/// older reports are resolved. Each row represents a single content item's
+/// aggregated report count, enabling efficient threshold checks without live
+/// joins across report tables. This is a purely operational table that is
+/// managed by system logic, not by direct user interaction.
+///
+/// @namespace Reputation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_report_aggregations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article being reported. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String?
+  
+  /// Reference to the comment being reported. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Total number of reports aggregated for this content item. When this count
+  /// reaches the system threshold (e.g., 5), automated moderation actions are
+  /// triggered.
+  count Int
+  
+  /// Timestamp when the aggregation record was first created. Records the
+  /// initial moment the content item received its first report.
+  created_at DateTime
+  
+  /// Timestamp when the report count was last updated. Updated every time a
+  /// new report is added or an existing report is resolved.
+  updated_at DateTime
+  
+  /// Timestamp when this aggregation record was logically deleted. Supports
+  /// soft deletion for data retention compliance and audit trail requirements,
+  /// allowing historical tracking of report aggregation lifecycle.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_report_aggregations_discussion_board__02865545")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id], map: "discussion_board_report_aggregations_discussion_board__048386d4")
+  @@index([count])
+}

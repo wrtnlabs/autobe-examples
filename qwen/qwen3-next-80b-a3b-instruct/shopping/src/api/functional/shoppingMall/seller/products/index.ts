@@ -1,64 +1,49 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduct";
-export * as variants from "./variants/index";
+export * as secondary_categories from "./secondary_categories/index";
+export * as attributes from "./attributes/index";
 export * as images from "./images/index";
 export * as tags from "./tags/index";
-export * as categories from "./categories/index";
+export * as variants from "./variants/index";
+export * as skus from "./skus/index";
+export * as inventory from "./inventory/index";
+export * as compatibilities from "./compatibilities/index";
+export * as templates from "./templates/index";
 
 /**
- * Create a new product listing in the shoppingMall marketplace.
+ * Create a new product listing in the shopping mall marketplace. This operation
+ * allows authenticated sellers to create new product listings by providing
+ * detailed information including title, description, category, pricing, and
+ * inventory details. The product is created in the shopping_mall_products table
+ * with an initial status of 'draft', which requires subsequent activation to
+ * become visible to customers.
  *
- * This operation allows authenticated sellers to create new product offerings
- * for sale. The seller's identity is automatically extracted from the JWT
- * authentication token and associated with the new product record. A product
- * can only be created by a seller with active status ('active'), and the
- * product's status is initially set to 'draft' to allow for review before
- * publishing.
+ * Security considerations include identity verification of sellers through JWT
+ * authentication, mandatory validation of required fields, and adherence to
+ * product content policies. The seller's identity is automatically extracted
+ * from the authentication token and associated with the product creation. This
+ * prevents unauthorized users from creating products and ensures proper
+ * attribution for inventory and sales tracking.
  *
- * The product creation process requires: a title (3-100 characters), a
- * description (minimum 20 characters), a price (minimum $0.01, maximum
- * $5000.00), and a tax category (shopping_mall_tax_categories.id). The product
- * can optionally be associated with a category through the
- * shopping_mall_product_categories junction table, but this is handled
- * separately after product creation.
+ * Business rules require that all products have a unique SKU, a minimum product
+ * title length of 5 characters, and pricing that must be greater than zero.
+ * Category association is mandatory and must reference an existing category in
+ * the shopping_mall_categories table. Products cannot be created without at
+ * least one image reference.
  *
- * Security: Only authenticated sellers can create products. This is enforced
- * through the authorizationActors field, which accepts only ['seller'] actor
- * types. The system validates that the authenticated seller has active status
- * before processing the request.
- *
- * The created product record is stored in the shopping_mall_products table with
- * the following field mappings:
- *
- * - Title → shopping_mall_products.title
- * - Description → shopping_mall_products.description
- * - Price → shopping_mall_products.price
- * - Shopping_mall_seller_id → mapping from JWT authenticated actor
- * - Shopping_mall_tax_category_id → provided in request body
- * - Status → automatically set to 'draft' initially
- * - Created_at, updated_at → automatically set
- *
- * The response returns the newly created product as a complete object with all
- * fields, including the generated ID and timestamps. This allows the client to
- * immediately use the returned product object for subsequent operations like
- * associating images or categories.
- *
- * Related operations: GET /products/{productId} retrieves the product after
- * creation. PATCH /products allows searching products. PUT
- * /products/{productId} updates an existing product (requires product status to
- * be 'draft').
- *
- * Error handling: Returns 400 Bad Request if validation fails (wrong title
- * length, price out of range, invalid tax category). Returns 401 Unauthorized
- * if the user is not authenticated as a seller. Returns 403 Forbidden if the
- * seller account is not active.
+ * This operation interacts with the shopping_mall_products table and triggers
+ * the creation of a corresponding entry in the shopping_mall_product_images
+ * table. Related operations include listing products (PATCH /products), viewing
+ * product details (GET /products/{productId}), and updating product information
+ * (PUT /products/{productId}).
  *
  * @param props.connection
- * @param props.body Creation data for a new product listing.
+ * @param props.body Complete product information required for creation,
+ *   including all mandatory fields for product listing.
  * @path /shoppingMall/seller/products
  * @accessor api.functional.shoppingMall.seller.products.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -87,7 +72,10 @@ export async function create(
 }
 export namespace create {
   export type Props = {
-    /** Creation data for a new product listing. */
+    /**
+     * Complete product information required for creation, including all
+     * mandatory fields for product listing.
+     */
     body: IShoppingMallProduct.ICreate;
   };
   export type Body = IShoppingMallProduct.ICreate;
@@ -121,215 +109,6 @@ export namespace create {
     });
     try {
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update an existing product in the shoppingMall catalog. This operation allows
- * authorized sellers to modify product information including title,
- * description, price, and status. The product must be in 'draft' or 'published'
- * status to be updated. Seller identity is extracted from the authentication
- * token and verified against the product owner. Updates to published products
- * trigger a moderation review if significant changes are detected.
- *
- * Security: Only the owning seller or platform administrators can update
- * products. The operation validates that all field changes comply with content
- * policies and business rules (minimum/maximum character lengths, price ranges,
- * etc.). The updated_at timestamp is automatically set to the modification
- * time.
- *
- * Special handling: When a product's status changes from 'draft' to
- * 'published', it triggers validation of all associated product variants and
- * images to ensure completeness. Products with missing required information
- * cannot be published. Products that have been archived cannot be updated.
- *
- * Related operations: GET /products/{productId} to view current product details
- * before update, and DELETE /products/{productId} to permanently remove
- * products.
- *
- * @param props.connection
- * @param props.productId Unique identifier of the target product to update.
- *   This is the product's system-generated UUID.
- * @param props.body Updated product fields for the modification.
- * @path /shoppingMall/seller/products/:productId
- * @accessor api.functional.shoppingMall.seller.products.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the target product to update. This is the
-     * product's system-generated UUID.
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /** Updated product fields for the modification. */
-    body: IShoppingMallProduct.IUpdate;
-  };
-  export type Body = IShoppingMallProduct.IUpdate;
-  export type Response = IShoppingMallProduct;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/seller/products/:productId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
-  export const random = (): IShoppingMallProduct =>
-    typia.random<IShoppingMallProduct>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Permanently delete a product from the shoppingMall catalog. This operation
- * removes the product record entirely from the system and cannot be undone.
- * Before deletion, the system verifies that no active orders contain this
- * product and that the product is not referenced by any other system entities.
- *
- * This is a hard delete operation performed only on products with 'draft'
- * status. Products that are 'published' cannot be deleted directly — they must
- * first be archived and then purged through a separate system process after a
- * retention period.
- *
- * Security: Only the owning seller or platform administrators can delete
- * products. Deletions trigger an audit log entry for compliance tracking. All
- * associated product variants, images, and category assignments are also
- * permanently removed.
- *
- * Special handling: If the product is associated with any active customer
- * wishlists or pending cart items, those references are removed but the other
- * entities preserved. The deletion is immediate and irreversible.
- *
- * Related operations: PATCH /products/{productId} with status=archived to mark
- * a product for archival (soft delete), which is the recommended approach for
- * published products.
- *
- * @param props.connection
- * @param props.productId Unique identifier of the target product to delete.
- *   This is the product's system-generated UUID.
- * @path /shoppingMall/seller/products/:productId
- * @accessor api.functional.shoppingMall.seller.products.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the target product to delete. This is the
-     * product's system-generated UUID.
-     */
-    productId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/shoppingMall/seller/products/:productId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

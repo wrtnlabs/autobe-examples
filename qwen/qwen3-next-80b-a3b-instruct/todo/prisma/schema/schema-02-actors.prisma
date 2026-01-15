@@ -1,0 +1,102 @@
+/// Stores identity and authentication credentials for individual users who
+/// create and manage their own todo items.
+///
+/// This table contains the foundational authentication data for users of the
+/// Todo List application. Each record represents a unique authenticated user
+/// who can create, view, update, and delete their own todo items. The table
+/// stores essential authentication information including email address and
+/// securely hashed password, along with standard temporal tracking for audit
+/// and account management purposes.
+///
+/// Email addresses must be unique to prevent duplicate account creation.
+/// Passwords are never stored in plain text - only their cryptographic hash
+/// is persisted. Soft delete functionality allows for account deactivation
+/// while preserving audit trails.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address used for authentication and communication.
+  /// Must be unique across all users.
+  email String
+  
+  /// Cryptographic hash of the user's password. Never stores plain text
+  /// passwords for security reasons.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the user account's information.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was logically deleted (soft delete). If
+  /// null, the account is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Manages authentication sessions for todo_list_user accounts, tracking
+/// active login states with JWT token metadata.
+///
+/// Each session represents a user's authenticated connection to the system,
+/// identified by an IP address and connection context. Sessions are tightly
+/// associated with a specific user account and are automatically managed by
+/// the authentication system.
+///
+/// Sessions automatically expire after a set time period for security
+/// purposes. They are used for audit trails, identifying active user
+/// sessions, and ensuring no unauthorized concurrent access.
+///
+/// This table does not store actual tokens or sensitive credential data -
+/// only connection metadata and temporal information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account's {@link todo_list_user.id}.
+  todo_list_user_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// URL to which the user connected to initiate this session.
+  href String
+  
+  /// Referrer URL indicating where the user came from before connecting.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Sessions must have expiration for
+  /// security. Default state is NOT NULL.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}

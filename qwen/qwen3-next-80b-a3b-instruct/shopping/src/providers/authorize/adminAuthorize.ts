@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
@@ -15,13 +15,13 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query admin directly using id field (shopping_mall_admins is a primary table)
+  // payload.id contains top-level user table ID
+  // Query using appropriate field based on schema structure
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
-      status: "active"
-    }
+    },
   });
 
   if (admin === null) {
