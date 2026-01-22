@@ -1,0 +1,219 @@
+/// Registered users with authentication credentials and profile data.
+///
+/// This table stores all essential information about users who can log into
+/// the system. It includes unique identifiers, authentication credentials
+/// such as email and password hash, and operational timestamps for auditing
+/// and lifecycle management.
+///
+/// Users have unique email addresses and usernames to ensure distinct
+/// identity across the platform. Passwords are stored as hashes to maintain
+/// security.
+///
+/// Soft deletion is supported to allow account deactivation without data
+/// loss. The table serves as the basis for user authentication and
+/// authorization, and has relational connections to session and roles
+/// tables.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address used for login and communication.
+  email String
+  
+  /// Unique username chosen by the user for identification within the app.
+  username String
+  
+  /// Hashed password used for user authentication. Plain passwords are never
+  /// stored.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the user account, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  accessTokens todo_app_access_tokens[]
+  refreshTokens todo_app_refresh_tokens[]
+  emailVerifications todo_app_user_email_verifications[]
+  userPasswordResets todo_app_user_password_resets[]
+  userRoles todo_app_user_roles[]
+  sessions todo_app_user_sessions[]
+  todoItems todo_app_todo_items[]
+  auditLogs todo_app_todo_item_audit_logs[]
+  
+  @@unique([email])
+  @@unique([username])
+}
+
+/// Authentication sessions for registered users tracking login state and
+/// session details.
+///
+/// This table stores a record of each login session initiated by a user in
+/// the system. Sessions include connection context information such as IP
+/// address, access URL (href), and referrer URL to help with security
+/// auditing and anomaly detection.
+///
+/// Each session is tied to exactly one user via the foreign key relationship
+/// to todo_app_users.id. Sessions have a definitive expiration time to
+/// enforce security policies and session lifecycle management.
+///
+/// This table uses a session stance as it exists solely to maintain login
+/// session lifecycle data and is managed through authentication flows rather
+/// than standard CRUD operations.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the user who owns this authentication session. {@link
+  /// todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// URL of the page or resource accessed during the session.
+  href String
+  
+  /// Referrer URL indicating the previous page leading to this session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and is no longer valid.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todoAppUser todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  accessTokens todo_app_access_tokens[]
+  refreshTokens todo_app_refresh_tokens[]
+  
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Todo items owned exclusively by individual users.
+///
+/// Each todo item belongs to a registered user represented by the
+/// todo_app_users table. Users manage their todo items independently with
+/// full CRUD operations. The table tracks title, description, and status to
+/// represent the task's content and lifecycle state.
+///
+/// Soft deletion is enabled to support audit trails and recovery of deleted
+/// tasks. Temporal fields created_at and updated_at maintain the creation
+/// and modification history. This model has a foreign key relationship to
+/// the owner user ensuring data integrity.
+///
+/// This table has a primary stance as users directly create, search, filter,
+/// and manage todo items independently within the system.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifying the todo item.
+  id String @id
+  
+  /// The registered user who owns this todo item. {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Title of the todo item representing the task summary.
+  title String
+  
+  /// Detailed description providing additional information about the todo item.
+  description String
+  
+  /// Current lifecycle status of the todo item (e.g., pending, completed,
+  /// in_progress).
+  status String
+  
+  /// Timestamp when the todo item was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the todo item was soft deleted; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  auditLogs todo_app_todo_item_audit_logs[]
+  
+  @@index([todo_app_user_id, status])
+}
+
+/// Audit logs recording all create, update, and delete actions performed on
+/// todo items for security and compliance.
+///
+/// Each log entry captures the specific todo item affected, the user who
+/// performed the action, the nature of the action, and timestamps for
+/// creation and modification.
+///
+/// This table supports auditing requirements by providing a detailed and
+/// immutable trail of all user activities on todo items. It includes soft
+/// delete to allow logical deletion while preserving historical data.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_item_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo item being audited. {@link todo_app_todo_items.id}.
+  todo_app_todo_item_id String
+  
+  /// Reference to the user who performed the action. {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Type of action performed on the todo item (e.g., create, update, delete).
+  action String
+  
+  /// Timestamp when the audit log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp allowing logical deletion of audit logs while
+  /// preserving history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todoItem todo_app_todo_items @relation(fields: [todo_app_todo_item_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_item_id, action])
+  @@index([todo_app_user_id, created_at])
+}

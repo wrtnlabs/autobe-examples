@@ -1,17 +1,19 @@
-/// Stores identity and authentication credentials for individual users who
-/// create and manage their own todo items.
+/// Authenticated user account with email, password hash, and profile
+/// information.
 ///
-/// This table contains the foundational authentication data for users of the
-/// Todo List application. Each record represents a unique authenticated user
-/// who can create, view, update, and delete their own todo items. The table
-/// stores essential authentication information including email address and
-/// securely hashed password, along with standard temporal tracking for audit
-/// and account management purposes.
+/// Represents the primary identity record for users who can log in to the
+/// system and manage personal todo lists.
 ///
-/// Email addresses must be unique to prevent duplicate account creation.
-/// Passwords are never stored in plain text - only their cryptographic hash
-/// is persisted. Soft delete functionality allows for account deactivation
-/// while preserving audit trails.
+/// Each user has a unique email address for authentication, and their
+/// password is stored as a hashed value for security. The table maintains a
+/// soft delete capability to preserve audit trails while allowing account
+/// deactivation.
+///
+/// This actor entity has a one-to-many relationship with
+/// todo_list_user_sessions, which tracks all login sessions for the user.
+///
+/// User accounts are created through registration workflow and are never
+/// shared between users.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -26,44 +28,138 @@ model todo_list_user {
   /// Must be unique across all users.
   email String
   
-  /// Cryptographic hash of the user's password. Never stores plain text
-  /// passwords for security reasons.
+  /// Hashed password for authentication. Never stored in plain text. Generated
+  /// using strong hashing algorithm with salt.
   password_hash String
   
   /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp of the last update to the user account's information.
+  /// Timestamp when the user account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was logically deleted (soft delete). If
-  /// null, the account is active.
+  /// Timestamp when the user account was soft-deleted. Null indicates account
+  /// is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_todos todo_list_todos[]
+  logs todo_list_logs[]
+  rateLimits todo_list_rate_limits[]
+  userSessions todo_list_user_sessions[]
+  todos todo_list_todos[]
   
   @@unique([email])
   @@index([created_at])
+  @@index([deleted_at])
 }
 
-/// Manages authentication sessions for todo_list_user accounts, tracking
-/// active login states with JWT token metadata.
+/// Represents unauthenticated visitors with no account data - used only for
+/// system state tracking.
 ///
-/// Each session represents a user's authenticated connection to the system,
-/// identified by an IP address and connection context. Sessions are tightly
-/// associated with a specific user account and are automatically managed by
-/// the authentication system.
+/// This actor type enables the system to track and maintain state for
+/// anonymous users who interact with public content. Unlike authenticated
+/// users, guest actors don't have login credentials or persistent profiles,
+/// but still require a unique identifier and session tracking to maintain
+/// temporary state across HTTP requests.
 ///
-/// Sessions automatically expire after a set time period for security
-/// purposes. They are used for audit trails, identifying active user
-/// sessions, and ensuring no unauthorized concurrent access.
+/// The guest entity provides a consistent actor pattern across all user
+/// types in the system, allowing unified authentication flows and session
+/// management even for anonymous access. Guest records are temporary and
+/// typically persist only for the duration of a browsing session.
 ///
-/// This table does not store actual tokens or sensitive credential data -
-/// only connection metadata and temporal information.
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this guest actor record was created. Mandatory for
+  /// tracking session lifecycle.
+  created_at DateTime
+  
+  /// Timestamp when this guest actor record was last updated. Used for session
+  /// activity tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  logs todo_list_logs[]
+  sessions todo_list_guest_sessions[]
+}
+
+/// Stores administrative user accounts with elevated system access privileges.
+///
+/// Represents the canonical identity record for administrative users who
+/// require elevated permissions and system access. Each admin account
+/// contains authentication credentials and profile data necessary for secure
+/// system administration.
+///
+/// This table is the source of truth for admin authentication and is
+/// referenced by admin_sessions table for session tracking. It separates
+/// administrative identity management from other user types following domain
+/// separation principles. Admins have unrestricted access to system
+/// functions and are responsible for maintaining system security and user
+/// management.
+///
+/// All admin accounts are subject to audit logging and strict credential
+/// requirements. Soft deletion is supported to maintain audit trails while
+/// allowing administrative account deactivation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique admin email address for authentication and system notifications.
+  email String
+  
+  /// Securely hashed password for authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update or password change.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was soft-deleted (null means active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  logs todo_list_logs[]
+  sessions todo_list_admin_sessions[]
+  
+  @@unique([email])
+}
+
+/// Authentication sessions for authenticated todo_list_user accounts,
+/// tracking login state, connection context, and session expiration.
+///
+/// Each session represents a single authenticated login event from a user.
+/// The table captures essential connection details (IP address, request URL,
+/// referrer) and enforces session lifetime through mandatory expiration.
+///
+/// Sessions are append-only - never updated or soft-deleted. Instead,
+/// expired sessions are purged by system maintenance. Primary purpose is
+/// security: limiting concurrent sessions and detecting suspicious access
+/// patterns.
+///
+/// The user_id foreign key references todo_list_user.id, establishing
+/// ownership. Any new login creates a new session record, preserving
+/// historical access patterns for auditing.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,29 +170,139 @@ model todo_list_user_sessions {
   /// Primary Key.
   id String @id
   
-  /// User account's {@link todo_list_user.id}.
-  todo_list_user_id String
+  /// The authenticated user this session belongs to. {@link todo_list_user.id}.
+  user_id String
   
   /// IP address from which the session was initiated.
   ip String
   
-  /// URL to which the user connected to initiate this session.
+  /// The full URL requested when this session was created.
   href String
   
-  /// Referrer URL indicating where the user came from before connecting.
+  /// The website or application that referred the user to this system.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when this session was created (first login event).
   created_at DateTime
   
-  /// Timestamp when this session expires. Sessions must have expiration for
-  /// security. Default state is NOT NULL.
+  /// Timestamp when this session expires and becomes invalid. Sessions must
+  /// expire for security - unlimited sessions are prohibited.
   expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_list_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
+  tokens todo_list_tokens[]
+  logs todo_list_logs[]
+  
+  @@index([user_id, created_at])
+}
+
+/// Authentication sessions for todo_list_admin, tracking tokens and login
+/// states.
+///
+/// Tracks active and expired login sessions for administrative users of the
+/// system. Each session records the connection context (IP address, URL,
+/// referrer) and timestamps for session lifecycle management.
+///
+/// Session records are append-only for audit trail purposes and do not
+/// represent user identity information (which resides in the todo_list_admin
+/// table). When a session expires, its expired_at field is set to the
+/// timestamp of expiration, after which it is no longer considered valid for
+/// authentication purposes.
+///
+/// Sessions are automatically created during login and terminated during
+/// logout or automatically after a system-defined timeout period.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin actor's {@link todo_list_admin.id}.
+  admin_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// Connection URL (path and query parameters) that initiated the session.
+  href String
+  
+  /// Referrer URL indicating the source that redirected the user to the system.
+  referrer String
+  
+  /// Timestamp when this session was created and validated.
+  created_at DateTime
+  
+  /// Timestamp when this session expired. Sessions must expire for security
+  /// reasons. Non-null by default.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  tokens todo_list_tokens[]
+  logs todo_list_logs[]
+  
+  @@index([admin_id, created_at])
+}
+
+/// Authentication sessions for todo_list_guest, tracking anonymous access
+/// state and temporary tokens.
+///
+/// Tracks the connection context and temporal state of unauthenticated guest
+/// visitors interacting with the system. Each session represents a temporary
+/// access period during which a guest may view public content or maintain
+/// transient preferences.
+///
+/// Sessions are created when a guest first interacts with the system and
+/// expire after a defined period of inactivity or system-defined duration.
+/// Sessions are append-only and not updated once created. Deleted sessions
+/// are logically removed through expiration rather than hard deletion.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the guest user's {@link todo_list_guest.id}.
+  todo_list_guest_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// The URL that was accessed during this session connection.
+  href String
+  
+  /// The referrer URL that prompted the guest's access to this system.
+  referrer String
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session will expire. Sessions must expire for
+  /// security - unlimited sessions are not permitted.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guest todo_list_guest @relation(fields: [todo_list_guest_id], references: [id], onDelete: Cascade)
+  
+  tokens todo_list_tokens[]
+  logs todo_list_logs[]
+  
+  @@index([todo_list_guest_id, created_at])
 }

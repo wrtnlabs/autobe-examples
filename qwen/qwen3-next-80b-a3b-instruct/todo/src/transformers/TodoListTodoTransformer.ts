@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
@@ -18,25 +19,21 @@ export namespace TodoListTodoTransformer {
       select: {
         id: true,
         title: true,
-        description: true,
-        status: true,
+        completed: true,
         created_at: true,
-        user: TodoListUserAtSummaryTransformer.select(),
         updated_at: true,
         deleted_at: true,
+        user: TodoListUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.todo_list_todosFindManyArgs;
   }
   export async function transform(input: Payload): Promise<ITodoListTodo> {
     return {
+      user: await TodoListUserAtSummaryTransformer.transform(input.user),
       id: input.id,
       title: input.title,
-      details: input.description ?? undefined,
-      completed: input.status === "completed" ? true : false,
-      priority: "low", // default value (not in database schema)
-      sequence: 0, // default value (not in database schema)
+      completed: input.completed,
       createdAt: input.created_at.toISOString(),
-      user: await TodoListUserAtSummaryTransformer.transform(input.user),
     };
   }
 }

@@ -1,245 +1,194 @@
-/// Guests who visit the Todo List application without registration.
+/// Records verifying tokens and verification status for user emails.
 ///
-/// This table stores basic guest visitor information for tracking anonymous
-/// sessions and limited interaction capabilities.
-/// Guests represent unregistered users visiting the platform with no
-/// authentication requirements.
+/// This table stores email verification tokens generated for users during
+/// registration or email change processes. It tracks the token string and
+/// its expiration time, as well as when the verification was completed. The
+/// table is associated with the authenticated user through a foreign key
+/// relationship with the users table.
 ///
-/// Each guest has a unique UUID primary key and temporal fields for creation
-/// and updates.
+/// Temporal fields include created_at for token creation and deleted_at for
+/// soft deletion support. The token field is unique to ensure no token
+/// duplication.
+///
+/// This model supports secure email verification workflows critical to user
+/// authentication and account integrity.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_guests {
+model todo_app_user_email_verifications {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// IP address of the guest visitor for tracking purposes.
-  visitor_ip String
+  /// Reference to the user this verification belongs to. {@link
+  /// todo_app_users.id}.
+  user_id String
   
-  /// Timestamp when the guest record was created.
+  /// Unique verification token sent to the user email.
+  token String
+  
+  /// Expiration datetime of the verification token.
+  token_expired_at DateTime
+  
+  /// Datetime when the email verification was completed. Null if not verified
+  /// yet.
+  verified_at DateTime?
+  
+  /// Timestamp when the verification record was created.
   created_at DateTime
   
-  /// Timestamp when the guest record was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  todo_list_guest_sessions todo_list_guest_sessions[]
-  
-  @@index([visitor_ip, created_at])
-}
-
-/// Session records for guest visitors of the Todo List application.
-///
-/// Tracks anonymous sessions for guests, including connection context and
-/// session lifecycle details.
-///
-/// Each session belongs to exactly one guest, enabling session-based
-/// interaction tracking without authentication.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_guest_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the guest who owns this session. {@link todo_list_guests.id}.
-  todo_list_guest_id String
-  
-  /// IP address of the session connection.
-  ip String
-  
-  /// Connection URL for the session.
-  href String
-  
-  /// Referrer URL for the session.
-  referrer String
-  
-  /// Session creation time.
-  created_at DateTime
-  
-  /// Session expiration time, null if session is currently active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  guest todo_list_guests @relation(fields: [todo_list_guest_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_list_guest_id, created_at])
-}
-
-/// Registered users who can create, read, update, and delete their own todo
-/// items.
-///
-/// This table stores user authentication credentials, including secure
-/// password hashes and contact emails.
-///
-/// Each user record contains a unique UUID primary key along with timestamps
-/// for auditing purposes.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_users {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// User email address used for authentication and communication.
-  email String
-  
-  /// Hashed password for secure user authentication.
-  password_hash String
-  
-  /// Timestamp when the user was created.
-  created_at DateTime
-  
-  /// Timestamp when the user was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the user was soft deleted, if applicable.
+  /// Timestamp when the record was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_user_sessions todo_list_user_sessions[]
-  todo_list_todos todo_list_todos[]
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
+  @@unique([token])
+  @@index([user_id])
 }
 
-/// Session records for registered users of the Todo List application.
+/// Password reset requests made by users to regain access to their accounts.
 ///
-/// Tracks authenticated user sessions with security and connection details.
+/// This table stores the reset tokens, expiration times, and request
+/// timestamps associated with each password reset attempt. It references the
+/// user who initiated the reset request ensuring audit trails and secure
+/// management of password recovery flows.
 ///
-/// Each session belongs to exactly one user and records creation and
-/// expiration times for session lifecycle management.
+/// Soft deletion is supported to allow historical record keeping while
+/// enabling administrative cleanup or invalidation of password reset
+/// requests.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user_sessions {
+model todo_app_user_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the user who owns this session. {@link todo_list_users.id}.
-  todo_list_user_id String
+  /// The user who requested the password reset. {@link todo_app_users.id}.
+  todo_app_user_id String
   
-  /// IP address of the session connection.
-  ip String
+  /// Unique token generated for the password reset process. Used to
+  /// authenticate the reset attempt.
+  token String
   
-  /// Connection URL for the session.
-  href String
+  /// Expiration date and time of the password reset token. After this, the
+  /// token becomes invalid.
+  expires_at DateTime
   
-  /// Referrer URL for the session.
-  referrer String
+  /// Timestamp when the password reset request was initiated.
+  requested_at DateTime
   
-  /// Session creation time.
+  /// Record creation timestamp.
   created_at DateTime
   
-  /// Session expiration time, null if session is currently active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_list_user_id, created_at])
-}
-
-/// Administrators of the Todo List application with full system privileges.
-///
-/// This table stores admin authentication data including email and hashed
-/// password.
-///
-/// Admins have a unique UUID primary key and timestamps for auditing their
-/// account lifecycle.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Admin email address for authentication and communication.
-  email String
-  
-  /// Hashed password for secure admin authentication.
-  password_hash String
-  
-  /// Timestamp when the admin account was created.
-  created_at DateTime
-  
-  /// Timestamp when the admin account was last updated.
+  /// Record last update timestamp.
   updated_at DateTime
   
-  /// Timestamp when the admin account was soft deleted, if applicable.
+  /// Soft deletion timestamp to mark the password reset request as deleted
+  /// without removing data.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_admin_sessions todo_list_admin_sessions[]
+  todoAppUser todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
+  @@unique([token])
+  @@index([todo_app_user_id, requested_at])
 }
 
-/// Session records for administrators of the Todo List application.
+/// Application roles defining permissions and access levels within the system.
 ///
-/// Tracks admin user sessions including connection information and session
-/// lifetimes.
+/// Each role represents a set of permissions that can be assigned to users
+/// to control access to various application features and resources.
 ///
-/// Each session links to one admin and records creation and expiration times
-/// for session management.
+/// Roles are managed independently and support standard lifecycle operations
+/// including creation, update, and soft deletion.
+///
+/// This table serves as the foundation for role-based access control within
+/// the todoApp application.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_admin_sessions {
+model todo_app_roles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the admin who owns this session. {@link todo_list_admins.id}.
-  todo_list_admin_id String
+  /// Unique name of the role used for identification and assignment.
+  name String
   
-  /// IP address of the session connection.
-  ip String
+  /// Detailed explanation of the role's purpose and the permissions it grants.
+  description String
   
-  /// Connection URL for the session.
-  href String
-  
-  /// Referrer URL for the session.
-  referrer String
-  
-  /// Session creation time.
+  /// Timestamp when the role was created.
   created_at DateTime
   
-  /// Session expiration time, null if session is currently active.
-  expired_at DateTime?
+  /// Timestamp when the role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the role was soft deleted, if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
+  userRoles todo_app_user_roles[]
   
-  @@index([todo_list_admin_id, created_at])
+  @@unique([name])
+  @@index([created_at, updated_at])
+}
+
+/// Mapping table linking users to roles, supporting a many-to-many
+/// relationship between the two entities.
+///
+/// This table enables assigning multiple roles to a single user and allows
+/// each role to be assigned to multiple users independently.
+///
+/// Each record associates one user with one role, ensuring unique
+/// assignments via a composite unique constraint on user and role IDs.
+///
+/// As a subsidiary entity, this table is managed through its parent
+/// entities, mainly users and roles, and supports authorization and access
+/// control in the system.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user. {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Reference to the role assigned to the user. {@link todo_app_roles.id}.
+  todo_app_role_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  role todo_app_roles @relation(fields: [todo_app_role_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_role_id])
+  
+  @@unique([todo_app_user_id, todo_app_role_id])
 }

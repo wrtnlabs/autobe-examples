@@ -8,23 +8,19 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoListUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify authenticated user matches the target user ID
+  // Verify that requester matches the target user
   if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "Unauthorized: You can only delete your own account",
-      403,
-    );
+    throw new HttpException("You can only delete your own account", 403);
   }
-  // Delete the user record directly (cascade deletion will handle related records)
+  // Delete user account - cascade will remove associated todos and sessions
   await MyGlobal.prisma.todo_list_user.delete({
-    where: {
-      id: props.userId,
-    },
+    where: { id: props.userId },
   });
 }

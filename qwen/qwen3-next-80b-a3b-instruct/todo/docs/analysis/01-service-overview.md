@@ -1,672 +1,630 @@
-# Todo List Application Requirements Specification
+# Todo List Application - Requirements Specification
 
-## Service Introduction
+## Service Overview
 
-The Todo List application is a simple, personal task management system designed for individuals who need to organize daily responsibilities, track progress on personal goals, and reduce cognitive load through a minimalistic interface. Unlike complex project management tools, this application focuses exclusively on the fundamental need to create, manage, and complete personal to-do items without distractions, integrations, or unnecessary features.
+### Vision
 
-This service exists because modern users experience significant mental fatigue from information overload, task fragmentation across multiple platforms, and the cognitive burden of remembering uncompleted responsibilities. The Todo List application solves this by providing an immediate, focused, and frictionless way to externalize thoughts into a persistent, accessible format that requires no training, no onboarding, and no complex navigation. Users can open the application and immediately begin capturing ideas, tasks, and reminders without being overwhelmed by menus, boards, categories, or permission systems.
+The Todo List application is designed to provide a minimal, intuitive, and private task management solution for individuals seeking to organize their daily activities. The service enables users to capture, track, and complete personal tasks with complete data isolation, ensuring that no user can access or interfere with another user's information. This service transforms the concept of a simple digital to-do list into a secure, reliable, and scalable personal productivity tool that respects user privacy above all else.
 
-The application is not intended for team collaboration, enterprise use, calendar synchronization, or task delegation. It is purely an individual productivity tool, optimized for users who value simplicity, speed, and privacy above all else. The absence of multi-user features, shared lists, or notification systems is not a limitation—it is a deliberate design decision that aligns with the core value proposition: "Your thoughts, captured immediately, without compromise."
+The vision is to become the simplest, most trusted platform for personal task management — where users can rely on the system to keep their private thoughts organized without fear of exposure, leakage, or unwanted cross-user interference. The service doesn't aim to compete with feature-rich productivity suites; instead, it focuses on excellence in a single, critical domain: secure, private task management.
 
-## Target Users
+### Problem Statement
 
-The primary user of this application is the individual who has a need to remember personal tasks but does not require collaboration, public sharing, or synchronization with external services. The application serves:
+Individuals need a simple way to manage their personal tasks, but existing solutions often suffer from critical shortcomings:
 
-- Students who need to track assignments and study goals
-- Working professionals managing daily to-do lists outside corporate tools
-- Creatives capturing ideas, project milestones, or personal challenges
-- Individuals practicing mindfulness and task externalization
-- Anyone seeking relief from mental clutter without investing time in learning complex systems
+- **Privacy violations**: Many task apps store data in a way that allows potential cross-user access, data mining, or account compromise
+- **Overcomplication**: Feature-rich apps introduce unnecessary complexity for users who only need basic task tracking
+- **Data ownership concerns**: Users don't always control their own data, especially in free-tier services
+- **Inconsistent experience**: Cross-device synchronization problems and unreliable data persistence
 
-All users are authenticated using OAuth 2.0 or email/password registration, and each user's data is isolated and never shared. There are no other actor types. There is no "admin," no "guest," no "moderator." Only the authenticated individual interacts with their own data.
+The absence of a truly private, minimalist task management system creates a gap in the personal productivity market. Users are forced to either use overly complex applications with bloated features or accept the risks of inadequate data isolation.
 
-## Primary Goals
+The Todo List application solves these problems by:
 
-The Todo List application has three primary business goals:
+1. Guaranteeing absolute data isolation — each user's tasks are accessible only to them
+2. Eliminating all non-essential features to provide a focused, clean experience
+3. Implementing industry-standard security practices from the ground up
+4. Ensuring data persistence without requiring user management of backups
 
-### Goal 1: Immediate Task Capture
+This approach addresses the fundamental anxiety that users experience when managing personal tasks in systems that may unintentionally expose their information.
 
-WHEN a user opens the application after registration, THE system SHALL present a simple, empty input field labeled "Add a new task." The field SHALL be automatically focused when the page loads. Users SHALL be able to type any text into this field and press Enter or click "Add" to create a new todo item without encountering any intermediary screens, dropdowns, or selection menus.
+### Core Value Proposition
 
-### Goal 2: Persistent Personal Storage
+The Todo List application delivers unmatched value through three core pillars:
 
-WHEN a user creates a new todo item, THE system SHALL securely store it in a personal database tied to their authenticated account, ensuring the item remains accessible across all devices where the user logs in. THE system SHALL NOT store data on the client side only (e.g., localStorage) but SHALL use server-side storage with encryption at rest. THE system SHALL retain tasks indefinitely until explicitly deleted by the user.
+1. **Guaranteed Privacy** — Unlike other task applications that may share data internally, use cloud-based aggregation, or have potential for cross-user access, this system ensures every user's todo list is completely isolated. A user cannot see, access, modify, or even know about another user's tasks — not even system administrators can access individual task content.
 
-### Goal 3: Task Completion and Closure
+2. **Minimalist Efficiency** — The application includes only the essential features: user registration, login, creating tasks, marking tasks as complete, deleting tasks, and logging out. There are no reminders, categories, recurring tasks, sharing features, or collaboration tools. This elimination of complexity ensures users can accomplish their goal — organizing personal tasks — without distraction.
 
-WHEN a user clicks on a todo item's checkbox or the "Complete" button, THE system SHALL toggle the item's status from "active" to "completed" and visually dim the item's text. THE system SHALL maintain completed items in the list unless explicitly hidden by the user. Completed items SHALL remain editable for 24 hours after completion so that users may correct mistakes or restore items. After 24 hours, completed items SHALL be permanently archived and inaccessible unless restored through a separate recovery mechanism.
+3. **Reliable Foundation** — Built with enterprise-grade backend architecture using TypeScript, NestJS, and Prisma, the system ensures data integrity, secure authentication, and consistent performance. Users can trust that their tasks will be saved reliably and accessible exactly when needed.
 
-## Scope Boundaries
+The value proposition is simple: "Manage your private tasks without worry. No clutter. No exposure. Just your list."
 
-The Todo List application has strict boundaries that define what is in scope and what is explicitly out of scope:
+### Business Model
 
-### ✅ In Scope
+#### Why This Service Exists
 
-- Individual user identity and authentication
-- Creation of todo items with plain text content (up to 500 characters)
-- Marking todo items as active or completed
-- Deleting todo items immediately or after confirmation
-- Viewing a list of todo items sorted by creation time (newest first)
-- Persistent data storage tied to authenticated account
-- Secure session management
-- Mobile-responsive UI (but UI design is outside this document)
-- Cross-device access through login
+This service addresses a universal human need: the desire to organize personal responsibilities without exposing them to potential surveillance or data harvesting. The market is saturated with productivity apps that monetize user data through advertising, analytics, or premium feature upsells — often at the cost of privacy. This application flips that model by prioritizing privacy as a core value, not an afterthought.
 
-### ❌ Out of Scope
+The target user is an individual who:
 
-- Task categorization, tagging, or labeling
-- Due dates, reminders, or notifications
-- Recurring tasks or repeating patterns
-- Priority levels (Urgent, Important, etc.)
-- Shared lists, team collaboration, or guest access
-- Integration with calendars, email, or third-party services
-- Drag-and-drop reordering of tasks
-- Search or filtering functionality
-- Import/export of data (CSV, JSON, etc.)
-- Theme customization or dark mode
-- Analytics, usage statistics, or reporting
-- Comments, replies, or notes on todo items
-- API access for external applications or automation
+- Values personal privacy above all
+- Needs to track basic tasks: "Buy milk", "Call mom", "Finish report"
+- Has been burned by apps that track behavior or require unnecessary permissions
+- Doesn't need collaboration, calendar sync, or team features
+- Wants to own their data without relying on cloud storage intermediaries
 
-The system SHALL NOT implement any feature not listed under "In Scope." Any request to add features outside of these boundaries SHALL result in a rejection of the change request as violating the application’s minimalistic philosophy. The application is not a productivity suite—it is a single-function tool designed for clarity and focus.
+The competition (like Todoist, Microsoft To Do, Google Keep) offers many features users don't need. This service competes by being the opposite: intentionally minimal, focused, and private.
 
-## Core Value Proposition
+#### Revenue Strategy
 
-This application is valuable because it eliminates the friction that prevents people from capturing their thoughts. Most people have ideas they want to act on: "Call dentist," "Buy milk," "Send email to boss," "Finish chapter," etc. The barrier to entry for traditional task managers (installing, learning, organizing, prioritizing) is so high that people abandon them. This application removes all barriers. The only action required to use it is to log in and type.
+The Todo List application follows a sustainable, privacy-first revenue model:
 
-Unlike complex systems that demand users adapt to their rules, this system adapts to the user's natural thought process: write it down, check it off, forget about it. The system requires no setup, no training, and no maintenance. Success is measured not by complexity, but by how often users return to the application to capture tasks they would otherwise forget.
+- **Freemium Tier (Free)**: Unlimited todo items, basic authentication, secure data storage — entirely free with no ads, no tracking, no feature restrictions.
+- **Premium Tier ($2/month or $20/year)**: Offers optional enhancements that do not compromise privacy:
+  - Custom themes and interface styling
+  - Export tasks in CSV/JSON format (for backup and portability)
+  - Advanced search within tasks (e.g., find all tasks with "meeting" in text)
+  - Priority customer support (email-based)
 
-## Future Evolution Constraints
+No advertising, no data monetization, no third-party tracking. Revenue is derived exclusively from voluntary user support for a service they value.
 
-The application’s current scope is intentionally minimal. Any future expansion must preserve the core philosophy: simplicity, privacy, independence, and focus. Potential future enhancements are strictly limited to:
+A secondary revenue stream may be developed in the future with **enterprise licenses** for organizations that need to provide a privacy-compliant task system to employees without exposing their data to external SaaS platforms.
 
-- Adding support for markdown formatting in task descriptions (bold, italic only)
-- Allowing users to sort items by completion status or creation date
-- Providing an option to permanently delete completed items
-- Adding a simple dark mode toggle
+#### Growth Plan
 
-Any feature that introduces collaboration, automation, or complexity beyond these examples SHALL NOT be implemented. The application’s value is rooted in its restraint.
+User acquisition will be community-driven and reputation-based:
+
+1. **Organic Growth via Privacy Advocates**: Target users in privacy-conscious communities (developers, journalists, activists, researchers) who value data sovereignty
+2. **Content Marketing**: Publish educational content on the importance of private task management; demonstrate how common apps leak data
+3. **Word-of-Mouth**: Encourage satisfied users to share the application as "the only task app I actually trust"
+4. **Open Source Transparency**: Make the backend codebase available for audit (not frontend) to build trust through transparency
+5. **No Paid Advertising**: Avoid performance marketing to maintain the privacy-focused ethos
+
+The growth philosophy is "small but loyal" — prioritizing user trust over rapid scaling.
+
+#### Success Metrics
+
+The success of this application will be measured by qualitative and quantitative indicators aligned with its privacy-first mission:
+
+- **User Retention Rate**: >80% of registered users active monthly (indicating satisfaction and trust)
+- **Customer Satisfaction Score**: >4.8/5.0 via anonymous yearly surveys
+- **Support Ticket Volume**: <3 tickets per 1000 users monthly (indicating minimal usability issues)
+- **Privacy Audit Compliance**: Zero confirmed data exposure incidents
+- **Premium Conversion Rate**: 3-5% of users upgrading to premium (industry standard for value-based pricing)
+- **User Acquisition Cost**: < $0.50 per user via organic channels (low-cost growth)
+- **Daily Active Users (DAU)/Monthly Active Users (MAU)**: Ratio > 0.6 (indicating habitual use)
+
+Unlike competing applications, success is not measured by user count alone, but by depth of trust, retention, and ethical integrity. A service with 10,000 deeply satisfied, privacy-conscious users is more valuable than one with 1,000,000 transient users who distrust the platform.
+
+This service’s ultimate measure of success is when a user says: "This is the only app I don’t feel guilty about using."
+
+## User Actors and Access Control
+
+### Actors
+
+The Todo List application defines three distinct user actors, each with specific roles and permissions that determine their access to system functionality.
+
+#### User
+- **Primary actor** for the system
+- Individual who registers and manages their personal todo lists
+- Has complete control over their own data
+- Cannot access or modify any data belonging to other users
+
+#### Guest
+- **Unauthenticated visitor** to the application
+- Can view public landing page and application information
+- Has no access to any private functionality including todo list management
+- Must authenticate to access application features
+
+#### Admin
+- **System administrator** with elevated privileges
+- Cannot create or manage personal todo lists
+- Has access to user management and system monitoring capabilities
+- Responsible for maintaining system integrity and user account health
+
+### Authorization Model
+
+#### Access Control Rules
+
+WHEN a user attempts to access a todo list, THE system SHALL verify that the user's ID matches the owner ID of the requested list.
+
+IF a user attempts to access another user's todo list, THEN THE system SHALL return HTTP 403 Forbidden status with error code ACCESS_DENIED.
+
+THE system SHALL enforce strict isolation between user data at the database and application layer.
+
+WHERE a user has authenticated, THE system SHALL grant access to all personal todo list functionality.
+
+THE admin actor SHALL have read-only access to user account metadata for system monitoring purposes.
+
+WHEN an admin attempts to view user data, THE system SHALL log the action for audit purposes.
+
+#### Permission Matrix
+
+| Action | User | Guest | Admin |
+|--------|------|-------|-------|
+| View public landing page | ✅ | ✅ | ✅ |
+| Register new account | ✅ | ✅ | ❌ |
+| Login to account | ✅ | ❌ | ✅ |
+| View own todo lists | ✅ | ❌ | ✅ |
+| Create new todo list | ✅ | ❌ | ✅ |
+| Edit own todo items | ✅ | ❌ | ✅ |
+| Delete own todo items | ✅ | ❌ | ✅ |
+| Mark todo items as complete | ✅ | ❌ | ✅ |
+| View other users' todo lists | ❌ | ❌ | ✅ |
+| Manage user accounts | ❌ | ❌ | ✅ |
+| View system logs | ❌ | ❌ | ✅ |
+| Logout from account | ✅ | ❌ | ✅ |
+| Request password reset | ✅ | ✅ | ✅ |
+| Change own password | ✅ | ❌ | ✅ |
+| Revoke all active sessions | ✅ | ❌ | ✅ |
+
+### Access Control Implementation Notes
+
+1. User identification is based on the "sub" claim from JWT token, which maps to the database user ID
+2. Data isolation is enforced at the database query layer using explicit user ID filtering
+3. All API endpoints validate JWT signatures and extract user identity from claims
+4. Admin privileges are determined by the "role" claim in the JWT token
+5. The application has no endpoint that accepts user ID parameters from request body or URL without JWT validation
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
 
-## User Authentication Workflow
+## Core Functionality Requirements
 
-WHEN a user accesses the application for the first time, THE system SHALL present a welcome screen with two options: "Sign in with OAuth" and "Create account with email".
+### Core Features Overview
 
-WHEN a user selects "Sign in with OAuth", THE system SHALL redirect to the configured OAuth provider (Google, Apple) for authentication.
+The Todo List application provides a minimal, privacy-focused task management system designed for individual personal use. The system is intentionally kept simple with no complex features, focusing exclusively on enabling users to manage their own private task lists.
 
-WHEN a user selects "Create account with email", THE system SHALL collect the user's email address and create a secure password.
+The core functionality revolves around the following essential activities:
 
-WHEN a user submits their credentials, THE system SHALL validate the email format and password strength (minimum 8 characters, contains uppercase, lowercase, and number).
-
-WHEN authentication is successful, THE system SHALL generate a JWT token with a 14-day expiration and store it securely on the client.
-
-WHEN the JWT token expires, THE system SHALL redirect the user to the login screen and require re-authentication.
-
-WHEN a user attempts to access any Todo item without a valid token, THE system SHALL return HTTP 401 and display a message "Please log in to access your tasks."
-
-## Data Ownership and Security
-
-WHEN a user creates a Todo item, THE system SHALL associate it with the authenticated user's unique ID.
-
-WHEN a user requests a list of Todo items, THE system SHALL filter results to include only items with the authenticated user's ID.
-
-WHEN a user attempts to access a Todo item by ID that belongs to another user, THE system SHALL return HTTP 403 with message "You do not own this item."
-
-WHEN a user attempts to delete a Todo item that belongs to another user, THE system SHALL return HTTP 403 with message "You do not own this item."
-
-WHEN a user attempts to update a Todo item that belongs to another user, THE system SHALL return HTTP 403 with message "You do not own this item."
-
-WHEN a user logs out, THE system SHALL immediately invalidate the JWT token on the server side.
-
-THE system SHALL NEVER expose any user's Todo items to other users, even if the item ID is known.
-
-THE system SHALL use HTTPS for all communications between client and server.
-
-THE system SHALL store all user passwords using bcrypt hashing with salt.
-
-THE system SHALL never log or store plain-text passwords or tokens.
-
-## Functional Requirements
-
-### Todo Item Creation
-
-WHEN a user creates a new Todo item, THE system SHALL store the item with a unique identifier (UUID), creation timestamp, and initial status of "pending".
-
-WHEN a user submits a Todo item with an empty title, THE system SHALL reject the request and return an error message indicating the title is required.
-
-WHEN a user submits a Todo item with a title exceeding 500 characters, THE system SHALL truncate the title to 500 characters and store it.
-
-### Todo Item Retrieval
-
-WHEN a user requests their Todo items, THE system SHALL return all items created by that user ordered by creation date (newest first).
-
-WHEN a user requests their Todo items with a status filter, THE system SHALL return only items matching the specified status ("pending", "completed").
-
-WHEN a user requests a specific Todo item by ID, THE system SHALL return that single item if it belongs to the requesting user.
-
-WHEN a user requests a Todo item by ID that does not exist or belongs to another user, THE system SHALL return HTTP 404 with error message "Todo item not found".
-
-### Todo Item Update
-
-WHEN a user updates a Todo item's title, THE system SHALL validate the new title is not empty and does not exceed 500 characters.
-
-WHEN a user updates the status of a Todo item to "completed", THE system SHALL set the completion timestamp to the current time.
-
-WHEN a user updates the status of a Todo item to "pending", THE system SHALL clear the completion timestamp.
-
-WHEN a user attempts to update a Todo item that belongs to another user, THE system SHALL reject the request with HTTP 403 and error message "You do not have permission to modify this item".
-
-### Todo Item Deletion
-
-WHEN a user deletes a Todo item, THE system SHALL permanently remove the item from storage.
-
-WHEN a user attempts to delete a Todo item that belongs to another user, THE system SHALL reject the request with HTTP 403 and error message "You do not have permission to delete this item".
-
-## Data Management
-
-### Todo Item Properties
-
-THE system SHALL store each Todo item with the following properties:
-- id: unique identifier (UUID format)
-- title: text content (max 500 characters)
-- description: optional text content (max 2,000 characters)
-- status: either "pending" or "completed"
-- createdAt: ISO 8601 timestamp (UTC)
-- updatedAt: ISO 8601 timestamp (UTC)
-- completedAt: ISO 8601 timestamp (UTC) or null
-- userId: UUID reference to the creating user
-
-### Data Validation Rules
-
-IF a Todo item title is received with only whitespace characters, THEN THE system SHALL treat it as empty and reject the request.
-
-IF a Todo item description exceeds 2,000 characters, THEN THE system SHALL truncate it to 2,000 characters.
-
-IF a Todo item status is received with any value other than "pending" or "completed", THEN THE system SHALL reject the request with error message "Invalid status value".
-
-IF a Todo item update request includes a completedAt timestamp that is later than the current server time, THEN THE system SHALL reject the request with error message "Completion timestamp cannot be in the future".
-
-### Data Consistency Requirements
-
-THE system SHALL ensure that when a Todo item's status is "completed", the completedAt field is not null.
-
-THE system SHALL ensure that when a Todo item's status is "pending", the completedAt field is null.
-
-THE system SHALL ensure that the updatedAt field is automatically updated on every modification of a Todo item.
-
-WHILE a user session is active, THE system SHALL maintain data consistency for all Todo items accessed during that session.
-
-## User Interactions
-
-### Task Creation Workflow
-
-WHEN a user navigates to the Todo list screen, THE system SHALL display a form to create a new item.
-
-WHEN a user enters text in the title field and clicks "Add", THE system SHALL submit the new Todo item for creation.
-
-WHEN a user leaves the title field empty and clicks "Add", THE system SHALL prevent form submission and display a visual indicator that the title is required.
-
-WHEN a user clicks "Cancel" on the creation form, THE system SHALL close the form without creating an item.
-
-### Task Status Management
-
-WHEN a user clicks on the checkbox next to a Todo item, THE system SHALL toggle the item's status between "pending" and "completed".
-
-WHEN a user toggles a Todo item's status, THE system SHALL update the completion timestamp accordingly.
-
-WHEN a Todo item is set to "completed", THE system SHALL visually distinguish it from pending items (e.g., strikethrough text).
-
-WHEN a Todo item is set to "pending", THE system SHALL remove visual completion indicators.
-
-### Bulk Operations
-
-WHEN a user selects multiple Todo items and chooses "Delete selected", THE system SHALL remove all selected items belonging to that user.
-
-WHEN a user selects multiple Todo items and chooses "Mark complete", THE system SHALL update the status of all selected items to "completed".
-
-WHEN a user selects multiple Todo items and chooses "Mark pending", THE system SHALL update the status of all selected items to "pending".
-
-WHEN a user attempts to perform a bulk operation on items belonging to another user, THE system SHALL ignore those items and process only the items belonging to the requesting user.
-
-### Search and Filter
-
-WHEN a user enters text in the search field, THE system SHALL filter results to show only items whose title contains the search term (case-insensitive).
-
-WHEN a user selects the "Show completed" filter, THE system SHALL display only items with status "completed".
-
-WHEN a user selects the "Show pending" filter, THE system SHALL display only items with status "pending".
-
-WHEN a user clears all filters, THE system SHALL display all Todo items for that user.
-
-## System Behavior
-
-### Session Management
-
-WHEN a user's authentication session expires, THE system SHALL require re-authentication before allowing any Todo item operations.
-
-WHILE a user is authenticated, THE system SHALL allow all Todo item operations.
-
-WHEN a user logs out, THE system SHALL invalidate all session tokens and prevent further Todo item operations until authentication.
-
-### Error Handling
-
-IF a user submits a malformed request (invalid JSON, missing required fields), THEN THE system SHALL return HTTP 400 with specific error message.
-
-IF a user's authentication token is invalid or expired, THEN THE system SHALL return HTTP 401 with error message "Authentication required".
-
-IF a user attempts to access a resource they do not own, THEN THE system SHALL return HTTP 403 with error message "Permission denied".
-
-IF the system encounters an internal error while processing a request, THEN THE system SHALL return HTTP 500 with error message "Server error occurred".
-
-### Audit and Logging
-
-THE system SHALL log all Todo item creation, update, and deletion operations with timestamp, user ID, and action type.
-
-THE system SHALL maintain an audit trail of access attempts, including successful and failed requests.
-
-WHEN a User Actor "user" modifies a Todo item, THE system SHALL record the modification in the audit log.
+- User registration and authentication to establish personal identity
+- Secure access to a private todo list accessible only to the authenticated user
+- Creation of individual todo items with simple text descriptions
+- Status management for todo items (incomplete to complete)
+- Deletion of todo items when no longer needed
+- Persistent storage of user data that is completely isolated between users
+
+All functionality is designed with single-user privacy as the primary constraint. The system enforces strict access controls to ensure that no user can access, modify, or even view another user's todo lists. This isolation is fundamental to the system's design and will be enforced at every layer of the application.
+
+Users interact with the system through a simple workflow: register, log in, and manage their private todo list. There are no social features, no sharing capabilities, no team collaboration, and no external integrations beyond the essential authentication and persistence layers.
+
+### Todo List Management
+
+Every authenticated user is automatically granted a private todo list upon successful login. This list is created automatically by the system and is never shared with any other user.
+
+#### List Structure
+- The todo list is an ordered collection of todo items
+- Each user has exactly one todo list
+- The list has no name or title—users work with their one and only personal list
+- Items in the list have no hierarchical structure (no subtasks, no categories)
+- Items are ordered chronologically by creation date
+
+#### List Access Rules
+- THE system SHALL allow a user to access their own todo list only after successful authentication
+- THE system SHALL prevent any user from accessing another user's todo list
+- THE system SHALL return a 403 Forbidden error if a guest or unauthorized user attempts to access list data
+- THE system SHALL display an empty list to new users who have not yet created any todo items
+
+#### List Persistence
+- THE system SHALL persist a user's todo list across sessions using secure data storage
+- THE system SHALL restore a user's todo list automatically upon login
+- THE system SHALL maintain list integrity and order during persistent storage and retrieval
+- THE system SHALL NOT allow list data to be modified by any means other than the user who owns the list
+
+### Item Creation
+
+Users can create new todo items to track tasks they need to complete. Each item is a simple text item with no additional metadata.
+
+#### Creation Process
+- WHEN a user submits a new todo item via the API (via POST /api/todos), THE system SHALL create a new todo item with the provided text
+- THE system SHALL assign a unique identifier to each created item
+- THE system SHALL automatically set the item status to "incomplete" upon creation
+- THE system SHALL timestamp the creation time of each item
+- THE system SHALL associate the new item exclusively with the authenticated user's ID
+
+#### Creation Constraints
+- WHEN a user attempts to create a todo item with an empty or whitespace-only description, THE system SHALL reject the request with a 400 Bad Request
+- IF the item description exceeds 500 characters, THEN THE system SHALL reject the request with a 400 Bad Request
+- IF the request contains no description field, THEN THE system SHALL reject the request with a 400 Bad Request
+- WHERE user authentication is invalid or missing, THE system SHALL reject the request with a 401 Unauthorized
+
+### Item Status Management
+
+Each todo item has a simple binary state: incomplete or complete. Users may toggle between these states to reflect task progress.
+
+#### Status Change Rules
+- WHEN a user marks a todo item as complete, THE system SHALL update the item's status to "complete" and record the completion timestamp
+- WHEN a user marks a todo item as incomplete, THE system SHALL update the item's status to "incomplete" and remove the completion timestamp
+- THE system SHALL maintain the original creation timestamp regardless of status changes
+- THE system SHALL allow users to toggle status back and forth as many times as they wish
+
+#### Status Change Process
+- WHEN a user submits a PATCH request to /api/todos/{id} with a "completed" flag, THE system SHALL update the status of the specified item
+- THE system SHALL validate that the user requesting the change owns the item
+- IF the item ID does not exist, THEN THE system SHALL return a 404 Not Found
+- IF the item ID belongs to a different user, THEN THE system SHALL return a 403 Forbidden
+
+### Item Deletion
+
+Users may remove todo items from their list when they are no longer relevant or have been resolved.
+
+#### Deletion Process
+- WHEN a user sends a DELETE request to /api/todos/{id}, THE system SHALL permanently remove the specified item from their list
+- THE system SHALL validate that the user deleting the item is the owner of the item
+- THE system SHALL NOT allow deletion of items belonging to other users
+- THE system SHALL perform a hard delete—the item data will be permanently removed from storage
+
+#### Deletion Constraints
+- IF the item ID does not exist, THEN THE system SHALL return a 404 Not Found
+- IF the user attempts to delete an item they do not own, THEN THE system SHALL return a 403 Forbidden
+- IF the user sends a delete request without authentication, THE system SHALL return a 401 Unauthorized
+- THE system SHALL NOT allow batch deletion—each item must be deleted individually
+
+### Data Persistence
+
+User data must be securely stored and made available across sessions.
+
+#### Storage Requirements
+- THE system SHALL store user authentication data (hashed passwords, user ID) using industry-standard cryptographic methods
+- THE system SHALL store todo list items in a relational database with proper indexing
+- THE system SHALL encrypt all personal data at rest
+- THE system SHALL isolate each user's data using row-level security policies
+- THE system SHALL never store user data in client-side cache without explicit user consent
+
+#### Data Retention
+- THE system SHALL retain user data indefinitely unless requested to be deleted
+- When a user deletes their account, THE system SHALL permanently erase all associated todo list items
+- THE system SHALL NOT retain any data from deleted accounts beyond the immediate session termination
+- THE system SHALL maintain audit logs of data access for security compliance purposes
+
+#### Data Integrity
+- THE system SHALL ensure referential integrity between users and their todos
+- THE system SHALL prevent orphaned todos by enforcing foreign key relationships
+- WHEN a user is deleted, THE system SHALL cascade delete all associated todos
+- THE system SHALL validate all data inputs before persistence to prevent injection attacks
 
 ### Performance Expectations
 
-WHEN a user loads their Todo list with fewer than 100 items, THE system SHALL display results in under 1 second.
+Users have clear expectations regarding system responsiveness.
 
-WHEN a user creates, updates, or deletes a Todo item, THE system SHALL confirm the action within 1 second.
+#### Response Time Requirements
+- WHEN a user logs in, THE system SHALL respond within 1 second in 99% of cases
+- WHEN a user requests their todo list, THE system SHALL respond within 500 milliseconds in 99% of cases
+- WHEN a user creates a new todo item, THE system SHALL respond within 300 milliseconds in 99% of cases
+- WHEN a user updates todo status, THE system SHALL respond within 200 milliseconds in 99% of cases
+- WHEN a user deletes a todo item, THE system SHALL respond within 200 milliseconds in 99% of cases
 
-WHEN a user searches through their Todo list, THE system SHALL return results instantly (under 500ms) for typical queries.
+#### Load Capacity
+- THE system SHALL support 10,000 concurrent users without degradation in response time
+- THE system SHALL handle 1,000 requests per minute without error
+- THE system SHALL maintain acceptable performance with up to 1,000 todo items per user
 
-WHILE a user is actively working with the Todo list, THE system SHALL ensure there is no perceivable lag in user interactions.
+#### Availability
+- THE system SHALL be available 99.9% of the time
+- THE system SHALL have automatic failover procedures in place to ensure continuous service
+- WHEN a service outage occurs, THE system SHALL return a 503 Service Unavailable with a clear message to users
 
-### Security and Privacy
+### Business Rules for Security and Privacy
 
-THE system SHALL ensure that users can only access, modify, and delete their own Todo items.
+#### User Data Isolation
+- THE system SHALL prevent any form of cross-user data access
+- THE system SHALL implement strict access control at the database query level
+- THE system SHALL use user-specific query filters for all database operations
+- THE system SHALL never return data from one user in response to another user's request
 
-THE system SHALL never expose other users' Todo item data in responses, even when querying by ID.
+#### Authentication Security
+- THE system SHALL use JWT tokens for all authenticated requests
+- THE system SHALL expire access tokens after 15 minutes
+- THE system SHALL issue refresh tokens that expire after 7 days
+- THE system SHALL validate token signatures strictly on every request
+- THE system SHALL prohibit token reuse or token theft through secure storage practices
 
-THE system SHALL validate all API requests against the authenticated user's permissions before processing.
+#### Input Validation
+- THE system SHALL validate all incoming request data before processing
+- THE system SHALL reject malformed JSON payloads
+- THE system SHALL sanitize all string inputs to prevent XSS attacks
+- THE system SHALL reject any non-text data in todo item descriptions
+- WHERE an item description contains HTML content, THE system SHALL either escape it or reject it
 
-WHEN processing Todo item operations, THE system SHALL use the user's authentication context to enforce data ownership rules.
+#### Error Handling
+- IF user authentication fails, THEN THE system SHALL return 401 Unauthorized without revealing why
+- IF the requested resource belongs to another user, THEN THE system SHALL return 403 Forbidden without revealing existence of the resource
+- IF an item ID is invalid, THEN THE system SHALL return 404 Not Found without indicating whether the identifier was syntactically correct
+- WHEN an internal server error occurs, THE system SHALL log the error internally but return only a 500 Internal Server Error to the user
 
-### Reliability and Availability
+## User Workflows
 
-THE system SHALL ensure that Todo item data is persisted to durable storage before returning success to the user.
+### User Registration Flow
 
-THE system SHALL maintain a minimum of 99.9% uptime during business hours (Monday-Saturday, 8:00-22:00 Korea time).
+The registration flow enables guests to create a new user account with secure authentication credentials. This is the first interaction point for all new users.
 
-WHILE creating, updating, or deleting Todo items, THE system SHALL use transactional operations to prevent data corruption.
+#### Registration Process
 
-THE system SHALL recover all Todo item data after system restarts or failures.
+WHEN a guest visits the application homepage, THE system SHALL display a registration form with email and password fields.
 
-### Scalability Requirements
+WHEN a guest submits a registration form with a valid email address and password (minimum 8 characters), THE system SHALL create a new user account with a unique userId.
 
-THE system SHALL handle up to 10,000 concurrent users accessing their Todo lists.
+WHEN a guest submits a registration form with an email address that already exists in the system, THE system SHALL return an error message "Email already registered" and prevent account creation.
 
-THE system SHALL support storage of up to 1 million Todo items per user.
+WHEN a guest submits a registration form with a password shorter than 8 characters, THE system SHALL return an error message "Password must be at least 8 characters long" and prevent account creation.
 
-WHEN a user's Todo list exceeds 500 items, THE system SHALL still respond to list queries within 2 seconds.
+WHEN a guest submits a registration form with an email address that is not in valid email format, THE system SHALL return an error message "Please enter a valid email address" and prevent account creation.
 
-### Business Rules
+WHILE the registration request is being processed, THE system SHALL display a loading indicator to the user.
 
-WHEN a Todo item is created, THE system SHALL assign a unique system-generated ID.
+IF the system fails to create the account due to a server error, THEN THE system SHALL display a generic error message "Registration failed. Please try again later." and log the error for debugging purposes.
 
-WHEN a Todo item is deleted, THE system SHALL NOT allow recovery of that item.
+IF the registration is successful, THEN THE system SHALL send a verification email to the provided email address with a unique token.
 
-WHEN a user has no Todo items, THE system SHALL display an empty state message.
+IF the user attempts to register twice with the same email without verifying, THEN THE system SHALL keep the original unverified account and send a new verification email.
 
-THE system SHALL NOT automatically archive or delete completed Todo items.
+#### Registration Success Flow
 
-WHERE a user has marked a Todo item as completed, THE system SHALL preserve the completion status indefinitely unless manually changed.
+WHEN the user receives the verification email, THE system SHALL allow them to click a unique verification link contained within.
 
-THE system SHALL not allow users to create Todo items for other users.
+WHEN the user clicks the verification link, THE system SHALL validate the token and activate the user account.
 
-THE system SHALL not allow users to copy Todo items from other users.
+WHEN the user account is activated, THE system SHALL redirect the user to the login page with a success message "Your account has been verified. You can now log in."
 
-### Edge Case Handling
+WHILE the account remains unverified, THE system SHALL prevent the user from logging in and display a message "Please verify your email address to log in."
 
-WHEN a user attempts to create a Todo item with a network error, THE system SHALL show a retry option and preserve the unfinished item locally until successful upload.
+#### Registration Failure Scenarios
 
-WHEN a user changes devices, THE system SHALL synchronize their Todo items across devices through authentication-based data access.
+IF the email service fails to deliver the verification email, THEN THE system SHALL display a message "We couldn't send the verification email. Please try registering again or contact support." and allow the user to retry registration.
 
-WHEN two users simultaneously attempt to update the same Todo item (unlikely due to ownership), THE system SHALL process requests sequentially and return appropriate success/failure responses.
+IF the user doesn't verify their email within 7 days, THEN THE system SHALL automatically delete the unverified account and allow the email to be reused for a new registration.
 
-WHEN the system is under heavy load, THE system SHALL maintain basic functionality for Todo item access and modification, prioritizing user operations over audit logging.
+### User Login Flow
 
-WHEN a user's device goes offline, THE system SHALL queue Todo item changes and attempt to synchronize when connectivity is restored.
+The login flow authenticates registered users and establishes a secure session. This workflow is the essential entry point to access personal todo lists.
 
-### Resource Constraints
+#### Authentication Process
 
-THE system SHALL limit each user to 1,000,000 total Todo items.
+WHEN a user attempts to log in with their email and password, THE system SHALL validate the credentials against the stored hash.
 
-WHEN a user reaches the 1,000,000 item limit, THE system SHALL prevent creation of additional items until existing items are deleted.
+WHEN the provided email and password combination is correct, THE system SHALL generate a JSON Web Token (JWT) with the following payload structure:
 
-THE system SHALL limit the description field of each Todo item to 2,000 characters.
+{
+  "userId": "unique-identifier",
+  "role": "user",
+  "permissions": ["read_todos", "write_todos", "delete_todos"],
+  "iat": 1678901234,
+  "exp": 1678904834
+}
 
-THE system SHALL limit the title field of each Todo item to 500 characters.
+WHEN the provided email or password is incorrect, THE system SHALL return an HTTP 401 error with error code AUTH_INVALID_CREDENTIALS.
 
-THE system SHALL limit the number of Todo items returned in a single request to 1,000 items.
+WHEN the user account is not yet verified, THE system SHALL return an HTTP 401 error with error code AUTH_EMAIL_NOT_VERIFIED.
 
-THE system SHALL enforce pagination for lists with more than 1,000 items.
+WHEN the user account has been permanently deactivated by an administrator, THE system SHALL return an HTTP 401 error with error code AUTH_ACCOUNT_DEACTIVATED.
 
-### Data Retention Policies
+WHILE login credentials are being validated, THE system SHALL display a loading indicator to the user.
 
-THE system SHALL retain Todo items indefinitely unless explicitly deleted by the user.
+IF the login attempt fails due to network connectivity issues, THEN THE system SHALL display a message "Unable to connect to server. Please check your internet connection and try again."
 
-THE system SHALL not automatically expire or delete completed Todo items after any time period.
+#### Session Management
 
-WHEN a user deletes their account, THE system SHALL permanently delete all associated Todo items.
+THE system SHALL store the JWT access token in browser localStorage.
 
-WHEN a user creates a Todo item, THE system SHALL retain associated metadata (creation/modification timestamps) forever.
+THE access token SHALL expire after 30 minutes of inactivity.
 
-### Timestamp Requirements
+WHEN the access token expires, THE system SHALL redirect the user to the login page and display "Your session has expired. Please log in again."
 
-THE system SHALL store all timestamps in UTC format.
+THE system SHALL provide a refresh token mechanism:
 
-THE system SHALL use ISO 8601 format for all timestamp representations.
+WHEN the access token expires, THE system SHALL use the refresh token (stored separately in httpOnly cookie) to request a new access token automatically.
 
-WHEN a Todo item is created, THE system SHALL set the createdAt timestamp to the server's current time in UTC.
+WHEN the refresh token is valid and not expired, THE system SHALL issue a new access token with a 30-minute expiration.
 
-WHEN a Todo item is updated, THE system SHALL set the updatedAt timestamp to the server's current time in UTC.
+WHEN the refresh token has expired (7 days after issuance), THE system SHALL require the user to log in again with their credentials.
 
-WHEN a Todo item is marked as completed, THE system SHALL set the completedAt timestamp to the server's current time in UTC.
+WHEN the user manually logs out, THE system SHALL delete both the access token from localStorage and the refresh token from the httpOnly cookie.
 
-THE system SHALL NOT allow clients to specify timestamp values.
+### Todo List Access Flow
 
-### Character Set and Encoding
+The todo list access flow ensures that each user can only access their own private todo items. User isolation is enforced at the application layer.
 
-THE system SHALL accept and store UTF-8 encoded text for all Todo item fields.
+#### Access Authorization
 
-THE system SHALL support international characters, emoji, and special symbols in Todo item titles and descriptions.
+WHEN a logged-in user navigates to the todo list page, THE system SHALL retrieve all todo items associated with the userId from the JWT token.
 
-THE system SHALL handle Unicode normalized text consistently.
+WHEN a logged-in user attempts to access todo items belonging to another userId, THE system SHALL return an empty array and log a security event.
 
-WHEN processing text input, THE system SHALL preserve all characters in the original encoding.
+WHERE the user has the permission "read_todos", THE system SHALL return the user's complete todo list in chronological order (oldest first).
 
-### Accessibility Requirements
+WHEN the user has no todo items, THE system SHALL display a message "You have no tasks yet. Create your first task above!"
 
-THE system SHALL ensure that all Todo item operations can be performed using keyboard navigation only.
+WHILE the todo list is being loaded from the database, THE system SHALL display a loading state with placeholder skeletons.
 
-THE system SHALL provide appropriate ARIA attributes for screen readers when displaying Todo lists.
+IF the database connection fails during todo retrieval, THEN THE system SHALL display a message "Could not load tasks. Please check your connection and try again." and retry the request after 5 seconds.
 
-WHEN a Todo item has been marked as completed, THE system SHALL indicate this status to assistive technologies.
+#### Data Isolation Rules
 
-THE system SHALL maintain sufficient color contrast for text and interactive elements.
+THE system SHALL enforce strict tenant isolation so that no user can access, view, or manipulate another user's todo items.
 
-### Backup and Recovery
+THE system SHALL use the userId from the JWT token as the only filter for all todo data queries, even when the user manipulates URL parameters.
 
-THE system SHALL maintain complete backup of all Todo item data daily.
+WHERE a user attempts to send HTTP POST/GET/PUT/DELETE requests with a different target userId in the request body or parameters, THE system SHALL ignore any userId provided by the client and use only the authenticated userId from the JWT token.
 
-THE system SHALL store backups in geographically separate locations.
+IF the JWT token is missing, malformed, or tampered with, THEN THE system SHALL return HTTP 401 Unauthorized.
 
-WHEN a data loss event occurs, THE system SHALL restore Todo item data from the most recent backup with minimal data loss (less than 24 hours).
+### Todo Item Creation Flow
 
-THE system SHALL test backup recovery procedures quarterly.
+The todo item creation workflow allows users to add new tasks to their personal list. This is the primary interaction for completing objectives.
 
+#### Task Creation Process
 
+WHEN a user clicks the "Add Task" button, THE system SHALL display an input field with placeholder text "What needs to be done?"
 
+WHEN a user enters text into the task input field and clicks "Save", THE system SHALL validate the input.
 
-## Workflow Diagram
+IF the task title is empty or contains only whitespace, THEN THE system SHALL display an error message "Task title cannot be empty" and not create the task.
+
+IF the task title exceeds 200 characters, THEN THE system SHALL display an error message "Task title cannot exceed 200 characters" and not create the task.
+
+WHEN the task title is valid, THE system SHALL create a new todo item with the following properties:
+
+{
+  "id": "uuid-v4",
+  "title": "entered text",
+  "completed": false,
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp",
+  "userId": "authenticated user id from JWT"
+}
+
+WHEN the todo item is successfully created, THE system SHALL add the new item to the top of the todo list and clear the input field.
+
+WHEN the todo item creation request fails due to a server error, THE system SHALL display a message "Failed to create task. Please try again." and retain the input in the field for the user to try again.
+
+WHEN the user enters special characters (including emoji, non-Latin scripts, and unicode), THE system SHALL accept and store them unchanged.
+
+WHEN the user presses Enter while typing in the task input field, THE system SHALL behave identically to clicking "Save".
+
+### Todo Item Completion Flow
+
+The completion workflow allows users to mark tasks as finished, providing a sense of accomplishment and organization.
+
+#### Status Management
+
+WHEN a user clicks the checkbox next to a todo item, THE system SHALL toggle the "completed" property of that item.
+
+WHEN the item status changes from incomplete to complete, THE system SHALL update the "updatedAt" field to the current timestamp.
+
+WHEN the item status changes from complete to incomplete, THE system SHALL update the "updatedAt" field to the current timestamp.
+
+WHEN a todo item has been completed, THE system SHALL visually display it with strikethrough text and a subtle gray color.
+
+WHILE the completion status change is being processed, THE system SHALL show a small loading spinner next to the checkbox.
+
+IF the status update fails due to network issues, THEN THE system SHALL revert the checkbox to its previous state and display a message "Could not update task status. Please try again.".
+
+WHEN the user refreshes the page, THE system SHALL restore the completion status of all items as they were before the refresh.
+
+THE system SHALL preserve the completion status of todo items across device restarts and browser sessions.
+
+### Todo Item Deletion Flow
+
+The delete workflow removes unwanted tasks from a user's personal list. This provides a way to clean up completed items or tasks that are no longer relevant.
+
+#### Deletion Process
+
+WHEN a user clicks the "Delete" button next to a todo item, THE system SHALL display a confirmation dialog with text "Are you sure you want to delete this task? This action cannot be undone."
+
+WHEN the user confirms deletion in the dialog, THE system SHALL remove the todo item from the database permanently.
+
+WHEN the deletion is successful, THE system SHALL remove the todo item from the UI immediately.
+
+WHEN the deletion fails due to network issues, THE system SHALL display a message "Failed to delete task. Please try again." and retain the item in the list.
+
+WHEN the user clicks "Cancel" in the confirmation dialog, THE system SHALL do nothing and close the dialog.
+
+IF the user attempts to delete a todo item that does not belong to their userId, THEN THE system SHALL return HTTP 403 Forbidden and log a security alert.
+
+IF the deletion request contains a malformed taskId or invalid format, THEN THE system SHALL return HTTP 400 Bad Request.
+
+### User Logout Flow
+
+The logout flow terminates the user's authenticated session and returns them to the anonymous guest state.
+
+#### Session Termination
+
+WHEN a user clicks the "Logout" button in the navigation menu, THE system SHALL delete the access token from localStorage.
+
+WHEN the access token is deleted from localStorage, THE system SHALL delete the refresh token from the httpOnly cookie.
+
+WHEN both tokens are removed, THE system SHALL redirect the user to the landing page.
+
+WHEN the user is redirected to the landing page after logout, THE system SHALL display a message "You have been logged out."
+
+WHEN a user attempts to navigate directly to the todo list page after logout, THE system SHALL redirect the user to the landing page and display "Please log in to access your tasks.".
+
+WHILE the logout request is being processed, THE system SHALL display a loading indicator in the navigation menu.
+
+IF the logout request fails due to server connectivity issues, THEN THE system SHALL display a message "Could not log out. Please refresh the page." and retain the user's login session.
+
+## System Context
+
+This document covers all user workflows for the todo list application as defined in the authentication and authorization requirements. All flows are designed around the user actor model with three actors: guest (unauthenticated), user (authenticated), and admin (system administrator with special privileges).
+
+All business rules and functional requirements have been expressed using EARS format with English keywords to ensure clarity for backend developers implementing these flows.
+
+The authentication system follows industry-standard JWT practices with refresh token rotation to maintain security and usability.
+
+All user data isolation is enforced at the application layer using the userId from the authenticated JWT token as the only source of truth for data queries.
+
+No other workflows, features, or user interactions beyond these seven core flows are required for this minimal application.
+
+## User Workflows Diagram
 
 ```mermaid
-graph TD
-    A["User Accesses Application"] --> B["Authentication Required"]
-    B --> C["Login or Register"]
-    C --> D["JWT Token Issued"]
-    D --> E["User Views Todo List"]
-    E --> F["Add New Task"]
-    E --> G["Toggle Task Status"]
-    E --> H["Delete Task"]
-    F --> I["Title Submitted"]
-    I --> J["Validate: Non-Empty, ≤500 chars"]
-    J --> K["Create Todo Item with UUID and Status=\"pending\""]
-    K --> L["Save to Database with Timestamp"]
-    L --> M["Return Success"]
-    G --> N["Toggle Status"]
-    N --> O["Update Status to \"completed\" or \"pending\""]
-    O --> P["Set/Update Timestamps: completedAt/updatedAt"]
-    P --> Q["Save Update to Database"]
-    Q --> R["Return Success"]
-    H --> S["Confirm Deletion"]
-    S --> T["Delete Item Permanently"]
-    T --> U["Return 204 No Content"]
-    M --> E
-    R --> E
-    U --> E
-    D --> Z["Invalid Token?"]
-    Z -->|Yes| C
-    Z -->|No| E
+graph LR
+    A["Guest Visits Landing Page"] --> B{"Authenticated?"}
+    B -->|No| C["Registration Flow"]
+    B -->|Yes| D["Login Flow"]
+    C --> E["Validate Credentials"]
+    E --> F{"Valid?"}
+    F -->|Yes| G["Send Verification Email"]
+    G --> H["Redirect to Login"]
+    F -->|No| I["Show Error"]
+    D --> J["Validate Credentials"]
+    J --> K{"Valid & Verified?"}
+    K -->|Yes| L["Issue JWT Tokens"]
+    K -->|No| M["Show Error"]
+    L --> N["Access Todo List"]
+    N --> O["Create Todo Item"]
+    N --> P["View Todo List"]
+    N --> Q["Complete Todo Item"]
+    N --> R["Delete Todo Item"]
+    N --> S["Logout"]
+    O --> T["Validate Title"]
+    T --> U{"Valid?"}
+    U -->|Yes| V["Create Item in DB"]
+    U -->|No| W["Show Error"]
+    P --> X["Retrieve Items by userId"]
+    X --> Y["Display Items"]
+    Q --> Z["Toggle Completed Flag"]
+    Z --> AA["Update DB"]
+    R --> AB["Show Confirmation"]
+    AB --> AC{"Confirmed?"}
+    AC -->|Yes| AD["Delete Item from DB"]
+    AC -->|No| AE["Cancel"]
+    S --> AF["Delete Tokens"]
+    AF --> AG["Redirect to Landing"]
+    I --> H
+    M --> H
+    V --> Y
+    AA --> Y
+    AD --> Y
 ```
 
-### Diagram Syntax Validation
-
-- All node labels use double quotes: "User Accesses Application"
-- All arrow syntax uses proper `-->` format
-- No spaces between brackets and quotes: "Login or Register" not " "Login or Register" "
-- All labels are meaningful and non-empty
-- All conditional branches are properly structured
-- No Mermaid syntax violations present
-
-
-
-## Exception Handling
-
-### Invalid Input Submission
-
-WHEN a user submits a Todo item with an empty title, THE system SHALL return HTTP 400 with message: "Todo title cannot be empty."
-
-WHEN a user submits a Todo item with a title exceeding 500 characters, THE system SHALL return HTTP 400 with message: "Todo title must be 500 characters or less."
-
-WHEN a user submits a Todo item with an invalid status value, THE system SHALL return HTTP 400 with message: "Invalid status. Must be one of: pending, completed."
-
-### Authentication Failure
-
-WHEN a user attempts to access any Todo list functionality without being authenticated, THE system SHALL return HTTP 401 with message: "Authentication required."
-
-WHEN a user's session has expired, THE system SHALL return HTTP 401 with message: "Session expired. Please log in again."
-
-WHILE a user is not authenticated, THE system SHALL not allow any modification or viewing of Todo items.
-
-### Resource Not Found
-
-WHEN a user requests a Todo item by ID that does not exist, THE system SHALL return HTTP 404 with message: "This Todo item does not exist or has been deleted."
-
-WHEN a user attempts to access a Todo item owned by another user, THE system SHALL return HTTP 403 with message: "You do not have permission to view this Todo item."
-
-WHEN a user attempts to delete or update a non-existent Todo item, THE system SHALL return HTTP 404 with message: "This Todo item does not exist or has been deleted."
-
-### Access Denied
-
-IF a user attempts to edit a Todo item that does not belong to them, THEN THE system SHALL deny the request with message: "You cannot modify another user's Todo items."
-
-IF a user attempts to delete a Todo item that does not belong to them, THEN THE system SHALL deny the request with message: "You cannot delete another user's Todo items."
-
-### System Errors
-
-WHILE the system is processing a Todo item operation, IF an unexpected internal error occurs, THEN THE system SHALL return HTTP 500 with message: "An unexpected error occurred. Please try again later."
-
-WHEN a database connection fails during Todo item persistence, THE system SHALL return HTTP 503 with message: "Service temporarily unavailable. Please try again later."
-
-### User Recovery Options
-
-#### Invalid Input Submission Recovery
-
-Users may correct their input submissions by:
-- Editing the title to be non-empty and under 500 characters
-- Selecting a valid status option from the provided choices
-- Re-submitting the form after correcting the errors
-- Clearing invalid fields and starting fresh
-
-#### Authentication Failure Recovery
-
-Users may recover from authentication failures by:
-- Re-entering their credentials on the login page
-- Using "Forgot Password" if credentials are forgotten
-- Waiting 30 seconds and retrying if locked out due to failed attempts
-- Contacting support if authentication is persistently blocked
-
-#### Resource Not Found Recovery
-
-Users may recover from resource not found errors by:
-- Refreshing the Todo list to verify item existence
-- Recreating the item if it was accidentally deleted
-- Searching for the item using alternative criteria
-- Contacting support if they believe they have lost an important item
-
-#### Access Denied Recovery
-
-Users may recover from access denied errors by:
-- Logging out and logging back in as the correct user
-- Verifying they have the correct account
-- Requesting sharing access if the item belongs to someone else
-- Using the correct account with sufficient permissions
-
-#### System Errors Recovery
-
-Users may recover from system errors by:
-- Waiting 30 seconds and retrying the operation
-- Refreshing the application to clear any corrupted state
-- Closing and reopening the application
-- Contacting support if the error persists after multiple attempts
-
-## Failure Recovery Paths
-
-### Invalid Input Submission Recovery Path
-
-User attempts to create Todo item with empty title → System rejects with error → User sees error message → User edits title → User re-submits → System accepts → Todo item created successfully
-
-### Authentication Failure Recovery Path
-
-User attempts to access Todo list → System detects no session → System redirects to login → User enters credentials → System validates → User redirected to Todo list → Access granted
-
-### Resource Not Found Recovery Path
-
-User attempts to view Todo item → System queries database → Item not found → System returns error message → User checks list → Item missing → User recreates item → System saves item → User views item successfully
-
-### Access Denied Recovery Path
-
-User attempts to update someone else's item → System checks ownership → Request denied → System returns error message → User verifies account identity → User switches to own account → User attempts update → System checks ownership → Item belongs to user → Update accepted
-
-### System Error Recovery Path
-
-User attempts to delete Todo item → System encounters database timeout → System fails operation internally → System returns generic error → User waits 30 seconds → User retries deletion → System succeeds → Item deleted successfully
-
-### Edge Case: Concurrent Modifications
-
-WHILE two users attempt to update the same Todo item simultaneously, THE system SHALL prevent data loss by rejecting the second update with message: "This item has been modified by another user. Please refresh and try again."
-
-## Data Integrity and Business Rules
-
-### Data Integrity and Atomicity
-
-WHEN a Todo item is created, THE system SHALL ensure that all fields (title, status, owner ID, creation timestamp) are saved atomically.
-
-IF any part of the creation operation fails, THEN THE system SHALL roll back the entire transaction and preserve data integrity.
-
-WHEN a Todo item is updated, THE system SHALL ensure that all changed fields are saved atomically.
-
-IF any part of the update operation fails, THEN THE system SHALL roll back the entire transaction and preserve data integrity.
-
-WHEN a Todo item is deleted, THE system SHALL remove the item completely and ensure no orphaned references remain.
-
-### Status Transition Consistency
-
-WHILE a Todo item has status "pending", THE system SHALL allow transitions to "completed" or "archived".
-
-WHILE a Todo item has status "completed", THE system SHALL allow transitions to "pending" or "archived".
-
-WHILE a Todo item has status "archived", THE system SHALL prevent any status changes.
-
-IF a Todo item is archived, THE system SHALL prevent any modification to its content except for potential future restoration.
-
-### User Privacy and Data Separation
-
-THE system SHALL guarantee complete separation of data between users.
-
-THE system SHALL never store or transmit any user's Todo items to another user's context.
-
-THE system SHALL ensure that even administrative functions cannot bypass user ownership constraints.
-
-THE system SHALL not support any feature that allows users to see or access other users' Todo items, even with explicit permissions.
-
-### Timestamp Consistency
-
-WHEN any operation affects a Todo item (creation, update, deletion), THE system SHALL record the exact server timestamp in UTC.
-
-THE system SHALL convert server timestamps to the user's local timezone (Asia/Seoul) for display purposes only.
-
-THE system SHALL maintain all timestamps internally in UTC regardless of user timezone.
-
-IF a user's system clock is inaccurate, THE system SHALL use server time as the authoritative source for all operations to ensure consistency.
-
-### Archive Logic
-
-WHEN a Todo item is archived, THE system SHALL preserve all metadata including creation date, completion date (if applicable), and all tags.
-
-THE system SHALL allow archived items to be restored to "pending" status by the original owner.
-
-IF an archived item is restored, THE system SHALL retain its original creation timestamp and any previous status history.
-
-WHEN a user restores an archived Item, THE system SHALL clear any completion timestamp that existed while the item was completed.
-
-The item's version number SHALL be incremented by one during restoration.
-
-### Deletion Logic
-
-WHEN a user deletes a Todo item, THE system SHALL immediately remove the item from the active database.
-
-THE system SHALL NOT keep a soft-delete record or backup of deleted items.
-
-THE system SHALL prevent any attempt to restore a deleted item.
-
-THE system SHALL ensure that deleted items cannot be recovered through any means, including backups or direct database access.
-
-WHEN a Todo item is deleted, THE system SHALL return an HTTP 204 No Content response to confirm successful deletion.
-
-### Tag Management Consistency
-
-WHEN a user adds a tag to a Todo item, THE system SHALL ensure the tag is unique within that item.
-
-WHEN a user removes a tag from a Todo item, THE system SHALL remove only that specific tag from the item's tag list.
-
-WHILE a Todo item contains any tags, THE system SHALL allow removal of individual tags without affecting other tags.
-
-WHEN a user attempts to add an empty tag (zero-length string), THE system SHALL reject the operation.
-
-WHEN a user attempts to add a tag exceeding 50 characters, THE system SHALL reject the operation.
-
-WHEN a user attempts to add a tag containing special characters that could cause display or search issues, THE system SHALL allow it but validate that it doesn't break system functionality.
-
-### Query Consistency
-
-WHEN a user searches for Todo items, THE system SHALL return all items matching the criteria, regardless of status, except for items owned by other users.
-
-WHEN a user filters by status, THE system SHALL return only items with the specified status.
-
-WHEN a user filters by due date or priority, THE system SHALL return items matching the exact criteria without approximation.
-
-THE system SHALL maintain consistency in query results across different devices for the same user within the same session.
-
-### Sorting Consistency
-
-WHEN a user sorts Todo items by title, THE system SHALL sort in ascending alphabetical order (A to Z).
-
-WHEN a user sorts Todo items by creation date, THE system SHALL sort from newest to oldest (most recent first).
-
-WHEN a user sorts Todo items by due date, THE system SHALL sort with earliest dates first.
-
-WHEN a user sorts Todo items by status, THE system SHALL sort in the following order: "pending", "completed", "archived".
-
-WHEN a user sorts by priority, THE system SHALL sort in the following order: "low", "medium", "high".
-
-THE system SHALL maintain consistent sorting behavior across all client devices.
-
-### User Experience Consistency
-
-WHILE a user is interacting with the application, THE system SHALL ensure that all feedback about item creation, modification, and deletion is immediate.
-
-WHEN an error occurs during a Todo item operation, THE system SHALL display the error message in a location where the user can clearly see it.
-
-THE system SHALL never silently fail - all user-initiated operations must produce a clear response or error message.
-
-THE system SHALL confirm successful operations with immediate visual feedback.
-
-THE system SHALL maintain visual consistency in the presentation of Todo items across all device types.
+### Diagram Legend
+
+- **A**: Guest interaction start point
+- **B**: Authentication state check
+- **C**: Registration workflow
+- **D**: Login workflow
+- **E, J**: Credential validation
+- **F, K**: Validation outcome checks
+- **G**: Email verification process
+- **H**: Login page redirect
+- **L**: Token issuance
+- **N**: Dashboard access
+- **O, P, Q, R**: Core todo management actions
+- **S**: Logout initiation
+- **AF**: Token removal
+- **AG**: Landing page return
+- **T**: Input validation
+- **U**: Validation check
+- **V**: Data creation
+- **W**: Error display
+- **X**: Data retrieval
+- **Y**: UI display
+- **Z**: Status toggle
+- **AA**: Database update
+- **AB, AC, AD, AE**: Delete confirmation logic
+- **AF, AG**: Logout completion
+
+All paths lead back to a consistent user experience where users can only interact with their own data.
+
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

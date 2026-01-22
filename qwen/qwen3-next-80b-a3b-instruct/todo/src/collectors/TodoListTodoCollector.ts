@@ -12,13 +12,11 @@ export namespace TodoListTodoCollector {
   export async function collect(props: {
     body: ITodoListTodo.ICreate;
     todoListUser: IEntity;
-    todoListUserSession: IEntity;
   }) {
     return {
       id: v4(),
       title: props.body.title,
-      description: props.body.details ?? null,
-      status: "pending",
+      completed: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

@@ -1,12 +1,12 @@
 import { tags } from "typia";
 
 export interface GuestPayload {
-  /** Top-level guest ID (UUID) */
+  /** Top-level guest user ID (the fundamental user identifier in the system). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the guest's authentication session */
+  /** Session ID associated with the guest user. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the role type */
+  /** Discriminator for guest role. */
   type: "guest";
 }

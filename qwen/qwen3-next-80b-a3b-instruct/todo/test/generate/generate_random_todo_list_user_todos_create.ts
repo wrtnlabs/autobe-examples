@@ -11,13 +11,17 @@ import { prepare_random_todo_list_todo } from "../prepare/prepare_random_todo_li
 export async function generate_random_todo_list_user_todos_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<ITodoListTodo.ICreate> | undefined;
+    body?: DeepPartial<ITodoListTodo.ICreate>;
   },
 ): Promise<ITodoListTodo> {
   const prepared: ITodoListTodo.ICreate = prepare_random_todo_list_todo(
     props.body,
   );
-  return await api.functional.todoList.user.todos.create(connection, {
-    body: prepared,
-  });
+  const result: ITodoListTodo = await api.functional.todoList.user.todos.create(
+    connection,
+    {
+      body: prepared,
+    },
+  );
+  return result;
 }

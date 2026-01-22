@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -15,8 +16,11 @@ export namespace TodoListTodoAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        description: true,
-        status: true,
+        completed: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        user: true,
       },
     } satisfies Prisma.todo_list_todosFindManyArgs;
   }
@@ -26,8 +30,8 @@ export namespace TodoListTodoAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
-      description: input.description ?? undefined,
-      is_completed: input.status === "completed",
+      completed: input.completed,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

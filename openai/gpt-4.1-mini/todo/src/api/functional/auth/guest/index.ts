@@ -3,21 +3,32 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoListGuest } from "../../../structures/ITodoListGuest";
+import { ITodoAppGuest } from "../../../structures/ITodoAppGuest";
+export * as _public from "./_public/index";
 
 /**
- * This operation enables unauthenticated users to register temporary guest
- * accounts. It creates a limited-access guest record in the database, providing
- * minimal permissions suitable for public resource viewing. The database fields
- * involved typically include the guest identifier and any session linkage if
- * applicable. This process does not require credentials, allowing fast
- * onboarding for temporary access. The operation's security considerations
- * involve limiting permissions for guests and secure issuance of temporary JWT
- * tokens. It integrates with the refresh operation to renew guest tokens as
- * necessary.
+ * This endpoint allows unauthenticated users to register as guest users. It
+ * creates a temporary guest account, issuing initial JWT tokens for session
+ * management. The operation corresponds to the 'todo_app_guests' database table
+ * representing guest entities. No credential login is needed as guests have
+ * implicit limited access. The operation is public and requires no prior
+ * authentication.
+ *
+ * Security considerations focus on preventing abuse of guest registrations
+ * through rate limiting and request validation. Token issuance follows
+ * stateless JWT patterns ensuring secure short-term access.
+ *
+ * This operation initiates the guest authentication lifecycle providing tokens
+ * necessary for accessing guest-level resources.
+ *
+ * Related operations include the refresh token endpoint which enables token
+ * renewal without re-registration.
+ *
+ * Clients should call POST /auth/guest/join to create a new guest user session
+ * and receive authorized tokens.
  *
  * @param props.connection
- * @param props.body Guest join request body with necessary join information.
+ * @param props.body Payload for registering a new guest user.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -52,11 +63,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Guest join request body with necessary join information. */
-    body: ITodoListGuest.IJoin;
+    /** Payload for registering a new guest user. */
+    body: ITodoAppGuest.IJoin;
   };
-  export type Body = ITodoListGuest.IJoin;
-  export type Response = ITodoListGuest.IAuthorized;
+  export type Body = ITodoAppGuest.IJoin;
+  export type Response = ITodoAppGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -72,8 +83,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/guest/join";
-  export const random = (): ITodoListGuest.IAuthorized =>
-    typia.random<ITodoListGuest.IAuthorized>();
+  export const random = (): ITodoAppGuest.IAuthorized =>
+    typia.random<ITodoAppGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -100,18 +111,26 @@ export namespace join {
 }
 
 /**
- * This operation allows guest users to renew their JWT access tokens by
- * providing a valid refresh token. It maintains session continuity for
- * temporary guest accounts with limited permissions. The underlying database
- * schema supports token validity checks and expiration management for guest
- * sessions. Security considerations include validating the refresh token,
- * preventing token theft, and limiting refresh capabilities to guests only. The
- * integration complements the join operation to ensure seamless temporary
- * access.
+ * This endpoint allows guest users to refresh their JWT access tokens,
+ * extending their authenticated session without the need to re-register. It
+ * validates the provided refresh token against the guest session information
+ * stored in the 'todo_app_guests' table.
+ *
+ * The operation ensures seamless guest user experience through token lifecycle
+ * management. It is restricted to authenticated guests presenting valid refresh
+ * tokens.
+ *
+ * Upon successful validation, new JWT tokens are issued following secure token
+ * handling practices.
+ *
+ * This operation complements the join operation, maintaining temporary
+ * authenticated sessions.
+ *
+ * Clients should call POST /auth/guest/refresh with a valid refresh token in
+ * the request body.
  *
  * @param props.connection
- * @param props.body Refresh token request body containing the refresh token
- *   string.
+ * @param props.body Payload containing the guest refresh token for JWT renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -146,11 +165,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request body containing the refresh token string. */
-    body: ITodoListGuest.IRefresh;
+    /** Payload containing the guest refresh token for JWT renewal. */
+    body: ITodoAppGuest.IRefresh;
   };
-  export type Body = ITodoListGuest.IRefresh;
-  export type Response = ITodoListGuest.IAuthorized;
+  export type Body = ITodoAppGuest.IRefresh;
+  export type Response = ITodoAppGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -166,8 +185,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/guest/refresh";
-  export const random = (): ITodoListGuest.IAuthorized =>
-    typia.random<ITodoListGuest.IAuthorized>();
+  export const random = (): ITodoAppGuest.IAuthorized =>
+    typia.random<ITodoAppGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

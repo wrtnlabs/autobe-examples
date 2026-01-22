@@ -3,32 +3,28 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoListTodoListUser } from "../../../structures/ITodoListTodoListUser";
-export * as password from "./password/index";
-export * as email from "./email/index";
-export * as two_factor from "./two_factor/index";
+import { ITodoAppUser } from "../../../structures/ITodoAppUser";
+export * as authorization_activity from "./authorization_activity/index";
 
 /**
- * This API operation enables registered users to create new accounts in the
- * todo list system. It utilizes the 'todo_list_users' table for storing and
- * validating user credentials securely. Upon successful registration, an
- * initial JWT token is issued for authentication purposes.
+ * This API operation allows new users to register and create an account in the
+ * todoApp system. It utilizes the 'todo_app_users' table where user email and
+ * password_hash fields are stored securely for authentication. Upon successful
+ * registration, an initial JWT token is issued to authenticate the user in
+ * subsequent operations.
  *
- * The operation is public and does not require prior authentication. It must
- * handle secure transmission and validation of sensitive data.
+ * Security measures ensure password hashing follows best practices. Email
+ * uniqueness and format will be validated during the join process.
  *
- * This join operation is part of the user authentication workflow alongside
- * login and refresh token operations.
+ * This operation is public and does not require prior authentication.
  *
- * Measures against duplicate account creation and input validation must be
- * implemented.
+ * Use this endpoint as the starting point for user authentication workflows.
  *
- * Provides initial access capability through token issuance after account
- * creation.
+ * The expected workflow includes client-side validation, server-side credential
+ * storage, and token generation.
  *
  * @param props.connection
- * @param props.body User registration data conforming to ITodoListUser.ICreate
- *   schema.
+ * @param props.body User registration data for join operation.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -63,11 +59,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** User registration data conforming to ITodoListUser.ICreate schema. */
-    body: ITodoListTodoListUser.ICreate;
+    /** User registration data for join operation. */
+    body: ITodoAppUser.IJoin;
   };
-  export type Body = ITodoListTodoListUser.ICreate;
-  export type Response = ITodoListTodoListUser.IAuthorized;
+  export type Body = ITodoAppUser.IJoin;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -83,8 +79,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/user/join";
-  export const random = (): ITodoListTodoListUser.IAuthorized =>
-    typia.random<ITodoListTodoListUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -111,23 +107,24 @@ export namespace join {
 }
 
 /**
- * This operation authenticates existing registered users by verifying
- * credentials stored in 'todo_list_users'. On success, it issues JWT access
- * tokens for authorized resource access.
+ * This API operation authenticates registered users by validating their
+ * credentials against stored information in the 'todo_app_users' table,
+ * specifically the email and password_hash fields. Successful login results in
+ * issuance of a JWT token for session management and authentication.
  *
- * Login credentials must comply with ITodoListUser.ILogin schema.
+ * Security is enforced by standard password hashing comparison and rate
+ * limiting login attempts to protect against brute force attacks.
  *
- * This login API is part of the standard authentication flow together with join
- * and token refresh operations.
+ * This endpoint is public and a core entry point for authenticated user access.
  *
- * Security includes protection against brute-force attacks and monitoring login
- * attempts.
+ * It is a crucial component of the user authentication workflow and works
+ * closely with join and refresh endpoints.
  *
- * Enables session continuity via issued tokens.
+ * Clients should store returned JWT tokens securely for subsequent
+ * authenticated API calls.
  *
  * @param props.connection
- * @param props.body Login credentials conforming to ITodoListUser.ILogin
- *   schema.
+ * @param props.body User login credentials for login operation.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -162,11 +159,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Login credentials conforming to ITodoListUser.ILogin schema. */
-    body: ITodoListTodoListUser.ILogin;
+    /** User login credentials for login operation. */
+    body: ITodoAppUser.ILogin;
   };
-  export type Body = ITodoListTodoListUser.ILogin;
-  export type Response = ITodoListTodoListUser.IAuthorized;
+  export type Body = ITodoAppUser.ILogin;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -182,8 +179,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/user/login";
-  export const random = (): ITodoListTodoListUser.IAuthorized =>
-    typia.random<ITodoListTodoListUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -210,21 +207,27 @@ export namespace login {
 }
 
 /**
- * This operation allows registered users to refresh their JWT access tokens by
- * submitting valid refresh tokens mapped to 'todo_list_users'. It issues new
- * tokens extending authenticated session duration.
+ * This API operation refreshes the JWT access token for authenticated users
+ * using a valid refresh token. The system checks the refresh token's validity
+ * and expiration to issue a new access token, maintaining continuous secure
+ * access.
  *
- * Supports token rotation and secure token management.
+ * The refresh token is managed and stored securely, with revocation policies
+ * applied for compromised tokens.
  *
- * Part of the authentication workflow including login and join.
+ * The operation uses table(s) that track refresh tokens linked to the
+ * 'todo_app_users'.
  *
- * Access control is enforced to ensure only valid tokens are processed.
+ * Only authenticated users associated with the 'member' actor type are
+ * authorized to access this endpoint.
  *
- * Public endpoint guarded by token validation mechanisms.
+ * This endpoint plays a vital role in session management and token lifecycle.
+ *
+ * Clients should call this operation before access tokens expire to prevent
+ * forced logout.
  *
  * @param props.connection
- * @param props.body Refresh token request conforming to ITodoListUser.IRefresh
- *   schema.
+ * @param props.body Refresh token data for token renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -259,11 +262,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request conforming to ITodoListUser.IRefresh schema. */
-    body: ITodoListTodoListUser.IRefresh;
+    /** Refresh token data for token renewal. */
+    body: ITodoAppUser.IRefresh;
   };
-  export type Body = ITodoListTodoListUser.IRefresh;
-  export type Response = ITodoListTodoListUser.IAuthorized;
+  export type Body = ITodoAppUser.IRefresh;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -279,8 +282,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/user/refresh";
-  export const random = (): ITodoListTodoListUser.IAuthorized =>
-    typia.random<ITodoListTodoListUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

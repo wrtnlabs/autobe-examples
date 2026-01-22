@@ -8,6 +8,7 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoListUserTodosTodoId(props: {
@@ -18,11 +19,11 @@ export async function deleteTodoListUserTodosTodoId(props: {
     where: { id: props.todoId },
   });
   if (!todo) {
-    throw new HttpException("Todo item not found", 404);
+    throw new HttpException("Todo not found", 404);
   }
   if (todo.todo_list_user_id !== props.user.id) {
     throw new HttpException(
-      "Forbidden - You can only delete your own todo items",
+      "Forbidden - You can only delete your own todos",
       403,
     );
   }

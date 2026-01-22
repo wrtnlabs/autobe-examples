@@ -5,16 +5,15 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IMember";
-import type { ITodoListMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListMember";
+import type { ITodoListToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListToken";
+import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 export async function authorize_member_refresh(
   connection: api.IConnection,
   props: {
-    body: IMember.IRefresh;
+    body: ITodoListUser.IRefresh;
   },
-): Promise<ITodoListMember.IAuthorized> {
-  return await api.functional.auth.member.refresh(connection, {
+): Promise<ITodoListUser.IAuthorized> {
+  return await api.functional.auth.user.refresh(connection, {
     body: props.body,
   });
 }

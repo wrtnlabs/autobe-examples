@@ -6,7 +6,7 @@ AI Model | Success | Score | FCSR | Status
 :--------|---------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 4 | 100 | 92% | 🟢
 [`openai/gpt-4.1`](#openaigpt-41) | 4 | 100 | 88% | 🟢
-[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 4 | 100 | 84% | 🟢
+[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 3 | 97.5 | 79% | 🟢
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 3 | 95 | 87% | 🟢
 [`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 3 | 95 | 78% | 🟢
 [`openai/gpt-5.1`](#openaigpt-51) | 3 | 95 | 85% | 🟢
@@ -24,6 +24,7 @@ AI Model | Success | Score | FCSR | Status
 [`deepseek/deepseek-v3.2-exp`](#deepseekdeepseek-v32-exp) | 0 | 2.5 | 100% | ❌
 [`google/gemini-3-pro-preview`](#googlegemini-3-pro-preview) | 0 | 2.5 | 21% | ❌
 [`openai/gpt-oss-120b-exacto`](#openaigpt-oss-120b-exacto) | 0 | 2.5 | 89% | ❌
+[`qwen/qwen3-next-80b-a3b-thinking`](#qwenqwen3-next-80b-a3b-thinking) | 0 | 0 | 0% | ❌
 
 - FCSR: Function Calling Success Rate
 - Status:
@@ -189,7 +190,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./openai/gpt-4.1-mini/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`todo`](./openai/gpt-4.1-mini/todo/) | 90 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 [`bbs`](./openai/gpt-4.1-mini/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./openai/gpt-4.1-mini/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-4.1-mini/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
@@ -197,18 +198,18 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 ### `openai/gpt-4.1-mini` - `todo`
 
 - Source Code: [`openai/gpt-4.1-mini/todo`](./openai/gpt-4.1-mini/todo/)
-- Score: 100
-- Elapsed Time: 2h 2m 38s
-- Token Usage: 46.71M
-- Function Calling Success Rate: 85.26%
+- Score: 90
+- Elapsed Time: 2h 56m 54s
+- Token Usage: 223.88M
+- Function Calling Success Rate: 69.87%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 10 | 359.8K | 2m 4s | 100%
-🟢 Database | `namespaces`: 3, `models`: 8 | 230.8K | 1m 33s | 87%
-🟢 Interface | `operations`: 49, `schemas`: 63 | 21.46M | 51m 59s | 78%
-🟢 Test | `functions`: 46 | 6.62M | 34m 39s | 86%
-🟢 Realize | `functions`: 72 | 18.05M | 32m 21s | 90%
+🟢 Analyze | `actors`: 2, `documents`: 11 | 457.8K | 9m 38s | 100%
+🟢 Database | `namespaces`: 3, `models`: 14 | 1.81M | 4m 4s | 79%
+🟢 Interface | `operations`: 70, `schemas`: 84 | 90.89M | 45m 5s | 65%
+🟢 Test | `functions`: 52 | 8.80M | 7m 48s | 64%
+🔴 Realize | `functions`: 105, `errors`: 16 | 19.96M | 43m 40s | 89%
 
 
 ### `openai/gpt-4.1-mini` - `bbs`
@@ -506,17 +507,17 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
 - Score: 90
-- Elapsed Time: 1h 54m 45s
-- Token Usage: 36.97M
-- Function Calling Success Rate: 64.31%
+- Elapsed Time: 2h 49m 39s
+- Token Usage: 118.77M
+- Function Calling Success Rate: 66.31%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 11 | 902.8K | 10m 3s | 75%
-🟢 Database | `namespaces`: 2, `models`: 3 | 993.2K | 2m 38s | 73%
-🟢 Interface | `operations`: 16, `schemas`: 22 | 16.26M | 13m 19s | 74%
-🟢 Test | `functions`: 10 | 3.86M | 4m 24s | 26%
-🔴 Realize | `functions`: 23, `errors`: 2 | 14.96M | 53m 52s | 67%
+🟢 Analyze | `actors`: 3, `documents`: 12 | 1.09M | 6m 20s | 73%
+🟢 Database | `namespaces`: 3, `models`: 13 | 1.57M | 3m 8s | 93%
+🟢 Interface | `operations`: 28, `schemas`: 35 | 45.72M | 44m 20s | 57%
+🟢 Test | `functions`: 31 | 5.04M | 14m 57s | 89%
+🔴 Realize | `functions`: 37, `errors`: 2 | 11.94M | 32m 5s | 68%
 
 
 ### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
@@ -1280,3 +1281,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
+
+
+## `qwen/qwen3-next-80b-a3b-thinking`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+

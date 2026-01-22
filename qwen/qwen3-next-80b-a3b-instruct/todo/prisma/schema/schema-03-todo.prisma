@@ -1,0 +1,60 @@
+/// Individual todo items owned by authenticated users with title, completion
+/// status, and timestamps.
+///
+/// Each todo item represents a discrete task that a user creates, manages,
+/// and completes within their personal todo list. Todo items are
+/// intrinsically linked to the user who created them through a foreign key
+/// relationship, ensuring complete data isolation between users.
+///
+/// Items support full lifecycle management: creation with title, toggling
+/// completion status, and deletion. All modifications are tracked with
+/// precise timestamps. Soft deletion is implemented to maintain audit trails
+/// while allowing user-initiated removal.
+///
+/// This table is fundamental to the Todo component's core functionality,
+/// providing persistent storage for user-specific task data without
+/// duplicating user authentication information.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who owns this todo item. {@link todo_list_user.id}.
+  todo_list_user_id String
+  
+  /// Title of the todo item (1-500 characters). The primary identifier for the
+  /// task that users enter and manage.
+  title String
+  
+  /// Completion status of the todo item. True indicates the task is marked
+  /// complete, false indicates it is still pending.
+  completed Boolean
+  
+  /// Timestamp when this todo item was created. Always set to current time on
+  /// creation and never modified afterwards.
+  created_at DateTime
+  
+  /// Timestamp when this todo item was last modified. Updated on any change to
+  /// title or completion status.
+  updated_at DateTime
+  
+  /// Timestamp when this todo item was soft-deleted by the user. NULL
+  /// indicates the item is still active. Used to support undelete
+  /// functionality and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_list_user_id, id])
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+  @@index([todo_list_user_id, updated_at])
+}

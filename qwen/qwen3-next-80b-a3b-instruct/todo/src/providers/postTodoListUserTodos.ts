@@ -8,10 +8,12 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 import { TodoListTodoCollector } from "../collectors/TodoListTodoCollector";
+import { TodoListTodoTransformer } from "../transformers/TodoListTodoTransformer";
 
 export async function postTodoListUserTodos(props: {
   user: UserPayload;
@@ -21,29 +23,8 @@ export async function postTodoListUserTodos(props: {
     data: await TodoListTodoCollector.collect({
       body: props.body,
       todoListUser: { id: props.user.id },
-      todoListUserSession: { id: props.user.session_id },
     }),
+    ...TodoListTodoTransformer.select(),
   });
-  return {
-    id: created.id,
-    title: created.title,
-    details: created.description !== null ? created.description : undefined,
-    completed: created.status === "completed",
-    priority:
-      created.status === "high"
-        ? "high"
-        : created.status === "medium"
-          ? "medium"
-          : "low",
-    sequence: 0,
-    createdAt: toISOStringSafe(created.created_at),
-    user: {
-      id: props.user.id,
-      email: "",
-      username: "",
-      createdAt: toISOStringSafe(new Date(created.created_at)),
-      isActive: true,
-      role: "user",
-    },
-  };
+  return await TodoListTodoTransformer.transform(created);
 }

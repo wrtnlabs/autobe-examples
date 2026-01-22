@@ -1,74 +1,146 @@
-# Todo List Application Requirements Analysis
+# Multi-User Todo List Application - Functional Requirements Specification
 
 ## 1. Introduction
-This document specifies the business requirements and minimal functional scope for a Todo list application. The aim is to provide a backend system with essential functionality that supports creating, managing, tracking, and deleting todo items for authenticated users while enforcing proper access controls.
 
-## 2. User Actors and Permissions
-### Actors
-- **Guest**: Unauthenticated user with permission to register an account only.
-- **User**: Registered user able to create, read, update, and delete own todo items.
-- **Admin**: User with full permissions to manage all todo items and user accounts.
+The multi-user Todo list application provides a platform for registered users to manage their personal todo lists securely. Each user's todo items are private and inaccessible to other users.
 
-### Permissions Matrix
-| Permission                 | Guest | User  | Admin |
-|----------------------------|-------|-------|-------|
-| Register account           | ✅    | ❌    | ❌    |
-| Create todo item           | ❌    | ✅    | ✅    |
-| Read own todo items        | ❌    | ✅    | ✅    |
-| Update own todo items      | ❌    | ✅    | ✅    |
-| Delete own todo items      | ❌    | ✅    | ✅    |
-| Manage all todo items      | ❌    | ❌    | ✅    |
-| Manage user accounts       | ❌    | ❌    | ✅    |
+This service ensures robust user authentication and authorization to maintain data privacy and integrity.
 
-## 3. Functional Requirements
-### 3.1 Todo Item Creation
-WHEN a registered User submits a request to create a new todo item, THE system SHALL create the todo item with fields:
-- Title (text)
-- Description (optional text)
-- Due date (optional date)
-- Status (default to "pending")
+## 2. User Actors and Authentication
 
-### 3.2 Todo Item Retrieval
-WHEN a User requests the list of todo items, THE system SHALL return all todo items owned by that User.
+### 2.1 User Actors
 
-### 3.3 Todo Item Update
-WHEN a User requests to update a todo item they own, THE system SHALL update fields including title, description, due date, and status.
+- **Guest**: Unauthenticated users who can register and log in.
+- **User**: Authenticated users who can create, read, update, and delete their own todo items.
 
-### 3.4 Todo Item Deletion
-WHEN a User requests to delete a todo item they own, THE system SHALL permanently remove the todo item from the system.
+### 2.2 Authentication Requirements
 
-## 4. Authentication and Authorization
-- WHEN a user registers, THE system SHALL create a new account with secure password storage.
-- WHEN a user logs in with valid credentials, THE system SHALL issue a JWT access token valid for 15 minutes and a refresh token valid for 7 days.
-- WHEN a user logs out, THE system SHALL invalidate the active tokens.
-- THE system SHALL enforce access control to prevent unauthorized access to todo items.
+- WHEN a guest submits a registration request with a valid email and password, THE system SHALL create a new user account and store credentials securely using strong encryption.
+- WHEN a guest submits valid login credentials, THE system SHALL authenticate the user and issue JWT access and refresh tokens.
+- WHILE a user session is active, THE system SHALL maintain the session using access and refresh tokens.
+- WHEN a user registers, THE system SHALL send a verification email containing a secure token.
+- WHEN a user clicks the verification link, THE system SHALL mark the user's email as verified.
+- WHEN a user requests a password reset, THE system SHALL send a secure password reset email.
+- WHEN a user submits a new password, THE system SHALL update the stored credentials.
+- WHEN a user requests to log out, THE system SHALL invalidate the access token and refresh token.
 
-## 5. Data Model Overview
-The system SHALL maintain a Todo entity with fields: ID (UUID), Title, Description, Due Date, Status, Owner User ID (foreign key).
+### 2.3 Token Management
 
-## 6. User Interface Requirements
-- THE system SHALL support API endpoints for all CRUD operations on todo items.
-- THE system SHALL support user registration and authentication endpoints.
+- THE system SHALL use JSON Web Tokens (JWT) for access and refresh tokens.
+- Access tokens SHALL have a lifespan of 15 minutes.
+- Refresh tokens SHALL have a lifespan of 7 days.
+- THE system SHALL require secure storage of tokens on the client side, preferably using httpOnly cookies.
+- THE JWT payload SHALL include userId and role.
+- THE system SHALL allow a secure token refresh flow to obtain new access tokens.
 
-## 7. Business Rules
-- All todo items MUST belong to a registered User.
-- Users SHALL NOT access or modify todo items owned by others unless they are Admin.
-- Title field SHALL NOT be empty when creating or updating a todo item.
+### 2.4 Permission Matrix
+
+| Action                     | Guest | User |
+|----------------------------|-------|------|
+| Register                   | ✅    | ❌   |
+| Login                      | ✅    | ❌   |
+| Logout                     | ❌    | ✅   |
+| Create Todo Item           | ❌    | ✅   |
+| Read Own Todo Items        | ❌    | ✅   |
+| Update Own Todo Items      | ❌    | ✅   |
+| Delete Own Todo Items      | ❌    | ✅   |
+| Access Others' Todo Items  | ❌    | ❌   |
+
+### 2.5 Authentication Flow Diagram
+
+```mermaid
+graph LR
+  A["Guest Visits Site"] --> B{"Wants to Register?"}
+  B -->|"Yes"| C["Submit Registration"]
+  B -->|"No"| D{"Wants to Login?"}
+  D -->|"Yes"| E["Submit Login"]
+  D -->|"No"| F["Browse Public Content"]
+  C --> G["Email Verification Sent"]
+  G --> H["User Verifies Email"]
+  E --> I["Validate Credentials"]
+  I --> J{"Valid Credentials?"}
+  J -->|"Yes"| K["Issue JWT Tokens"]
+  J -->|"No"| L["Show Login Error"]
+  K --> M["Access Todo List Resources"]
+  L --> D
+
+  M --> N{"Access Token Expired?"}
+  N -->|"Yes"| O["Use Refresh Token"]
+  N -->|"No"| M
+  O --> P["Refresh Access Token"]
+  P --> M
+
+  subgraph "Logout Flow"
+    Q["User Requests Logout"] --> R["Invalidate Tokens"]
+  end
+
+  M -->|"Logout"| Q
+```
+
+## 3. Todo List Management
+
+### 3.1 Todo Item CRUD Operations
+
+- WHEN a user creates a todo item with valid title and optional description, THE system SHALL save the item associated with the user's account.
+- WHEN a user requests to read their todo list, THE system SHALL return only the items belonging to that user.
+- WHEN a user updates a todo item, THE system SHALL validate ownership and update the item accordingly.
+- WHEN a user deletes a todo item, THE system SHALL validate ownership and remove the item from storage.
+
+### 3.2 Privacy and Access Control
+
+- THE system SHALL ensure that each user's todo list is private and inaccessible to other users.
+- WHEN a user attempts to access or modify todo items that do not belong to them, THE system SHALL deny access and respond with a suitable error message.
+
+## 4. Business Rules
+
+- WHEN a todo item is created or updated, THE system SHALL validate that the title is non-empty and does not exceed 255 characters.
+- THE system SHALL enforce that todo descriptions do not exceed 1000 characters.
+- WHEN a user deletes a todo item, THE system SHALL perform a soft delete to allow recovery within 30 days.
+
+## 5. User Scenarios
+
+### 5.1 User Registration
+
+WHEN a guest submits a registration with valid email and password, THE system SHALL create an account, send a verification email, and mark the email as unverified until confirmed.
+
+### 5.2 User Login
+
+WHEN a user submits valid credentials, THE system SHALL authenticate and issue JWT tokens for session management.
+
+### 5.3 Todo Management
+
+WHEN a user creates, reads, updates, or deletes todo items, THE system SHALL allow only access to their own items.
+
+### 5.4 Unauthorized Access Handling
+
+WHEN unauthorized access is attempted, THE system SHALL respond with HTTP 403 Forbidden and a descriptive error.
+
+## 6. Security and Privacy
+
+- THE system SHALL encrypt all sensitive data such as passwords using secure hashing algorithms.
+- THE system SHALL ensure all communication between client and server is secured via HTTPS.
+- THE system SHALL implement rate limiting on authentication endpoints to prevent brute force attacks.
+- THE system SHALL log authentication failures for audit and troubleshooting.
+
+## 7. Performance
+
+- THE system SHALL respond to authentication and todo requests within 500 milliseconds under normal load.
+- THE system SHALL handle concurrent user access with proper session isolation.
+- THE system SHALL support horizontal scalability by stateless server design.
 
 ## 8. Error Handling
-- WHEN an invalid request is received, THE system SHALL respond with appropriate HTTP status codes (e.g., 400, 401, 403).
-- WHEN authentication fails, THE system SHALL provide clear error messages.
 
-## 9. Performance Requirements
-- THE system SHALL respond to API requests within 500 milliseconds under typical load.
+- WHEN a request includes invalid data, THE system SHALL respond with HTTP 400 Bad Request and a message explaining the validation failure.
+- WHEN an authenticated user attempts forbidden operations, THE system SHALL respond with HTTP 403 Forbidden.
+- WHEN an internal error occurs, THE system SHALL respond with HTTP 500 Internal Server Error and log the error details for investigation.
 
-## 10. Security
-- THE system SHALL store passwords securely using industry-standard hashing algorithms.
-- THE system SHALL support token revocation and refresh mechanisms.
+## 9. Future Enhancements
 
-## 11. Glossary
-- **Todo item**: A task entity with descriptive fields used to track personal tasks.
-- **JWT**: JSON Web Token used for stateless authentication.
+- Support for multiple todo lists per user.
+- Collaborative shared todo lists with fine-grained permissions.
+- Integration with external calendar services.
+- Biometric authentication options.
 
-## 12. Appendices
-Includes references to user actor roles and authentication mechanisms as detailed in supporting documentation.
+---
+
+This detailed specification supports the development of a minimal yet secure multi-user Todo list backend application, ensuring user authentication, authorization, data privacy, and proper error handling.

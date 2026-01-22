@@ -1,47 +1,323 @@
-/// System configuration key-value storage for the Todo List application.
+/// Guest user identity and profile information for the todoApp system.
 ///
-/// Stores system-wide parameters and settings that control application
-/// behavior and feature toggles. Each configuration entry contains a unique
-/// key name, associated string value, human-readable description, and
-/// lifecycle timestamps. This facilitates dynamic configuration without
-/// requiring code changes or system redeployment.
+/// Stores unauthenticated user records who may access limited system
+/// features before full registration or authentication. Each guest is
+/// represented by a unique identifier string that can be used to track their
+/// interactions or sessions during their transient usage period.
 ///
-/// Configurations are managed independently and may be updated by
-/// administrators or system processes. The table supports soft deletion to
-/// preserve audit trails and enable recovery if necessary.
+/// Guests have creation and update timestamps for auditing, and soft
+/// deletion support to allow removal without permanent data loss. Guest
+/// records serve as a foundation for managing temporary or transient users
+/// separately from registered authenticated users.
+///
+/// This table has a primary key UUID "id" and includes a unique guest
+/// identifier string. It is functionally independent from user-related
+/// tables handled in other components but may relate indirectly through
+/// session tables already defined separately.
+///
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_system_configurations {
+model todo_app_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifier used for lookup and management.
-  key String
+  /// Unique string identifier for the guest user, used to track transient
+  /// users prior to registration.
+  guest_identifier String
   
-  /// Configuration value stored as string, typically representing a setting or
-  /// parameter value.
-  value String
-  
-  /// Human-readable explanation of the configuration entry and its purpose.
-  description String?
-  
-  /// Timestamp when the configuration entry was created.
+  /// Timestamp when the guest record was created.
   created_at DateTime
   
-  /// Timestamp when the configuration entry was last modified.
+  /// Timestamp when the guest record was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp indicating when the entry was marked deleted, if
+  /// Soft delete timestamp indicating when the guest record was deleted, if
   /// applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
+  guestSessions todo_app_guest_sessions[]
+  accessTokens todo_app_access_tokens[]
+  
+  @@unique([guest_identifier])
+}
+
+/// Guest user authentication sessions tracking login states and connection
+/// metadata.
+///
+/// Each session belongs to a single guest user and records information about
+/// the connection such as IP address, URL accessed (href), and referrer URL.
+/// Sessions are append-only with timestamps marking creation and expiration
+/// for lifecycle management.
+///
+/// This table supports auditing of guest login activity and helps maintain
+/// system security and session validity. It references {@link
+/// todo_app_guests.id} to link the session to the guest identity.
+///
+/// The model is architected as an actor session entity with standalone
+/// lifecycle, appropriate for managing ephemeral guest session data.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the guest user. {@link todo_app_guests.id}.
+  guest_id String
+  
+  /// IP address of the guest session connection.
+  ip String
+  
+  /// URL accessed during the session.
+  href String
+  
+  /// Referrer URL from which the session originated.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp. Sessions must have expiration for security.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guest todo_app_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([guest_id, created_at])
+}
+
+/// JWT access tokens issued to users or guests for authentication and
+/// authorization.
+///
+/// This table stores the active and historical access tokens, including
+/// token string, type, and timestamps indicating issuance, expiry, and
+/// revocation.
+///
+/// Foreign keys link tokens to either registered users or guest users,
+/// supporting multiple token types for flexible authentication mechanisms.
+///
+/// Used in security workflows to validate user sessions and authorize API
+/// requests. Tokens can be revoked and tracked for security audits.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_access_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Reference to the registered user who owns this token. {@link
+  /// todo_app_users.id}.
+  todo_app_user_id String?
+  
+  /// Reference to the guest user who owns this token. {@link
+  /// todo_app_guests.id}.
+  todo_app_guest_id String?
+  
+  /// Reference to the user session during which this token was issued. {@link
+  /// todo_app_user_sessions.id}.
+  todo_app_user_session_id String?
+  
+  /// JWT access token string used for authenticating requests.
+  token String
+  
+  /// Type of the token, e.g., 'access', 'api', or 'refresh'.
+  type String
+  
+  /// Timestamp when the token was issued.
+  issued_at DateTime
+  
+  /// Timestamp when the token expires.
+  expired_at DateTime
+  
+  /// Timestamp when the token was revoked, if applicable.
+  revoked_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  guest todo_app_guests? @relation(fields: [todo_app_guest_id], references: [id], onDelete: Cascade)
+  userSession todo_app_user_sessions? @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_guest_id])
+  @@index([todo_app_user_session_id])
+  
+  @@unique([token])
+  @@index([todo_app_user_id, type])
+}
+
+/// Refresh tokens issued to authenticated users for secure session renewal
+/// and longevity.
+///
+/// This table manages JWT refresh tokens linked to specific users and their
+/// authenticated sessions. It stores the token string, creation timestamp,
+/// and expiration timestamp to enforce valid session duration policies.
+///
+/// Each refresh token directly references a user and the session it
+/// originated from, enabling secure token revocation and audit capabilities.
+/// This design supports efficient lookup and management of active and
+/// expired tokens in the authentication subsystem.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifying the refresh token record uniquely.
+  id String @id
+  
+  /// The user associated with this refresh token. {@link todo_app_users.id}.
+  user_id String
+  
+  /// The user session that this refresh token is linked to. {@link
+  /// todo_app_user_sessions.id}.
+  user_session_id String
+  
+  /// JWT refresh token string used to obtain new access tokens.
+  refresh_token String
+  
+  /// Timestamp when the refresh token was created.
+  created_at DateTime
+  
+  /// Timestamp when the refresh token expires, enforcing session validity
+  /// duration.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  userSession todo_app_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([refresh_token])
+  @@index([user_id, expired_at])
+  @@index([user_session_id, expired_at])
+}
+
+/// Global application configuration settings accessible system-wide.
+///
+/// This table stores key-value pairs representing various configuration
+/// parameters used throughout the todoApp system. Each configuration entry
+/// includes a unique key, a value stored as a string, and the data type of
+/// the value for proper interpretation.
+///
+/// Configuration entries can be independently created, updated, and deleted
+/// by authorized system components or administrators.
+/// Soft deletion is supported via the deleted_at timestamp to maintain
+/// historical context and enable recovery.
+///
+/// Timestamps created_at and updated_at provide audit trails for changes in
+/// configuration settings.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key UUID for configuration entry.
+  id String @id
+  
+  /// Unique configuration key identifying the setting.
+  key String
+  
+  /// Configuration value stored as a string; interpretation depends on the
+  /// type field.
+  value String
+  
+  /// Data type of the configuration value (e.g., string, int, boolean) for
+  /// parsing and validation.
+  type String
+  
+  /// Optional human-readable description explaining the purpose of this
+  /// configuration.
+  description String?
+  
+  /// Timestamp when the configuration entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion; null means the configuration is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
   @@unique([key])
-  @@index([created_at, updated_at])
+  @@index([created_at])
+}
+
+/// System security policies and feature flags controlling application behavior.
+///
+/// Stores key-value pairs representing various security and feature toggles
+/// used to configure system behavior dynamically. Each policy has a
+/// descriptive text explaining its purpose.
+///
+/// Supports soft deletion for safe policy deactivation without permanent
+/// data loss. Active flag indicates whether the policy is currently
+/// enforced.
+///
+/// This table serves as a central configuration point for security settings
+/// enforceable across the entire todo app system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_security_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the security policy or feature flag.
+  key String
+  
+  /// Value of the security policy, representing its configuration state or
+  /// setting.
+  value String
+  
+  /// Optional detailed explanation of the policy's purpose and usage.
+  description String?
+  
+  /// Indicates whether the policy is currently active and enforced.
+  active Boolean
+  
+  /// Timestamp indicating when the policy was created.
+  created_at DateTime
+  
+  /// Timestamp indicating when the policy was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to mark the policy as logically deleted without
+  /// removing it from the database.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
 }
