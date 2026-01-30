@@ -6,14 +6,14 @@ import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
+import type { ICommunityBbsAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsAdmin";
 export async function authorize_admin_login(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformAdmin.ILogin;
+    body: ICommunityBbsAdmin.ILogin;
   },
-): Promise<ICommunityPlatformAdmin.IAuthorized> {
-  return await api.functional.auth.admin.login(connection, {
+): Promise<ICommunityBbsAdmin.IAuthorized> {
+  return await api.functional.communityBbs.auth.admin.login(connection, {
     body: props.body,
   });
 }

@@ -15,17 +15,13 @@ export namespace TodoAppUserPasswordResetTransformer {
     return {
       select: {
         id: true,
+        todo_app_user_id: true,
         token: true,
         expires_at: true,
         requested_at: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        todoAppUser: {
-          select: {
-            id: true,
-          },
-        },
       },
     } satisfies Prisma.todo_app_user_password_resetsFindManyArgs;
   }
@@ -34,13 +30,12 @@ export namespace TodoAppUserPasswordResetTransformer {
   ): Promise<ITodoAppUserPasswordReset> {
     return {
       id: input.id,
-      todo_app_user_id: input.todoAppUser.id,
+      todo_app_user_id: input.todo_app_user_id,
       token: input.token,
       expires_at: input.expires_at?.toISOString() ?? null,
       requested_at: input.requested_at?.toISOString() ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

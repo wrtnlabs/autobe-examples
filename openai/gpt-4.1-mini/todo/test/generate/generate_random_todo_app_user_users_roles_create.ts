@@ -13,16 +13,14 @@ export async function generate_random_todo_app_user_users_roles_create(
   connection: api.IConnection,
   props: {
     body?: DeepPartial<ITodoAppUserRole.ICreate> | undefined;
-    params: {
-      userId: string;
-    };
   },
 ): Promise<ITodoAppUserRole> {
   const prepared: ITodoAppUserRole.ICreate = prepare_random_todo_app_user_role(
     props.body,
   );
-  return await api.functional.todoApp.user.users.roles.create(connection, {
-    userId: props.params.userId,
-    body: prepared,
-  });
+  const result: ITodoAppUserRole =
+    await api.functional.todoApp.user.users.roles.create(connection, {
+      body: prepared,
+    });
+  return result;
 }

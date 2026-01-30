@@ -9,7 +9,10 @@ export function prepare_random_todo_app_user_password_reset(
   input?: DeepPartial<ITodoAppUserPasswordReset.ICreate>,
 ): ITodoAppUserPasswordReset.ICreate {
   return {
-    todo_app_user_id:
-      input?.todo_app_user_id ?? typia.random<string & tags.Format<"uuid">>(),
+    token: input?.token ?? RandomGenerator.alphaNumeric(32),
+    expires_at:
+      input?.expires_at ?? new Date(Date.now() + 86400000).toISOString(),
+    requested_at:
+      input?.requested_at ?? new Date(Date.now() - 86400000).toISOString(),
   };
 }

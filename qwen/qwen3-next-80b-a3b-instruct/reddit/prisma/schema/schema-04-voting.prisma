@@ -1,0 +1,175 @@
+/// Records all upvotes and downvotes on posts, including voter ID, post ID,
+/// vote type, and timestamp.
+///
+/// This table captures individual voting actions on posts, tracking whether
+/// a member upvoted or downvoted a specific post. Each vote is uniquely tied
+/// to one member account and one post, forming a many-to-many relationship
+/// between members and posts through voting actions.
+///
+/// Votes are immutable - once recorded, they cannot be changed. If a user
+/// changes their vote, a new vote record is created and the previous one is
+/// soft-deleted and tracked in this same table. This provides a complete
+/// audit trail of voting behavior for fraud detection and analytics
+/// purposes.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_votes_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's {@link community_bbs_member.id}.
+  community_bbs_member_id String
+  
+  /// Target post's {@link community_bbs_posts.id}.
+  community_bbs_post_id String
+  
+  /// Type of vote: "upvote" or "downvote". Must be one of these two values as
+  /// specified in requirements.
+  vote_type String
+  
+  /// Timestamp when the vote was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., soft-deleted or
+  /// reversed).
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating when the vote was invalidated. Null
+  /// means vote is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_bbs_member @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  post community_bbs_posts @relation(fields: [community_bbs_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_bbs_member_id, community_bbs_post_id], map: "community_bbs_votes_posts_community_bbs_member_id_comm_e5fc2346")
+  @@index([community_bbs_post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_member_id, created_at], map: "community_bbs_votes_posts_community_bbs_member_id_crea_e040a461")
+  @@index([vote_type, created_at])
+}
+
+/// Records all upvotes and downvotes on comments, including voter ID,
+/// comment ID, vote type, and timestamp. Enforces karma ≥100 threshold for
+/// voting on comments.
+///
+/// Each vote is an immutable record tied to a specific user and comment. The
+/// system checks the voter's karma score against the threshold (100) before
+/// allowing a vote submission. Votes are preserved even if the associated
+/// comment is deleted to maintain audit integrity. This table is critical
+/// for anti-manipulation systems and reputation calculations.
+///
+/// The primary key is a UUID, and a composite unique index prevents
+/// duplicate votes from the same user on the same comment. Karma evaluation
+/// is performed at the application level by querying the
+/// community_bbs_member table.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_votes_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's profile. {@link community_bbs_member.id}.
+  community_bbs_member_id String
+  
+  /// Target comment being voted on. {@link community_bbs_comments.id}.
+  community_bbs_comments_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'. Must be one of these two values.
+  type String
+  
+  /// Timestamp when the vote was cast. Standard for all business entities.
+  created_at DateTime
+  
+  /// Timestamp of last update. This is maintained for consistency with
+  /// engineering standards, though votes are immutable.
+  updated_at DateTime
+  
+  /// Soft delete marker. Preserved even when comment is deleted for audit
+  /// trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  voter community_bbs_member @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  comment community_bbs_comments @relation(fields: [community_bbs_comments_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_bbs_member_id, community_bbs_comments_id], map: "community_bbs_votes_comments_community_bbs_member_id_c_886a5cf8")
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_comments_id, created_at], map: "community_bbs_votes_comments_community_bbs_comments_id_e83642d6")
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_member_id, created_at], map: "community_bbs_votes_comments_community_bbs_member_id_c_cf4bbece")
+}
+
+/// Tracks coordinated voting patterns that trigger fraud detection,
+/// including suspect voter clusters, vote timing patterns, and device
+/// fingerprints associated with suspicious behavior.
+///
+/// This subsidiary table automatically generates detection records when the
+/// system's anomaly detection algorithms identify suspicious voting
+/// patterns. It serves as an audit trail for potential vote manipulation and
+/// supports the moderation system by identifying fraudulent activity.
+///
+/// Each record represents a detected anomaly event generated by automated
+/// analysis, not user interaction. The system uses this data to flag
+/// suspicious accounts and provide evidence for human moderation review. All
+/// detection data is immutable and permanently preserved for compliance and
+/// audit purposes.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_votes_anomalies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the anomaly was detected and recorded by the system.
+  created_at DateTime
+  
+  /// Timestamp when this anomaly record was last updated (typically when
+  /// detection score is refined).
+  updated_at DateTime
+  
+  /// JSON-encoded array of user IDs that formed the suspicious cluster (e.g.,
+  /// "[\"u123\", \"u456\", \"u789\"]").
+  voter_clusters String
+  
+  /// JSON-encoded representation of voting timing patterns, including
+  /// intervals, frequencies, and temporal sequences observed.
+  vote_timing_patterns String
+  
+  /// JSON-encoded array of device signatures associated with the suspicious
+  /// voting activity, including IP addresses, user agents, and hardware
+  /// identifiers.
+  device_fingerprints String
+  
+  /// Name of the algorithm that detected this anomaly (e.g.,
+  /// "cluster_detection_v3", "timing_anomaly_detector").
+  detection_algorithm String
+  
+  /// Confidence score (0.0-1.0) indicating the likelihood that this detection
+  /// represents actual fraudulent activity.
+  detection_score Float
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([detection_score])
+  @@index([detection_algorithm])
+}

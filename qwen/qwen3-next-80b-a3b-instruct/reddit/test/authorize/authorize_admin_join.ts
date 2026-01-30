@@ -6,18 +6,18 @@ import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
+import type { ICommunityBbsAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsAdmin";
 export async function authorize_admin_join(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformAdmin.IJoin;
+    body: ICommunityBbsAdmin.IJoin;
   },
-): Promise<ICommunityPlatformAdmin.IAuthorized> {
+): Promise<ICommunityBbsAdmin.IAuthorized> {
   const joinInput = {
     email: props.body.email ?? `${RandomGenerator.alphaNumeric(8)}@wrtn.io`,
-    href: props.body.href ?? "https://example.com/join",
-    referrer: props.body.referrer ?? "https://example.com",
-    ip: props.body.ip ?? null,
-  } satisfies ICommunityPlatformAdmin.IJoin;
-  return await api.functional.auth.admin.join(connection, { body: joinInput });
+    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+  } satisfies ICommunityBbsAdmin.IJoin;
+  return await api.functional.communityBbs.auth.admin.join(connection, {
+    body: joinInput,
+  });
 }

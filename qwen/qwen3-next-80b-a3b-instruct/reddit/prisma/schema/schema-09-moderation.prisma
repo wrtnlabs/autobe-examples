@@ -1,0 +1,609 @@
+/// Submitted reports of content violations by users, containing reporter ID,
+/// target ID, violation category, and timestamp.
+///
+/// Records user-submitted reports of inappropriate content across posts,
+/// comments, communities, and other platform entities. Each report is
+/// associated with a specific user actor (via
+/// community_bbs_reported_by_users), a target content entity (identified by
+/// target_id and target_type), and a violation category from the master
+/// list.
+///
+/// This table forms the foundation of the moderation workflow, enabling
+/// users to flag content for review by moderators. The system preserves all
+/// reports for audit and transparency purposes, even when the reported
+/// content is later deleted or modified. Reports can be linked to multiple
+/// violation categories and are tracked through their entire lifecycle via
+/// the community_bbs_report_statuses table.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the violation category defining the nature of the reported
+  /// content. {@link community_bbs_violation_categories.id}.
+  violation_category_id String
+  
+  /// The unique identifier of the content being reported. Can reference a
+  /// post, comment, community, or other entity.
+  target_id String
+  
+  /// The type of content being reported, indicating the source table (e.g.,
+  /// 'post', 'comment', 'community'). Used with target_id to implement
+  /// polymorphic relationship.
+  target_type String
+  
+  /// Optional user-provided description explaining why the content was
+  /// reported, including additional context or evidence.
+  description String?
+  
+  /// Timestamp when the report was originally submitted by the user.
+  created_at DateTime
+  
+  /// Timestamp when the report was last modified (e.g., status changed,
+  /// additional information added).
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp. Null indicates active report. Non-null indicates
+  /// report has been soft-deleted for moderation or policy reasons.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reportss community_bbs_violation_categories @relation(fields: [violation_category_id], references: [id], onDelete: Cascade)
+  
+  moderatorActions community_bbs_moderator_actions[]
+  reportedBy community_bbs_reported_by_users?
+  
+  @@unique([target_id, target_type])
+  @@index([created_at])
+  @@index([violation_category_id])
+}
+
+/// Permanent records of moderation penalties applied to users, including
+/// penalty type, duration, reason, and applying moderator.
+///
+/// This table serves as the immutable audit trail of all enforcement actions
+/// taken against users for violations of community guidelines. Each record
+/// represents a definitive, non-reversible decision made by a moderator or
+/// the platform's automated system.
+///
+/// Penalties are captured as historical snapshots and never modified after
+/// issuance. This ensures legal compliance and fairness by preserving the
+/// exact state of the penalty at the time it was applied.
+///
+/// Linkage to actors is handled through the community_bbs_penalized_users
+/// junction table which correctly manages polymorphic ownership across
+/// member, moderator, and admin actor types. The penalty's reason and type
+/// are referenced from standardized categories in
+/// community_bbs_violation_categories for consistency.
+///
+/// The applying moderator is tracked via community_bbs_moderator_actions,
+/// ensuring full auditability. This table's snapshot stance ensures perfect
+/// integrity for appeals, investigations, and public transparency reports.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_penalties {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The violation category that triggered this penalty. {@link
+  /// community_bbs_violation_categories.id}.
+  violation_category_id String
+  
+  /// The moderator action that issued this penalty. {@link
+  /// community_bbs_moderator_actions.id}.
+  moderator_action_id String
+  
+  /// The type of penalty applied. Valid values: 'warning',
+  /// 'temporary_suspension', 'permanent_ban'.
+  penalty_type String
+  
+  /// Duration of temporary suspension in hours. 0 for warning, -1 for
+  /// permanent ban.
+  duration_hours Int
+  
+  /// Detailed explanation of why this penalty was issued, including specific
+  /// violations observed.
+  reason String
+  
+  /// Timestamp when this penalty was issued and recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated (typically never, since this
+  /// is a snapshot).
+  updated_at DateTime
+  
+  /// Optional timestamp for soft deletion. Null means record is active and
+  /// valid.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  violationCategory community_bbs_violation_categories @relation(fields: [violation_category_id], references: [id], onDelete: Cascade)
+  moderatorAction community_bbs_moderator_actions @relation(fields: [moderator_action_id], references: [id], onDelete: Cascade)
+  
+  appeals community_bbs_appeals[]
+  penalizedUsers community_bbs_penalized_users[]
+  
+  @@index([violation_category_id, created_at])
+  @@index([moderator_action_id, created_at])
+}
+
+/// Appeal requests submitted by users against moderation penalties, with
+/// reason, status, and resolution timestamp.
+///
+/// Users can submit formal appeals when they disagree with moderation
+/// decisions such as bans, content removal, or karma penalties. Each appeal
+/// represents a request for review and potential reversal of a penalty.
+///
+/// The appeal system ensures due process for users by providing a structured
+/// mechanism to challenge moderation actions. Appeals remain active until
+/// resolved by a moderator or administrator, and may be escalated if not
+/// addressed within a reasonable timeframe.
+///
+/// Appeal status tracks the lifecycle: open (pending review), resolved
+/// (decision made), escalated (moderator escalation), or dismissed (appeal
+/// rejected). All appeals are immutable once resolved and preserved in audit
+/// history.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The penalty this appeal is challenging. {@link
+  /// community_bbs_penalties.id}.
+  penalty_id String
+  
+  /// The user's written justification for appealing the penalty. Must describe
+  /// why the user believes the penalty was unjustified or excessive.
+  reason String
+  
+  /// Current status of the appeal. Valid values: 'open', 'resolved',
+  /// 'escalated', 'dismissed'. Determines visibility and processing workflow.
+  status String
+  
+  /// Optional note from the moderator or administrator who resolved the
+  /// appeal, explaining the final decision and rationale.
+  resolution_note String?
+  
+  /// Timestamp when the appeal was resolved (status changed to resolved or
+  /// dismissed). Null until resolved.
+  resolved_at DateTime?
+  
+  /// When the appeal was originally submitted by the user.
+  created_at DateTime
+  
+  /// When the appeal status was last modified, including when resolved or
+  /// escalated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used to preserve audit trails while logically
+  /// removing appeals from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  penalty community_bbs_penalties @relation(fields: [penalty_id], references: [id], onDelete: Cascade)
+  
+  appealSubmitters community_bbs_appeal_submitters[]
+  
+  @@index([status])
+  @@index([created_at])
+  @@index([penalty_id, status])
+  @@index([resolved_at])
+}
+
+/// Master reference table of violation category codes and definitions used
+/// in reports
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_violation_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for this violation category.
+  code String
+  
+  /// Human-readable name of the violation category.
+  name String
+  
+  /// Detailed explanation of what constitutes a violation in this category.
+  description String
+  
+  /// Severity level of violation: 'low', 'medium', 'high', 'critical'.
+  severity String
+  
+  //----
+  // RELATIONS
+  //----
+  postReportsses community_bbs_post_reports[]
+  reportsses community_bbs_reports[]
+  penalties community_bbs_penalties[]
+  userReports community_bbs_user_reports[]
+  
+  @@unique([code])
+  @@index([severity])
+}
+
+/// Automated moderation flags triggered by ML or rule-based systems on
+/// content prior to manual review.
+///
+/// System-generated records that detect potential policy violations in posts
+/// or comments before human moderation. These flags are created
+/// automatically by content scanning engines based on AI detection, spam
+/// patterns, or keyword matching.
+///
+/// Each flag includes a confidence score indicating the system's certainty
+/// about the violation. Flags are processed asynchronously by moderators who
+/// then make final decisions via moderator_actions.
+///
+/// This table is strictly append-only and supports soft deletion for audit
+/// compliance. It does not represent content state but rather
+/// system-generated detection events.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_moderation_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of the target content being flagged (posts, comments). This is
+  /// polymorphic and references either community_bbs_posts.id or
+  /// community_bbs_comments.id.
+  target_id String
+  
+  /// Type of target content being flagged. Must be either 'post' or 'comment'.
+  /// Used with target_id to determine which component table holds the content.
+  target_type String
+  
+  /// Type of automation flag triggered. Examples: 'ai_generated_text',
+  /// 'spam_url', 'suspicious_keyword', 'repetitive_syntax', 'affilate_link',
+  /// 'inappropriate_image'.
+  flag_type String
+  
+  /// System confidence level (0.0 to 1.0) that the flag accurately represents
+  /// a violation. Higher scores indicate more certain violations.
+  confidence_score Float
+  
+  /// Timestamp when the automated flag was generated by the system.
+  created_at DateTime
+  
+  /// Soft delete timestamp. If null, flag is active. If set, flag has been
+  /// logically deleted, typically during system cleanup or reprocessing.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([target_id, target_type, flag_type], map: "community_bbs_moderation_flags_target_id_target_type_f_b44ef5ad")
+  @@index([target_id])
+  @@index([created_at])
+}
+
+/// Audit trail of all moderator actions, including reported content review,
+/// penalty application, and appeal resolution with justification.
+///
+/// This table records every decision made by moderators pertaining to
+/// user-reported content, penalty enforcement, or appeal resolutions. It
+/// serves as an immutable audit log for platform transparency and
+/// accountability.
+///
+/// Each action entry is linked to the specific moderation target (report,
+/// penalty, appeal, violation category, or moderation flag) through
+/// target_id and target_type fields. The action_type defines the nature of
+/// the moderator's decision, while justification provides the reasoning
+/// behind the action. This table ensures compliance with platform
+/// transparency requirements and enables detailed forensic analysis of
+/// moderation workflows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_moderator_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link community_bbs_moderator.id}.
+  moderator_id String
+  
+  /// The ID of the target entity being acted upon, which could be a report,
+  /// penalty, appeal, violation category, or moderation flag. {@link
+  /// community_bbs_reports.id}.
+  target_id String
+  
+  /// The type of target entity (e.g., 'report', 'penalty', 'appeal',
+  /// 'violation_category', 'moderation_flag') being acted upon. This enables
+  /// polymorphic association with different moderation entities.
+  target_type String
+  
+  /// Type of moderator action taken. Valid values: 'confirm_report' (accepted
+  /// report and removed content), 'dismiss_report' (rejected report without
+  /// action), 'warn_user' (issued warning to author), 'notify_appeal_rights'
+  /// (informed user of appeal rights), 'escalate' (escalated case to admin),
+  /// 'apply_penalty' (applied penalty), 'resolve_appeal' (resolved appeal).
+  action_type String
+  
+  /// Detailed reasoning provided by the moderator for their decision. Must
+  /// include specific policy reference and evidence basis.
+  justification String
+  
+  /// Timestamp when the moderator action was performed. Records the exact
+  /// moment of decision.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_bbs_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  target community_bbs_reports @relation(fields: [target_id], references: [id], onDelete: Cascade)
+  
+  penalties community_bbs_penalties[]
+  temporarySuspensions community_bbs_temporary_suspensions[]
+  
+  @@index([moderator_id, created_at])
+  @@index([target_id, target_type])
+}
+
+/// Records temporary suspensions imposed on users as part of the penalty
+/// enforcement system.
+///
+/// Tracks users who have been temporarily restricted from posting or
+/// commenting as a result of moderation penalties. Suspensions are
+/// automatically enforced based on penalty records created by moderators and
+/// expire automatically when the designated period ends.
+///
+/// This table links to the penalty system via community_bbs_penalized_users,
+/// which connects the underlying penalties with the specific user actor
+/// types. The suspension state is active until the end_at timestamp is
+/// reached, at which point it is automatically cleared by the system.
+///
+/// Suspensions are managed by the moderation workflow and not directly
+/// interacted with by users, making this a supporting entity in the
+/// moderation system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_temporary_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refers to the user who received the penalty, linked through the
+  /// penalized_users junction table. {@link community_bbs_penalized_users.id}.
+  penalized_user_id String
+  
+  /// References the moderator action that imposed this suspension. {@link
+  /// community_bbs_moderator_actions.id}.
+  moderator_action_id String
+  
+  /// The date and time when the temporary suspension took effect.
+  start_at DateTime
+  
+  /// The date and time when the temporary suspension automatically expires and
+  /// is lifted.
+  end_at DateTime
+  
+  /// Indicates whether the suspension is currently active (true) or has
+  /// expired (false).
+  is_active Boolean
+  
+  /// Timestamp when this suspension record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this suspension record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  penalizedUser community_bbs_penalized_users @relation(fields: [penalized_user_id], references: [id], onDelete: Cascade)
+  moderatorAction community_bbs_moderator_actions @relation(fields: [moderator_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_action_id])
+  
+  @@index([end_at])
+  @@index([is_active, end_at])
+  // spellchecker: ignore-next-line
+  @@index([penalized_user_id, is_active], map: "community_bbs_temporary_suspensions_penalized_user_id__52e8a054")
+}
+
+/// Link table between reports and the specific user actors who reported
+/// content violations.
+///
+/// This junction table establishes the relationship between a reported
+/// content item and the actor who submitted the report. It supports the
+/// system's requirement that reports can be submitted by any actor type
+/// (guest, member, moderator, or admin), maintaining referential integrity
+/// without nullable foreign keys.
+///
+/// The table does not store any data about the report content itself - it
+/// solely exists to link the community_bbs_reports table to the appropriate
+/// actor entity. This design ensures that reporting behavior can be tracked
+/// across all actor types while maintaining proper database normalization
+/// and avoiding polymorphic null fields.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_reported_by_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The specific report being submitted. {@link community_bbs_reports.id}.
+  community_bbs_report_id String
+  
+  /// The guest user who submitted the report (if actor type is 'guest').
+  /// {@link community_bbs_guest.id}.
+  community_bbs_guest_id String?
+  
+  /// The member user who submitted the report (if actor type is 'member').
+  /// {@link community_bbs_member.id}.
+  community_bbs_member_id String?
+  
+  /// The moderator user who submitted the report (if actor type is
+  /// 'moderator'). {@link community_bbs_moderator.id}.
+  community_bbs_moderator_id String?
+  
+  /// The administrator who submitted the report (if actor type is 'admin').
+  /// {@link community_bbs_admin.id}.
+  community_bbs_admin_id String?
+  
+  /// The type of actor who submitted the report. Must be one of: 'guest',
+  /// 'member', 'moderator', or 'admin'. This field implements polymorphic
+  /// ownership by specifying which actor subtype table contains the actual
+  /// actor reference. The corresponding actor subtype table has a 1:1
+  /// relationship with this record.
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  report community_bbs_reports @relation(fields: [community_bbs_report_id], references: [id], onDelete: Cascade)
+  guestActor community_bbs_guest? @relation(fields: [community_bbs_guest_id], references: [id], onDelete: Cascade)
+  memberActor community_bbs_member? @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  moderatorActor community_bbs_moderator? @relation(fields: [community_bbs_moderator_id], references: [id], onDelete: Cascade)
+  adminActor community_bbs_admin? @relation(fields: [community_bbs_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_bbs_report_id])
+  @@unique([community_bbs_guest_id])
+  @@unique([community_bbs_member_id])
+  @@unique([community_bbs_moderator_id])
+  @@unique([community_bbs_admin_id])
+}
+
+/// Link table that serves as the main entity in a polymorphic relationship
+/// between penalties and actor types (member, admin, or guest).
+///
+/// This table establishes the reference point for which actor type received
+/// each penalty, enabling the creation of subtype entities for each actor
+/// type. It does not store actual actor identifiers but rather identifies
+/// the type of actor and serves as the parent for three separate 1:1
+/// relationships with the actor-specific subtype tables. This pattern
+/// maintains referential integrity and follows 3NF normalization principles.
+/// Each subtype table will contain the actual actor identifier and session
+/// data, linked by a unique 1:1 relationship.
+///
+/// The table enables audit trails for moderation actions while maintaining
+/// data integrity, as each actor type's specific relationship is enforced at
+/// the database level through its dedicated subtype entity. This structure
+/// allows for future extension to new actor types without schema migration
+/// of this main entity.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_penalized_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the penalty that was applied to the actor. {@link
+  /// community_bbs_penalties.id}.
+  penalty_id String
+  
+  /// Identifies the type of actor who received the penalty (member, admin, or
+  /// guest). This field determines which subtype entity contains the actual
+  /// actor identifier.
+  actor_type String
+  
+  /// Timestamp when this penalty-to-actor relationship was established.
+  created_at DateTime
+  
+  /// Soft delete timestamp for reversing penalties. If null, the penalty
+  /// association is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  penalty community_bbs_penalties @relation(fields: [penalty_id], references: [id], onDelete: Cascade)
+  
+  temporarySuspensions community_bbs_temporary_suspensions[]
+  
+  @@unique([penalty_id])
+  @@index([actor_type, created_at])
+}
+
+/// Junction table linking appeals to the specific actor types who submitted
+/// them (member, admin, or guest).
+///
+/// This table enables polymorphic ownership of appeals, allowing users of
+/// any authenticated type (member, admin, or guest) to submit an appeal
+/// against a moderation penalty. The table stores the reference to the
+/// appeal and the identifying information of the submitting actor, with
+/// actor_type determining which actor table contains the actual actor
+/// record.
+///
+/// This pattern ensures referential integrity while accommodating multiple
+/// actor types without requiring nullable fields or complex joins. The table
+/// is immutable once created and is not directly managed by users — it is
+/// populated only through the appeals system.
+///
+/// Use this table to query all appeals submitted by a specific actor type
+/// and ID.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_appeal_submitters {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The appeal being submitted. {@link community_bbs_appeals.id}.
+  appeal_id String
+  
+  /// The ID of the actor (member, admin, or guest) who submitted the appeal.
+  /// {@link community_bbs_member.id} or {@link community_bbs_admin.id} or
+  /// {@link community_bbs_guest.id}.
+  actor_id String
+  
+  /// The type of actor who submitted the appeal. Must be one of: "member",
+  /// "admin", or "guest".
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  appeal community_bbs_appeals @relation(fields: [appeal_id], references: [id], onDelete: Cascade)
+  actor community_bbs_member @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
+  
+  @@unique([appeal_id, actor_type])
+  @@unique([appeal_id, actor_id])
+  @@index([actor_type, actor_id])
+}

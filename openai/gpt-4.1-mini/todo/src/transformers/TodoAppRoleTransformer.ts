@@ -9,8 +9,6 @@ import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppU
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { TodoAppUserRoleTransformer } from "./TodoAppUserRoleTransformer";
-
 export namespace TodoAppRoleTransformer {
   export type Payload = Prisma.todo_app_rolesGetPayload<
     ReturnType<typeof select>
@@ -24,22 +22,21 @@ export namespace TodoAppRoleTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        todo_app_user_roles: TodoAppUserRoleTransformer.select(),
       },
     } satisfies Prisma.todo_app_rolesFindManyArgs;
   }
   export async function transform(input: Payload): Promise<ITodoAppRole> {
     return {
       id: input.id,
-      role_code: input.name,
+      name: input.name,
       description: input.description,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
-      userRoles: await ArrayUtil.asyncMap(
-        input.todo_app_user_roles,
-        TodoAppUserRoleTransformer.transform,
-      ),
+      created_at:
+        input.created_at === null ? "" : toISOStringSafe(input.created_at),
+      updated_at:
+        input.updated_at === null ? "" : toISOStringSafe(input.updated_at),
+      deleted_at:
+        input.deleted_at === null ? "" : toISOStringSafe(input.deleted_at),
+      userRoles: [],
     };
   }
 }

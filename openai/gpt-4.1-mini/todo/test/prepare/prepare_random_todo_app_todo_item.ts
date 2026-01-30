@@ -13,19 +13,19 @@ export function prepare_random_todo_app_todo_item(
       input?.title ??
       RandomGenerator.paragraph({
         sentences: typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+          number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<5>
         >(),
       }),
     description:
-      input?.description !== undefined
-        ? input.description
-        : RandomGenerator.paragraph({
-            sentences: typia.random<
-              number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
-            >(),
-          }),
+      input?.description ??
+      RandomGenerator.content({
+        paragraphs: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
+        >(),
+        sentenceMin: 3,
+        sentenceMax: 6,
+      }),
     status:
-      input?.status ??
-      RandomGenerator.pick(["pending", "done", "cancelled"] as const),
+      input?.status ?? RandomGenerator.pick(["pending", "completed"] as const),
   };
 }

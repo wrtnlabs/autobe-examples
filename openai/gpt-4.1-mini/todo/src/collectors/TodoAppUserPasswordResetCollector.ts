@@ -11,17 +11,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace TodoAppUserPasswordResetCollector {
   export async function collect(props: {
     body: ITodoAppUserPasswordReset.ICreate;
+    todoAppUser: IEntity;
   }) {
     return {
       id: v4(),
-      token: v4(),
-      expires_at: new Date(Date.now() + 3600000),
-      requested_at: new Date(),
+      token: props.body.token,
+      expires_at: props.body.expires_at
+        ? new Date(props.body.expires_at)
+        : new Date(),
+      requested_at: props.body.requested_at
+        ? new Date(props.body.requested_at)
+        : new Date(),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       todoAppUser: {
-        connect: { id: props.body.todo_app_user_id },
+        connect: { id: props.todoAppUser.id },
       },
     } satisfies Prisma.todo_app_user_password_resetsCreateInput;
   }

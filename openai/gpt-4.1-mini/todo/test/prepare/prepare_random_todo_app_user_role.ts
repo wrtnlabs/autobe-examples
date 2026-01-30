@@ -9,6 +9,8 @@ export function prepare_random_todo_app_user_role(
   input?: DeepPartial<ITodoAppUserRole.ICreate>,
 ): ITodoAppUserRole.ICreate {
   return {
+    todo_app_user_id:
+      input?.todo_app_user_id ?? typia.random<string & tags.Format<"uuid">>(),
     todo_app_role_id:
       input?.todo_app_role_id ?? typia.random<string & tags.Format<"uuid">>(),
   };

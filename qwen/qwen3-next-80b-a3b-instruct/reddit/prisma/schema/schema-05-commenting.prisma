@@ -1,0 +1,531 @@
+/// Base comment records with text content, timestamps, author ID, parent
+/// post ID, and vote score.
+///
+/// Represents user-generated comments attached to forum posts. Each comment
+/// has an author, a parent post, a text body, and a vote score that
+/// contributes to user karma. Comments support a hierarchical structure via
+/// the comment_replies table but are core entities managed independently by
+/// users.
+///
+/// Comments can be edited within 15 minutes of creation and deleted within
+/// one hour by the author, with full audit trail maintained in associated
+/// edit and deletion tables. The comment score is recalculated on every vote
+/// and affects visibility and recommendation algorithms.
+///
+/// Comments are discoverable across posts via search and moderation
+/// interfaces. This table serves as the foundation for the entire commenting
+/// system.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's identity. {@link community_bbs_member.id}.
+  community_bbs_member_id String
+  
+  /// Parent post this comment belongs to. {@link community_bbs_posts.id}.
+  community_bbs_posts_id String
+  
+  /// Timestamp when the comment was originally created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit. Must be updated on every edit within
+  /// 15-minute window.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted by author (within 1 hour of
+  /// creation). Nullable means still active.
+  deleted_at DateTime?
+  
+  /// The full text content of the comment, limited to 5000 characters.
+  /// Supports Markdown formatting.
+  body String
+  
+  /// Net vote score (upvotes - downvotes) of the comment, used for sorting and
+  /// karma calculation.
+  vote_score Int
+  
+  //----
+  // RELATIONS
+  //----
+  author community_bbs_member @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  post community_bbs_posts @relation(fields: [community_bbs_posts_id], references: [id], onDelete: Cascade)
+  
+  votesByComments community_bbs_votes_comments[]
+  replies community_bbs_comment_replies[]
+  edits community_bbs_comment_edits[]
+  deletions community_bbs_comment_deletions[]
+  reports community_bbs_comment_reports[]
+  commentVotesByUsers community_bbs_comment_votes[]
+  
+  @@index([community_bbs_posts_id, created_at])
+  @@index([community_bbs_member_id, created_at])
+  @@index([deleted_at])
+  @@index([vote_score, created_at])
+}
+
+/// Manages hierarchical relationships between parent comments and their
+/// replies, enabling nested comment threads up to 5 levels deep.
+///
+/// This subsidiary table establishes parent-child relationships for comments
+/// stored in the community_bbs_comments table. It does not store comment
+/// content itself but only the structural relationship and depth level of
+/// replies.
+///
+/// Each reply records its direct parent comment via comment_id and its
+/// immediate parent reply via parent_id, enabling tree traversal. The depth
+/// field enforces a maximum of 5 levels of nesting as required by system
+/// specifications.
+///
+/// All comment content, metadata, timestamps, and deletion flags reside in
+/// the parent community_bbs_comments table. This table is purely structural
+/// and referenced exclusively through its parent comment.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment in community_bbs_comments. {@link
+  /// community_bbs_comments.id}.
+  comment_id String
+  
+  /// Reference to the immediate parent reply in this table. {@link
+  /// community_bbs_comment_replies.id}. Allows recursive hierarchy up to 5
+  /// levels.
+  parent_id String?
+  
+  /// The depth level of this reply in the hierarchy, with 1 representing a
+  /// direct reply to a comment and 5 being the maximum allowed depth.
+  depth Int
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  parent community_bbs_comment_replies? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  children community_bbs_comment_replies[] @relation("recursive")
+  
+  @@index([parent_id])
+  @@index([comment_id, depth])
+  @@index([depth])
+}
+
+/// Historical record of all edits to comments, preserving original content
+/// and edit timestamp.
+///
+/// Captures every modification made to a comment after its initial creation,
+/// maintaining an immutable audit trail of content changes. Each edit record
+/// contains the full text of the comment at the time of modification, the
+/// actor who made the edit, and the exact timestamp of the change.
+///
+/// Used for content integrity verification, moderation review, and
+/// compliance with transparency requirements. Edit records are never
+/// deleted, even if the parent comment is soft-deleted, ensuring permanent
+/// audit history.
+///
+/// Edit history is accessible only through the parent comment's API and
+/// cannot be managed independently by users.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the comment record that was edited. {@link
+  /// community_bbs_comments.id}.
+  comment_id String
+  
+  /// The member who performed the edit. {@link community_bbs_member.id}.
+  editor_id String
+  
+  /// The full text content of the comment exactly as it appeared after the
+  /// edit was applied.
+  content String
+  
+  /// Timestamp when the edit was made. Must capture the exact moment the edit
+  /// was saved by the member.
+  edited_at DateTime
+  
+  /// Record creation timestamp. Automatically set when the edit record is
+  /// first saved.
+  created_at DateTime
+  
+  /// Timestamp of last update to this edit record. Updated during maintenance
+  /// operations or metadata changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Indicates when this edit record was logically
+  /// removed. When null, the edit is considered active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  editor community_bbs_member @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id, edited_at])
+  @@index([editor_id, created_at])
+}
+
+/// Audit log of comment deletion events, capturing when, by whom, and why a
+/// comment was removed.
+///
+/// Records all deletion actions performed on comments, whether initiated by
+/// the original author within the 1-hour grace period or enforced by
+/// moderators/admins. This table serves as an immutable audit trail for
+/// content moderation activities, ensuring transparency and accountability.
+///
+/// Each record is linked to a specific comment via the comment_id foreign
+/// key. The deleting_actor_id references the actor table that performed the
+/// deletion (member, moderator, or admin). The deletion_reason field
+/// indicates whether the deletion was author-initiated or
+/// moderator-initiated, with additional context provided in the notes field.
+/// All entries are timestamped and immutable, with no updates allowed after
+/// creation.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment whose deletion is being recorded. {@link
+  /// community_bbs_comments.id}.
+  comment_id String
+  
+  /// The actor who initiated the deletion. References the relevant actor table
+  /// (member, moderator, or admin) based on context. {@link
+  /// community_bbs_member.id} for member deletions, {@link
+  /// community_bbs_moderator.id} for moderator deletions, or {@link
+  /// community_bbs_admin.id} for admin deletions.
+  deleting_actor_id String
+  
+  /// Classification of deletion type. Valid values: "author" (initiated by
+  /// comment author within 1-hour window), "moderator" (initiated by moderator
+  /// due to policy violation), or "admin" (initiated by system admin). This
+  /// field indicates the source of the deletion action.
+  deletion_reason String
+  
+  /// Optional explanation for the deletion. Used to capture moderator
+  /// justification when applicable. For author-initiated deletions, this may
+  /// contain voluntary reason provided by user (e.g., "Content outdated" or
+  /// "Inaccurate information"). For moderator-initiated deletions, may contain
+  /// specific policy violation reason (e.g., "Violation of spam policy" or
+  /// "Harassment"), referencing the community's specific moderation
+  /// guidelines.
+  deletion_notes String?
+  
+  /// Timestamp when the deletion was performed and recorded. This is a
+  /// critical audit trail field for determining when the comment was removed
+  /// from public view and is immutable.
+  created_at DateTime
+  
+  /// Timestamp of the last record update. For audit logs like this, this field
+  /// is redundant for content but maintained for consistency and platform-wide
+  /// architectural standard. Always matches created_at as this record type is
+  /// immutable.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  actor community_bbs_member @relation(fields: [deleting_actor_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([deleting_actor_id, created_at], map: "community_bbs_comment_deletions_deleting_actor_id_crea_e5bff5c8")
+}
+
+/// User-submitted reports on comments with violation category and status
+/// tracking.
+///
+/// Captures user reports on problematic comments as part of the platform's
+/// moderation workflow. Each report is associated with a specific comment,
+/// submitted by a registered user (or anonymously), and categorized
+/// according to violation type.
+///
+/// The report entity serves as the primary entry point for moderation
+/// actions. Reports are tracked through their lifecycle via the
+/// community_bbs_comment_report_statuses table. Reports that accumulate (3+
+/// within 5 minutes) trigger automatic priority escalation to
+/// administrators.
+///
+/// All reports are preserved even after comment deletion for audit purposes.
+/// Reports can be submitted anonymously to encourage reporting without fear
+/// of retaliation. Reports can be resolved by moderators through the
+/// moderation action system.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The target comment being reported. {@link community_bbs_comments.id}.
+  comment_id String
+  
+  /// The user who submitted this report. {@link community_bbs_member.id}.
+  reporter_id String?
+  
+  /// The violation category from violation_categories table. Examples: "spam",
+  /// "harassment", "impersonation", "copyright".
+  category String
+  
+  /// Optional detailed explanation provided by the reporter about why the
+  /// comment was reported.
+  reason String?
+  
+  /// True if the reporter chose to submit this report anonymously. When true,
+  /// reporter_id is null.
+  anonymous Boolean
+  
+  /// True when this report has been flagged for priority review due to
+  /// accumulating reports (3+ within 5 minutes) on the same comment.
+  priority Boolean
+  
+  /// Timestamp when this report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when this report was last updated (typically when status
+  /// changes).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail purposes. NULL indicates active
+  /// record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reporter community_bbs_member? @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  
+  statuses community_bbs_comment_report_statuses[]
+  moderationActions community_bbs_comment_moderation_actions[]
+  
+  @@index([comment_id])
+  @@index([reporter_id])
+  @@index([created_at])
+  @@index([priority, created_at])
+  @@index([category, created_at])
+}
+
+/// Tracks user votes on comments, recording upvotes and downvotes on a
+/// per-user basis.
+///
+/// Each record represents a single vote action by a specific user on a
+/// specific comment. This table is critical for implementing the karma
+/// system and preventing vote manipulation by tracking individual voter
+/// behavior.
+///
+/// Voter authentication is enforced through foreign key relationships to the
+/// actors component. Each user can cast exactly one vote per comment, and
+/// duplicate votes are prevented through database-level uniqueness
+/// constraints. Votes are immutable to preserve the audit trail of user
+/// interactions and are subject to soft deletion for moderation purposes.
+///
+/// The system ensures each vote is uniquely assigned to one member account
+/// and cannot be duplicated, with mechanisms to detect and cancel suspicious
+/// voting patterns.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's authenticated account. {@link community_bbs_member.id}.
+  voter_id String
+  
+  /// Target comment being voted on. {@link community_bbs_comments.id}.
+  comment_id String
+  
+  /// Type of vote cast - 'up' for upvote or 'down' for downvote. Value is
+  /// immutable once cast.
+  vote_type String
+  
+  /// Timestamp when this vote was cast. Required for vote history and
+  /// analytics.
+  created_at DateTime
+  
+  /// Timestamp when this vote was last modified. Always equals created_at for
+  /// immutable votes.
+  updated_at DateTime
+  
+  /// Timestamp when this vote was soft-deleted due to modulation or system
+  /// cleanup. Null if vote is still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  voter community_bbs_member @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  comment community_bbs_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([voter_id, comment_id])
+  @@index([voter_id])
+  @@index([comment_id])
+  @@index([created_at])
+}
+
+/// Tracks the lifecycle status of comment reports with workflow transitions
+/// and moderator assignment.
+///
+/// Manages the state progression of user-submitted comment reports through
+/// the moderation workflow: from initial submission (open) to resolution
+/// (resolved, escalated, or dismissed). This table enables administrators to
+/// monitor report processing times, assign workload to moderators, and
+/// escalate unresolved reports to system admins when SLAs are exceeded.
+/// Status changes are audited and linked directly to the
+/// community_bbs_comment_reports table for complete traceability.
+///
+/// The status field uses standardized values from 10-moderation-policy.md:
+/// open (new report), resolved (issue addressed), escalated (no moderator
+/// response within SLA), or dismissed (report deemed invalid). The
+/// assigned_moderator_id links to the specific moderator assigned this
+/// report, while escalation_timestamp and resolution_timestamp provide
+/// precise timing for performance metrics and SLA monitoring.
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_report_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment report this status belongs to. {@link
+  /// community_bbs_comment_reports.id}.
+  community_bbs_comment_report_id String
+  
+  /// The moderator assigned to handle this report. Null if unassigned. {@link
+  /// community_bbs_moderator.id}.
+  assigned_moderator_id String?
+  
+  /// Current status of the comment report. Must be one of: 'open', 'resolved',
+  /// 'escalated', or 'dismissed'. Follows moderation workflow defined in
+  /// 10-moderation-policy.md.
+  status String
+  
+  /// Timestamp when this report was escalated to an admin due to SLA breach
+  /// (no moderator response within 24 hours). Null if not escalated.
+  escalation_timestamp DateTime?
+  
+  /// Timestamp when this report was resolved. Null while report is still open
+  /// or escalated.
+  resolution_timestamp DateTime?
+  
+  /// Timestamp when this status record was created. Tracks when the report
+  /// entered its current status phase.
+  created_at DateTime
+  
+  /// Timestamp when this status record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail purposes. NULL indicates active
+  /// record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report community_bbs_comment_reports @relation(fields: [community_bbs_comment_report_id], references: [id], onDelete: Cascade)
+  moderator community_bbs_moderator? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([assigned_moderator_id, created_at], map: "community_bbs_comment_report_statuses_assigned_moderat_93831685")
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_comment_report_id], map: "community_bbs_comment_report_statuses_community_bbs_co_35e160ae")
+}
+
+/// Audit trail of moderator actions taken on reported comments.
+///
+/// Records every decision made by moderators regarding reported comments,
+/// including the type of action taken, justification provided, and temporal
+/// metadata. This table supports full transparency and accountability in the
+/// moderation workflow, enabling audit trails for appeals and regulatory
+/// compliance.
+///
+/// Each moderation action is linked to a specific comment report and
+/// performed by a moderator. Actions are append-only and immutable - once
+/// recorded, they cannot be altered. The action type determines next steps
+/// in the moderation workflow (removal, dismissal, warning, or appeal
+/// notification).
+///
+/// @namespace Commenting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_comment_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment report being acted upon. {@link
+  /// community_bbs_comment_reports.id}.
+  comment_report_id String
+  
+  /// Reference to the moderator who performed this action. {@link
+  /// community_bbs_moderator.id}.
+  moderator_id String
+  
+  /// Type of moderation action taken. Must be one of: "remove" (delete
+  /// comment), "dismiss" (close report without action), "warn" (notify user of
+  /// violation), or "notify" (inform user of appeal rights).
+  action_type String
+  
+  /// Detailed explanation of why this moderation action was taken, including
+  /// specific community rule violations or contextual reasons.
+  justification String
+  
+  /// Timestamp when this moderation action was recorded.
+  created_at DateTime
+  
+  /// Should be null as this is an audit trail - updates are not permitted.
+  /// Only set if system requires a null value for schema compliance.
+  updated_at DateTime?
+  
+  /// Soft delete timestamp to preserve audit integrity while allowing logical
+  /// removal from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report community_bbs_comment_reports @relation(fields: [comment_report_id], references: [id], onDelete: Cascade)
+  moderator community_bbs_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([comment_report_id, created_at], map: "community_bbs_comment_moderation_actions_comment_repor_aed7035c")
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_bbs_comment_moderation_actions_moderator_id__820b27e6")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_bbs_comment_moderation_actions_action_type_c_2a531017")
+}

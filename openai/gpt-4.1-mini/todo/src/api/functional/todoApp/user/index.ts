@@ -1,11 +1,3 @@
-export * as access_tokens from "./access_tokens/index";
-export * as refresh_tokens from "./refresh_tokens/index";
-export * as configurations from "./configurations/index";
-export * as security_policies from "./security_policies/index";
 export * as roles from "./roles/index";
-export * as user_email_verifications from "./user_email_verifications/index";
-export * as user_password_resets from "./user_password_resets/index";
 export * as users from "./users/index";
-export * as todo_items from "./todo_items/index";
-export * as user_sessions from "./user_sessions/index";
-export * as todo_item_audit_logs from "./todo_item_audit_logs/index";
+export * as auth from "./auth/index";

@@ -1,457 +1,211 @@
-# Economic and Political Discussion Board
+# Economic/Political Discussion Board Requirements
 
-## Service Vision
+## Introduction
 
-Economic and political discourse has become increasingly fragmented, polarized, and dominated by algorithmic engagement hooks rather than thoughtful dialogue. Modern discussion platforms prioritize virality over validity, incentivizing outrage over understanding. This service exists to provide a simple, ad-free, and moderator-guided space where citizens can engage with economic and political ideas in good faith — without distraction, without manipulation, and without corporate surveillance.
+This document defines the complete business requirements for a minimal, focused discussion platform designed for thoughtful economic and political discourse. The system prioritizes content quality, user accountability, and evidence-based conversation over engagement metrics, viral content, or social networking features.
 
-Unlike mainstream forums that monetize attention through targeted advertising, content farms, or algorithmically amplified extremes, this platform is designed as a digital town square for intellectually serious discourse. It rejects clickbait, suppresses outrage-driven content, and empowers users to build knowledge through reasoned exchange. The service is not driven by growth-at-all-costs metrics but by meaningful participation and civil exchange.
+## Core Functionality
 
-This is not another social media echo chamber. This is a curated environment for people who want to understand complex systems, challenge their own assumptions, and engage with opposing viewpoints without fear of harassment, doxxing, or algorithmic silencing.
+### 1. Post Creation and Attribution
 
-## Core Value Proposition
+WHEN a user wishes to start a new discussion thread, THE system SHALL present a simple text editor with a 200-character minimum limit.
 
-WHEN a citizen posts an article, THE system SHALL allow the attachment of images and files to support arguments with data, charts, or source documents.
+WHEN a user creates a post, THE system SHALL associate the post with their registered username only.
 
-WHEN a citizen submits content, THE system SHALL not automatically promote, boost, or algorithmically rank posts based on engagement metrics (likes, shares, replies).
+WHILE displaying any post, THE system SHALL NOT show any of the following user metadata:
+- Profile picture/avatar
+- Join date
+- Number of posts or replies
+- Reputation score
+- Social connections
+- Award badges
+- Verified status
 
-THE system SHALL display all posts in chronological order, newest first, with no personalized feed.
+The sole identifier SHALL be a plain text username without styling, color, or emphasis.
 
-THE system SHALL permit users to comment on posts, but SHALL not enable nested reply chains that encourage tribal escalation.
+### 2. File and Image Attachment Support
 
-WHEN a post receives five or more user reports, THE system SHALL automatically flag it for review by a moderator.
+WHEN a user creates or replies to a post, THE system SHALL allow uploading of files and images with the following supported formats:
+- Images: .jpg, .jpeg, .png, .gif
+- Documents: .pdf, .txt, .docx, .csv
 
-THE system SHALL not monetize user data, display advertisements, or sell any user information.
+WHEN an attachment is uploaded, THE system SHALL enforce a maximum size limit of 5MB per file.
 
-WHERE a post includes a file attachment, THE system SHALL validate that the file is one of these types: .jpg, .png, .pdf, .txt, .csv, .xlsx, .docx, .mp4, .mov.
+WHERE a post contains attachments, THE system SHALL display:
+- For images: A thumbnail preview scaled to fit within 300px width, with a click-to-zoom option
+- For documents: An icon representing the file type, followed by the filename
+- All attachments SHALL appear directly below the post text content, in the order they were uploaded
 
-WHILE a moderator is reviewing a flagged post, THE system SHALL hide the post from public view unless it is cleared.
+WHEN a user uploads an unsupported file format, THE system SHALL display an inline error message: "Unsupported file type. Please use .jpg, .png, .gif, .pdf, .txt, .docx, or .csv."
 
-WHEN a moderator removes a post, THE system SHALL notify the author with a clear explanation and provide an appeals process.
+WHEN a user attempts to upload a file larger than 5MB, THE system SHALL display an inline error message: "File too large. Maximum size is 5MB."
 
-THE system SHALL not support anonymous posting — every post must be tied to a verified citizen account.
+WHEN a file upload fails due to network error, THE system SHALL prompt the user to retry with a "Retry Upload" button.
 
-## Target Audience
+### 3. Threaded Replies
 
-### Primary Users: Citizens
+WHEN a user replies to a post, THE system SHALL create a child comment thread directly under the parent post.
 
-Citizens are regular individuals interested in economics, public policy, political theory, and societal trends. They may be students, professionals, retirees, or autodidacts. They are not influencers, activists, or trolls. They seek to understand complex systems, reference primary sources, and participate in thoughtful critique.
+WHEN a user replies to another reply, THE system SHALL nest the new reply under the parent reply with visual indentation.
 
-Citizens use the platform to:
-- Share articles, op-eds, or original analysis on inflation, taxation, regulation, governance, or historical economic patterns
-- Attach charts from government publications, academic papers, or statistical datasets
-- Comment on posts with citations and logical reasoning
-- Flag content that is misleading, unfounded, or abusive
+THE system SHALL support up to 5 levels of reply nesting.
 
-Citizens are not expected to generate viral content. They are expected to engage deliberately.
+WHEN a reply is more than 5 levels deep, THE system SHALL display an error: "Maximum comment depth reached. Cannot reply further."
 
-### Secondary Users: Moderators
+### 4. Minimalist Moderation System
 
-Moderators are trusted citizens selected for their demonstrated capacity for impartial judgment and respect for evidence. They do not have special privileges to promote their own views. Their role is solely to uphold the norms of civil discourse.
+IF a post is reported by three or more distinct users, THEN THE system SHALL:
+- Immediately hide the post and all its replies from public view
+- Display a banner to all users: "This post is under review by an administrator."
+- Notify the post author via in-app notification: "Your post has been reported by 3+ users and is now under review."
+- Record the reporting users, times, and reasons (if provided)
 
-Moderators:
-- Review flagged posts within 24 hours
-- Remove content that contains personal attacks, falsehoods presented as fact, or spam
-- Issue warnings to users who repeatedly breach behavior guidelines
-- Maintain the integrity of the platform without censoring legitimate dissent
+WHILE the post is hidden, THE system SHALL NOT count it in any public statistics, search results, or feed rankings.
 
-Moderators are not administrators. They have no access to user data beyond what is necessary to review reported content. Their authority is derived from community trust, not system permissions.
+WHEN an administrator reviews a hidden post, THEY SHALL have two options:
+- Approve: Restore the post to public view with a "🏷️ Reviewed by admin" badge below the post content
+- Delete: Permanently remove the post and all its replies from the database
 
-### What This Platform Is NOT
+WHEN an administrator deletes a post, THE system SHALL:
+- Immediately remove the post and all replies from public view
+- Send an email or in-app notification to the author: "Your post has been deleted by an administrator for violating community guidelines. Reason: [reason provided]."
+- Log the deletion event with timestamp, admin ID, and reason
 
-- It is NOT a place for political mobilization or campaigning.
-- It is NOT a platform for meme warfare or ironic outrage.
-- It is NOT designed for mass audiences or viral growth.
-- It is NOT a forum for anonymous commenters.
-- It is NOT monetized. No ads. No affiliate links. No data harvesting.
+WHEN a user reports a post, THEY SHALL be prompted to provide a reason from a predefined list:
+- Offensive or abusive language
+- False or misleading information
+- Spam or irrelevant content
+- Personal attacks
+- Other (with free-text field)
 
-This platform exists to make serious discourse possible again. It does not need to be big. It needs to be reliable.
+### 5. User Registration and Access
 
-## Business Model
+WHEN a user registers for the first time, THE system SHALL require only:
+- A unique username (3–20 characters, alphanumeric and underscores only)
+- A valid email address (format: user@domain.com)
 
-### Why This Service Exists
+THE system SHALL NOT require:
+- Phone number verification
+- Government ID or real name
+- Captcha
+- Security questions
+- Social media login
 
-There is a growing demand among educated citizens for platforms free from commercialized attention economies. Existing forums are either cluttered with ads and algorithmic manipulation, or they are hostile environments dominated by polarization and harassment. This service addresses the unmet need for a clean, trustworthy, and intentionally slow-moving space for intellectual exchange.
+WHEN a user registers, THE system SHALL:
+- Create an unverified account immediately
+- Allow immediate posting of text content
+- Disable all file and image uploads until email verification is completed
+- Send a verification email with a unique, one-time-use link
 
-The absence of advertising and monetization is not a limitation — it is the core innovation.
+WHEN a user clicks a valid verification link, THE system SHALL:
+- Mark the account as "email verified"
+- Enable file and image upload functionality
+- Record the timestamp of verification
+- Do not change the username or account status otherwise
 
-### Revenue Strategy
+WHEN a user attempts to register with an already-used username, THE system SHALL display: "Username already taken. Please choose another."
 
-The service will operate as a non-profit community project funded entirely by voluntary user contributions, with no paywalls or tiers. The only financial requirement is infrastructure costs (hosting, bandwidth, storage for attachments). Contributions will be collected via open-source donation platforms like GitHub Sponsors or OpenCollective.
+WHEN a user attempts to register with an already-used email address, THE system SHALL display: "An account with this email already exists. Please log in or reset password."
 
-There will be no paid memberships, no premium features, no sponsored content, and no affiliate programs. The platform’s integrity is non-negotiable.
+WHEN a user resets their password, THE system SHALL require:
+- Entry of the registered email address
+- Sending a password reset link
+- Creation of a new password with minimum 8 characters
 
-### Growth Plan
+### 6. Administrative Controls
 
-Growth will be organic and invitation-based. The service will not run paid advertising campaigns. Instead, it will rely on:
-- Word-of-mouth referrals among academic circles, professional communities, and civil society organizations
-- Links from reputable blogs and newsletters focused on political economy
-- Appearances in independent media covering digital democracy and information integrity
+ADMINISTRATORS SHALL have the following additional capabilities:
 
-The goal is not to reach millions, but to cultivate an active community of 500–2,000 engaged users who use the platform daily for deep discussion.
+THEY SHALL be able to ban a user by username or email address.
 
-### Success Metrics
+WHEN a user is banned, THE system SHALL:
+- Immediately hide all their posts and replies from public view
+- Prevent the user from creating new accounts using the same email or IP address
+- Display in the admin panel: "User [username] is banned. Posts hidden. Reposting blocked."
 
-Success is measured by qualitative and behavioral indicators:
-- **Daily Active Contributors**: At least 50 unique citizen posts per day
-- **Post-to-Comment Ratio**: Minimum 1 comment for every 2 posts
-- **Report-to-Removal Ratio**: Less than 15% of reported posts are removed (indicating healthy self-policing)
-- **Average Post Length**: Minimum 200 words
-- **File Attachment Rate**: At least 30% of posts include images or data files
-- **Moderation Response Time**: All reported posts reviewed within 24 hours
+THEY SHALL be able to view a full log of all user reports, moderation actions, and system events.
 
-The platform considers itself a failure if it attracts more than 10,000 registered accounts, as this indicates dilution of intent and community cohesion.
+THEY SHALL receive a daily email summary containing:
+- Total number of reported posts
+- Number of posts approved
+- Number of posts deleted
+- Top three reported reasons
+- System uptime and health status
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+THE system SHALL provide a "fast approve" button that restores a reported post in one click without needing to view its content.
 
-## Workflow: Posting an Article with Attachments
+### 7. Content Display and Interface
 
-```mermaid
-graph TD
-    A["Citizen Logs In"] --> B["Clicks 'New Post'"]
-    B --> C["Enters Title and Body Text"]
-    C --> D["Clicks 'Attach File'"]
-    D --> E["Selects File (jpg/png/pdf/txt/csv/xlsx/docx/mp4/mov)"]
-    E --> F["System Validates File Type and Size"]
-    F --> G{"Valid?"}
-    G -->|Yes| H["File Uploaded and Stored"]
-    G -->|No| I["Shows Error: 'Invalid File Type or Exceeds Size Limit'"]
-    H --> J["Clicks 'Publish'"]
-    J --> K["System Creates Post with Metadata"]
-    K --> L["Stores Post in Database"]
-    L --> M["Assigns Unique Post ID and Timestamp"]
-    M --> N["Displays Post Publicly"]
-    N --> O["System Logs Activity for Moderation"]
-```
+THE system SHALL display all posts in strict chronological order (oldest to newest).
 
-## Workflow: Reporting and Moderation
-
-```mermaid
-graph TD
-    A["Post Published"] --> B["User Clicks 'Report'"]
-    B --> C["System Records Report and User ID (anonymous)"]
-    C --> D{"Total Reports >= 5?"}
-    D -->|No| E["Post Remains Public"]
-    D -->|Yes| F["System Flags Post for Review"]
-    F --> G["Hides Post From Public View"]
-    G --> H["Notifies Moderator Queue"]
-    H --> I["Moderator Reviews Post Within 24 Hours"]
-    I --> J{"Violates Guidelines?"}
-    J -->|Yes| K["Removes Post"]
-    J -->|No| L["Clears Flag, Makes Post Public"]
-    K --> M["Sends Notification to Author: \"Post Removed: Violation of Civil Discourse Policy\""]
-    K --> N["Logs Removal for Audit"]
-    M --> O["Author May Appeal Within 7 Days"]
-    O --> P["Appeal Requested?"]
-    P -->|Yes| Q["Moderator Revisits Decision with New Evidence"]
-    P -->|No| R["Case Closed"]
-    Q --> S{"Decision Reversed?"}
-    S -->|Yes| T["Reinstate Post"]
-    S -->|No| U["Maintain Removal"]
-    T --> V["Notify Author: \"Post Reinstated\""]
-    U --> W["Notify Author: \"Appeal Denied\""]
-```
-
-## File Attachment Requirements
-
-WHEN a citizen attaches a file to a post, THE system SHALL accept only these file extensions:
-
-- .jpg
-- .png
-- .pdf
-- .txt
-- .csv
-- .xlsx
-- .docx
-- .mp4
-- .mov
-
-WHEN a file is uploaded, THE system SHALL reject files exceeding 25 MB in size.
+THE system SHALL NOT implement:
+- Algorithmic ranking
+- "Trending" lists
+- "Most popular" sections
+- Like/heart buttons
+- Share buttons (not even platform native ones)
+- Notifications for replies
+- Suggested threads
+- Search autocomplete
 
-WHEN a file is uploaded, THE system SHALL validate the MIME type against extension to prevent spoofing.
+THE search function SHALL be basic:
+- Only supports keyword matching in post titles and content
+- Returns exact matches only (no fuzzy search)
+- Returns at most 50 results
+- Shows results in chronological order
 
-WHEN a file is rejected, THE system SHALL display a clear message: \"Invalid file type or too large. Supported formats: jpg, png, pdf, txt, csv, xlsx, docx, mp4, mov. Max size: 25 MB.\"
+THE system SHALL have no advertisements, affiliate links, or sponsored content.
 
-THE system SHALL store all attachments in a dedicated, non-public folder with unique filenames generated by the system (e.g., post_12345_attachment_9876.pdf).
-
-THE system SHALL NOT expose file paths, URLs, or internal storage structure to users.
+THE system SHALL display no social media buttons, counters, or tracking pixels.
 
-THE system SHALL maintain a record of all attached files linked to their post ID for moderation and audit purposes.
-
-## Commenting System
-
-THE system SHALL allow comments on posts, but SHALL NOT support nested replies.
-
-WHEN a user comments, THE system SHALL display the comment directly under the post.
-
-WHEN a comment is posted, THE system SHALL display the username of the commenter and timestamp.
-
-WHEN a comment contains hate speech, threats, or personal attacks, THE system SHALL flag it if reported.
-
-WHEN a comment receives five or more user reports, THE system SHALL hide it from view and trigger moderator review.
-
-WHEN a moderator deletes a comment, THE system SHALL notify the commenter: \"Your comment was removed for violating civil discourse guidelines.\"
-
-WHEN a moderator approves a flagged comment, THE system SHALL immediately make it visible again.
-
-THE system SHALL NOT enable @mentions, emoji reactions, or voting on comments.
-
-THE system SHALL NOT display comment scores, likes, or popularity rankings.
-
-## Authentication and Access Control
-
-### Actor: Citizen
-
-THE citizen SHALL be able to:
-- Register with a unique email address and password
-- Log in using email and password
-- Edit their own profile (display name only)
-- Create new posts
-- Attach permitted file types to posts
-- Comment on existing posts
-- Report posts or comments
-- View all public posts in chronological order
-- Receive email notifications for moderation actions affecting their content
-
-THE citizen SHALL NOT be able to:
-- View other users’ email addresses or personal data
-- Delete their own posts after publication
-- Edit their post content after publication
-- Hide or block other users
-- Search posts by keyword (search functionality is intentionally disabled)
-- Access administrative features
-
-### Actor: Moderator
-
-THE moderator SHALL be able to:
-- Perform all actions of a Citizen
-- Review flagged posts and comments
-- Remove posts or comments that violate behavior guidelines
-- Issue warnings to users
-- Clear flags on posts or comments
-- Appeal decisions made by other moderators
-- View audit logs of flagged content and moderation actions
-
-THE moderator SHALL NOT be able to:
-- Access user passwords or encryption keys
-- View private messages (there are none)
-- Edit or alter any user-generated content (only remove)
-- Disable user accounts permanently
-- Change system settings or configurations
-- View content that has not been flagged
-- Bypass the 5-report threshold for flagging
-
-## Content Visibility and Ranking
-
-THE system SHALL display all posts in strict chronological order (newest first).
-
-THE system SHALL NOT use any algorithm to rank, boost, or prioritize posts based on:
-- Number of comments
-- Number of reports
-- Number of views
-- Engagement metrics (likes, shares, replies)
-
-THE system SHALL NOT offer personalized feeds.
-
-THE system SHALL NOT allow users to filter posts by topic, author, or sentiment.
-
-THE system SHALL NOT allow users to subscribe to specific authors or topics.
-
-Content visibility is determined only by time and moderation status.
-
-## Moderation Process
-
-WHEN a user reports a post or comment, THE system SHALL record:
-- The reporting user’s ID (anonymized)
-- The reported content’s ID
-- The timestamp
-- The reason (predefined options: "Off-topic", "Misinformation", "Personal Attack", "Spam", "Other")
-
-THE system SHALL aggregate reports on the same item until there are five or more.
-
-WHEN a content item reaches five reports, THE system SHALL:
-- Automatically hide the item from public view
-- Flag it in the moderator dashboard
-- Send a notification to the moderation queue
-- Log the event for audit
-
-WHEN a moderator reviews a flagged item, THE system SHALL display:
-- The original content
-- The full list of reports (with anonymized reporter IDs)
-- Timestamps of reports
-- Number of total reports
-- Associated file attachments (if any)
-
-THE moderator SHALL select one of these actions:
-- Remove
-- Clear
-- Issue Warning
-- Escalate to Admin (not implemented)
-
-WHEN a moderator removes content, THE system SHALL:
-- Immediately hide the content
-- Notify the author by email
-- Log the removal (moderator ID, timestamp, reason)
-- Add the item to a permanent audit log
-- Prevent any further edits or deletion attempts
-
-WHEN a moderator clears a flag, THE system SHALL:
-- Immediately restore visibility
-- Log the action
-- Notify the author (if no other flags remain)
-
-THE system SHALL require moderator identification before taking action.
-
-## Error Handling
-
-WHEN a user attempts to upload a file with an unsupported extension, THE system SHALL:
-- Prevent form submission
-- Display an inline error: \"Invalid file type. Only .jpg, .png, .pdf, .txt, .csv, .xlsx, .docx, .mp4, and .mov are allowed.\"
-
-WHEN a file exceeds 25 MB, THE system SHALL:
-- Cancel the upload
-- Display an error: \"File too large. Maximum size is 25 MB.\"
+### 8. Performance and Reliability
 
-WHEN a file is corrupted during upload, THE system SHALL:
-- Discard the partial file
-- Log the error
-- Notify the user: \"File upload failed. Please try again.\"
+WHEN a user loads the topic list, THE system SHALL return results in under 1.5 seconds under normal load (100 concurrent users).
 
-WHEN a user tries to comment on a removed post, THE system SHALL:
-- Display a message: \"This post has been removed by a moderator.\"
-- Disable the comment field
+WHEN a user uploads a file, THE system SHALL provide upload progress feedback.
 
-WHEN a moderator is unable to access their dashboard due to server error, THE system SHALL:
-- Display a generic error: \"Temporary service interruption. Please try again later.\"
-- Log the error for engineering review
-- Maintain moderation queue in a durable storage state
+THE system SHALL guarantee 99.5% file upload success rate under normal conditions.
 
-WHEN a user tries to log in with invalid credentials, THE system SHALL:
-- Display: \"Invalid email or password.\"
-- Not reveal whether email exists or not
-- Implement exponential backoff after 3 failed attempts
+WHEN the system experiences downtime, THE system SHALL display a maintenance message instead of error states.
 
-## Authentication Flow
+THE system SHALL allow a maximum of 5 simultaneous file uploads per user.
 
-```mermaid
-graph TD
-    A["User Visits Site"] --> B{"Is Logged In?"}
-    B -->|No| C["Display Login/Registration"]
-    C --> D["User Enters Email and Password"]
-    D --> E["System Validates Email Format"]
-    E --> F["System Checks Database for User"]
-    F --> G{"Exists and Password Matches?"}
-    G -->|Yes| H["Issue Secure JWT Token"]
-    G -->|No| I["Show: 'Invalid email or password.'"]
-    H --> J["Store Token in HTTP-Only Cookie"]
-    J --> K["Redirect to Dashboard"]
-    B -->|Yes| L["Show User's Posts and Comments"]
-    L --> M["Enable Post, Comment, Report, Attach File"]
-    M --> N["Include Token in Authorization Header for All Requests"]
-    N --> O["Server Validates Token Signature and Expiry"]
-    O --> P{"Valid?"}
-    P -->|No| Q["Clear Token, Redirect to Login"]
-    P -->|Yes| R["Proceed with Request"]
-```
+### 9. Authentication and Session Management
 
-## Business Rules Summary
+WHEN a user logs in, THE system SHALL issue a JWT token with a 24-hour expiration time.
 
-- No advertising
-- No analytics tracking
-- No user data collection beyond email and password
-- No personalization
-- No search
-- No likes, shares, or upvotes
-- No nested comments
-- No hashtags or topics
-- No direct messaging
-- No profiles with bio, avatar, follower count
-- No public user listing
-- No API for third-party access
-- No public API keys
+WHEN a user closes their browser, THE system SHALL NOT automatically log them out, but THE system SHALL allow manual logout.
 
-## Performance and Availability Requirements
+WHEN a user’s token expires, THE system SHALL redirect them to the login page with a message: "Your session has expired. Please log in again."
 
-THE system SHALL serve pages in less than 500ms under normal load.
+THE system SHALL support concurrent logins from multiple devices, all using the same token.
 
-THE system SHALL allow files up to 25 MB to upload within 60 seconds on 10 Mbps connection.
+THE system SHALL have no "remember me" feature.
 
-THE system SHALL handle 50 concurrent users without degradation.
+WHEN an admin bans a user, THE system SHALL immediately invalidate all active sessions for that user.
 
-THE system SHALL be available 99.9% of the time.
+### 10. Success Metrics and Analytics
 
-THE system SHALL automatically retry failed uploads with exponential backoff.
+The system SHALL track and report the following metrics for continuous improvement:
 
-THE system SHALL maintain a backup of all content and attachments daily.
+*Content Quality Metrics:*
+- Average post length (words) — Target: ≥150
+- Percentage of posts with attachments — Target: ≥30%
+- Percentage of posts with zero replies — Target: ≤20%
 
-## Compliance and Data Retention
+*User Retention Metrics:*
+- Ratio of registered users who post ≥3 times within 30 days — Target: ≥40%
+- Ratio of users who contribute ≥5 replies within 30 days — Target: ≥25%
+- Median days between user logins — Target: ≥12 days
 
-THE system SHALL retain all posts and comments indefinitely, unless removed by a moderator.
+*Moderation Efficiency Metrics:*
+- Average time between report and admin action — Target: ≤6 hours
+- Ratio of reported posts that are deleted — Target: ≤15%
+- Average number of reports per admin per week — Target: ≤50
 
-THE system SHALL retain uploaded files as long as their associated post is not removed.
+*System Health Metrics:*
+- Page load time for topic lists — Target: ≤1.5s
+- File upload success rate — Target: ≥99.5%
+- Concurrent active users — Target: ≥100
 
-THE system SHALL allow users to delete their account:
-- All posts and comments are preserved (to maintain discussion continuity)
-- Author names are anonymized to "[Deleted User]"
-- Email address and password are permanently deleted
-- File attachments remain accessible via their post ID
-
-THE system SHALL comply with GDPR, CCPA, and other applicable data protection laws.
-
-THE system SHALL not use cookies for tracking — only one HTTP-Only session cookie for authentication.
-
-THE system SHALL display a privacy notice on first visit, requiring opt-in before account creation.
-
-THE system SHALL never sell, license, or use user data for advertising.
-
-## Security Requirements
-
-THE system SHALL encrypt all files at rest using AES-256.
-
-THE system SHALL validate file extensions against actual MIME type.
-
-THE system SHALL sanitize all user input to prevent XSS and injection attacks.
-
-THE system SHALL store passwords using bcrypt with salt.
-
-THE system SHALL use HTTPS for all communications.
-
-THE system SHALL use a random, non-sequential token system for moderation links and appeals.
-
-THE system SHALL log all moderator actions with timestamp and user ID.
-
-THE system SHALL never expose storage paths, filenames, or internal system structure.
-
-THE system SHALL implement rate limiting (10 requests/minute per IP for public endpoints).
-
-## Design Constraints
-
-THE interface SHALL be minimalistic:
-- Monochrome color scheme
-- Sans-serif only typography
-- No decorative graphics
-- No animations
-- No popups or banners
-- No social media buttons
-- No external links
-
-THE content SHALL occupy the full viewport width on desktop.
-
-THE interface SHALL be responsive on mobile with touch-friendly controls.
-
-THE system SHALL not support legacy browsers (IE, Safari <15).
-
-THE system SHALL be accessible via screen readers.
-
-## Developer Notes
-
-This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.
-
-All specifications are implementation-agnostic. This document is intended to be read by backend engineers to understand what the system must do — not how to build it.
-
-Database tables, API endpoints, DTO models, and file storage schemes are not described here. Those will be generated separately in the Database and Interface phases.
-
-All requirements must be implemented as specified. No deviations, no "convenient" shortcuts, no feature creep. This system is designed for minimalism, integrity, and trust — not efficiency or scalability.
-
-If a requirement conflicts with a technical constraint, the business requirement takes precedence.
-
-This document is the single source of truth for the system’s purpose and behavior.
+*The service succeeds when users return because they value thoughtful, evidence-based conversation — not because they are addicted to likes, notifications, or popularity

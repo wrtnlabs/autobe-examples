@@ -1,0 +1,116 @@
+/// Stores file metadata for uploaded attachments including unique hashed
+/// filename, original filename, MIME type, file size, and upload timestamp.
+///
+/// Contains immutable metadata for files attached to posts, ensuring file
+/// integrity, tracking, and efficient retrieval. Each record represents a
+/// single uploaded file with its technical properties, used by the
+/// application to serve files and validate uploads. The actual file storage
+/// is managed externally (e.g., cloud storage), with this table storing only
+/// reference and metadata information.
+///
+/// Files are linked to posts via the economic_forum_post_attachments
+/// junction table. This table exists purely as supporting metadata and is
+/// not independently managed by users - attachments are created and deleted
+/// via their parent posts.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_attachment_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique hashed filename generated to prevent storage conflicts and enable
+  /// secure file referencing. Uses secure hashing algorithm to create unique
+  /// identifier from original filename and content.
+  hashed_filename String
+  
+  /// The original filename as provided by the user during upload. Preserved
+  /// for display purposes and to maintain user intent, but never used for file
+  /// storage or direct access.
+  original_filename String
+  
+  /// The official MIME type of the file (e.g., 'image/jpeg',
+  /// 'application/pdf'). Used for content delivery and validation to ensure
+  /// only permitted file types are uploaded.
+  mime_type String
+  
+  /// Size of the file in bytes. Enforces maximum 5MB (5,242,880 bytes) limit
+  /// per file as specified in requirements. Stored as double to accommodate
+  /// precise byte counting.
+  size Float
+  
+  /// Timestamp when the file was uploaded and metadata was recorded. Used for
+  /// sorting attachments in upload order within posts and for audit purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  postAttachments economic_forum_post_attachments[]
+  
+  @@unique([hashed_filename])
+  @@index([created_at])
+}
+
+/// Junction table linking posts to their attached files, ensuring each
+/// attachment is associated with exactly one post and maintaining order of
+/// upload.
+///
+/// This table manages the many-to-many relationship between
+/// economic_forum_posts and economic_forum_attachment_files by creating a
+/// direct association with an explicit sequence number. Each attachment
+/// record in this table points to one specific post and one specific file,
+/// establishing the parent-child relationship between content and media.
+///
+/// The sequence field (integer) determines the display order of attachments
+/// under each post, with lower numbers appearing first. This ensures
+/// attachments are presented in the exact order they were uploaded by the
+/// user.
+///
+/// This junction table enables efficient querying of all attachments for a
+/// given post while maintaining the upload sequence, and prevents direct
+/// interaction with attachments outside the context of their parent post.
+///
+/// When a post is deleted, all associated attachment records in this table
+/// are automatically removed as a cascading deletion through the foreign key
+/// relationship.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_post_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post that this attachment belongs to. {@link
+  /// economic_forum_posts.id}.
+  economic_forum_post_id String
+  
+  /// Reference to the file record containing metadata for this attachment.
+  /// {@link economic_forum_attachment_files.id}.
+  economic_forum_attachment_file_id String
+  
+  /// Numeric order of attachment within the post. Lower values appear first,
+  /// ensuring attachments are displayed in upload sequence. Must be positive
+  /// integer.
+  sequence Int
+  
+  //----
+  // RELATIONS
+  //----
+  post economic_forum_posts @relation(fields: [economic_forum_post_id], references: [id], onDelete: Cascade)
+  attachmentFile economic_forum_attachment_files @relation(fields: [economic_forum_attachment_file_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_attachment_file_id], map: "economic_forum_post_attachments_economic_forum_attachm_d7dda78a")
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_forum_post_id, economic_forum_attachment_file_id], map: "economic_forum_post_attachments_economic_forum_post_id_a216d52a")
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_post_id, sequence], map: "economic_forum_post_attachments_economic_forum_post_id_e8eb85dc")
+}

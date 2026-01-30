@@ -1,30 +1,20 @@
 import { Module } from "@nestjs/common";
 
-import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { AuthUserPasswordResetController } from "./controllers/auth/user/password/reset/AuthUserPasswordResetController";
-import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
-import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { TodolistUsersController } from "./controllers/todoList/users/TodolistUsersController";
-import { TodolistUserUsersController } from "./controllers/todoList/user/users/TodolistUserUsersController";
-import { TodolistGuestsController } from "./controllers/todoList/guests/TodolistGuestsController";
-import { TodolistAdminAdminsController } from "./controllers/todoList/admin/admins/TodolistAdminAdminsController";
-import { TodolistAdminsController } from "./controllers/todoList/admins/TodolistAdminsController";
-import { TodolistTodosController } from "./controllers/todoList/todos/TodolistTodosController";
-import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
+import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
+import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
+import { TodoappUserAuthUsersVerifyEmailController } from "./controllers/todoApp/user/auth/users/verify/email/TodoappUserAuthUsersVerifyEmailController";
+import { TodoappUserAuthUsersController } from "./controllers/todoApp/user/auth/users/logout/TodoappUserAuthUsersController";
+import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
+import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
 
 @Module({
   controllers: [
-    AuthUserController,
-    AuthUserPasswordResetController,
-    AuthGuestController,
-    AuthAdminController,
-    TodolistUsersController,
-    TodolistUserUsersController,
-    TodolistGuestsController,
-    TodolistAdminAdminsController,
-    TodolistAdminsController,
-    TodolistTodosController,
-    TodolistUserTodosController,
+    TodoappAuthUserController,
+    TodoappAuthGuestController,
+    TodoappUserAuthUsersVerifyEmailController,
+    TodoappUserAuthUsersController,
+    TodoappUserUsersController,
+    TodoappUserTodosController,
   ],
 })
 export class MyModule {}

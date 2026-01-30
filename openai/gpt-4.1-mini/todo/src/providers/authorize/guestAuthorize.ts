@@ -4,25 +4,27 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
-export async function guestAuthorize(request: { headers: { authorization?: string } }): Promise<GuestPayload> {
+export async function guestAuthorize(request: {
+  headers: {
+    authorization?: string;
+  };
+}): Promise<GuestPayload> {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guestSession = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
+  const session = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
-      expired_at: {
-        gt: new Date(),
-      },
+      expired_at: { gt: new Date() },
       guest_id: payload.id,
     },
   });
 
-  if (guestSession === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (session === null) {
+    throw new ForbiddenException("You're not enrolled or session expired");
   }
 
   return payload;

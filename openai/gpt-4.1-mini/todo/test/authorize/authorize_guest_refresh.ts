@@ -13,7 +13,7 @@ export async function authorize_guest_refresh(
     body: ITodoAppGuest.IRefresh;
   },
 ): Promise<ITodoAppGuest.IAuthorized> {
-  return await api.functional.auth.guest.refresh(connection, {
+  return await api.functional.todoApp.auth.guest.refresh(connection, {
     body: props.body,
   });
 }

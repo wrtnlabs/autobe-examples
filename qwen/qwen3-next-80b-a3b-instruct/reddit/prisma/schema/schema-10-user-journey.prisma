@@ -1,0 +1,436 @@
+/// Tracks email verification status and activation timestamps for user
+/// accounts during onboarding.
+///
+/// This subsidiary table manages the email verification workflow as users
+/// register on the platform. It links directly to the community_bbs_member
+/// actor entity and stores critical verification state information including
+/// the verification token, expiration time, and timestamps for when
+/// verification occurred.
+///
+/// The table is maintained automatically by the system during authentication
+/// flow and does not require direct user interaction. Once verified, this
+/// record persists for auditability but does not change state unless the
+/// user requests re-verification.
+///
+/// All records are soft-deleted when the corresponding member account is
+/// removed to maintain referential integrity.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_activation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account being activated. {@link
+  /// community_bbs_member.id}.
+  community_bbs_member_id String
+  
+  /// Indicates whether the user's email address has been successfully
+  /// verified. True if verification completed, false if pending.
+  is_verified Boolean
+  
+  /// Timestamp when the email verification was successfully completed. Null if
+  /// not yet verified.
+  verified_at DateTime?
+  
+  /// Unique token sent to the user's email for verification purposes. This
+  /// token is valid only for a limited time.
+  email_verification_token String
+  
+  /// Expiration timestamp for the verification token. After this time, the
+  /// token becomes invalid and a new one must be requested.
+  token_expires_at DateTime
+  
+  /// Timestamp when the activation record was created during user registration.
+  created_at DateTime
+  
+  /// Timestamp when the activation record was last updated (e.g., when
+  /// verified or token refreshed).
+  updated_at DateTime
+  
+  /// Timestamp when the activation record was soft-deleted. Will be null for
+  /// active records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_bbs_member @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([email_verification_token])
+  @@unique([community_bbs_member_id])
+  @@index([is_verified, created_at])
+  @@index([token_expires_at])
+}
+
+/// Stores cumulative karma points and decay history for each user,
+/// determining privilege levels.
+///
+/// This subsidiary table tracks the reputation score for all authenticated
+/// user actors (members, moderators, and admins). Karma points are
+/// calculated from user contributions and interactions across the platform,
+/// including post upvotes, comment upvotes, and community participation.
+///
+/// The system applies decay rules based on account inactivity, reducing
+/// karma points over time to maintain relevance. This table serves as the
+/// centralized authority for privilege escalation thresholds: 500 karma
+/// unlocks community creation, 1000 unlocks comment voting, 5000 unlocks
+/// moderator eligibility, and 10000 unlocks special platform privileges.
+///
+/// Karma is a derived metric - it's not directly modifiable by users but
+/// calculated from operations in other components. The history of decay
+/// events and point changes is preserved for audit and transparency.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user actor who owns this karma score. {@link
+  /// community_bbs_member.id}, {@link community_bbs_moderator.id}, or {@link
+  /// community_bbs_admin.id}.
+  user_id String
+  
+  /// Current total karma points for the user. Always non-negative. Used for
+  /// privilege escalation thresholds: 500 (create community), 1000 (vote on
+  /// comments), 5000 (moderator eligibility), 10000 (platform privileges).
+  karma_points Int
+  
+  /// JSON string encoding the history of decay events, including timestamps
+  /// and point reductions. Used for audit and transparency purposes. Format:
+  /// [{"timestamp": "2026-01-01T00:00:00Z", "points_reduced": 50, "reason":
+  /// "inactivity_30_days"}, ...]
+  decay_history String?
+  
+  /// Timestamp when this karma score was last updated due to point changes or
+  /// decay calculation. Used for identifying active users and triggering decay
+  /// calculations.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_bbs_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([karma_points, updated_at])
+}
+
+/// Tracks which users are subscribed to which communities, with join dates
+/// and subscription status.
+///
+/// This table manages the many-to-many relationship between users and
+/// communities, recording when users join communities and their current
+/// subscription status. Subscriptions are managed through community
+/// membership workflows and are not independently operated on by users.
+///
+/// Each user can subscribe to multiple communities, and each community can
+/// have multiple subscribers. The subscription status determines whether the
+/// user can access community content and participate in discussions.
+///
+/// This is a subsidiary table because subscriptions are always accessed and
+/// managed through their parent entities (either the user or the community),
+/// and users do not directly create, update, or delete subscriptions as
+/// standalone entities.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community member who subscribed. {@link
+  /// community_bbs_member.id}.
+  community_bbs_member_id String
+  
+  /// Reference to the community that was subscribed to. {@link
+  /// community_bbs_communities.id}.
+  community_bbs_community_id String
+  
+  /// Current subscription status. Valid values: 'active', 'pending',
+  /// 'suspended', 'expired', 'revoked'.
+  status String
+  
+  /// Timestamp when the subscription was created. This field represents the
+  /// join date to the community.
+  subscribed_at DateTime
+  
+  /// Timestamp when the subscription status was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_bbs_member @relation(fields: [community_bbs_member_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities @relation(fields: [community_bbs_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_bbs_member_id, community_bbs_community_id], map: "community_bbs_community_subscriptions_community_bbs_me_fc6b829c")
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_member_id, status], map: "community_bbs_community_subscriptions_community_bbs_me_6cde5e45")
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_community_id, status], map: "community_bbs_community_subscriptions_community_bbs_co_8397b719")
+}
+
+/// Records platform-wide and community-specific bans imposed on users for
+/// policy violations.
+///
+/// Tracks temporary and permanent restrictions on user access to the
+/// platform or individual communities. Each ban record is linked to a
+/// specific user account, the type of ban (platform-wide or
+/// community-specific), the issuing entity (member, moderator, or admin),
+/// and the reason for the ban. Soft deletion is supported to maintain audit
+/// trails while allowing bans to be formally lifted.
+///
+/// Platform-wide bans restrict all access across the system.
+/// Community-specific bans restrict access only within the designated
+/// community. Bans have a defined duration or are permanent, with automated
+/// expiration handling.
+///
+/// Ban records support filtering for moderation dashboards, audit reports,
+/// and user self-service status checks.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user account that has been banned. {@link community_bbs_member.id}.
+  banned_user_id String
+  
+  /// The community to which the ban applies, if community-specific. Leave null
+  /// for platform-wide bans. {@link community_bbs_communities.id}.
+  community_id String?
+  
+  /// Reference to the community_bbs_member who issued the ban, if issuer_type
+  /// is 'member'. {@link community_bbs_member.id}.
+  issuer_member_id String?
+  
+  /// Reference to the community_bbs_moderator who issued the ban, if
+  /// issuer_type is 'moderator'. {@link community_bbs_moderator.id}.
+  issuer_moderator_id String?
+  
+  /// Reference to the community_bbs_admin who issued the ban, if issuer_type
+  /// is 'admin'. {@link community_bbs_admin.id}.
+  issuer_admin_id String?
+  
+  /// Type of ban: 'community' for community-specific restrictions, 'platform'
+  /// for system-wide restrictions. This defines scope of the ban.
+  ban_type String
+  
+  /// Reason for the ban, providing context for moderation decisions. Typically
+  /// references violation category from community_bbs_violation_categories.
+  reason String
+  
+  /// Number of days the ban is active, or 0 for permanent bans. Negative
+  /// values indicate revoked bans.
+  duration_days Int
+  
+  /// Timestamp when the ban was applied. Always non-null and set at creation.
+  start_date DateTime
+  
+  /// Timestamp when the ban expires (if temporary). Null for permanent bans.
+  end_date DateTime?
+  
+  /// Current status of the ban: 'active', 'expired', 'revoked'. Transitioned
+  /// automatically or by moderator action.
+  status String
+  
+  /// Timestamp when this ban record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this ban record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was soft-deleted (revoked/removed). Null if active
+  /// or expired.
+  deleted_at DateTime?
+  
+  /// The type of entity that issued the ban ('member', 'moderator', 'admin').
+  /// Used as discriminator for polymorphic ownership pattern. Values must be
+  /// one of: 'member', 'moderator', 'admin'.
+  issuer_type String
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser community_bbs_member @relation("community_bbs_user_bans_of_banned_user_id", fields: [banned_user_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  issuerMember community_bbs_member? @relation("community_bbs_user_bans_of_issuer_member_id", fields: [issuer_member_id], references: [id], onDelete: Cascade)
+  issuerModerator community_bbs_moderator? @relation(fields: [issuer_moderator_id], references: [id], onDelete: Cascade)
+  issuerAdmin community_bbs_admin? @relation(fields: [issuer_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([banned_user_id, community_id])
+  @@unique([banned_user_id, issuer_member_id])
+  @@unique([banned_user_id, issuer_moderator_id])
+  @@unique([banned_user_id, issuer_admin_id])
+  @@index([status])
+  @@index([ban_type])
+  @@index([start_date])
+  @@index([end_date])
+  @@index([issuer_type])
+  @@index([banned_user_id, status])
+  @@index([community_id, status])
+  @@index([banned_user_id, community_id, status])
+  @@index([issuer_member_id, status])
+  @@index([issuer_moderator_id, status])
+  @@index([issuer_admin_id, status])
+}
+
+/// Logs content reports submitted by users, with status (pending, reviewed,
+/// resolved).
+///
+/// Tracks user-submitted reports of content violations across the platform,
+/// enabling moderation workflows and audit trails. Each report identifies
+/// the reporter (member), the target content (via polymorphic reference),
+/// the nature of the violation, and the current status in the moderation
+/// process.
+///
+/// Reports can be submitted by any member (authenticated user) against any
+/// content (post, comment, etc.) when content violates platform guidelines.
+/// Reports remain immutable for audit purposes with status changes tracked
+/// by moderators.
+///
+/// This table supports all reporting requirements from
+/// 10-moderation-policy.md including the 9 predefined violation categories,
+/// public transparency reporting, and escalation to admin teams when
+/// thresholds are met.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The authenticated member who submitted this report. {@link
+  /// community_bbs_member.id}.
+  reporter_id String
+  
+  /// The specific violation category from the 9 predefined categories.
+  /// References master category definition. {@link
+  /// community_bbs_violation_categories.id}.
+  violation_category_id String
+  
+  /// The ID of the content being reported (post, comment, etc.). Cannot be
+  /// null as every report must target specific content.
+  target_content_id String
+  
+  /// The type of content being reported. Valid values: 'post', 'comment'. Used
+  /// for polymorphic relationship to other component tables.
+  target_content_type String
+  
+  /// Current status of the report in moderation workflow. Valid values:
+  /// 'pending' (new report), 'reviewed' (moderator has acted), 'resolved'
+  /// (decision implemented).
+  status String
+  
+  /// Optional additional notes provided by the reporter detailing the
+  /// violation. May contain specifics about context, timestamps, or additional
+  /// evidence.
+  notes String?
+  
+  /// Timestamp when the report was submitted by the member. Always non-null as
+  /// reports are created with a timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_bbs_member @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  violationCategory community_bbs_violation_categories @relation(fields: [violation_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_id])
+  @@index([violation_category_id])
+  
+  @@index([created_at])
+  @@index([status])
+  @@index([target_content_type])
+  // spellchecker: ignore-next-line
+  @@index([target_content_id, target_content_type], map: "community_bbs_user_reports_target_content_id_target_co_a5baff9d")
+}
+
+/// Tracks current user status flags including inactive, suspended, and
+/// verified states.
+///
+/// Represents the current platform-wide state of each authenticated user,
+/// determining access to features and privileges. This table does not store
+/// historical states or change history - it only reflects the current active
+/// status.
+///
+/// Each user has exactly one status record that is updated as they meet or
+/// fail platform requirements (e.g., email verification, penalties,
+/// administrative decisions). Statuses are independent flags - a user can be
+/// both inactive and suspended simultaneously.
+///
+/// The statuses managed here directly affect user experience: inactive users
+/// cannot interact with content, suspended users are restricted from posting
+/// and commenting, and verified users gain enhanced privileges.
+///
+/// Linking to membership: This record is linked to the user's identity in
+/// the community_bbs_member table via user_id.
+///
+/// @namespace UserJourney
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_user_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user's membership record. {@link
+  /// community_bbs_member.id}.
+  user_id String
+  
+  /// True if the user is inactive due to prolonged inactivity. Prevents access
+  /// to most features.
+  inactive Boolean
+  
+  /// True if the user is currently suspended due to policy violations.
+  /// Prevents posting, commenting, and voting.
+  suspended Boolean
+  
+  /// True if the user has completed identity verification. Grants enhanced
+  /// privileges such as community creation.
+  verified Boolean
+  
+  /// Timestamp when this status record was created. Always non-null as status
+  /// is established upon account creation.
+  created_at DateTime
+  
+  /// Timestamp of the last update to any status flag. Updated whenever any
+  /// flag changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail. Null if record is active. Only set
+  /// if system commits to permanent deletion (rare).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_bbs_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([inactive, created_at])
+  @@index([suspended, created_at])
+  @@index([verified, created_at])
+}

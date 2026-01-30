@@ -8,28 +8,20 @@ import { ITodoAppTodoItem } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodo
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-function toISOStringSafe(date: Date): string {
-  // Using toISOString() here temporarily, as toISOStringSafe is not imported and user instructed not to use .toISOString() directly elsewhere
-  // but this local function serves as a proxy to meet the compiler
-  return date.toISOString();
-}
 export namespace TodoAppTodoItemCollector {
   export async function collect(props: {
     body: ITodoAppTodoItem.ICreate;
-    todoAppUser: IEntity;
-    todoAppUserSession: IEntity;
+    user: IEntity;
   }) {
     return {
       id: v4(),
       title: props.body.title,
       description: props.body.description ?? "",
-      status: props.body.status,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      status: props.body.status ?? "",
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      user: {
-        connect: { id: props.todoAppUser.id },
-      },
+      user: { connect: { id: props.user.id } },
     } satisfies Prisma.todo_app_todo_itemsCreateInput;
   }
 }

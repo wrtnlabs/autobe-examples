@@ -1,239 +1,463 @@
-/// Stores profile information and authentication details for regular users
-/// of the discussion board.
+/// Registered user accounts with email/password authentication credentials,
+/// email verification status, and profile information.
 ///
-/// Represents citizens who can register, create posts, submit comments, and
-/// upload attachments. Each citizen has a unique email and encrypted
-/// password for secure authentication. This entity is linked to their active
-/// sessions via the citizen_sessions table.
+/// Stores primary identity information for authenticated users of the
+/// economic forum platform. Each user account is uniquely identified by
+/// email and secured with a hashed password. This table serves as the
+/// canonical source of user identity for the entire system, serving as the
+/// root of all ownership and permission relationships. User accounts are
+/// linked to their corresponding sessions through the
+/// economic_forum_user_sessions table and are referenced by
+/// economic_forum_user_email_verifications and
+/// economic_forum_user_password_resets for authentication workflows.
 ///
-/// Citizens are primary actors - they independently manage their account,
-/// view their posted content, and interact with other users. Soft deletion
-/// is supported to maintain audit trails during account deactivation or
-/// moderation actions.
+/// The designation of this table as an "actor" means it represents a true
+/// user type with its own distinct authentication flow, separate from any
+/// business domain entities like posts or attachments.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_citizen {
+model economic_forum_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address for authentication and notification. Must be
-  /// validated and verified.
+  /// Unique email address used for login and communication. Must be a valid
+  /// email format and globally unique across all users.
   email String
   
-  /// Securely hashed password using Argon2 or bcrypt. Never stored in plain
-  /// text.
+  /// Cryptographic hash of the user's password. Never store plain text
+  /// passwords. Generated using bcrypt or similar secure algorithm.
   password_hash String
   
-  /// Timestamp when the citizen account was created.
+  /// Timestamp when this user account was created. Automatically set upon
+  /// account registration and never modified.
   created_at DateTime
   
-  /// Timestamp of the last update to citizen profile or authentication data.
+  /// Timestamp when this user account was last updated. Updated on any profile
+  /// changes, password resets, or account status modifications.
   updated_at DateTime
   
-  /// Soft delete timestamp; if set, account is deactivated but preserved for
-  /// audit.
+  /// Timestamp when this user account was soft-deleted. Nullable - if null,
+  /// account is active. Used to preserve audit trail while hiding inactive
+  /// accounts from user interfaces.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_authentication_logs discussion_board_authentication_logs[]
-  discussion_board_activity_logs discussion_board_activity_logs[]
-  discussion_board_citizen_sessions discussion_board_citizen_sessions[]
-  discussion_board_articles discussion_board_articles[]
-  discussion_board_article_reports discussion_board_article_reports[]
-  discussion_board_article_comments discussion_board_article_comments[]
-  discussion_board_article_status_logs discussion_board_article_status_logs[]
-  discussion_board_comments discussion_board_comments[]
-  discussion_board_comment_replies discussion_board_comment_replies[]
-  discussion_board_comment_votes discussion_board_comment_votes[]
-  discussion_board_attachment_images discussion_board_attachment_images[]
-  discussion_board_reports discussion_board_reports[]
-  discussion_board_warnings discussion_board_warnings[]
-  discussion_board_suspensions discussion_board_suspensions[]
-  discussion_board_bans discussion_board_bans[]
-  discussion_board_appeals discussion_board_appeals[]
-  discussion_board_citizen_violations discussion_board_citizen_violations[]
-  discussion_board_citizen_trust_scores discussion_board_citizen_trust_scores?
-  discussion_board_citizen_suspensions discussion_board_citizen_suspensions[]
-  discussion_board_notification_preferences discussion_board_notification_preferences[]
-  discussion_board_audit_events discussion_board_audit_events[]
-  discussion_board_compliance_records discussion_board_compliance_records[]
+  sessions economic_forum_user_sessions[]
+  userEmailVerifications economic_forum_user_email_verifications[]
+  passwordResets economic_forum_user_password_resets[]
+  systemAudits economic_forum_system_audits[]
+  emailVerificationss economic_forum_email_verifications[]
+  posts economic_forum_posts[]
+  comments economic_forum_post_comments[]
+  postReports economic_forum_post_reports[]
   
   @@unique([email])
   @@index([created_at])
+  @@index([updated_at])
   @@index([deleted_at])
 }
 
-/// Tracks authentication sessions for discussion board citizens, including
-/// session tokens and expiration.
+/// JWT session tokens for user authentication with access token, refresh
+/// token, and 24-hour expiration.
 ///
-/// Each session represents a user's active connection to the application.
-/// Sessions are automatically created upon successful authentication and
-/// invalidated upon logout or expiration. This table supports security
-/// auditing by tracking IP addresses, connection URLs, and referrer
-/// information for each session.
+/// This table tracks login sessions for users of the economic_forum
+/// platform, serving as an append-only audit trail of authentication events.
+/// Each record represents a single user session established through
+/// successful login, containing connection metadata and temporal context
+/// necessary for security monitoring and session management.
 ///
-/// Sessions are managed by authentication flows and do not require direct
-/// user interaction. They provide critical audit trails for investigating
-/// suspicious activity and verifying user identity attribution.
+/// Sessions are created upon successful authentication and expire after 24
+/// hours by default. The system does not permit unlimited sessions for
+/// security reasons, so expired_at is always set.
+///
+/// This table has no independent API endpoints - all lifecycle operations
+/// are managed exclusively through the authentication subsystem.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_citizen_sessions {
+model economic_forum_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Citizen's {@link discussion_board_citizen.id}.
-  citizen_id String
+  /// The user's {@link economic_forum_users.id} who owns this session.
+  user_id String
   
-  /// IP address from which the session was initiated.
+  /// The IP address used to establish this session.
   ip String
   
-  /// URL of the connection that established this session.
+  /// The URL of the connection that established this session.
   href String
   
-  /// Referrer URL that led the user to initiate this session.
+  /// The referrer URL that led to this session establishment.
   referrer String
   
-  /// Timestamp when this session was created.
+  /// The timestamp when this session was created.
   created_at DateTime
   
-  /// Timestamp when this session expires or is invalidated. Null indicates
-  /// session is still active.
-  expired_at DateTime?
+  /// The timestamp when this session will expire. Always set to 24 hours after
+  /// created_at. Not nullable to enforce security policy.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  citizen discussion_board_citizen @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  user economic_forum_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@index([citizen_id, created_at])
+  @@index([user_id, created_at])
 }
 
-/// Privileged account information for moderators who manage content and user
-/// reports.
+/// Email verification tokens with 24-hour expiration to confirm user email
+/// addresses during registration before enabling file uploads.
 ///
-/// Stores credentials and authentication details for users with elevated
-/// permissions to review, edit, or remove content.
-/// This table exists independently of the main user table to provide
-/// specialized access controls for moderation roles.
-/// Each moderator account has unique authentication credentials and cannot
-/// be a regular citizen account.
-/// Soft deletion is supported to maintain audit trails while allowing
-/// temporary deactivation of moderator privileges.
+/// This subsidiary table stores temporary one-time verification tokens
+/// issued during account registration or email change workflows. Each token
+/// is associated with a specific user and expires after exactly 24 hours for
+/// security. The presence of a record indicates the email address is
+/// unverified, while deletion (or expiration) signifies successful
+/// verification.
+///
+/// Tokens are designed to be single-use and cannot be reused. Users will
+/// receive the token via email and must enter it on the verification page to
+/// complete the process. The system uses this table to prevent unauthorized
+/// email changes and enforce reliable communication channels.
+///
+/// This table is managed entirely by the system during user registration and
+/// account modification flows, not through direct user CRUD operations -
+/// making it a subsidiary entity.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_moderator {
+model economic_forum_user_email_verifications {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the primary user account in the Systematic component. {@link
-  /// discussion_board_users.id}.
-  discussion_board_user_id String
+  /// User associated with this verification request. {@link
+  /// economic_forum_users.id}.
+  economic_forum_user_id String
   
-  /// Unique email address used for authentication and communication. Must be
-  /// distinct from citizen accounts.
-  email String
+  /// Unique one-time verification token generated for email confirmation. Must
+  /// be cryptographically random and unguessable.
+  token String
   
-  /// Hashed password for secure authentication. Never store plain text
-  /// passwords.
-  password_hash String
-  
-  /// Timestamp when the moderator account was created.
+  /// Timestamp when this verification token was issued. Used to calculate
+  /// 24-hour expiration window and enforce security policies.
   created_at DateTime
   
-  /// Timestamp of the last update to the moderator account metadata.
-  updated_at DateTime
+  /// Timestamp when this verification token expires (24 hours after
+  /// created_at). Must be exactly 24 hours after creation. Sessions cannot be
+  /// extended beyond this point.
+  expired_at DateTime
   
-  /// Timestamp when the moderator account was deactivated (soft delete). Null
-  /// indicates active account.
+  /// Timestamp when this verification record was soft-deleted (upon successful
+  /// verification or manual cleanup). Absence indicates active/unverified
+  /// status.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  user economic_forum_users @relation(fields: [economic_forum_user_id], references: [id], onDelete: Cascade)
   
-  discussion_board_moderation_logs discussion_board_moderation_logs[]
-  discussion_board_authentication_logs discussion_board_authentication_logs[]
-  discussion_board_activity_logs discussion_board_activity_logs[]
-  discussion_board_moderator_sessions discussion_board_moderator_sessions[]
-  discussion_board_article_publication_log discussion_board_article_publication_log[]
-  discussion_board_comment_mod_actions discussion_board_comment_mod_actions[]
-  discussion_board_reports discussion_board_reports[]
-  discussion_board_moderation_actions discussion_board_moderation_actions[]
-  discussion_board_bans discussion_board_bans[]
-  discussion_board_appeals discussion_board_appeals[]
-  discussion_board_moderator_actions discussion_board_moderator_actions[]
-  discussion_board_notification_preferences discussion_board_notification_preferences[]
-  discussion_board_audit_events discussion_board_audit_events[]
-  discussion_board_compliance_records discussion_board_compliance_records[]
-  
-  @@unique([email])
-  @@unique([discussion_board_user_id])
-  @@index([created_at])
-  @@index([deleted_at])
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_user_id], map: "economic_forum_user_email_verifications_economic_forum_ca581de3")
+  @@index([expired_at])
 }
 
-/// Authentication sessions for moderators with elevated access privileges.
+/// Password reset tokens for user account recovery with 1-hour expiration
+/// window.
 ///
-/// Tracks active and expired sessions for moderator accounts, enabling audit
-/// tracing of moderator authentication events and connection contexts. Each
-/// session is associated with a single moderator and captures IP address,
-/// connection URL, and referrer information.
+/// Supports secure password recovery workflow by generating unique,
+/// time-limited tokens that users can use to reset their authentication
+/// credentials. Each token is associated with exactly one user account and
+/// becomes invalid after one hour from creation.
 ///
-/// Sessions are managed automatically by the identity system and are not
-/// directly created or manipulated by users. They serve as operational logs
-/// for security monitoring and compliance tracking, with expired sessions
-/// automatically cleaned up by system processes.
-///
-/// No personal authentication data is stored here; moderator identity is
-/// referenced via the foreign key to the moderator table.
+/// Tokens are used exclusively in the password reset workflow and are not
+/// exposed to users except via secure, encrypted communication channels.
+/// Once a password is successfully reset, the corresponding token is marked
+/// for deletion to maintain audit trail and prevent token reuse.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_moderator_sessions {
+model economic_forum_user_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The moderator account this session belongs to. {@link
-  /// discussion_board_moderator.id}.
-  moderator_id String
+  /// Reference to the user account requesting password reset. {@link
+  /// economic_forum_users.id}.
+  economic_forum_user_id String
   
-  /// IP address from which the session was initiated.
-  ip String
+  /// Unique hashed token used for password reset validation. Generated
+  /// securely and sent to user via email.
+  token String
   
-  /// The URL of the connection endpoint (e.g., the page or API route accessed).
-  href String
+  /// Exact datetime when the password reset token expires. Fixed 1-hour window
+  /// from creation per security requirements.
+  expired_at DateTime
   
-  /// The referrer URL that led to this session.
-  referrer String
-  
-  /// Timestamp when the session was created.
+  /// Timestamp when the password reset token was generated and issued to the
+  /// user.
   created_at DateTime
   
-  /// Timestamp when the session expired. Null indicates an active session.
-  expired_at DateTime?
+  /// Timestamp when the password reset token was last modified (e.g. marked as
+  /// used or deleted).
+  updated_at DateTime
+  
+  /// Timestamp when the password reset token was logically deleted (soft
+  /// delete). Used for audit trail tracking.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  moderator discussion_board_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  user economic_forum_users @relation(fields: [economic_forum_user_id], references: [id], onDelete: Cascade)
   
-  @@index([moderator_id, created_at])
+  @@unique([token])
+  @@unique([economic_forum_user_id])
+  @@index([expired_at])
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_user_id, created_at], map: "economic_forum_user_password_resets_economic_forum_use_8c8385e5")
+}
+
+/// Administrator accounts with email/password authentication credentials and
+/// elevated privileges for content moderation and user management.
+///
+/// Stores credentials and profile information for system administrators who
+/// have the authority to moderate content, delete inappropriate posts, and
+/// manage user accounts. This table serves as the canonical identity record
+/// for admin actors, with all authentication and session management flows
+/// centered around this entity.
+///
+/// Administrators are distinct from regular users because they have elevated
+/// permissions and are responsible for system integrity. Each admin has a
+/// unique email address for secure authentication and communication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email address for authentication and communication. Must be
+  /// unique and used as the primary login identifier.
+  email String
+  
+  /// Hashed password for authentication. Never stored in plain text. Used for
+  /// secure login verification via bcrypt or equivalent hashing algorithm.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created. Records the initial
+  /// registration date for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the administrator record. Updated
+  /// whenever profile information is modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for administrator accounts. When set, the account
+  /// is considered deactivated but retained for audit trails. Null value
+  /// indicates active status.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions economic_forum_admin_sessions[]
+  passwordResets economic_forum_admin_password_resets[]
+  emailVerifications economic_forum_admin_email_verifications[]
+  systemAudits economic_forum_system_audits[]
+  adminEmailVerifications economic_forum_email_verifications[]
+  moderatedPosts economic_forum_posts[]
+  
+  @@unique([email])
+}
+
+/// JWT session tokens for admin authentication with access and refresh token
+/// support for secure, persistent sessions.
+///
+/// Tracks login sessions for economic_forum_admins users with connection
+/// metadata including IP address, requested URL, and referrer information.
+/// This is an append-only audit trail that records each authentication
+/// event. Sessions expire after a defined period for security, and the
+/// expired_at field is mandatory to prevent unlimited sessions which pose
+/// security risks.
+///
+/// Each session is tied to exactly one admin account and cannot exist
+/// independently. The system uses this table to validate active sessions
+/// during requests and to audit login activity for security investigations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The admin account associated with this session. {@link
+  /// economic_forum_admins.id}.
+  economic_forum_admin_id String
+  
+  /// The IP address from which the session was initiated. Required for
+  /// security monitoring and geo-location tracking.
+  ip String
+  
+  /// The full URL of the page that initiated the session. Used for tracking
+  /// access patterns and identifying entry points.
+  href String
+  
+  /// The referrer URL that led to this session initiation. Provides context
+  /// about the source of the authentication request.
+  referrer String
+  
+  /// The timestamp when this session was created. Required to establish
+  /// session lifecycle and track duration.
+  created_at DateTime
+  
+  /// The timestamp when this session will expire. Mandatory for security
+  /// compliance to prevent unlimited sessions. Sessions must have an explicit
+  /// expiration time.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin economic_forum_admins @relation(fields: [economic_forum_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_admin_id, created_at], map: "economic_forum_admin_sessions_economic_forum_admin_id__c160ca72")
+}
+
+/// Password reset tokens for administrative accounts with expiration and
+/// usage tracking.
+///
+/// Stores one-time tokens used to initiate password recovery workflows for
+/// economic_forum_admins. Each token is generated when an admin requests a
+/// password reset and is valid for a limited time. The system marks the
+/// token as used once it has been applied, rendering it invalid for future
+/// use.
+///
+/// Tokens are stored with explicit expiration dates and timestamps for
+/// security auditing. Soft deletion is supported to maintain a complete
+/// audit trail of all password reset attempts, including those that were
+/// never completed.
+///
+/// This table is managed entirely by the authentication system and not
+/// directly accessed or modified by end users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin account requesting password reset. {@link economic_forum_admins.id}.
+  economic_forum_admin_id String
+  
+  /// Randomly generated unique token string for password reset. Used to
+  /// authenticate the reset request.
+  token String
+  
+  /// Expiration timestamp for the password reset token. After this time, the
+  /// token is no longer valid.
+  expires_at DateTime
+  
+  /// Flag indicating whether the password reset token has been successfully
+  /// used to change the password.
+  used Boolean
+  
+  /// Timestamp when the password reset token was created and issued to the
+  /// admin.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token was last updated (typically when
+  /// marked as used).
+  updated_at DateTime
+  
+  /// Timestamp when the password reset token record was soft-deleted. Null
+  /// indicates the record is active. Used for audit trail preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin economic_forum_admins @relation(fields: [economic_forum_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([economic_forum_admin_id, created_at], map: "economic_forum_admin_password_resets_economic_forum_ad_0f554082")
+}
+
+/// Email verification tokens to confirm admin email addresses during account
+/// registration or update.
+///
+/// Stores temporary tokens used to verify the authenticity of admin email
+/// addresses during account creation or email change procedures. Each token
+/// is unique, single-use, and expires after a defined period (typically 24
+/// hours) to ensure security.
+///
+/// The token is sent to the admin's email address and must be presented to
+/// complete the verification process. Once verified, the token is
+/// invalidated. This table maintains an audit trail of all verification
+/// attempts, including successful validations and expired or unused tokens.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_forum_admin_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin account that this email verification is associated with. {@link
+  /// economic_forum_admins.id}.
+  admin_id String
+  
+  /// Unique verification token generated for email confirmation. Must be
+  /// cryptographically random and URL-safe to prevent guessing attacks.
+  token String
+  
+  /// Expiration timestamp for the verification token. Tokens are always valid
+  /// for a limited time (typically 24 hours) for security reasons.
+  expires_at DateTime
+  
+  /// Timestamp when this verification token was created and issued to the
+  /// admin.
+  created_at DateTime
+  
+  /// Soft delete timestamp indicating when this verification record was
+  /// logically deleted, either upon successful verification or manual cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin economic_forum_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([admin_id, expires_at], map: "economic_forum_admin_email_verifications_admin_id_expi_e7cb10f2")
 }

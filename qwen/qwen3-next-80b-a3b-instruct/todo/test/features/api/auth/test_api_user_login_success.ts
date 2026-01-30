@@ -5,59 +5,66 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { ITodoListToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListToken";
-import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
-import { authorize_member_join } from "../../../authorize/authorize_member_join";
-import { authorize_member_login } from "../../../authorize/authorize_member_login";
-import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { authorize_user_join } from "../../../authorize/authorize_user_join";
+import { authorize_user_login } from "../../../authorize/authorize_user_login";
+import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
 export async function test_api_user_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create a new user account before testing login
-  const email = typia.random<string & tags.Format<"email">>();
+  // Step 1: Create a valid user account for login testing
+  const userConnection: api.IConnection = { host: connection.host };
   const password = RandomGenerator.alphaNumeric(16);
-  const userJoinData = {
-    email,
-    password,
-  } satisfies ITodoListUser.IJoin;
-  const createdUser: ITodoListUser.IAuthorized = await authorize_member_join(
-    connection,
+  const createdUser: ITodoAppUser.IAuthorized = await authorize_user_join(
+    userConnection,
     {
-      body: userJoinData,
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password,
+      },
     },
   );
   typia.assert(createdUser);
-  // Step 2: Authenticate the created user with their credentials
+  // Step 2: Use the created user's credentials to authenticate
   const loginConnection: api.IConnection = { host: connection.host };
-  const userLoginData = {
-    email,
-    password,
-  } satisfies ITodoListUser.ILogin;
-  const authenticatedUser: ITodoListUser.IAuthorized =
-    await authorize_member_login(loginConnection, {
-      body: userLoginData,
-    });
-  typia.assert(authenticatedUser);
-  // Step 3: Validate that user information matches the created user
-  TestValidator.equals("user ID matches", authenticatedUser.id, createdUser.id);
+  const loggedUser: ITodoAppUser.IAuthorized = await authorize_user_login(
+    loginConnection,
+    {
+      body: {
+        email: createdUser.email,
+        password,
+      },
+    },
+  );
+  typia.assert(loggedUser);
+  // Step 3: Validate business logic fields that should match between join and login
+  TestValidator.equals("email matches", loggedUser.email, createdUser.email);
   TestValidator.equals(
-    "user email matches",
-    authenticatedUser.email,
-    createdUser.email,
+    "username matches",
+    loggedUser.username,
+    createdUser.username,
+  );
+  TestValidator.equals("user id matches", loggedUser.id, createdUser.id);
+  TestValidator.equals(
+    "created_at matches",
+    loggedUser.created_at,
+    createdUser.created_at,
   );
   TestValidator.equals(
-    "created at matches",
-    authenticatedUser.createdAt,
-    createdUser.createdAt,
+    "updated_at matches",
+    loggedUser.updated_at,
+    createdUser.updated_at,
   );
-  // Step 4: Validate authentication token structure
-  const token: ITodoListToken = authenticatedUser.token;
-  // Verify token properties exist and are properly structured
-  TestValidator.equals("access token is string", typeof token.access, "string");
+  TestValidator.equals("token exists", loggedUser.token !== null, true);
   TestValidator.equals(
-    "refresh token is string",
-    typeof token.refresh,
-    "string",
+    "access token exists",
+    typeof loggedUser.token.access === "string",
+    true,
   );
-  // Note: last_login_at database update cannot be validated as it's not exposed in API response
+  TestValidator.equals(
+    "refresh token exists",
+    typeof loggedUser.token.refresh === "string",
+    true,
+  );
 }

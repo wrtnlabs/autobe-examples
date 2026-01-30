@@ -9,15 +9,12 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace TodoAppUserRoleCollector {
-  export async function collect(props: {
-    body: ITodoAppUserRole.ICreate;
-    todoAppUsers: IEntity;
-  }) {
+  export async function collect(props: { body: ITodoAppUserRole.ICreate }) {
     return {
       id: v4(),
       created_at: new Date(),
       updated_at: new Date(),
-      user: { connect: { id: props.todoAppUsers.id } },
+      user: { connect: { id: props.body.todo_app_user_id } },
       role: { connect: { id: props.body.todo_app_role_id } },
     } satisfies Prisma.todo_app_user_rolesCreateInput;
   }

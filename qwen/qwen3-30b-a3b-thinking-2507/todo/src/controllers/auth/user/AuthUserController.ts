@@ -1,6 +1,10 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
+import { postAuthUserJoin } from "../../../providers/postAuthUserJoin";
+import { postAuthUserLogin } from "../../../providers/postAuthUserLogin";
+import { postAuthUserRefresh } from "../../../providers/postAuthUserRefresh";
+import { getAuthUserStatus } from "../../../providers/getAuthUserStatus";
 
 import { ITodoUser } from "../../../api/structures/ITodoUser";
 
@@ -23,11 +27,20 @@ export class AuthUserController {
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ITodoUser.IJoin,
   ): Promise<ITodoUser.IAuthorized> {
-    body;
-    return typia.random<ITodoUser.IAuthorized>();
+    try {
+      return await postAuthUserJoin({
+        ip,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
@@ -47,11 +60,20 @@ export class AuthUserController {
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ITodoUser.ILogin,
   ): Promise<ITodoUser.IAuthorized> {
-    body;
-    return typia.random<ITodoUser.IAuthorized>();
+    try {
+      return await postAuthUserLogin({
+        ip,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
@@ -75,8 +97,14 @@ export class AuthUserController {
     @TypedBody()
     body: ITodoUser.IRefresh,
   ): Promise<ITodoUser.IAuthorized> {
-    body;
-    return typia.random<ITodoUser.IAuthorized>();
+    try {
+      return await postAuthUserRefresh({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
@@ -92,6 +120,11 @@ export class AuthUserController {
    */
   @TypedRoute.Get("status")
   public async status(): Promise<ITodoUser> {
-    return typia.random<ITodoUser>();
+    try {
+      return await getAuthUserStatus();
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

@@ -8,8 +8,6 @@ import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppU
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { TodoAppUserAtSummaryTransformer } from "./TodoAppUserAtSummaryTransformer";
-
 export namespace TodoAppUserEmailVerificationTransformer {
   export type Payload = Prisma.todo_app_user_email_verificationsGetPayload<
     ReturnType<typeof select>
@@ -23,7 +21,11 @@ export namespace TodoAppUserEmailVerificationTransformer {
         verified_at: true,
         created_at: true,
         deleted_at: true,
-        user: TodoAppUserAtSummaryTransformer.select(),
+        user: {
+          select: {
+            // ITodoAppUser.ISummary is empty, no fields to select
+          },
+        },
       },
     } satisfies Prisma.todo_app_user_email_verificationsFindManyArgs;
   }
@@ -31,14 +33,13 @@ export namespace TodoAppUserEmailVerificationTransformer {
     input: Payload,
   ): Promise<ITodoAppUserEmailVerification> {
     return {
-      user: await TodoAppUserAtSummaryTransformer.transform(input.user),
       id: input.id,
       token: input.token,
       token_expired_at: input.token_expired_at.toISOString(),
-      verified_at: input.verified_at?.toISOString() ?? null,
+      verified_at: input.verified_at ? input.verified_at.toISOString() : null,
       created_at: input.created_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      user_id: null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
+      user: {}, // ITodoAppUser.ISummary is empty
     };
   }
 }

@@ -1,506 +1,211 @@
-/// Channels for content delivery (e.g., web, mobile, API) with branding and
-/// configuration settings.
+/// Defines communication channels through which content is delivered (e.g.,
+/// web app, mobile app, API). Stores branding, configuration, and access
+/// settings for each channel.
 ///
-/// Represents the primary access points for users to interact with the
-/// system content, such as web interface, mobile applications, or API
-/// endpoints. Each channel can have distinct branding, functionality, and
-/// configuration settings to serve different user segments or device types.
+/// This table represents the different ways users can access the platform,
+/// each potentially having unique branding, feature availability, and
+/// configuration settings. Channels serve as the primary delivery mechanism
+/// for content and determine display characteristics, API endpoints, and
+/// user experience variations.
 ///
-/// Channels are managed independently by administrators who can enable,
-/// disable, or modify channel-specific settings. Users select a channel when
-/// accessing the platform, and the system routes content and features
-/// accordingly. Channels can be hierarchical, with sections organizing
-/// content within each channel.
-///
-/// The channel configuration includes branding elements like logos, colors,
-/// and custom UI settings that adapt the platform experience per channel.
+/// Each channel is uniquely identified and can be independently activated,
+/// deactivated, or modified through system administration interfaces. The
+/// channel configuration affects how posts, comments, and user interfaces
+/// are rendered across different platforms (web, mobile, API).
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_channels {
+model community_bbs_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent channel for hierarchical organization. {@link
-  /// community_platform_channels.id}.
-  parent_channel_id String?
-  
-  /// Unique internal name for the channel (e.g., 'web', 'mobile', 'api').
+  /// Human-readable name of the channel (e.g., "Web App", "Mobile App",
+  /// "API"). Must be unique across channels for administrative clarity.
   name String
   
-  /// Human-readable name shown to users (e.g., 'Web Portal', 'Mobile App').
-  display_name String
-  
-  /// Detailed description of the channel's purpose and target users.
-  description String?
-  
-  /// Primary brand color code in hex format (e.g., '#3B82F6').
-  color_primary String?
-  
-  /// Secondary brand color code in hex format (e.g., '#10B981').
-  color_secondary String?
-  
-  /// Whether the channel is currently active and available to users.
-  is_enabled Boolean
-  
-  /// JSON configuration object for channel-specific settings and feature flags.
-  config String?
-  
-  /// Timestamp when this channel was created.
-  created_at DateTime
-  
-  /// Timestamp when this channel was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this channel was soft-deleted (null if active).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  parent community_platform_channels? @relation("recursive", fields: [parent_channel_id], references: [id], onDelete: Cascade)
-  
-  recursive community_platform_channels[] @relation("recursive")
-  community_platform_sections community_platform_sections[]
-  
-  @@index([parent_channel_id])
-  
-  @@unique([name])
-  @@index([is_enabled, created_at])
-}
-
-/// Hierarchical sections within channels for organizing content, products,
-/// and community groupings.
-///
-/// Each section belongs to a specific channel and can have nested child
-/// sections to create multi-level organizational structures. Sections define
-/// the navigation hierarchy for users and determine content categorization
-/// within a channel.
-///
-/// Sections are managed by administrators through channel configuration
-/// interfaces, but users directly navigate, search, and access sections via
-/// URL routing. Each section has a unique slug for clean URLs and is ordered
-/// visually by display_order.
-///
-/// This table is a primary entity because users independently interact with
-/// sections: accessing content by selecting sections, bookmarking, and
-/// navigating through the site structure.
-///
-/// Temporal fields:
-/// - created_at: Records when the section was created in the system
-/// - updated_at: Tracks the last modification of section metadata
-/// - deleted_at: NULL until soft-deleted for moderation purposes
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_sections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Channel that this section belongs to. {@link
-  /// community_platform_channels.id}.
-  community_platform_channel_id String
-  
-  /// Parent section for nesting. {@link community_platform_sections.id}.
-  /// Enables hierarchical structure.
-  parent_section_id String?
-  
-  /// Display name for the section shown to users.
-  name String
-  
-  /// URL-friendly identifier for routing, must be unique within channel.
+  /// URL-friendly identifier for the channel used in routing and API
+  /// endpoints. Must be unique and follow kebab-case format (e.g., "web-app",
+  /// "mobile-app", "api").
   slug String
   
-  /// Detailed description of the section's purpose and content scope.
+  /// Detailed description explaining the purpose, target audience, and unique
+  /// features of this channel.
   description String?
   
-  /// Order position of this section relative to its siblings under the same
-  /// parent.
-  display_order Int
+  /// Flag indicating whether the channel is currently enabled for user access.
+  /// When false, users cannot create or view content through this channel.
+  is_active Boolean
   
-  /// Whether this section is visible to users. Hidden sections can be
-  /// reactivated.
-  is_visible Boolean
+  /// Primary brand color in hex format (#RRGGBB) used for UI elements specific
+  /// to this channel.
+  branding_color String?
   
-  /// Timestamp of when this section was created.
+  /// Full URL to the logo image used in this channel's interface. Must be a
+  /// publicly accessible web address.
+  branding_logo_url String?
+  
+  /// JSON string containing boolean flags for channel-specific features (e.g.,
+  /// "{\"enable_comments\":true,\"enable_votes\":true,\"enable_media_upload\":false}").
+  /// Allows granular control per channel.
+  feature_flags String?
+  
+  /// Maximum allowed size for posts in this channel (in bytes). Applies to
+  /// both content and metadata.
+  max_post_size_bytes Int
+  
+  /// Timestamp when this channel was created in the system.
   created_at DateTime
   
-  /// Timestamp of when this section was last updated.
+  /// Timestamp when this channel was last modified.
   updated_at DateTime
   
-  /// Soft delete timestamp for moderation. When set, section is hidden from
-  /// users.
+  /// Timestamp when this channel was soft-deleted. NULL indicates the channel
+  /// is active. Used for audit trails and potential recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel community_platform_channels @relation(fields: [community_platform_channel_id], references: [id], onDelete: Cascade)
-  parent community_platform_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
+  sections community_bbs_sections[]
+  communities community_bbs_communities[]
   
-  recursive community_platform_sections[] @relation("recursive")
-  
-  @@index([parent_section_id])
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_channel_id, slug], map: "community_platform_sections_community_platform_channel_1607a327")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_channel_id, parent_section_id], map: "community_platform_sections_community_platform_channel_26bd8152")
-  @@index([display_order])
+  @@unique([name])
+  @@unique([slug])
+  @@index([is_active])
+  @@index([created_at])
 }
 
-/// Global system configuration flags and feature toggles that control
-/// application behavior across all domains.
+/// Hierarchical content organization units within channels.
 ///
-/// Stores system-wide settings such as feature toggles, operational
-/// parameters, and administrative controls that govern how the platform
-/// functions across all components. These configurations are managed
-/// exclusively by administrators through administrative interfaces and are
-/// not directly manipulated by end users.
+/// Defines structured content groupings that organize posts and communities
+/// within communication channels. Each section represents a logical category
+/// that groups related communities for user navigation and content
+/// filtering. Sections form a hierarchy that enables users to understand
+/// content architecture and navigate efficiently between content types.
 ///
-/// Configuration values include activation flags for features like comment
-/// moderation, karma calculation rules, content filtering sensitivity, and
-/// system-wide rate limits. All settings are applied globally and affect the
-/// behavior of every subsystem, including Notifications, Reporting, Sales,
-/// and Actors. Changes to configurations trigger immediate effects across
-/// the entire platform.
+/// Sections are managed by platform administrators and moderators, not by
+/// regular users. They do not represent user-generated content but rather
+/// the structural framework through which content is organized. Each section
+/// belongs to exactly one channel and can contain multiple communities.
 ///
-/// The table follows a snapshot-like pattern but is classified as subsidiary
-/// because it represents the current active configuration state rather than
-/// historical versions. Configuration changes are tracked through audit logs
-/// in other components rather than versioned in this table.
+/// The ordering property determines the display sequence in navigation
+/// menus. The visibility property controls whether sections are visible to
+/// guests or members only. Soft deletion is supported to maintain audit
+/// trails while allowing configuration changes.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_configurations {
+model community_bbs_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Enables or disables automated comment moderation system. When enabled,
-  /// AI-powered content analysis flags inappropriate comments for review.
-  feature_flag_comments_moderation Boolean
+  /// Parent channel to which this section belongs. {@link
+  /// community_bbs_channels.id}.
+  community_bbs_channels_id String
   
-  /// Activates the karma reputation system that rewards user contributions.
-  /// When disabled, user reputation scores are not calculated or displayed.
-  feature_flag_karma_system Boolean
+  /// Human-readable name of the section for display in UI. Must be unique
+  /// within a channel.
+  name String
   
-  /// Enables keyword-based content filtering to block prohibited terms across
-  /// all content types. When disabled, no automated filtering occurs.
-  feature_flag_content_filtering Boolean
+  /// Detailed description explaining the purpose and content scope of this
+  /// section for users and administrators.
+  description String?
   
-  /// Controls whether post view statistics and engagement metrics are
-  /// collected and stored for analytics purposes.
-  feature_flag_post_analytics Boolean
+  /// Integer value determining the display order of sections within a channel.
+  /// Lower values appear first in UI. Must be positive.
+  ordering Int
   
-  /// Activates daily posting limits for member users to prevent spam and
-  /// maintain platform quality.
-  feature_flag_daily_limit_posts Boolean
+  /// Visibility scope of the section. Valid values: 'public', 'members_only'.
+  /// Public sections visible to guests and members; members_only require
+  /// authentication.
+  visibility String
   
-  /// Enables or disables paid subscription features for premium content access
-  /// and monetization.
-  feature_flag_subscription_payments Boolean
-  
-  /// Controls whether administrators receive automated alerts for
-  /// high-priority moderation events such as content reports exceeding
-  /// thresholds.
-  feature_flag_moderator_notifications Boolean
-  
-  /// Enables access to system-wide analytics dashboards for administrators to
-  /// monitor platform health, user growth, and engagement trends.
-  feature_flag_analytics_dashboard Boolean
-  
-  /// Minimum karma score required before a user can report content. Prevents
-  /// abuse of reporting system by low-reputation users.
-  karma_threshold_report Int
-  
-  /// Minimum karma score required before a user can post comments. Reduces
-  /// spam by requiring community trust before allowing interaction.
-  karma_threshold_comments Int
-  
-  /// Minimum karma score required before a user can create new posts. Prevents
-  /// spam content from new or low-reputation users.
-  karma_threshold_post Int
-  
-  /// Number of reports required on content before automated moderation action
-  /// is triggered (e.g., hiding the content or suspending user).
-  report_threshold_moderation Int
-  
-  /// Number of reports required on a user before automatic suspension or
-  /// banning occurs based on cumulative offenses.
-  report_threshold_ban Int
-  
-  /// Maximum number of posts a member user can create per day when daily limit
-  /// feature is enabled.
-  daily_post_limit Int
-  
-  /// Maximum file upload size in bytes allowed for content attachments such as
-  /// images, videos, or documents.
-  max_file_upload_size Int
-  
-  /// Maximum nesting depth allowed for comment threads. Controls comment
-  /// hierarchy complexity to prevent excessive nesting.
-  max_comment_depth Int
-  
-  /// Time-to-live duration in seconds for search query results cache. Controls
-  /// how frequently search indexes are refreshed.
-  search_cache_ttl Int
-  
-  /// Duration in minutes after which a user session expires if there is no
-  /// activity. Defines session inactivity timeout.
-  session_timeout_minutes Int
-  
-  /// Global maintenance flag that temporarily disables user-facing operations
-  /// during system updates or repairs. When true, users see maintenance page.
-  maintenance_mode_enabled Boolean
-  
-  /// Maximum number of login attempts allowed from a single IP address within
-  /// a time window before temporary lockout.
-  rate_limit_login Int
-  
-  /// Maximum number of reports a single user can submit within a time window
-  /// to prevent report spamming.
-  rate_limit_reports Int
-  
-  /// Current system version identifier, used for tracking schema compatibility
-  /// and deployment status across distributed systems.
-  system_version String
-  
-  /// Timestamp indicating when this configuration set was created. Tracks when
-  /// these system settings were first applied.
+  /// Timestamp when this section was created in the system.
   created_at DateTime
   
-  /// Timestamp indicating the last time this configuration set was modified.
-  /// Used for auditing configuration changes and cache invalidation.
+  /// Timestamp when this section was last modified.
   updated_at DateTime
   
-  /// Soft delete timestamp for configuration records. When set, indicates the
-  /// configuration has been archived and is no longer active. Used for audit
-  /// trail and rollback capability.
+  /// Timestamp when this section was soft-deleted. NULL means active. Used to
+  /// preserve configuration history while hiding deleted sections.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@index([created_at])
-  @@index([updated_at])
-  @@index([deleted_at])
-  // spellchecker: ignore-next-line
-  @@index([feature_flag_comments_moderation, feature_flag_karma_system], map: "community_platform_configurations_feature_flag_comment_3df6b11a")
+  channel community_bbs_channels @relation(fields: [community_bbs_channels_id], references: [id], onDelete: Cascade)
+  
+  communities community_bbs_communities[]
+  
+  @@unique([community_bbs_channels_id, name])
+  @@index([community_bbs_channels_id, ordering])
+  @@index([visibility])
 }
 
-/// Tracks anonymous visitors who view public content but have no
-/// authenticated identity.
+/// System-wide configuration settings and feature flags that control
+/// platform behavior. Stores boolean flags, numeric thresholds, text
+/// settings, and activation states for platform-wide features.
 ///
-/// Records temporary access events from users who have not created an
-/// account or logged in. These records enable analytics on public content
-/// engagement and provide data for conversion funnel analysis.
+/// This table serves as the single source of truth for global operational
+/// parameters. Values are managed exclusively by administrators and are
+/// applied across all components. Changes to configuration affect the entire
+/// platform's behavior, including content moderation thresholds, karma decay
+/// rates, comment depth limits, and feature toggles.
 ///
-/// Each guest record is uniquely identified and timestamped to track visit
-/// frequency and duration. Guest records are cleared after 30 days of
-/// inactivity as part of data retention policy, but always maintained in
-/// soft-deleted state for audit purposes.
-///
-/// This table is referenced by the community_platform_guest_sessions table
-/// to correlate anonymous sessions with guest visit history.
+/// Each configuration key is unique and serves a specific operational
+/// purpose. The activation_state determines whether a setting is currently
+/// applied (active) or bypassed (inactive). The created_at, updated_at, and
+/// deleted_at fields provide an audit trail of configuration changes for
+/// compliance and debugging.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_guest {
+model community_bbs_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp when this guest record was first created upon initial visit.
+  /// Unique identifier for the configuration setting (e.g.,
+  /// "max_comment_depth", "karma_decay_rate").
+  key String
+  
+  /// Boolean flag for enabling or disabling a feature (e.g.,
+  /// "enable_anonymous_comments").
+  bool_flag Boolean?
+  
+  /// Integer threshold value for system limits (e.g.,
+  /// "min_karma_for_moderation", "max_votes_per_hour").
+  int_threshold Int?
+  
+  /// Text setting for configuration values (e.g.,
+  /// "default_community_description", "moderation_policy_link").
+  text_setting String?
+  
+  /// Current activation status: 'active' or 'inactive'. Determines whether
+  /// this configuration is currently applied to the platform.
+  activation_state String
+  
+  /// Timestamp when this configuration was created.
   created_at DateTime
   
-  /// Timestamp of the most recent activity associated with this guest record.
+  /// Timestamp when this configuration was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp indicating when this guest record was marked for
-  /// removal as part of data retention policy. NULL means record is active.
+  /// Timestamp when this configuration was soft-deleted. If null,
+  /// configuration is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_platform_guest_sessions community_platform_guest_sessions[]
-  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
-  community_platform_notification_events community_platform_notification_events[]
-  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
-  community_platform_email_notification_queue community_platform_email_notification_queue[]
-  community_platform_notification_optouts community_platform_notification_optouts?
-  
-  @@index([created_at])
-  @@index([updated_at])
-  @@index([deleted_at])
-}
-
-/// Authenticated member accounts with profiles, karma scores, and
-/// subscription relationships.
-///
-/// Represents users who have registered and authenticated with the system,
-/// enabling full participation in the community including posting content,
-/// voting, commenting, and managing subscriptions.
-///
-/// Each member records persistent identity and engagement metrics that
-/// persist across sessions. Members can create communities, submit posts and
-/// comments, earn karma through community interactions, and subscribe to
-/// content channels.
-///
-/// The model tracks cryptographic password hashes for secure authentication,
-/// email for communication and recovery, and karma as a cumulative
-/// reputation score derived from community feedback.
-///
-/// Connections to authentication state are maintained through a 1:1
-/// relationship with community_platform_member_sessions, which handles
-/// active login sessions, while this table maintains the persistent identity
-/// profile.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_member {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Registered email address used for authentication, notifications, and
-  /// account recovery. Must be unique across all members.
-  email String
-  
-  /// BCrypt hash of the user's password. Never stored in plain text. Required
-  /// for secure login functionality.
-  password_hash String
-  
-  /// Cumulative reputation score earned through community interactions such as
-  /// helpful posts, upvotes from other members, and successful content
-  /// contributions. Positive values only.
-  karma Int
-  
-  /// Optional user-provided description about themselves. Can contain short
-  /// narratives, interests, or professional summaries.
-  bio String?
-  
-  /// Timestamp when the member account was created. Always set during initial
-  /// registration and never modified.
-  created_at DateTime
-  
-  /// Timestamp when the member profile was last updated (e.g., bio change,
-  /// email update). Automatically maintained by the system.
-  updated_at DateTime
-  
-  /// Soft delete timestamp indicating when the member account was deactivated.
-  /// NULL means active account; non-NULL means account is archived and no
-  /// longer accessible.
-  deleted_at DateTime?
-  
-  /// Current account status. Valid values: active, suspended, disabled,
-  /// verified. Controls access permissions and moderation actions.
-  status String
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_member_sessions community_platform_member_sessions[]
-  communityplatformproductreviews communityplatformproductreviews?
-  communityplatformproductreviewvotes communityplatformproductreviewvotes[]
-  communityplatformsales communityplatformsales[]
-  communityplatformsalefavorites communityplatformsalefavorites[]
-  communityplatformproductwishlist communityplatformproductwishlist[]
-  community_platform_carts community_platform_carts[]
-  community_platform_orders community_platform_orders[]
-  community_platform_shipments community_platform_shipments[]
-  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
-  community_platform_user_notification_preferences community_platform_user_notification_preferences[]
-  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
-  community_platform_email_notification_queue community_platform_email_notification_queue[]
-  community_platform_notification_read_status community_platform_notification_read_status[]
-  community_platform_notification_retention_policies community_platform_notification_retention_policies[]
-  community_platform_notification_optouts community_platform_notification_optouts?
-  community_platform_reports community_platform_reports[]
-  community_platform_report_of_members community_platform_report_of_members[]
-  
-  @@unique([email])
-  @@index([created_at])
-}
-
-/// System administrators with elevated privileges for moderation,
-/// configuration, and user management.
-///
-/// Accounts with full access to system-wide configuration, content
-/// moderation, user management, and operational controls. These entities are
-/// granted permissions beyond regular members to ensure platform integrity
-/// and operational continuity.
-///
-/// Admins can perform actions across all domains: removing inappropriate
-/// content, banning users, adjusting karma scores, managing community rules,
-/// reviewing reports, and accessing system analytics. Each admin has a
-/// unique email and password for authentication, and all actions are
-/// auditable through session logging.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_admin {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// User-specific notification preferences controlling which alerts this
-  /// admin receives. {@link
-  /// community_platform_user_notification_preferences.id}.
-  user_notification_preference_id String
-  
-  /// Unique email address used for login and communication. Must be a valid
-  /// business email address associated with the administrator.
-  email String
-  
-  /// Securely hashed password for authentication. Never stored as plain text.
-  /// Created using bcrypt with salt.
-  password_hash String
-  
-  /// Timestamp when this admin account was created. Used for audit trails and
-  /// onboarding tracking.
-  created_at DateTime
-  
-  /// Timestamp of the last update to this admin account. Updated whenever
-  /// profile or permissions change.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. If null, account is active. If set, account is
-  /// logically deleted for audit purposes.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  notificationPreferences community_platform_user_notification_preferences @relation(fields: [user_notification_preference_id], references: [id], onDelete: Cascade)
-  
-  community_platform_admin_sessions community_platform_admin_sessions[]
-  community_platform_shipments community_platform_shipments[]
-  community_platform_inventory_lifecycle community_platform_inventory_lifecycle[]
-  community_platform_notification_subscriptions community_platform_notification_subscriptions[]
-  community_platform_email_notification_queue community_platform_email_notification_queue[]
-  community_platform_notification_optouts community_platform_notification_optouts?
-  community_platform_moderation_logs community_platform_moderation_logs[]
-  
-  @@unique([user_notification_preference_id])
-  
-  @@unique([email])
-  @@index([created_at])
-  @@index([updated_at])
-  @@index([deleted_at])
+  @@unique([key])
+  @@index([activation_state, created_at])
 }

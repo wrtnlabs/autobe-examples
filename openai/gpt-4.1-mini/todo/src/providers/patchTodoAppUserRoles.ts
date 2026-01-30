@@ -18,45 +18,76 @@ export async function patchTodoAppUserRoles(props: {
   user: UserPayload;
   body: ITodoAppRole.IRequest;
 }): Promise<IPageITodoAppRole.ISummary> {
-  const page = props.body.page;
-  const limit = props.body.limit;
+  const page =
+    props.body.page !== undefined && props.body.page !== null
+      ? Math.max(props.body.page, 1)
+      : 1;
+  const limit =
+    props.body.limit !== undefined && props.body.limit !== null
+      ? Math.max(props.body.limit, 1)
+      : 100;
   const skip = (page - 1) * limit;
-  // Build where condition
-  const where = {
-    deleted_at: null,
-    ...(props.body.searchTerm
-      ? {
-          OR: [
-            { name: { contains: props.body.searchTerm } },
-            { description: { contains: props.body.searchTerm } },
-          ],
-        }
-      : {}),
-    ...(props.body.roleType
-      ? {
-          role_type: props.body.roleType,
-        }
-      : {}),
+  // Construct where condition for filtering
+  const whereCondition = {
+    AND: [
+      {
+        deleted_at: null,
+      },
+      ...(props.body.searchTerm
+        ? [
+            {
+              OR: [
+                {
+                  name: {
+                    contains: props.body.searchTerm,
+                    mode: "insensitive" as const,
+                  },
+                },
+                {
+                  description: {
+                    contains: props.body.searchTerm,
+                    mode: "insensitive" as const,
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+      ...(props.body.roleName ? [{ name: props.body.roleName }] : []),
+    ],
   } satisfies Prisma.todo_app_rolesWhereInput;
-  const data = await MyGlobal.prisma.todo_app_roles.findMany({
-    where,
+  // Validate and set sortBy and sortOrder with defaults
+  const validSortFields = ["name", "created_at", "updated_at", "description"];
+  const sortBy =
+    props.body.sortBy && validSortFields.includes(props.body.sortBy)
+      ? props.body.sortBy
+      : "created_at";
+  const sortOrder =
+    props.body.sortOrder === "asc" || props.body.sortOrder === "desc"
+      ? props.body.sortOrder
+      : "desc";
+  const roles = await MyGlobal.prisma.todo_app_roles.findMany({
+    where: whereCondition,
     skip,
     take: limit,
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-    },
+    orderBy: { [sortBy]: sortOrder },
   });
-  const total = await MyGlobal.prisma.todo_app_roles.count({ where });
+  const total = await MyGlobal.prisma.todo_app_roles.count({
+    where: whereCondition,
+  });
+  // Map database records to ITodoAppRole.ISummary with date formatting
+  const data = roles.map((role) => ({
+    id: role.id,
+    name: role.name,
+    description: role.description,
+  }));
   return {
-    pagination: {
-      current: page satisfies number as number,
-      limit: limit satisfies number as number,
-      records: total,
-      pages: Math.ceil(total / limit) satisfies number as number,
-    },
     data,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
   };
 }

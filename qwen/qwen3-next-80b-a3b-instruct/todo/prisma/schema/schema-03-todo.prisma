@@ -1,60 +1,56 @@
-/// Individual todo items owned by authenticated users with title, completion
-/// status, and timestamps.
+/// Personal task items owned exclusively by a single user. Each todo
+/// represents a discrete unit of work that can be tracked to completion.
 ///
-/// Each todo item represents a discrete task that a user creates, manages,
-/// and completes within their personal todo list. Todo items are
-/// intrinsically linked to the user who created them through a foreign key
-/// relationship, ensuring complete data isolation between users.
+/// Stores individual todo items with strict ownership by a single user. Each
+/// item has a unique ID, title, description, status
+/// (pending/completed/archived), and timestamps for creation and updates.
+/// The userId field links to the authentication agent's user table, ensuring
+/// complete data isolation. Todo items are not shared between users and can
+/// only be accessed, modified, or deleted by their owner.
 ///
-/// Items support full lifecycle management: creation with title, toggling
-/// completion status, and deletion. All modifications are tracked with
-/// precise timestamps. Soft deletion is implemented to maintain audit trails
-/// while allowing user-initiated removal.
-///
-/// This table is fundamental to the Todo component's core functionality,
-/// providing persistent storage for user-specific task data without
-/// duplicating user authentication information.
+/// This is the primary business entity of the Todo application, supporting
+/// full CRUD operations with independent filtering and searching
+/// capabilities.
 ///
 /// @namespace Todo
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_todos {
+model todo_app_todo_items {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The user who owns this todo item. {@link todo_list_user.id}.
-  todo_list_user_id String
+  /// Owner of this todo item. {@link todo_app_users.id}.
+  user_id String
   
-  /// Title of the todo item (1-500 characters). The primary identifier for the
-  /// task that users enter and manage.
+  /// Brief title for the todo item, maximum 255 characters.
   title String
   
-  /// Completion status of the todo item. True indicates the task is marked
-  /// complete, false indicates it is still pending.
-  completed Boolean
+  /// Detailed description of the todo item, maximum 10,000 characters.
+  /// Optional field for additional context.
+  description String?
   
-  /// Timestamp when this todo item was created. Always set to current time on
-  /// creation and never modified afterwards.
+  /// Current status of the todo item. Valid values: pending, completed,
+  /// archived.
+  status String
+  
+  /// Timestamp when this todo item was created.
   created_at DateTime
   
-  /// Timestamp when this todo item was last modified. Updated on any change to
-  /// title or completion status.
+  /// Timestamp of the last modification to this todo item.
   updated_at DateTime
   
-  /// Timestamp when this todo item was soft-deleted by the user. NULL
-  /// indicates the item is still active. Used to support undelete
-  /// functionality and audit trails.
+  /// Timestamp when this todo item was logically deleted (soft delete). NULL
+  /// indicates active item.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@unique([todo_list_user_id, id])
-  @@index([todo_list_user_id, created_at])
-  @@index([todo_list_user_id, completed])
-  @@index([todo_list_user_id, updated_at])
+  @@index([status])
+  @@index([user_id, status])
+  @@index([user_id, created_at])
 }

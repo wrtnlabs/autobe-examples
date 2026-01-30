@@ -10,12 +10,18 @@ import type { ITodoAppGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/ITo
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body?: Partial<ITodoAppGuest.IJoin>;
+    body?: DeepPartial<ITodoAppGuest.IJoin>;
   },
 ): Promise<ITodoAppGuest.IAuthorized> {
-  const joinInput = {
-    guestIdentifier:
-      props.body?.guestIdentifier ?? RandomGenerator.alphaNumeric(16),
+  const joinBody = {
+    email:
+      props.body?.email ?? `${RandomGenerator.alphaNumeric(8)}@example.com`,
+    ip: props.body?.ip ?? null,
+    href: props.body?.href ?? `https://${RandomGenerator.alphabets(8)}.com`,
+    referrer:
+      props.body?.referrer ?? `https://${RandomGenerator.alphabets(8)}.com`,
   } satisfies ITodoAppGuest.IJoin;
-  return await api.functional.auth.guest.join(connection, { body: joinInput });
+  return await api.functional.todoApp.auth.guest.join(connection, {
+    body: joinBody,
+  });
 }

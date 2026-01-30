@@ -20,16 +20,10 @@ export async function postTodoAppUserRoles(props: {
   user: UserPayload;
   body: ITodoAppRole.ICreate;
 }): Promise<ITodoAppRole> {
-  // Collector to transform API DTO to Prisma create input
   const data = await TodoAppRoleCollector.collect({ body: props.body });
-  // Create new role record
   const created = await MyGlobal.prisma.todo_app_roles.create({
-    data,
+    data: data,
     ...TodoAppRoleTransformer.select(),
   });
-  if (!created) {
-    throw new HttpException("Failed to create user role", 500);
-  }
-  // Transform Prisma result to API DTO
   return await TodoAppRoleTransformer.transform(created);
 }

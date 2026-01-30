@@ -9,7 +9,8 @@ import { ITodoAppTodoItemAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structur
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { TodoAppUserAtSummaryTransformer } from "./TodoAppUserAtSummaryTransformer";
+import { TodoAppUserTransformer } from "./TodoAppUserTransformer";
+import { TodoAppTodoItemAuditLogTransformer } from "./TodoAppTodoItemAuditLogTransformer";
 
 export namespace TodoAppTodoItemTransformer {
   export type Payload = Prisma.todo_app_todo_itemsGetPayload<
@@ -25,23 +26,27 @@ export namespace TodoAppTodoItemTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        todo_app_user_id: true,
-        user: TodoAppUserAtSummaryTransformer.select(),
+        user: TodoAppUserTransformer.select(),
+        todo_app_todo_item_audit_logs:
+          TodoAppTodoItemAuditLogTransformer.select(),
       },
     } satisfies Prisma.todo_app_todo_itemsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<ITodoAppTodoItem> {
     return {
       id: input.id,
+      todoAppUserId: input.user.id,
       title: input.title,
-      description: input.description,
-      status: input.status,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      todo_app_user_id: input.todo_app_user_id,
-      user: await TodoAppUserAtSummaryTransformer.transform(input.user),
-      auditLogs: [],
+      description: input.description ?? undefined,
+      status: Boolean(input.status),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at?.toISOString() ?? undefined,
+      deletedAt: input.deleted_at?.toISOString() ?? undefined,
+      user: await TodoAppUserTransformer.transform(input.user),
+      auditLogs: await ArrayUtil.asyncMap(
+        input.todo_app_todo_item_audit_logs,
+        TodoAppTodoItemAuditLogTransformer.transform,
+      ),
     };
   }
 }

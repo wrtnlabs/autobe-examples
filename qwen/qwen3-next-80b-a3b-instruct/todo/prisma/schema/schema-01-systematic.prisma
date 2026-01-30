@@ -1,448 +1,166 @@
-/// System-wide configuration settings and feature flags governing
-/// application behavior and operational parameters.
+/// Global system configuration settings such as token expiration duration,
+/// password complexity rules, and feature flags.
 ///
-/// Stores key-value pairs that control application features, operational
-/// parameters, and behavioral settings across the entire system. These
-/// configurations are managed by administrators through administrative
-/// interfaces and affect system-wide behavior rather than individual user
-/// experience.
-///
-/// Configuration values can control feature toggles, rate limits, timeouts,
-/// external service endpoints, and other operational settings. The enabled
-/// flag allows administrators to activate or deactivate configurations
-/// without deleting them, maintaining audit trails for compliance.
-///
-/// This table is referenced by various system components to determine their
-/// runtime behavior based on centralized configuration.
+/// Stores application-wide configuration parameters that control system
+/// behavior without requiring code deployment. These settings are loaded at
+/// application startup and may be dynamically updated via administrative
+/// interfaces. All configuration values are stored as strings for maximum
+/// flexibility in handling different data types (numbers, booleans, JSON
+/// objects) via serialization.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_configurations {
+model todo_app_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting (e.g.,
-  /// "feature_toggles.new_ui", "api.rate_limit.per_minute"). Must be unique
-  /// across all configurations.
-  configuration_key String
+  /// Duration in minutes that JWT access tokens remain valid before requiring
+  /// refresh. Default value is typically 15 minutes for security.
+  token_expiration_minutes Int
   
-  /// The actual value of the configuration setting. Can represent boolean
-  /// ("true"/"false"), numbers, strings, JSON objects, or any other data
-  /// format. Stored as string to accommodate any configuration type.
-  configuration_value String
+  /// Minimum number of characters required for user passwords. Enforces basic
+  /// password strength requirements to improve account security.
+  password_min_length Int
   
-  /// Detailed explanation of what this configuration controls, its expected
-  /// values, and its impact on system behavior. Used by administrators to
-  /// understand configuration purpose.
-  description String
+  /// Whether passwords must contain at least one uppercase letter. Part of the
+  /// password complexity policy to enhance security.
+  password_require_uppercase Boolean
   
-  /// Whether this configuration is active and affecting system behavior. When
-  /// false, the system should ignore this configuration regardless of its
-  /// value.
-  enabled Boolean
+  /// Whether passwords must contain at least one lowercase letter. Part of the
+  /// password complexity policy to enhance security.
+  password_require_lowercase Boolean
   
-  /// Timestamp when this configuration was created. Used for audit trail and
-  /// debugging purposes.
+  /// Whether passwords must contain at least one numeric digit. Part of the
+  /// password complexity policy to enhance security.
+  password_require_numbers Boolean
+  
+  /// Whether passwords must contain at least one special symbol. Part of the
+  /// password complexity policy to enhance security.
+  password_require_symbols Boolean
+  
+  /// JSON-encoded string containing key-value pairs for toggleable application
+  /// features. Each key represents a feature name and value is a boolean
+  /// indicating enabled/disabled status.
+  feature_flags String
+  
+  /// Timestamp when this configuration record was created. Used for auditing
+  /// and change tracking of system settings.
   created_at DateTime
   
-  /// Timestamp when this configuration was last modified. Updated
-  /// automatically on any change to the configuration.
+  /// Timestamp when this configuration record was last modified. Used to
+  /// identify when system settings changed and for cache invalidation.
   updated_at DateTime
   
-  /// Timestamp when this configuration was logically deleted. Used for soft
-  /// deletion to maintain audit trails while allowing configurations to be
-  /// deactivated without permanent deletion.
+  //----
+  // RELATIONS
+  //----
+  @@index([updated_at])
+}
+
+/// Toggleable application features that can be enabled or disabled at
+/// runtime without deployment.
+///
+/// Provides system-wide control over application functionality by allowing
+/// administrators to activate or deactivate features dynamically. Each
+/// feature is uniquely identified by name and can be toggled between enabled
+/// and disabled states. This enables safe experimentation, staged rollouts,
+/// and emergency feature disabling without code deployments.
+///
+/// The description field provides context about the feature's purpose and
+/// impact, helping administrators make informed decisions. Feature flags are
+/// critical for continuous delivery practices and risk mitigation in
+/// production environments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the feature flag. Should be descriptive and follow
+  /// naming convention (e.g., "new_checkout_flow", "dark_mode").
+  feature_name String
+  
+  /// Current state of the feature flag. True indicates the feature is active
+  /// and available. False indicates the feature is disabled.
+  enabled Boolean
+  
+  /// Detailed description of the feature's purpose, expected impact, and any
+  /// known considerations. Used by administrators to understand the feature
+  /// before enabling.
+  description String
+  
+  /// Timestamp when the feature flag was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the feature flag was last modified (enabled/disabled
+  /// status changed or description updated).
+  updated_at DateTime
+  
+  /// Timestamp when the feature flag was logically deleted. NULL indicates the
+  /// flag is still active. Used for audit trail and potential recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([configuration_key])
+  @@unique([feature_name])
   @@index([enabled])
 }
 
-/// Authentication tokens (access and refresh) issued to users, tracking
-/// validity, expiration, and revocation status.
+/// Application metadata containing version, build timestamp, and environment
+/// information for the todo_app system.
 ///
-/// Manages the lifecycle of tokens associated with authenticated sessions.
-/// Each token is linked to exactly one session (user, admin, or guest) and
-/// contains either an access token or refresh token value.
+/// Tracks critical system configuration data including the current
+/// application version, build timestamp when deployed, and runtime
+/// environment (development, staging, production). This metadata is used for
+/// system diagnostics, version validation, and environment-specific
+/// configuration.
 ///
-/// Access tokens are short-lived and used for API authentication, while
-/// refresh tokens are longer-lived and used to obtain new access tokens when
-/// expired. The system tracks token expiration and revocation to enforce
-/// secure authentication policies.
-///
-/// Tokens are automatically revoked when users log out or when sessions
-/// expire. The revoked_at field allows for explicit revocation before
-/// expiration and supports audit trails of security incidents.
+/// The table records immutable system state information that is updated
+/// during deployment processes. It is not directly user-managed but is
+/// essential for system integrity and monitoring.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_tokens {
+model todo_app_application_metadata {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Session that issued this token. {@link todo_list_user_sessions.id}.
-  todo_list_user_session_id String?
-  
-  /// Session that issued this token. {@link todo_list_admin_sessions.id}.
-  todo_list_admin_session_id String?
-  
-  /// Session that issued this token. {@link todo_list_guest_sessions.id}.
-  todo_list_guest_session_id String?
-  
-  /// Type of authentication token: 'access' for short-lived API tokens,
-  /// 'refresh' for long-lived token renewal tokens. Cannot be null - every
-  /// token must be explicitly classified.
-  token_type String
-  
-  /// The actual cryptographic token value issued for authentication. Must be a
-  /// secure, random string that cannot be guessed. Used to authenticate API
-  /// requests.
-  token_value String
-  
-  /// The exact timestamp when the token expires and becomes invalid. This is a
-  /// required security field - sessions cannot grant unlimited access. All
-  /// tokens must have an expiration time.
-  expires_at DateTime
-  
-  /// The timestamp when the token was explicitly revoked before expiration.
-  /// NULL means token has not been voluntarily revoked. Used for audit trails
-  /// when users log out or security events occur.
-  revoked_at DateTime?
-  
-  /// The timestamp when this token was originally issued and stored in the
-  /// database.
-  created_at DateTime
-  
-  /// The timestamp when this token was last modified (typically updated when
-  /// revoked).
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  userSession todo_list_user_sessions? @relation(fields: [todo_list_user_session_id], references: [id], onDelete: Cascade)
-  adminSession todo_list_admin_sessions? @relation(fields: [todo_list_admin_session_id], references: [id], onDelete: Cascade)
-  guestSession todo_list_guest_sessions? @relation(fields: [todo_list_guest_session_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token_value])
-  @@index([todo_list_user_session_id, expires_at])
-  @@index([todo_list_admin_session_id, expires_at])
-  @@index([todo_list_guest_session_id, expires_at])
-  @@index([expires_at])
-  @@index([revoked_at])
-}
-
-/// Audit logs for critical system operations such as authentication events,
-/// configuration changes, and security alerts.
-///
-/// Tracks all significant system events for security monitoring, compliance
-/// auditing, and system troubleshooting. Each log entry records the actor
-/// responsible, the type of event, contextual metadata, and connection
-/// details.
-///
-/// Log entries are append-only and never modified after creation. The system
-/// uses these logs to reconstruct the sequence of operations for forensic
-/// analysis and to enforce security policies.
-///
-/// Soft deletion is supported to maintain data integrity during regulatory
-/// compliance requirements while allowing administrative cleanup of obsolete
-/// records.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_logs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// User who triggered the event. {@link todo_list_user.id}.
-  todo_list_user_id String?
-  
-  /// Guest session that triggered the event. {@link todo_list_guest.id}.
-  todo_list_guest_id String?
-  
-  /// Administrator who triggered the event. {@link todo_list_admin.id}.
-  todo_list_admin_id String?
-  
-  /// User session context for the event. {@link todo_list_user_sessions.id}.
-  todo_list_user_session_id String?
-  
-  /// Guest session context for the event. {@link todo_list_guest_sessions.id}.
-  todo_list_guest_session_id String?
-  
-  /// Admin session context for the event. {@link todo_list_admin_sessions.id}.
-  todo_list_admin_session_id String?
-  
-  /// High-level category of the event. Values: 'authentication',
-  /// 'configuration', 'security', 'system', 'request'.
-  event_category String
-  
-  /// Specific event that occurred. Examples: 'login', 'logout',
-  /// 'password_change', 'config_update', 'failed_login', 'access_denied'.
-  event_type String
-  
-  /// JSON string containing additional context about the event (e.g., changed
-  /// fields, error codes, request parameters).
-  metadata String?
-  
-  /// Client IP address from which the request originated.
-  ip String
-  
-  /// User agent string identifying the client application/browser.
-  user_agent String
-  
-  /// Session identifier associated with this event (unique identifier for the
-  /// session, not the ID field).
-  session_id String?
-  
-  /// Timestamp when the log entry was created. The time at which the event
-  /// occurred.
-  created_at DateTime
-  
-  /// Timestamp when the log entry was last updated. Always equal to created_at
-  /// as logs are immutable.
-  updated_at DateTime
-  
-  /// Timestamp when the log entry was logically deleted by an administrator.
-  /// Used for compliance cleanup. Event data remains intact for audit.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_list_user? @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
-  guest todo_list_guest? @relation(fields: [todo_list_guest_id], references: [id], onDelete: Cascade)
-  admin todo_list_admin? @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
-  userSession todo_list_user_sessions? @relation(fields: [todo_list_user_session_id], references: [id], onDelete: Cascade)
-  guestSession todo_list_guest_sessions? @relation(fields: [todo_list_guest_session_id], references: [id], onDelete: Cascade)
-  adminSession todo_list_admin_sessions? @relation(fields: [todo_list_admin_session_id], references: [id], onDelete: Cascade)
-  
-  @@index([created_at])
-  @@index([event_category])
-  @@index([event_type])
-  @@index([todo_list_user_id, created_at])
-  @@index([todo_list_guest_id, created_at])
-  @@index([todo_list_admin_id, created_at])
-  @@index([todo_list_user_session_id, created_at])
-  @@index([todo_list_guest_session_id, created_at])
-  @@index([todo_list_admin_session_id, created_at])
-  @@index([ip, created_at])
-  @@index([session_id, created_at])
-}
-
-/// System-wide rate limit enforcement for protecting infrastructure from abuse.
-///
-/// Tracks request quotas per client IP address or authenticated user to
-/// prevent rate flooding and denial-of-service attacks. Each record
-/// represents a specific limitation configuration that expires after a time
-/// window, ensuring stateful counting with automatic cleanup.
-///
-/// Rate limits can be applied by IP address or linked to authentication by
-/// user ID. The system automatically invalidates expired limits during
-/// cleanup operations and allows administrators to reset limits manually for
-/// debugging or user support.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_rate_limits {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The authenticated user whose requests are being rate limited. {@link
-  /// todo_list_user.id}.
-  todo_list_user_id String?
-  
-  /// Client IP address that generated the requests. Used as primary limiting
-  /// identifier for unauthenticated clients.
-  ip_address String
-  
-  /// Number of requests counted within the current time window. Resets to zero
-  /// upon expiration.
-  request_count Int
-  
-  /// Duration of the rate limiting window in seconds (e.g., 60 for 1-minute
-  /// window).
-  window_seconds Int
-  
-  /// Timestamp when this rate limit expires and should be reset. Used for
-  /// automated cleanup of old limits.
-  expired_at DateTime
-  
-  /// Type of rate limit: 'ip' for IP-based limits, 'user' for authenticated
-  /// user limits.
-  limit_type String
-  
-  /// Timestamp when this rate limit record was created.
-  created_at DateTime
-  
-  /// Timestamp when this rate limit record was last updated (request count
-  /// incremented).
-  updated_at DateTime
-  
-  /// Soft delete timestamp for audit trails. When set, the limit is considered
-  /// inactive but retained for historical analysis.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_list_user? @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
-  
-  @@unique([ip_address, window_seconds, limit_type])
-  @@index([expired_at])
-  @@index([todo_list_user_id, expired_at])
-}
-
-/// Tracks the health status of core system dependencies to ensure 99.9%
-/// availability.
-///
-/// Captures point-in-time measurements of critical system components
-/// including database connectivity, cache performance, and external service
-/// availability. Records timestamps for all health checks to build an audit
-/// trail of system reliability over time.
-///
-/// This table follows an append-only pattern where previous health states
-/// are preserved for historical analysis and incident investigation. New
-/// records are added periodically by system monitoring processes, and
-/// records are never updated in place. Soft delete is supported to maintain
-/// the integrity of historical audit trails while allowing for data
-/// moderation policies.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_health_checks {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Current health status of the monitored component. Valid values:
-  /// 'healthy', 'degraded', 'unavailable'. Indicates the operational state of
-  /// the system dependency at the time of check.
-  status String
-  
-  /// Response latency in milliseconds observed during the health check. Null
-  /// indicates no latency measurement was performed or available for this
-  /// check.
-  latency Float?
-  
-  /// Detailed error message describing the failure condition when status is
-  /// 'degraded' or 'unavailable'. Null when status is 'healthy' or when no
-  /// error occurred.
-  error_message String?
-  
-  /// Database service uptime percentage during the health check. Value between
-  /// 0 and 100. Null when database health check not performed.
-  database_uptime Float?
-  
-  /// Average cache response time in milliseconds during the health check. Null
-  /// when cache service not monitored.
-  cache_response_time Float?
-  
-  /// Status of first external service dependency. Valid values: 'healthy',
-  /// 'degraded', 'unavailable'. Null when not monitored.
-  external_service_one_status String?
-  
-  /// Status of second external service dependency. Valid values: 'healthy',
-  /// 'degraded', 'unavailable'. Null when not monitored.
-  external_service_two_status String?
-  
-  /// Timestamp when the health check record was created. Represents the exact
-  /// moment the system state was measured.
-  created_at DateTime
-  
-  /// Timestamp when the health check record was last updated. In this model,
-  /// this will typically equal created_at as records are never modified.
-  updated_at DateTime
-  
-  /// Timestamp indicating when this health check record was logically deleted.
-  /// Maintained for audit trail purposes and data governance compliance.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@index([status, created_at])
-  @@index([created_at])
-  @@index([database_uptime])
-  @@index([cache_response_time])
-}
-
-/// Tracks historical versions of application code, database schema, and
-/// deployment configurations to ensure infrastructure consistency and enable
-/// rollback capabilities.
-///
-/// Records exact state snapshots of system components at time of deployment,
-/// creating an immutable audit trail of system evolution. Each version
-/// record captures the specific code version, schema version, deployment
-/// environment, and changelog notes for full traceability.
-///
-/// Used for rollback procedures, deployment verification, and infrastructure
-/// change analysis. This is an append-only historical record that should
-/// never be modified after creation.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_versions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Application code version identifier following semantic versioning format
-  /// (e.g., '1.2.3'). Uniquely identifies each deployment state.
+  /// Current application semantic version number in format MAJOR.MINOR.PATCH
+  /// (e.g., 1.2.3).
   version String
   
-  /// Database schema version identifier following semantic versioning format
-  /// (e.g., '2.1.0'). Tracks exact state of database structure at time of
-  /// deployment.
-  schema_version String
+  /// Timestamp of when this version of the application was built and deployed
+  /// to the current environment.
+  build_timestamp DateTime
   
-  /// Timestamp when this version was deployed in the target environment.
-  /// Records exact point-in-time of the deployment action.
-  deployed_at DateTime
-  
-  /// Deployment environment identifier. Valid values: development, staging,
-  /// production. Specifies the target system for this version deployment.
+  /// Current runtime environment of the application. Valid values:
+  /// development, staging, production.
   environment String
   
-  /// Detailed changelog describing changes included in this version. Contains
-  /// human-readable summary of code, schema, and configuration modifications.
-  changelog String
-  
-  /// When this version record was created in the database. Automatically set
-  /// to match deployment time for audit consistency.
+  /// Timestamp when this metadata record was initially created in the database.
   created_at DateTime
   
-  /// When this version record was last updated. Always equals created_at since
-  /// snapshot tables are immutable.
+  /// Timestamp when this metadata record was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp. Null indicates record is active. Used for
-  /// system-level data retention policies while maintaining audit trail
-  /// integrity.
+  /// Timestamp when this metadata record was soft-deleted. Null indicates
+  /// active record.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@index([deployed_at])
-  @@index([environment])
-  @@index([version, deployed_at])
+  @@index([environment, created_at])
+  @@index([version, build_timestamp])
 }

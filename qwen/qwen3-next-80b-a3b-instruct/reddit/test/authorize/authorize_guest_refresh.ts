@@ -6,14 +6,14 @@ import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformGuest";
+import type { ICommunityBbsGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsGuest";
 export async function authorize_guest_refresh(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformGuest.IRefresh;
+    body: ICommunityBbsGuest.IRefresh;
   },
-): Promise<ICommunityPlatformGuest.IAuthorized> {
-  return await api.functional.auth.guest.refresh(connection, {
+): Promise<ICommunityBbsGuest.IAuthorized> {
+  return await api.functional.communityBbs.auth.guest.refresh(connection, {
     body: props.body,
   });
 }

@@ -1,0 +1,261 @@
+/// Materialized view storing precomputed hot scores for posts, indexed by
+/// post_id and time_scope for efficient real-time sorting by the hot
+/// algorithm.
+///
+/// This materialized view caches the calculated hot score for each post
+/// across different time scopes (hour, day, week, month) to enable real-time
+/// ranking of content. The hot score formula is computed from a combination
+/// of vote engagement, recency, and decay factors to prioritize trending
+/// content. This table is updated periodically by backend jobs and is never
+/// modified directly by users or frontend applications.
+///
+/// The view supports efficient queries for retrieving top posts in a given
+/// time scope and enables the platform's discoverability features. All data
+/// is denormalized from the primary community_bbs_posts and
+/// community_bbs_votes_posts tables to optimize read performance.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_community_bbs_post_hot_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post this hot score applies to. {@link
+  /// community_bbs_posts.id}.
+  community_bbs_post_id String
+  
+  /// Time scope for which the hot score is calculated. Valid values: "hour",
+  /// "day", "week", "month". Determines the period over which engagement is
+  /// aggregated.
+  time_scope String
+  
+  /// The calculated hot score for the post in the specified time scope.
+  /// Represents a weighted combination of upvotes, downvotes, recency, and
+  /// decay factors. Higher values indicate more trending content.
+  hot_score Float
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts @relation(fields: [community_bbs_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_post_id, time_scope], map: "mv_community_bbs_post_hot_scores_community_bbs_post_id_86e670fb")
+  @@index([time_scope])
+}
+
+/// Materialized view storing precomputed net vote scores (upvotes -
+/// downvotes) for posts, indexed by post_id and time_scope for top sort
+/// optimization.
+///
+/// This table contains aggregated vote scores for posts computed by the
+/// system's content discovery algorithm. It enables fast retrieval of
+/// top-rated posts by time scope (hour, day, week, month, all_time) without
+/// requiring real-time aggregation across the voting database.
+///
+/// The scores are updated by scheduled background jobs that recalculate
+/// based on community_bbs_votes_posts entries. The materialized view serves
+/// as a performance optimization layer for the platform's top posts ranking
+/// system, providing efficient query response times for user feed
+/// generation.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_community_bbs_post_top_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source post in community_bbs_posts table. Used for
+  /// joining with post metadata to display content.
+  post_id String
+  
+  /// Time scope period for which the score is calculated. Valid values:
+  /// 'hour', 'day', 'week', 'month', 'all_time'.
+  time_scope String
+  
+  /// Net vote score calculated as (upvotes - downvotes) for the post within
+  /// the specified time scope. Higher scores indicate higher ranking in top
+  /// view.
+  score Float
+  
+  /// Timestamp of the last calculation/update of this materialized view entry.
+  /// Indicates freshness of the computed score.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id, time_scope])
+}
+
+/// Materialized view computing controversial scores for posts using the
+/// formula (upvotes * downvotes) / (upvotes + downvotes + 1).
+///
+/// This view enables efficient real-time sorting of posts by controversial
+/// content across different time scopes. Controversial scores represent
+/// content that generates equal levels of upvotes and downvotes, indicating
+/// high engagement with polarized opinions. The calculation prevents
+/// division by zero by adding 1 to the denominator.
+///
+/// The view is automatically refreshed based on voting activity and is used
+/// by the content discovery system to surface controversial posts in feeds
+/// sorted by controversy score. This materialized view is read-only and
+/// computed from the community_bbs_votes_posts table.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_community_bbs_post_controversial_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being scored. {@link community_bbs_posts.id}.
+  bbs_post_id String
+  
+  /// Time period for which the controversial score is calculated (e.g.,
+  /// 'hour', 'day', 'week', 'month'). Specifies the time window for engagement
+  /// aggregation.
+  time_scope String
+  
+  /// Computed controversial score using formula: (upvotes * downvotes) /
+  /// (upvotes + downvotes + 1). Higher values indicate more controversial
+  /// content with balanced upvotes and downvotes.
+  controversial_score Float
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts @relation(fields: [bbs_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([bbs_post_id, time_scope], map: "mv_community_bbs_post_controversial_scores_bbs_post_id_1f2f1843")
+}
+
+/// Materialized view storing trending scores for posts and communities,
+/// computed from recent engagement rate and popularity factors.
+///
+/// This table serves as a precomputed performance optimization for content
+/// discovery algorithms that surface trending topics. It aggregates
+/// engagement signals from posts and communities across recently active time
+/// scopes to determine relevance and velocity.
+///
+/// The trending score combines several factors: recent vote volume, comment
+/// activity, share frequency, and subscription growth rate. This view is
+/// refreshed periodically by background jobs, not through user interaction.
+/// Users see content from this view when browsing the 'Trending' feed, but
+/// never directly create, update, or delete records here.
+///
+/// This is a read-only materialized view that does not support direct writes.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_community_bbs_trending_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post entity this trending score applies to. {@link
+  /// community_bbs_posts.id}.
+  post_id String?
+  
+  /// Reference to the community entity this trending score applies to. {@link
+  /// community_bbs_communities.id}.
+  community_id String?
+  
+  /// Type of the trending entity (either 'post' or 'community'). Determines
+  /// which foreign key is populated.
+  entity_type String
+  
+  /// Time period used for trending calculation (e.g., 'hour', 'day', 'week').
+  /// Used to filter trending results by recency.
+  time_scope String
+  
+  /// The computed trending score based on engagement rate and popularity
+  /// factors. Higher values indicate more trending content.
+  score Float
+  
+  /// Rate of new interactions (votes, comments, shares) relative to content
+  /// age and base popularity.
+  engagement_rate Float
+  
+  /// Composite measure of the entity's existing popularity including total
+  /// votes, subscribers, and views.
+  popularity_factor Float
+  
+  /// Timestamp when this trending record was computed and inserted. Used for
+  /// freshness verification.
+  created_at DateTime
+  
+  /// Timestamp when this trending record was last recomputed. Used for
+  /// freshness verification.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_bbs_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([entity_type, time_scope])
+  @@index([community_id, time_scope])
+  @@index([post_id, time_scope])
+  @@index([score, created_at])
+}
+
+/// Materialized view storing personalized recommendation scores for users
+/// based on content similarity, user similarity, and trending factors.
+///
+/// This view is updated by background jobs to precompute recommendation
+/// scores for each user-community pair, enabling fast retrieval of
+/// personalized content feeds. The score is calculated as a weighted
+/// combination of:
+/// - Content similarity between user's past interactions and community posts
+/// - User similarity to other users in the community
+/// - Trending scores of content within the community
+///
+/// This table is read-only from user perspective. Updates are triggered by
+/// system jobs based on new content, activity, and interest signals. It
+/// supports the recommendation engine for the 'Recommended Communities' and
+/// 'Personalized Feed' features.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_community_bbs_recommendation_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's {@link community_bbs_member.id} who receives the recommendation.
+  user_id String
+  
+  /// Community's {@link community_bbs_communities.id} being recommended.
+  community_id String
+  
+  /// Precomputed recommendation score, higher values indicate stronger
+  /// recommendation. Range typically 0.0 to 1.0.
+  score Float
+  
+  /// Timestamp when this recommendation score was last computed and updated by
+  /// automated system job.
+  last_updated DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_bbs_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, community_id])
+  @@index([user_id, last_updated])
+  // spellchecker: ignore-next-line
+  @@index([community_id, last_updated], map: "mv_community_bbs_recommendation_scores_community_id_la_36a621ed")
+}

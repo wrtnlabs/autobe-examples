@@ -1,0 +1,67 @@
+/// Core todo items representing individual tasks created and managed by
+/// authenticated members.
+///
+/// Each todo belongs to exactly one member and contains structured task
+/// information including title, description, completion status, due date,
+/// and priority level. Members have complete control over their own todos
+/// with strict data isolation preventing access to other users' tasks.
+///
+/// The todo lifecycle includes creation, updates to content and status, soft
+/// deletion for recovery capability, and eventual permanent removal. Status
+/// tracking supports workflow management from pending through completion.
+///
+/// Todos support filtering and sorting operations by status, priority, due
+/// date, and creation time to enable effective task organization and
+/// priority management.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member who created and manages this todo. {@link
+  /// todo_app_members.id}
+  todo_app_member_id String
+  
+  /// Short descriptive title summarizing the todo task. Maximum 200 characters.
+  title String
+  
+  /// Detailed description providing additional context and information about
+  /// the todo task. Supports longer text for comprehensive task details.
+  description String?
+  
+  /// Current completion status of the todo. Valid values: pending,
+  /// in_progress, completed, cancelled.
+  status String
+  
+  /// Optional deadline date and time when the todo task should be completed.
+  /// Null indicates no specific deadline.
+  due_date DateTime?
+  
+  /// Priority level indicating task urgency. Valid values: low, medium, high.
+  priority String
+  
+  /// Timestamp when the todo was first created.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates active todo, non-null indicates
+  /// deleted todo available for recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_member_id, created_at])
+  @@index([status])
+  @@index([priority])
+  @@index([due_date])
+}

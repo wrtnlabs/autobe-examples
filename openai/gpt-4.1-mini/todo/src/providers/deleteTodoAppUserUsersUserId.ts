@@ -15,18 +15,19 @@ export async function deleteTodoAppUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const existing = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: {
-      id: props.userId,
-      deleted_at: null,
-    },
+  const existingUser = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: { id: props.userId },
+    select: { id: true },
   });
-  if (!existing) {
+  if (!existingUser) {
     throw new HttpException("User not found", 404);
   }
+  // Delete all personal todo list data of the user
+  await MyGlobal.prisma.todo_app_todo_items.deleteMany({
+    where: { todo_app_user_id: props.userId },
+  });
+  // Delete the user
   await MyGlobal.prisma.todo_app_users.delete({
-    where: {
-      id: props.userId,
-    },
+    where: { id: props.userId },
   });
 }

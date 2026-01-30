@@ -6,86 +6,52 @@ import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
-import type { ICommunityPlatformChannel } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformChannel";
-import type { ICommunityPlatformChannelSettings } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformChannelSettings";
-import { prepare_random_community_platform_channel } from "../../../prepare/prepare_random_community_platform_channel";
-import { generate_random_community_platform_admin_channels_create } from "../../../generate/generate_random_community_platform_admin_channels_create";
+import type { ICommunityBbsAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsAdmin";
+import type { ICommunityBbsChannel } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsChannel";
+import { prepare_random_community_bbs_channel } from "../../../prepare/prepare_random_community_bbs_channel";
+import { generate_random_community_bbs_admin_channels_create } from "../../../generate/generate_random_community_bbs_admin_channels_create";
 import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 export async function test_api_channel_creation_by_admin(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create admin connection and authenticate
+  // Step 1: Create admin-specific connection
   const adminConnection: api.IConnection = { host: connection.host };
+  // Step 2: Authenticate admin using authorize_admin_join utility function (mandatory per utility function priority rule)
   await authorize_admin_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      href: "https://example.com/join",
-      referrer: "https://example.com",
-      ip: null,
-    } satisfies ICommunityPlatformAdmin.IJoin,
+      password: typia.random<
+        string & tags.MinLength<8> & tags.MaxLength<128>
+      >(),
+    } satisfies ICommunityBbsAdmin.IJoin,
   });
-  // Step 2: Generate random channel creation data
-  const channelCode = RandomGenerator.alphaNumeric(8);
-  const channelData = {
-    name: RandomGenerator.paragraph({ sentences: 2, wordMin: 4, wordMax: 8 }),
-    description: RandomGenerator.paragraph({
-      sentences: 3,
-      wordMin: 5,
-      wordMax: 10,
-    }),
-    is_public: true,
-    settings: RandomGenerator.alphaNumeric(20), // Use random string for settings, as it's a string type
-  } satisfies ICommunityPlatformChannel.ICreate;
-  // Step 3: Create the channel using the admin connection
-  const createdChannel =
-    await generate_random_community_platform_admin_channels_create(
-      adminConnection,
-      {
-        body: channelData,
-      },
-    );
-  // Step 4: Validate the created channel - this ensures all fields are non-undefined
-  typia.assert(createdChannel);
-  // Step 5: Verify channel properties match expected values
+  // Step 3: Create a new channel using the admin connection
+  const channel: ICommunityBbsChannel =
+    await api.functional.communityBbs.admin.channels.create(adminConnection, {
+      body: {
+        name: RandomGenerator.paragraph({
+          sentences: 2,
+          wordMin: 1,
+          wordMax: 50,
+        }), // Max 100 chars via 2 x 50-word limit
+        description: RandomGenerator.content({
+          paragraphs: 1,
+          sentenceMin: 2,
+          sentenceMax: 6,
+          wordMin: 2,
+          wordMax: 40,
+        }), // Max 500 chars via 6 x 40-word limit
+      } satisfies ICommunityBbsChannel.ICreate,
+    });
+  // Step 4: Validate response
+  typia.assert(channel);
+  // Step 5: Validate business logic properties
   TestValidator.equals(
-    "channel name matches",
-    createdChannel.name,
-    channelData.name,
+    "channel visibility default",
+    channel.visibility,
+    "public",
   );
-  TestValidator.equals(
-    "channel description matches",
-    createdChannel.description,
-    channelData.description,
-  );
-  TestValidator.equals(
-    "channel is public",
-    createdChannel.visibility,
-    channelData.is_public ? "public" : "private",
-  );
-  TestValidator.equals(
-    "channel status is active",
-    createdChannel.status,
-    "active",
-  );
-  TestValidator.equals(
-    "channel contributor count is 0",
-    createdChannel.contributor_count,
-    0,
-  );
-  TestValidator.equals("channel post count is 0", createdChannel.post_count, 0);
-  TestValidator.predicate(
-    "channel code is valid",
-    /^[a-zA-Z0-9]{1,64}$/.test(createdChannel.code),
-  );
-  // Step 6: Verify settings is of correct type and not empty
-  const settings = createdChannel.settings;
-  TestValidator.equals("channel settings type", typeof settings, "string");
-  // Fixed: Check for null/undefined before accessing length property
-  TestValidator.predicate(
-    "channel settings is not empty",
-    settings !== null && settings !== undefined && settings.length > 0,
-  );
+  TestValidator.equals("channel status", channel.status, "active");
 }

@@ -1,9 +1,0 @@
-export * as actions from "./actions/index";
-export * as logs from "./logs/index";
-export * as audit_trails from "./audit_trails/index";
-export * as comments from "./comments/index";
-export * as warnings from "./warnings/index";
-export * as suspensions from "./suspensions/index";
-export * as bans from "./bans/index";
-export * as review_queues from "./review_queues/index";
-export * as analytics from "./analytics/index";

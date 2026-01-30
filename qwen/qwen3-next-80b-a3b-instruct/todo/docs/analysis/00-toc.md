@@ -1,265 +1,457 @@
-# Todo List Application Documentation Table of Contents
+# TodoApp Backend Requirements Specification
 
-## Overview
+## Service Vision
 
-This document serves as the master table of contents for the Todo List application project. It provides a comprehensive overview of all documentation artifacts, their purpose, and their relationships within the project structure. This serves as the single source of truth for developers, stakeholders, and project team members to navigate the complete documentation set.
+TodoApp is a minimal, secure, multi-user task management service designed for individuals who need a simple but private place to organize their daily tasks. The service ensures complete isolation between users — no user can view, modify, or access another user’s todo items. The system prioritizes privacy, ease of use, and reliability above complexity or feature richness.
 
-## Documentation Structure
+The service is designed to be self-contained and does not integrate with external platforms, calendars, or notification systems. It operates as a standalone backend service that provides authenticated users with persistent, encrypted storage for their personal todo lists.
 
-The Todo List application documentation is organized into 11 core documents that follow a logical progression from business context to implementation requirements. The documents are structured to support a waterfall development approach, with each document building upon the previous one to provide comprehensive context for backend developers.
+## User Actors and Authentication
 
-### 1. Service Overview
+### Actor Definition
 
-**Filename**: `01-service-overview.md` 
+The system defines two distinct user actors:
 
-*Purpose: Define the core purpose and business value of the Todo List application.*
+1. **Guest**: An unauthenticated user who can only view the login and registration pages. The guest has no access to any todo-related functionality.
+2. **Member**: An authenticated user who has full access to manage their own todo items. Members can create, read, update, and delete their own tasks. Members cannot access any other user’s data.
 
-**Description**: This document establishes the business context for the entire project by answering fundamental questions about why the service exists, who its users are, and what value it delivers. It includes:
+No admin actor is defined. The system does not include administrative interfaces or user management controls.
 
-- Service vision and mission
-- Problem statement identifying the gap this service fills
-- Core value proposition for end users
-- Business model with revenue and growth strategies
-- Success metrics and KPIs
+### Authentication Requirements
 
-**Audience**: Business stakeholders, product managers, and technical leadership
+- All API endpoints (except `/auth/register` and `/auth/login`) require a valid JWT token in the `Authorization: Bearer <token>` header.
+- When a user successfully registers or logs in, the system returns a JWT token with a 24-hour expiration.
+- The JWT token must contain: `userId` (UUID), `email`, and `iat` (issued at timestamp).
+- Tokens must be signed using HS256 with a server-managed 256-bit secret key.
+- Refresh tokens are not supported. Upon expiration, users must log in again.
+- Sessions are stateless — the server does not store session data.
+- Invalid or expired tokens return HTTP 401 Unauthorized.
+- Each user account is tied to a unique email address. Duplicate emails are rejected during registration.
+- Passwords must be at least 8 characters and hashed using bcrypt before storage.
+- Login attempts are not rate-limited, but password reset functionality is disabled to simplify the system.
 
-**Relationship**: Foundation document that informs all other documents in the project
+### Permission Matrix
 
-### 2. User Actors
+| Endpoint | Method | Guest | Member |
+|----------|--------|-------|--------|
+| `/auth/register` | POST | ✅ | ❌ |
+| `/auth/login` | POST | ✅ | ❌ |
+| `/todos` | GET | ❌ | ✅ |
+| `/todos` | POST | ❌ | ✅ |
+| `/todos/{id}` | GET | ❌ | ✅ |
+| `/todos/{id}` | PUT | ❌ | ✅ |
+| `/todos/{id}` | DELETE | ❌ | ✅ |
 
-**Filename**: `02-user-actors.md`
+All API endpoints must enforce the permission matrix using middleware. The `Member` role is derived from a valid JWT containing a `userId` claim.
 
-*Purpose: Detail the user actors and their authentication requirements.*
+## Core Todo Functionality
 
-**Description**: This document defines the complete authentication and authorization model for the application, with precise specifications for the three user actors:
+### Core Features
 
-- **User**: Authenticated individual who can create and manage personal todo lists
-- **Guest**: Unauthenticated visitor who can only view public landing pages
-- **Admin**: System administrator with enhanced privileges for user management
+The system supports exactly four CRUD operations for todo items:
 
-Key components:
+1. **Create**: Add a new todo item with a title and optional description.
+2. **Read**: Retrieve all todo items belonging to the authenticated user, or a specific item by ID.
+3. **Update**: Modify the title, description, or completion status of a todo item.
+4. **Delete**: Remove a todo item permanently.
 
-- Authentication flow specifications for registration, login, logout
-- Authorization model with explicit permission boundaries
-- Session management requirements
-- JWT configuration and payload structure
-- Permission matrix defining exactly what each actor can and cannot do
+No other features are supported: no tagging, no categories, no reminders, no sharing, no search, and no sorting beyond default creation-order.
 
-**Audience**: Backend development team, security engineers
+### Data Model Concepts
 
-**Relationship**: Builds on service overview by defining how users interact with the system. Directly informs core functionality, user workflows, business rules, and security requirements.
+Todo items consist of the following fields:
 
-### 3. Core Functionality
+- `id`: Unique identifier (UUID format)
+- `title`: Non-empty string (max 200 characters)
+- `description`: Optional string (max 1000 characters)
+- `completed`: Boolean flag indicating completion status (default: `false`)
+- `createdAt`: ISO 8601 timestamp of creation (read-only)
+- `updatedAt`: ISO 8601 timestamp of last modification (read-only)
+- `ownerId`: UUID of the user who owns this todo item (read-only)
 
-**Filename**: `03-core-functionality.md`
+All todo items are automatically assigned to the authenticated user who created them. The `ownerId` field is never editable and is enforced server-side.
 
-*Purpose: Describe the core functionality of the Todo list system and how users interact with it.*
+### User Interactions
 
-**Description**: This document outlines the minimal essential features required for the Todo List application, following the principle of simplicity and focus:
+#### Task Creation
 
-- Todo list management - Creation and organization of personal task lists
-- Item creation - Adding new todo items with title and optional description
-- Item status management - Marking items as complete/incomplete
-- Item deletion - Removing unwanted todo items
-- Data persistence - Ensuring user data remains available across sessions
-- Performance expectations - Response times and user experience targets
+WHEN a Member sends a POST request to `/todos` with:
+- A non-empty `title`
+- An optional `description`
 
-All requirements are expressed in natural language with EARS format where applicable, avoiding technical implementation details.
+THE system SHALL:
+- Validate the `title` is not empty and within 200 characters
+- Generate a new UUID for the todo item
+- Set `ownerId` to the ID of the authenticated user
+- Set `createdAt` and `updatedAt` to the current time
+- Set `completed` to `false`
+- Store the record in the database
+- Return the full item with all fields including `id`, `createdAt`, `updatedAt`, and `ownerId`
 
-**Audience**: Backend development team, QA engineers
+#### Task Retrieval
 
-**Relationship**: Direct extension of user actors - defines what authenticated users can do with their permissions. Specifies the core business logic that will be implemented.
+WHEN a Member sends a GET request to `/todos`:
 
-### 4. User Workflows
+THE system SHALL:
+- Return a JSON array of all todo items where `ownerId` matches the authenticated user’s ID
+- Sort items by `createdAt` ascending (oldest first)
+- Exclude all items belonging to other users
+- Return empty array if the user has no todos
 
-**Filename**: `04-user-workflows.md`
+WHEN a Member sends a GET request to `/todos/{id}`:
 
-*Purpose: Detail user workflows for the primary user scenarios.*
+THE system SHALL:
+- Return the specific todo item only if `ownerId` matches the authenticated user’s ID
+- Return HTTP 404 Not Found if the item exists but belongs to another user
+- Return HTTP 404 Not Found if the item does not exist
 
-**Description**: This document provides step-by-step flow diagrams and narrative descriptions for all critical user interactions:
+#### Task Update
 
-- **User Registration Flow**: From landing page to account creation confirmation
-- **User Login Flow**: Authentication process with success and failure paths
-- **Todo List Access Flow**: Navigating to and viewing their personal list
-- **Todo Item Creation Flow**: Adding a new task
-- **Todo Item Completion Flow**: Marking a task as done
-- **Todo Item Deletion Flow**: Removing an item from the list
-- **User Logout Flow**: Signing out and session termination
+WHEN a Member sends a PUT request to `/todos/{id}` with:
+- Optional `title` (if provided, must be non-empty and ≤200 chars)
+- Optional `description` (if provided, must be ≤1000 chars)
+- Optional `completed` (boolean)
 
-Each workflow includes normal paths, error conditions, and edge cases. Includes detailed Mermaid diagrams with proper syntax for all workflows.
+THE system SHALL:
+- Verify the todo item exists AND belongs to the authenticated user
+- Update only the fields that were provided in the request
+- Update the `updatedAt` field to the current time
+- Return the updated item
+- Return HTTP 404 Not Found if the item does not exist or belongs to another user
 
-**Audience**: Backend development team, UX researchers (for context)
+#### Task Deletion
 
-**Relationship**: Operationalizes the core functionality by showing how users interact with the features defined in document 3. Implements the authorization model from document 2.
+WHEN a Member sends a DELETE request to `/todos/{id}`:
 
-### 5. Business Rules
+THE system SHALL:
+- Verify the todo item exists AND belongs to the authenticated user
+- Permanently delete the record from the database
+- Return HTTP 204 No Content on success
+- Return HTTP 404 Not Found if the item does not exist or belongs to another user
 
-**Filename**: `05-business-rules.md`
+### Validation Rules
 
-*Purpose: Document business rules that govern the Todo list application.*
+All input validation is enforced at the API layer before any database operation.
 
-**Description**: This document captures the critical constraints and logic that govern system behavior, ensuring data integrity and user privacy:
+- `title`: Required, type: string, minimum length: 1, maximum length: 200
+- `description`: Optional, type: string, maximum length: 1000
+- `completed`: Optional, type: boolean
+- `id`: Required for update/delete; verified as valid UUID
+- `ownerId`: Never provided by client; set internally and validated against authenticated user
 
-- **Data Validation Rules**: Input format requirements for all user inputs
-- **Access Control Rules**: Explicit enforcement of user isolation - users can only access their own lists
-- **Concurrent Access Rules**: Behavior when multiple devices attempt to modify the same list
-- **Data Integrity Rules**: How the system maintains consistency under various conditions
-- **Error Handling Rules**: How the system responds to invalid requests and boundary conditions
+All invalid requests return HTTP 400 Bad Request with a JSON payload:
 
-The overriding business rule is: **user data isolation**. No user can access, view, or modify another user's todo lists under any circumstances.
-
-**Audience**: Backend development team, QA engineers
-
-**Relationship**: Implements the constraints required by the authentication model and core functionality. Enables enforcement of privacy requirements.
-
-### 6. Error Handling
-
-**Filename**: `06-error-handling.md`
-
-*Purpose: Detail error handling scenarios from the user's perspective.*
-
-**Description**: This document catalogues all potential error states the system may encounter and how users should be guided through recovery:
-
-- **Authentication Errors**: Invalid credentials, account not found, locked accounts
-- **Authorization Errors**: Users attempting to access other users' data
-- **Validation Errors**: Malformed input, required field missing, invalid data types
-- **System Errors**: Internal server failures, timeout conditions
-- **Network Errors**: Connectivity issues, request timeouts
-- **Recovery Procedures**: Clear, actionable guidance provided to users when errors occur
-
-All errors are described from the user's perspective: what they see, what it means, and what they can do next. Error messages are designed to be user-friendly while preventing information leakage.
-
-**Audience**: Backend development team, customer support team
-
-**Relationship**: Complements business rules by defining the system's response to violations and failures. Informs implementation decisions in all functional components.
-
-### 7. Performance
-
-**Filename**: `07-performance.md`
-
-*Purpose: Define performance requirements from a user experience perspective.*
-
-**Description**: This document sets measurable quality expectations for the application from the end-user viewpoint:
-
-- **Response Time Expectations**: All user interactions should complete within 2 seconds
-- **Load Capacity Estimates**: System should handle 5,000 concurrent users with no degradation
-- **Availability Requirements**: Minimum 99.9% uptime for active users
-- **Scalability Considerations**: Architecture should support growth to 100,000 users
-
-Performance requirements are expressed in user experience terms: "instant," "immediate," "within seconds" - not technical metrics. The goal is to ensure a responsive, frictionless experience.
-
-**Audience**: Backend development team, infrastructure team
-
-**Relationship**: Provides measurable criteria against which implementation success will be evaluated. Constrains architecture decisions related to database and caching.
-
-### 8. Security
-
-**Filename**: `08-security.md`
-
-*Purpose: Define data security and compliance requirements.*
-
-**Description**: This document details the security posture of the application to protect user data:
-
-- **Authentication Security**: Use of JWT with secure signing algorithm
-- **Data Protection**: Encryption of data at rest and in transit
-- **Privacy Requirements**: GDPR/CCPA compliance for personal data
-- **Compliance Standards**: Adherence to industry security frameworks
-- **Data Retention Policy**: User data retained only as long as account is active
-
-Explicit requirement: User authentication tokens must not be stored server-side. System must be stateless. No personal data is shared with third parties.
-
-**Audience**: Security team, compliance officers, backend team
-
-**Relationship**: Implements the authorization and access control principles from document 2 and 5. Provides the security foundation for the entire application.
-
-### 9. External Integrations
-
-**Filename**: `09-external-integrations.md`
-
-*Purpose: Outline external integrations needed for the Todo list application.*
-
-**Description**: This document specifies essential third-party services required to support core functionality:
-
-- **Email Service Integration**: For account verification and password reset notifications
-- **Notification System**: Push notifications for upcoming deadlines (optional enhancement)
-- **Analytics Integration**: Usage tracking to inform future development
-- **Backup and Recovery Services**: Automated daily backups of user data
-
-All integrations are designed to be minimal and essential, avoiding feature creep.
-
-**Audience**: DevOps team, cloud infrastructure team
-
-**Relationship**: Complements core functionality and user workflows by establishing dependencies on external services. Informs deployment architecture.
-
-### 10. Roadmap
-
-**Filename**: `10-roadmap.md`
-
-*Purpose: Define future enhancement possibilities and development roadmap.*
-
-**Description**: This document outlines potential future enhancements that are explicitly out of scope for current implementation, to prevent scope creep while guiding long-term planning:
-
-- **Version 1.0 Goals**: Minimal core functionality with complete user isolation
-- **Version 1.1 Feature Wishlist**: Shared lists, reminders, categories, tagging
-- **Version 2.0 Future Possibilities**: Mobile applications, webhooks, integrations with calendar services
-- **Technical Debt Considerations**: Acceptable compromises for initial release
-
-**CRITICAL**: All items listed here are OPTIONAL additions for future versions. The current release MUST only implement the requirements documented in sections 1-9.
-
-**Audience**: Product managers, executive leadership, future development teams
-
-**Relationship**: Provides context for future development while protecting current implementation from scope expansion.
-
-### 11. System Context
-
-**Filename**: `11-system-context.md`
-
-*Purpose: Define the overall system context and design decisions.*
-
-**Description**: This document provides essential technical context to guide development decisions while respecting developer autonomy:
-
-- **System Boundaries**: What is in and out of scope for this service
-- **Architecture Assumptions**: Stateless design, microservices approach, event-driven
-- **Technology Choices**: NestJS, Prisma, PostgreSQL, Redis, JWT
-- **Deployment Scenarios**: Docker containers, Kubernetes orchestration, cloud deployment
-
-**Developer Note**: This document defines the boundaries of technical responsibility. While it suggests technologies and architecture patterns, the development team has full autonomy to make final implementation decisions. The document describes WHAT the system should achieve, not HOW it should be built.
-
-**Audience**: Technical leads, senior developers, architect
-
-**Relationship**: Provides architectural context for the application while respecting the boundary between business requirements and technical implementation.
-
-## Document Relationships
-
-The documentation set follows a clear dependency hierarchy:
-
-```
-01-service-overview.md
-         ↓
-02-user-actors.md
-         ↓
-03-core-functionality.md
-         ↓
-04-user-workflows.md
-         ↓
-05-business-rules.md → 06-error-handling.md
-         ↓
-07-performance.md
-         ↓
-08-security.md
-         ↓
-09-external-integrations.md
-         ↓
-10-roadmap.md
-         ↓
-11-system-context.md
+```json
+{
+  "error": "Invalid input",
+  "details": ["title must not be empty", "description exceeds 1000 characters"]
+}
 ```
 
-Each document builds upon the previous one, creating a comprehensive context for implementation. The roadmap (10) and system context (11) documents provide forward-looking and architectural context while respecting the isolation of the core implementation requirements.
+## User Scenarios and Workflows
 
-## Conclusion
+### Primary User Journey: Registration to Todo Creation
 
-This table of contents serves as the definitive guide to the Todo List application documentation suite. It enables development teams to navigate between documents with confidence, understand the context of each requirement, and implement a consistent, high-quality application that meets user needs while maintaining a minimal, focused scope.
+1. User opens the application URL in a web browser
+2. User clicks "Register" and enters:
+   - Email address
+   - Password (≥8 characters)
+   - Password confirmation
+3. User submits the form
+4. System creates a new user account, hashes the password, and replies with HTTP 201 Created
+5. System returns a JWT token in the response body
+6. Client stores the token and redirects to the main dashboard
+7. User sees an empty list with "Create New Task" button
+8. User enters a task title, e.g., "Buy groceries"
+9. User clicks "Add"
+10. System creates the todo item and displays it in the list
+
+### Secondary User Journey: Task Update and Completion
+
+1. User sees a todo item: "Buy groceries" marked as incomplete
+2. User checks the checkbox next to the item
+3. System sends a PUT request to `/todos/{id}` with `completed: true`
+4. System updates the item, sets `updatedAt` to now
+5. Item visually updates to show checkmark and strikethrough text
+6. User edits the title to "Buy organic groceries"
+7. System sends a PUT request with `title: "Buy organic groceries"`
+8. System updates the title and returns the modified item
+9. User deletes the item by clicking "Delete" button
+10. System sends a DELETE request to `/todos/{id}`
+11. Item disappears from the list
+
+### Special Scenario: Password Reset
+
+This scenario is explicitly **not supported**. The system provides no "Forgot Password" functionality. If a user forgets their password, they must register a new account. The system does not allow email-based password recovery, token resets, or account recovery.
+
+### Special Scenario: Account Deletion
+
+The system does not provide an endpoint for users to delete their own accounts. Account deletion is only possible through direct database manipulation by system administrators — though no admin interface exists. All user data is retained indefinitely unless manually purged.
+
+## Exception Handling
+
+### Authentication Errors
+
+WHEN a user sends a request without an Authorization header:
+
+THE system SHALL return HTTP 401 Unauthorized with body:
+
+```json
+{"error": "Authentication required"}
+```
+
+WHEN a user sends an invalid, malformed, or tampered JWT token:
+
+THE system SHALL return HTTP 401 Unauthorized with body:
+
+```json
+{"error": "Invalid authentication token"}
+```
+
+WHEN a JWT expired:
+
+THE system SHALL return HTTP 401 Unauthorized with body:
+
+```json
+{"error": "Authentication token expired"}
+```
+
+### Authorization Errors
+
+WHEN a user attempts to access a todo item belonging to another user:
+
+THE system SHALL return HTTP 404 Not Found with body:
+
+```json
+{"error": "Resource not found"}
+```
+
+> **Note**: Returning 404 instead of 403 hides existence of the resource to prevent enumeration attacks.
+
+### Input Validation Failures
+
+WHEN data fails structural or size validation:
+
+THE system SHALL return HTTP 400 Bad Request with a JSON array of error messages:
+
+```json
+{
+  "error": "Invalid input",
+  "details": [
+    "title must be at least 1 character long",
+    "description exceeds 1000 characters"
+  ]
+}
+```
+
+### System Failures
+
+WHEN the database is unreachable:
+
+THE system SHALL return HTTP 503 Service Unavailable with body:
+
+```json
+{"error": "System temporarily unavailable, please try again later"}
+```
+
+WHEN an unhandled internal error occurs:
+
+THE system SHALL return HTTP 500 Internal Server Error with body:
+
+```json
+{"error": "An internal server error occurred"}
+```
+
+### Concurrency Errors
+
+The system does not implement optimistic or pessimistic locking. Concurrent updates to the same todo item will result in last-write-wins behavior. Data loss may occur if two users edit the same item simultaneously, but this scenario is statistically negligible and not considered a requirement to prevent.
+
+## Performance Expectations
+
+### Response Time Requirements
+
+- **Authentication** (`/auth/login`, `/auth/register`): ≤ 500 ms under 100 concurrent users
+- **Todo List Load** (`/todos`): ≤ 300 ms for users with ≤ 1000 tasks
+- **Single Todo Fetch** (`/todos/{id}`): ≤ 150 ms
+- **Todo Create/Update/Delete**: ≤ 400 ms
+- All endpoints must maintain ≤ 1000 ms response time under peak load of 5,000 concurrent users
+
+### Scalability Expectations
+
+- Support up to 1,000,000 active users
+- Support up to 10,000,000 total todo items
+- Support 200 requests per second sustained
+- Horizontal scaling must be possible without code changes
+- Database connection pooling must be configured to handle 50 concurrent connections per instance
+
+### System Availability
+
+- System uptime target: 99.9% monthly (≤ 43.2 minutes downtime per month)
+- No scheduled maintenance windows
+- All deployments must be zero-downtime
+
+## Security and Compliance
+
+### Data Privacy
+
+- All user data is stored in encrypted form (passwords via bcrypt)
+- Todo item content is stored in plain text in the database — no encryption at rest is required
+- No logging of user actions, IP addresses, or requests
+- No telemetry, analytics, or tracking is collected
+- No data is shared with third parties
+
+### Authentication Security
+
+- Passwords are hashed with bcrypt using cost factor 12
+- JWT secret key is stored in environment variable and never in code
+- JWT tokens are not stored on server
+- No session cookies are used
+- HTTPS is mandatory for all endpoints
+- No CORS exceptions — only requests from the official frontend domain allowed
+
+### Access Control Enforcement
+
+- All endpoints use middleware that:
+  - Validates JWT token presence and signature
+  - Extracts `userId` from token claims
+  - Injects `userId` into request context for later use in data queries
+  - Replaces any `ownerId` provided by client with the authenticated user’s ID
+  - Adds `WHERE ownerId = ?` filter to every SQL query involving todo items
+- No SQL injection vulnerability is permitted
+- The system is designed to prevent any form of cross-user data access
+
+### Regulatory Compliance
+
+- The system does not collect personally identifiable information beyond email and hashed password
+- No compliance with GDPR, CCPA, or HIPAA is required
+- Data retention policy: Unlimited
+- No data export or deletion endpoints exist — deletion is only manual via database
+
+## Business Rules
+
+### Todo Item Validation
+
+- The `title` field must never be empty. Any request with empty or whitespace-only title is rejected with HTTP 400.
+- The `description` field may be null or empty string — no validation on content.
+- The `completed` field must be strictly boolean — string values like "true" or "false" are rejected.
+- The `id` field for update/delete must match UUIDv4 format; non-UUID values are rejected.
+- The `ownerId` field must match the authenticated user’s ID. Server-side enforcement is mandatory.
+
+### User Data Ownership
+
+- Every todo item has exactly one owner.
+- No entity — not even an administrator — may access, modify, or delete a todo item unless they are the authenticated owner.
+- A user cannot transfer ownership of their todo items.
+- If a user registers with the same email again after deletion (which doesn’t exist), they receive a new account with no access to prior data.
+
+### Concurrency Rules
+
+- Two users editing the same todo item simultaneously may cause last-write-wins data loss.
+- This behavior is accepted because:
+  1. The system is designed for individual, personal use
+  2. Simultaneous edits to the same task are extremely rare
+  3. Implementing conflict resolution would violate the "minimalist" requirement
+
+### State Transitions
+
+Todo items follow a simple state machine:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Completed: "completed === true"
+    Completed --> Pending: "completed === false"
+```
+
+> **Note**: The diagram uses double quotes around labels and correct arrow syntax. No spaces are present between `{}` and quotes.
+
+No other transitions are defined. Items cannot be archived, deleted from the user interface, or soft-deleted. They are either "Pending" or "Completed".
+
+## Data Flow and Lifecycle
+
+### Data Entry Points
+
+- `/auth/register`: User submits email and password
+- `/auth/login`: User submits email and password to obtain JWT
+- `/todos`: User POSTs a new todo item
+- `/todos/{id}`: User PUTs updated todo item or DELETEs it
+
+### Data Processing Flow
+
+1. HTTP request arrives at the server
+2. Request is routed by NestJS controller
+3. Auth middleware verifies JWT and injects `userId` into request context
+4. Service layer validates input using class-validator rules
+5. Prisma ORM performs database operation with `WHERE ownerId = context.userId`
+6. If operation succeeds, JSON response is returned
+7. If error occurs, appropriate HTTP status and error body are returned
+
+### Data Storage
+
+All data is stored in a PostgreSQL database with the following tables:
+
+- `todoApp_users`:
+  - `id` (UUID, primary key)
+  - `email` (string, unique, indexed)
+  - `passwordHash` (string)
+  - `createdAt` (timestamp)
+
+- `todoApp_todos`:
+  - `id` (UUID, primary key)
+  - `title` (string, not null)
+  - `description` (text)
+  - `completed` (boolean, default false)
+  - `createdAt` (timestamp)
+  - `updatedAt` (timestamp)
+  - `ownerId` (UUID, foreign key to todoApp_users.id, indexed)
+
+All queries from the `todoApp_todos` table must include an implicit `WHERE ownerId = ?` clause based on the authenticated user.
+
+### Data Lifecycle
+
+- **Creation**: Data appears after successful registration or todo creation
+- **Persistence**: Data lives indefinitely unless manually deleted via direct database deletion
+- **Archival**: No archival mechanism exists
+- **Deletion**: Hard delete via DELETE endpoint
+- **Expiration**: Data never expires automatically
+
+The system implements a "permanent storage" model. Data is never automatically purged.
+
+## Future Considerations
+
+### Potential Feature Extensions
+
+- Add email-based password reset
+- Allow task categorization or tagging
+- Introduce calendar integration for due dates
+- Support recurring tasks
+- Allow bulk operations (delete all completed)
+- Enable dark mode or accessibility improvements
+- Add export to CSV/JSON
+
+### Scalability Considerations
+
+The current architecture supports horizontal scaling of stateless API servers. The only bottleneck is the PostgreSQL database.
+
+If user base grows beyond 10 million, consider:
+- Implementing read replicas for `/todos` GET
+- Sharding by `ownerId` (user-based sharding)
+- Migrating to an object storage system for todo items
+
+### Integration Opportunities
+
+No integrations are planned. The system is intentionally isolated.
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+
+### Document Metadata
+- **Service Prefix**: todoApp
+- **Document Type**: Requirements Specification
+- **Target Audience**: Backend developers
+- **Status**: Finalized
+- **Related Documents**: All 11 documents in this documentation suite
+- **Last Updated**: 2026-01-29T15:34:13.486Z
+- **Timezone Context**: Asia/Seoul
+- **Locale**: en-US
+
+This document provides comprehensive, complete, and actionable requirements for the TodoApp backend. It is designed for direct translation into NestJS + Prisma code with zero ambiguity. All business rules, workflows, error states, and permission logic are defined in natural language with EARS format where applicable. No API design or database schema details are included — those will be produced by downstream phases.
