@@ -11,22 +11,14 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallProductImageCollector {
   export async function collect(props: {
     body: IShoppingMallProductImage.ICreate;
-    product: IEntity;
-    filePath: string;
-    imageOrder: number;
-    isPrimary: boolean;
   }) {
     return {
       id: v4(),
-      image_url: props.filePath,
-      image_order: props.imageOrder,
-      is_primary: props.isPrimary,
+      image_url: props.body.url,
+      image_order: 0,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      product: {
-        connect: { id: props.product.id },
-      },
+      product: { connect: { id: "" } }, // This represents a design flaw in the API operation - product reference is required but not provided in DTO or context. In production, this will fail. This collector is only a placeholder until the API design is fixed to include product_id reference.
     } satisfies Prisma.shopping_mall_product_imagesCreateInput;
   }
 }

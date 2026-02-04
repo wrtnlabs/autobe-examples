@@ -1,205 +1,444 @@
-/// Core member account details for authenticated users.
-///
-/// Stores authentication credentials, basic profile information, and
-/// membership status for registered members.
-///
-/// Each member has a unique email address for login and profile management.
-/// Account status tracks validity (active, suspended, banned), supporting
-/// moderation workflows.
-///
-/// Email is required for login and must be unique. Password is securely
-/// hashed, and temporal fields track creation/modification with soft delete
-/// capability for data integrity.
+/// Temporary guest accounts for unauthenticated users identified by device
+/// fingerprint with no password requirements. Each guest account is tied to
+/// a device identifier and has a short-lived session for browsing without
+/// registration. Guests can browse sections and view articles but cannot
+/// create content or interact beyond anonymous viewing.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_members {
+model econ_politic_board_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's display name for public profiles, may be left blank.
-  name String?
+  /// Device fingerprint identifier used to track guest sessions. Must be
+  /// unique per device for temporary account linkage.
+  device_id String
   
-  /// Member's email address used for authentication. Must be unique across all
-  /// members.
-  email String
-  
-  /// Securely hashed password for authentication. Never stored in plain text.
-  password_hash String
-  
-  /// Current membership status indicating account validity (active, suspended,
-  /// banned).
-  status String
-  
-  /// Timestamp when member account was created.
+  /// Account creation timestamp indicating when the guest session was
+  /// initiated.
   created_at DateTime
   
-  /// Timestamp of last account modification.
+  /// Last modification timestamp tracking session updates for device
+  /// fingerprint management.
   updated_at DateTime
   
-  /// Timestamp of soft deletion to preserve audit trails.
+  /// Soft delete timestamp indicating when the guest account was expired or
+  /// cleared.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_member_sessions discussion_board_member_sessions[]
-  discussion_board_articles discussion_board_articles[]
-  discussion_board_moderation_queue discussion_board_moderation_queue[]
+  sessions econ_politic_board_guest_sessions[]
   
-  @@unique([email])
+  @@unique([device_id])
 }
 
-/// Administrative accounts with elevated system privileges and moderation
-/// capabilities.
+/// Regular authenticated user accounts with email/password credentials.
+/// Stores user profile information including display name and bio text.
 ///
-/// Stores accounts for system administrators who can manage user content,
-/// configure system settings, and perform moderation actions. Each admin
-/// account includes authentication credentials, access level configuration,
-/// and system role details.
+/// Used as the primary identity entity for users within the
+/// economic/political discussion board platform. Each account represents a
+/// distinct user type that can participate in the platform by creating
+/// articles, comments, and managing their profile.
 ///
-/// Admins have distinct capabilities compared to regular members, with
-/// permissions for full system access and moderation workflows.
-/// Scenario: An admin account created by superadmin for system management
-/// requires secure password storage and predefined access levels.
+/// Accounts require email verification before becoming fully active.
+/// Passwords are stored as hashes for security, with password reset
+/// functionality available for recovery.
+///
+/// The email field is mandatory and must be unique across all members. The
+/// display name field is optional, allowing users to choose whether to show
+/// a public identifier. The bio field is also optional and provides space
+/// for a short profile description.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admins {
+model econ_politic_board_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Admin email address used for authentication and account recovery. Must be
-  /// unique across all administrative accounts.
+  /// User's email address used for authentication and communication. Must be
+  /// unique across all members.
   email String
   
-  /// Password hash storing the admin's authentication credentials. Does not
-  /// store plaintext passwords for security reasons.
+  /// Password hash used for authentication. Never store plain passwords.
   password_hash String
   
-  /// Administrative access level representing the privileges granted to this
-  /// account. Valid values: 'superadmin', 'full-access', 'moderation-only'.
-  system_access_level String
+  /// User's display name visible to other users. Maximum 30 characters.
+  display_name String?
   
-  /// Indicates if the admin account has moderation capabilities. True for
-  /// admins who can review and manage content.
-  moderation_capabilities Boolean?
+  /// User's bio text describing their profile. Maximum 500 characters.
+  bio String?
   
-  /// Timestamp when the admin account was created.
+  /// Timestamp of when this member account was created.
   created_at DateTime
   
-  /// Timestamp when the admin account was last modified.
+  /// Timestamp of when this member account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the admin account was marked for deletion (soft delete).
+  /// Timestamp of when this member account was deleted. (Null means not
+  /// deleted.)
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  sessions econ_politic_board_member_sessions[]
+  passwordResets econ_politic_board_member_password_resets[]
+  emailVerifications econ_politic_board_member_email_verifications[]
+  articles econ_politic_board_articles[]
+  adminRequests econ_politic_board_admin_requests[]
+  profiles econ_politic_board_profiles[]
   
   @@unique([email])
+  @@index([created_at])
 }
 
-/// Tracks active login sessions for members, including expiration timestamps
-/// and device information.
+/// Member session tracking for authenticated users with JWT access tokens.
 ///
-/// Records session details for authenticated members to enable secure
-/// session management and activity tracking. Each session links to a
-/// specific member through the primary account.
+/// Stores session lifecycle information for authenticated members, including
+/// authentication context and connection details. Each session belongs to
+/// exactly one authenticated member and can have multiple concurrent active
+/// sessions.
 ///
-/// Supports session duration tracking, device identification (IP address),
-/// and connection context (URLs and referrers) necessary for security
-/// monitoring and user activity audits.
+/// Session tokens have limited validity (1 hour access, 30 days refresh) to
+/// meet security requirements. Session data includes connection metadata (IP
+/// address, URL references) for audit purposes.
+///
+/// All sessions follow a strict lifecycle with non-null expiration times to
+/// prevent unlimited access tokens. Created and expired timestamps enable
+/// session history analysis and security monitoring.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_member_sessions {
+model econ_politic_board_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Member's account identifier. {@link discussion_board_members.id}.
-  discussion_board_members_id String
+  /// Member who owns this session. {@link econ_politic_board_members.id}.
+  member_id String
   
-  /// IP address associated with the session connection.
-  ip String
+  /// IP address of the session connection.
+  ip String?
   
-  /// Full URL used for the connection.
-  href String
+  /// Connection URL (e.g., /dashboard).
+  href String?
   
-  /// URL that referred to the current connection.
-  referrer String
+  /// Referrer URL from which the user initiated the session.
+  referrer String?
   
-  /// Timestamp of session creation.
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Timestamp when session expires (nullable if session is ongoing).
-  expired_at DateTime?
+  /// Session expiration timestamp (1 hour after creation).
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  member discussion_board_members @relation(fields: [discussion_board_members_id], references: [id], onDelete: Cascade)
+  member econ_politic_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id, created_at])
+}
+
+/// Password reset tokens used for securely resetting member passwords. These
+/// tokens are generated upon password reset request and expire after 1 hour
+/// to prevent abuse.
+///
+/// Each token is unique and directly associated with a member during the
+/// password recovery process. Tokens are marked as used when successfully
+/// applied, providing clear audit trail of all password reset activities.
+/// The table enforces strict expiration timing to maintain security
+/// integrity.
+///
+/// The token must be unique across the system, and tokens should be
+/// generated using cryptographically secure random value generation. All
+/// token-related operations are managed exclusively through the password
+/// reset workflow, not through direct user actions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who requested password reset. {@link
+  /// econ_politic_board_members.id}.
+  econ_politic_board_member_id String
+  
+  /// UUID-based token string for password reset verification. Must be unique
+  /// across all entries for security.
+  token String
+  
+  /// Timestamp when the password reset token was generated.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token expires after 1 hour. Tokens
+  /// always expire, never "unlimited".
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used to reset the password.
+  /// Empty if token was never used.
+  used_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member econ_politic_board_members @relation(fields: [econ_politic_board_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_members_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_87557db0")
+  @@index([econ_politic_board_member_id], map: "econ_politic_board_member_password_resets_econ_politic_0c63d763")
+  
+  @@unique([token])
+  @@index([expires_at])
+  @@index([used_at])
 }
 
-/// Tracks active admin login sessions with connection details for audit and
-/// activity tracking.
+/// Administrator accounts with email/password authentication for managing
+/// content and moderating user interactions.
 ///
-/// Maintains session connection context including client IP, URL, and
-/// referrer information. Session data is managed through admin identity
-/// flows rather than standalone operations.
+/// Stores administrative user credentials and basic profile information.
+/// Each admin must register with a valid email, and the system handles
+/// secure password storage using bcrypt hashing.
 ///
-/// Includes session creation and expiration timestamps for activity
-/// monitoring and session management.
+/// Administrators can access all content management features and user
+/// moderation tools. Admin accounts persist until explicitly deleted by
+/// another administrator.
 ///
-/// Required fields follow exact session table specification without
-/// additional metadata. Composite index on [admin_id, created_at] ensures
-/// efficient query patterns for activity streams.
+/// The system maintains audit trails for account creation and modification
+/// using standard timestamps and soft delete support.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admin_sessions {
+model econ_politic_board_admins {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated admin account. {@link discussion_board_admins.id}.
+  /// Email address used for authentication and system communication. Must be
+  /// unique across all administrators and valid per email format rules.
+  email String
+  
+  /// Securely hashed password for authentication, stored using bcrypt. Never
+  /// store plain text passwords.
+  password_hash String
+  
+  /// Timestamp of when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp of when the admin account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the admin account was deleted. If null, the account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions econ_politic_board_admin_sessions[]
+  passwordResets econ_politic_board_admin_password_resets[]
+  
+  @@unique([email])
+}
+
+/// Administrator session management with JWT tokens for secure access.
+///
+/// Stores active session records for administrators with access (1-hour) and
+/// refresh (30-day) tokens. Each session is tied to a specific administrator
+/// and includes connection metadata for audit purposes.
+///
+/// Session tokens expire after 1 hour for access tokens and 30 days for
+/// refresh tokens, ensuring secure access management. The session creation
+/// timestamp allows for session history analysis and audit trails.
+///
+/// All sessions are recorded with IP address, connection URL, and referrer
+/// information to track access patterns and detect security anomalies.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator account's {@link econ_politic_board_admins.id}
   admin_id String
   
-  /// IP address of client connecting to system.
+  /// IP address of the user connecting from.
   ip String
   
-  /// Connection URL for session tracking.
+  /// Connection URL used for the session.
   href String
   
-  /// Referrer URL from which session was initiated.
+  /// Referrer URL of the client connection.
   referrer String
   
   /// Session creation timestamp.
   created_at DateTime
   
-  /// Session expiration timestamp.
-  expired_at DateTime?
+  /// Session expiration timestamp (1 hour for access, 30 days for refresh).
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  admin econ_politic_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
   @@index([admin_id, created_at])
+}
+
+/// Admin password reset tokens for secure password recovery workflows.
+/// Stores temporary reset tokens with 1-hour expiration associated with
+/// administrator accounts, facilitating secure password reset processes
+/// without storing passwords.
+///
+/// Tokens are generated during password reset requests and expire after 1
+/// hour for security. Each token is tied to a specific administrator record,
+/// allowing verification of the request's owner without requiring password
+/// storage.
+///
+/// When tokens expire, they're automatically removed from the system, and
+/// users must request a new reset link. Soft delete capability ensures token
+/// records can be purged after expiration without losing audit history.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated administrator account's {@link econ_politic_board_admins.id.
+  admin_id String
+  
+  /// Secure one-time token for password reset requests. Generated as random
+  /// UUID with SHA-256 hashing for security.
+  reset_token String
+  
+  /// Token expiration datetime. Set to 1 hour from creation for security.
+  expires_at DateTime
+  
+  /// Token creation timestamp for audit purposes.
+  created_at DateTime
+  
+  /// Soft delete timestamp for record retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin econ_politic_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reset_token])
+  // spellchecker: ignore-next-line
+  @@index([admin_id, expires_at], map: "econ_politic_board_admin_password_resets_admin_id_expi_bc300606")
+}
+
+/// Temporary guest sessions for unauthenticated browsing.
+///
+/// Stores connection context for users who access the platform without
+/// logging in. Each session has a short 5-minute expiration period for
+/// security. Tracks connection metadata including IP address, URL, and
+/// referrer information for audit purposes. Sessions are tied to guest
+/// accounts (identified by device fingerprint, not email).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to guest account.
+  guest_id String
+  
+  /// IP address used for the session connection.
+  ip String
+  
+  /// Connection URL used to initiate the session.
+  href String
+  
+  /// Referrer URL that led to this session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires (5 minutes from creation).
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guest econ_politic_board_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([guest_id, created_at])
+}
+
+/// Verification tokens for new member registration.
+///
+/// Stores tokens sent to members during account creation to verify their
+/// email addresses. Each token is valid for exactly 1 hour and is tied to a
+/// specific member account for verification tracking.
+///
+/// Tokens expire automatically and are not manually managed through the
+/// application. These tokens are created during the registration process and
+/// serve as the mechanism for confirming a member's email address.
+///
+/// Unlike password resets, these tokens cannot be regenerated without
+/// creating a new account, ensuring email verification is a one-time process
+/// during initial sign-up.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member this verification token belongs to. {@link
+  /// econ_politic_board_members.id}
+  member_id String
+  
+  /// Unique token string sent to member's email for verification. Used to
+  /// confirm email address during registration.
+  email_verification_token String
+  
+  /// Timestamp indicating when this token expires (1 hour from creation).
+  expires_at DateTime
+  
+  /// Timestamp indicating when this token was created (sent to member's email).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member econ_politic_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([email_verification_token], map: "econ_politic_board_member_email_verifications_email_ve_455d9f44")
+  @@index([member_id])
 }

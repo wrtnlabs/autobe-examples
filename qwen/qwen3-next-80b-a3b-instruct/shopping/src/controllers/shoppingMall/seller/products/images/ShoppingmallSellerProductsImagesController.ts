@@ -1,147 +1,128 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
-import typia, { tags } from "typia";
+import typia from "typia";
 
+import { IPageIShoppingMallProductImage } from "../../../../../api/structures/IPageIShoppingMallProductImage";
 import { IShoppingMallProductImage } from "../../../../../api/structures/IShoppingMallProductImage";
-import { IShoppingMallProduct } from "../../../../../api/structures/IShoppingMallProduct";
+import { SellerAuth } from "../../../../../decorators/SellerAuth";
+import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
+import { deleteShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/deleteShoppingMallSellerProductsProductIdImagesImageId";
+import { postShoppingMallSellerProductsProductIdImages } from "../../../../../providers/postShoppingMallSellerProductsProductIdImages";
+import { putShoppingMallSellerProductsProductIdImagesReorder } from "../../../../../providers/putShoppingMallSellerProductsProductIdImagesReorder";
 
 @Controller("/shoppingMall/seller/products/:productId/images")
 export class ShoppingmallSellerProductsImagesController {
   /**
-   * Create one or more new product image records for a specified product in the
-   * shopping mall platform. This operation creates new image records in the
-   * shopping_mall_product_images table, associating them with the product
-   * identified by the productId path parameter. Each uploaded image is stored
-   * as a unique record with a generated ID, URL to the cloud-stored image, and
-   * an ordering position based on upload sequence.
+   * Upload images for a specific product listing in the shopping mall platform.
    *
-   * This operation supports multiple image uploads in a single request. The
-   * system validates that the referenced product exists and that the requesting
-   * actor (seller or admin) has appropriate permissions to create images for
-   * that product. Only sellers and administrators can perform this operation.
+   * This operation allows authenticated sellers to upload multiple image files associated with a specific product. Each uploaded image will be stored as a separate record in the shopping_mall_product_images table, with the imageUrl field containing the generated URI reference to the image asset, and imageOrder field determining its display order.
    *
-   * Each uploaded image must be a valid image format (JPEG, PNG, GIF) with a
-   * maximum file size of 5MB. The system generates unique, secure file names
-   * and stores images in designated cloud storage. The system enforces a
-   * maximum of 10 images per product.
+   * Security: The request must be authenticated as a seller account. The system will validate that the seller has ownership of the product specified by productId. Only product images associated with the seller's products may be uploaded.
    *
-   * The first uploaded image is automatically assigned priority position 0 and
-   * becomes the primary image for the product. Subsequent images receive
-   * sequentially higher order positions. Images cannot be modified after
-   * creation through this endpoint - updating order or description requires
-   * separate operations: PATCH /products/{productId}/images/{imageId} for
-   * order/alt text updates, and DELETE /products/{productId}/images/{imageId}
-   * for image removal.
+   * Implementation: Images are stored in an object storage system (S3-compatible). The URI for each uploaded image is generated in the service layer after successful upload. The imageOrder field is automatically assigned based on upload sequence, starting from 1 for the first image. The system may compress large images and generate web-friendly variants (WebP/AVIF) for optimized delivery.
    *
-   * Security: Only authenticated sellers and administrators can upload images.
-   * The system verifies product ownership and prevents unauthorized uploads.
-   * The productId parameter must correspond exactly to an existing product in
-   * the shopping_mall_products table.
-   *
-   * Validation: The system checks for valid file types, file sizes, and
-   * existence of the target product. Invalid file types return 400 Bad Request.
-   * Files exceeding size limits return 413 Payload Too Large. If the product
-   * does not exist or the user lacks permission, the system returns 404 Not
-   * Found or 403 Forbidden as appropriate.
+   * Related operations: GET /products/{productId}/images (list product images), PUT /products/{productId}/images/reorder (reorder product images), DELETE /products/{productId}/images/{imageId} (delete specific image).
    *
    * @param connection
-   * @param productId Unique identifier of the target product being uploaded to.
-   *   This must correspond to an existing product in the shopping_mall_products
-   *   table with a primary key in snake_case format.
-   * @param body Form data containing one or more image files to upload for the
-   *   specified product. Each file must be a valid image format (JPEG, PNG,
-   *   GIF) with dimensions appropriate for product display.
+   * @param productId Unique identifier of the product to which images will be uploaded
+   * @param body Sets of image files to be uploaded as a list of URI strings pointing to uploaded assets. This setup supports multiple image uploads in one request, each represented by its URI reference.
+   * @x-autobe-specification On POST request to /products/{productId}/images, authenticate the user as a seller and verify seller ownership of the product. Extract the productId from the path parameter. Create a new record for each uploaded image in the shopping_mall_product_images table. Generate a unique URI for each image file using the storage system. Assign imageOrder sequentially based on the upload order (1, 2, 3, ...). Store the generated URI in the imageUrl field. Ensure file uploads are properly validated for size and type (JPEG, PNG, WebP, AVIF). Return each successfully uploaded image's details including the generated imageId, imageUrl, and assigned imageOrder in the response body, following the IShoppingMallProductImage schema.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
+    @SellerAuth()
+    seller: SellerPayload,
     @TypedParam("productId")
     productId: string,
     @TypedBody()
     body: IShoppingMallProductImage.ICreate,
   ): Promise<IShoppingMallProductImage> {
-    productId;
-    body;
-    return typia.random<IShoppingMallProductImage>();
+    try {
+      return await postShoppingMallSellerProductsProductIdImages({
+        seller,
+        productId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Update the product image associations for a specific product. This
-   * operation allows authenticated users to manage which images are associated
-   * with a product in the catalog. The endpoint targets the
-   * shopping_mall_product_images table which maintains the relationship between
-   * products and their associated images.
+   * Reorder the sequence of product images for a specific product. This operation allows sellers to manually arrange the visual order of images displayed on the product detail page, ensuring the most important or featured images appear first.
    *
-   * For customers, this operation allows them to submit image modifications for
-   * product listings they own. Sellers can update the images of their own
-   * products, including adding new images, removing existing ones, or
-   * reordering the display sequence. Admin users have full authority to modify
-   * product images for any seller's products, which is essential for content
-   * moderation and compliance enforcement.
+   * Sellers can update the sequence of all images associated with a product in a single atomic operation. The request body must contain every image associated with the product, specifying a new imageOrder value for each. If any image is omitted from the request, it will be treated as having been removed from the ordered set, which will trigger an error. This ensures data integrity and prevents unintended deletion of image order information.
    *
-   * The system enforces strict authorization controls: customers can only
-   * modify images for products they created, sellers can update images of their
-   * own products, and admins have unrestricted access. This ensures proper
-   * accountability and prevents unauthorized content changes.
+   * The operation requires the requester to be an authenticated seller with permission to manage the specified product. No other actors are permitted to reorder images.
    *
-   * This operation assumes a many-to-many relationship between products and
-   * images via the shopping_mall_product_images junction table, where each
-   * image association records the product ID and image ID along with metadata
-   * like display order and status. The request body will specify the exact
-   * image IDs to associate with the product, effectively replacing the current
-   * set of associations.
-   *
-   * Security protocols include rate limiting for image modification operations
-   * and comprehensive audit logging of all image changes for regulatory
-   * compliance. The system validates that all image IDs in the request
-   * correspond to existing, approved images in the system to prevent invalid
-   * associations.
+   * This operation complements the POST /products/{productId}/images endpoint, which uploads new images, and the DELETE /products/{productId}/images/{imageId} endpoint, which removes images. The reorder operation specifically manages the presentation sequence of existing images.
    *
    * @param connection
-   * @param productId Unique identifier of the product for which image
-   *   associations are being updated (global scope)
-   * @param body List of image identifiers to associate with this product,
-   *   replacing the current set of associations
+   * @param productId The unique identifier of the product whose images are being reordered.
+   * @param body An array of image objects specifying each image's ID and its new relative display order.
+   * @x-autobe-specification Query all product images for the given productId. Validate that all images in the request body are from this product. Update the imageOrder field of each image using the supplied values in a database transaction. Ensure that no two images receive the same imageOrder value. Calculate a new sequence from 0 to N-1 for each image. Generate a product snapshot if the image order has changed from the previous state (compare older imageOrder values to new ones). Log the action with the actorId of the authenticated seller. Return the updated list of images in new order with their updated imageOrder values as confirmation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async patchByProductid(
+  @TypedRoute.Put("reorder")
+  public async reorder(
+    @SellerAuth()
+    seller: SellerPayload,
     @TypedParam("productId")
     productId: string,
     @TypedBody()
-    body: IShoppingMallProduct.IRequest,
-  ): Promise<IShoppingMallProduct.ISummary> {
-    productId;
-    body;
-    return typia.random<IShoppingMallProduct.ISummary>();
+    body: IShoppingMallProductImage.IReorder,
+  ): Promise<IPageIShoppingMallProductImage> {
+    try {
+      return await putShoppingMallSellerProductsProductIdImagesReorder({
+        seller,
+        productId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Updates metadata for a product image using the product's business code and
-   * image's business code. The database enforces referential integrity through
-   * foreign key constraints.
+   * Delete a specific product image associated with a product. This operation permanently removes an image from the product's image gallery. The image is removed from the shopping_mall_product_images table and its URL is no longer accessible.
+   *
+   * Security: This operation requires authentication as the seller who owns the product. Unauthorized access attempts by other users or non-sellers will be rejected. The system verifies that the specified product exists and that the authenticated seller is the owner of the product before allowing the delete operation.
+   *
+   * Behavior: If the product has multiple images, deletion proceeds successfully. If this is the last image of the product, the system does NOT automatically generate a replacement. The product remains visible in search with no primary image, which may affect customer perception.
+   *
+   * Side effects: This operation triggers a product snapshot event, capturing the state of the product's image gallery before the deletion, as required by the 14-snapshot-principle.md documentation.
+   *
+   * Implementation: The system performs a direct delete query on shopping_mall_product_images table using product_id and image_id as composite keys. Image file storage deletion is handled asynchronously by a file system cleanup service after successful database deletion.
+   *
+   * Related operations: POST /products/{productId}/images (upload), PUT /products/{productId}/images/reorder (reorder), DELETE /products/{productId} (delete entire product).
    *
    * @param connection
-   * @param productId Unique identifier of the product whose image is being
-   *   updated (global scope)
-   * @param imageId Unique identifier of the specific product image being
-   *   updated (global scope)
-   * @param body Update metadata for a product image, including display
-   *   preferences and descriptive text
+   * @param productId Unique identifier of the product containing the image to be deleted. This is a UUID value from the shopping_mall_products table.
+   * @param imageId Unique identifier of the specific image to be deleted from the product. This is a UUID value from the shopping_mall_product_images table.
+   * @x-autobe-specification Query shopping_mall_product_images table with product_id and image_id as composite key. Verify user is owner of the product by joining with shopping_mall_products and shopping_mall_sellers tables. Perform database deletion if validation passes. Schedule asynchronous file system cleanup for the image file. Create a product snapshot capturing the current state of all images before deletion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":imageId")
-  public async putByProductidAndImageid(
+  @TypedRoute.Delete(":imageId")
+  public async erase(
+    @SellerAuth()
+    seller: SellerPayload,
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedParam("imageId")
-    imageId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallProductImage.IUpdate,
-  ): Promise<IShoppingMallProductImage> {
-    productId;
-    imageId;
-    body;
-    return typia.random<IShoppingMallProductImage>();
+    imageId: string,
+  ): Promise<void> {
+    try {
+      return await deleteShoppingMallSellerProductsProductIdImagesImageId({
+        seller,
+        productId,
+        imageId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

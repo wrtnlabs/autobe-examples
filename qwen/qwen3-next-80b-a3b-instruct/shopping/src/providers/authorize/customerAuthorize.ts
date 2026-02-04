@@ -15,17 +15,23 @@ export async function customerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using foreign key relationship from customer_sessions to shopping_mall_customers
-  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
+  // payload.id contains top-level customer table ID
+  // Query customer_sessions for active session validation
+  const customerSession = await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.session_id,
+      // Validate that session has not expired
+      expired_at: { gt: new Date() },
+      // Ensure customer account is active and not deleted
+      customer: {
+        id: payload.id,
+        deleted_at: null,
+      },
     },
   });
 
-  if (customer === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (customerSession === null) {
+    throw new ForbiddenException("You're not enrolled or your session has expired");
   }
 
   return payload;

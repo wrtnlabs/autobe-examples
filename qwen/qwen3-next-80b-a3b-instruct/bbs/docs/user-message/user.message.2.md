@@ -1,1 +1,1 @@
-Design the database schema.
+I'm not familiar with the analyze feature. Please determine everything by yourself, and just show me the analysis report.

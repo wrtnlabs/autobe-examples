@@ -1,144 +1,414 @@
-## Table of Contents
+# Economic/Political Discussion Board - Detailed Requirements Specification
 
-The Economic/Political Discussion Board Requirements Analysis Report consists of nine core documents that define the complete system specifications from business context to success metrics:
+## 1. Introduction
 
-1. [Service Overview Document](./01-service-overview.md) - Defines the core purpose, scope, and context of the economic/political discussion board service
-2. [User Actors Document](./02-user-actors.md) - Details the user actors and their roles, permissions, and capabilities within the discussion board system
-3. [Functional Requirements Document](./03-functional-requirements.md) - Documents the core functional requirements of the discussion board including posting, commenting, and content management
-4. [Business Rules Document](./04-business-rules.md) - Specifies the business rules and validation requirements for the discussion board functionality
-5. [Non-Functional Requirements Document](./05-non-functional-requirements.md) - Defines non-functional requirements including performance, security, and usability expectations
-6. [User Journeys Document](./06-user-journeys.md) - Outlines the user journey scenarios and workflows for different actor types
-7. [Security Document](./07-security.md) - Documents security considerations, authentication flows, and data protection requirements
-8. [Data Management Document](./08-data-management.md) - Specifies data management requirements including storage, backup, and retention policies
-9. [Success Metrics Document](./09-success-metrics.md) - Defines success criteria, metrics, and project constraints for measuring the discussion board's effectiveness
+### 1.1 Purpose
+The purpose of this document is to provide a comprehensive specification for the Economic/Political Discussion Board system. This platform will serve as a centralized hub for informed discussions on economic policies, political developments, and current affairs.
 
-## Document Overview
+### 1.2 Scope
+This document outlines all functional and non-functional requirements for the discussion board, covering user management, content creation and organization, community engagement features, administrative capabilities, and security considerations.
 
-This comprehensive requirements analysis report provides a detailed specification for an economic/political discussion board system. The system is designed to facilitate discourse on economic and political topics while supporting rich media content including images and file attachments.
+### 1.3 Definitions
+- **User**: An authenticated member of the platform who can participate in discussions
+- **Administrator**: A trusted user with elevated privileges for content and user management
+- **Super Administrator**: The highest privilege level with complete administrative control
+- **Section**: A categorized area for organizing discussions (e.g., Politics, Economy)
+- **Article**: A user-created post containing content, attachments, and tags
+- **Comment**: A response to an article with single-level nesting
 
-The documentation is structured to provide a holistic view of the system, starting with the service overview and following through user roles, functional capabilities, business constraints, and success criteria. Each document builds upon the previous ones to create a cohesive specification that backend developers can use to implement the complete system.
+## 2. Overall Description
 
-The approach taken emphasizes a straightforward, minimal implementation that focuses on core functionality without unnecessary complexity. The system design supports three distinct user roles (guest, member, and moderator) with clearly defined permissions that reflect different levels of system access.
+### 2.1 Product Perspective
+The Economic/Political Discussion Board is a standalone web application that provides a structured environment for community-driven discourse on economic and political topics. The system will integrate modern web technologies to ensure a responsive and secure user experience.
 
-## Project Context
+### 2.2 User Characteristics
+The system will serve multiple user types with distinct characteristics:
 
-The discussion board is positioned as a platform for community-driven dialogue on economic and political issues. It addresses the need for a dedicated space where users can share perspectives, engage in discussions, and contribute content through articles that support multimedia attachments.
+#### 2.2.1 General Users
+- Individuals interested in political and economic discourse
+- Policy enthusiasts and analysts
+- Political science students and academics
+- Economics professionals and researchers
+- Journalists and media professionals
+- Civic-minded citizens engaged in public affairs
 
-The system is designed with a clear separation of concerns:
-- Guest users can browse content without registration
-- Member users can contribute content including text, images, and file attachments
-- Moderator users can manage content quality and user behavior
+#### 2.2.2 Administrators
+- Trusted community members with moderation responsibilities
+- Individuals with technical knowledge of platform management
+- Policy experts who can guide community discussions
 
-This three-tiered architecture provides appropriate access controls while maintaining the openness essential for a discussion platform. The focus remains on facilitating conversation while implementing necessary moderation capabilities to maintain a respectful and productive environment.
+#### 2.2.3 Super Administrators
+- Platform operators with complete system control
+- Technical personnel responsible for maintaining system integrity
+- Senior moderators with authority over administrator management
 
-The technical approach emphasizes reliability and straightforward implementation. The system is designed to handle standard web traffic loads with responsive performance characteristics. File and image attachments are supported with appropriate size and format limitations to balance functionality with system stability.
+### 2.3 Operating Environment
+The system will operate as a web-based application accessible through modern browsers. The backend will utilize cloud-based infrastructure to ensure scalability and reliability.
 
-## Service Description
+### 2.4 Design and Implementation Constraints
+- Must comply with data protection regulations (GDPR, CCPA)
+- Must support responsive design for mobile and desktop access
+- Must maintain high availability (99.9% uptime)
+- Must implement industry-standard security practices
 
-The economic/political discussion board is a web-based platform that enables users to create and engage with content related to economic and political topics. The service provides a space for community discussion through articles that can include text content along with image and file attachments.
+## 3. System Features
 
-Core system capabilities include:
-- Content creation with rich text formatting
-- Multimedia support through image and file attachments
-- Categorization of content by topics
-- Commenting functionality for community engagement
-- User account management with role-based permissions
-- Content moderation tools for administrative oversight
+### 3.1 User Account Management
 
-The system architecture follows a straightforward client-server model with a focus on reliability and performance. Data persistence ensures that content remains available for community reference, while appropriate access controls protect user privacy and system integrity.
+#### 3.1.1 WHEN a guest registers for an account
+THE system SHALL:
+1. Require email address and password for registration
+2. Validate that the email address is properly formatted
+3. Verify that the email address is not already registered
+4. Create a new user account with default user permissions
+5. Send a verification email to the provided email address
 
-Content organization follows a simple hierarchical approach with categories representing economic and political topics. This structure allows users to easily discover relevant content while providing moderators with tools to maintain organizational coherence.
+#### 3.1.2 WHEN a guest attempts to log in
+THE system SHALL authenticate the credentials against stored user data.
 
-The system supports standard web interactions with responsive design principles. Performance optimization focuses on rapid content delivery with particular attention to media handling through efficient storage and retrieval mechanisms.
+#### 3.1.3 WHEN authentication is successful
+THE system SHALL:
+1. Generate a JWT access token with appropriate claims for the user's permission level
+2. Create an active session for the user
+3. Record the login event for security auditing
 
-## User Actors
+#### 3.1.4 WHEN authentication fails
+THE system SHALL:
+1. Return an appropriate error message
+2. Prevent access to the platform
+3. Implement rate limiting to prevent brute force attacks
 
-The system implements a three-tier user model with clearly defined roles and capabilities:
+#### 3.1.5 WHEN a user changes their password
+THE system SHALL:
+1. Require the current password for verification
+2. Accept and store the new password if current password is valid
+3. Invalidate all existing sessions for that user
 
-1. **Guest Users**: Unauthenticated users who can view public posts and categories but cannot create posts or comment. This role provides open access to content while protecting contribution capabilities for registered users.
+#### 3.1.6 WHEN a user forgets their password
+THE system SHALL:
+1. Provide a password reset mechanism via email verification
+2. Send a time-limited password reset link to the user's email address
+3. Allow the user to set a new password without providing the old one when accessing the reset link
 
-2. **Member Users**: Authenticated users who can create posts with images and file attachments, comment on posts, and manage their own content. This role represents the core community that drives discussion activity.
+#### 3.1.7 WHEN a user requests account deletion
+THE system SHALL:
+1. Require password confirmation for security
+2. Permanently remove all user profile data
+3. Permanently delete all articles authored by the user
+4. Permanently delete all comments authored by the user
+5. Terminate all active sessions for the user
+6. Maintain anonymized records for audit purposes where required by law
 
-3. **Moderator Users**: Administrative users who can review and approve posts, manage user accounts, delete inappropriate content, and configure system settings. This role provides oversight capabilities necessary to maintain community standards.
+### 3.2 User Profile System
 
-Authentication follows standard web practices with email/password registration for member users. Session management ensures secure access while allowing appropriate flexibility for user interactions. Role-based permissions are strictly enforced to maintain appropriate access controls across all system functions.
+#### 3.2.1 Profile Information Structure
+THE user profile system SHALL maintain a data structure for each registered user containing:
+1. Display name (1-50 characters)
+2. Biography text (0-1000 characters)
 
-The user model reflects a balance between openness and accountability. Guest users provide content discoverability for search engines and casual visitors, member users represent the engaged community, and moderator users ensure system integrity through administrative oversight.
+#### 3.2.2 WHEN a user edits their profile
+THE system SHALL:
+1. Allow modification of display name within character limits
+2. Allow modification of biography text within character limits
+3. Validate all input to prevent injection attacks
+4. Save changes immediately upon submission
 
-## Functional Requirements
+#### 3.2.3 WHEN viewing a user's profile
+THE system SHALL display:
+1. The user's display name
+2. The user's biography text (if provided)
+3. A complete list of all articles authored by the user
+4. A complete list of all comments made by the user
+5. Pagination for both articles and comments (20 items per page)
 
-The system implements comprehensive functional capabilities organized around content creation, community interaction, and administrative management:
+#### 3.2.4 Profile Privacy
+User profiles SHALL be publicly visible to all users of the system, including non-authenticated visitors.
 
-**Content Management**: Users can create, edit, and delete their own articles with appropriate permissions. Content includes rich text formatting and support for image and file attachments. Administrative users can manage all content including review and approval processes.
+### 3.3 Section Management
 
-**Commenting System**: Registered users can engage with content through commenting functionality. Comments support text formatting and can be managed by content owners and administrative users.
+#### 3.3.1 Section Properties
+WHEN a section is created, THE system SHALL store:
+1. Name (1-100 characters, alphanumeric with spaces, hyphens, and underscores)
+2. Description (0-500 characters)
+3. Unique identifier
 
-**Media Handling**: The system supports image attachments in standard web formats and file attachments with type and size limitations. Media validation ensures compatibility and system stability.
+#### 3.3.2 Section Creation (Admin Only)
+THE system SHALL restrict section creation to users with administrator privileges. WHEN an administrator creates a section, THE system SHALL validate name uniqueness.
 
-**User Management**: The system provides account registration, authentication, and profile management. Password reset and email verification capabilities ensure account security.
+#### 3.3.3 Section Editing (Admin Only)
+THE system SHALL allow administrators to modify section name and description. WHEN editing, THE system SHALL validate name uniqueness.
 
-**Administrative Functions**: Moderator users can perform content review, user management, and system configuration. Audit trails provide visibility into administrative actions.
+#### 3.3.4 Section Deletion (Admin Only)
+THE system SHALL allow administrators to delete sections. WHEN deleting a section, THE system SHALL:
+1. Display a confirmation dialog warning about content deletion
+2. Permanently delete the section and all associated articles and comments
+3. Remove all tag associations with articles in the section
 
-These functional areas work together to provide a complete discussion platform while maintaining focus on core capabilities without unnecessary complexity.
+#### 3.3.5 Section Listing
+THE system SHALL display all sections to any user with:
+1. Section name
+2. Section description
+3. Article count
+4. Comment count
+5. Date of most recent article
 
-## Non-Functional Requirements
+#### 3.3.6 Section Browsing
+WHEN a user selects a section, THE system SHALL:
+1. Display articles in that section
+2. Sort articles by newest first (default)
+3. Paginate articles (20 per page)
+4. For each article, display title, author, tags, comment count, and time posted
 
-Non-functional requirements address system qualities that support effective operation:
+### 3.4 Article Management
 
-**Performance**: The system responds to user interactions within acceptable timeframes with particular attention to content loading and media handling. Search and filtering operations provide responsive feedback for user queries.
+#### 3.4.1 Article Properties
+WHEN creating an article, THE system SHALL require:
+1. Title (1-200 characters)
+2. Content (1-50,000 characters)
+3. Section selection (exactly one valid section)
 
-**Security**: User authentication protects account access while content authorization ensures appropriate visibility controls. Data protection mechanisms safeguard user privacy and system integrity.
+#### 3.4.2 WHEN a user creates an article
+THE system SHALL:
+1. Validate all required fields
+2. Associate the authenticated user as the author
+3. Set the publication timestamp to current server time
+4. Generate a unique article identifier
+5. Redirect to the newly created article page
 
-**Usability**: The system interface provides clear navigation and feedback for user actions. Error handling presents informative messages that assist users in resolving issues.
+#### 3.4.3 WHEN a user edits their article
+THE system SHALL:
+1. Validate all fields meet requirements
+2. Update the article with new values
+3. Set modification timestamp
 
-**Reliability**: The system operates with minimal downtime and handles error conditions gracefully. Data backup processes protect against information loss.
+#### 3.4.4 WHEN a user deletes their article
+THE system SHALL:
+1. Permanently remove the article record
+2. Remove all associations with tags
+3. Delete all attachments associated with the article
+4. Remove all comments on the article
+5. Redirect to an appropriate page
 
-**Scalability**: The system architecture supports growth in user base and content volume through appropriate resource allocation and optimization.
+#### 3.4.5 File Attachments
+THE system SHALL allow up to 5 file attachments per article with:
+1. Maximum file size: 10MB per file
+2. Allowed types: PDF, DOC, DOCX, TXT, CSV, XLSX
+3. Download capability for authenticated users
 
-These requirements ensure that functional capabilities operate within appropriate quality parameters that support positive user experiences.
+#### 3.4.6 Image Attachments
+THE system SHALL allow up to 10 image attachments per article with:
+1. Maximum file size: 5MB per image
+2. Allowed types: JPG, JPEG, PNG, GIF, WEBP
+3. Display in gallery format with thumbnails
+4. Download capability for full-size images
 
-## Business Rules
+#### 3.4.7 Tagging System
+THE system SHALL allow up to 10 tags per article with:
+1. Each tag 1-30 characters
+2. Alphanumeric characters, spaces, hyphens, and underscores only
+3. No duplicate tags on the same article
 
-Business rules define the operational constraints that govern system behavior:
+### 3.5 Article Listing and Search
 
-**Content Validation**: Articles must include appropriate titles and content with restrictions on prohibited content. Media attachments must conform to supported formats and size limitations.
+#### 3.5.1 Article List Display
+WHEN viewing articles in a section, THE system SHALL:
+1. Display articles in paginated format (20 per page)
+2. Show title, author, tags, comment count, and time posted
+3. Not display full article content
 
-**User Interaction**: Comments must comply with community standards with mechanisms for reporting inappropriate content. User behavior is governed by terms of service that promote respectful discourse.
+#### 3.5.2 Sorting Options
+THE system SHALL allow users to sort articles by:
+1. Newest first (default)
+2. Oldest first
 
-**Moderation**: Content review processes ensure appropriate standards while maintaining timely publication. User management capabilities support account maintenance and policy enforcement.
+#### 3.5.3 Article Viewing
+WHEN viewing a single article, THE system SHALL display:
+1. Complete title
+2. Author information
+3. Full content
+4. Section information
+5. Publication timestamp
+6. All tags
+7. All attachments (files and images)
+8. Download capability for attachments
 
-**Data Integrity**: Content persistence ensures availability while audit capabilities track important system changes. Data retention policies balance information availability with storage considerations.
+#### 3.5.4 Search Functionality
+THE system SHALL allow users to search articles by:
+1. Title content
+2. Article content
+3. Paginate search results
 
-These rules provide the framework for system operation while supporting the community objectives of the discussion platform.
+#### 3.5.5 Tag Filtering
+THE system SHALL allow users to filter articles by tags.
 
-## Security Considerations
+### 3.6 Comment System
 
-Security measures protect user information and system integrity:
+#### 3.6.1 Comment Creation
+WHEN an authenticated user submits a comment, THE system SHALL:
+1. Validate the user is not banned
+2. Validate the parent article exists
+3. Validate comment content is 1-5000 characters
+4. Create a new comment record
+5. Associate the comment with the parent article and author
 
-**Authentication**: Secure user registration with email verification and password management capabilities protect account access. Session management prevents unauthorized system use.
+#### 3.6.2 Comment Editing
+WHEN a user edits their comment, THE system SHALL:
+1. Validate the user is the original author
+2. Validate the comment exists and is not deleted
+3. Validate updated content is 1-5000 characters
+4. Update the comment content
+5. Mark the comment as edited
 
-**Authorization**: Role-based access controls ensure users can only perform actions appropriate to their permissions. Content visibility controls protect privacy and administrative functions.
+#### 3.6.3 Comment Deletion
+WHEN a user deletes their comment, THE system SHALL:
+1. Validate the user is the original author
+2. Mark the comment as deleted (soft delete)
+3. Update the article's comment count
 
-**Data Protection**: User information is protected through appropriate storage and transmission security measures. Media handling includes validation to prevent malicious content.
+#### 3.6.4 Comment Display
+WHEN displaying comments for an article, THE system SHALL:
+1. Show all active comments
+2. Display author information
+3. Display content with appropriate formatting
+4. Show creation timestamp
+5. Indicate if the comment has been edited
 
-**Content Security**: Input validation and output encoding prevent common web vulnerabilities. Administrative functions require additional authentication measures.
+#### 3.6.5 Comment Sorting
+THE system SHALL display comments sorted by oldest first.
 
-These security capabilities provide defense in depth while maintaining appropriate usability for community participation.
+### 3.7 Administrator System
 
-## Success Metrics
+#### 3.7.1 Administrator Request Process
+THE system SHALL allow standard users to request administrative privileges:
+1. Users SHALL provide a reason (10-1000 characters)
+2. Super administrators SHALL view pending requests
+3. Super administrators SHALL approve or reject requests
+4. Approved users SHALL become regular administrators
 
-Success metrics define how system effectiveness is measured:
+#### 3.7.2 Administrator Grades
+THE system SHALL implement two administrator grades:
+1. Regular Administrator - Day-to-day moderation capabilities
+2. Super Administrator - Complete administrative control including administrator management
 
-**User Engagement**: Participation rates including article creation, commenting, and content consumption indicate community activity levels. User retention measures ongoing platform value.
+#### 3.7.3 Administrator Promotions/Demotions
+WHEN a super administrator manages administrators, THE system SHALL:
+1. Allow promotion of regular administrators to super administrators
+2. Allow demotion of super administrators to regular administrators
+3. Prevent super administrators from demoting themselves
 
-**Content Quality**: Moderation metrics and community feedback reflect content standards. Content diversity and relevance support discussion objectives.
+#### 3.7.4 Administrator Capabilities
+Administrators SHALL be able to:
+1. Create, edit, and delete sections
+2. Delete any article
+3. Delete any comment
+4. Ban and unban users
+5. View the list of banned users
+6. Perform all standard user actions
 
-**Performance Indicators**: System response times and availability metrics demonstrate technical effectiveness. Media handling performance indicates quality of user experience.
+#### 3.7.5 Super Administrator Exclusive Capabilities
+Super administrators SHALL additionally be able to:
+1. Approve or reject administrator requests
+2. Promote or demote administrators
+3. Access exclusive audit interfaces
 
-**Business Outcomes**: User growth and community expansion track platform adoption. Administrative efficiency metrics reflect operational effectiveness.
+### 3.8 Banning System
 
-These metrics provide comprehensive visibility into system performance while supporting continuous improvement efforts.
+#### 3.8.1 Banning Process
+WHEN an administrator bans a user, THE system SHALL:
+1. Require a ban reason (10-500 characters)
+2. Record the timestamp and administrator who initiated the ban
+3. Immediately prevent the user from authenticating
+4. Display a ban notification with reason on login attempts
 
-## Developer Note
+#### 3.8.2 Banned User Restrictions
+Banned users SHALL:
+1. Be unable to log in to the platform
+2. Be unable to access authenticated features
+3. Have their existing articles and comments remain visible
 
-Before proceeding with implementation, it's strongly recommended to validate all requirements with stakeholders to ensure alignment with business objectives. Technical architecture decisions should consider the production environment constraints and existing infrastructure capabilities.
+#### 3.8.3 Unbanning Process
+WHEN an administrator unbans a user, THE system SHALL:
+1. Restore the user's ability to log in
+2. Record the timestamp and administrator who initiated the unban
+
+#### 3.8.4 Ban Record Management
+THE system SHALL:
+1. Maintain permanent records of all ban actions
+2. Allow administrators to view banned users list
+3. Show ban date, reason, and banning administrator
+4. Allow filtering of banned users list
+
+## 4. External Interface Requirements
+
+### 4.1 User Interfaces
+The system SHALL provide responsive web interfaces that work on desktop and mobile devices. The interface SHALL be accessible and comply with WCAG 2.1 AA standards.
+
+### 4.2 Hardware Interfaces
+No specific hardware interfaces are required beyond standard web browser capabilities.
+
+### 4.3 Software Interfaces
+The system SHALL integrate with standard email services for sending verification and notification emails.
+
+### 4.4 Communications Interfaces
+The system SHALL communicate over HTTPS for all data transmission to ensure security.
+
+## 5. Non-Functional Requirements
+
+### 5.1 Performance Requirements
+1. Article listing pages SHALL load within 3 seconds
+2. Article viewing pages SHALL load within 2 seconds
+3. User authentication SHALL complete within 2 seconds
+4. Section management operations SHALL complete within 5 seconds
+
+### 5.2 Security Requirements
+1. All passwords SHALL be securely hashed using industry-standard algorithms
+2. JWT tokens SHALL be used for session management
+3. All file uploads SHALL be validated and sanitized
+4. All user inputs SHALL be sanitized to prevent XSS attacks
+5. Rate limiting SHALL be implemented on authentication endpoints
+
+### 5.3 Reliability Requirements
+1. The system SHALL maintain 99.9% uptime
+2. Data SHALL be backed up daily
+3. Database transactions SHALL ensure data consistency
+
+### 5.4 Availability Requirements
+1. The system SHALL be available 24/7 except for scheduled maintenance
+2. Scheduled maintenance SHALL not exceed 4 hours per month
+
+### 5.5 Maintainability Requirements
+1. The system SHALL be designed with modular components
+2. Error logs SHALL be comprehensive for debugging purposes
+3. Database schema changes SHALL be version controlled
+
+## 6. Other Requirements
+
+### 6.1 Legal Requirements
+The system SHALL comply with applicable data protection laws including GDPR and CCPA.
+
+### 6.2 Documentation Requirements
+Complete API documentation SHALL be provided for all system endpoints.
+
+### 6.3 Data Retention Requirements
+1. Ban records SHALL be retained permanently
+2. Audit logs SHALL be retained for 2 years
+3. User data SHALL be deleted upon account deletion request
+
+### 6.4 System Constraints
+1. The system SHALL be implemented using NestJS and Prisma
+2. All code SHALL be written in TypeScript
+3. The system SHALL use a PostgreSQL database
+
+## 7. Future Enhancements
+
+### 7.1 Real-time Notifications
+The system MAY implement real-time notifications for article comments and user mentions.
+
+### 7.2 Content Recommendation
+The system MAY implement content recommendation based on user interests and reading history.
+
+### 7.3 Advanced Moderation Tools
+The system MAY implement automated content moderation using AI-based filtering.
+
+### 7.4 Mobile Application
+A dedicated mobile application MAY be developed for enhanced mobile user experience.

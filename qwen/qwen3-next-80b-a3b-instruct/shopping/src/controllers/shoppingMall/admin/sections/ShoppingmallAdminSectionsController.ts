@@ -1,138 +1,162 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia from "typia";
+import typia, { tags } from "typia";
 
+import { IPageIShoppingMallSection } from "../../../../api/structures/IPageIShoppingMallSection";
 import { IShoppingMallSection } from "../../../../api/structures/IShoppingMallSection";
+import { AdminAuth } from "../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { getShoppingMallAdminSectionsSectionId } from "../../../../providers/getShoppingMallAdminSectionsSectionId";
+import { patchShoppingMallAdminSections } from "../../../../providers/patchShoppingMallAdminSections";
+import { postShoppingMallAdminSections } from "../../../../providers/postShoppingMallAdminSections";
+import { putShoppingMallAdminSectionsSectionId } from "../../../../providers/putShoppingMallAdminSectionsSectionId";
 
 @Controller("/shoppingMall/admin/sections")
 export class ShoppingmallAdminSectionsController {
   /**
-   * Create a new section in the shopping mall platform.
+   * Create a new section within the shopping mall environment to organize products, promotions, or customer experience zones.
    *
-   * This operation allows administrators to create new organizational sections
-   * within the shopping mall ecosystem. Each section represents a distinct area
-   * of the platform that can contain products, services, or specialized
-   * content. The section creation process establishes the foundational
-   * structure for merchandise categorization and customer navigation.
+   * This operation enables administrators to establish new organizational sections within the shopping mall platform. Each section represents a distinct area of the marketplace, such as a product category (Electronics, Apparel), a promotional zone (Summer Sale, Holiday Specials), or a functional area (Customer Support, FAQ Hub).
    *
-   * The operation requires specification of section details including name,
-   * display order, and visibility settings. All sections must have a unique
-   * name to prevent conflicts in the platform's navigation hierarchy. Section
-   * names serve as both display identifiers and internal reference keys,
-   * ensuring consistent integration across customer-facing interfaces and
-   * administrative tools.
+   * The created section becomes immediately available as a navigation element for customers and serves as a grouping mechanism for associated products, inventory, and sales records. Proper section organization improves user experience through intuitive navigation and helps sellers manage their inventory more effectively by aligning with structured taxonomies.
    *
-   * Administrative privileges are required to use this operation, as sections
-   * define the fundamental architecture of the shopping mall platform. Sections
-   * are not user-createable entities; their creation requires platform-wide
-   * strategic planning to maintain coherence and prevent organizational
-   * fragmentation. The system enforces strict naming validation to ensure all
-   * section identifiers follow camelCase conventions and avoid reserved
-   * keywords.
+   * Security: Only authenticated administrators may create sections. The operation validates that the creator has appropriate permissions, and the system logs all section creation activities for audit purposes. Section names must be globally unique across the entire shopping mall to prevent confusion in navigation and reporting.
    *
-   * This operation integrates tightly with the shopping_mall_sections database
-   * entity, which maintains immutable records of all sections across the
-   * platform. Any attempt to create a section with a name that already exists
-   * will result in validation failure, ensuring data integrity of the
-   * platform's organizational structure. Once created, the section becomes
-   * immediately available in the platform's category navigation and can be
-   * populated with products through separate operations.
-   *
-   * Note that section creation does not automatically assign products or
-   * sub-sections; these relationships are managed by separate operations. The
-   * created section's unique identifier is returned in the response for
-   * subsequent configuration and management operations.
+   * This operation is fundamental to the shopping mall's structure and enables scalability of the marketplace as new product lines and promotional strategies are introduced. Related operations: Update section (PUT /sections/{sectionId}), List sections (GET /sections), Delete section (DELETE /sections/{sectionId}).
    *
    * @param connection
-   * @param body Details required to create a new shopping mall section.
+   * @param body Required fields: name (minimum 1 character). Optional: description, display_order, status. All create requests require name.
+   * @x-autobe-specification Insert new shopping_mall_sections record with provided name, description, display_order, and status. Validate required fields: name (minLength: 1), description (optional), display_order (integer >= 0), status ('active' or 'inactive'). Apply default status 'active' if not provided. Generate section_id as UUID. Return full created section record with created_at timestamp and updated_at timestamp. Maintain display_order uniqueness for active sections within same parent context (if hierarchical).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
+    @AdminAuth()
+    admin: AdminPayload,
     @TypedBody()
     body: IShoppingMallSection.ICreate,
   ): Promise<IShoppingMallSection> {
-    body;
-    return typia.random<IShoppingMallSection>();
+    try {
+      return await postShoppingMallAdminSections({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Update an existing shopping mall section by its unique business code. This
-   * operation modifies the section details in the shopping_mall_sections table
-   * from the database schema. The section code serves as a human-readable
-   * identifier and is guaranteed to be globally unique across all malls.
+   * Retrieve a paginated list of shopping mall sections with filtering and sorting capabilities. This operation queries the shopping_mall_sections table to return sections organized in a hierarchical structure based on parent-child relationships. Each section represents a distinct area of the shopping mall, such as 'Electronics', 'Fashion', or 'Food Court'.
    *
-   * Update operations must be performed by administrators only, as sections
-   * define the physical and organizational structure of the shopping mall. The
-   * section code is immutable and cannot be changed during an update - only
-   * other attributes like title, description, and layout can be modified. This
-   * ensures consistent reference identifiers in user interfaces, analytics, and
-   * external systems.
+   * Sections can be organized hierarchically with parent-child relationships, allowing for nested categorization (e.g., 'Electronics' > 'Audio' > 'Headphones'). The response includes only essential summary information such as section name, description, and hierarchical level to optimize performance for list displays. The operation supports filtering by section name and description, ordered by creation date or section order index.
    *
-   * Security policy requires that only users with admin privileges can execute
-   * this operation. The system automatically validates that the specified
-   * sectionCode exists in the database and that the updated fields comply with
-   * data integrity constraints. Partial updates are supported - only the fields
-   * provided in the request body will be modified, leaving other fields
-   * unchanged.
+   * Security: This endpoint is publicly accessible to allow customers to browse the mall's layout and section structure. There is no authentication required to view mall sections, though administrators can manage this data via other endpoints.
    *
-   * Related operations: Get section (GET /sections/{sectionCode}), List
-   * sections (PATCH /sections), Create section (POST /sections).
+   * This operation is used by the frontend to display the mall's navigation structure in sidebars, category menus, and Sitemap pages. It is commonly called when the user opens the website, visits the category navigation page, or searches for products in a specific section.
+   *
+   * Related operations: GET /sections/{sectionId} retrieves detailed section information. PATCH /sections allows administrators to create or update sections. DELETE /sections/{sectionId} removes sections.
+   *
+   * Key characteristics:
+   * - Returns summary data (not full entity details)
+   * - Supports pagination with configurable limit and offset
+   * - Filters based on name and description text
+   * - Orders by default by creation date (newest first)
+   * - Includes parent-child relationship information
+   * - No request body for simple retrieval - uses query parameters for filtering
+   * - Read-only access - no modification permitted
    *
    * @param connection
-   * @param sectionCode Unique business identifier code of the target shopping
-   *   mall section (global scope)
-   * @param body Update fields for the shopping mall section with all fields
-   *   optional to support partial updates.
+   * @param body Search and pagination parameters for mall sections.
+   * @x-autobe-specification Query shopping_mall_sections table with pagination using cursor-based pagination for high performance. Where clause filters by name and description fields using case-insensitive LIKE queries. Join with parent section to include parentName in response for hierarchical context. Order by createdAt DESC (newest first) unless sortBy parameter specifies orderIndex. Limit results to page size specified in request (default 10). Cache results for 5 minutes using request parameters as cache key. For sections with parent, include parent.name and parent.id in response but exclude children array to prevent circular references. Handle case where section has no parent - return null for parent field.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":sectionCode")
+  @TypedRoute.Patch()
+  public async index(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedBody()
+    body: IShoppingMallSection.IRequest,
+  ): Promise<IPageIShoppingMallSection.ISummary> {
+    try {
+      return await patchShoppingMallAdminSections({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific section from the shopping mall platform by its unique identifier.
+   *
+   * This operation fetches the complete details of a section from the shopping_mall_sections table, including its name, description, and associated metadata. Sections represent logical groupings of products or features within the shopping mall platform, allowing for organized navigation and content presentation. The operation returns the full section information as defined in the database schema, with all available field values.
+   *
+   * Access to this operation is granted to authenticated customers, sellers, and administrators who need to view section details for navigation, product categorization, or content management purposes. The section information returned is used to populate navigation menus, category displays, and marketing content areas on the platform's frontend interfaces.
+   *
+   * This operation supports the business need for users to browse and explore different sections of the shopping mall, each representing a distinct product category or thematic grouping. The section details provide context for users about the content and products available in that section of the platform.
+   *
+   * @param connection
+   * @param sectionId Unique identifier of the target section
+   * @x-autobe-specification Query shopping_mall_sections table by sectionId parameter. Return section record with name, description fields. Validate that sectionId is a valid UUID. Ensure response includes all available section properties as defined in the database schema. Use cached results for 1 minute with sectionId as cache key.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":sectionId")
+  public async at(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("sectionId")
+    sectionId: string,
+  ): Promise<IShoppingMallSection> {
+    try {
+      return await getShoppingMallAdminSectionsSectionId({
+        admin,
+        sectionId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the details of a specific section in the shopping mall platform's organizational structure.
+   *
+   * This operation allows administrators to edit the name and description of an existing section. The section must be identified by its unique UUID identifier in the path parameter. Changes to the section will be reflected immediately throughout the platform where the section is referenced, including administrative dashboards and content management interfaces.
+   *
+   * The operation expects a complete update of the section's name and description fields in the request body. It does not support partial updates or field-by-field modification; the request must include both name and description values for the specified section. The operation validates that the name is non-empty and the description is valid text.
+   *
+   * This is a primary entity update operation with no dependencies on other tables or complex business rules. The updated_at timestamp is automatically managed by the system to reflect the time of modification. The section's id cannot be changed via this endpoint as it serves as the primary key.
+   *
+   * Related operations: GET /sections/{sectionId} for viewing section details, DELETE /sections/{sectionId} for permanent removal, and GET /sections for listing all sections.
+   *
+   * @param connection
+   * @param sectionId Unique identifier of the target section (UUID format). This corresponds to the id field in the shopping_mall_sections table.
+   * @param body Complete update data for the section, including new name and description
+   * @x-autobe-specification Update an existing shopping_mall_sections record by sectionId. Find the record by id field (uuid formatted) and update the name and description fields with provided values. Set updated_at timestamp to current time. Return the complete updated record. Ensure no other fields are modified. Validate input name and description strings for non-null length.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":sectionId")
   public async update(
-    @TypedParam("sectionCode")
-    sectionCode: string,
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("sectionId")
+    sectionId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallSection.IUpdate,
   ): Promise<IShoppingMallSection> {
-    sectionCode;
-    body;
-    return typia.random<IShoppingMallSection>();
-  }
-
-  /**
-   * Permanently remove a shopping mall section from the organizational
-   * structure.
-   *
-   * This operation permanently deletes the specified shopping mall section from
-   * the database based on its unique section code. Once executed, the section
-   * record is completely removed from the shopping_mall_sections table without
-   * any possibility of recovery.
-   *
-   * This operation directly affects the hierarchical structure of the shopping
-   * mall. When a section is deleted, all products and categories that were
-   * associated with it become orphaned, which may affect product discovery and
-   * navigation in the user interface. There is no automatic cleanup or
-   * cascading logic performed by this operation.
-   *
-   * This endpoint is exclusively for administrative purposes to clean up unused
-   * or deprecated sections. Only users with admin privileges can execute this
-   * operation due to the irreversible nature of the deletion. After deletion,
-   * section codes cannot be reused immediately as they remain in the system's
-   * audit logs.
-   *
-   * Related operations: GET /sections - Retrieve list of sections, PATCH
-   * /sections/{sectionCode} - Update section details.
-   *
-   * @param connection
-   * @param sectionCode Unique business identifier code of the target shopping
-   *   mall section (global scope)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":sectionCode")
-  public async erase(
-    @TypedParam("sectionCode")
-    sectionCode: string,
-  ): Promise<void> {
-    sectionCode;
-    return typia.random<void>();
+    try {
+      return await putShoppingMallAdminSectionsSectionId({
+        admin,
+        sectionId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

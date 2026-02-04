@@ -1,20 +1,21 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IShoppingMallConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallConfiguration";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
-import api from "@ORGANIZATION/PROJECT-api";
-import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallConfiguration";
+
 import { prepare_random_shopping_mall_configuration } from "../prepare/prepare_random_shopping_mall_configuration";
+
 export async function generate_random_shopping_mall_admin_configurations_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IShoppingMallConfiguration.ICreate>;
+    body?: DeepPartial<IShoppingMallConfiguration.ICreate> | undefined;
   },
 ): Promise<IShoppingMallConfiguration> {
-  const prepared: IShoppingMallConfiguration.ICreate =
-    prepare_random_shopping_mall_configuration(props.body);
+  const prepared = prepare_random_shopping_mall_configuration(props.body);
   return await api.functional.shoppingMall.admin.configurations.create(
     connection,
     {

@@ -1,0 +1,174 @@
+/// User comments on articles with content, timestamps, and authorship
+/// information. Supports creation, editing, and deletion of comments with
+/// tracking of modification history.
+///
+/// Each comment is associated with a specific article and created by an
+/// authenticated user. Comments can be edited by their authors, with each
+/// edit creating a new version in the history table. Comments can also be
+/// soft deleted while maintaining their content for audit purposes.
+///
+/// The comment system supports single-level discussion threads only - there
+/// are no nested replies. Comments are displayed sorted by creation time,
+/// oldest first. The content is limited to 2000 characters to ensure
+/// readability and performance.
+///
+/// Comments maintain full audit trails through their history and deletion
+/// records, allowing administrators to track all changes and removals for
+/// moderation purposes.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article this comment belongs to. {@link discussion_board_articles.id}
+  article_id String
+  
+  /// The user who authored this comment. {@link discussion_board_users.id}
+  author_id String
+  
+  /// The main content of the comment. Limited to 2000 characters to ensure
+  /// readability and performance in the discussion interface.
+  content String
+  
+  /// When the comment was first created. Used for sorting comments
+  /// chronologically and providing temporal context.
+  created_at DateTime
+  
+  /// When the comment was last edited. This field is updated every time the
+  /// comment content is modified. NULL if the comment has never been edited.
+  updated_at DateTime?
+  
+  /// When the comment was deleted. Used for soft deletion to maintain audit
+  /// trails while hiding content from users. NULL if the comment is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  histories discussion_board_comment_histories[]
+  deletion discussion_board_comment_deletions?
+  
+  @@index([article_id, created_at])
+  @@index([author_id, created_at])
+}
+
+/// Historical versions of comments for audit trail purposes.
+///
+/// Each time a comment is edited, a snapshot of its previous state is stored
+/// in this table. This creates a complete history of all changes made to
+/// comments over time, which is essential for moderation, accountability,
+/// and content recovery purposes.
+///
+/// The history records include the complete content of the comment at the
+/// time of the edit, along with timestamps and authorship information. This
+/// allows administrators to track the evolution of discussions and
+/// investigate any problematic content modifications.
+///
+/// History records are created automatically whenever a comment is updated.
+/// They are immutable once created, ensuring the integrity of the audit
+/// trail. The relationship to the main comment table allows for easy
+/// retrieval of the complete history of any comment.
+///
+/// This table follows the standard snapshot pattern used throughout the
+/// system for maintaining historical data.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this history record belongs to. {@link
+  /// discussion_board_comments.id}
+  comment_id String
+  
+  /// The user who authored this version of the comment. {@link
+  /// discussion_board_users.id}
+  author_id String
+  
+  /// The content of the comment at the time this history record was created.
+  /// This represents the state of the comment before it was edited.
+  content String
+  
+  /// When this history record was created. This timestamp represents when the
+  /// comment was edited and this snapshot was taken.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id, created_at])
+  @@index([author_id, created_at])
+}
+
+/// Records of deleted comments for permanent audit trail purposes.
+///
+/// When a comment is deleted, a record is created in this table to maintain
+/// a permanent audit trail of all content removals. This is essential for
+/// moderation oversight and accountability, allowing administrators to track
+/// what content has been removed and when.
+///
+/// The deletion records include information about the deleted comment, when
+/// it was deleted, and who performed the deletion. This information is
+/// crucial for investigating abuse, resolving disputes, and maintaining
+/// transparency in content moderation.
+///
+/// Unlike the soft deletion in the main comments table, these records are
+/// permanent and cannot be restored. This ensures that there is always a
+/// trace of deleted content for administrative purposes, even if the
+/// original comment is no longer visible to users.
+///
+/// The table is designed to be append-only, with new records added for each
+/// deletion but existing records never modified. This maintains the
+/// integrity of the audit trail.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that was deleted. {@link discussion_board_comments.id}
+  comment_id String
+  
+  /// The user who performed the deletion. For user deletions, this will be the
+  /// comment author. For administrative deletions, this will be the
+  /// administrator. {@link discussion_board_users.id}
+  deleted_by_id String
+  
+  /// When the comment was deleted. This timestamp is set when the deletion
+  /// occurs and is used for audit purposes.
+  deleted_at DateTime
+  
+  /// Optional reason for the deletion. This field can be used by
+  /// administrators to record why a comment was removed, which is important
+  /// for moderation transparency and user communication.
+  reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  deletedBy discussion_board_users @relation(fields: [deleted_by_id], references: [id], onDelete: Cascade)
+  
+  @@unique([comment_id])
+  
+  @@index([deleted_by_id, deleted_at])
+}

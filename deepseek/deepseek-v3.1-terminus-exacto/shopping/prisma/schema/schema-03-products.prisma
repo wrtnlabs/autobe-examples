@@ -1,0 +1,703 @@
+/// Core product catalog entries containing essential product information and
+/// seller relationships.
+///
+/// Stores the foundational product data including name, description, base
+/// pricing details, and seller ownership. Each product represents a distinct
+/// item in the catalog that can have multiple variants through the related
+/// variants table.
+///
+/// Products maintain a status field to control listing visibility and
+/// availability. The base price serves as the default pricing which can be
+/// overridden at the variant level when specific options affect pricing.
+///
+/// Seller relationship ensures proper ownership tracking and access control
+/// for product management. Products are designed to support the snapshot
+/// architecture by capturing modifications through the separate product
+/// snapshots table for historical data preservation.
+///
+/// Temporal fields track creation, modification, and soft deletion lifecycle
+/// following platform audit requirements. The product status allows for
+/// flexible listing management including draft preparation, active sales,
+/// and archival for discontinued items.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link ecommerce_mall_sellers.id} that owns and manages
+  /// this product. Established through the seller registration and approval
+  /// process.
+  seller_id String
+  
+  /// Product name for display and search purposes. Must be unique within the
+  /// seller's product catalog to avoid confusion. Supports international
+  /// characters for global market reach.
+  name String
+  
+  /// Detailed product description containing features, specifications, usage
+  /// instructions, and marketing content. Supports HTML formatting for rich
+  /// content presentation.
+  description String
+  
+  /// Default product price in base currency that serves as the pricing
+  /// foundation. Variant-specific prices can override this base price when
+  /// options affect pricing.
+  base_price Float
+  
+  /// Current product status controlling listing visibility and availability.
+  /// Valid values: 'draft', 'active', 'inactive', 'archived'. Controls when
+  /// products appear in search results and customer-facing catalogs.
+  status String
+  
+  /// Timestamp when the product was initially created in the system. Captures
+  /// the initial listing date for historical tracking and seller analytics.
+  created_at DateTime
+  
+  /// Timestamp when the product was last modified. Used to track recent
+  /// changes and support change detection for snapshot creation triggers.
+  updated_at DateTime
+  
+  /// Timestamp when the product was soft deleted, enabling data preservation
+  /// while removing from active catalogs. Allows for product restoration and
+  /// maintains referential integrity with historical orders.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  variants ecommerce_mall_product_variants[]
+  images ecommerce_mall_product_images[]
+  snapshots ecommerce_mall_product_snapshots[]
+  attributes ecommerce_mall_product_attributes[]
+  viewStats ecommerce_mall_product_view_stats[]
+  categories ecommerce_mall_product_categories[]
+  sales ecommerce_mall_sales[]
+  ratingCalculations ecommerce_mall_rating_calculations[]
+  
+  @@unique([seller_id, name])
+  @@index([status, created_at])
+  @@index([seller_id, status])
+}
+
+/// Product variants represent specific configurations of products with
+/// unique SKU codes, pricing overrides, and stock quantities.
+///
+/// Each variant belongs to a parent product and represents one specific
+/// combination of product options. Variants have distinct SKU codes for
+/// inventory management and can have different pricing from the base
+/// product. Stock quantities are tracked per variant, allowing independent
+/// inventory management.
+///
+/// The variant system supports complex product offerings while maintaining
+/// proper normalization. Variants are managed through their parent products
+/// and follow the snapshots system for historical data preservation when
+/// modified.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// product catalog reorganization.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link ecommerce_mall_products.id} that this variant
+  /// belongs to.
+  ecommerce_mall_product_id String
+  
+  /// Stock Keeping Unit (SKU) code for inventory management and product
+  /// identification. Must be unique across all variants.
+  sku String
+  
+  /// Optional price override for this variant. If null, inherits base price
+  /// from parent product.
+  price_override Float?
+  
+  /// Current available stock quantity for this variant. Cannot be negative.
+  stock_quantity Int
+  
+  /// Availability status of this variant. Values: active - available for sale,
+  /// inactive - not currently available, discontinued - permanently
+  /// unavailable.
+  status String
+  
+  /// Timestamp when this variant was created.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this variant was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  inventoryRecords ecommerce_mall_inventory_records[]
+  snapshots ecommerce_mall_variant_snapshots[]
+  options ecommerce_mall_product_variant_options[]
+  saleVariants ecommerce_mall_sale_variants[]
+  cartItems ecommerce_mall_cart_items[]
+  cartSnapshotItems ecommerce_mall_cart_snapshot_items[]
+  inventoryHistories ecommerce_mall_inventory_histories[]
+  lowStockAlerts ecommerce_mall_inventory_low_stock_alerts[]
+  inventoryTransfers ecommerce_mall_inventory_transfers[]
+  inventoryCountItems ecommerce_mall_inventory_count_items[]
+  
+  @@unique([sku])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, status], map: "ecommerce_mall_product_variants_ecommerce_mall_product_c90c3102")
+  @@index([stock_quantity])
+  @@index([created_at])
+}
+
+/// Stores product images with ordering and metadata management for visual
+/// product display.
+///
+/// Each product can have multiple images with specific display ordering.
+/// Images include URL references, alt text for accessibility, and image type
+/// classification. The ordering field determines the sequence in which
+/// images are displayed for the product.
+///
+/// Images are managed through their parent product operations and cannot be
+/// created independently. Soft deletion is supported to maintain audit
+/// trails while allowing image replacement or removal.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product reference. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// URL reference to the product image file stored in the media storage
+  /// system.
+  image_url String
+  
+  /// Sequential order for image display. Lower numbers appear first in product
+  /// image galleries.
+  display_order Int
+  
+  /// Alternative text description for accessibility and SEO purposes.
+  alt_text String?
+  
+  /// Classification of image type such as 'primary', 'thumbnail', 'gallery',
+  /// or 'detail'.
+  image_type String
+  
+  /// Timestamp when the image record was created.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, display_order], map: "ecommerce_mall_product_images_ecommerce_mall_product_i_15677891")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, image_type], map: "ecommerce_mall_product_images_ecommerce_mall_product_i_6a9ee842")
+}
+
+/// Inventory history tracking table recording all quantity changes for
+/// product variants with timestamps and adjustment reasons for complete
+/// audit trail.
+///
+/// Maintains a comprehensive history of inventory operations including
+/// sales, restocks, adjustments, returns, and other modifications to variant
+/// stock levels. Each record represents a single inventory transaction that
+/// affects the available quantity of a product variant.
+///
+/// Essential for audit compliance, stock reconciliation, and providing
+/// visibility into inventory movements over time. The audit trail supports
+/// dispute resolution, performance analysis, and inventory optimization
+/// decisions.
+///
+/// References the target product variant using {@link
+/// ecommerce_mall_product_variants.id} to track inventory changes at the
+/// variant level.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target product variant whose inventory is being modified. {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Amount of inventory added (positive) or deducted (negative) in this
+  /// operation.
+  quantity_change Int
+  
+  /// Description of why this inventory change occurred, such as sale, restock,
+  /// adjustment, or return.
+  reason String
+  
+  /// Stock level before this operation occurred, for audit verification.
+  previous_quantity Int
+  
+  /// Stock level after this operation occurred, for audit verification.
+  new_quantity Int
+  
+  /// Type of inventory operation: sale, restock, adjustment, return, damage,
+  /// etc.
+  operation_type String
+  
+  /// Timestamp when this inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  operations ecommerce_mall_inventory_operations[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_19d25df6")
+  @@index([operation_type, created_at])
+}
+
+/// Immutable snapshots preserving complete product state including variants
+/// at modification time for audit trails and historic reference.
+///
+/// Captures the complete state of products whenever modifications occur,
+/// including all fields, variant relationships, and image associations. This
+/// ensures exact product information is preserved for order processing,
+/// dispute resolution, and business auditing purposes.
+///
+/// Each snapshot establishes a reference to the parent product being
+/// modified and includes creation timestamps for temporal tracking. The
+/// snapshots are append-only and cannot be modified once created,
+/// maintaining data integrity for historical reference.
+///
+/// Used by the system to resolve disputes, provide accurate historical
+/// reporting, and ensure customer orders reference the exact product state
+/// at purchase time even if the live product data changes later.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent product whose state is being preserved via
+  /// snapshot. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Product name at the time of snapshot creation, capturing the exact naming
+  /// state for historical accuracy.
+  name String
+  
+  /// Complete product description including all rich text formatting and
+  /// content details preserved exactly as captured.
+  description String
+  
+  /// Product base price in the original currency at snapshot time, preserving
+  /// exact pricing for historical reference.
+  base_price Float
+  
+  /// Product activation status at snapshot time, indicating whether the
+  /// product was available for sale when captured.
+  is_active Boolean
+  
+  /// Approval requirement status at snapshot time, capturing any
+  /// administrative gatekeeping status.
+  requires_approval Boolean
+  
+  /// Number of product variants available at snapshot time, capturing the
+  /// product complexity state.
+  variant_count Int
+  
+  /// JSON structure containing all variant option definitions and combinations
+  /// available at snapshot time for complete reconstruction.
+  variant_options_json String
+  
+  /// Number of product images associated with the product at snapshot time,
+  /// capturing visual asset completeness.
+  image_count Int
+  
+  /// JSON structure containing the complete category hierarchy including
+  /// parent and subcategory relationships at snapshot time.
+  category_hierarchy_json String
+  
+  /// Number of product attributes and specifications defined at snapshot time,
+  /// capturing feature completeness.
+  attribute_count Int
+  
+  /// Cumulative product view count at snapshot time, capturing engagement
+  /// metrics for historical analytics.
+  total_views Int
+  
+  /// Reason for snapshot creation, documenting the modification event that
+  /// triggered this historical capture (e.g., price_change,
+  /// description_update, status_change).
+  snapshot_reason String
+  
+  /// Timestamp when this immutable snapshot was created, establishing the
+  /// exact moment of product state preservation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, created_at], map: "ecommerce_mall_product_snapshots_ecommerce_mall_produc_b378938d")
+  @@index([snapshot_reason])
+  @@index([created_at])
+}
+
+/// Immutable snapshots preserving complete variant state changes for audit
+/// trail and dispute resolution.
+///
+/// Captures the entire state of a product variant at the moment of any
+/// modification, creating permanent records that cannot be altered. Each
+/// snapshot includes all variant fields as they existed when the snapshot
+/// was triggered, ensuring historical accuracy for business analytics, data
+/// disputes, and compliance requirements.
+///
+/// Used automatically by the system whenever a variant is created or
+/// modified, providing a complete audit trail of all changes over the
+/// variant's lifecycle. Snapshots are referenced when resolving customer
+/// disputes about product specifications or pricing, allowing verification
+/// of what was presented at any point in time.
+///
+/// The denormalized storage of all variant fields ensures that historical
+/// data remains accurate even if later changes are made to the active
+/// variant record. This supports the platform's commitment to data integrity
+/// and transparency in all customer transactions.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_variant_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The variant being snapshotted's identifier. {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Name of the variant at snapshot time, typically combining product name
+  /// with option selections.
+  variant_name String
+  
+  /// Detailed description of the variant's specific features and
+  /// characteristics as recorded during snapshot.
+  variant_description String?
+  
+  /// Specific combination of product options that defines this variant,
+  /// formatted consistently for display and search.
+  option_combination String
+  
+  /// Price adjustment amount relative to base product price, positive for
+  /// premiums or negative for discounts.
+  price_adjustment Float
+  
+  /// Weight adjustment relative to base product weight, positive for heavier
+  /// or negative for lighter configurations.
+  weight_adjustment Float
+  
+  /// Available stock quantity at snapshot time, reflecting current inventory
+  /// levels for order processing.
+  stock_quantity Int
+  
+  /// Stock Keeping Unit code identifying this specific variant for inventory
+  /// management and order fulfillment.
+  sku String
+  
+  /// Whether the variant was active and available for purchase at snapshot
+  /// creation time.
+  active Boolean
+  
+  /// Timestamp when this snapshot was created, representing the exact moment
+  /// of variant state capture.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_variant_snapshots_ecommerce_mall_produc_25af60ef")
+}
+
+/// Standardized product specifications and attributes enabling advanced
+/// filtering and search functionality across the product catalog.
+///
+/// Stores structured specification data for products including features,
+/// dimensions, materials, and technical attributes that support customer
+/// filtering and search operations. Each attribute represents a specific
+/// product characteristic that can be used for search filtering like color,
+/// size, weight, material type, or feature availability.
+///
+/// Attributes are assigned to specific products and maintain consistent
+/// naming conventions to ensure reliable filtering across the entire
+/// catalog. The table supports flexible attribute types including textual
+/// descriptions, numeric values with units, and boolean flags for feature
+/// presence/absence.
+///
+/// Provides the foundation for advanced search capabilities where customers
+/// can filter products by specific specifications, compare product features,
+/// and find items matching precise technical requirements.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product that owns this attribute. {@link
+  /// ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Timestamp when this product attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when this product attribute was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this product attribute was soft deleted, allowing
+  /// attribute recovery.
+  deleted_at DateTime?
+  
+  /// Standardized name of the product attribute for consistent filtering and
+  /// search operations.
+  attribute_name String
+  
+  /// Value of the product attribute, which may contain text descriptions,
+  /// codes, or formatted data.
+  attribute_value String
+  
+  /// Type classification of the attribute indicating how the value should be
+  /// interpreted for filtering.
+  attribute_type String
+  
+  /// Measurement unit for numeric attributes, such as 'cm', 'kg', 'oz' etc.
+  unit String?
+  
+  /// Order in which attributes should be displayed, controlling presentation
+  /// sequence.
+  display_order Int
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, attribute_name], map: "ecommerce_mall_product_attributes_ecommerce_mall_produ_d7ad63d7")
+  // spellchecker: ignore-next-line
+  @@index([attribute_name, attribute_value], map: "ecommerce_mall_product_attributes_attribute_name_attri_0ad8796e")
+  @@index([attribute_type])
+}
+
+/// Tracks product view counts and customer behavior analytics for
+/// performance monitoring and engagement analysis.
+///
+/// Records individual view events for products with timestamps and customer
+/// associations when available. Supports analytics for product popularity,
+/// customer engagement patterns, and performance monitoring across the
+/// platform.
+///
+/// Each view event captures the specific product being viewed and optionally
+/// links to the customer who viewed it, allowing for both anonymous and
+/// authenticated view tracking. The data supports business intelligence for
+/// product performance optimization and customer behavior analysis.
+///
+/// View statistics are used to calculate product popularity metrics,
+/// identify trending products, and optimize product discovery algorithms
+/// based on actual customer engagement patterns.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Viewed product's {@link ecommerce_mall_products.id}.
+  ecommerce_mall_product_id String
+  
+  /// Viewing customer's {@link ecommerce_mall_customers.id} when authenticated.
+  ecommerce_mall_customer_id String?
+  
+  /// Timestamp when the product view event occurred.
+  viewed_at DateTime
+  
+  /// IP address of the viewer for geographic and behavioral analysis.
+  ip_address String?
+  
+  /// Browser or application user agent string for device and platform analysis.
+  user_agent String?
+  
+  /// Referring URL or source that led to the product view.
+  referrer String?
+  
+  /// Anonymous session identifier for tracking unauthenticated user behavior.
+  session_id String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers? @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, viewed_at], map: "ecommerce_mall_product_view_stats_ecommerce_mall_produ_bb02f8b5")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, viewed_at], map: "ecommerce_mall_product_view_stats_ecommerce_mall_custo_f0aa0dd7")
+  @@index([viewed_at])
+}
+
+/// Junction table linking products to categories for flexible product
+/// organization and filtering.
+///
+/// Enables many-to-many relationships between products and categories,
+/// allowing products to be assigned to multiple categories and categories to
+/// contain multiple products. This provides flexible product organization
+/// and supports advanced filtering capabilities across the product catalog.
+///
+/// The table maintains referential integrity between products and categories
+/// while supporting the hierarchical category structure defined in the
+/// Systematic component. Each relationship includes creation and
+/// modification timestamps for audit trail purposes.
+///
+/// Products can be dynamically re-categorized without affecting their core
+/// product information, and categories can be reorganized while maintaining
+/// existing product assignments.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link ecommerce_mall_products.id}.
+  ecommerce_mall_product_id String
+  
+  /// Belonged category's {@link ecommerce_mall_categories.id}.
+  ecommerce_mall_category_id String
+  
+  /// Timestamp when the product-category relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when the product-category relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the product-category relationship was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id], map: "ecommerce_mall_product_categories_ecommerce_mall_categ_e3dd3f65")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, ecommerce_mall_category_id], map: "ecommerce_mall_product_categories_ecommerce_mall_produ_029e6b0c")
+}
+
+/// Individual option values assigned to product variants for proper
+/// normalization and advanced filtering.
+///
+/// Each record represents a single option-value pair for a specific product
+/// variant, decomposing the JSON structure into relational format. This
+/// enables efficient querying by individual option values and supports
+/// advanced product filtering capabilities.
+///
+/// The table maintains referential integrity with product variants and
+/// supports the business requirement for sophisticated product discovery and
+/// filtering based on specific attributes.
+///
+/// Option values are stored as discrete fields rather than JSON arrays,
+/// ensuring proper database normalization and enabling efficient indexing
+/// for search operations.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product variant's {@link ecommerce_mall_product_variants.id}
+  /// that this option value belongs to.
+  ecommerce_mall_product_variant_id String
+  
+  /// Name of the product option (e.g., "size", "color", "material").
+  option_name String
+  
+  /// Specific value for this option (e.g., "XL", "Red", "Cotton").
+  option_value String
+  
+  /// Timestamp when this option value was assigned to the variant.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_variant_id, option_name], map: "ecommerce_mall_product_variant_options_ecommerce_mall__23f0a446")
+  // spellchecker: ignore-next-line
+  @@index([option_name, option_value], map: "ecommerce_mall_product_variant_options_option_name_opt_666f2464")
+  @@index([created_at])
+}

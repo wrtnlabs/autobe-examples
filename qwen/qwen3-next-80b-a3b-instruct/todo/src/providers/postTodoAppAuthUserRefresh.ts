@@ -1,45 +1,50 @@
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import jwt from "jsonwebtoken";
 import typia, { tags } from "typia";
 import { v4 } from "uuid";
+
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-
 export async function postTodoAppAuthUserRefresh(props: {
   body: ITodoAppUser.IRefresh;
 }): Promise<ITodoAppUser.IAuthorized> {
+  // AutoBE framework automatically extracts and validates the refresh token from the Authorization header
+  // The decoded authentication payload is available via props.auth
   let decoded: {
-    id: string;
-    session_id: string;
-    type: "user";
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
   };
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: "user";
+    // Validate that auth is available and contains refresh token
+    if (!props.auth || !props.auth.token || !props.auth.token.refresh) {
+      throw new HttpException("No refresh token provided", 401);
+    }
+    // Decode and verify the refresh token
+    decoded = jwt.verify(
+      props.auth.token.refresh,
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        issuer: "autobe",
+      },
+    ) as {
+      id: string & tags.Format<"uuid">;
+      session_id: string & tags.Format<"uuid">;
     };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // Validate token type
-  if (decoded.type !== "user") {
-    throw new HttpException("Invalid token type", 403);
-  }
   // Validate session exists and is active
-  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
+  const session = await MyGlobal.prisma.todo_app_user_sessions.findUnique({
     where: {
       id: decoded.session_id,
-      user_id: decoded.id, // Fixed: used correct relation field name 'user_id' based on schema
+      todo_app_user_id: decoded.id, // Correct foreign key field name from schema
     },
   });
   if (!session) {
@@ -52,14 +57,14 @@ export async function postTodoAppAuthUserRefresh(props: {
   if (user.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // Generate new tokens with same session_id
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 15 * 60 * 1000)); // 15 minutes
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
+  // Generate new access token with issuer and expiration
+  const accessExp = toISOStringSafe(new Date(Date.now() + 15 * 60 * 1000));
+  const refreshExp = toISOStringSafe(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  );
   const access = jwt.sign(
     {
-      type: decoded.type,
+      type: "user",
       id: decoded.id,
       session_id: decoded.session_id,
       created_at: toISOStringSafe(new Date()),
@@ -70,9 +75,10 @@ export async function postTodoAppAuthUserRefresh(props: {
       issuer: "autobe",
     },
   );
+  // Generate new refresh token
   const refresh = jwt.sign(
     {
-      type: decoded.type,
+      type: "user",
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
@@ -80,7 +86,7 @@ export async function postTodoAppAuthUserRefresh(props: {
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "7d",
+      expiresIn: "30d",
       issuer: "autobe",
     },
   );
@@ -90,21 +96,21 @@ export async function postTodoAppAuthUserRefresh(props: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: refreshExpires,
+      expired_at: refreshExp,
     },
   });
+  // Return new tokens and user profile
   return {
+    display_name: user.display_name,
     email: user.email,
-    username: user.email, // Use email as username
-    email_verified: user.email_verified,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
     id: user.id,
     token: {
       access,
       refresh,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      expired_at: accessExp,
+      refreshable_until: refreshExp,
     },
   };
 }

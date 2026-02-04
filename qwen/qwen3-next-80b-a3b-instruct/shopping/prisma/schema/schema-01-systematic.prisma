@@ -1,19 +1,20 @@
-/// Represents sales channels (e.g., online store, mobile app) with branding,
-/// configuration, and settings for multi-channel operations.
+/// Defines sales channels (e.g., online store, mobile app) with branding,
+/// routing rules, and configuration settings.
 ///
-/// Each channel defines a distinct storefront experience with its own
-/// branding, language, currency, and operational parameters.
-/// Administrators create and manage multiple channels to serve different
-/// markets, platforms, or customer segments with tailored experiences.
+/// Represents the different platforms through which the shopping mall
+/// platform operates, such as web and mobile applications. Each channel has
+/// its own configuration for branding, URL routing, and feature flags that
+/// determine user experience and available functionality.
 ///
-/// Channels can be enabled or disabled independently, allowing fine-grained
-/// control over which storefronts are active.
-/// All channel settings are applied at the platform infrastructure level,
-/// influencing how products are displayed, how payments are routed, and how
-/// orders are processed across different sales avenues.
+/// This is a system-level infrastructure table that supports the entire
+/// commerce platform. It is not directly managed by customers or sellers,
+/// but rather by system administrators through administrative tools. Changes
+/// to channel configuration affect the behavior of the entire platform.
 ///
-/// Channels do not store business data directly but provide the
-/// configuration context for all other business entities.
+/// The branding logo and default route define the visual identity and entry
+/// point of each channel. Feature flags control conditional activation of
+/// platform features per channel, allowing targeted rollouts and A/B
+/// testing.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -24,76 +25,60 @@ model shopping_mall_channels {
   /// Primary Key.
   id String @id
   
-  /// Human-readable name of the sales channel (e.g., 'Online Store', 'Mobile
-  /// App', 'Wholesale Portal').
+  /// Unique identifier for the sales channel (e.g., "online_store",
+  /// "mobile_app"). Must be unique across all channels.
   name String
   
-  /// Detailed description explaining the channel's purpose and target audience.
-  description String?
+  /// Detailed description of the channel's purpose and scope, explaining what
+  /// types of users and functionalities it supports.
+  description String
   
-  /// URL pointing to the channel's logo image for branding in UI.
-  logo_url String?
+  /// URL to the logo image used to represent this channel in the user
+  /// interface. Optional, allows for custom branding per channel.
+  branding_logo_url String?
   
-  /// CSS color scheme definition for the channel's visual theme (e.g.,
-  /// '#FF0000, #0000FF' for red and blue).
-  color_scheme String?
+  /// The canonical URL path prefix or routing identifier for this channel.
+  /// Used to direct user requests to the appropriate application instance or
+  /// service.
+  default_route String
   
-  /// UI theme identifier for the channel (e.g., 'light', 'dark', 'retro').
-  theme String?
+  /// JSON string representation containing boolean flags that control feature
+  /// availability per channel. Examples: "{\"enable_wishlist\": true,
+  /// \"enable_mobile_payments\": false}". Allows targeted feature rollouts.
+  feature_flags String?
   
-  /// IANA timezone identifier for the channel's operations (e.g.,
-  /// 'America/New_York', 'Asia/Seoul').
-  timezone String
-  
-  /// ISO 4217 currency code for pricing display and processing (e.g., 'USD',
-  /// 'KRW', 'EUR').
-  currency String
-  
-  /// ISO 639-1 language code for UI text (e.g., 'en', 'ko', 'ja').
-  language String
-  
-  /// Whether this channel is active and visible to users. False means channel
-  /// is disabled but preserved for audit.
-  enabled Boolean
-  
-  /// Timestamp when the channel was created.
+  /// Timestamp when this channel configuration was created in the system.
   created_at DateTime
   
-  /// Timestamp when the channel was last updated.
+  /// Timestamp when this channel configuration was last modified.
   updated_at DateTime
-  
-  /// Soft delete timestamp; null means channel is active, value means channel
-  /// is archived.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_sections shopping_mall_sections[]
-  
   @@unique([name])
-  @@unique([currency, language])
-  @@index([enabled, created_at])
-  @@index([timezone])
-  @@index([created_at])
 }
 
-/// Hierarchical sections within channels for organizing products and
-/// content, enabling multi-level navigation and content grouping.
+/// Hierarchical sections within a shopping channel for organizing content
+/// and products with one-level nesting support.
 ///
-/// Defines the tree structure of content sections within each sales channel
-/// (e.g., online store, mobile app). Sections can be nested to create
-/// multi-level navigation menus, with each section having a specific order
-/// within its parent.
+/// Defines organizational units that structure the product catalog and
+/// content navigation within each sales channel. Sections can be parented to
+/// other sections to create a controlled hierarchy (parent > child) with
+/// exactly one level of nesting permitted.
 ///
-/// This table is used to build the content hierarchy that products and
-/// categories are assigned to, determining how users discover and browse
-/// offerings on the platform. It is a foundational system configuration
-/// component maintained by administrators.
+/// Sections are managed exclusively by administrators through system
+/// configuration, not by end users. They provide the structural framework
+/// for product categorization and content organization within channels.
 ///
-/// Sections are not directly accessible by customers or sellers but serve as
-/// organizational containers for product categorization and content
-/// presentation.
+/// Each section has a unique name and optional description providing context
+/// for its purpose. The parent-child relationship allows organization of
+/// sections into logical groups without permitting deeper nesting that could
+/// complicate navigation.
+///
+/// Changes to sections are tracked via system audit trails, and soft
+/// deletion preserves historical configuration states while allowing for
+/// reorganization and cleanup.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -104,55 +89,69 @@ model shopping_mall_sections {
   /// Primary Key.
   id String @id
   
-  /// Parent channel this section belongs to. {@link shopping_mall_channels.id}.
-  shopping_mall_channel_id String
+  /// Parent section that this section belongs to, enabling one-level
+  /// hierarchical nesting. {@link shopping_mall_sections.id}.
+  parent_section_id String?
   
-  /// Parent section for hierarchical nesting. {@link
-  /// shopping_mall_sections.id}.
-  parent_id String?
-  
-  /// Display name of the section used in navigation menus and UI.
+  /// The unique name of the section used for identification and navigation.
+  /// Must be unique within its channel context.
   name String
   
-  /// Detailed description explaining the purpose and scope of this section for
-  /// administrators.
+  /// Optional detailed description explaining the purpose and content scope of
+  /// this section. Used for administrative reference and documentation.
   description String?
   
-  /// Display order of this section within its parent section or channel root.
-  /// Lower values appear first.
-  ordering Int
+  /// Timestamp when this section was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this section was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When non-null, indicates this section has been
+  /// logically deleted but preserved for audit history.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  parent shopping_mall_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
   
-  recursive shopping_mall_sections[] @relation("recursive")
+  children shopping_mall_sections[] @relation("recursive")
+  products shopping_mall_products[]
+  sales shopping_mall_sales[]
   
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_channel_id, parent_id, name], map: "shopping_mall_sections_shopping_mall_channel_id_parent_5b7a6728")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_channel_id, parent_id, ordering], map: "shopping_mall_sections_shopping_mall_channel_id_parent_af667e77")
-  @@index([parent_id])
+  @@unique([name])
+  @@index([parent_section_id, deleted_at])
 }
 
-/// System-wide configuration settings, feature flags, and platform-wide
-/// operational parameters that control core behavior.
+/// Global system-wide configuration settings and feature flags that control
+/// platform behavior and functionality.
 ///
-/// Stores key-value configuration pairs that define platform behavior,
-/// enable/disable features, and set operational thresholds. These settings
-/// are managed exclusively by administrators through the admin dashboard and
-/// apply globally across all system components. Configurations support
-/// multiple data types (string, number, boolean, json) to accommodate
-/// diverse system parameters such as payment gateway timeouts, default
-/// shipping methods, feature toggles, and rate limits.
+/// This table serves as the authoritative source for dynamic configuration
+/// parameters that govern the behavior of the entire shopping mall platform.
+/// Administrators use this to enable/disable features, configure business
+/// rules, adjust thresholds, and adjust system behavior without code
+/// deployments.
 ///
-/// Configuration keys are unique and immutable in naming, but the values can
-/// be updated by admins as needed. The system retrieves configurations at
-/// startup and caches them to avoid database latency during request
-/// processing. Changes to configurations require admin authentication and
-/// are audited through the platform's admin audit system.
+/// Each configuration entry has a unique key and a structured value stored
+/// in JSONB format to support complex nested settings. The category field
+/// organizes settings into logical groups (e.g., payment, shipping,
+/// reviews). The enabled flag allows temporary deactivation of a setting
+/// without deletion.
+///
+/// All changes to configuration records are captured via the platform's
+/// snapshot system — every update operation creates an immutable snapshot in
+/// the system's audit trail, preserving the previous value state for
+/// compliance and verification.
+///
+/// Deleting configuration entries is strongly discouraged; instead,
+/// administrators should disable them with enabled: false and deprecate the
+/// key name. This preserves audit integrity and prevents breaking changes in
+/// deployed systems.
+///
+/// Operators frequently query this table to determine active feature flags
+/// and system behaviors in real-time. It is critical for zero-downtime
+/// configuration updates during peak traffic.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -163,29 +162,42 @@ model shopping_mall_configurations {
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting (e.g.,
-  /// "payment_gateway_timeout", "feature_flag_new_checkout"). Must be globally
-  /// unique across all configurations.
+  /// Unique identifier for the configuration setting. Must be globally unique
+  /// and follow snake_case naming convention (e.g., 'payment_gateway_enabled',
+  /// 'max_items_per_cart').
   key String
   
-  /// String representation of the configuration value. Can encode string,
-  /// number, boolean, or JSON values. For numeric/boolean values, the string
-  /// representation follows standard conversion rules (e.g., "true", "42",
-  /// "{\"enabled\":true}").
+  /// Structured configuration value stored as JSONB. Can contain nested
+  /// objects, arrays, and primitive types (string, number, boolean, null).
+  /// Used for flexible, dynamic configuration structures.
   value String
   
-  /// Data type classification of the configuration value. Valid values:
-  /// "string", "number", "boolean", "json". Determines how the value should be
-  /// interpreted and parsed by the application.
-  type String
+  /// Logical category or namespace for this configuration. Used to group
+  /// related settings (e.g., 'payment', 'shipping', 'reviews', 'system').
+  category String
   
-  /// Timestamp when this configuration was last modified. Tracks when admins
-  /// last changed the value. No automatic update on read operations.
+  /// Human-readable description explaining the purpose and effect of this
+  /// configuration setting. Used by administrators to understand impact.
+  description String
+  
+  /// Whether this configuration is active and being applied by the system. Set
+  /// to false to temporarily disable a setting without deletion.
+  enabled Boolean
+  
+  /// Timestamp of creation for this configuration record. Records when the
+  /// configuration was first introduced into the system.
+  created_at DateTime
+  
+  /// Timestamp of last modification for this configuration record. Updated on
+  /// every change to track when the setting was last adjusted.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
   @@unique([key])
+  @@index([category])
+  @@index([enabled])
+  @@index([created_at])
   @@index([updated_at])
 }

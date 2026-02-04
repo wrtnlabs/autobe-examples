@@ -1,0 +1,319 @@
+/// Records all administrative actions performed in the system for audit
+/// trail purposes.
+///
+/// This table provides a comprehensive log of administrator activities
+/// including
+/// content moderation, user management, and system configuration changes. Each
+/// record captures the administrator who performed the action, what type of
+/// action
+/// it was, when it occurred, and additional context. This enables super
+/// administrators
+/// to review historical activities, investigate issues, and maintain
+/// accountability.
+///
+/// The schema enforces strict data integrity through foreign key
+/// relationships to
+/// ensure all actions are properly attributed to valid administrators and
+/// affected
+/// users. Indexes are optimized for common audit queries by action type,
+/// timestamp,
+/// and administrator. All actions that modify system state should be logged
+/// here.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action. {@link
+  /// discussion_board_administrators.id}
+  administrator_id String
+  
+  /// User affected by the action (if applicable). {@link
+  /// discussion_board_users.id}
+  affected_user_id String?
+  
+  /// Type of administrative action performed
+  ///
+  /// Categorizes the specific type of administrative activity that was
+  /// executed.
+  /// Standardized classification enables filtering and reporting on action
+  /// types.
+  ///
+  /// Valid action types represent core administrative functions:
+  /// - 'section_create': Creation of new content sections
+  /// - 'section_edit': Modification of existing section properties
+  /// - 'section_delete': Removal of content sections
+  /// - 'article_delete': Removal of user articles by administrators
+  /// - 'comment_delete': Removal of user comments by administrators
+  /// - 'user_ban': Restriction of user access to the platform
+  /// - 'user_unban': Restoration of user access to the platform
+  /// - 'admin_approve': Granting of administrative privileges to users
+  /// - 'admin_reject': Denial of administrative privilege requests
+  /// - 'admin_promote': Elevation of regular administrators to super status
+  /// - 'admin_demote': Reduction of super administrators to regular status
+  action_type String
+  
+  /// Detailed description of the action performed
+  ///
+  /// Provides human-readable context about what specifically occurred during
+  /// the
+  /// administrative action. This captures variable details that distinguish
+  /// similar
+  /// action types, such as which entity was affected or the justification for
+  /// the action.
+  ///
+  /// Essential for auditors and investigators to understand the full context
+  /// without
+  /// requiring access to related tables.
+  description String
+  
+  /// IP address of the administrator when action was performed
+  ///
+  /// Records the network origin for security auditing. Combined with
+  /// timestamps,
+  /// provides accountability trail for sensitive operations.
+  ///
+  /// Used to detect suspicious access patterns and assist in forensic
+  /// investigations.
+  ip_address String
+  
+  /// User agent string of the administrator's browser/client
+  ///
+  /// Captures client software used to perform the action. Helps distinguish
+  /// between
+  /// different devices and can be valuable for detecting unusual access
+  /// patterns
+  /// and investigating suspicious activities.
+  user_agent String?
+  
+  /// Timestamp when the administrative action was performed
+  ///
+  /// Records the exact date and time when the administrative operation was
+  /// executed.
+  /// Crucial for chronological audit trails and correlation with other system
+  /// events.
+  performed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  affectedUser discussion_board_users? @relation(fields: [affected_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([affected_user_id])
+  
+  @@index([action_type])
+  @@index([performed_at])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, performed_at], map: "discussion_board_administrator_actions_administrator_i_2cba6a3d")
+}
+
+/// Records user banning actions including the reason, timestamps, and
+/// administrator who performed the ban. This table tracks when users are
+/// banned from the platform for violating community guidelines.
+///
+/// Each record represents a single banning action with details about why the
+/// user was banned and by which administrator. The ban reason helps maintain
+/// accountability and provides context for potential unbanning decisions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who was banned. Links to the users table to
+  /// identify the banned user's account. {@link discussion_board_users.id}
+  user_id String
+  
+  /// Reference to the administrator who performed the ban. Links to the
+  /// administrators table to track which admin took the banning action. {@link
+  /// discussion_board_administrators.id}
+  administrator_id String
+  
+  /// Detailed reason for why the user was banned, explaining the policy
+  /// violation or inappropriate behavior that led to this action. This field
+  /// provides context for administrators reviewing ban decisions and for the
+  /// banned user understanding the reason.
+  reason String
+  
+  /// Timestamp when the banning action was performed, marking the exact moment
+  /// when the user's access was restricted. This is set automatically upon ban
+  /// creation and never modified.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([administrator_id, created_at])
+}
+
+/// ban history records
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who was banned. {@link discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// The administrator who initiated the ban. {@link
+  /// discussion_board_administrators.id}
+  banning_administrator_id String
+  
+  /// The administrator who lifted the ban, if applicable. {@link
+  /// discussion_board_administrators.id}
+  unbanning_administrator_id String?
+  
+  /// The reason provided for the ban.
+  ban_reason String
+  
+  /// The timestamp when the ban was initiated.
+  banned_at DateTime
+  
+  /// The timestamp when the ban was lifted, if applicable.
+  unbanned_at DateTime?
+  
+  /// Whether the user is currently banned.
+  is_currently_banned Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  banningAdministrator discussion_board_administrators @relation("discussion_board_ban_histories_of_banning_administrator_id", fields: [banning_administrator_id], references: [id], onDelete: Cascade)
+  unbanningAdministrator discussion_board_administrators? @relation("discussion_board_ban_histories_of_unbanning_administrator_id", fields: [unbanning_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([unbanning_administrator_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([banning_administrator_id, banned_at], map: "discussion_board_ban_histories_banning_administrator_i_bd79ec8f")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, banned_at], map: "discussion_board_ban_histories_discussion_board_user_i_2827ca94")
+}
+
+/// Records and manages the hierarchical structure of administrator grades,
+/// tracking promotions and demotions between regular administrators and
+/// super administrators. This table maintains the current grade of each
+/// administrator and references the most recent grade change record. Super
+/// administrators are distinguished by having entries in this table, while
+/// regular administrators have entries with grade_level set to 'regular'.
+/// The system uses this table to determine authorization levels for
+/// administrative actions and UI access.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_grades {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator whose grade is being managed. This links
+  /// to the discussion_board_administrators table to identify the specific
+  /// administrator. {@link discussion_board_administrators.id}
+  discussion_board_administrator_id String
+  
+  /// The current administrative grade level of the user, determining their
+  /// authorization scope. Valid values are 'regular' for standard
+  /// administrators with basic moderation privileges, and 'super' for super
+  /// administrators with full system management capabilities including
+  /// promoting/demoting other administrators.
+  grade_level String
+  
+  /// Timestamp when this grade record was created, marking when the
+  /// administrator was first assigned a grade. This is set automatically upon
+  /// initial grade assignment and never changes.
+  created_at DateTime
+  
+  /// Timestamp when this grade record was last updated, indicating the most
+  /// recent grade change. Automatically updated whenever the administrator's
+  /// grade level is modified through promotion or demotion.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_id], map: "discussion_board_administrator_grades_discussion_board_8d299c61")
+  // spellchecker: ignore-next-line
+  @@index([grade_level, created_at], map: "discussion_board_administrator_grades_grade_level_crea_2c5a269e")
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Records administrator privilege changes including promotions, demotions,
+/// and capability assignments.
+///
+/// This table tracks all changes to administrator privileges over time,
+/// including the specific capabilities assigned
+/// to each administrator. It maintains a history of privilege changes to
+/// support audit trails and ensures that each
+/// administrator's current capabilities are accurately represented.
+///
+/// The table is designed to support the two-tier administrator hierarchy
+/// (regular administrator and super administrator)
+/// with appropriate capability sets for each grade. It provides historical
+/// tracking of all privilege modifications
+/// for compliance and auditing purposes.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_privileges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator whose privileges are being managed. {@link
+  /// discussion_board_administrators.id}
+  discussion_board_administrator_id String
+  
+  /// The super administrator who made the privilege change. {@link
+  /// discussion_board_super_administrators.id}
+  discussion_board_super_administrator_id String
+  
+  /// The type of privilege change that occurred. Valid values are 'promotion'
+  /// (regular to super), 'demotion' (super to regular), or 'assignment'
+  /// (capability changes).
+  change_type String
+  
+  /// JSON object containing the specific capabilities assigned to the
+  /// administrator at this point in time.
+  capabilities String
+  
+  /// Timestamp when the privilege change was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  superAdministrator discussion_board_super_administrators @relation(fields: [discussion_board_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_administrator_privileges_discussion_b_340dbd29")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_administrator_id, created_at], map: "discussion_board_administrator_privileges_discussion_b_32750836")
+}

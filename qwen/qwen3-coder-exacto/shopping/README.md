@@ -18,13 +18,13 @@ subgraph "Backend Coding Agent"
 end
 subgraph "Functional Agents"
   coder --"Requirements Analysis"--> analyze("✅ Analyze")
-  coder --"ERD"--> prisma("⬜ Prisma")
+  coder --"ERD"--> database("✅ Database")
   coder --"API Design"--> interface("⬜ Interface")
   coder --"Test Codes" --> test("⬜ Test")
   coder --"Main Program" --> realize("⬜ Realize")
 end
 subgraph "Compiler Feedback"
-  prisma --"validates" --> prismaCompiler("Prisma Compiler")
+  database --"validates" --> prismaCompiler("Prisma Compiler")
   interface --"validates" --> openapiValidator("OpenAPI Validator")
   interface --"generates" --> tsCompiler("TypeScript Compiler")
   test --"validates" --> tsCompiler("TypeScript Compiler")
@@ -42,7 +42,7 @@ Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
 Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | ⬜ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
 Design          | ⬜ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
 Development     | ⬜ Realize      | [API Provider Functions](src/providers)
 Testing         | ⬜ Test         | [E2E Test Functions](test/features/api)
@@ -113,13 +113,13 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 3, documents: 12 | 90.32 % | 3,205,709 | 621 sec
-⬜ prisma | | | | 
+✅ analyze | actors: 3, documents: 13 | 87.50 % | 1,262,781 | 661 sec
+✅ database | namespaces: 12, models: 72 | 73.70 % | 22,564,639 | 2824 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 
 
-This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
 - **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
 - **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
@@ -133,10 +133,19 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 31 | 3 | 7 | 28 | 90.32 %
-analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 12 | 0 | 7 | 12 | 100.00 %
-analyzeReview | 18 | 3 | 0 | 15 | 83.33 %
+total | 405 | 100 | 0 | 304 | 75.06 %
+analyzeScenario | 2 | 1 | 0 | 1 | 50.00 %
+analyzeWrite | 15 | 1 | 0 | 13 | 86.67 %
+analyzeReview | 23 | 2 | 0 | 21 | 91.30 %
+databaseGroup | 3 | 1 | 0 | 2 | 66.67 %
+databaseGroupReview | 3 | 1 | 0 | 2 | 66.67 %
+databaseAuthorization | 5 | 2 | 0 | 3 | 60.00 %
+databaseAuthorizationReview | 4 | 1 | 0 | 3 | 75.00 %
+databaseComponent | 52 | 27 | 0 | 25 | 48.08 %
+databaseComponentReview | 46 | 19 | 0 | 27 | 58.70 %
+databaseSchema | 160 | 43 | 0 | 117 | 73.13 %
+databaseSchemaReview | 78 | 2 | 0 | 76 | 97.44 %
+databaseCorrect | 14 | 0 | 0 | 14 | 100.00 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

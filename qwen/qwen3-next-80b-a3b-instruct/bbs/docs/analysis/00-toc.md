@@ -1,209 +1,561 @@
-# Core Functional Requirements
+# Economic/Political Discussion Board Requirements
 
-## Post Creation
+## Service Overview
 
-WHEN a user wants to share an opinion, THE system SHALL allow them to create a new post with text content and optional media attachments. THE system SHALL require the post title to be at least 5 characters long and the content to be at least 10 characters long. THE system SHALL accept PNG, JPEG, GIF, PDF, DOCX, and TXT file attachments with a maximum individual file size of 10MB and total attachment limit of 5 files per post. THE system SHALL display an appropriate error message if the user exceeds these limits. THE system SHALL preserve the original file names and MIME types for each attachment. THE system SHALL assign a unique post ID and timestamp upon successful creation. THE system SHALL display the new post immediately upon creation with all attachments rendered appropriately.
+The Economic/Political Discussion Board is a web-based platform designed to facilitate civil discourse on economic and political topics. The system enables registered users to create and participate in discussions through articles and comments, organized within categorized sections. Content moderation is managed through a tiered administrator system with defined privileges and workflows.
 
-## File Attachment Handling
+The platform prioritizes user autonomy and accountability: users retain control over their content, are responsible for their contributions, and are subject to community moderation through administrative oversight. The architecture is designed to support high-volume concurrent usage with scalable infrastructure.
 
-WHEN a user uploads an image or file to a post, THE system SHALL validate the file type against allowed extensions (png, jpg, jpeg, gif, pdf, docx, txt). THE system SHALL reject files with malicious extensions or content. THE system SHALL store each file with a unique hashed filename to prevent conflicts and directory traversal attacks. THE system SHALL maintain a separate record of the original filename and upload timestamp. THE system SHALL generate thumbnails for image files (max 800px width) and serve them via a static CDN endpoint. THE system SHALL limit file storage to 100GB per user account with monthly usage reporting. THE system SHALL automatically delete attachments of deleted posts. THE system SHALL provide a direct download link to each attachment visible only to authenticated users with post access.
+## User Actors and Authentication
 
-## Commenting System
+The system implements a three-tiered user actor model with escalating privileges:
 
-WHEN a user views a post, THE system SHALL display all existing comments in chronological order with the most recent at the bottom. THE system SHALL allow users to reply to any comment, creating a hierarchical thread up to 5 levels deep. THE system SHALL enforce a minimum comment length of 3 characters and maximum length of 2000 characters. THE system SHALL prevent users from posting duplicate comments within 10 seconds. THE system SHALL support rich text formatting (bold, italic, code blocks) using Markdown syntax. THE system SHALL render external links with target="_blank" and rel="noopener noreferrer" attributes. THE system SHALL display a count of replies for each comment and allow expansion/collapse of reply threads. THE system SHALL notify the original post author and all users mentioned (@username) via email and in-app notification when a new comment is posted.
+### Citizen (Regular User)
 
-## Content Moderation
+- **Capabilities**: Register, log in, view profiles, create articles and comments, edit/delete own content, search, and browse sections
+- **Authentication**: Email/password registration with secure password hashing
+- **Session Management**: JWT-based authentication with refresh token mechanism
+- **Permissions**: Only permitted to act on their own content and metadata
+- **Account Deletion**: Triggers cascading deletion of all associated articles and comments
 
-WHEN an admin user flags a post or comment as inappropriate, THE system SHALL immediately hide it from public view and notify other admins for review. THE system SHALL maintain an audit log of all moderation actions including the admin who took action, timestamp, reason provided, and original content. THE system SHALL allow admins to permanently delete content, issue temporary bans (3 days, 7 days, 30 days), or issue warning notices to the user. THE system SHALL permit users to appeal moderation decisions through a dedicated request form. THE system SHALL automatically re-approve content if no admin action is taken within 24 hours. THE system SHALL limit each user to 3 moderation reports per day to prevent abuse. THE system SHALL notify the original poster when content is removed or banned with an explanation and appeal instructions.
+### Administrator
 
-## Search Functionality
+- **Privilege Basis**: Promoted from Citizen status through official request approval
+- **Capabilities**: All Citizen capabilities plus:
+  - Create, edit, and delete sections
+  - Delete any article or comment
+  - Ban and unban users
+  - View list of banned users
+- **Authentication**: Same JWT mechanism as Citizen, with additional role claims
+- **Permission Validation**: Each moderation action requires role verification
+- **Limitation**: Cannot promote or demote other users
 
-WHEN a user performs a search for posts or comments, THE system SHALL return results in chronological order by default, with relevance ranking for keyword matches. THE system SHALL support filtering results by date range, user, or content type (posts vs comments). THE system SHALL highlight search terms in the results with bold styling. THE system SHALL support boolean operators (AND, OR, NOT) and phrase searches using quotes. THE system SHALL return a maximum of 50 results per page with pagination controls. THE system SHALL display a message if no results are found and suggest similar terms. THE system SHALL update search results in real-time as the user types, with a 300ms debounce period to prevent excessive server load.
+### Super Administrator
 
-## Notification System
+- **Privilege Basis**: Highest system authority level
+- **Capabilities**: All Administrator capabilities plus:
+  - Approve/reject administrator promotion requests
+  - Promote Administrators to Super Administrators
+  - Demote Super Administrators to Administrators
+- **Authentication**: JWT with elevated privilege claims and enhanced security monitoring
+- **Self-Demotion Restriction**: System prohibits self-demotion actions
+- **Audit Trail**: All privilege modifications are logged permanently
 
-WHEN a user is mentioned (@username) in a post or comment, THE system SHALL generate an in-app notification badge and send an email notification if the user has enabled email notifications. THE system SHALL send a notification when someone replies to a post or comment the user has participated in. THE system SHALL allow users to customize notification preferences: email, in-app, or both. THE system SHALL store notification records for 30 days and allow users to mark them as read. THE system SHALL group related notifications (multiple replies to one post) into single summary notifications after 4 hours of inactivity. THE system SHALL provide a "Mark all as read" button and bulk delete functionality for notifications. THE system SHALL notify admins of 5+ reports received on a single user within 24 hours.
-
-## User Profile Management
-
-WHEN a user accesses their profile page, THE system SHALL display their joined date, post count, comment count, and avatar if uploaded. THE system SHALL allow users to edit their display name (up to 50 characters) and bio (up to 500 characters). THE system SHALL allow users to upload a profile image (PNG, JPEG, GIF, max 2MB). THE system SHALL provide a "Delete Account" button that initiates a 7-day grace period before permanent deletion. THE system SHALL require password confirmation before deleting the account. THE system SHALL anonymize all content associated with a deleted account but preserve the total count statistics. THE system SHALL provide a "Download My Data" feature exporting posts, comments, and attachments as a ZIP file containing JSON and media files. THE system SHALL display the user's last active timestamp without revealing exact times for privacy reasons.
-
-## Authentication
-
-WHEN a user visits the site, THE system SHALL display a login/signup modal. THE system SHALL accept email/password authentication with strong password requirements (minimum 12 characters, including upper, lower, number, symbol). THE system SHALL implement rate limiting (5 attempts per minute) to prevent brute force attacks. THE system SHALL send an email verification link after registration that expires in 24 hours. THE system SHALL allow users to reset passwords via email with a unique token valid for 1 hour. THE system SHALL issue a JWT token upon successful authentication that expires in 7 days and is stored in an HTTP-only secure cookie. THE system SHALL refresh the token automatically on user activity every 20 minutes. THE system SHALL log users out after 30 days of inactivity. THE system SHALL enforce HTTPS for all communications. THE system SHALL provide "Sign in with Google" as an optional third-party authentication method.
-
-## Actor Permissions
-
-THE system defines two actor roles:
-
-- **Guest**: Can view posts and comments, perform searches, but cannot create posts, comment, upload files, or access notification settings.
-- **Member**: Has all Guest privileges plus ability to create posts, upload attachments, comment, manage profile, receive notifications, and perform searches.
-- **Admin**: Has all Member privileges plus moderation controls, user ban management, and access to audit logs.
-
-THE permission matrix is enforced at the API level with strict role-based access control (RBAC). Every endpoint validates the user's role before execution. Admin actions require additional confirmation steps to prevent accidental misuse.
-
-## Error Scenarios
-
-WHEN the file upload is interrupted, THE system SHALL show a retry button and preserve the partially uploaded file state. WHEN the user's browser refreshes during a post creation, THE system SHALL attempt to recover the draft from localStorage. WHEN multiple users try to create identical posts simultaneously, THE system SHALL allow both to succeed but flag near-duplicates for potential spam review. WHEN a file exceeds the 10MB limit, THE system SHALL cancel the upload and display the exact file size and maximum allowed. WHEN a user tries to access another user's private data, THE system SHALL return 403 Forbidden without revealing the existence of the resource.
-
-## Performance Requirements
-
-THE system SHALL load the homepage with 50 posts in under 1.5 seconds on 4G connections. THE system SHALL render a post with 20 comments and 5 attachments in under 1 second. THE system SHALL process image uploads and generate thumbnails in under 30 seconds. THE system SHALL respond to search queries with 50 results in under 500ms. THE system SHALL handle 500 concurrent users without degradation. THE system SHALL maintain 99.9% uptime.
-
-## Business Rules
-
-- Posts and comments cannot be edited after creation
-- All content is public and searchable
-- No private messaging between users
-- Usernames are not visible - only display names
-- No likes, upvotes, or downvotes on content
-- No follower/following relationships
-- No comments on profile pages
-- No tagging users who haven't posted recently
-- All moderation actions are logged permanently
-- No advertising or sponsored content allowed
-- No political party endorsements in profiles
-- No personal contact information in posts or comments
-- All content must be text and file based only
-
-## Business Process Flow
-
-1. **New User Onboarding**: Visit site → Click signup → Enter email/password → Receive verification email → Click link → Log in → Create first post
-2. **Engagement Loop**: View posts → Read content → Write comment → Upload image → Get notification of reply → View profile → Edit display name → Create another post
-3. **Moderation Workflow**: User flags post → Admin receives alert → Admin reviews → Admin takes action (delete/ban/warn) → User notified → Appeal possible
-4. **User Retention**: User receives 3+ notifications → Checks site daily → Posts 2-3 times per week → Returns monthly
-
-## Use Cases
-
-### UC1: Regular Contribution
-
-A user finds an interesting economic analysis post. They read it, write a thoughtful comment with data from a report they found, attach the PDF file, and submit. They receive notifications when others reply, and return to the conversation the next day.
-
-### UC2: Moderation Action
-
-An admin sees a comment containing hate speech. They flag it, which hides it from public view. Another admin reviews the flag and permanently deletes the comment and issues a 7-day ban to the user. The banned user receives an email explaining the violation and appeal process.
-
-### UC3: File Upload Failure
-
-A user tries to upload a 15MB video file. The system immediately rejects it with the message: "File too large. Maximum allowed: 10MB. Your file: 15.2MB." The user then compresses the video and uploads a 9MB version successfully.
-
-
-## Mermaid Diagram: Post Content Flow
+### Authentication Flow
 
 ```mermaid
-graph TD
-    A["User initiates post creation"] --> B{"Has valid text?"}
-    B -- No --> C["Show error: Minimum 10 characters required"]
-    B -- Yes --> D["Validate file attachments"]
-    D --> E{"All files ≤10MB?"}
-    E -- No --> F["Reject files exceeding limit with count"]
-    E -- Yes --> G["Save post with attachments"]
-    G --> H["Generate unique post ID and timestamp"]
-    H --> I["Publish to feed and notify followers"]
-    I --> J["Return success response and display post"]
-    
-    C --> K["Display form with error highlights"]
-    F --> K
-    K --> A
-    J --> A
+graph LR
+  A["Guest User"] --> B{"Authenticated?"}
+  B -->|No| C["Show Login Page"]
+  B -->|Yes| D["Access Dashboard"]
+  C --> E["Enter Credentials"]
+  E --> F["Validate Credentials"]
+  F --> G{"Valid?"}
+  G -->|Yes| D
+  G -->|No| H["Show Error Message"]
+  D --> I["Verify Roles"]
+  I --> J{{"Super Admin?"}}
+  J -->|Yes| K["Enable Admin Features"]
+  J -->|No| L["Enable User Features"]
 ```
 
-## Mermaid Diagram: Comment Thread Hierarchy
+### Authentication Requirements
+
+- WHEN a user registers, THE system SHALL validate email format using RFC 5322 standards and create account with bcrypt password hash
+- WHEN a user logs in, THE system SHALL validate credentials against stored hash and issue JWT token with expiration
+- WHEN a user changes password, THE system SHALL validate old password and enforce minimum complexity (12 characters, numeric, special symbol)
+- WHEN a user requests account deletion, THE system SHALL delete all associated articles and comments within 5 minutes of confirmation
+- WHILE a user is logged in, THE system SHALL maintain active session and refresh JWT every 1 hour without requiring re-authentication
+- IF a user provides invalid credentials, THEN THE system SHALL return HTTP 401 with AUTH_INVALID_CREDENTIALS error code
+- WHERE user role is administrator, THE system SHALL grant access to moderation controls in UI and API endpoints
+- WHERE user role is super administrator, THE system SHALL grant access to privilege management interfaces
+- IF JWT token is expired or invalid, THEN THE system SHALL return HTTP 403 with AUTH_TOKEN_INVALID error code
+- IF a user attempts authentication while banned, THEN THE system SHALL deny access immediately and log the attempt
+
+## Article Management
+
+### Article Creation
+
+Users create articles within designated sections with the following requirements:
+
+- **Required Fields**: Title (6-200 characters), Content (100-10,000 characters)
+- **Section Assignment**: Must select one available section during creation
+- **File Attachments**: Up to 5 files allowed per article
+  - Accepted formats: PDF, DOCX, XLSX, PNG, JPG, JPEG, GIF
+  - Maximum file size: 50MB each
+- **Image Attachments**: Automatically handled by the same file attachment system
+- **Tagging**: Up to 10 tags permitted per article
+  - Tags: Free-text, case-insensitive, space-delimited
+  - Tag length: 2-50 characters minimum (no empty tags)
+  - Tag uniqueness: Not enforced (multiple articles may share identical tags)
+
+### Article Editing
+
+Users may edit their own articles any number of times with constraints:
+
+- **Editable Fields**: Title, content, attachments, tags
+- **Non-Editable**: Section assignment (once set, immutable)
+- **Attachment Management**: Files can be added or removed
+- **Timestamp Update**: "Last edited" field updates with each edit
+- **Edit Limitation**: No restrictions on number of edits except system performance thresholds
+
+### Article Deletion
+
+- **Permission**: User may delete own articles
+- **Cascading Effect**: Deleting an article automatically deletes all associated comments
+- **Visibility**: Deleted articles are immediately removed from search results and section listings
+- **Archiving**: Articles are permanently deleted from database (no soft delete)
+- **Confirmation**: User must confirm deletion action
+
+### Article Listing
+
+The article listing presents a paginated view of available content:
+
+- **Display Fields**: Title, Author, Tags, Comment Count, Posted Time
+- **Content Limitation**: Full article body is NOT displayed (only truncated to title)
+- **Sorting Options**: Newest first (default), Oldest first
+- **Pagination**: 20 articles per page
+- **Filtering**: Articles filtered by selected section
+- **Performance**: Article list must load within 1 second under normal load
+
+### Article Viewing
+
+When selecting a specific article, users are presented with a detailed view:
+
+- **Display Fields**: Title, Author (with profile link), Content, Attachments, Tags, Posted Time, Last Edited (if applicable)
+- **Attachments**: Files and images displayed as clickable links
+  - File icons indicate type
+  - Image previews shown inline
+- **Download Functionality**: Users can download attached files
+- **Author Profile**: Clicking author name navigates to their public profile
+- **Comment Count**: Displays total number of comments on the article
+- **Performance**: Article page must render within 1.5 seconds including all attachments
+
+## Comment System
+
+### Comment Creation
+
+Users can post comments on any visible article:
+
+- **Required Field**: Content (minimum 5 characters, maximum 1,000 characters)
+- **Author Attribution**: Automatically linked to the authenticated user
+- **Time Stamping**: Comment created timestamp recorded in UTC
+- **Sorting**: Comments appear in oldest to newest chronological order
+- **Limitation**: No nested replies (single-level comments only)
+- **Validation**: Empty comments are rejected with immediate error message
+
+### Comment Editing
+
+Users may modify their own comments:
+
+- **Permitted**: Content text only
+- **Prohibited**: Author, timestamp changes
+- **Revision History**: No version tracking (only current state displayed)
+- **Timestamp Update**: Last edited indicator appears after modification
+- **Character Limit**: Same as creation (1,000 characters)
+- **Validation**: Empty content is rejected
+
+### Comment Deletion
+
+Users may delete their own comments:
+
+- **Permission**: Only the comment author may delete
+- **Cascading Effect**: None - deletion affects only the comment record
+- **Visibility**: Comment disappears immediately from the article thread
+- **Confirmation**: Must confirm deletion action
+- **Audit**: Deleted comments are permanently removed from database
+
+### Comment Display
+
+Comments are presented on the article page with:
+
+- **Author**: Display name linked to profile
+- **Content**: Plain text with line breaks preserved
+- **Time Posted**: "X hours ago" or absolute timestamp
+- **Sorting**: Oldest first (chronological)
+- **Pagination**: All comments load at once (no pagination due to expected low volume)
+- **Count**: Displayed at top of comment section, updated in real-time
+- **Performance**: Comments must load with article (sub-second)
+
+### Comment Requirements
+
+- WHEN a user comments on an article, THE system SHALL require comment content with minimum 5 characters
+- WHEN a user edits own comment, THE system SHALL allow modification of comment content only
+- WHEN a user deletes own comment, THE system SHALL remove comment from database
+- WHILE article is being viewed, THE system SHALL display comments sorted by oldest first
+- WHERE a user views article, THE system SHALL display comment count
+- IF a comment exceeds 1,000 characters, THEN THE system SHALL truncate the content and display "[truncated]" indicator
+- IF comment content is empty or less than 5 characters, THEN THE system SHALL reject submission with message "Comment must be at least 5 characters"
+
+## Section Management
+
+### Section Creation
+
+Sections are the top-level categories organizing article content:
+
+- **Permission**: Only Administrators may create new sections
+- **Required Fields**: Name (3-50 characters), Description (50-500 characters)
+- **Validation**: Name must be unique system-wide
+- **Format**: No special characters (alphanumeric, spaces, hyphens, underscores only)
+- **Default Sections**: System pre-populates with "Politics", "Economy", "Current Affairs" upon first launch
+- **Section Visibility**: All sections are publicly viewable
+
+### Section Editing
+
+Administrators may modify existing sections:
+
+- **Editable Fields**: Name, Description
+- **Validation**: New name must be unique (non-conflicting)
+- **Impact**: Editing section name updates all associated articles automatically
+- **History**: No versioning - changes are immediate and irreversible
+
+### Section Deletion
+
+Administrators may remove sections:
+
+- **Permission**: Only Administrators
+- **Cascading Effect**: All articles within section are NOT automatically deleted (moved to "Uncategorized" if defined, otherwise remain accessible via direct links)
+- **Archive Mechanism**: Articles retain full integrity and visibility
+- **Confirmation**: Must confirm deletion action
+- **Effectiveness**: Section disappears from section listing immediately
+- **No Reuse**: Section name cannot be reused for new section creation
+
+### Section Listing & Browsing
+
+- **Visibility**: All sections displayed in sidebar and section selector
+- **Order**: Alphabetical by section name
+- **Access**: Citizens may browse articles in any visible section
+- **Navigation**: Section selection filters article listing
+- **Performance**: Section list loads instantly upon user profile access
+
+### Section Requirements
+
+- WHEN a user attempts to create section, THE system SHALL validate name (3-50 characters) and description (50-500 characters)
+- WHERE user role is administrator, THE system SHALL enable section creation capability
+- WHERE user role is administrator, THE system SHALL enable section editing capability
+- WHERE user role is administrator, THE system SHALL enable section deletion capability
+- WHILE user browses section list, THE system SHALL display all existing sections
+- IF section name already exists, THEN THE system SHALL return ERROR_SECTION_NAME_TAKEN
+
+## Administrator Request Workflow
+
+### Request Submission
+
+Citizens may apply to become Administrators:
+
+- **Access Point**: "Become Administrator" button on profile
+- **Required Input**: Reason text (10-1,000 characters)
+- **Validation**: Reason must contain at least 10 non-whitespace characters
+- **Status**: Request enters "Pending Approval" state
+- **Notification**: User receives confirmation message upon submission
+
+### Request Review
+
+Super Administrators review pending requests:
+
+- **Access Point**: "Administrator Requests" list in management dashboard
+- **Information Displayed**: Requester username, request reason, timestamp
+- **Actions Available**: Approve, Reject
+- **Response**: No automatic email - system notification only
+
+### Approval Process
+
+- **Action**: Super Administrator selects "Approve"
+- **System Response**: User role updates from "Citizen" to "Administrator"
+- **Permissions**: Admin rights activated immediately
+- **Notification**: User receives system message: "Your administrator request has been approved."
+- **Audit Log**: Entry recorded with approver ID and timestamp
+
+### Rejection Process
+
+- **Action**: Super Administrator selects "Reject"
+- **System Response**: User role remains "Citizen"
+- **Notification**: User receives system message: "Your administrator request has been rejected."
+- **Reason Display**: The user does not see the rejection reason (administrative discretion preserved)
+- **Audit Log**: Entry recorded with rejector ID and timestamp
+
+### Request Status
+
+While a request is pending:
+
+- **Profile Display**: Shows "Administrator Request Pending" banner
+- **Button State**: "Become Administrator" button disabled
+- **Request Visibility**: Only visible to Super Administrators
+- **Duration**: No expiration - requests remain open indefinitely
+
+### Administrator Request Workflow Diagram
 
 ```mermaid
-graph TD
-    A["Post created"] --> B["First comment"]
-    B --> C["Reply to comment 1"]
-    C --> D["Reply to reply"]
-    D --> E["Reply to reply 2"]
-    B --> F["Second reply to comment 1"]
-    A --> G["Second comment"]
-    G --> H["Reply to comment 2"]
-    H --> I["Reply to reply"]
-    
-    style A fill:#f9f,stroke:#333
-    style B fill:#bbf,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style D fill:#bbf,stroke:#333
-    style E fill:#bbf,stroke:#333
-    style F fill:#bbf,stroke:#333
-    style G fill:#bbf,stroke:#333
-    style H fill:#bbf,stroke:#333
-    style I fill:#bbf,stroke:#333
+graph LR
+  A["Citizen Submits Request"] --> B["Request Stored"]
+  B --> C["Super Admin Reviews Request"]
+  C --> D{"Approve?"}
+  D -->|Yes| E["Update Role to Administrator"]
+  D -->|No| F["Notify Requestor of Rejection"]
+  E --> G["Activate Administrator Permissions"]
+  G --> H["Send Welcome Notification"]
+  I["Administrator Requests Promotion"] --> J["Request Stored"]
+  J --> K["Super Admin Reviews Request"]
+  K --> L{"Approve?"}
+  L -->|Yes| M["Update Role to Super Administrator"]
+  L -->|No| N["Notify Requestor of Rejection"]
+  M --> O["Activate Super Admin Permissions"]
+  O --> P["Send Welcome Notification"]
 ```
 
-## Mermaid Diagram: Authentication Flow
+### Administrator Request Requirements
+
+- WHEN a citizen submits administrator request, THE system SHALL capture reason text with minimum 10 characters
+- WHEN a super administrator reviews request, THE system SHALL display request reason
+- WHEN a super administrator approves request, THE system SHALL upgrade user to administrator
+- WHEN a super administrator rejects request, THE system SHALL notify user of rejection
+- WHILE request is pending, THE system SHALL display user status as "request pending"
+
+## Administrator Privilege Hierarchy
+
+### Privilege Structure
+
+The administrator hierarchy defines two roles with escalating authority:
+
+- **Administrator**: Moderation rights over content and users
+- **Super Administrator**: Full system management including promotion/demotion
+
+### Promotion Process
+
+- **Eligibility**: Administrator user must submit promotion request
+- **Process**: Same workflow as citizen-to-administrator request
+- **Validation**: Super administrator reviews request and may approve
+- **Outcome**: Role updated to "Super Administrator"
+- **Notification**: Confirmation message sent to promoted user
+- **Audit**: All promotions logged permanently
+
+### Demotion Process
+
+- **Authority**: Only Super Administrators may demote users
+- **Target**: Only Administrators (including other Super Administrators)
+- **Self-Demotion Restriction**: System prohibits Super Administrators from demoting themselves
+- **Process**: Demotion request requires explicit confirmation
+- **Outcome**: Role downgraded to "Administrator"
+
+### Privilege Matrix
+
+| Capability | Citizen | Administrator | Super Administrator |
+|---|---|---|---|
+| Register/Login | ✓ | ✓ | ✓ |
+| Edit own profile | ✓ | ✓ | ✓ |
+| Create articles | ✓ | ✓ | ✓ |
+| Edit own articles | ✓ | ✓ | ✓ |
+| Delete own articles | ✓ | ✓ | ✓ |
+| Comment on articles | ✓ | ✓ | ✓ |
+| Edit own comments | ✓ | ✓ | ✓ |
+| Delete own comments | ✓ | ✓ | ✓ |
+| View public profiles | ✓ | ✓ | ✓ |
+| Search articles | ✓ | ✓ | ✓ |
+| Create sections | ✗ | ✓ | ✓ |
+| Edit sections | ✗ | ✓ | ✓ |
+| Delete sections | ✗ | ✓ | ✓ |
+| Delete any article | ✗ | ✓ | ✓ |
+| Delete any comment | ✗ | ✓ | ✓ |
+| Ban users | ✗ | ✓ | ✓ |
+| Unban users | ✗ | ✓ | ✓ |
+| View banned users | ✗ | ✓ | ✓ |
+| Approve admin requests | ✗ | ✗ | ✓ |
+| Promote admin to super | ✗ | ✗ | ✓ |
+| Demote super to admin | ✗ | ✗ | ✓ |
+| Demote self | ✗ | ✗ | ✗ |
+
+### Administrator Privilege Hierarchy Requirements
+
+- WHEN a super administrator promotes administrator, THE system SHALL update role to super administrator
+- WHEN a super administrator demotes administrator, THE system SHALL downgrade role to administrator
+- WHERE user attempts to demote self, THE system SHALL reject action and return error
+- WHERE user role is administrator, THE system SHALL grant all citizen permissions plus moderation
+- WHERE user role is super administrator, THE system SHALL grant all administrator permissions plus privilege management
+- IF a super administrator attempts to demote self, THEN THE system SHALL return ERROR_SELF_DEMOTION_PROHIBITED
+
+## Banning System
+
+### Banning Process
+
+Administrators can restrict user access to the platform:
+
+- **Trigger**: Administrator selects "Ban User" on profile
+- **Requirement**: Ban reason (mandatory, 10-500 characters)
+- **Action**: User status changed to "Banned"
+- **Effect**: Immediate session termination
+- **Notification**: Optional system message to banned user
+- **Content Preservation**: User's articles and comments remain publicly visible
+- **Audit Log**: Ban reason, admin ID, timestamp recorded permanently
+- **Access Denial**: Future login attempts rejected immediately
+
+### Unbanning Process
+
+- **Trigger**: Administrator selects "Unban User" on banned profile
+- **Action**: Ban status removed
+- **Effect**: User can log in normally
+- **Audit Log**: Unban event recorded with admin ID and timestamp
+
+### Ban Visibility
+
+- **Admin View**: All banned users visible in "Banned Users" list
+- **Information Displayed**: Username, ban reason, ban date, banning admin
+- **Search Functionality**: Ban list is searchable by username or reason
+- **Non-Admin View**: Banned users appear as normal users (no indication of ban status)
+- **Reason Privacy**: Only administrators can view ban reasons
+
+### Ban Status Effects
+
+- **Login**: Denied with message "Your account has been banned. Contact administrators for appeal."
+- **Content Visibility**: Articles/comments remain visible to all users
+- **Profile Access**: Profile remains accessible but shows "(Banned)" tag
+- **Interaction**: Cannot comment, like, or interact with other users
+- **Notification**: No automatic email sent upon ban
+
+### Banning Process Diagram
 
 ```mermaid
-graph TD
-    A["User visits site"] --> B{"JWT valid?"}
-    B -- No --> C["Show login modal"]
-    C --> D["User enters email/password"]
-    D --> E["Validate credentials and password strength"]
-    E --> F{"Success?"}
-    F -- No --> G["Show error: Invalid credentials"]
-    G --> C
-    F -- Yes --> H["Check email verification status"]
-    H --> I{"Verified?"}
-    I -- No --> J["Send verification email"]
-    J --> K["Display: Please verify email"]
-    K --> C
-    I -- Yes --> L["Generate JWT token"]
-    L --> M["Set HTTP-only secure cookie"]
-    M --> N["Redirect to feed"]
-    
-    B -- Yes --> N
-    N --> O["Auto-refresh token every 20 minutes"]
-    O --> B
+graph LR
+  A["Administrator Decides to Ban"] --> B["Enter Ban Reason"]
+  B --> C["Confirm Ban Action"]
+  C --> D["Update User Status to Banned"]
+  D --> E["Log Ban Reason in System"]
+  E --> F["Terminate User Session"]
+  F --> G["Notify User (if possible)"]
+  H["Banned User Attempts Login"] --> I["Check Status"]
+  I --> J{"Banned?"}
+  J -->|Yes| K["Deny Access"]
+  J -->|No| L["Allow Login"]
+  M["Administrator Unbans User"] --> N["Remove Ban Status"]
+  N --> O["Clear Ban Reason"]
+  O --> P["Reactivate Account"]
 ```
 
-## Mermaid Diagram: Moderation Workflow
+### Banning System Requirements
+
+- WHEN an administrator bans user, THE system SHALL require ban reason with minimum 10 characters
+- WHEN user is banned, THE system SHALL prevent login attempts
+- WHILE user is banned, THE system SHALL maintain visibility of user content
+- WHERE administrator views banned users, THE system SHALL display ban reason
+- WHEN an administrator unbans user, THE system SHALL remove ban status and restore access
+- IF a banned user attempts to log in, THEN THE system SHALL deny access immediately
+- IF ban reason is empty or under 10 characters, THEN THE system SHALL reject ban request
+
+## Search and Filtering
+
+### Search Functionality
+
+Users can discover articles using full-text search:
+
+- **Search Fields**: Title and article content
+- **Match Type**: Fuzzy matching (case-insensitive partial matching)
+- **Result Scope**: Only articles the user has permission to view
+- **Pagination**: 20 results per page
+- **Performance**: Search results must return within 2 seconds
+- **Highlighting**: Search terms highlighted in results
+
+### Tag Filtering
+
+Users can narrow search results by tags:
+
+- **Filter Criteria**: Exact tag matches (case-sensitive matching)
+- **Multiple Tags**: AND logic (all selected tags must be present)
+- **Tag Sources**: Extracted from article metadata
+- **Display**: Tags appear as selectable chips in UI
+- **Combination**: Can be used alone or with text search
+- **Performance**: Filtering must not impact search response time
+
+### User Interface Flow
 
 ```mermaid
-graph TD
-    A["User flags content as inappropriate"] --> B["Create moderation report"]
-    B --> C["Hide content from public view"]
-    C --> D["Notify all admins via in-app alert"]
-    D --> E{"Admin reviews report"}
-    E --> F["Mark as invalid spam report"]
-    E --> G["Delete content and issue warning"]
-    E --> H["Delete content and ban user 3 days"]
-    E --> I["Delete content and ban user 7 days"]
-    E --> J["Delete content and ban user 30 days"]
-    
-    F --> K["Remove report from queue"]
-    G --> K
-    H --> K
-    I --> K
-    J --> K
-    K --> L["Notify user of action taken"]
-    L --> M["Log action in audit trail"]
-    M --> N["Close moderation case"]
-
-    style A fill:#f9f,stroke:#333
-    style C fill:#f9f,stroke:#333
-    style D fill:#f9f,stroke:#333
-    style E fill:#f9f,stroke:#333
-    style F fill:#f00,stroke:#333
-    style G fill:#0f0,stroke:#333
-    style H fill:#0f0,stroke:#333
-    style I fill:#0f0,stroke:#333
-    style J fill:#0f0,stroke:#333
-    style L fill:#00f,stroke:#333
-    style M fill:#00f,stroke:#333
+graph LR
+  A["User Requests Articles"] --> B["Apply Section Filter"]
+  B --> C["Apply Search Term"]
+  C --> D["Apply Tag Filters"]
+  D --> E["Apply Sort Order"]
+  E --> F["Query Database"]
+  F --> G["Return Paginated Results"]
+  G --> H["Display: Title, Author, Tags, Comments, Posted" ]
+  I["User Clicks Article"] --> J["Fetch Full Article Data"]
+  J --> K["Include Attachments, Tags, Author Profile"]
+  K --> L["Display Full Article Page"]
 ```
 
-## Business Success Metrics
+### Search and Filtering Requirements
 
-- 500+ daily active users
-- 2+ posts per user per week on average
-- 50% of users return after 30 days
-- Moderation reports per 1000 posts < 0.5%
-- Average response time to moderation flags < 4 hours
-- Upload success rate > 98%
-- Page load time under 2 seconds in 95% of cases
-- 95% of email verifications completed within 24 hours
+- WHEN a user searches articles, THE system SHALL search title and content fields
+- WHEN a user filters by tags, THE system SHALL match exact tag values
+- WHILE user browses search results, THE system SHALL display 20 items per page
+- WHEN user navigates search pages, THE system SHALL maintain filter criteria
+- WHERE search returns no results, THE system SHALL display "No articles match your search"
+- IF search term contains 1 character or less, THEN THE system SHALL return all articles without filtering
+- IF tag filter is applied, THEN THE system SHALL return articles that contain ALL selected tags
+- IF filter criteria are cleared, THEN THE system SHALL return unfiltered results
 
-All functional requirements are complete, specific, and implementable. No database schema or API specification is included. All authentication, authorization, and user workflows are defined in natural business language with EARS-compliant requirements.
+## Performance and Operational Requirements
 
-> This document is self-contained. No external references are needed.
+### Response Time Expectations
+
+- **Article Lists**: Must respond within 1 second (P95)
+- **Search Operations**: Must respond within 2 seconds (P95)
+- **Single Article Load**: Must render within 1.5 seconds (including attachments)
+- **Comment Loading**: Must be instantaneous (sub-second)
+- **User Actions**: Create/edit/delete must confirm within 1 second
+- **File Uploads**: Progress bar must update every 500ms; total upload time under 30 seconds for 50MB
+
+### System Throughput
+
+- **Concurrent Users**: Support 10,000 concurrent authenticated users
+- **Requests/Second**: Minimum 200 requests per second
+- **Database Load**: Maximum 50 concurrent database connections
+- **Cache Utilization**: 80% of article list requests served from cache
+- **Session Handling**: Support 50,000 active sessions simultaneously
+
+### Concurrency Requirements
+
+- **Database Transactions**: Use row-level locking for article/comment deletion
+- **File Uploads**: Uploads queued under heavy load
+- **API Throttling**: Rate limit 100 requests per minute per IP address
+- **Priority Queueing**: Moderator actions (ban/delete) get priority over user content views
+
+### Data Retention Policy
+
+- **Deleted Articles**: Permanently removed from database (hard delete)
+- **Deleted Comments**: Permanently removed from database (hard delete)
+- **Banned User Content**: Maintained indefinitely (never deleted)
+- **Session Logs**: Kept 90 days for security auditing
+- **Audit Logs**: Kept permanently (non-erasable)
+- **Files**: Retained indefinitely as long as associated article exists
+
+### Error Handling
+
+- **HTTP 400**: Bad Request (invalid parameters, missing fields)
+- **HTTP 401**: Unauthorized (invalid/no authentication)
+- **HTTP 403**: Forbidden (insufficient permissions)
+- **HTTP 404**: Not Found (resource not exist or deleted)
+- **HTTP 429**: Too Many Requests (rate limiting)
+- **HTTP 500**: Internal Server Error (unexpected system failure)
+- **HTTP 503**: Service Unavailable (database unresponsive)
+
+### Error Code Definitions
+
+- AUTH_INVALID_CREDENTIALS: Invalid email/password combination
+- AUTH_TOKEN_INVALID: Expired or malformed JWT token
+- AUTH_ACCESS_DENIED: User lacks required permissions
+- SECTION_NAME_TAKEN: Section name already exists
+- ERROR_SELF_DEMOTION_PROHIBITED: Super administrator attempted self-demotion
+- ERROR_FILE_TOO_LARGE: File exceeds 50MB size limit
+- ERROR_COMMENT_TOO_SHORT: Comment less than 5 characters
+- ERROR_COMMENT_TOO_LONG: Comment exceeds 1,000 characters
+- ERROR_REASON_TOO_SHORT: Ban/admin request reason too short
+- ERROR_DATABASE_UNAVAILABLE: Database connection failed
+- ERROR_SYSTEM: Unspecified server-side error
+
+### System Uptime
+
+- **Target**: 99.9% uptime for authenticated operations
+- **Maintenance**: Scheduled maintenance windows between 2:00-4:00 AM (Asia/Seoul)
+- **Monitoring**: Health checks every 30 seconds
+- **Failover**: Automatic to standby server upon failure
+- **Alerting**: PagerDuty alerts for downtime exceeding 2 minutes
+
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

@@ -5,7 +5,7 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { prepare_random_shopping_mall_order } from "../prepare/prepare_random_shopping_mall_order";
 export async function generate_random_shopping_mall_customer_orders_create(
@@ -16,9 +16,7 @@ export async function generate_random_shopping_mall_customer_orders_create(
 ): Promise<IShoppingMallOrder> {
   const prepared: IShoppingMallOrder.ICreate =
     prepare_random_shopping_mall_order(props.body);
-  const result: IShoppingMallOrder =
-    await api.functional.shoppingMall.customer.orders.create(connection, {
-      body: prepared,
-    });
-  return result;
+  return await api.functional.shoppingMall.customer.orders.create(connection, {
+    body: prepared,
+  });
 }

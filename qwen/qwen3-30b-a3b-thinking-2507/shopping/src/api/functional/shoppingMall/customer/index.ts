@@ -1,9 +1,9 @@
-export * as sections from "./sections/index";
-export * as configurations from "./configurations/index";
-export * as customers from "./customers/index";
-export * as products from "./products/index";
+export * as profile from "./profile/index";
+export * as sessions from "./sessions/index";
+export * as email_verifications from "./email_verifications/index";
+export * as password_resets from "./password_resets/index";
 export * as orders from "./orders/index";
-export * as payments from "./payments/index";
-export * as refunds from "./refunds/index";
-export * as reviews from "./reviews/index";
-export * as search from "./search/index";
+export * as order_items from "./order_items/index";
+export * as carts from "./carts/index";
+export * as addresses from "./addresses/index";
+export * as wishlist from "./wishlist/index";

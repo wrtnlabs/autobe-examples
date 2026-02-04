@@ -1,0 +1,120 @@
+/// Tracks upvotes and downvotes on comments with unique user-comment
+/// constraints, enabling accurate karma calculation for the community
+/// platform.
+///
+/// This table stores every user's vote on a specific comment, ensuring each
+/// user can vote only once per comment. The system uses these votes to
+/// calculate karma scores for authors and manage voting behavior without
+/// duplicate adjustments.
+///
+/// The unique combination of user and comment enforces the business rule
+/// that each vote must be between a single user and a single comment,
+/// preventing duplicate or conflicting votes. Votes support both up
+/// (positive) and down (negative) actions, with the vote direction stored as
+/// a boolean flag.
+///
+/// Temporal fields (created_at, updated_at) track when votes are recorded or
+/// modified, while soft deletion (deleted_at) allows for content moderation
+/// without data loss.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link community_platform_users.id}.
+  user_id String
+  
+  /// Comment being voted on. {@link community_platform_comments.id}.
+  comment_id String
+  
+  /// Whether the vote is an upvote (true) or downvote (false).
+  is_upvote Boolean
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft-deleted (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id])
+  
+  @@unique([user_id, comment_id])
+}
+
+/// Core comment structure including content, parent-child relationships,
+/// author, and post references.
+///
+/// Represents the fundamental unit of conversation within the platform,
+/// allowing users to create threaded discussions about posts. Comments can
+/// exist as top-level posts or nested replies to other comments.
+///
+/// Each comment carries its core content, reference to the originating post,
+/// author information, and temporal metadata for audit trails. The platform
+/// supports unlimited nesting depth through the self-referential
+/// parent_comment_id relationship.
+///
+/// Comments require independent management due to platform requirements:
+/// users need to search across all posts, moderate individual comments, and
+/// track comment activity without post context.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated post's {@link community_platform_posts.id}. Comments must
+  /// belong to a parent post for context.
+  post_id String
+  
+  /// The comment author's {@link community_platform_users.id}. All comments
+  /// have a clear origin.
+  author_id String
+  
+  /// The parent comment's {@link community_platform_comments.id}, allowing
+  /// nested replies.
+  parent_comment_id String?
+  
+  /// The raw content of the comment using standard markdown formatting.
+  content String
+  
+  /// When the comment was originally created.
+  created_at DateTime
+  
+  /// When the comment was last modified.
+  updated_at DateTime
+  
+  /// When the comment was soft-deleted for moderation or user request.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  author community_platform_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  votes community_platform_comment_votes[]
+  replies community_platform_comments[] @relation("recursive")
+  
+  @@index([post_id])
+  @@index([author_id])
+  @@index([parent_comment_id])
+}

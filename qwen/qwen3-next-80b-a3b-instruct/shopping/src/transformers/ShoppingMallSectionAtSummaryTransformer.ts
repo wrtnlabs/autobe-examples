@@ -2,60 +2,47 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSection";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-export namespace ShoppingMallSectionAtSummaryTransformer {
+// Remove import that conflicts with local declaration
+export namespace ShoppingMallSectionAtSummaryTransformerInternal {
   export type Payload = Prisma.shopping_mall_sectionsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
+  export function select(): Prisma.shopping_mall_sectionsFindManyArgs {
     return {
       select: {
         id: true,
         name: true,
         description: true,
-        ordering: true,
-        parent: true,
-        channel: true,
-        recursive: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        parent_section_id: true,
       },
-    } satisfies Prisma.shopping_mall_sectionsFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallSection.ISummary> {
     return {
       id: input.id,
-      title: input.name,
-      description: input.description ?? undefined,
-      display_order: input.ordering,
-      parent_section_id: input.parent?.id ?? undefined,
-      section_type:
-        (input.channel?.theme as
-          | "product_category"
-          | "marketing"
-          | "navigation"
-          | "system") ?? undefined,
-      has_children: input.recursive.length > 0,
-      is_active: false,
-      total_products: 0,
-      is_featured: false,
-      seo_title: "",
-      seo_description: "",
-      image_url: "",
-      is_visible_in_mobile: false,
-      badge_text: "",
-      analytics_goals: [],
-      shoppable: false,
-      display_text_color: "",
-      display_background_color: "",
-      alignment: "center",
-      icon: "",
-      min_customer_level: 0,
-      traffic_mirror: "",
-      section_slug: "default",
+      name: input.name,
+      description: input.description || "",
+      parent: input.parent_section_id
+        ? await ShoppingMallSectionAtSummaryTransformerInternal.transform({
+            ...input,
+            parent: input.parent_section_id,
+          } as Payload)
+        : undefined,
     };
   }
 }
+// Export transform function as the public API
+export const transform =
+  ShoppingMallSectionAtSummaryTransformerInternal.transform;
+export const select = ShoppingMallSectionAtSummaryTransformerInternal.select;
+export type Payload = ShoppingMallSectionAtSummaryTransformerInternal.Payload;

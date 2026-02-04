@@ -8,33 +8,30 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { TodoUserAtSummaryTransformer } from "../transformers/TodoUserAtSummaryTransformer";
 
 export async function getTodoUserUsersUserId(props: {
   user: UserPayload;
-  userId: string;
-}): Promise<ITodoUser> {
-  const userRecord = await MyGlobal.prisma.todo_users.findUnique({
+  userId: string & tags.Format<"uuid">;
+}): Promise<ITodoUser.ISummary> {
+  if (props.userId !== props.user.id) {
+    throw new HttpException(
+      "Forbidden: You can only retrieve your own profile",
+      403,
+    );
+  }
+  const dbUser = await MyGlobal.prisma.todo_users.findUnique({
     where: {
       id: props.userId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      email: true,
-      created_at: true,
-      updated_at: true,
-    },
+    ...TodoUserAtSummaryTransformer.select(),
   });
-  if (!userRecord) {
+  if (!dbUser) {
     throw new HttpException("User not found", 404);
   }
-  return {
-    id: userRecord.id,
-    email: userRecord.email,
-    name: "User", // Default name since database lacks this field
-    createdAt: toISOStringSafe(userRecord.created_at),
-    updatedAt: toISOStringSafe(userRecord.updated_at),
-  };
+  return await TodoUserAtSummaryTransformer.transform(dbUser);
 }

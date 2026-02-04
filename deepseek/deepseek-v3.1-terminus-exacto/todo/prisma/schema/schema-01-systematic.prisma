@@ -1,18 +1,19 @@
-/// Core application configuration settings with version control and audit
-/// trail support.
+/// System-wide configuration settings and feature flags that control
+/// application behavior.
 ///
-/// Stores the master configuration definitions including metadata,
-/// validation rules, and default values. Each configuration entry represents
-/// a configurable parameter that can be customized per environment while
-/// maintaining a consistent definition structure.
+/// Stores global application settings, feature flags, and configuration
+/// parameters that affect the entire system. Each configuration entry
+/// represents a specific setting that can be toggled, configured, or
+/// enabled/disabled to control application behavior across different
+/// environments.
 ///
-/// Supports typed configuration values with proper validation, dependency
-/// tracking, and hierarchical organization. Configuration changes are
-/// tracked through snapshots to maintain audit trails and enable rollback
-/// capabilities.
+/// Configurations support various scopes including global, channel-specific,
+/// and section-specific settings. The system maintains audit trails for
+/// configuration changes and supports versioning through snapshot patterns.
 ///
-/// The table enforces data integrity through unique constraints and supports
-/// flexible configuration management for multi-environment deployments.
+/// Configuration values can include boolean flags, numeric values, string
+/// parameters, and JSON objects for complex settings. Each configuration is
+/// validated against its defined type constraints and business rules.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,284 +24,427 @@ model todo_app_configurations {
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifier following naming convention:
-  /// 'category.subcategory.setting'. Must be lowercase with underscores.
-  config_key String
+  /// Target channel for channel-specific configurations. {@link
+  /// todo_app_channels.id}.
+  todo_app_channel_id String?
   
-  /// Human-readable display name for the configuration setting.
+  /// Target section for section-specific configurations. {@link
+  /// todo_app_sections.id}.
+  todo_app_section_id String?
+  
+  /// Unique configuration key identifier used to reference the setting in code.
+  key String
+  
+  /// Configuration value stored as string with type validation applied.
+  value String
+  
+  /// Data type of the configuration value (boolean, number, string, json).
+  value_type String
+  
+  /// Human-readable description explaining the configuration's purpose and
+  /// usage.
+  description String
+  
+  /// Configuration scope (global, channel, section) determining visibility and
+  /// access.
+  scope String
+  
+  /// Configuration status (active, inactive, deprecated) controlling
+  /// availability.
+  status String
+  
+  /// Timestamp when the configuration was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel todo_app_channels? @relation(fields: [todo_app_channel_id], references: [id], onDelete: Cascade)
+  section todo_app_sections? @relation(fields: [todo_app_section_id], references: [id], onDelete: Cascade)
+  
+  @@unique([key])
+  @@index([scope, status])
+  @@index([todo_app_channel_id, status])
+  @@index([todo_app_section_id, status])
+}
+
+/// Application channels representing different access points or deployment
+/// environments for the todo application.
+///
+/// Channels define different entry points and deployment contexts for the
+/// application, such as web interfaces, mobile apps, API endpoints, or
+/// different deployment environments (production, staging, development).
+/// Each channel has specific configuration that determines how the
+/// application behaves within that context.
+///
+/// Channel metadata includes identification fields, status tracking
+/// indicating whether the channel is active or inactive, priority levels for
+/// channel routing decisions, and URL patterns or access specifications. The
+/// system uses channel information to apply environment-specific
+/// configuration and access control policies.
+///
+/// Channels are managed as infrastructure components rather than user-facing
+/// entities, with changes typically made during deployment or configuration
+/// updates rather than through user-driven CRUD operations. Relationships
+/// with other systematic components ensure consistent configuration across
+/// the application ecosystem.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name for the channel, such as "Web Interface", "Mobile
+  /// App", "API Gateway", etc. Used for display and identification purposes.
   name String
   
-  /// Detailed description explaining the purpose, usage, and impact of this
+  /// Unique machine-readable code identifier for the channel. Used for
+  /// programmatic channel selection and routing decisions. Examples: "web",
+  /// "mobile", "api", "admin".
+  channel_code String
+  
+  /// Type classification of the channel indicating its purpose and access
+  /// pattern. Valid types: "web", "mobile", "api", "internal", "integration".
+  channel_type String
+  
+  /// Current operational status of the channel. Valid values: "active",
+  /// "inactive", "maintenance". Controls whether the channel is accessible.
+  status String
+  
+  /// Priority level for channel selection and routing decisions. Lower numbers
+  /// indicate higher priority. Used when multiple channels are available for
+  /// the same functionality.
+  priority Int
+  
+  /// URL pattern or base path that identifies requests originating from this
+  /// channel. Used for request routing and channel-specific configuration
+  /// application.
+  base_url_pattern String?
+  
+  /// Detailed description of the channel's purpose, capabilities, and intended
+  /// usage context. Provides context for system administrators managing
+  /// deployment environments.
+  description String?
+  
+  /// Timestamp when the channel configuration was initially created in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when the channel configuration was last modified. Tracked for
+  /// configuration change auditing.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  configurations todo_app_configurations[]
+  sections todo_app_sections[]
+  
+  @@unique([channel_code])
+  @@unique([name])
+  @@index([channel_type, status])
+  @@index([priority])
+  @@index([created_at])
+}
+
+/// Hierarchical sections within channels for organizing application
+/// components and system structure.
+///
+/// Sections provide organizational hierarchy within application channels,
+/// enabling structured content organization and navigation. Each section can
+/// have parent-child relationships to create nested organizational
+/// structures that support complex application layouts.
+///
+/// Sections are referenced by other system components for organizational
+/// context and are managed as independent infrastructure entities. The
+/// hierarchical structure allows for flexible organization patterns while
+/// maintaining referential integrity through parent-child relationships.
+///
+/// Channel association ensures sections are properly scoped within specific
+/// application deployment environments or access points.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated channel's {@link todo_app_channels.id}.
+  todo_app_channel_id String
+  
+  /// Parent section's {@link todo_app_sections.id} for hierarchical
+  /// organization.
+  parent_id String?
+  
+  /// Unique section code identifier for system reference and navigation.
+  code String
+  
+  /// Display name of the section for organizational purposes.
+  name String
+  
+  /// Detailed description explaining the section's purpose and usage context.
+  description String?
+  
+  /// Sort order for section display within parent context.
+  order Int
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel todo_app_channels @relation(fields: [todo_app_channel_id], references: [id], onDelete: Cascade)
+  parent todo_app_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  configurations todo_app_configurations[]
+  children todo_app_sections[] @relation("recursive")
+  
+  @@unique([code])
+  @@unique([todo_app_channel_id, name])
+  @@index([todo_app_channel_id, parent_id])
+  @@index([parent_id])
+  @@index([order])
+}
+
+/// Core application metadata including version information and system
+/// statistics.
+///
+/// Contains infrastructure-level data that supports the entire application
+/// system, such as version tracking, operational statistics, and system
+/// configuration metadata. This table provides centralized metadata
+/// management for application monitoring, version control, and system health
+/// tracking.
+///
+/// Stores version information including current application version,
+/// database schema version, and compatibility information. Also maintains
+/// system statistics such as user count, active session count, and
+/// performance metrics for monitoring purposes.
+///
+/// This metadata is managed through system operations and background
+/// processes rather than direct user interaction. It serves as a
+/// foundational component for system administration, monitoring, and
+/// operational visibility across the entire application infrastructure.
+///
+/// Relationships with other systematic infrastructure tables provide
+/// comprehensive system management capabilities while maintaining clear
+/// separation from user-facing business logic domains.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Current application version number in semantic versioning format (e.g.,
+  /// 1.0.0). Used for version tracking and compatibility verification.
+  version String
+  
+  /// Database schema version number that corresponds to this application
+  /// version. Used for schema migration tracking and compatibility checking.
+  schema_version String
+  
+  /// Build timestamp or date when this application version was deployed. Helps
+  /// tracking deployment history and system updates.
+  build_date String
+  
+  /// Total number of registered users in the system. Used for system growth
+  /// monitoring and capacity planning.
+  total_users Int
+  
+  /// Current number of active user sessions. Provides real-time visibility
+  /// into system usage and load.
+  active_sessions Int
+  
+  /// Total number of todos created in the system. Statistical metric for
+  /// monitoring application usage patterns.
+  total_todos Int
+  
+  /// Number of API requests processed today. Operational metric for monitoring
+  /// system load and performance.
+  api_requests_today Int
+  
+  /// Number of consecutive days the system has been operational. Measures
+  /// system reliability and stability.
+  uptime_days Int
+  
+  /// Timestamp of the last successful system backup. Critical for disaster
+  /// recovery monitoring and data safety assurance.
+  last_backup DateTime?
+  
+  /// Indicates whether the system is currently in maintenance mode. Used for
+  /// system administration and operational control.
+  maintenance_mode Boolean
+  
+  /// Timestamp when this metadata record was created. Typically corresponds to
+  /// initial system setup or version deployment.
+  created_at DateTime
+  
+  /// Timestamp when this metadata record was last updated. Tracks changes to
+  /// system metadata and statistics.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([version])
+  @@index([updated_at])
+}
+
+/// Global application settings and preferences that affect all users across
+/// the entire system.
+///
+/// Stores configuration parameters that control application behavior,
+/// feature toggles, system defaults, and user experience preferences.
+/// Settings are maintained as key-value pairs with type validation to ensure
+/// data integrity.
+///
+/// Managed by system administrators through dedicated settings management
+/// interfaces. Changes to these settings can impact all users and should be
+/// carefully controlled and monitored through proper audit trails.
+///
+/// This table provides centralized configuration management for application
+/// customization, A/B testing, feature rollouts, and system behavior tuning
+/// without requiring code deployments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the setting, following reverse domain notation
+  /// (e.g., 'app.features.advanced_editing'). Used to retrieve and reference
+  /// specific settings programmatically.
+  key String
+  
+  /// Setting value stored as string with type validation determined by the
+  /// type field. Contains the actual configuration data that controls
+  /// application behavior.
+  value String
+  
+  /// Data type of the setting value to enforce validation. Valid values:
+  /// 'string', 'boolean', 'number', 'json'. Determines how the value field
+  /// should be parsed and validated.
+  type String
+  
+  /// Human-readable description explaining the setting's purpose, usage, and
+  /// impact. Provides context for administrators managing application
   /// configuration.
   description String
   
-  /// Expected data type for configuration values: 'boolean', 'number',
-  /// 'string', 'json', 'array', 'object'.
-  data_type String
+  /// Restricts access to sensitive settings that should only be modified by
+  /// system administrators. True: admin-level access required; False: broader
+  /// administrative access allowed.
+  admin_only Boolean
   
-  /// Default configuration value that applies when no environment-specific
-  /// value is set.
-  default_value String
-  
-  /// JSON string containing validation constraints for the configuration value.
-  validation_rules String?
-  
-  /// Configuration category for organizational grouping (e.g., 'security',
-  /// 'performance', 'ui').
-  category String
-  
-  /// Indicates whether this configuration contains sensitive information that
-  /// requires encryption.
-  is_sensitive Boolean
-  
-  /// Whether this configuration must have a value set in all environments.
-  is_required Boolean
-  
-  /// Configuration version number for tracking schema changes.
-  version Int
-  
-  /// Timestamp when this configuration definition was created.
+  /// Timestamp when the setting was first created and added to the system
+  /// configuration.
   created_at DateTime
   
-  /// Timestamp when this configuration definition was last modified.
+  /// Timestamp when the setting was last modified, providing audit trail for
+  /// configuration changes.
   updated_at DateTime
   
-  /// Timestamp when this configuration was soft-deleted, allowing for recovery.
+  /// Timestamp when the setting was soft-deleted, allowing for reversible
+  /// configuration removal without permanent data loss.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_app_configuration_snapshots todo_app_configuration_snapshots[]
-  todo_app_configuration_values todo_app_configuration_values[]
-  mv_todo_app_active_configurations mv_todo_app_active_configurations?
-  
-  @@unique([config_key])
-  @@index([category, config_key])
-  @@index([data_type])
-  @@index([is_sensitive])
-  @@index([is_required])
-  @@index([version])
-  @@index([created_at])
+  @@unique([key])
+  @@index([admin_only, created_at])
 }
 
-/// Historical snapshots of configuration changes for audit trails and
-/// version control.
+/// Feature flag management and rollout configurations for controlled feature
+/// releases.
 ///
-/// Captures point-in-time states of configuration definitions whenever
-/// changes are made. Each snapshot represents a complete configuration
-/// definition at a specific moment, enabling rollback capabilities and
-/// change tracking.
+/// Stores feature toggle settings that control functionality availability
+/// across the application. Each feature can be completely disabled, enabled
+/// for all users, or gradually rolled out to a percentage of users for A/B
+/// testing.
 ///
-/// Used for compliance auditing, troubleshooting configuration-related
-/// issues, and understanding the evolution of application settings over
-/// time. Snapshots are append-only and never modified after creation.
+/// Features support percentage-based rollouts where access is granted to a
+/// specified percentage of users, allowing controlled feature releases and
+/// gradual deployment strategies. Feature status can be tracked
+/// (development, testing, production) with specific rollout percentages for
+/// each environment.
 ///
-/// Maintains referential integrity with the main configuration table while
-/// providing independent historical records for analysis and reporting.
+/// The configuration field stores JSON settings for advanced feature
+/// behaviors, A/B testing parameters, and environment-specific
+/// configurations. Features are managed independently with audit trails for
+/// changes to rollout settings and configurations.
+///
+/// Feature flags enable decoupling deployment from feature releases,
+/// supporting safe deployments and gradual rollouts with minimal risk.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_configuration_snapshots {
+model todo_app_features {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the configuration definition being snapshotted. {@link
-  /// todo_app_configurations.id}
-  todo_app_configuration_id String
-  
-  /// Configuration key at the time of snapshot creation.
-  config_key String
-  
-  /// Configuration display name at snapshot time.
+  /// Unique name identifier for the feature. Used as the feature key in
+  /// application code to check feature availability.
   name String
   
-  /// Configuration description at snapshot time.
-  description String
+  /// Detailed description explaining the feature's purpose and functionality.
+  /// Used for documentation and administrative interfaces.
+  description String?
   
-  /// Data type definition at snapshot time.
-  data_type String
+  /// Current feature status. Valid values: 'development', 'testing',
+  /// 'production', 'disabled'. Controls feature rollout stage and access
+  /// policies.
+  status String
   
-  /// Default value at snapshot time.
-  default_value String
+  /// Percentage of users who can access this feature (0-100). Used for gradual
+  /// feature rollouts and A/B testing.
+  rollout_percentage Int
   
-  /// Validation rules at snapshot time.
-  validation_rules String?
+  /// JSON configuration data for feature-specific settings, A/B testing
+  /// parameters, and environment-specific behaviors.
+  configuration String?
   
-  /// Configuration category at snapshot time.
-  category String
-  
-  /// Sensitivity flag at snapshot time.
-  is_sensitive Boolean
-  
-  /// Required flag at snapshot time.
-  is_required Boolean
-  
-  /// Configuration version at snapshot time.
-  version Int
-  
-  /// Reason for creating this snapshot (e.g., 'version_update', 'bug_fix',
-  /// 'compliance').
-  snapshot_reason String
-  
-  /// Timestamp when this snapshot was created.
+  /// Timestamp when the feature flag was first created.
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  configuration todo_app_configurations @relation(fields: [todo_app_configuration_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([todo_app_configuration_id, created_at], map: "todo_app_configuration_snapshots_todo_app_configuratio_e4fee1a6")
-  @@index([config_key])
-  @@index([category])
-  @@index([version])
-}
-
-/// Environment-specific configuration values that override default settings.
-///
-/// Stores actual configuration values for specific deployment environments
-/// (development, staging, production). Each value entry links to a
-/// configuration definition and provides the environment-specific
-/// implementation of that setting.
-///
-/// Supports value versioning and audit trails for environment-specific
-/// configurations. Values can be set, modified, or deleted independently per
-/// environment while maintaining referential integrity with the master
-/// configuration definitions.
-///
-/// Enables flexible configuration management across multiple deployment
-/// environments with proper isolation and change tracking.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_configuration_values {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the configuration definition. {@link
-  /// todo_app_configurations.id}
-  todo_app_configuration_id String
-  
-  /// Deployment environment for this configuration value (e.g., 'development',
-  /// 'staging', 'production').
-  environment String
-  
-  /// Environment-specific configuration value that overrides the default.
-  config_value String
-  
-  /// Type of the stored value for validation purposes.
-  value_type String
-  
-  /// Indicates whether this environment-specific value is currently active.
-  is_active Boolean
-  
-  /// Timestamp when this configuration value becomes effective.
-  effective_from DateTime
-  
-  /// Timestamp when this configuration value expires (null for indefinite).
-  effective_to DateTime?
-  
-  /// Timestamp when this configuration value was created.
-  created_at DateTime
-  
-  /// Timestamp when this configuration value was last modified.
+  /// Timestamp when the feature flag configuration was last modified.
   updated_at DateTime
   
-  /// Timestamp when this configuration value was soft-deleted.
+  /// Timestamp when the feature flag was soft-deleted. Null indicates the
+  /// feature is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  configuration todo_app_configurations @relation(fields: [todo_app_configuration_id], references: [id], onDelete: Cascade)
-  
-  mv_todo_app_active_configurations mv_todo_app_active_configurations?
-  
-  // spellchecker: ignore-next-line
-  @@unique([todo_app_configuration_id, environment], map: "todo_app_configuration_values_todo_app_configuration_i_9e6f2834")
-  @@index([environment, is_active])
-  @@index([effective_from, effective_to])
-  @@index([value_type])
-  @@index([created_at])
-}
-
-/// Materialized view showing currently active configuration values across
-/// all environments.
-///
-/// Pre-computed view that combines configuration definitions with their
-/// active environment-specific values. Provides fast access to the complete
-/// configuration state without complex joins and filtering logic.
-///
-/// Used by application components that need to quickly access the current
-/// configuration settings. The view is refreshed periodically to ensure
-/// consistency with the underlying configuration tables.
-///
-/// Optimizes configuration lookup performance for high-frequency access
-/// patterns in the application runtime.
-///
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model mv_todo_app_active_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the configuration definition. {@link
-  /// todo_app_configurations.id}
-  todo_app_configuration_id String
-  
-  /// Reference to the active configuration value. {@link
-  /// todo_app_configuration_values.id}
-  todo_app_configuration_value_id String?
-  
-  /// Configuration key identifier.
-  config_key String
-  
-  /// Deployment environment.
-  environment String
-  
-  /// Currently active configuration value (environment-specific or default).
-  effective_value String
-  
-  /// Source of the value: 'environment' for specific values, 'default' for
-  /// fallback.
-  value_source String
-  
-  /// Expected data type for validation.
-  data_type String
-  
-  /// Configuration category for filtering.
-  category String
-  
-  /// Whether the value contains sensitive information.
-  is_sensitive Boolean
-  
-  /// Timestamp when this configuration was last updated.
-  last_updated DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  configuration todo_app_configurations @relation(fields: [todo_app_configuration_id], references: [id], onDelete: Cascade)
-  configurationValue todo_app_configuration_values? @relation(fields: [todo_app_configuration_value_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([todo_app_configuration_id], map: "mv_todo_app_active_configurations_todo_app_configurati_ba969aab")
-  // spellchecker: ignore-next-line
-  @@unique([todo_app_configuration_value_id], map: "mv_todo_app_active_configurations_todo_app_configurati_043c61f3")
-  
-  @@unique([config_key, environment])
-  @@index([environment])
-  @@index([category])
-  @@index([data_type])
-  @@index([value_source])
+  @@unique([name])
+  @@index([status, created_at])
+  @@index([rollout_percentage])
 }

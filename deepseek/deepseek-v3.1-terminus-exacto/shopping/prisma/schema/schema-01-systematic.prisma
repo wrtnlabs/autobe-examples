@@ -1,243 +1,451 @@
-/// Shopping mall sales channels that categorize different shopping
-/// experiences or market segments.
+/// Parent categories for product organization with name, description, and
+/// hierarchical structure management.
 ///
-/// Each channel represents a distinct shopping environment or marketplace
-/// within the platform, such as general retail, outlet stores, specialty
-/// markets, or regional marketplaces. Channels enable platform operators to
-/// organize sellers and products into logical groupings that serve different
-/// customer segments or business models.
+/// Manages the primary category hierarchy for organizing products within the
+/// e-commerce platform. Each category represents a distinct grouping
+/// capability with support for hierarchical nesting. Categories can be
+/// organized in parent-child relationships to create multi-level category
+/// trees.
 ///
-/// Channels maintain their own configuration settings, pricing strategies,
-/// and seller eligibility requirements. This allows the platform to support
-/// diverse business models while maintaining a unified customer experience.
-/// Channel status controls visibility and availability to both sellers and
-/// customers.
+/// Categories maintain their own lifecycle independent of contained
+/// products, allowing administrators to reorganize the product catalog
+/// without affecting existing product assignments. Supports flexible
+/// category management operations including creation, renaming,
+/// reorganization, and soft deletion while preserving category-product
+/// relationships.
 ///
-/// All channels reference the platform's systematic configurations for
-/// consistent behavior across the marketplace ecosystem.
+/// The hierarchical structure enables flexible product discovery paths while
+/// maintaining category integrity through parent-child relationships.
+/// Categories can be toggled between active and inactive states to control
+/// product visibility while preserving historical category assignments.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model ecommerce_mall_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique channel code identifier used for system references and API calls.
-  /// Must be unique across all channels and follow consistent naming
-  /// conventions.
-  code String
+  /// Parent category's {@link ecommerce_mall_categories.id} for hierarchical
+  /// organization. Null for top-level categories.
+  parent_id String?
   
-  /// Display name of the shopping channel shown to users and administrators.
-  /// Should be descriptive of the channel's purpose and target audience.
+  /// Unique category name used for display and organization. Must be distinct
+  /// across all categories.
   name String
   
-  /// Detailed description explaining the channel's business purpose, target
-  /// market, and operational characteristics.
+  /// Detailed category description explaining the product scope and
+  /// organizational purpose.
   description String?
   
-  /// Current operational status of the channel. Valid values: active,
-  /// inactive, maintenance, planned. Controls channel visibility and
-  /// functionality.
+  /// Unique category code used for system reference and API identification.
+  code String
+  
+  /// Category status controlling visibility and functionality. Valid values:
+  /// 'active', 'inactive', 'archived'.
   status String
   
-  /// JSON configuration object storing channel-specific settings, policies,
-  /// and operational parameters. Allows flexible customization per channel.
-  configuration String?
+  /// Numerical order for category display sequence. Lower numbers appear first.
+  sort_order Int
   
-  /// Timestamp when the channel was first created in the system. Used for
-  /// audit trails and reporting.
+  /// Timestamp when the category was first created in the system.
   created_at DateTime
   
-  /// Timestamp when the channel configuration was last modified. Tracks
-  /// changes for version control.
+  /// Timestamp when the category was last modified.
   updated_at DateTime
   
-  /// Timestamp when the channel was soft-deleted. Allows for archival and
-  /// potential restoration while maintaining data integrity.
+  /// Timestamp when the category was soft deleted. Null indicates active
+  /// category.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_sections shopping_mall_sections[]
-  shopping_mall_coupons shopping_mall_coupons[]
-  shopping_mall_promotions shopping_mall_promotions[]
-  shopping_mall_articles shopping_mall_articles[]
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
   
+  children ecommerce_mall_categories[] @relation("recursive")
+  subcategories ecommerce_mall_subcategories[]
+  products ecommerce_mall_product_categories[]
+  sales ecommerce_mall_sales[]
+  saleCategories ecommerce_mall_sale_categories[]
+  
+  @@unique([name])
   @@unique([code])
-  @@index([status, created_at])
+  @@index([parent_id, status])
+  @@index([sort_order])
+  @@index([status])
+}
+
+/// Child categories that belong to parent categories for hierarchical
+/// product organization.
+///
+/// Subcategories provide a secondary level of classification within the
+/// product catalog hierarchy, allowing for more granular organization of
+/// products. Each subcategory must belong to exactly one parent category and
+/// maintains its own organizational structure.
+///
+/// Subcategories support flexible product classification and enable advanced
+/// filtering and browsing capabilities for customers. They can be
+/// independently managed, searched, and organized regardless of their parent
+/// category context.
+///
+/// The hierarchical relationship ensures proper product organization while
+/// allowing subcategories to have their own identity and management
+/// workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_subcategories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference. {@link ecommerce_mall_categories.id}
+  ecommerce_mall_category_id String
+  
+  /// Display name of the subcategory used for customer-facing navigation and
+  /// product organization.
+  name String
+  
+  /// Detailed description explaining the subcategory's purpose and product
+  /// scope.
+  description String?
+  
+  /// Numerical ordering value determining the display sequence of
+  /// subcategories within their parent category.
+  display_order Int
+  
+  /// Timestamp when the subcategory was initially created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the subcategory was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the subcategory was soft-deleted, allowing for recovery
+  /// and audit trail preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_category_id, name], map: "ecommerce_mall_subcategories_ecommerce_mall_category_i_6c14568d")
+  @@index([display_order])
   @@index([created_at])
 }
 
-/// Organizational sections within shopping channels that group related
-/// products or categories.
+/// System-wide configuration settings and feature flags controlling platform
+/// operation and behavior.
 ///
-/// Sections provide hierarchical organization within channels, allowing
-/// platform operators to create logical groupings such as departments,
-/// product categories, or thematic collections. Each section belongs to a
-/// specific channel and can contain products, sub-sections, or promotional
-/// content.
+/// Stores key-value pairs for all platform configuration parameters
+/// including feature toggles, operational settings, and system-wide
+/// parameters that control how the e-commerce platform functions. Supports
+/// hierarchical organization through parent-child relationships and allows
+/// enabling/disabling features without code changes.
 ///
-/// Sections enable targeted merchandising, personalized shopping
-/// experiences, and efficient product discovery. They support both manual
-/// curation by administrators and automated grouping based on product
-/// attributes or customer behavior.
+/// Each configuration setting includes type information for proper value
+/// validation and supports different data types including boolean flags,
+/// numeric values, string parameters, and JSON objects for complex
+/// configurations. Administrators can manage these settings through
+/// dedicated API endpoints to control platform behavior dynamically.
 ///
-/// Section hierarchy and organization directly impact customer navigation
-/// and search effectiveness. Proper section management is crucial for
-/// maintaining an intuitive shopping experience across diverse product
-/// catalogs.
+/// Configuration changes are tracked through standard audit timestamps, and
+/// the hierarchical structure allows organizing related settings together
+/// for easier management and navigation.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
+model ecommerce_mall_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent channel that contains this section. {@link
-  /// shopping_mall_channels.id}
-  shopping_mall_channel_id String
+  /// Parent configuration's {@link ecommerce_mall_configurations.id} for
+  /// hierarchical organization. Null for root-level configurations.
+  parent_configuration_id String?
   
-  /// Unique section code within the parent channel. Used for system
-  /// references, URLs, and organizational purposes.
-  code String
+  /// Configuration key identifier used to reference this setting in
+  /// application code.
+  key String
   
-  /// Display name of the section shown to customers and administrators. Should
-  /// clearly indicate the section's content and purpose.
+  /// Human-readable name for this configuration setting displayed in
+  /// administrative interfaces.
   name String
   
-  /// Detailed description of the section's purpose, content guidelines, and
-  /// target audience. Helps administrators manage section content effectively.
-  description String?
+  /// Detailed description explaining the purpose and usage of this
+  /// configuration setting.
+  description String
   
-  /// Optional parent section for creating hierarchical section structures.
-  /// Enables multi-level categorization and navigation.
-  parent_section_id String?
+  /// Data type of the configuration value. Valid values: boolean, string,
+  /// integer, double, json.
+  value_type String
   
-  /// Numeric order for section display within parent channel or section. Lower
-  /// numbers appear first in navigation and listings.
-  display_order Int
+  /// Configuration value when value_type is 'string'. Contains the string
+  /// parameter value.
+  string_value String?
   
-  /// Current status of the section. Valid values: active, inactive, hidden,
-  /// archived. Controls section visibility and functionality.
-  status String
+  /// Configuration value when value_type is 'boolean'. Contains the true/false
+  /// flag value.
+  boolean_value Boolean?
   
-  /// JSON configuration storing section-specific settings, display options,
-  /// and content rules. Allows customization of section behavior.
-  configuration String?
+  /// Configuration value when value_type is 'integer'. Contains the numeric
+  /// integer value.
+  integer_value Int?
   
-  /// Timestamp when the section was created. Used for auditing and tracking
-  /// section lifecycle.
+  /// Configuration value when value_type is 'double'. Contains the numeric
+  /// decimal value.
+  double_value Float?
+  
+  /// Configuration value when value_type is 'json'. Contains JSON-formatted
+  /// complex configuration data.
+  json_value String?
+  
+  /// Organizational category for grouping related configuration settings
+  /// together.
+  category String
+  
+  /// Whether this configuration setting is currently active and being applied
+  /// by the system.
+  is_active Boolean
+  
+  /// Whether this configuration contains sensitive data that requires special
+  /// security handling.
+  is_sensitive Boolean
+  
+  /// Timestamp when this configuration setting was initially created.
   created_at DateTime
   
-  /// Timestamp when the section configuration was last modified. Tracks
-  /// changes for version control.
+  /// Timestamp when this configuration setting was last modified.
   updated_at DateTime
-  
-  /// Timestamp when the section was soft-deleted. Allows archival while
-  /// maintaining referential integrity.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  parent ecommerce_mall_configurations? @relation("recursive", fields: [parent_configuration_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_articles shopping_mall_articles[]
+  children ecommerce_mall_configurations[] @relation("recursive")
   
-  @@unique([shopping_mall_channel_id, code])
+  @@unique([key])
+  @@index([category])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
-  @@index([parent_section_id, display_order])
-  @@index([status, created_at])
+  @@index([parent_configuration_id, is_active], map: "ecommerce_mall_configurations_parent_configuration_id__e529cc24")
+  @@index([value_type, is_active])
 }
 
-/// Global platform configuration settings that control system-wide behavior
-/// and policies.
+/// Sales channels configuration defining different sales environments with
+/// branding, settings, and operational parameters.
 ///
-/// This table stores centralized configuration parameters that affect the
-/// entire shopping mall platform. Configurations include system settings,
-/// feature flags, business rules, default values, and operational parameters
-/// that govern platform behavior across all channels and sections.
+/// Each channel represents a distinct sales environment with its own
+/// branding identity, operational settings, and configuration parameters.
+/// Channels can be configured independently to support different business
+/// models, customer segments, or geographic regions.
 ///
-/// Configuration settings support different environments (development,
-/// staging, production) and can be scoped to specific contexts or user
-/// groups. The system uses a hierarchical configuration model where more
-/// specific settings override general defaults.
+/// Channels contain branding elements such as logos, color schemes, and
+/// display settings that define the visual identity of the sales
+/// environment. Operational parameters include business rules, pricing
+/// strategies, and availability settings that govern how products are sold
+/// within each channel.
 ///
-/// Proper configuration management is essential for platform stability,
-/// feature rollout control, and operational flexibility. All configuration
-/// changes are audited to maintain system integrity and compliance.
+/// System administrators can create, configure, and manage channels
+/// independently to support multi-channel sales strategies. Each channel
+/// maintains its own configuration state and can be activated or deactivated
+/// based on business needs.
+///
+/// Soft deletion is supported to maintain configuration history while
+/// allowing channel retirement when no longer needed.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
+model ecommerce_mall_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key that identifies the setting. Follows dot
-  /// notation for hierarchical organization (e.g., 'payment.gateway.timeout').
-  config_key String
+  /// Unique channel name identifier used for system reference and display
+  /// purposes.
+  name String
   
-  /// Configuration value stored as string. Complex values are stored as JSON
-  /// strings. Values are type-cast based on configuration context.
-  config_value String
+  /// Human-readable channel name displayed to users and administrators.
+  display_name String
   
-  /// Data type of the configuration value. Valid values: string, number,
-  /// boolean, json, array, object. Guides value parsing and validation.
-  data_type String
+  /// Detailed description explaining the channel's purpose, target audience,
+  /// and business context.
+  description String?
   
-  /// Detailed description of the configuration setting's purpose, usage, and
-  /// acceptable values. Essential for administrative management.
-  description String
+  /// URL to the channel's branding logo image for visual identity.
+  logo_url String?
   
-  /// Configuration scope defining where the setting applies. Values: global,
-  /// channel, section, environment. Enables targeted configuration.
-  scope String
+  /// Branding color scheme definition in CSS or design system format.
+  color_scheme String?
   
-  /// Optional ID reference when scope is channel or section. Links
-  /// configuration to specific channel or section entities.
-  scope_id String?
+  /// Indicates whether the channel is currently active and available for use.
+  is_active Boolean
   
-  /// Target environment for this configuration. Values: development, staging,
-  /// production, all. Supports environment-specific settings.
-  environment String
+  /// JSON configuration object containing operational parameters and business
+  /// rules specific to this channel.
+  configuration_json String?
   
-  /// Indicates whether the configuration value should be encrypted at rest.
-  /// Used for sensitive data like API keys and credentials.
-  is_encrypted Boolean
-  
-  /// Configuration version number for tracking changes and supporting rollback
-  /// capabilities. Auto-incremented on updates.
-  version Int
-  
-  /// Timestamp when the configuration was initially created. Used for audit
-  /// trails and change tracking.
+  /// Timestamp when the channel configuration was initially created.
   created_at DateTime
   
-  /// Timestamp when the configuration was last modified. Tracks configuration
-  /// changes for version control.
+  /// Timestamp when the channel configuration was last modified.
   updated_at DateTime
   
-  /// Timestamp when the configuration was soft-deleted. Allows safe removal
-  /// while maintaining historical references.
+  /// Timestamp when the channel was soft-deleted, allowing for configuration
+  /// history preservation.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  // spellchecker: ignore-next-line
-  @@unique([config_key, scope, scope_id, environment], map: "shopping_mall_configurations_config_key_scope_scope_id_5bbfcd80")
-  @@index([scope, scope_id])
-  @@index([environment, created_at])
+  sections ecommerce_mall_sections[]
+  
+  @@unique([name])
+  @@index([is_active, created_at])
+  @@index([created_at])
+}
+
+/// Sections within channels for organizing content and products hierarchically.
+///
+/// Represents organizational units within sales channels that provide
+/// structured content arrangement and navigation. Sections can be nested
+/// hierarchically through parent-child relationships, allowing for complex
+/// organizational structures within individual channels.
+///
+/// Each section must belong to exactly one channel through the channel_id
+/// foreign key relationship. The parent_section_id enables hierarchical
+/// nesting within the same channel, with null values indicating top-level
+/// sections. Status field controls section visibility and ordering
+/// determines display sequence within the parent context.
+///
+/// Soft deletion is supported through deleted_at field to preserve
+/// organizational relationships while allowing section removal from active
+/// display. Sections serve as containers for organizing products,
+/// promotions, and marketing content within channel contexts.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged channel's {@link ecommerce_mall_channels.id}.
+  channel_id String
+  
+  /// Parent section's {@link ecommerce_mall_sections.id} for hierarchical
+  /// nesting.
+  parent_section_id String?
+  
+  /// Display name of the section for user interface identification.
+  name String
+  
+  /// Detailed description explaining the section's purpose and content.
+  description String?
+  
+  /// Display order position within the parent context or channel.
+  ordering Int
+  
+  /// Section status for visibility control (active, inactive, archived).
+  status String
+  
+  /// Timestamp when the section was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel ecommerce_mall_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  parent ecommerce_mall_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
+  
+  children ecommerce_mall_sections[] @relation("recursive")
+  
+  @@unique([channel_id, name])
+  @@index([parent_section_id])
+  @@index([ordering])
+  @@index([status])
+  @@index([channel_id, ordering])
+}
+
+/// System operation logs for audit trails, performance monitoring, and error
+/// tracking.
+///
+/// Captures detailed information about system events, errors, performance
+/// metrics, and operational activities across the e-commerce platform. Each
+/// log entry includes severity level, contextual data, and timestamps for
+/// chronological analysis.
+///
+/// Used by administrators for system health monitoring, debugging, security
+/// auditing, and performance optimization. Supports filtering by log level,
+/// time ranges, and specific system components for targeted analysis.
+///
+/// The logs provide comprehensive visibility into platform operations and
+/// serve as the foundation for alerting systems, performance dashboards, and
+/// security incident response workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Log severity level indicating the importance and nature of the log entry.
+  /// Common values include 'error', 'warning', 'info', 'debug', 'trace' for
+  /// system monitoring and filtering.
+  level String
+  
+  /// Detailed log message describing the event, error, or system activity.
+  /// Contains context-specific information for debugging and analysis
+  /// purposes.
+  message String
+  
+  /// Source IP address associated with the logged event, providing network
+  /// context for security monitoring and request tracing.
+  ip String?
+  
+  /// User agent string from the client connection, useful for identifying
+  /// client devices, browsers, and application versions involved in system
+  /// events.
+  user_agent String?
+  
+  /// Additional contextual data in JSON format containing detailed information
+  /// specific to the logged event, such as request parameters, error details,
+  /// or performance metrics.
+  context String?
+  
+  /// System component or module where the log event originated, enabling
+  /// targeted monitoring and component-specific log analysis.
+  component String?
+  
+  /// Timestamp when the log entry was created, used for chronological ordering
+  /// and time-based log analysis. Supports time-series analysis and event
+  /// correlation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([level, created_at])
   @@index([created_at])
 }

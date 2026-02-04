@@ -1,320 +1,527 @@
-# Community Platform Service Overview
+# Reddit-like Community Platform Requirements Specification
 
 ## Executive Summary
 
-The Community Platform is a Reddit-like online community service designed to facilitate meaningful discussions, content sharing, and community building across diverse interest groups. This platform addresses the growing need for specialized, moderated online spaces where users can engage in authentic conversations, discover relevant content, and connect with like-minded individuals.
+This document provides comprehensive requirements for a Reddit-like community platform that enables users to create, moderate, and participate in online communities. The platform supports user registration, content creation, voting systems, moderation tools, and community management features.
 
-**Core Mission**: To create the most engaging and user-friendly community platform that empowers users to share knowledge, build communities, and participate in meaningful discussions across any topic of interest.
+## User Account Management
 
-**Platform Vision**: THE platform SHALL provide a democratic content curation environment where community voting determines content visibility, while maintaining robust moderation tools to ensure platform integrity and user safety.
+### User Registration Process
 
-## Business Model
+**WHEN** a new user initiates registration, **THE** system **SHALL** require email address, password, and unique username.
 
-### Revenue Strategy
-The platform employs a multi-tiered revenue model focused on sustainable growth and user value:
+**WHEN** a user submits registration information, **THE** system **SHALL** validate email format, password strength (minimum 8 characters), and username uniqueness.
 
-**Primary Revenue Streams**:
-- **Premium Memberships**: Enhanced features for power users including advanced analytics, custom communities, and priority support
-- **Targeted Advertising**: Non-intrusive, community-relevant advertising based on user interests and engagement patterns
-- **Community Sponsorships**: Brands can sponsor specific communities with transparent, value-added partnerships
-- **API Access Fees**: Commercial access to platform data and integration capabilities
+**WHEN** registration validation fails, **THE** system **SHALL** provide specific error messages indicating which requirements were not met.
 
-**Secondary Revenue Opportunities**:
-- **Content Syndication**: Licensing high-quality community content to media outlets
-- **Premium Moderation Tools**: Advanced tools for community moderators managing large communities
-- **White-label Solutions**: Enterprise-grade community platforms for businesses
+**WHEN** registration succeeds, **THE** system **SHALL** send email verification and create a pending user account.
 
-### Value Exchange Proposition
-The platform operates on a value-first approach where:
-- **Free users** receive comprehensive access to core features
-- **Premium features** enhance but don't restrict the core experience
-- **Advertising** remains relevant and non-disruptive to user engagement
-- **Community sponsorships** provide genuine value to both sponsors and community members
+### User Authentication Workflow
 
-**Business Rule Requirements**:
-- WHEN a user signs up for premium membership, THE system SHALL provide immediate access to enhanced features
-- WHERE advertising is displayed, THE system SHALL ensure it remains non-intrusive and community-relevant
-- IF community sponsorship occurs, THEN THE sponsorship SHALL be transparently disclosed to community members
+**WHEN** a user attempts to log in, **THE** system **SHALL** authenticate using email and password combination.
 
-## Target Market Analysis
+**WHEN** authentication succeeds, **THE** system **SHALL** create a session token valid for 24 hours.
 
-### Primary User Segments
+**WHEN** authentication fails due to incorrect credentials, **THE** system **SHALL** return generic error message without specifying whether email or password was incorrect.
 
-**Content Creators & Experts** (25-45 age group):
-- Professionals seeking to share knowledge and build reputation
-- Industry experts establishing thought leadership
-- Hobbyists passionate about specific topics
+**WHEN** a user exceeds 5 failed login attempts within 15 minutes, **THE** system **SHALL** temporarily lock the account for 30 minutes.
 
-**Community Seekers** (18-35 age group):
-- Individuals looking for niche communities and meaningful connections
-- Students and young professionals seeking knowledge sharing
-- People with specialized interests not served by mainstream platforms
+### Password Management
 
-**Brands & Organizations** (B2B segment):
-- Companies seeking authentic engagement with their audiences
-- Non-profits building supporter communities
-- Educational institutions fostering student discussions
+**WHEN** an authenticated user requests password change, **THE** system **SHALL** require current password verification.
 
-### Market Opportunity
-- **Global online community market**: Estimated $15B+ with 15% annual growth
-- **Niche community gap**: Existing platforms often too broad or too restrictive
-- **Mobile-first engagement**: Increasing demand for mobile-optimized community experiences
-- **Professional community growth**: Rise of professional knowledge-sharing platforms
+**WHEN** password change succeeds, **THE** system **SHALL** invalidate all existing sessions and require re-authentication.
 
-**Market Penetration Strategy**:
-- WHEN launching the platform, THE company SHALL focus on underserved niche communities
-- WHERE market opportunities exist, THE platform SHALL prioritize communities with high engagement potential
-- IF user growth targets are met, THEN THE platform SHALL expand to broader community categories
+**WHEN** a user forgets their password, **THE** system **SHALL** send password reset link to registered email address.
 
-## Core Value Proposition
+### Account Deletion Process
 
-### For Users
-- **Authentic Engagement**: Algorithm-free content discovery based on community voting
-- **Specialized Communities**: Deep, focused discussions without mainstream noise
-- **User Empowerment**: Democratic content moderation through community voting
-- **Knowledge Preservation**: Structured content organization and search capabilities
-- **Cross-Community Discovery**: Intelligent recommendations across related communities
+**WHEN** a user requests account deletion, **THE** system **SHALL** require password confirmation and display deletion consequences.
 
-### For Community Builders
-- **Flexible Moderation Tools**: Customizable community guidelines and moderation workflows
-- **Growth Analytics**: Insights into community health and member engagement
-- **Monetization Support**: Tools for community-led revenue generation
-- **Content Management**: Advanced tools for organizing and showcasing community content
+**WHEN** account deletion is confirmed, **THE** system **SHALL** permanently remove all user data including posts, comments, and profile information.
 
-### For Advertisers & Sponsors
-- **Targeted Reach**: Precise audience targeting based on interests and engagement
-- **Authentic Context**: Brand integration within relevant community discussions
-- **Measurable Impact**: Clear analytics on engagement and conversion metrics
+**WHEN** account deletion completes, **THE** system **SHALL** send confirmation email and invalidate all active sessions.
 
-**Value Delivery Requirements**:
-- WHEN a user joins the platform, THE system SHALL provide immediate access to core community features
-- WHERE community builders need moderation tools, THE system SHALL offer comprehensive moderation capabilities
-- IF advertisers seek targeted audiences, THEN THE platform SHALL provide precise targeting options based on community interests
+## User Profile System
 
-## Competitive Landscape
+### Profile Structure Requirements
 
-### Direct Competitors
-- **Reddit**: Established but often overwhelming for niche communities
-- **Discord**: Real-time focused, less structured for content discovery
-- **Facebook Groups**: Privacy concerns and algorithm-driven content
-- **Stack Exchange**: Highly specialized but limited to Q&A format
+Each user profile **SHALL** contain:
+- Display name (editable by user)
+- Bio text (maximum 500 characters)
+- Avatar image (supports JPEG, PNG, GIF formats up to 2MB)
+- Total karma score (read-only)
+- Account creation date (read-only)
+- Last activity timestamp (read-only)
 
-### Competitive Advantages
+### Profile Editing Functions
 
-**User Experience Differentiation**:
-- **Intuitive Interface**: Clean, modern design optimized for content discovery
-- **Mobile Excellence**: Superior mobile experience compared to competitors
-- **Accessibility Focus**: Commitment to inclusive design and accessibility standards
+**WHEN** a user edits their profile, **THE** system **SHALL** validate display name length (2-30 characters) and bio length (0-500 characters).
 
-**Technical Innovation**:
-- **Advanced Search**: Semantic search understanding context and relationships
-- **Smart Recommendations**: AI-powered content discovery across communities
-- **Real-time Features**: Live discussions and instant updates without compromising structure
+**WHEN** a user uploads an avatar, **THE** system **SHALL** resize image to 256x256 pixels and compress for optimal storage.
 
-**Community-First Approach**:
-- **Moderator Empowerment**: Better tools and support for community leaders
-- **Transparent Governance**: Clear policies and community input mechanisms
-- **Sustainable Growth**: Focus on community health over rapid expansion
+**WHEN** profile updates succeed, **THE** system **SHALL** immediately reflect changes across all profile views.
 
-**Competitive Positioning Requirements**:
-- WHEN competing with established platforms, THE service SHALL emphasize niche community specialization
-- WHERE user experience differs, THE platform SHALL highlight superior mobile optimization and accessibility
-- IF feature comparisons occur, THEN THE service SHALL demonstrate advanced moderation tools and community empowerment
+### Profile Viewing Permissions
 
-## Vision and Goals
+**WHEN** any user views another user's profile, **THE** system **SHALL** display:
+- Display name, bio, and avatar
+- Total karma score
+- List of all posts created by the user (paginated)
+- List of all comments written by the user (paginated)
+- Account age and last activity time
 
-### Short-Term Goals (0-12 months)
-- **Launch MVP**: Core community features with 50+ active communities
-- **User Acquisition**: Reach 100,000 registered users with 25% monthly active rate
-- **Community Diversity**: Establish communities across 20+ major interest categories
-- **Mobile App Launch**: Full-featured iOS and Android applications
+**WHEN** viewing own profile, **THE** system **SHALL** provide editing controls and private statistics.
 
-### Medium-Term Goals (1-3 years)
-- **Platform Maturity**: Advanced features including live events and premium tools
-- **User Growth**: Expand to 1 million active users with strong retention metrics
-- **Monetization Scale**: Achieve sustainable revenue covering operational costs
-- **International Expansion**: Support for multiple languages and regional communities
+## Karma Scoring System
 
-### Long-Term Vision (3-5 years)
-- **Market Leadership**: Become the go-to platform for specialized online communities
-- **Ecosystem Development**: Third-party developer ecosystem with API integrations
-- **AI Enhancement**: Advanced AI features for content moderation and discovery
-- **Global Community**: Support for diverse cultures and languages worldwide
+### Karma Calculation Rules
 
-**Goal Achievement Requirements**:
-- WHEN launching the MVP, THE platform SHALL include core community creation and content sharing features
-- WHERE user growth targets are set, THE system SHALL track acquisition metrics against established benchmarks
-- IF international expansion occurs, THEN THE platform SHALL support multiple language interfaces and regional community features
+**WHEN** a post receives an upvote, **THE** system **SHALL** increase author's karma by 1 point.
 
-## Success Metrics
+**WHEN** a post receives a downvote, **THE** system **SHALL** decrease author's karma by 1 point.
 
-### Key Performance Indicators
+**WHEN** a comment receives an upvote, **THE** system **SHALL** increase author's karma by 1 point.
 
-**User Engagement Metrics**:
-- **Monthly Active Users (MAU)**: Target 1M within 3 years
-- **Daily Active Users (DAU)**: Target 30% of MAU as daily active
-- **User Retention**: 70% month-over-month retention for registered users
-- **Content Creation**: Average 5 posts per active user monthly
+**WHEN** a comment receives a downvote, **THE** system **SHALL** decrease author's karma by 1 point.
 
-**Community Health Metrics**:
-- **Community Growth**: 20% month-over-month growth in active communities
-- **Moderator Satisfaction**: 90%+ satisfaction rate among community moderators
-- **Content Quality**: 95%+ of content meeting community guidelines
-- **Response Time**: Average 2-hour response time for support requests
+**WHEN** a vote is removed, **THE** system **SHALL** adjust karma score accordingly.
 
-**Business Metrics**:
-- **Revenue Growth**: 50% quarter-over-quarter revenue growth
-- **Customer Acquisition Cost**: Maintain below $5 per registered user
-- **Lifetime Value**: Average user LTV of $50+
-- **Profitability**: Achieve operational profitability within 24 months
+### Karma Display Requirements
 
-### Measurement Framework
+**WHEN** karma score is displayed, **THE** system **SHALL** show total cumulative score without breakdown.
 
-**Weekly Monitoring**:
-- User registration and activation rates
-- Community creation and growth metrics
-- Content engagement and quality indicators
+**WHEN** karma score is negative, **THE** system **SHALL** display with minus sign.
 
-**Monthly Reporting**:
-- Financial performance against projections
-- User retention and satisfaction scores
-- Platform performance and reliability metrics
+**WHEN** karma calculation occurs, **THE** system **SHALL** ensure atomic operations to prevent race conditions.
 
-**Quarterly Reviews**:
-- Strategic goal achievement assessment
-- Competitive positioning analysis
-- Product roadmap adjustments based on metrics
-
-**Metric Tracking Requirements**:
-- WHEN user engagement metrics are collected, THE system SHALL provide real-time dashboard visibility
-- WHERE business metrics require calculation, THE platform SHALL maintain accurate financial tracking
-- IF performance benchmarks are not met, THEN THE company SHALL implement corrective action plans
-
-## Strategic Positioning
-
-The Community Platform positions itself as the **premier destination for authentic online communities** by focusing on:
-
-**Quality over Quantity**: Prioritizing meaningful engagement over sheer user numbers
-**Community Empowerment**: Giving communities control over their space and rules
-**Technical Excellence**: Building the most reliable and feature-rich platform
-**Sustainable Growth**: Balancing user needs with business requirements
-
-**Strategic Implementation Requirements**:
-- WHEN making platform decisions, THE company SHALL prioritize community quality over rapid user acquisition
-- WHERE technical features are developed, THE platform SHALL focus on reliability and user experience
-- IF growth opportunities arise, THEN THE company SHALL evaluate them against sustainable community development principles
-
-This strategic approach ensures the platform remains true to its core mission while building a sustainable business that serves users, community builders, and stakeholders effectively.
-
-## User Authentication and Authorization Framework
-
-### Authentication System Overview
-The platform implements a comprehensive JWT-based authentication system supporting four distinct user roles with granular permissions:
-
-```mermaid
-graph TD
-    A["Guest User<br/>Browse Public Content"] --> B["Member User<br/>Create Content & Vote"]
-    B --> C["Moderator User<br/>Community Management"]
-    C --> D["Admin User<br/>Platform Administration"]
-    
-    A --> E["View Public Posts"]
-    A --> F["Browse Communities"]
-    A --> G["Search Content"]
-    
-    B --> H["Create Posts & Comments"]
-    B --> I["Upvote/Downvote Content"]
-    B --> J["Subscribe to Communities"]
-    
-    C --> K["Remove Content"]
-    C --> L["Ban Users from Community"]
-    C --> M["Manage Community Settings"]
-    
-    D --> N["Manage All Users"]
-    D --> O["System Configuration"]
-    D --> P["Platform Analytics"]
-```
-
-### Permission Hierarchy Implementation
-**Guest User Requirements**:
-- WHEN a guest user accesses the platform, THE system SHALL allow browsing of public content without authentication
-- WHERE guest users attempt restricted actions, THE system SHALL prompt for registration or login
-
-**Member User Requirements**:
-- WHEN a member registers successfully, THE system SHALL provide immediate access to content creation features
-- IF email verification is required, THEN THE system SHALL restrict certain actions until verification is complete
-
-**Moderator User Requirements**:
-- WHERE a user becomes a community moderator, THE system SHALL grant community-specific moderation permissions
-- WHEN moderation actions are taken, THE system SHALL maintain comprehensive audit logs
-
-**Admin User Requirements**:
-- IF administrative functions are accessed, THEN THE system SHALL require enhanced security verification
-- WHERE platform-wide changes are made, THE system SHALL notify affected users appropriately
-
-## Business Process Documentation
+## Community Management
 
 ### Community Creation Process
-```mermaid
-graph LR
-    A["Member Requests<br/>Community Creation"] --> B["Validate Community<br/>Name Availability"]
-    B --> C{"Name Available?"}
-    C -->|"No"| D["Show Error:<br/>Name Already Taken"]
-    C -->|"Yes"| E["Create Community<br/>Record"]
-    E --> F["Assign Creator as<br/>Primary Moderator"]
-    F --> G["Configure Default<br/>Community Settings"]
-    G --> H["Redirect to New<br/>Community Page"]
-```
 
-**Community Creation Requirements**:
-- WHEN a member creates a community, THE system SHALL validate the community name for uniqueness and appropriateness
-- IF community creation succeeds, THEN THE creator SHALL automatically receive moderator privileges
-- WHERE community settings are configured, THE system SHALL apply reasonable defaults for new communities
+**WHEN** an authenticated user creates a community, **THE** system **SHALL** require:
+- Unique community name (3-20 characters, alphanumeric and hyphens only)
+- Description text (10-500 characters)
+- Optional icon image (supports JPEG, PNG formats up to 1MB)
 
-### Content Submission Workflow
-```mermaid
-graph LR
-    A["Member Selects<br/>Target Community"] --> B["Choose Post Type<br/>(Text, Link, Media)"]
-    B --> C["Enter Post Content<br/>& Metadata"]
-    C --> D["Validate Against<br/>Community Rules"]
-    D --> E{"Validation<br/>Passed?"}
-    E -->|"No"| F["Show Specific<br/>Error Message"]
-    E -->|"Yes"| G["Submit for<br/>Moderation Review"]
-    G --> H{"Moderation<br/>Required?"}
-    H -->|"No"| I["Publish Immediately<br/>to Community Feed"]
-    H -->|"Yes"| J["Add to Moderation<br/>Queue"]
-    I --> K["Notify Subscribers<br/>& Update Feeds"]
-    J --> L["Show "Pending<br/>Approval" Status"]
-```
+**WHEN** community creation succeeds, **THE** system **SHALL** automatically subscribe the creator and assign owner role.
 
-**Content Submission Requirements**:
-- WHEN a member submits content, THE system SHALL validate it against community-specific rules
-- IF content requires moderation, THEN THE system SHALL place it in a moderation queue for review
-- WHERE content is published successfully, THE system SHALL notify community subscribers appropriately
+**WHEN** community name conflicts exist, **THE** system **SHALL** suggest available alternatives.
 
-### User Engagement Flow
+### Community Structure Requirements
+
+Each community **SHALL** maintain:
+- Unique identifier and display name
+- Description text
+- Icon image URL
+- Owner user reference
+- Creation timestamp
+- Subscriber count
+- Post count
+- Active moderator list
+- Banned user list
+
+### Community Discovery System
+
+**WHEN** users browse communities, **THE** system **SHALL** provide:
+- Paginated list of all communities sorted by subscriber count
+- Search functionality by community name
+- Filter by creation date (new, popular, trending)
+- Community statistics (subscriber count, post frequency)
+
+**WHEN** searching communities, **THE** system **SHALL** support partial name matching and return maximum 50 results per page.
+
+## Subscription Management
+
+### Subscription Rules
+
+**WHEN** a user subscribes to a community, **THE** system **SHALL** add community to user's subscription list.
+
+**WHEN** a user unsubscribes from a community, **THE** system **SHALL** remove community from subscription list.
+
+**WHEN** subscription changes occur, **THE** system **SHALL** update subscriber count in real-time.
+
+### Subscription-Based Posting
+
+**WHEN** a user attempts to create a post, **THE** system **SHALL** verify user is subscribed to target community.
+
+**WHEN** subscription requirement is not met, **THE** system **SHALL** prevent post creation and prompt subscription.
+
+**WHEN** viewing subscription list, **THE** system **SHALL** show:
+- Community names and icons
+- Recent activity indicators
+- Unread post counts (if applicable)
+- Quick unsubscribe options
+
+## Post Management System
+
+### Post Creation Requirements
+
+**WHEN** creating a post, **THE** system **SHALL** require:
+- Title (5-300 characters)
+- Post type selection (text, link, or image)
+- Community selection (must be subscribed)
+
+**WHEN** post type is text, **THE** system **SHALL** require content text (10-10,000 characters).
+
+**WHEN** post type is link, **THE** system **SHALL** validate URL format and prevent duplicate links.
+
+**WHEN** post type is image, **THE** system **SHALL** support JPEG, PNG, GIF formats up to 10MB.
+
+### Post Editing and Deletion
+
+**WHEN** a user edits their post, **THE** system **SHALL** allow title and content modifications.
+
+**WHEN** post editing occurs, **THE** system **SHALL** maintain edit history with timestamps.
+
+**WHEN** a user deletes their post, **THE** system **SHALL** remove post and all associated comments.
+
+**WHEN** post deletion occurs, **THE** system **SHALL** update community post counts accordingly.
+
+### Post Viewing Requirements
+
+**WHEN** viewing a single post, **THE** system **SHALL** display:
+- Complete post title and content
+- Author username with profile link
+- Community name with community link
+- Current vote score
+- Total comment count
+- Post creation timestamp
+- Edit history (if applicable)
+
+## Post Voting System
+
+### Voting Rules Implementation
+
+**WHEN** a user votes on a post, **THE** system **SHALL** enforce one vote per user per post.
+
+**WHEN** upvoting, **THE** system **SHALL** add 1 to post score and author karma.
+
+**WHEN** downvoting, **THE** system **SHALL** subtract 1 from post score and author karma.
+
+**WHEN** changing vote, **THE** system **SHALL** calculate net change and apply accordingly.
+
+**WHEN** removing vote, **THE** system **SHALL** revert previous vote impact.
+
+### Vote Validation
+
+**WHEN** processing votes, **THE** system **SHALL** verify:
+- User authentication status
+- Post existence and visibility
+- User not banned from community
+- Vote not already cast (for new votes)
+
+**WHEN** vote validation fails, **THE** system **SHALL** return appropriate error message.
+
+## Feed Management System
+
+### Home Feed Requirements
+
+**WHEN** authenticated user views home feed, **THE** system **SHALL** show posts only from subscribed communities.
+
+**WHEN** home feed is empty, **THE** system **SHALL** suggest popular communities to subscribe.
+
+**WHEN** home feed loads, **THE** system **SHALL** apply user's preferred sorting algorithm.
+
+### Popular Feed Requirements
+
+**WHEN** any user views popular feed, **THE** system **SHALL** show posts from all communities.
+
+**WHEN** popular feed displays to logged-out users, **THE** system **SHALL** exclude NSFW content.
+
+**WHEN** popular feed sorts content, **THE** system **SHALL** use platform-wide engagement metrics.
+
+### Community Feed Requirements
+
+**WHEN** viewing community feed, **THE** system **SHALL** show posts from specific community only.
+
+**WHEN** community feed displays to non-subscribers, **THE** system **SHALL** show all non-restricted content.
+
+**WHEN** community has restricted content, **THE** system **SHALL** require subscription for access.
+
+### Feed Sorting Algorithms
+
+**Hot Algorithm**: **SHALL** prioritize recent posts with high engagement using formula combining time decay and vote velocity.
+
+**New Algorithm**: **SHALL** sort by creation timestamp descending.
+
+**Top Algorithm**: **SHALL** sort by vote score with time filters (today, week, month, year, all time).
+
+**Controversial Algorithm**: **SHALL** prioritize posts with high vote count but score close to zero.
+
+### Feed Pagination
+
+**WHEN** feeds exceed page limit, **THE** system **SHALL** implement cursor-based pagination.
+
+**WHEN** loading next page, **THE** system **SHALL** maintain sorting consistency.
+
+**WHEN** pagination reaches end, **THE** system **SHALL** indicate no more content available.
+
+## Post List Display
+
+### List Item Requirements
+
+Each post in feed lists **SHALL** display:
+- Post title (truncated if necessary)
+- Author username
+- Community name
+- Current vote score
+- Total comment count
+- Relative time since posting
+- Content preview based on post type
+
+### Content Previews by Type
+
+**WHEN** post type is text, **THE** system **SHALL** show first 200 characters of content.
+
+**WHEN** post type is image, **THE** system **SHALL** display thumbnail (100x100 pixels).
+
+**WHEN** post type is link, **THE** system **SHALL** show domain name from URL.
+
+### Performance Requirements
+
+**WHEN** loading post lists, **THE** system **SHALL** render within 2 seconds for 50 items.
+
+**WHEN** images load, **THE** system **SHALL** use lazy loading and progressive enhancement.
+
+**WHEN** network conditions are poor, **THE** system **SHALL** provide fallback text content.
+
+## Comment System
+
+### Comment Creation Rules
+
+**WHEN** creating a comment, **THE** system **SHALL** require:
+- Content text (1-10,000 characters)
+- Parent post reference
+- Optional parent comment reference for replies
+
+**WHEN** comment creation succeeds, **THE** system **SHALL** update post comment count.
+
+**WHEN** replying to comment, **THE** system **SHALL** maintain nested thread structure.
+
+### Comment Editing and Deletion
+
+**WHEN** editing comments, **THE** system **SHALL** preserve edit history with timestamps.
+
+**WHEN** deleting comments, **THE** system **SHALL** remove comment and all child replies.
+
+**WHEN** comment moderation occurs, **THE** system **SHALL** maintain audit trails.
+
+### Nested Comment Display
+
+**WHEN** displaying comments, **THE** system **SHALL** support unlimited nesting depth.
+
+**WHEN** comment threads are deep, **THE** system **SHALL** provide collapse/expand functionality.
+
+**WHEN** sorting comments, **THE** system **SHALL** maintain thread relationships.
+
+## Comment Voting System
+
+### Voting Implementation
+
+**WHEN** voting on comments, **THE** system **SHALL** apply same rules as post voting.
+
+**WHEN** comment vote changes, **THE** system **SHALL** update author karma accordingly.
+
+**WHEN** vote conflicts occur, **THE** system **SHALL** resolve with last-action-wins policy.
+
+### Vote Validation
+
+**WHEN** processing comment votes, **THE** system **SHALL** verify:
+- Comment visibility and accessibility
+- User permissions in community
+- Vote integrity constraints
+
+## Comment Sorting Options
+
+### Best Sorting Algorithm
+
+**WHEN** sorting by best, **THE** system **SHALL** use confidence score based on vote ratio and total votes.
+
+### New Sorting Algorithm
+
+**WHEN** sorting by new, **THE** system **SHALL** order by creation timestamp descending.
+
+### Controversial Sorting Algorithm
+
+**WHEN** sorting by controversial, **THE** system **SHALL** prioritize comments with high vote disparity.
+
+## Community Moderation System
+
+### Moderator Hierarchy
+
+**Community Owner**: **SHALL** have ultimate authority including moderator management.
+
+**Moderators**: **SHALL** have content moderation permissions but cannot manage other moderators.
+
+**WHEN** owner adds moderators, **THE** system **SHALL** notify users and log the action.
+
+**WHEN** owner removes moderators, **THE** system **SHALL** revoke permissions immediately.
+
+### Moderator Permissions
+
+**WHEN** moderators perform actions, **THE** system **SHALL** allow:
+- Deleting any post in community
+- Deleting any comment in community
+- Banning users from community
+- Unbanning users
+- Viewing banned users list
+- Processing reports
+
+**WHEN** moderation actions occur, **THE** system **SHALL** maintain comprehensive audit logs.
+
+### User Banning System
+
+**WHEN** banning users, **THE** system **SHALL** prevent banned users from:
+- Creating posts in community
+- Writing comments in community
+- Voting on community content
+
+**WHEN** users are banned, **THE** system **SHALL** allow them to view content read-only.
+
+**WHEN** ban duration expires, **THE** system **SHALL** automatically restore permissions.
+
+## Reporting System
+
+### Report Creation Process
+
+**WHEN** users report content, **THE** system **SHALL** require:
+- Reason text (10-500 characters)
+- Content reference (post or comment)
+- Reporting user authentication
+
+**WHEN** report is submitted, **THE** system **SHALL** notify community moderators.
+
+**WHEN** duplicate reports occur, **THE** system **SHALL** consolidate into single case.
+
+### Moderator Report Review
+
+**WHEN** moderators review reports, **THE** system **SHALL** provide:
+- Reported content context
+- Reporting user information
+- Report reason and timestamp
+- Previous report history for same content
+
+**WHEN** moderators approve reports, **THE** system **SHALL** delete reported content.
+
+**WHEN** moderators dismiss reports, **THE** system **SHALL** remove from active queue.
+
+### Report Resolution Workflow
+
 ```mermaid
 graph TD
-    A["User Discovers<br/>Content"] --> B["Read Post &<br/>Comments"]
-    B --> C["Interact with<br/>Content"]
-    C --> D{"User Action?"}
-    D -->|"Upvote"| E["Increase Content<br/>Score"]
-    D -->|"Downvote"| F["Decrease Content<br/>Score"]
-    D -->|"Comment"| G["Add to Discussion<br/>Thread"]
-    D -->|"Share"| H["Distribute Content<br/>to Networks"]
-    
-    E --> I["Update Visibility<br/>Algorithm"]
-    F --> I
-    G --> J["Notify Post Author<br/>& Participants"]
-    H --> K["Track Sharing<br/>Metrics"]
-    
-    I --> L["Adjust Content<br/>Ranking"]
-    J --> M["Encourage Further<br/>Discussion"]
-    K --> N["Measure Content<br/>Virality"]
+    A["User Submits Report"] --> B["Report Queued for Review"]
+    B --> C["Moderator Reviews Report"]
+    C --> D{"Decision"}
+    D -->|Approve| E["Content Deleted"]
+    D -->|Dismiss| F["Report Closed"]
+    E --> G["User Notified of Action"]
+    F --> G
+    G --> H["Case Resolved"]
 ```
 
-**Engagement Requirements**:
-- WHEN users interact with content, THE system SHALL provide immediate feedback on their actions
-- WHERE voting occurs, THE system SHALL update content scores in real-time
-- IF comments are added, THEN THE system SHALL maintain proper threading and notification systems
+## System Performance Requirements
 
-This enhanced service overview provides comprehensive business requirements for the Reddit-like community platform, ensuring all stakeholders have clear understanding of the platform's objectives, features, and success metrics. The document focuses on natural language business requirements while avoiding technical implementation details, making it suitable for business stakeholders, investors, and executive leadership.
+### Response Time Standards
+
+**WHEN** serving feed content, **THE** system **SHALL** respond within 200ms for cached requests.
+
+**WHEN** processing votes, **THE** system **SHALL** complete within 100ms.
+
+**WHEN** loading user profiles, **THE** system **SHALL** render within 500ms.
+
+### Scalability Targets
+
+**WHEN** under load, **THE** system **SHALL** support:
+- 10,000 concurrent users
+- 1,000 new posts per minute
+- 10,000 votes per minute
+- 100,000 comments per hour
+
+### Availability Requirements
+
+**WHEN** operational, **THE** system **SHALL** maintain 99.9% uptime.
+
+**WHEN** failures occur, **THE** system **SHALL** provide graceful degradation.
+
+## Data Retention Policies
+
+### Content Retention
+
+User-generated content **SHALL** be retained indefinitely unless deleted by user or moderation.
+
+Edit history **SHALL** be maintained for 90 days after content deletion.
+
+Audit logs **SHALL** be retained for 365 days.
+
+### Privacy Compliance
+
+**WHEN** handling user data, **THE** system **SHALL** comply with GDPR and CCPA requirements.
+
+**WHEN** users request data export, **THE** system **SHALL** provide complete data within 30 days.
+
+**WHEN** account deletion occurs, **THE** system **SHALL** permanently erase all personal data.
+
+## Error Handling Requirements
+
+### User-Facing Errors
+
+**WHEN** errors occur, **THE** system **SHALL** provide clear, actionable error messages.
+
+**WHEN** validation fails, **THE** system **SHALL** indicate specific field requirements.
+
+**WHEN** permission errors occur, **THE** system **SHALL** explain required permissions.
+
+### System Errors
+
+**WHEN** system failures occur, **THE** system **SHALL** maintain service degradation rather than complete outage.
+
+**WHEN** database errors occur, **THE** system **SHALL** retry with exponential backoff.
+
+**WHEN** critical failures occur, **THE** system **SHALL** alert administrators immediately.
+
+## Security Requirements
+
+### Authentication Security
+
+**WHEN** storing passwords, **THE** system **SHALL** use bcrypt hashing with work factor 12.
+
+**WHEN** transmitting sensitive data, **THE** system **SHALL** use TLS 1.3 encryption.
+
+**WHEN** session management, **THE** system **SHALL** implement CSRF protection.
+
+### Content Security
+
+**WHEN** processing user content, **THE** system **SHALL** sanitize HTML to prevent XSS attacks.
+
+**WHEN** handling file uploads, **THE** system **SHALL** validate file types and scan for malware.
+
+**WHEN** storing images, **THE** system **SHALL** use secure CDN with access controls.
+
+## Monitoring and Analytics
+
+### Performance Monitoring
+
+**WHEN** operational, **THE** system **SHALL** track:
+- Response times by endpoint
+- Error rates and types
+- User engagement metrics
+- System resource utilization
+
+### Business Metrics
+
+**WHEN** reporting, **THE** system **SHALL** provide:
+- Daily active users
+- Content creation rates
+- Community growth metrics
+- User retention statistics
+
+### Moderation Metrics
+
+**WHEN** analyzing moderation, **THE** system **SHALL** track:
+- Report response times
+- Moderation action rates
+- User satisfaction scores
+- Content quality trends
+
+This requirements specification provides comprehensive guidance for developing a Reddit-like community platform with robust features for user engagement, content management, and community moderation.

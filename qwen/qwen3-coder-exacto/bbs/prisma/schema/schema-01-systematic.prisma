@@ -1,86 +1,54 @@
-/// System-wide configuration settings for the economic/political discussion
-/// board platform.
+/// File attachments associated with articles for supplementary content.
 ///
-/// This table stores global configuration values that control the behavior
-/// and policies of the entire discussion board system. It contains settings
-/// that affect platform functionality, content policies, and operational
-/// parameters that apply across all user interactions.
+/// This table stores metadata for files that users attach to their articles.
+/// Each record represents a single file attachment and includes information
+/// about the file's location, size, and type. Files are associated with
+/// specific articles and can be downloaded by users with appropriate
+/// permissions.
 ///
-/// Settings in this table are typically managed by system administrators and
-/// affect the entire platform rather than individual users or content.
-/// Values are usually set during initial configuration and modified only for
-/// significant policy or operational changes.
-///
-/// The table is designed to store configuration as key-value pairs with
-/// typed values to support various setting types. Changes to settings are
-/// tracked through the updated_at timestamp and audit fields to maintain an
-/// audit trail of configuration modifications.
-///
-/// Support for logical deletion allows settings to be marked as inactive
-/// without removing historical references, supporting compliance and
-/// rollback scenarios.
+/// The system supports multiple file attachments per article, allowing
+/// users to provide supplementary materials such as documents,
+/// presentations, or data files. All attached files are stored
+/// securely with unique identifiers to prevent conflicts.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_system_settings {
+model discussion_board_article_files {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the moderator who last updated this setting. {@link
-  /// discussion_board_moderator.id}.
-  updated_by String?
+  /// The article this file is attached to. {@link discussion_board_articles.id}
+  discussion_board_article_id String
   
-  /// Unique identifier for the configuration setting. This key is used
-  /// programmatically to retrieve specific configuration values. Examples
-  /// include 'max_image_size', 'allowed_file_types', 'posts_per_page',
-  /// 'session_timeout_minutes'.
-  setting_key String
+  /// Unique identifier for the file attachment.
+  name String
   
-  /// The value of the configuration setting stored as a string representation.
-  /// Different data types are stored as strings and parsed by the application
-  /// according to the setting_key. For example, numeric values like '100' for
-  /// maximum posts per page, or comma-separated lists like
-  /// 'jpg,png,gif,pdf,doc' for allowed file types.
-  setting_value String
+  /// Original filename as uploaded by the user.
+  original_name String
   
-  /// Data type of the setting value to enable proper parsing by the
-  /// application. Valid values include 'string', 'integer', 'boolean',
-  /// 'array_string' for comma-separated values, and 'json' for structured
-  /// data. This field ensures type-safe handling of configuration values.
-  setting_type String
+  /// MIME type of the uploaded file.
+  mime_type String
   
-  /// Human-readable description of what the setting controls and its possible
-  /// values. This documentation helps administrators understand the purpose
-  /// and proper values for each configuration option without requiring
-  /// code-level knowledge.
-  description String?
+  /// Size of the file in bytes.
+  size Int
   
-  /// Timestamp when the configuration setting was first created in the system.
-  /// This field provides an audit trail showing when settings were initially
-  /// established.
+  /// URL where the file can be downloaded.
+  url String
+  
+  /// Timestamp when the file was uploaded.
   created_at DateTime
   
-  /// Timestamp when the configuration setting was last modified. This field
-  /// allows administrators to track when settings were changed and helps with
-  /// troubleshooting configuration-related issues.
+  /// Timestamp when the file record was last updated.
   updated_at DateTime
-  
-  /// Timestamp when the configuration setting was logically deleted. This
-  /// field enables soft deletion of settings while maintaining historical
-  /// references for audit and compliance purposes.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  moderator discussion_board_moderator? @relation(fields: [updated_by], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
-  @@unique([setting_key])
-  @@index([setting_type])
-  @@index([created_at, updated_at])
-  @@index([updated_by, updated_at])
-  @@index([deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
 }

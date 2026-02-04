@@ -2,42 +2,49 @@ import { IConnection } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IShoppingMallAdminOverview } from "../../../../../../structures/IShoppingMallAdminOverview";
+import { IShoppingMallAdmin } from "../../../../../../structures/IShoppingMallAdmin";
 
 /**
- * Retrieve a comprehensive executive overview for system administrators. This
- * operation aggregates key metrics from multiple database sources including
- * administrative activity, system health, resource utilization, and pending
- * approvals to provide a unified dashboard view for platform governance.
+ * Retrieve comprehensive administrative dashboard metrics for monitoring the shoppingMall platform's operational health and business performance. This endpoint synthesizes aggregated statistics across multiple domains including seller management, product inventory, order fulfillment, and system status to provide administrators with a holistic overview of marketplace operations.
  *
- * The operation combines data from the shopping_mall_admins,
- * shopping_mall_audit_logs, shopping_mall_monitoring_alerts,
- * shopping_mall_configurations, shopping_mall_order_events,
- * shopping_mall_product_sales_stats, and
- * shopping_mall_seller_performance_metrics tables. It calculates current
- * operational status, identifies anomalies requiring administrator attention,
- * and presents summary statistics for decision-making. The response includes
- * administrative user counts, system health indicators, transaction volumes,
- * pending verification requests, and performance benchmarks for sellers.
+ * The dashboard combines data from multiple system domains to provide operational insights that cannot be obtained through direct entity queries. It includes key metrics on seller onboarding performance, product catalog growth, order volume trends, and system health indicators to support strategic decision-making.
  *
- * Security protocol: This endpoint is restricted to admin actors with elevated
- * privileges, and all field access follows principle of least privilege. The
- * operation does not return personally identifiable information about
- * individual users, focusing instead on aggregate metrics. Rate limiting and
- * monitoring alerts are triggered if the endpoint is accessed abnormally
- * frequently or by non-admin actors.
+ * Business context: Administrators use this dashboard to identify growth trends, operational bottlenecks, and system performance issues. The metrics inform resource allocation, seller support initiatives, and platform optimization strategies.
  *
- * Related operations: GET /users (search admins), PATCH /system/metrics
- * (detailed metrics), GET /audit/logs (full audit trail).
+ * Technical context: This operation aggregates data from multiple sources: shopping_mall_sellers (for seller statistics), shopping_mall_products (for product metrics), shopping_mall_orders (for order volumes), and monitoring system tables for health indicators. It does not directly map to any single database table but performs SQL joins and aggregations across these entities to generate the consolidated metrics.
+ *
+ * Security considerations: This endpoint requires administrator authorization and should only be accessible to users with admin roles. Data returned represents aggregated statistics and does not expose individual user or transaction details. Rate limiting applies to prevent abuse of this high-volume endpoint.
+ *
+ * Related operations: This dashboard complements detailed administration endpoints like /sellers/manage and /products/manage, which provide granular details for specific entities. The dashboard provides the high-level context that helps administrators prioritize which detailed investigations to conduct.
+ *
+ * Implementation note: The endpoint calculates real-time metrics by aggregating data from transactional tables. The calculation involves grouping sellers by approval status, counting products by category and availability, summing order totals by status, and checking system performance indicators from monitoring tables. The query should optimize performance through indexed views or materialized cache structures, with cache invalidation triggered by significant changes to underlying data sources.
+ *
+ * Error handling: The endpoint should return 200 OK with appropriate error metrics even if some data sources are temporarily unavailable, ensuring the dashboard remains functional during partial system outages. Metrics that cannot be calculated should be marked as 'unavailable' with appropriate status flags.
+ *
+ * Future scalability: The dashboard structure supports extending metrics with additional dimensions like region-based analytics, merchant performance tiers, or customer retention metrics without altering the core response structure. All new metrics should follow the same naming conventions and data types as existing properties.
+ *
+ * Data preservation: Although this endpoint returns computed metrics, all underlying data sources are preserved according to the snapshot principle, ensuring auditability of all dashboard calculations. When administrators export dashboard data for reporting, timestamped snapshots are stored for compliance purposes.
  *
  * @param props.connection
+ * @x-autobe-specification Aggregate administrative dashboard metrics by calculating key performance indicators across multiple domains:
+ *
+ * 1. Retrieve seller metrics: count total sellers, count pending approval, count approved, count suspended, count rejected, count banned
+ * 2. Retrieve product metrics: count total products, count active products, count inactive products, count out_of_stock variants, count products with zero variants
+ * 3. Retrieve order metrics: count total orders, count paid orders, count shipped orders, count delivered orders, count cancelled orders, count refunded orders
+ * 4. Retrieve system metrics: count total customers, count pending cancellations, count pending refunds, count active sessions, system uptime hours
+ * 5. Calculate derived metrics: average_order_value, seller_approval_rate, customer_retention_rate
+ * 6. Format results into IAdminDashboard DTO structure
+ * 7. Implement caching: cache results for 30 seconds with cache key based on user role and timestamp
+ * 8. Implement fallback: if data source unavailable, return available metrics with status flags
+ * 9. Apply read-only access control: only admin roles can access this endpoint
+ * 10. Implement rate limiting: 100 requests per minute per admin user
  * @path /shoppingMall/admin/dashboard/admin/overview
- * @accessor api.functional.shoppingMall.admin.dashboard.admin.overview.at
+ * @accessor api.functional.shoppingMall.admin.dashboard.admin.overview.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function at(connection: IConnection): Promise<at.Response> {
+export async function index(connection: IConnection): Promise<index.Response> {
   return true === connection.simulate
-    ? at.simulate(connection)
+    ? index.simulate(connection)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -47,14 +54,14 @@ export async function at(connection: IConnection): Promise<at.Response> {
           },
         },
         {
-          ...at.METADATA,
-          path: at.path(),
+          ...index.METADATA,
+          path: index.path(),
           status: null,
         },
       );
 }
-export namespace at {
-  export type Response = IShoppingMallAdminOverview;
+export namespace index {
+  export type Response = IShoppingMallAdmin;
 
   export const METADATA = {
     method: "GET",
@@ -67,8 +74,8 @@ export namespace at {
   } as const;
 
   export const path = () => "/shoppingMall/admin/dashboard/admin/overview";
-  export const random = (): IShoppingMallAdminOverview =>
-    typia.random<IShoppingMallAdminOverview>();
+  export const random = (): IShoppingMallAdmin =>
+    typia.random<IShoppingMallAdmin>();
   export const simulate = (_connection: IConnection): Response => {
     return random();
   };

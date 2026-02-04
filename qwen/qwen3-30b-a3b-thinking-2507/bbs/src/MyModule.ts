@@ -1,72 +1,72 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
-import { GuestController } from "./controllers/guest/verify/GuestController";
-import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
-import { MemberController } from "./controllers/member/profile/MemberController";
-import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { AdminController } from "./controllers/admin/me/AdminController";
-import { DiscussionboardAdminConfigsController } from "./controllers/discussionBoard/admin/configs/DiscussionboardAdminConfigsController";
-import { DiscussionboardMemberChannelsController } from "./controllers/discussionBoard/member/channels/DiscussionboardMemberChannelsController";
-import { DiscussionboardChannelsController } from "./controllers/discussionBoard/channels/DiscussionboardChannelsController";
-import { DiscussionboardAdminChannelsController } from "./controllers/discussionBoard/admin/channels/DiscussionboardAdminChannelsController";
-import { DiscussionboardMemberMembersController } from "./controllers/discussionBoard/member/members/DiscussionboardMemberMembersController";
-import { DiscussionboardAdminMembersController } from "./controllers/discussionBoard/admin/members/DiscussionboardAdminMembersController";
-import { DiscussionboardAdminAdminsController } from "./controllers/discussionBoard/admin/admins/DiscussionboardAdminAdminsController";
-import { DiscussionboardAdminDiscussion_boardAdminsController } from "./controllers/discussionBoard/admin/discussion-board/admins/DiscussionboardAdminDiscussion_boardAdminsController";
-import { DiscussionboardMemberMembersSessionsController } from "./controllers/discussionBoard/member/members/sessions/DiscussionboardMemberMembersSessionsController";
-import { DiscussionboardAdminMembersSessionsController } from "./controllers/discussionBoard/admin/members/sessions/DiscussionboardAdminMembersSessionsController";
-import { DiscussionboardAdminAdminsSessionsController } from "./controllers/discussionBoard/admin/admins/sessions/DiscussionboardAdminAdminsSessionsController";
-import { DiscussionboardArticlesController } from "./controllers/discussionBoard/articles/DiscussionboardArticlesController";
-import { DiscussionboardMemberArticlesController } from "./controllers/discussionBoard/member/articles/DiscussionboardMemberArticlesController";
-import { DiscussionboardMemberArticlesImagesController } from "./controllers/discussionBoard/member/articles/images/DiscussionboardMemberArticlesImagesController";
-import { DiscussionboardAdminArticlesImagesController } from "./controllers/discussionBoard/admin/articles/images/DiscussionboardAdminArticlesImagesController";
-import { DiscussionboardMemberArticlesFilesController } from "./controllers/discussionBoard/member/articles/files/DiscussionboardMemberArticlesFilesController";
-import { DiscussionboardAdminArticlesFilesController } from "./controllers/discussionBoard/admin/articles/files/DiscussionboardAdminArticlesFilesController";
-import { DiscussionboardGuestArticlesFilesController } from "./controllers/discussionBoard/guest/articles/files/DiscussionboardGuestArticlesFilesController";
-import { DiscussionboardAdminModerationQueuesController } from "./controllers/discussionBoard/admin/moderation/queues/DiscussionboardAdminModerationQueuesController";
-import { DiscussionboardAdminModerationQueuesActionsController } from "./controllers/discussionBoard/admin/moderation/queues/actions/DiscussionboardAdminModerationQueuesActionsController";
-import { DiscussionboardAnalyticsArticlesMonthlyController } from "./controllers/discussionBoard/analytics/articles/monthly/DiscussionboardAnalyticsArticlesMonthlyController";
-import { DiscussionboardAdminDashboardAdminModerationController } from "./controllers/discussionBoard/admin/dashboard/admin/moderation/DiscussionboardAdminDashboardAdminModerationController";
-import { DiscussionboardSearchArticlesController } from "./controllers/discussionBoard/search/articles/DiscussionboardSearchArticlesController";
-import { DiscussionboardAdminDashboardModerationController } from "./controllers/discussionBoard/admin/dashboard/moderation/overview/DiscussionboardAdminDashboardModerationController";
-import { DiscussionboardAdminAnalyticsModerationActionsController } from "./controllers/discussionBoard/admin/analytics/moderation/actions/DiscussionboardAdminAnalyticsModerationActionsController";
-import { DiscussionboardAdminModerationQueuesApprove_allController } from "./controllers/discussionBoard/admin/moderation/queues/approve-all/DiscussionboardAdminModerationQueuesApprove_allController";
+import { EconpoliticboardAdminArticlesController } from "./controllers/econPoliticBoard/admin/articles/EconpoliticboardAdminArticlesController";
+import { EconpoliticboardAdminArticlesAttachmentsController } from "./controllers/econPoliticBoard/admin/articles/attachments/EconpoliticboardAdminArticlesAttachmentsController";
+import { EconpoliticboardAdminArticlesTagsController } from "./controllers/econPoliticBoard/admin/articles/tags/EconpoliticboardAdminArticlesTagsController";
+import { EconpoliticboardAdminArticlesVersionsController } from "./controllers/econPoliticBoard/admin/articles/versions/EconpoliticboardAdminArticlesVersionsController";
+import { EconpoliticboardAdmin_exportController } from "./controllers/econPoliticBoard/admin/export/EconpoliticboardAdmin_exportController";
+import { EconpoliticboardAdminProfilesController } from "./controllers/econPoliticBoard/admin/profiles/EconpoliticboardAdminProfilesController";
+import { EconpoliticboardAdminRequestsController } from "./controllers/econPoliticBoard/admin/requests/EconpoliticboardAdminRequestsController";
+import { EconpoliticboardAdminSectionsController } from "./controllers/econPoliticBoard/admin/sections/EconpoliticboardAdminSectionsController";
+import { EconpoliticboardAdminStatisticsController } from "./controllers/econPoliticBoard/admin/statistics/EconpoliticboardAdminStatisticsController";
+import { EconpoliticboardAdminSystemconfigsController } from "./controllers/econPoliticBoard/admin/systemConfigs/EconpoliticboardAdminSystemconfigsController";
+import { EconpoliticboardAdminSystemconfigsMaintenanceController } from "./controllers/econPoliticBoard/admin/systemConfigs/maintenance/EconpoliticboardAdminSystemconfigsMaintenanceController";
+import { EconpoliticboardAdminsController } from "./controllers/econPoliticBoard/admins/EconpoliticboardAdminsController";
+import { EconpoliticboardArticlesController } from "./controllers/econPoliticBoard/articles/EconpoliticboardArticlesController";
+import { EconpoliticboardArticlesAttachmentsController } from "./controllers/econPoliticBoard/articles/attachments/EconpoliticboardArticlesAttachmentsController";
+import { EconpoliticboardArticlesTagsController } from "./controllers/econPoliticBoard/articles/tags/EconpoliticboardArticlesTagsController";
+import { EconpoliticboardArticlesVersionsController } from "./controllers/econPoliticBoard/articles/versions/EconpoliticboardArticlesVersionsController";
+import { EconpoliticboardAuthAdminController } from "./controllers/econPoliticBoard/auth/admin/EconpoliticboardAuthAdminController";
+import { EconpoliticboardAuthGuestController } from "./controllers/econPoliticBoard/auth/guest/EconpoliticboardAuthGuestController";
+import { EconpoliticboardAuthMemberJoinController } from "./controllers/econPoliticBoard/auth/member/join/EconpoliticboardAuthMemberJoinController";
+import { EconpoliticboardAuthMemberLoginController } from "./controllers/econPoliticBoard/auth/member/login/EconpoliticboardAuthMemberLoginController";
+import { EconpoliticboardAuthMemberRefreshController } from "./controllers/econPoliticBoard/auth/member/refresh/EconpoliticboardAuthMemberRefreshController";
+import { EconpoliticboardGuestsController } from "./controllers/econPoliticBoard/guests/EconpoliticboardGuestsController";
+import { EconpoliticboardMemberArticlesController } from "./controllers/econPoliticBoard/member/articles/EconpoliticboardMemberArticlesController";
+import { EconpoliticboardMemberArticlesAttachmentsController } from "./controllers/econPoliticBoard/member/articles/attachments/EconpoliticboardMemberArticlesAttachmentsController";
+import { EconpoliticboardMemberArticlesTagsController } from "./controllers/econPoliticBoard/member/articles/tags/EconpoliticboardMemberArticlesTagsController";
+import { EconpoliticboardMemberArticlesVersionsController } from "./controllers/econPoliticBoard/member/articles/versions/EconpoliticboardMemberArticlesVersionsController";
+import { EconpoliticboardMemberProfileController } from "./controllers/econPoliticBoard/member/profile/EconpoliticboardMemberProfileController";
+import { EconpoliticboardMemberProfilesController } from "./controllers/econPoliticBoard/member/profiles/EconpoliticboardMemberProfilesController";
+import { EconpoliticboardMemberSearchController } from "./controllers/econPoliticBoard/member/search/EconpoliticboardMemberSearchController";
+import { EconpoliticboardMemberSessionsController } from "./controllers/econPoliticBoard/member/sessions/EconpoliticboardMemberSessionsController";
+import { EconpoliticboardMembersController } from "./controllers/econPoliticBoard/members/EconpoliticboardMembersController";
+import { EconpoliticboardSectionsController } from "./controllers/econPoliticBoard/sections/EconpoliticboardSectionsController";
 
 @Module({
   controllers: [
-    AuthGuestController,
-    GuestController,
-    AuthMemberController,
-    MemberController,
-    AuthAdminController,
-    AdminController,
-    DiscussionboardAdminConfigsController,
-    DiscussionboardMemberChannelsController,
-    DiscussionboardChannelsController,
-    DiscussionboardAdminChannelsController,
-    DiscussionboardMemberMembersController,
-    DiscussionboardAdminMembersController,
-    DiscussionboardAdminAdminsController,
-    DiscussionboardAdminDiscussion_boardAdminsController,
-    DiscussionboardMemberMembersSessionsController,
-    DiscussionboardAdminMembersSessionsController,
-    DiscussionboardAdminAdminsSessionsController,
-    DiscussionboardArticlesController,
-    DiscussionboardMemberArticlesController,
-    DiscussionboardMemberArticlesImagesController,
-    DiscussionboardAdminArticlesImagesController,
-    DiscussionboardMemberArticlesFilesController,
-    DiscussionboardAdminArticlesFilesController,
-    DiscussionboardGuestArticlesFilesController,
-    DiscussionboardAdminModerationQueuesController,
-    DiscussionboardAdminModerationQueuesActionsController,
-    DiscussionboardAnalyticsArticlesMonthlyController,
-    DiscussionboardAdminDashboardAdminModerationController,
-    DiscussionboardSearchArticlesController,
-    DiscussionboardAdminDashboardModerationController,
-    DiscussionboardAdminAnalyticsModerationActionsController,
-    DiscussionboardAdminModerationQueuesApprove_allController,
+    EconpoliticboardAuthGuestController,
+    EconpoliticboardAuthMemberJoinController,
+    EconpoliticboardAuthMemberLoginController,
+    EconpoliticboardAuthMemberRefreshController,
+    EconpoliticboardAuthAdminController,
+    EconpoliticboardGuestsController,
+    EconpoliticboardMembersController,
+    EconpoliticboardMemberSessionsController,
+    EconpoliticboardAdminsController,
+    EconpoliticboardMemberProfileController,
+    EconpoliticboardArticlesAttachmentsController,
+    EconpoliticboardArticlesTagsController,
+    EconpoliticboardArticlesVersionsController,
+    EconpoliticboardMemberArticlesController,
+    EconpoliticboardAdminArticlesController,
+    EconpoliticboardArticlesController,
+    EconpoliticboardMemberArticlesAttachmentsController,
+    EconpoliticboardAdminArticlesAttachmentsController,
+    EconpoliticboardMemberArticlesTagsController,
+    EconpoliticboardAdminArticlesTagsController,
+    EconpoliticboardMemberArticlesVersionsController,
+    EconpoliticboardAdminArticlesVersionsController,
+    EconpoliticboardAdminRequestsController,
+    EconpoliticboardMemberProfilesController,
+    EconpoliticboardAdminProfilesController,
+    EconpoliticboardSectionsController,
+    EconpoliticboardAdminSectionsController,
+    EconpoliticboardAdminSystemconfigsController,
+    EconpoliticboardAdminStatisticsController,
+    EconpoliticboardMemberSearchController,
+    EconpoliticboardAdmin_exportController,
+    EconpoliticboardAdminSystemconfigsMaintenanceController,
   ],
 })
 export class MyModule {}

@@ -1,1 +1,1 @@
-Create the API interface specification.
+Make the e2e test functions.

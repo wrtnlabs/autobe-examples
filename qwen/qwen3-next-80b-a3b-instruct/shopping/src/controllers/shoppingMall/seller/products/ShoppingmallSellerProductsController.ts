@@ -1,49 +1,132 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody } from "@nestia/core";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallProduct";
+import { SellerAuth } from "../../../../decorators/SellerAuth";
+import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
+import { deleteShoppingMallSellerProductsProductId } from "../../../../providers/deleteShoppingMallSellerProductsProductId";
+import { postShoppingMallSellerProducts } from "../../../../providers/postShoppingMallSellerProducts";
+import { putShoppingMallSellerProductsProductId } from "../../../../providers/putShoppingMallSellerProductsProductId";
 
 @Controller("/shoppingMall/seller/products")
 export class ShoppingmallSellerProductsController {
   /**
-   * Create a new product listing in the shopping mall marketplace. This
-   * operation allows authenticated sellers to create new product listings by
-   * providing detailed information including title, description, category,
-   * pricing, and inventory details. The product is created in the
-   * shopping_mall_products table with an initial status of 'draft', which
-   * requires subsequent activation to become visible to customers.
+   * Update an existing product's information including name, description, category ID, and base price. This operation implements the product lifecycle management requirements specified in the system, creating a comprehensive snapshot of the product state before modification to ensure historical accuracy for audit, compliance, and dispute resolution purposes.
    *
-   * Security considerations include identity verification of sellers through
-   * JWT authentication, mandatory validation of required fields, and adherence
-   * to product content policies. The seller's identity is automatically
-   * extracted from the authentication token and associated with the product
-   * creation. This prevents unauthorized users from creating products and
-   * ensures proper attribution for inventory and sales tracking.
+   * When a seller updates a product, the system captures the complete previous state including all product details and image sequences in an immutable product snapshot. This snapshot preserves the product's configuration as it existed at the moment of change, including the product name, description, category assignment, base price, and image order sequence. The snapshot mechanism ensures that all historical states of the product are preserved for future reference, even if the product is later modified again or deleted.
    *
-   * Business rules require that all products have a unique SKU, a minimum
-   * product title length of 5 characters, and pricing that must be greater than
-   * zero. Category association is mandatory and must reference an existing
-   * category in the shopping_mall_categories table. Products cannot be created
-   * without at least one image reference.
+   * The operation enforces ownership validation, ensuring that only the seller who created the product is permitted to make updates. This prevents unauthorized modification of product details by other sellers or users. Additionally, any updates to the product's category or base price are logged in the snapshot with the timestamp and actor information to maintain complete audit trails. The product's variant information remains unaffected by changes to these top-level fields, maintaining data integrity across the product ecosystem.
    *
-   * This operation interacts with the shopping_mall_products table and triggers
-   * the creation of a corresponding entry in the shopping_mall_product_images
-   * table. Related operations include listing products (PATCH /products),
-   * viewing product details (GET /products/{productId}), and updating product
-   * information (PUT /products/{productId}).
+   * The snapshot system ensures complete traceability of product changes, supporting regulatory compliance, customer disputes, and business analytics. For example, if a customer received a product that differed from its specifications at time of purchase, the historical product snapshot can be used to verify compliance. Similarly, administrators can audit product modifications to ensure adherence to platform policies and identify patterns of abuse or error. The system maintains the integrity of the product record by preventing direct alteration of historical states while enabling current data to be updated as needed.
+   *
+   * This operation does not modify product variants, images, or inventory levels, which have separate dedicated endpoints. Changes to product variants require the /products/{productId}/variants endpoint, while image modifications use the /products/{productId}/images endpoint. This separation of concerns ensures consistent data integrity while allowing each domain to manage its specific lifecycle requirements.
    *
    * @param connection
-   * @param body Complete product information required for creation, including
-   *   all mandatory fields for product listing.
+   * @param productId Unique identifier of the target product. Must be a UUID format string that corresponds to the shopping_mall_products table's primary key.
+   * @param body Update request for product information with optional fields for product name, description, category, and base price.
+   * @x-autobe-specification Update product fields (name, description, category, base price) only if user is the product owner.
+   * Validate the product owner matches the authenticated seller ID.
+   * Create a product snapshot capturing:
+   * - Previous name, description, category ID, base price
+   * - Current values after update
+   * - Timestamp of change
+   * - Actor (seller ID)
+   * - Current image sequence with all image identifiers in order
+   * - Variant count (not the variants themselves, as variants are separate entities)
+   * - Do not modify any variant information
+   * - If no fields provided in request, return 400 Bad Request with message 'No fields to update'
+   * - If product not found, return 404 Not Found
+   * - If seller is not owner, return 403 Forbidden with message 'Not authorized to update this product'
+   * - Do not validate product name uniqueness (already handled during creation)
+   * - Only update fields provided in request - do not modify fields omitted from the request
+   * - Return 200 OK with updated product fields upon successful update
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":productId")
+  public async update(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProduct.IUpdate,
+  ): Promise<IShoppingMallProduct> {
+    try {
+      return await putShoppingMallSellerProductsProductId({
+        seller,
+        productId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a product from the shopping mall platform. This operation completely deletes the product record from the database and cascades deletion to all associated resources including product images and variants.
+   *
+   * This is a hard delete operation — records are permanently removed and cannot be recovered. This behavior is intentional as specified by the business requirements which indicate product deletion should be irreversible. After this operation, the product will no longer appear in search results, product listings, or any customer-facing interfaces.
+   *
+   * Security considerations include strict authorization: only the original seller who created the product may perform this operation, unless the requester has administrative privileges. The system performs additional validation to ensure the product does not have any associated order items with status 'paid', 'shipped', or 'delivered' to prevent disruption of existing customer transactions. If such order items exist, the deletion will be blocked with a 400 error. This prevents the accidental deletion of products that are part of active or completed customer orders.
+   *
+   * This operation is intended for two primary use cases: when a seller removes an unsold product from their inventory, or when an administrator enforces content moderation policies by removing products that violate platform guidelines. The product's deletion history is preserved in audit logs for compliance and security review.
+   *
+   * @param connection
+   * @param productId Unique identifier of the target product. This UUID refers to the product record in the shopping_mall_products table.
+   * @x-autobe-specification Delete the product record from the shopping_mall_products table using the productId path parameter. Cascade delete all associated records in shopping_mall_product_images and shopping_mall_product_variants tables. Check that the product has no order items with status 'paid', 'shipped', or 'delivered'. If order items exist with these statuses, return 400 with error message. Verify that the requesting user is either the product's seller or has admin privileges. If not, return 403 Forbidden. Log the deletion in the audit trail. Return the deleted product record in the response body including its id, name, sellerId, and createdAt timestamp for audit purposes.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":productId")
+  public async erase(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallProduct> {
+    try {
+      return await deleteShoppingMallSellerProductsProductId({
+        seller,
+        productId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new product listing in the shopping mall platform.
+   *
+   * This operation allows authenticated sellers to create new product listings by providing essential information: product name, description, category, and base price. The system validates that all required fields are provided and meet length requirements: product name must be 1-255 characters, description 1-10000 characters. The category must reference an existing valid category in the system, and the base price must be at least $0.01 USD.
+   *
+   * When a product is created, the system assigns it a unique identifier and initial status of 'draft'. The product becomes immediately available to the seller in their dashboard but remains hidden from customer search results and category listings until the seller adds at least one product variant. This design ensures that products are not publicly visible until they're ready for sale with specific SKUs. The seller's identity is automatically extracted from the JWT authentication token, ensuring that products are properly attributed to the correct seller account.
+   *
+   * This operation integrates with the Product table from the database schema, capturing the complete initial state of the product. The operation also triggers creation of a product snapshot for audit purposes, recording the initial state of the product at creation time. This snapshot will be used for historical reference if the product is later edited or deleted.
+   *
+   * Security: Only authenticated sellers can create products. Product name must be unique across the platform to prevent customer confusion. Rate limiting applies to prevent spam product creation. After creation, sellers can add product images and variants using separate operations. Related operations: PUT /products/{productId} to update product details, POST /products/{productId}/variants to create product variants, GET /products/{productId} to view product details, DELETE /products/{productId} to remove product if no orders exist.
+   *
+   * @param connection
+   * @param body Creation data for a new product listing
+   * @x-autobe-specification Query the shopping_mall_products table to create a new product record. Validate that: name is 1-255 characters, description is 1-10000 characters, basePrice is >= 0.01 USD, categoryId exists in shopping_mall_categories table. Extract sellerId from JWT token. Set initial status to 'draft'. Generate unique productId. Create initial product snapshot capturing the values provided. Return product object with productId, name, description, categoryId, basePrice, sellerId, createdAt, updatedAt, and isDeleted=false.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
+    @SellerAuth()
+    seller: SellerPayload,
     @TypedBody()
     body: IShoppingMallProduct.ICreate,
   ): Promise<IShoppingMallProduct> {
-    body;
-    return typia.random<IShoppingMallProduct>();
+    try {
+      return await postShoppingMallSellerProducts({
+        seller,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

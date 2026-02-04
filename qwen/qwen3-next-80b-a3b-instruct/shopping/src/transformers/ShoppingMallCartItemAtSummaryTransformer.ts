@@ -2,19 +2,10 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
-import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantAttributeSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantAttributeSummary";
-import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-
-import { ShoppingMallCartAtSummaryTransformer } from "./ShoppingMallCartAtSummaryTransformer";
-import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
-import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallCartItemAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_cart_itemsGetPayload<
@@ -25,12 +16,11 @@ export namespace ShoppingMallCartItemAtSummaryTransformer {
       select: {
         id: true,
         quantity: true,
-        price: true,
+        price_at_time: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        cart: ShoppingMallCartAtSummaryTransformer.select(),
-        productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
+        customer: true,
+        productVariant: true,
       },
     } satisfies Prisma.shopping_mall_cart_itemsFindManyArgs;
   }
@@ -38,23 +28,9 @@ export namespace ShoppingMallCartItemAtSummaryTransformer {
     input: Payload,
   ): Promise<IShoppingMallCartItem.ISummary> {
     return {
-      id: input.id,
+      cartId: input.id,
+      variantId: input.productVariant.id,
       quantity: input.quantity,
-      price: input.price,
-      total: input.price * input.quantity,
-      product_id: input.productVariant.product.id,
-      product: await ShoppingMallProductAtSummaryTransformer.transform(
-        input.productVariant.product,
-      ),
-      variant_id: input.productVariant.id,
-      variant: await ShoppingMallProductVariantAtSummaryTransformer.transform(
-        input.productVariant,
-      ),
-      seller_id: input.productVariant.seller.id,
-      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
-        input.productVariant.seller,
-      ),
-      created_at: toISOStringSafe(input.created_at),
     };
   }
 }

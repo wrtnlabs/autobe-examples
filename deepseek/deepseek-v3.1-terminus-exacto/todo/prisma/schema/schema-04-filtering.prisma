@@ -1,0 +1,125 @@
+/// Stores user preferences for filtering and sorting configurations in the
+/// todo application.
+///
+/// Each record represents a user's saved preferences for how their todo list
+/// should be filtered and sorted. Users can configure their preferred view
+/// settings including completion status filters (All/Complete/Incomplete),
+/// sort criteria (creation date, start date, or due date), and sort
+/// direction (ascending or descending).
+///
+/// These preferences are subsidiary to the main user entity and are
+/// automatically created or updated as users interact with the filtering and
+/// sorting controls in the user interface. The system maintains these
+/// preferences to provide a consistent user experience across sessions.
+///
+/// Privacy is strictly enforced - users can only access their own filtering
+/// preferences and preferences are automatically cascaded when users are
+/// deleted from the system.
+///
+/// @namespace Filtering
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_filtering_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the user who owns these filtering preferences. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// User's preferred todo filter setting. Valid values: 'all' (show all
+  /// todos), 'complete' (show only completed todos), or 'incomplete' (show
+  /// only incomplete todos). Defaults to 'all' if not specified.
+  filter_preference String
+  
+  /// User's preferred sort field. Valid values: 'created_at' (sort by creation
+  /// date), 'start_date' (sort by start date), or 'due_date' (sort by due
+  /// date). Defaults to 'created_at' if not specified.
+  sort_criteria String
+  
+  /// User's preferred sort direction. Valid values: 'asc' (ascending) or
+  /// 'desc' (descending). Defaults to 'desc' if not specified.
+  sort_direction String
+  
+  /// Timestamp when the filtering preferences record was created.
+  /// Automatically set when preferences are first established.
+  created_at DateTime
+  
+  /// Timestamp when the filtering preferences were last updated. Automatically
+  /// updated whenever preferences are modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Stores user preferences for sorting configurations including sort field,
+/// direction, and null value handling rules.
+///
+/// Users can configure their preferred sorting options for todo lists,
+/// including which field to sort by (creation date, start date, due date),
+/// sort direction (ascending/descending), and how to handle null values in
+/// sorting operations. These preferences are persisted across sessions and
+/// can be customized per user.
+///
+/// The table maintains a one-to-one relationship with users, ensuring each
+/// user has their own sorting preference configuration. Preferences include
+/// default sorting behavior that applies when users haven't explicitly
+/// configured their sorting options.
+///
+/// Soft deletion is supported to allow users to reset their preferences
+/// while maintaining audit trails.
+///
+/// @namespace Filtering
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_sorting_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns these sorting preferences. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// The field to use for sorting todos. Valid values: 'created_at',
+  /// 'start_date', 'due_date'.
+  sort_field String
+  
+  /// Sort direction preference. Valid values: 'asc', 'desc'.
+  sort_direction String
+  
+  /// How to handle null values in sorting. Valid values: 'first', 'last'.
+  null_handling String
+  
+  /// Indicates if these are the default sorting preferences for the user.
+  is_default Boolean
+  
+  /// Timestamp when the sorting preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when the sorting preferences were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the sorting preferences were soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id])
+  @@index([sort_field, sort_direction])
+  @@index([created_at])
+  @@index([is_default])
+}

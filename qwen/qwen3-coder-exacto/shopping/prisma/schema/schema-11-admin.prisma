@@ -1,0 +1,393 @@
+/// Administrator accounts with authentication credentials and permission
+/// levels for platform management.
+///
+/// This table stores core administrator account information including
+/// authentication credentials
+/// (password hash and password salt for secure authentication) and account
+/// status (suspension flag).
+/// Each administrator has a unique email address for login and
+/// identification purposes.
+///
+/// The table supports different permission levels through relationships with
+/// the admin grades table,
+/// enabling fine-grained access control across the platform's administrative
+/// functions.
+/// Administrators can be suspended, temporarily preventing them from
+/// accessing the system.
+///
+/// This entity serves as the foundation for the administrative access
+/// control system,
+/// providing secure authentication and authorization mechanisms for platform
+/// governance.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Grade level that determines administrator's permission scope and
+  /// capabilities. {@link shopping_mall_admin_grades.id}
+  shopping_mall_admin_grade_id String
+  
+  /// Unique email address used for administrator authentication and
+  /// communication. Must be unique across all administrators.
+  email String
+  
+  /// Cryptographically secured password hash generated using industry-standard
+  /// hashing algorithm. Used for authentication verification.
+  password_hash String
+  
+  /// Random string used as salt in password hashing process to prevent rainbow
+  /// table attacks and ensure unique hashes.
+  password_salt String
+  
+  /// Flag indicating whether the administrator account is currently suspended
+  /// and unable to access the system. When true, the administrator cannot log
+  /// in or perform any actions.
+  suspended Boolean
+  
+  /// Timestamp when the administrator account was initially created in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last modified or updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was logically deleted (soft
+  /// delete). If null, the account is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  grade shopping_mall_admin_grades @relation(fields: [shopping_mall_admin_grade_id], references: [id], onDelete: Cascade)
+  
+  adminActions shopping_mall_admin_actions[]
+  productRemovals shopping_mall_product_removals[]
+  forcedCancellations shopping_mall_forced_cancellations[]
+  forcedRefunds shopping_mall_forced_refunds[]
+  userSanctions shopping_mall_user_sanctions[]
+  
+  @@index([shopping_mall_admin_grade_id])
+  
+  @@unique([email])
+  @@index([suspended, created_at])
+}
+
+/// Audit trail records of administrative actions performed on the platform.
+///
+/// This table maintains a comprehensive log of all administrative activities
+/// for compliance, security monitoring, and accountability purposes. Each
+/// record captures who performed an action, when it occurred, what was
+/// changed, and the reason for the action.
+///
+/// The audit trail supports:
+/// - Regulatory compliance requirements
+/// - Security incident investigations
+/// - Dispute resolution for administrative decisions
+/// - Operational analytics for platform management
+///
+/// All actions are immutable once recorded to ensure audit integrity.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed the action. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// The administrator's session when the action was performed, if applicable.
+  /// {@link shopping_mall_admin_sessions.id}.
+  shopping_mall_admin_session_id String?
+  
+  /// The type of administrative action performed. Valid values include
+  /// 'user_ban', 'user_unban', 'seller_approve', 'seller_reject',
+  /// 'product_remove', 'order_cancel', 'order_refund'.
+  action_type String
+  
+  /// Detailed description of what was changed or affected by the
+  /// administrative action.
+  description String
+  
+  /// The reason or justification provided by the administrator for performing
+  /// this action.
+  reason String
+  
+  /// IP address of the administrator when the action was performed.
+  ip_address String
+  
+  /// Timestamp when the administrative action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  adminSession shopping_mall_admin_sessions? @relation(fields: [shopping_mall_admin_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_admin_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_admin_actions_shopping_mall_administrato_b0cbd110")
+  @@index([action_type, created_at])
+  @@index([ip_address])
+}
+
+/// Records of product removal actions taken by administrators for policy
+/// violations.
+///
+/// This table tracks all instances where administrators have removed
+/// products from the platform due to policy violations or other regulatory
+/// requirements. Each removal is documented with a detailed justification
+/// and timestamped for audit trail purposes.
+///
+/// The table serves as a critical compliance mechanism to ensure proper
+/// oversight of product management and to maintain a record of
+/// administrative decisions. It provides transparency in the event of
+/// disputes or legal inquiries regarding product removals.
+///
+/// Each record maintains immutable evidence of:
+/// - Which administrator performed the removal
+/// - What product was removed
+/// - The business justification for the removal
+/// - When the removal occurred
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_removals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the product removal. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Product that was removed from the platform. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Business reason provided by the administrator for removing the product.
+  /// Must explain the policy violation or regulatory requirement that
+  /// necessitated the removal.
+  justification String
+  
+  /// Timestamp when the product was removed from the platform.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_product_removals_shopping_mall_administr_e5acd7d1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_removals_shopping_mall_product_i_67a031bf")
+}
+
+/// Administrative forced order cancellation records initiated by platform
+/// administrators.
+///
+/// This table maintains an immutable record of all forced cancellation
+/// actions performed by administrators on customer order items. Each record
+/// captures the administrator who initiated the cancellation, the specific
+/// order item that was cancelled, and the justification for the
+/// administrative action.
+///
+/// The system creates these records when an administrator determines that an
+/// order item needs to be cancelled despite normal customer-seller
+/// processing workflows. Common scenarios include policy violations,
+/// suspected fraud, or customer service escalations where normal
+/// cancellation processes have failed.
+///
+/// Every forced cancellation is fully audited with detailed reasoning to
+/// maintain compliance with regulatory requirements and provide transparency
+/// for dispute resolution. The cancellation action results in immediate
+/// order item status updates and triggers automated inventory restoration
+/// processes for the affected items.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_forced_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who initiated the forced cancellation action. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Specific order item that was forcibly cancelled by administrative action.
+  /// {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Detailed justification for the administrative forced cancellation.
+  /// Contains explanations of policy violations, fraud indicators, or
+  /// exceptional circumstances that necessitated administrator intervention.
+  reason String
+  
+  /// Timestamp when the forced cancellation action was initiated by the
+  /// administrator.
+  created_at DateTime
+  
+  /// Timestamp when the forced cancellation record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the forced cancellation record was marked as deleted (soft
+  /// deletion).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_forced_cancellations_shopping_mall_order_89c3ba29")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_forced_cancellations_shopping_mall_admin_660bb925")
+  @@index([created_at])
+  @@index([deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, deleted_at], map: "shopping_mall_forced_cancellations_shopping_mall_admin_0aad8995")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, deleted_at], map: "shopping_mall_forced_cancellations_shopping_mall_order_c191b6dd")
+}
+
+/// Refund records representing administrator-forced refunds on customer
+/// order items. Each record captures the reason for the forced refund and
+/// maintains links to the relevant order item and administrator who
+/// initiated the action.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_forced_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item that was forcibly refunded. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// The administrator who initiated the forced refund. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Reason provided by the administrator for initiating the forced refund.
+  /// This text explains the business justification for the administrative
+  /// override.
+  reason String
+  
+  /// Timestamp when the forced refund was initiated by the administrator.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_forced_refunds_shopping_mall_administrat_70740f47")
+}
+
+/// Records of user account suspension and banning actions taken by
+/// administrators with comprehensive reason tracking and status management.
+///
+/// This table captures all administrative sanctions imposed on user accounts
+/// (customers, sellers, or administrators) for policy violations or
+/// misconduct. Each record represents a specific enforcement action with
+/// detailed justification and timeframe.
+///
+/// Sanctions can be applied to any user type through a unified interface,
+/// with the specific user relationship captured through foreign key
+/// constraints. The system maintains immutable records of all enforcement
+/// actions to support dispute resolution and audit compliance.
+///
+/// Administrators can track the current status of sanctions (active, lifted,
+/// expired) and review historical actions. The table supports compliance
+/// requirements by preserving all sanction activity with complete context.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sanctions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who imposed this sanction. {@link
+  /// shopping_mall_administrators.id}.
+  administrator_id String
+  
+  /// Customer being sanctioned (if applicable). {@link
+  /// shopping_mall_customers.id}.
+  customer_id String?
+  
+  /// Seller being sanctioned (if applicable). {@link shopping_mall_sellers.id}.
+  seller_id String?
+  
+  /// Administrator being sanctioned (if applicable). {@link
+  /// shopping_mall_admins.id}.
+  admin_id String?
+  
+  /// Detailed textual explanation of why this sanction was imposed. Must
+  /// clearly articulate the policy violation or misconduct that justified this
+  /// enforcement action.
+  reason String
+  
+  /// Current enforcement status of this sanction. Valid values: 'active'
+  /// (currently enforced), 'lifted' (administrator removed the sanction),
+  /// 'expired' (sanction period completed).
+  status String
+  
+  /// Scheduled expiration time for temporary sanctions. If NULL, the sanction
+  /// is indefinite until manually lifted by an administrator.
+  expires_at DateTime?
+  
+  /// Timestamp when this sanction was manually lifted by an administrator.
+  /// Only populated when a sanction's status changes from 'active' to
+  /// 'lifted'.
+  lifted_at DateTime?
+  
+  /// UTC timestamp when this sanction record was created.
+  created_at DateTime
+  
+  /// UTC timestamp when this sanction record was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id, created_at])
+  @@index([customer_id, created_at])
+  @@index([seller_id, created_at])
+  @@index([admin_id, created_at])
+}

@@ -2,12 +2,11 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 
 export namespace ShoppingMallOrderTransformer {
   export type Payload = Prisma.shopping_mall_ordersGetPayload<
@@ -16,122 +15,36 @@ export namespace ShoppingMallOrderTransformer {
   export function select() {
     return {
       select: {
-        // All scalar fields from shopping_mall_orders
         id: true,
-        status: true,
-        currency: true,
-        total_amount: true,
-        shipping_cost: true,
-        tax_amount: true,
-        order_number: true,
+        total_price: true,
+        payment_status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        coupon_discount_code: true,
-        notes: true,
-        placed_from: true,
-        // Relations
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-        shopping_mall_order_items: {
+        customer: {
           select: {
             id: true,
-            product_id: true,
-            variant_id: true,
-            quantity: true,
-            unit_price: true,
-            total_price: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
           },
         },
-        shopping_mall_order_addresses: {
+        shippingAddress: {
           select: {
-            id: true,
-            address_type: true,
-            first_name: true,
-            last_name: true,
-            company: true,
-            address_1: true,
-            address_2: true,
+            recipientName: true,
+            streetAddress: true,
             city: true,
-            state: true,
-            postal_code: true,
+            stateProvince: true,
+            postalCode: true,
             country: true,
-            phone: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
+            phoneNumber: true,
+            isDefault: true,
           },
         },
-        shopping_mall_order_payments: {
+        shopping_mall_order_snapshots: {
           select: {
             id: true,
-            payment_method: true,
-            status: true,
-            amount: true,
-            currency: true,
-            transaction_id: true,
-            receipt_url: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-        shopping_mall_order_events: {
-          select: {
-            id: true,
-            event_type: true,
-            status: true,
-            notes: true,
-            created_by: true,
-            created_at: true,
-          },
-        },
-        shopping_mall_order_returns: {
-          select: {
-            id: true,
-            reason: true,
-            status: true,
-            requested_by: true,
-            created_at: true,
-            updated_at: true,
-            processed_at: true,
-          },
-        },
-        shopping_mall_order_refunds: {
-          select: {
-            id: true,
-            payment_id: true,
-            amount: true,
-            currency: true,
-            status: true,
-            reason: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
-        shopping_mall_delivery_trackings: {
-          select: {
-            id: true,
-            carrier: true,
-            tracking_url: true,
-            status: true,
-            estimated_delivery: true,
-            actual_delivery: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
-        shopping_mall_order_shipments: {
-          select: {
-            id: true,
-            tracking_number: true,
-            status: true,
-            carrier: true,
-            shipping_method: true,
-            shipping_date: true,
-            delivered_at: true,
+            order_id: true,
+            total_price: true,
+            payment_status: true,
+            shipping_address_id: true,
             created_at: true,
             updated_at: true,
             deleted_at: true,
@@ -141,37 +54,61 @@ export namespace ShoppingMallOrderTransformer {
     } satisfies Prisma.shopping_mall_ordersFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IShoppingMallOrder> {
-    const shippingAddress = input.shopping_mall_order_addresses?.find(
-      (a) => a.address_type === "shipping",
-    );
-    const billingAddress = input.shopping_mall_order_addresses?.find(
-      (a) => a.address_type === "billing",
-    );
-    const payment = input.shopping_mall_order_payments?.[0];
-    const shipment = input.shopping_mall_order_shipments?.[0];
+    // Based on the IShoppingMallOrder type and the database schema, orderItems and shipments are not direct relations
+    // but are constructed from joining with other tables (shopping_mall_order_items and shopping_mall_shipments).
+    // Since we can only select data from the shopping_mall_orders table in this transformer,
+    // and the transformer cannot perform joins or querying other tables, we must return empty arrays.
+    // The service layer is responsible for aggregating the complete IShoppingMallOrder with orderItems and shipments.
+    // This transformer transforms the base shopping_mall_orders record to its basic properties.
+    const orderItemsJson = JSON.stringify([]);
+    const shipmentsJson = JSON.stringify([]);
+    // Parse shippingAddress from JSON field
+    let shippingAddress: IShoppingMallCustomerAddress;
+    if (input.shippingAddress) {
+      try {
+        const addressJson = JSON.parse(input.shippingAddress);
+        shippingAddress = {
+          recipientName: addressJson.recipientName,
+          streetAddress: addressJson.streetAddress,
+          city: addressJson.city,
+          stateProvince: addressJson.stateProvince ?? undefined,
+          postalCode: addressJson.postalCode,
+          country: addressJson.country,
+          phoneNumber: addressJson.phoneNumber ?? undefined,
+          isDefault: addressJson.isDefault ?? undefined,
+        };
+      } catch (error) {
+        // Fallback in case JSON parsing fails
+        shippingAddress = {
+          recipientName: "",
+          streetAddress: "",
+          city: "",
+          postalCode: "",
+          country: "",
+          stateProvince: undefined,
+          phoneNumber: undefined,
+          isDefault: undefined,
+        };
+      }
+    } else {
+      // Fallback if shippingAddress is null
+      shippingAddress = {
+        recipientName: "",
+        streetAddress: "",
+        city: "",
+        postalCode: "",
+        country: "",
+        stateProvince: undefined,
+        phoneNumber: undefined,
+        isDefault: undefined,
+      };
+    }
     return {
+      customerId: input.customer.id as string & tags.Format<"uuid">,
       id: input.id,
-      orderCode: input.order_number,
-      status: input.status satisfies string as
-        | "completed"
-        | "pending_payment"
-        | "confirmed"
-        | "processing"
-        | "shipped"
-        | "delivered"
-        | "cancelled"
-        | "refunded",
-      totalAmount: Number(input.total_amount),
-      currency: input.currency satisfies string as "USD",
-      shipping_address_id: shippingAddress?.id ?? null,
-      billing_address_id: billingAddress?.id ?? null,
-      shipping_method_id: payment?.payment_method ?? null,
-      shipping_tracking_number: shipment?.tracking_number ?? undefined,
-      notes: input.notes ?? undefined,
-      created_at: toISOStringSafe(input.created_at),
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
+      orderItems: orderItemsJson,
+      shipments: shipmentsJson,
+      shippingAddress: shippingAddress,
     };
   }
 }

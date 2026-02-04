@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
@@ -15,16 +15,19 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
-  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+  // Query admin_session table for active session linked to admin
+  const adminSession = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.session_id,
+      expired_at: { gt: new Date() },
+      admin: {
+        id: payload.id,
+        deleted_at: null,
+      },
     },
   });
 
-  if (admin === null) {
+  if (adminSession === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

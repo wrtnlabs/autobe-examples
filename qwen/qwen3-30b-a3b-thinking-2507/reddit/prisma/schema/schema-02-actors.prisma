@@ -1,233 +1,233 @@
-/// Active authentication sessions for standard users, tracking login state
-/// and tokens.
+/// User authentication records including credentials, email verification
+/// state, and account activity tracking. Stores primary user identity data
+/// with email credentials for system access and audit trails.
 ///
-/// Stores each user's active session context including connection details
-/// (IP address, URL, referrer), session creation time, and expiration time.
-/// Each session is linked to a specific user account and expires after a
-/// defined period for security.
-///
-/// Session management enables tracking user activity for audit purposes and
-/// security features like preventing session hijacking.
+/// Includes all fields necessary for user registration, login, and session
+/// management while following strict schema normalization. User accounts are
+/// fully authenticated through email and password, with verification state
+/// tracked separately from profile data.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_platform_user_sessions {
+model community_platform_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's account identifier {@link reddit_platform_users.id}.
-  user_id String
+  /// User's email address used for authentication and email communication.
+  /// Must be unique across all users to prevent duplicate accounts.
+  email String
   
-  /// IP address of the client connecting to the session.
+  /// Hashed password for authentication. Stored securely with cryptographic
+  /// hashing to prevent plaintext password exposure.
+  password_hash String
+  
+  /// Whether the user's email address has been verified through the
+  /// verification process. Used for security and access control.
+  email_verified Boolean
+  
+  /// Account creation timestamp. Automatically set when the user creates their
+  /// account.
+  created_at DateTime
+  
+  /// Last account modification timestamp. Updated on any profile change or
+  /// credential update.
+  updated_at DateTime
+  
+  /// Account deletion timestamp for soft delete functionality. Null indicates
+  /// active account, timestamp indicates deletion for audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions community_platform_user_sessions[]
+  emailVerifications community_platform_user_email_verifications[]
+  passwordResets community_platform_user_password_resets[]
+  profile community_platform_profiles?
+  karmaScores community_platform_karma_scores[]
+  postVotes community_platform_post_votes[]
+  communities community_platform_communities[]
+  subscriptions community_platform_community_subscriptions[]
+  moderatedCommunities community_platform_community_moderators[]
+  posts community_platform_posts[]
+  votes community_platform_comment_votes[]
+  comments community_platform_comments[]
+  reportedReports community_platform_reports[]
+  moderationActions community_platform_moderation_actions[]
+  bansForBannedUser community_platform_bans[] @relation("community_platform_bans_of_user_id")
+  bansForModerator community_platform_bans[] @relation("community_platform_bans_of_moderator_id")
+  
+  @@unique([email])
+  @@index([email_verified, created_at])
+}
+
+/// Session records for user authentication and access management.
+///
+/// Tracks active user login sessions including connection details and
+/// expiration information.
+///
+/// Each session is associated with a single user and records the following:
+/// - Session creation data (timestamp and connection details)
+/// - Session lifetime (with forced expiration for security)
+/// - Session lifecycle for security audit tracking
+///
+/// This table uses the standard session table pattern for user authentication.
+///
+/// Security: Sessions always expire by default (no unlimited sessions) to
+/// prevent security vulnerabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User session belongs to a user's {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// IP address from which the session was created.
   ip String
   
-  /// Connection URL for the session.
+  /// Connection URL (full URL) that created the session.
   href String
   
   /// Referrer URL that initiated the session.
   referrer String
   
-  /// Time when the session was created.
-  created_at DateTime
-  
-  /// Time when the session expires for security purposes.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  @@index([user_id, created_at])
-}
-
-/// System records for community administrators who manage specific platform
-/// communities.
-///
-/// Stores identification and core administrative metadata for users
-/// designated as community managers. Each community admin record represents
-/// a distinct administrative identity within a community context.
-///
-/// Admins can create, manage, and moderate content within their assigned
-/// communities. This system tracks community admin status, assigned
-/// community boundaries, and moderation thresholds without storing
-/// authentication credentials.
-///
-/// The community admin identity is maintained separately from general user
-/// identity and authentication, allowing for clear role specialization and
-/// permissions management.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_platform_communityadmins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Timestamp when the community admin record was created.
-  created_at DateTime
-  
-  /// Timestamp when the community admin record was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the community admin record was soft-deleted (null
-  /// indicates active).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  reddit_platform_communityadmin_sessions reddit_platform_communityadmin_sessions[]
-}
-
-/// Active authentication sessions for community administrators, tracking
-/// login state and security context for community management operations.
-///
-/// Manages authentication tokens and session context specifically for
-/// community administrator roles with dedicated session tracking. Each
-/// session is linked to a community administrator's account and includes
-/// comprehensive connection metadata for security monitoring and audit
-/// trails.
-///
-/// Session management follows standard security practices with expiration
-/// time and connection details for all community administrator sessions.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_platform_communityadmin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community administrator account's {@link
-  /// reddit_platform_communityadmins.id}.
-  communityadmin_id String
-  
-  /// IP address from which session was initiated.
-  ip String
-  
-  /// Connection URL used to establish session.
-  href String
-  
-  /// Referrer URL from which session originated.
-  referrer String
-  
   /// Session creation timestamp.
   created_at DateTime
   
-  /// Session expiration timestamp (required, never NULL).
+  /// Session expiration timestamp.
   expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  communityadmin reddit_platform_communityadmins @relation(fields: [communityadmin_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([communityadmin_id, created_at], map: "reddit_platform_communityadmin_sessions_communityadmin_a9166b7f")
+  @@index([community_platform_user_id, created_at], map: "community_platform_user_sessions_community_platform_us_cc8d68d4")
 }
 
-/// Platform-wide administrators with system-level permissions and control
-/// capabilities.
+/// Stores email verification tokens used during user account activation
+/// after registration. Each verification token is tied to a user's email
+/// address and has a limited validity period for security.
 ///
-/// Represents the main account data for users with full administrative
-/// access across the entire platform. Each site admin has a unique email for
-/// authentication, with password hashing for secure login. Supports soft
-/// deletion for account management without permanent data loss.
+/// The token is generated upon registration and email is stored as part of
+/// the verification request. Tokens expire to prevent unauthorized access
+/// while the user completes the activation process. This table supports
+/// secure account activation without storing sensitive verification data
+/// long-term.
+///
+/// Verification tokens are only valid for the intended email and expiration
+/// date, ensuring that tokens cannot be reused or misused for different
+/// email accounts.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_platform_siteadmins {
+model community_platform_user_email_verifications {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address for authentication and system notifications. Must
-  /// follow business email domain requirements.
+  /// User this verification belongs to. {@link community_platform_users.id}
+  user_id String
+  
+  /// Email address for which the verification token was issued. Must match the
+  /// email in user profiles for activation.
   email String
   
-  /// Secure hash of the user's password for authentication. Never store
-  /// plaintext passwords.
-  password_hash String
+  /// One-time verification token used during account activation. Stored in
+  /// hashed form for security, not plaintext.
+  token String
   
-  /// Timestamp when the site admin account was created. Used for audit and
-  /// activity tracking.
+  /// Time when the verification token expires. After this time, the token is
+  /// no longer valid for account activation.
+  expires_at DateTime
+  
+  /// Timestamp when the verification token was created.
   created_at DateTime
   
-  /// Timestamp when the site admin account was last updated. Reflects changes
-  /// to profile or authentication data.
+  /// Timestamp when the verification token was last modified (e.g., refreshed).
   updated_at DateTime
   
-  /// Timestamp when the site admin account was deleted. Soft deletion allows
-  /// for recovery without data loss.
+  /// Timestamp when the verification token was marked for deletion. Soft
+  /// delete support for security audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_platform_siteadmin_sessions reddit_platform_siteadmin_sessions[]
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
+  @@index([user_id])
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([email, expires_at], map: "community_platform_user_email_verifications_email_expi_17ebaf1e")
+  @@index([expires_at])
 }
 
-/// Active authentication sessions for site administrators tracking login
-/// state and security parameters.
+/// Stores temporary tokens for secure password reset workflows, including
+/// expiration timing for security and automatic cleanup.
 ///
-/// Stores session records for platform-wide administrators who have
-/// system-level permissions and control capabilities. Each session is
-/// associated with a specific site administrator account and includes
-/// connection context for audit purposes.
+/// This table holds one-time password reset tokens used to validate user
+/// requests for changing their password. Each token is uniquely associated
+/// with a user account and has a limited validity period to prevent stale
+/// tokens.
 ///
-/// Sessions require expiration for security, with both creation and
-/// expiration timestamps recorded. Multiples sessions per siteadmin are
-/// supported, which is why foreign key relationships have the 1:N pattern.
+/// Tokens are generated as UUIDs and stored with expiration dates set to
+/// match system security requirements. The table tracks token creation time
+/// for audit purposes, allowing security monitoring of reset attempts.
 ///
-/// The session data structure follows the required pattern strictly: IP,
-/// connection URL, referrer, timestamps, and non-nullable expired_at for
-/// security compliance.
+/// Automated cleanup processes remove expired tokens to maintain database
+/// efficiency and security compliance.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_platform_siteadmin_sessions {
+model community_platform_user_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Site administrator account who owns this session. {@link
-  /// reddit_platform_siteadmins.id}.
-  siteadmin_id String
+  /// Associated user's {@link community_platform_users.id}.
+  user_id String
   
-  /// IP address from which the session was initiated.
-  ip String
+  /// Unique password reset token generated for security verification. Must be
+  /// a strong, random UUID string.
+  token String
   
-  /// Connection URL used for session establishment.
-  href String
+  /// Expiration timestamp for the reset token. Tokens become invalid after
+  /// this time.
+  expires_at DateTime
   
-  /// Referrer URL that led to the session initiation.
-  referrer String
-  
-  /// Timestamp when the session was created.
+  /// Timestamp of when the reset token was created.
   created_at DateTime
   
-  /// Timestamp when the session expires for security reasons. Mandatory
-  /// non-nullable value.
-  expired_at DateTime
+  /// Timestamp of the last modification to the token record.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete to maintain audit trail when tokens are expired
+  /// or used.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  siteadmin reddit_platform_siteadmins @relation(fields: [siteadmin_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@index([siteadmin_id, created_at])
+  @@index([user_id])
+  
+  @@unique([token])
+  @@index([expires_at])
 }

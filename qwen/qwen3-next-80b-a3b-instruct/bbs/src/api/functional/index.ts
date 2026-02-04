@@ -1,1 +1,1 @@
-export * as economicForum from "./economicForum/index";
+export * as economicDiscussion from "./economicDiscussion/index";

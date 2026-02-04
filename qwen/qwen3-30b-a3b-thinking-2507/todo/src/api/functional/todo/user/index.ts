@@ -1,2 +1,3 @@
+export * as auth from "./auth/index";
 export * as users from "./users/index";
-export * as tasks from "./tasks/index";
+export * as todos from "./todos/index";

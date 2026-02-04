@@ -18,13 +18,13 @@ subgraph "Backend Coding Agent"
 end
 subgraph "Functional Agents"
   coder --"Requirements Analysis"--> analyze("✅ Analyze")
-  coder --"ERD"--> prisma("✅ Prisma")
-  coder --"API Design"--> interface("✅ Interface")
-  coder --"Test Codes" --> test("✅ Test")
-  coder --"Main Program" --> realize("❌ Realize")
+  coder --"ERD"--> database("⬜ Database")
+  coder --"API Design"--> interface("⬜ Interface")
+  coder --"Test Codes" --> test("⬜ Test")
+  coder --"Main Program" --> realize("⬜ Realize")
 end
 subgraph "Compiler Feedback"
-  prisma --"validates" --> prismaCompiler("Prisma Compiler")
+  database --"validates" --> prismaCompiler("Prisma Compiler")
   interface --"validates" --> openapiValidator("OpenAPI Validator")
   interface --"generates" --> tsCompiler("TypeScript Compiler")
   test --"validates" --> tsCompiler("TypeScript Compiler")
@@ -42,10 +42,10 @@ Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
 Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
-Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | ❌ Realize      | [API Provider Functions](src/providers)
-Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
+Design          | ⬜ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ⬜ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
+Development     | ⬜ Realize      | [API Provider Functions](src/providers)
+Testing         | ⬜ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
 ## Project Structure
@@ -113,13 +113,13 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 3, documents: 12 | 62.50 % | 1,525,177 | 739 sec
-✅ prisma | namespaces: 7, models: 21 | 54.55 % | 1,627,324 | 342 sec
-✅ interface | operations: 72, schemas: 71 | 54.62 % | 55,737,061 | 3739 sec
-✅ test | functions: 118 | 61.95 % | 29,213,651 | 2190 sec
-❌ realize | functions: 72, errors: 1 | 53.57 % | 22,678,242 | 3839 sec
+✅ analyze | actors: 4, documents: 12 | 90.00 % | 1,209,023 | 652 sec
+⬜ database | | | | 
+⬜ interface | | | | 
+⬜ test | | | | 
+⬜ realize | | | | 
 
-This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Prisma, Interface, Test, Realize), it tracks:
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
 - **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
 - **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)
@@ -133,30 +133,10 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 1,742 | 775 | 72 | 970 | 55.68 %
-analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 12 | 0 | 7 | 12 | 100.00 %
-analyzeReview | 27 | 15 | 3 | 12 | 44.44 %
-prismaComponent | 1 | 0 | 0 | 1 | 100.00 %
-prismaSchema | 22 | 14 | 1 | 8 | 36.36 %
-prismaReview | 9 | 1 | 0 | 8 | 88.89 %
-prismaCorrect | 1 | 0 | 0 | 1 | 100.00 %
-interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
-interfaceAuthorization | 12 | 4 | 0 | 8 | 66.67 %
-interfaceEndpoint | 16 | 1 | 0 | 15 | 93.75 %
-interfaceEndpointReview | 10 | 8 | 0 | 2 | 20.00 %
-interfaceOperation | 130 | 57 | 0 | 70 | 53.85 %
-interfaceOperationReview | 100 | 54 | 4 | 53 | 53.00 %
-interfaceSchema | 191 | 89 | 22 | 101 | 52.88 %
-interfaceSchemaReview | 175 | 46 | 9 | 129 | 73.71 %
-interfaceSchemaRename | 1 | 0 | 0 | 1 | 100.00 %
-interfacePrerequisite | 133 | 93 | 0 | 40 | 30.08 %
-testScenario | 42 | 2 | 0 | 40 | 95.24 %
-testWrite | 255 | 111 | 23 | 144 | 56.47 %
-realizeAuthorizationWrite | 14 | 6 | 0 | 8 | 57.14 %
-realizeAuthorizationCorrect | 45 | 21 | 0 | 24 | 53.33 %
-realizeWrite | 238 | 81 | 2 | 157 | 65.97 %
-realizeCorrect | 306 | 172 | 1 | 134 | 43.79 %
+total | 40 | 4 | 0 | 36 | 90.00 %
+analyzeScenario | 2 | 1 | 0 | 1 | 50.00 %
+analyzeWrite | 12 | 0 | 0 | 12 | 100.00 %
+analyzeReview | 26 | 3 | 0 | 23 | 88.46 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

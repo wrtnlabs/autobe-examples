@@ -1,0 +1,1476 @@
+/// Main sales listings combining product information, seller details,
+/// pricing, and availability status.
+///
+/// Represents individual sales offerings by sellers within the e-commerce
+/// platform. Each sale listing contains product details copied from the
+/// source product at listing time, seller information for ownership
+/// tracking, pricing configuration, and status management for platform
+/// visibility.
+///
+/// Sales maintain references to their source product, seller owner, and
+/// category classification. The table supports rich product displays while
+/// allowing seller-specific pricing and promotion overrides. Status fields
+/// control visibility and manage platform approval workflows for new
+/// listings.
+///
+/// Sales integrate with the snapshot system through the associated
+/// ecommerce_mall_sale_snapshots table to preserve historical states when
+/// sellers modify their listings. Soft deletion allows for listing removal
+/// while maintaining data integrity for past orders and reviews.
+///
+/// The pricing structure includes both base selling price and optional
+/// promotional pricing, enabling sellers to run targeted discounts and
+/// campaigns without permanently altering their base pricing strategy.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who created and owns this sale listing. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Source product providing base product information for this sale. {@link
+  /// ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Primary category classification for this sale listing. {@link
+  /// ecommerce_mall_categories.id}
+  ecommerce_mall_category_id String
+  
+  /// Display title for the sale listing. Should be descriptive and
+  /// search-friendly to help customers find the product.
+  title String
+  
+  /// Detailed description of the sale listing including product features,
+  /// specifications, and seller-specific information.
+  description String
+  
+  /// Base selling price for standard sales without promotions. Serves as
+  /// reference for calculating discounts and promotional pricing.
+  base_price Float
+  
+  /// Current active sale price if promotional pricing is applied. If null,
+  /// base_price is used for transactions.
+  sale_price Float?
+  
+  /// Current status of the sale listing controlling platform visibility. Valid
+  /// values: active, inactive, pending_approval, rejected.
+  status String
+  
+  /// Availability flag indicating whether the sale listing is currently
+  /// available for purchase. Allows temporary disabling without deleting.
+  is_available Boolean
+  
+  /// Flag indicating whether this sale requires administrator approval before
+  /// becoming active on the platform.
+  requires_approval Boolean
+  
+  /// Timestamp when the sale listing was originally created by the seller.
+  created_at DateTime
+  
+  /// Timestamp when the sale listing was last modified by the seller or system.
+  updated_at DateTime
+  
+  /// Timestamp when the sale listing was soft deleted. Null indicates active
+  /// listing.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  snapshots ecommerce_mall_sale_snapshots[]
+  variants ecommerce_mall_sale_variants[]
+  prices ecommerce_mall_sale_prices[]
+  promotions ecommerce_mall_sale_promotions[]
+  images ecommerce_mall_sale_images[]
+  reviews ecommerce_mall_sale_reviews[]
+  questions ecommerce_mall_sale_questions[]
+  saleCategories ecommerce_mall_sale_categories[]
+  customerFavorites ecommerce_mall_sale_favorites[]
+  viewStats ecommerce_mall_sale_view_stats[]
+  specification ecommerce_mall_sale_specifications?
+  availabilities ecommerce_mall_sale_availabilities[]
+  metadatum ecommerce_mall_sale_metadata?
+  performanceMetrics ecommerce_mall_sale_performance_metrics[]
+  productReviews ecommerce_mall_product_reviews[]
+  ratingCalculations ecommerce_mall_rating_calculations[]
+  reviewEligibilities ecommerce_mall_review_eligibilities[]
+  
+  @@unique([ecommerce_mall_seller_id, title])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, ecommerce_mall_seller_id], map: "ecommerce_mall_sales_ecommerce_mall_product_id_ecommer_1f37cc8b")
+  @@index([status, is_available])
+  @@index([ecommerce_mall_category_id, status])
+  @@index([created_at])
+  @@index([base_price])
+}
+
+/// Immutable snapshots preserving complete sale state including variants and
+/// images for audit trail.
+///
+/// Captures the entire state of a sale listing at the moment of any
+/// modification, ensuring data integrity for dispute resolution and
+/// historical tracking. Each snapshot represents a point-in-time copy of the
+/// sale's complete information including active prices, promotions, variant
+/// configurations, and associated images.
+///
+/// The snapshot system enables accurate historical analysis and provides
+/// precise documentation of what customers saw during their purchase
+/// decision process. Snapshots are automatically created when sales are
+/// modified and cannot be altered once created, serving as definitive
+/// evidence in case of disputes about pricing, product descriptions, or
+/// availability claims.
+///
+/// All snapshots reference their original sale entity via sale_id, allowing
+/// comprehensive audit trails of how sales evolve over time while
+/// maintaining referential integrity with other business entities in the
+/// system.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original sale entity whose state is being snapshotted.
+  /// {@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Sale name as it appeared at the time of snapshot creation.
+  name String
+  
+  /// Complete sale description including all formatting and content at
+  /// snapshot time.
+  description String
+  
+  /// Base price of the sale before any promotions or discounts were applied.
+  base_price Float
+  
+  /// Sale status (active, inactive, draft, archived) at the moment of snapshot.
+  status String
+  
+  /// Seller ID responsible for the sale, captured for historical reference.
+  seller_id String
+  
+  /// Category assignment of the sale at snapshot creation time.
+  category_id String?
+  
+  /// JSON representation of all sale variants including SKUs, options, and
+  /// variant-specific pricing at snapshot time.
+  variants_data String
+  
+  /// JSON representation of sale images including URLs, ordering, and metadata
+  /// captured at snapshot creation.
+  images_data String
+  
+  /// JSON snapshot of active promotions and discounts applied to the sale at
+  /// the time of snapshot capture.
+  promotions_data String?
+  
+  /// Complete sale metadata including tags, custom fields, and classification
+  /// data preserved for historical accuracy.
+  metadata String?
+  
+  /// Timestamp when this snapshot was automatically created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated (should match
+  /// created_at for immutable snapshots).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for snapshot management while preserving audit
+  /// trail integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, created_at], map: "ecommerce_mall_sale_snapshots_ecommerce_mall_sale_id_c_0857c104")
+  @@index([created_at])
+  @@index([seller_id, created_at])
+}
+
+/// Specific variants available within sales with SKU codes, option values,
+/// and pricing details.
+///
+/// Each sale variant represents a unique combination of options and pricing
+/// for products listed in sales. Variants include SKU codes for inventory
+/// tracking, option values for customer selection, and pricing details
+/// specific to the sale context.
+///
+/// Sale variants maintain their own stock levels independent of the main
+/// product inventory, allowing sellers to offer limited quantities at sale
+/// prices. Variants can be activated or deactivated based on availability
+/// and sale duration.
+///
+/// The relationship with the parent sale ensures proper catalog
+/// organization, while the optional reference to product variants allows for
+/// consistency with the main product catalog when applicable.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged sale's {@link ecommerce_mall_sales.id}.
+  ecommerce_mall_sale_id String
+  
+  /// Reference to product variant's {@link ecommerce_mall_product_variants.id}
+  /// for consistency with product catalog.
+  ecommerce_mall_product_variant_id String?
+  
+  /// Stock Keeping Unit code for inventory tracking and variant
+  /// identification. Must be unique within the sale context.
+  sku String
+  
+  /// JSON string containing variant option combinations and values for
+  /// customer selection.
+  option_values String
+  
+  /// Special sale price for this variant during the sale period.
+  sale_price Float
+  
+  /// Original price before sale discount for comparison purposes.
+  original_price Float
+  
+  /// Available quantity of this variant for sale. Separate from main product
+  /// inventory.
+  stock_quantity Int
+  
+  /// Variant status: active, inactive, sold_out, or discontinued. Controls
+  /// visibility and availability.
+  status String
+  
+  /// Timestamp when the sale variant was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the sale variant was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants? @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  prices ecommerce_mall_sale_prices[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_sale_variants_ecommerce_mall_product_va_14e1b167")
+  
+  @@unique([ecommerce_mall_sale_id, sku])
+  @@unique([sku])
+  @@index([ecommerce_mall_sale_id, status])
+  @@index([status, stock_quantity])
+  @@index([sale_price])
+}
+
+/// Pricing history and current pricing information for sales including
+/// promotional discounts and validity periods.
+///
+/// Tracks both current and historical pricing for sales entities, supporting
+/// base prices, sale prices, promotional discounts, and effective date
+/// ranges. Maintains complete pricing audit trail for compliance and
+/// historical analysis.
+///
+/// Each pricing entry can be tied to either a specific sale (for sale-wide
+/// pricing) or a sale variant (for variant-specific pricing). The status
+/// field distinguishes active pricing from historical records, while
+/// effective date ranges ensure proper pricing application during validity
+/// periods.
+///
+/// Pricing entries include base price (regular price), sale price (current
+/// promotional price), discount percentage, and currency information. The
+/// pricing source field tracks whether pricing is system-generated, manually
+/// set, or promotional in origin.
+///
+/// Maintains relationships with {@link ecommerce_mall_sales.id} for
+/// sale-wide pricing and optionally with {@link
+/// ecommerce_mall_sale_variants.id} for variant-specific pricing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_prices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the sale this pricing belongs to. {@link
+  /// ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Optional reference to specific sale variant for variant-level pricing.
+  /// {@link ecommerce_mall_sale_variants.id}
+  ecommerce_mall_sale_variant_id String?
+  
+  /// Base or regular price before any discounts or promotions. Represents the
+  /// standard selling price.
+  base_price Float
+  
+  /// Current selling price including any active discounts or promotions. This
+  /// is the price customers pay.
+  sale_price Float
+  
+  /// Discount percentage applied to create the sale price from base price.
+  /// Null if no discount active.
+  discount_percentage Float?
+  
+  /// Currency code for the pricing (e.g., USD, EUR, KRW). Ensures consistent
+  /// currency handling across the platform.
+  currency String
+  
+  /// Start date and time when this pricing becomes active. Used for scheduled
+  /// pricing changes.
+  effective_from DateTime
+  
+  /// End date and time when this pricing expires. Null for ongoing/persistent
+  /// pricing.
+  effective_to DateTime?
+  
+  /// Pricing status indicating whether this pricing is active, expired, or
+  /// scheduled. Controls pricing activation.
+  status String
+  
+  /// Source of this pricing entry: system-generated, manual-entry,
+  /// promotional, or automated.
+  pricing_source String
+  
+  /// Timestamp when this pricing entry was created. Used for audit trail and
+  /// chronological ordering.
+  created_at DateTime
+  
+  /// Timestamp when this pricing entry was last updated. Tracks modifications
+  /// to pricing data.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  variant ecommerce_mall_sale_variants? @relation(fields: [ecommerce_mall_sale_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, status, effective_from], map: "ecommerce_mall_sale_prices_ecommerce_mall_sale_id_stat_2d00e38d")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_variant_id, status, effective_from], map: "ecommerce_mall_sale_prices_ecommerce_mall_sale_variant_125e98e1")
+  @@index([effective_from, effective_to])
+}
+
+/// Active promotions and discount campaigns applied to sales with validity
+/// periods and conditions.
+///
+/// Stores promotional campaigns that offer discounts or special offers on
+/// sales listings. Each promotion specifies discount amounts, validity
+/// periods, and applicable conditions for targeted sales. Promotions can be
+/// created by sellers or administrators and may target specific sales or
+/// apply across multiple eligible sales based on conditions.
+///
+/// Includes comprehensive promotion details such as discount type
+/// (percentage, fixed amount, buy-one-get-one), minimum purchase
+/// requirements, customer eligibility rules, and promotional messaging.
+/// Supports time-limited campaigns with precise start and end dates for
+/// automated activation and expiration.
+///
+/// Maintains audit trail for promotion lifecycle management and supports
+/// promotion performance tracking when combined with order data. Follows the
+/// platform's snapshot architecture principle where modifications create
+/// immutable snapshots for historical preservation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who created and manages this promotion.{@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String?
+  
+  /// Specific sale targeted by this promotion, if promotion is
+  /// sale-specific.{@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String?
+  
+  /// Promotion title displayed to customers for marketing and identification
+  /// purposes.
+  title String
+  
+  /// Detailed promotion description explaining discount terms, conditions, and
+  /// promotional messaging.
+  description String?
+  
+  /// Type of discount applied (percentage, fixed_amount, bogo_free,
+  /// bogo_discount). Percentage discounts apply as percentage of sale price,
+  /// fixed_amount reduces by specific amount.
+  discount_type String
+  
+  /// Amount of discount based on discount_type. For percentage discounts,
+  /// value should be between 0 and 100.
+  discount_amount Float
+  
+  /// Minimum cart or purchase amount required to qualify for this promotion,
+  /// null means no minimum.
+  minimum_purchase_amount Float?
+  
+  /// Maximum discount amount that can be applied for percentage discounts,
+  /// prevents excessive discounts on high-value items.
+  maximum_discount_amount Float?
+  
+  /// Date and time when promotion becomes active and applicable to eligible
+  /// sales.
+  start_date DateTime
+  
+  /// Date and time when promotion expires and becomes inactive.
+  end_date DateTime
+  
+  /// Whether this promotion is currently active and should be
+  /// displayed/applied to eligible sales.
+  is_active Boolean
+  
+  /// Maximum number of times this promotion can be used across all customers,
+  /// null means unlimited usage.
+  usage_limit Int?
+  
+  /// Maximum number of times a single customer can use this promotion, null
+  /// means unlimited per customer.
+  customer_usage_limit Int?
+  
+  /// Optional promotional code that customers must enter to apply this
+  /// promotion, enables targeted marketing campaigns.
+  promo_code String?
+  
+  /// Timestamp when this promotion was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this promotion was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this promotion was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers? @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  sale ecommerce_mall_sales? @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_mall_sale_id])
+  
+  @@unique([promo_code])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, title], map: "ecommerce_mall_sale_promotions_ecommerce_mall_seller_i_eddb842f")
+  // spellchecker: ignore-next-line
+  @@index([start_date, end_date, is_active], map: "ecommerce_mall_sale_promotions_start_date_end_date_is__b4e2b8d1")
+  // spellchecker: ignore-next-line
+  @@index([discount_type, discount_amount], map: "ecommerce_mall_sale_promotions_discount_type_discount__bea93323")
+}
+
+/// Multiple images associated with sales for product display and marketing
+/// purposes.
+///
+/// Stores image metadata including URLs, descriptions, ordering sequence,
+/// and display properties for sales listings. Each image is associated with
+/// a specific sale and supports the visual presentation of products in the
+/// sales catalog.
+///
+/// Images are managed through sale operations and follow the snapshot
+/// architecture for audit trail purposes. The ordering field determines the
+/// display sequence of images for each sale, allowing sellers to prioritize
+/// product visuals effectively.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// content moderation and image replacement workflows.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged sale's {@link ecommerce_mall_sales.id}.
+  ecommerce_mall_sale_id String
+  
+  /// URL of the image file stored in the image service.
+  image_url String
+  
+  /// Display sequence order for images within the sale. Lower numbers appear
+  /// first.
+  ordering Int
+  
+  /// Optional description or caption for the image.
+  description String?
+  
+  /// Whether this image is the primary/default image for the sale.
+  is_primary Boolean
+  
+  /// Timestamp when the image was added to the sale.
+  created_at DateTime
+  
+  /// Timestamp when the image metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_sale_id, ordering])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, is_primary], map: "ecommerce_mall_sale_images_ecommerce_mall_sale_id_is_p_475e11da")
+}
+
+/// Customer reviews and ratings for sales listings with purchase
+/// verification and content management.
+///
+/// Stores feedback from customers who have purchased and received sales
+/// items. Each review captures the customer's experience through a 5-star
+/// rating system and optional text content. Reviews require purchase
+/// verification to ensure only legitimate customers can provide feedback.
+///
+/// The system maintains comprehensive audit trails including delivery
+/// confirmation tracking and review modification histories. Reviews support
+/// moderation workflows with reporting capabilities and status management to
+/// ensure content quality and platform integrity.
+///
+/// Reviews are linked to both the customer who created them and the sale
+/// being reviewed, enabling comprehensive reputation tracking and customer
+/// sentiment analysis across the marketplace. Soft deletion is supported for
+/// content moderation while preserving audit trails.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The sale being reviewed. {@link ecommerce_mall_sales.id}
+  sale_id String
+  
+  /// The customer who created the review. {@link ecommerce_mall_customers.id}
+  customer_id String
+  
+  /// The order item that establishes purchase eligibility. {@link
+  /// ecommerce_mall_order_items.id}
+  order_item_id String
+  
+  /// The 1-5 star rating assigned by the customer. Valid values: 1 (lowest) to
+  /// 5 (highest).
+  rating Int
+  
+  /// Optional review title summarizing the customer experience.
+  title String?
+  
+  /// Optional detailed review content describing the customer's experience
+  /// with the sale.
+  content String?
+  
+  /// Review status for moderation workflows. Valid values: pending, approved,
+  /// rejected, flagged.
+  status String
+  
+  /// Flag indicating the review is from a verified purchase. Set to true after
+  /// delivery confirmation.
+  verified_purchase Boolean
+  
+  /// Timestamp when the item delivery was confirmed, establishing review
+  /// eligibility.
+  delivery_confirmed_at DateTime?
+  
+  /// Count of other customers who found this review helpful.
+  helpful_count Int
+  
+  /// Count of times this review has been reported for moderation.
+  report_count Int
+  
+  /// Timestamp when the review was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft deleted for moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  @@unique([customer_id, sale_id])
+  @@unique([order_item_id])
+  @@index([sale_id, status, created_at])
+  @@index([customer_id, created_at])
+  @@index([status, created_at])
+  @@index([rating, sale_id])
+  @@index([verified_purchase, created_at])
+}
+
+/// Customer questions about products listed for sale in the sales catalog.
+///
+/// Stores inquiries from customers seeking additional information about sale
+/// listings before making purchase decisions. Each question is associated
+/// with a specific sale and created by an authenticated customer through
+/// their active session.
+///
+/// Questions remain attached to the sale even if the product details change,
+/// providing historical context for customer inquiries. Customers can ask
+/// multiple questions per sale listing, and each question can receive one
+/// answer from the seller.
+///
+/// The question content includes title and body fields for structured
+/// inquiry formatting. Soft deletion is supported to maintain audit trails
+/// while allowing content moderation for inappropriate questions.
+///
+/// This entity enables customer-seller communication and helps provide
+/// transparency about sale listings through community Q&A functionality.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_questions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated sale listing being questioned. References sale's {@link
+  /// ecommerce_mall_sales.id} that the customer is inquiring about.
+  ecommerce_mall_sale_id String
+  
+  /// Question creator's identification. References customer {@link
+  /// ecommerce_mall_customers.id} who asked the question through their active
+  /// session.
+  ecommerce_mall_customer_id String
+  
+  /// Active session during question creation. References session {@link
+  /// ecommerce_mall_customer_sessions.id} used for authentication when asking
+  /// the question.
+  ecommerce_mall_customer_session_id String
+  
+  /// Brief summary title of the customer's question about the sale listing.
+  /// Provides a quick overview of the inquiry topic and helps sellers
+  /// understand the question scope at a glance.
+  title String
+  
+  /// Detailed content of the customer's question explaining their specific
+  /// inquiry about the sale listing. Contains the full question text with any
+  /// clarifying details or specific points the customer seeks information
+  /// about.
+  body String
+  
+  /// Timestamp when the customer submitted the question about the sale
+  /// listing. Records the exact time of question creation for audit trail and
+  /// customer service reference.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the question. Updated when the
+  /// question content is edited by the customer providing a complete
+  /// modification history.
+  updated_at DateTime
+  
+  /// Timestamp when the question was soft deleted for content moderation or
+  /// customer request. Allows question removal while preserving audit trail
+  /// and historical context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  answer ecommerce_mall_sale_question_answers?
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id], map: "ecommerce_mall_sale_questions_ecommerce_mall_customer__c68c2e88")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, created_at], map: "ecommerce_mall_sale_questions_ecommerce_mall_sale_id_c_f832241d")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_sale_questions_ecommerce_mall_customer__feecb249")
+}
+
+/// Seller responses to customer questions about sales listings, maintaining
+/// proper normalization with separate entity structure.
+///
+/// Each answer is created by an authenticated seller in response to a
+/// specific customer question about a sales listing. The separate table
+/// structure avoids the normalization violations of combining question and
+/// answer data in a single table with nullable answer fields.
+///
+/// Answers maintain independent lifecycle management from questions,
+/// supporting search across seller responses, moderation workflows, and
+/// seller accountability tracking. The 1:1 relationship is enforced via
+/// unique constraint to ensure each question receives at most one answer
+/// from sellers.
+///
+/// This approach follows the snapshot-based architecture principle by
+/// preserving seller session context and timestamps for audit trail
+/// integrity. When a seller answers a question, their response is
+/// permanently linked to their seller account and active session for
+/// accountability.
+///
+/// Customers can view seller answers to make informed purchasing decisions,
+/// while platform administrators can monitor answer quality and timeliness
+/// as part of seller performance evaluation. Answers remain visible even if
+/// the seller later terminates their account or modifies their profile
+/// information.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_question_answers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer question being answered by this response.
+  /// {@link ecommerce_mall_sale_questions.id}
+  ecommerce_mall_sale_question_id String
+  
+  /// Seller providing this answer to the customer question. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Active seller session context when creating this answer. {@link
+  /// ecommerce_mall_seller_sessions.id}
+  ecommerce_mall_seller_session_id String
+  
+  /// Answer title summarizing the seller's response to facilitate customer
+  /// browsing and quick reference.
+  title String
+  
+  /// Detailed answer content providing seller expertise and information to
+  /// address the customer's question.
+  body String
+  
+  /// Timestamp when the seller created this answer to track responsiveness
+  /// metrics.
+  created_at DateTime
+  
+  /// Timestamp when the seller last modified this answer to track content
+  /// accuracy maintenance.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for answer moderation and archival preservation
+  /// requirements.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  question ecommerce_mall_sale_questions @relation(fields: [ecommerce_mall_sale_question_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession ecommerce_mall_seller_sessions @relation(fields: [ecommerce_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_session_id], map: "ecommerce_mall_sale_question_answers_ecommerce_mall_se_9fbd5518")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_question_id], map: "ecommerce_mall_sale_question_answers_ecommerce_mall_sa_2bc0573a")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_sale_question_answers_ecommerce_mall_se_83a52bc1")
+  @@index([created_at])
+}
+
+/// Junction table establishing many-to-many relationships between sales and
+/// categories for catalog organization.
+///
+/// Each record represents a category assignment for a specific sale,
+/// allowing sales to appear in multiple categories while maintaining proper
+/// catalog structure. This enables flexible product categorization where a
+/// single sale can be listed in relevant categories to improve
+/// discoverability.
+///
+/// The table supports the snapshot architecture by maintaining assignment
+/// history and enabling audit trails for category modifications. Category
+/// assignments can be independently tracked for each sale, allowing sellers
+/// to optimize product visibility across different category sections.
+///
+/// Soft deletion is supported to preserve assignment history while allowing
+/// category reorganization without losing audit trails.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated sale listing being categorized. {@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Category that the sale belongs to. {@link ecommerce_mall_categories.id}
+  ecommerce_mall_category_id String
+  
+  /// Timestamp when the category assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when the category assignment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category assignment was soft deleted for audit
+  /// preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_id, ecommerce_mall_category_id], map: "ecommerce_mall_sale_categories_ecommerce_mall_sale_id__937e1110")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id, created_at], map: "ecommerce_mall_sale_categories_ecommerce_mall_category_1a52c03e")
+}
+
+/// Customer favorites and wishlist entries for tracking customer interest in
+/// specific sales.
+///
+/// This table manages the many-to-many relationship between customers and
+/// sales items they have marked as favorites. Each record represents a
+/// customer's interest in a particular sale, which can be used for
+/// personalized recommendations, wishlist functionality, and customer
+/// behavior analysis.
+///
+/// Customers can independently add and remove sales from their favorites
+/// list. The system tracks when items were added and modified, supporting
+/// features like 'recently favorited' and providing insights into customer
+/// preferences over time.
+///
+/// Favorites are customer-specific and private by default, allowing personal
+/// collection management without public visibility. This supports wishlist
+/// functionality where customers can save sales for future purchase
+/// consideration.
+///
+/// The implementation includes soft deletion support to maintain historical
+/// tracking while allowing customers to clean up their favorites list as
+/// needed.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who added this sale to their favorites. {@link
+  /// ecommerce_mall_customers.id}
+  customer_id String
+  
+  /// Reference to the sale that has been marked as favorite by the customer.
+  /// {@link ecommerce_mall_sales.id}
+  sale_id String
+  
+  /// Timestamp when the customer added this sale to their favorites list.
+  created_at DateTime
+  
+  /// Timestamp when this favorite entry was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this favorite was removed from the customer's list,
+  /// supporting soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  sale ecommerce_mall_sales @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  
+  @@unique([customer_id, sale_id])
+  @@index([customer_id, created_at])
+  @@index([sale_id, created_at])
+}
+
+/// Tracks individual viewing events and analytics data for sales performance
+/// monitoring.
+///
+/// Captures granular view details including customer associations, device
+/// information, viewing duration, and referral sources for comprehensive
+/// sales analytics. Each record represents a distinct viewing session that
+/// contributes to overall view counts and performance metrics.
+///
+/// When customers are authenticated, their viewing activity is linked to
+/// their account for personalized analytics. Anonymous views are tracked
+/// separately with session-based identification. View statistics support
+/// business intelligence reporting and sales performance optimization
+/// through detailed engagement metrics.
+///
+/// Viewing data is used to calculate conversion rates, identify popular
+/// sales, and optimize marketing strategies based on customer engagement
+/// patterns recorded through detailed analytics tracking.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the viewed sale's {@link ecommerce_mall_sales.id}.
+  ecommerce_mall_sale_id String
+  
+  /// Optional reference to the viewing customer's {@link
+  /// ecommerce_mall_customers.id} when authenticated.
+  ecommerce_mall_customer_id String?
+  
+  /// Timestamp when the viewing session began for chronological tracking and
+  /// reporting.
+  viewed_at DateTime
+  
+  /// IP address of the viewer for geographic analysis and security monitoring.
+  ip_address String?
+  
+  /// Client browser or device user agent string for device type identification.
+  user_agent String?
+  
+  /// URL of the referring page that directed the visitor to the sale page.
+  referrer_url String?
+  
+  /// Length of time the sale was viewed in seconds for engagement analysis.
+  duration_seconds Int?
+  
+  /// Source identifier for the view event (search, direct, social, email,
+  /// etc.).
+  view_source String?
+  
+  /// Device category for analytics (mobile, tablet, desktop, etc.).
+  device_type String?
+  
+  /// Country code derived from IP address for geographic segmentation.
+  country_code String?
+  
+  /// Unique session identifier for tracking multiple views within same
+  /// browsing session.
+  session_id String?
+  
+  /// Record creation timestamp for audit trail and data processing.
+  created_at DateTime
+  
+  /// Last modification timestamp for data maintenance tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers? @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, viewed_at], map: "ecommerce_mall_sale_view_stats_ecommerce_mall_sale_id__a2cb0bd4")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, viewed_at], map: "ecommerce_mall_sale_view_stats_ecommerce_mall_customer_c875a3bb")
+  @@index([viewed_at])
+  @@index([country_code, viewed_at])
+}
+
+/// Detailed technical specifications and attributes for sales listings.
+///
+/// Stores comprehensive product specifications including features,
+/// dimensions, technical details, and attributes that customers need to make
+/// informed purchase decisions. Each specification set belongs to exactly
+/// one sale listing and provides detailed product information beyond basic
+/// descriptions.
+///
+/// Specifications include measurements, materials, technical specifications,
+/// features, and other attribute data that helps customers understand the
+/// product's capabilities and limitations. The specifications are managed
+/// independently from the main sale information to allow detailed technical
+/// data organization.
+///
+/// Specification data supports advanced filtering, comparison features, and
+/// detailed product information displays. Soft deletion is supported to
+/// maintain audit trails while allowing content updates.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_specifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main sale listing that these specifications belong to.
+  /// {@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Title or name of the specification set, providing a descriptive label for
+  /// the technical details.
+  title String
+  
+  /// Overall description of the specifications, providing context for the
+  /// technical details contained within.
+  description String?
+  
+  /// Category or classification of the specifications (e.g., technical,
+  /// dimensions, features, materials).
+  category String?
+  
+  /// Priority level for display ordering, with higher numbers indicating more
+  /// important specifications.
+  priority Int
+  
+  /// Whether these specifications should be displayed to customers or kept for
+  /// internal reference only.
+  is_visible Boolean
+  
+  /// Timestamp when the specification set was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the specification set was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the specification set was soft deleted, or null if
+  /// currently active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  attributes ecommerce_mall_sale_specification_attributes[]
+  
+  @@unique([ecommerce_mall_sale_id])
+  @@index([category, priority])
+  @@index([is_visible, priority])
+  @@index([created_at])
+}
+
+/// Individual attribute entries within sale specifications.
+///
+/// Stores specific attribute-value pairs that make up the detailed
+/// specifications for sales. Each attribute represents a single piece of
+/// technical information such as a dimension measurement, feature
+/// description, or technical specification.
+///
+/// This child table enforces First Normal Form by decomposing repeating
+/// attribute groups that would otherwise violate normalization principles if
+/// stored as arrays or JSON objects in the parent table. Each attribute is
+/// stored as a separate record with its own name, value, and metadata.
+///
+/// Attributes support various data types through standardized value
+/// representation and include ordering information for proper display
+/// sequencing. The table maintains referential integrity with the parent
+/// specifications table.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_specification_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent specification set that this attribute belongs to.
+  /// {@link ecommerce_mall_sale_specifications.id}
+  ecommerce_mall_sale_specification_id String
+  
+  /// Name or label of the attribute (e.g., 'Weight', 'Dimensions', 'Material',
+  /// 'Processor').
+  attribute_name String
+  
+  /// Value of the attribute, which may represent measurements, descriptions,
+  /// or specifications.
+  attribute_value String
+  
+  /// Type of the attribute value (e.g., 'number', 'text', 'boolean',
+  /// 'measurement').
+  value_type String?
+  
+  /// Unit of measurement for numeric attributes (e.g., 'kg', 'cm', 'GHz').
+  unit String?
+  
+  /// Order in which this attribute should be displayed within the
+  /// specification set.
+  display_order Int
+  
+  /// Whether this attribute is considered important and should be highlighted
+  /// in displays.
+  is_important Boolean
+  
+  /// Timestamp when the attribute was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the attribute was soft deleted, or null if currently
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  specification ecommerce_mall_sale_specifications @relation(fields: [ecommerce_mall_sale_specification_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_specification_id, display_order], map: "ecommerce_mall_sale_specification_attributes_ecommerce_08980834")
+  // spellchecker: ignore-next-line
+  @@index([is_important, display_order], map: "ecommerce_mall_sale_specification_attributes_is_import_540029d8")
+}
+
+/// Tracks sale availability status including active/inactive periods, stock
+/// status, and listing visibility.
+///
+/// This table manages the lifecycle and availability state of sales
+/// listings, ensuring proper visibility and stock management. It records
+/// active periods when the sale is available for purchase, tracks current
+/// stock status, and controls listing visibility for customer-facing
+/// display.
+///
+/// Each availability record is tied to a specific sale and maintains
+/// temporal boundaries for when the sale is active. Stock status updates
+/// trigger availability changes, and listing visibility controls allow
+/// sellers to temporarily hide sales without removing them from the system.
+///
+/// The table supports business rules around sale activation, inventory
+/// management, and customer-facing availability while maintaining audit
+/// trails for availability changes.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_availabilities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent sale entity. {@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Current availability status of the sale. Values: active, inactive,
+  /// out_of_stock, hidden, suspended.
+  status String
+  
+  /// Current stock availability status. Values: in_stock, low_stock,
+  /// out_of_stock, pre_order, discontinued.
+  stock_status String
+  
+  /// Whether the sale is currently visible to customers. Controls
+  /// customer-facing display independent of availability status.
+  is_visible Boolean
+  
+  /// Start date and time when the sale becomes active and available for
+  /// purchase.
+  active_from DateTime?
+  
+  /// End date and time when the sale becomes inactive and no longer available
+  /// for purchase.
+  active_until DateTime?
+  
+  /// Timestamp when this availability record was created.
+  created_at DateTime
+  
+  /// Timestamp when this availability record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this availability record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_sale_id])
+  @@index([status, is_visible])
+  @@index([stock_status])
+  @@index([active_from, active_until])
+}
+
+/// Extended metadata and attributes for sales listings including
+/// classification data, custom field definitions, and organizational tags.
+///
+/// This table serves as the central repository for additional metadata
+/// associated with sales listings beyond the core product information. It
+/// supports flexible classification systems, custom field definitions for
+/// seller-specific attributes, and organizational tagging for improved
+/// search and filtering capabilities.
+///
+/// Each metadata record is directly associated with a specific sale listing
+/// and provides extensible attribute storage that maintains data integrity
+/// while allowing sellers to customize their listing information.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated sale listing for this metadata. {@link
+  /// ecommerce_mall_sales.id}.
+  ecommerce_mall_sale_id String
+  
+  /// Primary classification category for the sale listing used for
+  /// organizational purposes.
+  classification_type String?
+  
+  /// JSON schema definition for custom fields structure and validation rules.
+  custom_field_schema String?
+  
+  /// Priority ranking for sale display and promotion purposes.
+  priority_level String?
+  
+  /// Timestamp when the metadata record was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the metadata record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the metadata record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  tags ecommerce_mall_sale_metadatum_tags[]
+  fields ecommerce_mall_sale_metadatum_fields[]
+  
+  @@unique([ecommerce_mall_sale_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, created_at], map: "ecommerce_mall_sale_metadata_ecommerce_mall_sale_id_cr_5cd81849")
+  @@index([classification_type])
+}
+
+/// Individual tags associated with sale metadata for improved categorization
+/// and search functionality.
+///
+/// This child table decomposes the repeating group of tags that would
+/// otherwise violate First Normal Form (1NF) if stored in the main metadata
+/// table. Each tag represents a specific categorization label that can be
+/// applied to sales listings for organizational purposes.
+///
+/// Tags support flexible categorization systems and enable advanced
+/// filtering and search capabilities across the sales catalog.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_metadatum_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent metadata record for this tag. {@link
+  /// ecommerce_mall_sale_metadata.id}.
+  ecommerce_mall_sale_metadata_id String
+  
+  /// The actual tag text used for categorization and filtering.
+  tag_name String
+  
+  /// Optional category grouping for tags to organize them hierarchically.
+  tag_category String?
+  
+  /// Timestamp when the tag was added to the metadata.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  metadata ecommerce_mall_sale_metadata @relation(fields: [ecommerce_mall_sale_metadata_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_metadata_id, tag_name], map: "ecommerce_mall_sale_metadatum_tags_ecommerce_mall_sale_bc144226")
+  @@index([tag_category])
+}
+
+/// Custom field values associated with sale metadata for extended attribute
+/// storage.
+///
+/// This child table decomposes the repeating group of custom fields that
+/// would violate First Normal Form (1NF) if stored directly in the main
+/// metadata table. It provides flexible storage for seller-defined
+/// attributes and custom field values that extend beyond the standard sale
+/// information.
+///
+/// Custom fields support seller-specific requirements and enable specialized
+/// attribute tracking for different types of sales listings.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_metadatum_fields {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent metadata record for this custom field. {@link
+  /// ecommerce_mall_sale_metadata.id}.
+  ecommerce_mall_sale_metadata_id String
+  
+  /// Name of the custom field as defined in the metadata schema.
+  field_name String
+  
+  /// The actual value stored for this custom field.
+  field_value String
+  
+  /// Data type of the custom field for validation and display purposes.
+  field_type String
+  
+  /// Timestamp when the custom field value was set.
+  created_at DateTime
+  
+  /// Timestamp when the custom field value was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  metadata ecommerce_mall_sale_metadata @relation(fields: [ecommerce_mall_sale_metadata_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_metadata_id, field_name], map: "ecommerce_mall_sale_metadatum_fields_ecommerce_mall_sa_8773739c")
+  @@index([field_name])
+  @@index([field_type])
+}
+
+/// Performance tracking and analytics metrics for sales including conversion
+/// rates, revenue calculations, and engagement analytics.
+///
+/// Tracks key performance indicators for sales listings to measure
+/// effectiveness and customer engagement. Each record represents aggregated
+/// performance data for a specific sale over a defined period, providing
+/// insights into conversion rates, revenue generation, and customer
+/// interaction patterns.
+///
+/// Performance metrics are calculated based on customer interactions,
+/// purchases, and engagement activities associated with the sale. This data
+/// supports seller analytics, platform optimization, and business
+/// intelligence reporting.
+///
+/// The metrics include view counts, conversion rates, revenue totals, and
+/// engagement scores that help sellers understand how their sales listings
+/// perform in the marketplace.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_sale_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the sale being tracked. {@link ecommerce_mall_sales.id}
+  ecommerce_mall_sale_id String
+  
+  /// Total number of views the sale has received from customers browsing the
+  /// platform.
+  view_count Int
+  
+  /// Total number of purchases made for this sale, tracking conversion from
+  /// views to purchases.
+  purchase_count Int
+  
+  /// Calculated conversion rate percentage (purchases divided by views) for
+  /// performance analysis.
+  conversion_rate Float
+  
+  /// Total revenue generated from this sale, including all purchases and
+  /// variant sales.
+  revenue_total Float
+  
+  /// Composite engagement score based on customer interactions, reviews, and
+  /// activity levels.
+  engagement_score Float
+  
+  /// Average customer rating for this sale based on reviews and feedback.
+  average_rating Float?
+  
+  /// Total number of reviews submitted by customers who purchased this sale.
+  review_count Int
+  
+  /// Number of times customers have added this sale to their favorites or
+  /// wishlist.
+  favorite_count Int
+  
+  /// Number of customer questions asked about this sale, indicating customer
+  /// interest.
+  question_count Int
+  
+  /// Start timestamp of the tracking period for these performance metrics.
+  period_start DateTime
+  
+  /// End timestamp of the tracking period for these performance metrics.
+  period_end DateTime
+  
+  /// Timestamp when this performance metrics record was created.
+  created_at DateTime
+  
+  /// Timestamp when this performance metrics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale ecommerce_mall_sales @relation(fields: [ecommerce_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sale_id, period_start, period_end], map: "ecommerce_mall_sale_performance_metrics_ecommerce_mall_bd57270a")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_sale_id, created_at], map: "ecommerce_mall_sale_performance_metrics_ecommerce_mall_96598d68")
+  // spellchecker: ignore-next-line
+  @@index([period_start, period_end], map: "ecommerce_mall_sale_performance_metrics_period_start_p_5bc48a37")
+  @@index([conversion_rate])
+  @@index([revenue_total])
+}

@@ -1,457 +1,463 @@
-# TodoApp Backend Requirements Specification
+# TodoApp Functional Requirements Specification
 
-## Service Vision
+## Introduction
 
-TodoApp is a minimal, secure, multi-user task management service designed for individuals who need a simple but private place to organize their daily tasks. The service ensures complete isolation between users — no user can view, modify, or access another user’s todo items. The system prioritizes privacy, ease of use, and reliability above complexity or feature richness.
+TodoApp is a private, single-user-per-account task management application designed with absolute data isolation and privacy as its foundational principles. This specification document provides comprehensive, implementation-ready requirements for developing the backend application with strict adherence to the business requirement that no user can access, view, or even detect the existence of another user's data under any circumstances.
 
-The service is designed to be self-contained and does not integrate with external platforms, calendars, or notification systems. It operates as a standalone backend service that provides authenticated users with persistent, encrypted storage for their personal todo lists.
+All development must ensure complete logical and technical segregation of user data. The system is not designed for collaboration, sharing, or any form of cross-user interaction. Every feature has been architected to enforce individual user data sovereignty.
 
-## User Actors and Authentication
+## User Authentication
 
-### Actor Definition
+### User Registration
 
-The system defines two distinct user actors:
+WHEN a user submits an email and password to register an account, THE system SHALL validate that:
 
-1. **Guest**: An unauthenticated user who can only view the login and registration pages. The guest has no access to any todo-related functionality.
-2. **Member**: An authenticated user who has full access to manage their own todo items. Members can create, read, update, and delete their own tasks. Members cannot access any other user’s data.
+- The email address follows standard email format (local-part@domain)
+- The password is at least 8 characters in length
+- The email address is not already registered in the system
 
-No admin actor is defined. The system does not include administrative interfaces or user management controls.
+IF the email address is already registered, THEN THE system SHALL return a generic error message: "Invalid email or password" without indicating whether the issue was with the email or password.
 
-### Authentication Requirements
+WHEN validation passes, THE system SHALL create a new user account with:
+- A unique identifier (UUID)
+- The provided email address in encrypted form
+- The password stored as a bcrypt-hashed value
+- A default display name set to the email address prefix (text before @)
+- The account creation timestamp
+- All data tied exclusively to the new user's UUID
 
-- All API endpoints (except `/auth/register` and `/auth/login`) require a valid JWT token in the `Authorization: Bearer <token>` header.
-- When a user successfully registers or logs in, the system returns a JWT token with a 24-hour expiration.
-- The JWT token must contain: `userId` (UUID), `email`, and `iat` (issued at timestamp).
-- Tokens must be signed using HS256 with a server-managed 256-bit secret key.
-- Refresh tokens are not supported. Upon expiration, users must log in again.
-- Sessions are stateless — the server does not store session data.
-- Invalid or expired tokens return HTTP 401 Unauthorized.
-- Each user account is tied to a unique email address. Duplicate emails are rejected during registration.
-- Passwords must be at least 8 characters and hashed using bcrypt before storage.
-- Login attempts are not rate-limited, but password reset functionality is disabled to simplify the system.
+### User Login
 
-### Permission Matrix
+WHEN a user submits an email and password to log in, THE system SHALL validate that:
 
-| Endpoint | Method | Guest | Member |
-|----------|--------|-------|--------|
-| `/auth/register` | POST | ✅ | ❌ |
-| `/auth/login` | POST | ✅ | ❌ |
-| `/todos` | GET | ❌ | ✅ |
-| `/todos` | POST | ❌ | ✅ |
-| `/todos/{id}` | GET | ❌ | ✅ |
-| `/todos/{id}` | PUT | ❌ | ✅ |
-| `/todos/{id}` | DELETE | ❌ | ✅ |
+- The email address corresponds to an existing, active user account
+- The provided password matches the stored bcrypt hash
 
-All API endpoints must enforce the permission matrix using middleware. The `Member` role is derived from a valid JWT containing a `userId` claim.
+IF authentication fails, THEN THE system SHALL return the same generic error message regardless of whether the email doesn't exist or the password is incorrect: "Invalid email or password."
 
-## Core Todo Functionality
+WHEN authentication succeeds, THE system SHALL issue:
+- A JWT access token with expiration of 15 minutes
+- A refresh token stored as a hashed value in the database with 30-day expiration
 
-### Core Features
+THE JWT access token SHALL contain the following payload:
+-"sub": the user's unique UUID identifier
+-"email": the user's email address (for identification)
+-"actor": the string literal "user"
+-"iat": issuance timestamp
+-"exp": expiration timestamp (15 minutes after issuance)
 
-The system supports exactly four CRUD operations for todo items:
+WHEN a user successfully logs in, THE system SHALL redirect them to their todos dashboard.
 
-1. **Create**: Add a new todo item with a title and optional description.
-2. **Read**: Retrieve all todo items belonging to the authenticated user, or a specific item by ID.
-3. **Update**: Modify the title, description, or completion status of a todo item.
-4. **Delete**: Remove a todo item permanently.
+### Password Change
 
-No other features are supported: no tagging, no categories, no reminders, no sharing, no search, and no sorting beyond default creation-order.
+WHEN a user requests to change their password, THE system SHALL require:
 
-### Data Model Concepts
+- The current password
+- The new password (minimum 8 characters)
+- Confirmation of the new password
 
-Todo items consist of the following fields:
+WHEN the current password is validated, THE system SHALL compare the new password with the confirmation field.
+IF the passwords do not match, THEN THE system SHALL return "Passwords do not match."
 
-- `id`: Unique identifier (UUID format)
-- `title`: Non-empty string (max 200 characters)
-- `description`: Optional string (max 1000 characters)
-- `completed`: Boolean flag indicating completion status (default: `false`)
-- `createdAt`: ISO 8601 timestamp of creation (read-only)
-- `updatedAt`: ISO 8601 timestamp of last modification (read-only)
-- `ownerId`: UUID of the user who owns this todo item (read-only)
+WHEN passwords match and are valid, THE system SHALL:
 
-All todo items are automatically assigned to the authenticated user who created them. The `ownerId` field is never editable and is enforced server-side.
+- Hash the new password using bcrypt
+- Replace the old password hash with the new one in the database
+- Immediately invalidate all active refresh tokens associated with the account
+- Reissue a fresh refresh token upon successful change
 
-### User Interactions
+IF a user attempts to change their password while logged out, THEN THE system SHALL require them to re-authenticate before proceeding with password change.
 
-#### Task Creation
+### Account Deletion
 
-WHEN a Member sends a POST request to `/todos` with:
-- A non-empty `title`
-- An optional `description`
+WHEN a user initiates account deletion, THE system SHALL require explicit confirmation of this irreversible action.
 
-THE system SHALL:
-- Validate the `title` is not empty and within 200 characters
-- Generate a new UUID for the todo item
-- Set `ownerId` to the ID of the authenticated user
-- Set `createdAt` and `updatedAt` to the current time
-- Set `completed` to `false`
-- Store the record in the database
-- Return the full item with all fields including `id`, `createdAt`, `updatedAt`, and `ownerId`
+WHEN confirmation is received, THE system SHALL:
 
-#### Task Retrieval
+- Mark the user account as "deleted" with a timestamp
+- Immediately invalidate all active authentication tokens (both access and refresh) for this user
+- Initiate a full soft-deletion cascade of all user data:
+  - Soft-delete all todos (set is_deleted = true and deleted_at = current timestamp)
+  - Permanently delete all edit history records associated with the user's todos
+  - Delete the user profile data
 
-WHEN a Member sends a GET request to `/todos`:
+WHEN a user attempts to log in after account deletion, THE system SHALL return: "User account does not exist or has been deleted."
 
-THE system SHALL:
-- Return a JSON array of all todo items where `ownerId` matches the authenticated user’s ID
-- Sort items by `createdAt` ascending (oldest first)
-- Exclude all items belonging to other users
-- Return empty array if the user has no todos
+WHEN a user attempts to register with an email previously associated with a deleted account, THE system SHALL allow new registration and create a fresh account.
 
-WHEN a Member sends a GET request to `/todos/{id}`:
+## User Profile Management
 
-THE system SHALL:
-- Return the specific todo item only if `ownerId` matches the authenticated user’s ID
-- Return HTTP 404 Not Found if the item exists but belongs to another user
-- Return HTTP 404 Not Found if the item does not exist
+### Display Name Definition
 
-#### Task Update
+WHEN a user has not set a custom display name, THE system SHALL generate a default display name using the email address prefix (everything before @).
 
-WHEN a Member sends a PUT request to `/todos/{id}` with:
-- Optional `title` (if provided, must be non-empty and ≤200 chars)
-- Optional `description` (if provided, must be ≤1000 chars)
-- Optional `completed` (boolean)
+FOR EXAMPLE: User with email "john.doe@example.com" shall have default display name "john.doe".
 
-THE system SHALL:
-- Verify the todo item exists AND belongs to the authenticated user
-- Update only the fields that were provided in the request
-- Update the `updatedAt` field to the current time
-- Return the updated item
-- Return HTTP 404 Not Found if the item does not exist or belongs to another user
+### Display Name Update
 
-#### Task Deletion
+WHEN a user updates their display name, THE system SHALL validate that:
 
-WHEN a Member sends a DELETE request to `/todos/{id}`:
+- The display name is not empty or whitespace only
+- The display name does not exceed 50 characters
+- The display name does not contain any control characters or HTML/JS injection sequences
 
-THE system SHALL:
-- Verify the todo item exists AND belongs to the authenticated user
-- Permanently delete the record from the database
-- Return HTTP 204 No Content on success
-- Return HTTP 404 Not Found if the item does not exist or belongs to another user
+IF the display name is empty, whitespace, or exceeds 50 characters, THEN THE system SHALL reject the update and return an appropriate error: "Display name must be 1-50 non-whitespace characters."
+
+WHEN validation passes, THE system SHALL:
+
+- Replace the existing display_name field with the new value
+- Update the updated_at timestamp
+- Return the updated profile data to the client
+
+### Profile Access
+
+WHEN a user requests their own profile information, THE system SHALL return:
+
+- The display name
+- The account creation date
+- The email address (for display purposes)
+- The last login timestamp
+
+IF a user attempts to access another user's profile, THEN THE system SHALL return HTTP 404 Not Found with message "User not found."
+
+## Todo Creation
+
+### Todo Entity Requirements
+
+WHEN a user creates a todo, THE system SHALL require:
+
+- A non-empty title with 1-200 characters
+
+WHEN a user creates a todo, THE system SHALL permit:
+
+- A description field with maximum 2,000 characters (can be empty)
+- A start date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ) (can be null)
+- A due date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ) (can be null)
+
+WHEN a todo is created, THE system SHALL automatically set:
+
+- completion_status = false (incomplete)
+- created_at = timestamp of creation
+- updated_at = timestamp of creation
+- is_deleted = false
+- user_id = authenticated user's UUID
 
 ### Validation Rules
 
-All input validation is enforced at the API layer before any database operation.
+WHEN a todo title is submitted with 0 characters, THEN THE system SHALL reject the request with code "TODO_MISSING_TITLE."
 
-- `title`: Required, type: string, minimum length: 1, maximum length: 200
-- `description`: Optional, type: string, maximum length: 1000
-- `completed`: Optional, type: boolean
-- `id`: Required for update/delete; verified as valid UUID
-- `ownerId`: Never provided by client; set internally and validated against authenticated user
+WHEN a todo title exceeds 200 characters, THEN THE system SHALL reject the request with code "TODO_TITLE_TOO_LONG."
 
-All invalid requests return HTTP 400 Bad Request with a JSON payload:
+WHEN a start date or due date is submitted in invalid ISO 8601 format, THEN THE system SHALL reject the request with code "TODO_INVALID_DATE."
 
-```json
-{
-  "error": "Invalid input",
-  "details": ["title must not be empty", "description exceeds 1000 characters"]
-}
-```
+WHEN a due date is provided and is before the start date, THE system SHALL accept the todo but SHALL record this inconsistency in the edit history (user-visible).
 
-## User Scenarios and Workflows
+WHEN a todo is created with an empty description, THE system SHALL store an empty string.
 
-### Primary User Journey: Registration to Todo Creation
+WHEN a todo is created without a start date, THE system SHALL store null.
 
-1. User opens the application URL in a web browser
-2. User clicks "Register" and enters:
-   - Email address
-   - Password (≥8 characters)
-   - Password confirmation
-3. User submits the form
-4. System creates a new user account, hashes the password, and replies with HTTP 201 Created
-5. System returns a JWT token in the response body
-6. Client stores the token and redirects to the main dashboard
-7. User sees an empty list with "Create New Task" button
-8. User enters a task title, e.g., "Buy groceries"
-9. User clicks "Add"
-10. System creates the todo item and displays it in the list
+WHEN a todo is created without a due date, THE system SHALL store null.
 
-### Secondary User Journey: Task Update and Completion
+### Todo Storage
 
-1. User sees a todo item: "Buy groceries" marked as incomplete
-2. User checks the checkbox next to the item
-3. System sends a PUT request to `/todos/{id}` with `completed: true`
-4. System updates the item, sets `updatedAt` to now
-5. Item visually updates to show checkmark and strikethrough text
-6. User edits the title to "Buy organic groceries"
-7. System sends a PUT request with `title: "Buy organic groceries"`
-8. System updates the title and returns the modified item
-9. User deletes the item by clicking "Delete" button
-10. System sends a DELETE request to `/todos/{id}`
-11. Item disappears from the list
+EVERY todo created SHALL belong exclusively to the authenticated user.
 
-### Special Scenario: Password Reset
+WHEN a todo is created, THE system SHALL not store any reference to other users.
 
-This scenario is explicitly **not supported**. The system provides no "Forgot Password" functionality. If a user forgets their password, they must register a new account. The system does not allow email-based password recovery, token resets, or account recovery.
+WHEN a todo is created, THE system SHALL not include any metadata, tags, or context that could link it to other users.
 
-### Special Scenario: Account Deletion
+## Todo Viewing
 
-The system does not provide an endpoint for users to delete their own accounts. Account deletion is only possible through direct database manipulation by system administrators — though no admin interface exists. All user data is retained indefinitely unless manually purged.
+### Todo List Retrieval
 
-## Exception Handling
+WHEN a user requests their todo list, THE system SHALL return:
 
-### Authentication Errors
+- Only todos where user_id = authenticated user's UUID
+- Each todo shall include: title, completion_status, created_at, start_date (if not null), due_date (if not null)
 
-WHEN a user sends a request without an Authorization header:
+WHEN the user requests pagination, THE system SHALL:
 
-THE system SHALL return HTTP 401 Unauthorized with body:
+- Default to 20 todos per page
+- Accept page parameter as a positive integer
+- Return total count for pagination controls
 
-```json
-{"error": "Authentication required"}
-```
+WHEN the user requests more than 100 todos per page, THE system SHALL default to 20 todos per page and log the anomalous request.
 
-WHEN a user sends an invalid, malformed, or tampered JWT token:
+### Single Todo Retrieval
 
-THE system SHALL return HTTP 401 Unauthorized with body:
+WHEN a user requests a single todo by ID, THE system SHALL:
 
-```json
-{"error": "Invalid authentication token"}
-```
+- Return the full detail: title, description, completion_status, created_at, updated_at, start_date (if not null), due_date (if not null)
 
-WHEN a JWT expired:
+IF the requested todo_id does not exist, THEN THE system SHALL return HTTP 404 Not Found.
 
-THE system SHALL return HTTP 401 Unauthorized with body:
+IF the todo_id exists but belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
 
-```json
-{"error": "Authentication token expired"}
-```
+## Todo Completion Toggle
 
-### Authorization Errors
+### Completion Status Update
 
-WHEN a user attempts to access a todo item belonging to another user:
+WHEN a user marks a todo as complete, THE system SHALL:
 
-THE system SHALL return HTTP 404 Not Found with body:
+- Set completion_status = true
+- Update the updated_at timestamp
 
-```json
-{"error": "Resource not found"}
-```
+WHEN a user marks a todo as incomplete, THE system SHALL:
 
-> **Note**: Returning 404 instead of 403 hides existence of the resource to prevent enumeration attacks.
+- Set completion_status = false
+- Update the updated_at timestamp
 
-### Input Validation Failures
+WHEN a todo is toggled, THE system SHALL create an edit history entry.
 
-WHEN data fails structural or size validation:
+IF the todo_id provided does not exist, THEN THE system SHALL return HTTP 404 Not Found.
 
-THE system SHALL return HTTP 400 Bad Request with a JSON array of error messages:
+IF the todo_id belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
 
-```json
-{
-  "error": "Invalid input",
-  "details": [
-    "title must be at least 1 character long",
-    "description exceeds 1000 characters"
-  ]
-}
-```
+## Todo Editing
 
-### System Failures
+### Editable Fields
 
-WHEN the database is unreachable:
+WHEN a user edits a todo, THE system SHALL allow modification of:
 
-THE system SHALL return HTTP 503 Service Unavailable with body:
+- Title (1-200 characters)
+- Description (≤ 2,000 characters)
+- Start date (ISO 8601 or null)
+- Due date (ISO 8601 or null)
 
-```json
-{"error": "System temporarily unavailable, please try again later"}
-```
+### Edit Validation
 
-WHEN an unhandled internal error occurs:
+WHEN a user submits an edit with an empty title, THEN THE system SHALL return code "TODO_MISSING_TITLE."
 
-THE system SHALL return HTTP 500 Internal Server Error with body:
+WHEN a user submits an edit with a title > 200 characters, THEN THE system SHALL return code "TODO_TITLE_TOO_LONG."
 
-```json
-{"error": "An internal server error occurred"}
-```
+WHEN a user submits an edit with invalid date format, THEN THE system SHALL return code "TODO_INVALID_DATE."
 
-### Concurrency Errors
+WHEN a user attempts to change a field to the same value, THE system SHALL still create an edit history entry recording "no change."
 
-The system does not implement optimistic or pessimistic locking. Concurrent updates to the same todo item will result in last-write-wins behavior. Data loss may occur if two users edit the same item simultaneously, but this scenario is statistically negligible and not considered a requirement to prevent.
+### Edit History Trigger
 
-## Performance Expectations
+WHEN any field of a todo is modified, THE system SHALL create a new entry in the edit history table with:
 
-### Response Time Requirements
+- The timestamp of the edit
+- The previous value of the title (if changed) or "no change"
+- The previous value of the description (if changed) or "no change"
+- The previous value of the start date (if changed) or "no change"
+- The previous value of the due date (if changed) or "no change"
 
-- **Authentication** (`/auth/login`, `/auth/register`): ≤ 500 ms under 100 concurrent users
-- **Todo List Load** (`/todos`): ≤ 300 ms for users with ≤ 1000 tasks
-- **Single Todo Fetch** (`/todos/{id}`): ≤ 150 ms
-- **Todo Create/Update/Delete**: ≤ 400 ms
-- All endpoints must maintain ≤ 1000 ms response time under peak load of 5,000 concurrent users
+WHEN a todo is edited, THE system SHALL update the updated_at field to the current timestamp.
 
-### Scalability Expectations
+IF a user attempts to edit a todo that belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
 
-- Support up to 1,000,000 active users
-- Support up to 10,000,000 total todo items
-- Support 200 requests per second sustained
-- Horizontal scaling must be possible without code changes
-- Database connection pooling must be configured to handle 50 concurrent connections per instance
+## Edit History
 
-### System Availability
+### History Record Structure
 
-- System uptime target: 99.9% monthly (≤ 43.2 minutes downtime per month)
-- No scheduled maintenance windows
-- All deployments must be zero-downtime
+EVERY edit history entry SHALL contain:
 
-## Security and Compliance
+- history_id (UUID)
+- todo_id (foreign key to todos table)
+- edited_at (timestamp)
+- previous_title (string or null)
+- previous_description (string or null)
+- previous_start_date (timestamp or null)
+- previous_due_date (timestamp or null)
+- edited_by (user_id)
 
-### Data Privacy
+### Access Control
 
-- All user data is stored in encrypted form (passwords via bcrypt)
-- Todo item content is stored in plain text in the database — no encryption at rest is required
-- No logging of user actions, IP addresses, or requests
-- No telemetry, analytics, or tracking is collected
-- No data is shared with third parties
+WHEN a user requests the edit history for a todo, THE system SHALL:
 
-### Authentication Security
+- Return only history entries where todo_id belongs to the authenticated user
+- Sort results by edited_at descending (most recent first)
 
-- Passwords are hashed with bcrypt using cost factor 12
-- JWT secret key is stored in environment variable and never in code
-- JWT tokens are not stored on server
-- No session cookies are used
-- HTTPS is mandatory for all endpoints
-- No CORS exceptions — only requests from the official frontend domain allowed
+IF a user attempts to access edit history for a todo they do not own, THEN THE system SHALL return HTTP 404 Not Found.
 
-### Access Control Enforcement
+IF a user attempts to access edit history for a non-existent todo, THEN THE system SHALL return HTTP 404 Not Found.
 
-- All endpoints use middleware that:
-  - Validates JWT token presence and signature
-  - Extracts `userId` from token claims
-  - Injects `userId` into request context for later use in data queries
-  - Replaces any `ownerId` provided by client with the authenticated user’s ID
-  - Adds `WHERE ownerId = ?` filter to every SQL query involving todo items
-- No SQL injection vulnerability is permitted
-- The system is designed to prevent any form of cross-user data access
+### History Persistence
 
-### Regulatory Compliance
+WHEN a todo is deleted (soft delete), ALL corresponding edit history records SHALL be retained.
 
-- The system does not collect personally identifiable information beyond email and hashed password
-- No compliance with GDPR, CCPA, or HIPAA is required
-- Data retention policy: Unlimited
-- No data export or deletion endpoints exist — deletion is only manual via database
+WHEN a todo is permanently deleted, ALL edit history records for that todo SHALL be permanently removed.
 
-## Business Rules
+WHEN a user account is deleted, ALL edit history records for that user's todos SHALL be permanently removed.
 
-### Todo Item Validation
+## Todo Deletion
 
-- The `title` field must never be empty. Any request with empty or whitespace-only title is rejected with HTTP 400.
-- The `description` field may be null or empty string — no validation on content.
-- The `completed` field must be strictly boolean — string values like "true" or "false" are rejected.
-- The `id` field for update/delete must match UUIDv4 format; non-UUID values are rejected.
-- The `ownerId` field must match the authenticated user’s ID. Server-side enforcement is mandatory.
+### Soft Deletion Process
 
-### User Data Ownership
+WHEN a user deletes a todo, THE system SHALL:
 
-- Every todo item has exactly one owner.
-- No entity — not even an administrator — may access, modify, or delete a todo item unless they are the authenticated owner.
-- A user cannot transfer ownership of their todo items.
-- If a user registers with the same email again after deletion (which doesn’t exist), they receive a new account with no access to prior data.
+- Set is_deleted = true
+- Set deleted_at = current timestamp
+- Preserve all other todo data including description and dates
+- Move the todo out of the regular todo list view
+- Preserve all edit history records
+- Update the updated_at timestamp
 
-### Concurrency Rules
+WHEN a todo is soft-deleted, THE system SHALL NOT create an edit history entry for the deletion itself.
 
-- Two users editing the same todo item simultaneously may cause last-write-wins data loss.
-- This behavior is accepted because:
-  1. The system is designed for individual, personal use
-  2. Simultaneous edits to the same task are extremely rare
-  3. Implementing conflict resolution would violate the "minimalist" requirement
+WHEN a todo is soft-deleted, THE system SHALL still allow it to be restored.
 
-### State Transitions
+### Access Control
 
-Todo items follow a simple state machine:
+WHEN a user attempts to delete a todo belonging to another user, THE system SHALL return HTTP 404 Not Found.
 
-```mermaid
-stateDiagram-v2
-    [*] --> Pending
-    Pending --> Completed: "completed === true"
-    Completed --> Pending: "completed === false"
-```
+WHEN a user attempts to delete a non-existent todo, THE system SHALL return HTTP 404 Not Found.
 
-> **Note**: The diagram uses double quotes around labels and correct arrow syntax. No spaces are present between `{}` and quotes.
+## Trash Management
 
-No other transitions are defined. Items cannot be archived, deleted from the user interface, or soft-deleted. They are either "Pending" or "Completed".
+### Trash List Access
 
-## Data Flow and Lifecycle
+WHEN a user requests their trash, THE system SHALL:
 
-### Data Entry Points
+- Return only todos where is_deleted = true AND user_id = authenticated user's UUID
+- Return each todo with: title, created_at, deleted_at, completion_status
+- Paginate results with default 20 items per page
 
-- `/auth/register`: User submits email and password
-- `/auth/login`: User submits email and password to obtain JWT
-- `/todos`: User POSTs a new todo item
-- `/todos/{id}`: User PUTs updated todo item or DELETEs it
+IF the trash is empty, THE system SHALL return: "Your trash is empty."
 
-### Data Processing Flow
+### Todo Restoration
 
-1. HTTP request arrives at the server
-2. Request is routed by NestJS controller
-3. Auth middleware verifies JWT and injects `userId` into request context
-4. Service layer validates input using class-validator rules
-5. Prisma ORM performs database operation with `WHERE ownerId = context.userId`
-6. If operation succeeds, JSON response is returned
-7. If error occurs, appropriate HTTP status and error body are returned
+WHEN a user restores a todo from trash, THE system SHALL:
 
-### Data Storage
+- Set is_deleted = false
+- Set deleted_at = null
+- Update the updated_at timestamp
+- Return the todo to the normal todo list
 
-All data is stored in a PostgreSQL database with the following tables:
+IF the todo being restored does not exist, THE system SHALL return HTTP 404 Not Found.
 
-- `todoApp_users`:
-  - `id` (UUID, primary key)
-  - `email` (string, unique, indexed)
-  - `passwordHash` (string)
-  - `createdAt` (timestamp)
+IF the todo belongs to another user, THE system SHALL return HTTP 404 Not Found.
 
-- `todoApp_todos`:
-  - `id` (UUID, primary key)
-  - `title` (string, not null)
-  - `description` (text)
-  - `completed` (boolean, default false)
-  - `createdAt` (timestamp)
-  - `updatedAt` (timestamp)
-  - `ownerId` (UUID, foreign key to todoApp_users.id, indexed)
+### Permanent Deletion
 
-All queries from the `todoApp_todos` table must include an implicit `WHERE ownerId = ?` clause based on the authenticated user.
+WHEN a user permanently deletes a todo from trash, THE system SHALL:
 
-### Data Lifecycle
+- Remove the todo record from the todos table entirely
+- Remove all associated edit history records from the edit_history table
+- Return confirmation message: "Todo and its history have been permanently deleted."
 
-- **Creation**: Data appears after successful registration or todo creation
-- **Persistence**: Data lives indefinitely unless manually deleted via direct database deletion
-- **Archival**: No archival mechanism exists
-- **Deletion**: Hard delete via DELETE endpoint
-- **Expiration**: Data never expires automatically
+WHEN a todo is permanently deleted, THE system SHALL guarantee that NO TRACE of the data remains in the database.
 
-The system implements a "permanent storage" model. Data is never automatically purged.
+## Filtering
 
-## Future Considerations
+### Completion Status Filters
 
-### Potential Feature Extensions
+WHEN a user applies the filter "All", THE system SHALL return todos regardless of completion status.
 
-- Add email-based password reset
-- Allow task categorization or tagging
-- Introduce calendar integration for due dates
-- Support recurring tasks
-- Allow bulk operations (delete all completed)
-- Enable dark mode or accessibility improvements
-- Add export to CSV/JSON
+WHEN a user applies the filter "Complete", THE system SHALL return only todos where completion_status = true.
 
-### Scalability Considerations
+WHEN a user applies the filter "Incomplete", THE system SHALL return only todos where completion_status = false.
 
-The current architecture supports horizontal scaling of stateless API servers. The only bottleneck is the PostgreSQL database.
+WHEN a user applies an invalid filter parameter, THE system SHALL default to "All".
 
-If user base grows beyond 10 million, consider:
-- Implementing read replicas for `/todos` GET
-- Sharding by `ownerId` (user-based sharding)
-- Migrating to an object storage system for todo items
+WHEN a user applies any filter, THE system SHALL ensure that only todos belonging to the authenticated user are returned.
 
-### Integration Opportunities
+## Sorting
 
-No integrations are planned. The system is intentionally isolated.
+### Sort by Creation Date
+
+WHEN a user sorts by creation_date ascending, THE system SHALL order todos by created_at field ascending.
+
+WHEN a user sorts by creation_date descending, THE system SHALL order todos by created_at field descending.
+
+### Sort by Start Date
+
+WHEN a user sorts by start_date ascending, THE system SHALL:
+
+- Order todos by start_date field ascending
+- Place todos with null start_date at the end of the list
+
+WHEN a user sorts by start_date descending, THE system SHALL:
+
+- Order todos by start_date field descending
+- Place todos with null start_date at the end of the list
+
+### Sort by Due Date
+
+WHEN a user sorts by due_date ascending, THE system SHALL:
+
+- Order todos by due_date field ascending
+- Place todos with null due_date at the end of the list
+
+WHEN a user sorts by due_date descending, THE system SHALL:
+
+- Order todos by due_date field descending
+- Place todos with null due_date at the end of the list
+
+### Default Sort Order
+
+WHEN a user does not specify a sort order, THE system SHALL default to sorting by creation_date descending (newest first).
+
+WHEN a user applies an invalid sort parameter, THE system SHALL default to creation_date descending.
+
+## Privacy and Security Architecture
+
+### Data Isolation Enforcement
+
+THE system SHALL guarantee that all database queries include an explicit WHERE clause filtering by user_id = authenticated_user_id.
+
+THE system SHALL never include a user_id or any other identity identifier from another user in any query, response, or log.
+
+WHEN any API endpoint is accessed, THE system SHALL:
+
+- Validate authentication token
+- Extract user UUID from token
+- Scope every database query to that user UUID
+- Reject any request that attempts to inject external user IDs
+
+### Query Scope Enforcement
+
+EVERY SQL query SHALL follow this pattern:
+
+SELECT * FROM todos WHERE user_id = ? AND [other conditions];
+
+THE system SHALL NEVER use queries like:
+
+SELECT * FROM todos WHERE id = ?; // without user_id constraint
+
+IF any database query bypasses user_id filtering, THE system SHALL be considered a critical security failure and trigger an immediate system lockdown.
+
+### Error Message Consistency
+
+WHEN a resource does not belong to the authenticated user, THE system SHALL return HTTP 404 Not Found, NEVER HTTP 403 Forbidden.
+
+WHEN a resource does not exist, THE system SHALL return HTTP 404 Not Found.
+
+WHEN a resource is accessible to the user but requires authentication, THE system SHALL return HTTP 401 Unauthorized.
+
+THE rationale is that by returning 404 instead of 403 for unauthorized access to resources belonging to others, we prevent any data leakage about whether a resource exists for other users.
+
+### Audit Logging
+
+SYSTEM logs SHALL record only:
+
+- Timestamp
+- HTTP method and endpoint
+- HTTP status code
+- User ID (for successful authenticated requests)
+- Request length
+- Execution time
+
+SYSTEM logs SHALL NEVER record:
+
+- Any todo content (title, description, dates)
+- Email addresses or display names
+- JWT tokens or refresh tokens
+- Personal identifiers beyond user UUID
+- The existence of other users
+
+## Conclusion
+
+This document provides a complete, implementation-ready specification for TodoApp, covering all functional requirements in EARS format with explicit business rules, validation constraints, privacy enforcement, and edge case handling.
+
+Every requirement has been designed around the non-negotiable principle that **no user can see, access, or even detect the existence of any data belonging to another user**.
+
+The system is designed for single-user productivity with absolute data isolation as a foundational architectural principle - not an optional layer.
+
+Implementation must be done with 100% compliance to these specifications to ensure security, privacy, and reliability.
+
+All subsequent phases (database design, APIs, testing) must be derived from these requirements without modification.
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
-
-### Document Metadata
-- **Service Prefix**: todoApp
-- **Document Type**: Requirements Specification
-- **Target Audience**: Backend developers
-- **Status**: Finalized
-- **Related Documents**: All 11 documents in this documentation suite
-- **Last Updated**: 2026-01-29T15:34:13.486Z
-- **Timezone Context**: Asia/Seoul
-- **Locale**: en-US
-
-This document provides comprehensive, complete, and actionable requirements for the TodoApp backend. It is designed for direct translation into NestJS + Prisma code with zero ambiguity. All business rules, workflows, error states, and permission logic are defined in natural language with EARS format where applicable. No API design or database schema details are included — those will be produced by downstream phases.

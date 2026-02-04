@@ -1,0 +1,173 @@
+/// Product variants representing specific combinations of options (e.g.,
+/// color, size) with their unique SKU codes, pricing, and stock quantities.
+/// Each variant is linked to a specific product and contains detailed option
+/// values that distinguish it from other variants of the same product. This
+/// table serves as the fundamental unit for inventory tracking and sales
+/// processing in the e-commerce platform. Variants enable sellers to offer
+/// multiple versions of the same base product with different attributes such
+/// as size, color, or other customizable options. The SKU code serves as the
+/// unique identifier for tracking inventory movements, order fulfillment,
+/// and sales analytics. Every modification to variant details creates an
+/// immutable snapshot for audit purposes, ensuring comprehensive data
+/// governance and compliance with legal requirements. Stock quantities are
+/// managed through detailed inventory history records that track all
+/// movements including sales, restocking, and adjustments.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The base product this variant belongs to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Unique identifier for this variant used for inventory tracking and order
+  /// fulfillment. Must be globally unique across the platform to ensure
+  /// accurate stock management and prevent collisions between sellers. The SKU
+  /// code typically follows a structured format combining seller
+  /// identification, product category, and sequential numbering.
+  sku_code String
+  
+  /// Serialized representation of the specific option values that define this
+  /// variant (e.g., '{"color": "Red", "size": "Large"}'). This field captures
+  /// the distinguishing characteristics that differentiate this variant from
+  /// others of the same base product, enabling customers to make precise
+  /// selections during the purchasing process. Values are stored in a
+  /// structured format for efficient querying and display.
+  option_values String
+  
+  /// Price for this specific variant when different from the base product
+  /// price. When null, the variant inherits the base price from its parent
+  /// product. This allows sellers to implement flexible pricing strategies
+  /// where certain variants may command premium or discounted rates compared
+  /// to the standard product pricing.
+  price Float?
+  
+  /// Current available stock quantity for this variant. This value is
+  /// calculated by summing all inventory history records and represents the
+  /// real-time availability for purchase. Stock quantities start at 0 when a
+  /// variant is first created and are adjusted through sales transactions,
+  /// restocking operations, and inventory adjustments. When stock reaches
+  /// zero, variants are marked as out of stock and cannot be added to shopping
+  /// carts.
+  stock_quantity Int
+  
+  /// Timestamp when this variant was first created. Forms part of the audit
+  /// trail for tracking the product's lifecycle from initial creation through
+  /// all modifications.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last modified. Updated with each change
+  /// to variant details to maintain accurate modification tracking for both
+  /// operational monitoring and audit compliance.
+  updated_at DateTime
+  
+  /// Timestamp when this variant was marked as deleted. Implements soft
+  /// deletion pattern to preserve data for audit trails while removing from
+  /// active listings. Deleted variants are hidden from customer views but
+  /// remain accessible for order processing and historical reporting.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  inventoryHistories shopping_mall_inventory_histories[]
+  shoppingCartItem shopping_mall_shopping_cart_items?
+  orderItems shopping_mall_order_items[]
+  orderItemProductSnapshots shopping_mall_order_item_product_snapshots[]
+  inventoryAlerts shopping_mall_seller_inventory_alerts[]
+  wishlistMetric shopping_mall_seller_wishlist_metrics?
+  snapshots shopping_mall_product_variant_snapshots[]
+  
+  @@unique([sku_code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_variants_shopping_mall_product_i_8fcece9d")
+  @@index([stock_quantity])
+}
+
+/// Inventory history records tracking all stock quantity changes for each
+/// product variant. Each record captures the exact quantity change (positive
+/// for restocking, negative for sales/adjustments), the reason for the
+/// change, and timestamp. This provides a complete audit trail of all
+/// inventory movements and enables accurate stock level calculations.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant this inventory record tracks. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// The quantity change for this inventory record. Positive values indicate
+  /// restocking, negative values indicate sales or adjustments.
+  quantity_change Int
+  
+  /// The reason for this inventory change (e.g., 'restock', 'sale',
+  /// 'adjustment', 'return').
+  reason String
+  
+  /// Timestamp when this inventory change occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  orderItems shopping_mall_inventory_history_order_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_histories_shopping_mall_produc_065e82e8")
+}
+
+/// Junction table linking inventory history records to the specific order
+/// items that caused stock reductions. This enables traceability from
+/// inventory changes back to specific sales transactions, supporting audit
+/// requirements and stock reconciliation processes.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_history_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory history record for tracking stock quantity changes. {@link
+  /// shopping_mall_inventory_histories.id}
+  shopping_mall_inventory_history_id String
+  
+  /// Order item that caused this inventory reduction through a sale. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// The quantity change for this inventory record. Positive values indicate
+  /// restocking, negative values indicate sales or adjustments.
+  quantity_change Int
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryHistory shopping_mall_inventory_histories @relation(fields: [shopping_mall_inventory_history_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_inventory_history_order_items_shopping_m_b17a3d34")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_history_id, shopping_mall_order_item_id], map: "shopping_mall_inventory_history_order_items_shopping_m_bb93f3af")
+}

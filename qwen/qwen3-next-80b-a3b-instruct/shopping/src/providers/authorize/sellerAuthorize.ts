@@ -15,20 +15,25 @@ export async function sellerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // seller_sessions table links to shopping_mall_sellers via seller_id
-  // payload.id contains top-level user ID from shopping_mall_sellers table
+  // Query seller_sessions to verify active session and link to seller
+  // seller_sessions has seller_id foreign key to shopping_mall_sellers
   const sellerSession = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst({
     where: {
       id: payload.session_id,
       seller: {
         id: payload.id,
-        deleted_at: null,
+        deleted_at: null,  // Soft-delete validation
+        is_suspended: false,  // Corrected field name
       },
+      expired_at: { gt: new Date() },  // Session expiration validation
+    },
+    include: {
+      seller: true,
     },
   });
 
   if (sellerSession === null) {
-    throw new ForbiddenException("You're not enrolled or your account is inactive");
+    throw new ForbiddenException("You're not enrolled or your session has expired");
   }
 
   return payload;

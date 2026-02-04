@@ -1,386 +1,626 @@
-# E-commerce Shopping Mall Platform Requirements Analysis
+# E-Commerce Shopping Mall Platform Requirements Specification
 
-## Business Model and Value Proposition
+## 1. Introduction and Platform Overview
 
-The e-commerce shopping mall platform exists to address the growing demand for comprehensive online marketplace solutions that connect multiple sellers with customers in a single, unified shopping experience. Today's consumers expect diverse product selections, competitive pricing, and streamlined purchasing processes, while sellers require accessible platforms to showcase their products without the overhead of building individual storefronts. This platform bridges that gap by providing a scalable, multi-vendor marketplace that benefits both consumers and merchants.
+### 1.1 Purpose
+The purpose of this document is to establish a comprehensive requirements specification for an e-commerce shopping mall platform. This platform will serve as a digital marketplace connecting customers with sellers, implementing robust security measures, complete data governance, and a comprehensive audit trail system.
 
-### Revenue Strategy
+### 1.2 Scope
+This platform will facilitate the complete lifecycle of online commerce, from product discovery to post-purchase support. It requires user registration for all participants and maintains immutable records of all critical data modifications for legal and dispute resolution purposes.
 
-The platform employs a multi-faceted revenue model designed to generate sustainable income from various touchpoints:
+### 1.3 Business Context
+The platform operates as a multi-vendor marketplace designed to:
+- Enable individual consumers to discover, purchase, and review products
+- Provide businesses with tools to manage their product catalogs and sales operations
+- Maintain regulatory compliance through comprehensive data snapshots
+- Facilitate secure financial transactions through integrated payment processing
 
-1. **Commission Fees**: The primary revenue stream comes from transaction fees ranging from 5-15% on each sale, depending on product category and seller tier. This percentage-based model aligns incentives with sellers, as higher sales volume benefits both parties.
+## 2. User Actors and Authentication System
 
-2. **Subscription Fees**: Monthly subscription plans for sellers ranging from $29 to $199 per month based on features and selling limits. Higher-tier plans include premium placement, advanced analytics, and promotional tools.
+### 2.1 Customer Actor Requirements
 
-3. **Featured Placement**: Pay-per-click advertising and promoted product listings allowing sellers to boost visibility for $0.10-$2.00 per click, with recommended products appearing prominently in search results and category pages.
+#### 2.1.1 Account Management
+THE customer SHALL be able to register with a unique email address and password.
 
-4. **Value-Added Services**: Additional fee-based services including premium customer support ($49/month), advanced analytics dashboards ($29/month), and fulfillment services with percentage-based markup on shipping costs.
+WHEN a customer attempts to register with an already registered email address, THE system SHALL notify the customer that an account with that email already exists.
 
-5. **Partnership Revenue**: Integration fees with payment processors, shipping providers, and third-party logistics companies, typically 1-3% of transaction volume processed through these partnerships.
+THE customer SHALL be able to authenticate with their email and password.
 
-## User Actor Requirements
+THE customer SHALL be able to change their password after authentication.
 
-### Customer (Registered User)
+THE customer SHALL be able to delete their account with explicit confirmation.
 
-THE customer SHALL be a registered user of the platform with capabilities to browse products, search for items, manage a shopping cart and wishlist, place orders, track shipments, submit reviews, view order history, and request cancellations or refunds.
+WHEN a customer deletes their account, THE system SHALL:
+- Remove the customer's profile information
+- Preserve order history and reviews for legal and business purposes
+- Display any reviews as authored by a "deleted user"
 
-THE customer SHALL be able to create and manage multiple shipping addresses associated with their account.
+#### 2.1.2 Profile Management
+THE customer SHALL be able to create and modify their profile containing:
+- Display name
+- Phone number
 
-THE customer SHALL be able to update their personal profile information including contact details and password.
+#### 2.1.3 Address Management
+THE customer SHALL be able to:
+- Add multiple shipping addresses
+- Edit existing shipping addresses
+- Delete shipping addresses
+- Designate one shipping address as default
 
-### Seller (Vendor)
+Each shipping address SHALL contain:
+- Recipient name
+- Phone number
+- Street address
+- City
+- State/province
+- Postal code
+- Country
 
-THE seller SHALL be an authorized vendor account with the ability to manage their own product catalog, define product variants, manage inventory levels, view and update order status, access sales reports, respond to customer reviews, and update their business profile.
+### 2.2 Seller Actor Requirements
 
-THE seller SHALL be able to create new product listings with complete details including categories, descriptions, pricing, images, and variants.
+#### 2.2.1 Account Management
+THE seller SHALL be able to register with a unique email address and password.
 
-THE seller SHALL be able to manage inventory levels for each product variant.
+THE seller SHALL be required to obtain administrative approval before becoming active.
 
-### Admin (System Administrator)
+THE seller SHALL be able to authenticate with their email and password.
 
-THE admin SHALL have full system access to manage all platform functions including user account management, product category administration, order oversight, payment method configuration, system reporting, promotional campaign management, and platform configuration.
+THE seller SHALL be able to change their password after authentication.
 
-THE admin SHALL be able to moderate user reviews and handle policy violations.
+THE seller SHALL be able to view their current approval status (pending, approved, rejected).
 
-## Product Catalog and Search Requirements
+WHEN a seller's registration is rejected, THE system SHALL provide the reason for rejection.
 
-### Category Management
+THE seller SHALL be able to submit a new registration request after rejection.
 
-WHEN a customer navigates the site, THE system SHALL display a hierarchical category structure organized by product types to help users find relevant products efficiently.
+THE seller SHALL be able to delete their account IF:
+- No order items have paid or shipped status
+- No cancellation or refund requests are pending
 
-THE system SHALL support unlimited nesting levels for categories to accommodate complex product hierarchies.
+WHEN a seller deletes their account, THE system SHALL:
+- Remove the seller's products from active listings
+- Preserve order history and snapshots
+- Maintain the seller's shop name in historical orders
 
-THE system SHALL display a maximum of 10 top-level categories in the main navigation menu.
+#### 2.2.2 Profile Management
+THE seller SHALL be able to create and modify their profile containing:
+- Shop name
+- Shop description
+- Logo image
 
-WHEN an admin creates a new category, THE system SHALL store the category with attributes including unique identifier, name, description, parent category reference, slug for URL construction, display order, and active status.
+WHEN a seller modifies their profile, THE system SHALL create a snapshot of the previous state.
 
-### Product Search and Filtering
+### 2.3 Administrator Actor Requirements
 
-WHEN a customer enters search terms, THE system SHALL search across product titles, descriptions, tags, brands, SKUs, and categories.
+#### 2.3.1 System Management
+THE administrator SHALL be able to:
+- Review and respond to seller registration requests
+- Approve or reject seller registrations with reasons
+- Suspend and unsuspend seller accounts
+- Manage platform categories
+- Review and remove products for policy violations
+- Monitor all orders and transactions
+- Force cancellation or refund for any order item
+- Manage customer accounts (ban/unban)
+- Manage seller accounts (ban/unban)
 
-THE system SHALL implement full-text search capabilities with relevance scoring to prioritize matches.
+#### 2.3.2 Role Management
+THE user SHALL be able to request administrative privileges with a justification.
 
-WHEN a customer views a category or search results, THE system SHALL provide filter options including price range, brand selection, product rating, availability status, features, colors, and sizes.
+THE super administrator SHALL be able to:
+- Approve or deny administrative privilege requests
+- Promote regular administrators to super administrator status
+- Demote super administrators to regular administrator status
+- NOT demote themselves
 
-THE system SHALL allow customers to sort products by relevance, price (low to high), price (high to low), newest arrivals, customer rating, and best sellers.
+### 2.4 Authentication and Session Management
 
-## Product Variant and Inventory Management Requirements
+ALL users SHALL be required to authenticate before accessing any platform functionality.
 
-### SKU Management
+THE system SHALL implement secure session management with appropriate timeout mechanisms.
 
-WHEN a seller creates a new product, THE system SHALL generate a unique SKU identifier for each distinct product variant.
+THE system SHALL maintain user roles and permissions in authenticated sessions.
 
-THE system SHALL ensure that each SKU identifier is globally unique within the platform.
+### 2.5 Permission Matrix
 
-THE system SHALL generate SKU identifiers using alphanumeric characters between 6 and 32 characters in length.
+| Actor | Browse Products | Manage Account | Create Products | Process Orders | Admin Functions |
+|-------|----------------|----------------|-----------------|----------------|-----------------|
+| Customer | Yes | Yes | No | No | No |
+| Seller | Yes | Yes | Yes (when approved) | Yes (own products) | No |
+| Administrator | Yes | Yes | No | Yes (all) | Yes |
 
-### Variant Attributes
+## 3. Product and Category Management System
 
-THE system SHALL support color variations for products with predefined color names.
+### 3.1 Category System Requirements
 
-THE system SHALL support standard size classifications (XS, S, M, L, XL, XXL) and numeric sizing for products like shoes.
+THE platform SHALL organize products into a two-level category hierarchy (categories and subcategories).
 
-THE system SHALL support material variant specifications and allow sellers to define custom variant attributes.
+THE administrator SHALL be the only role authorized to create, edit, or delete categories.
 
-### Inventory Tracking
+WHEN a customer browses categories, THE system SHALL display all available categories and their subcategories.
 
-WHEN a product variant is created, THE system SHALL initialize stock levels to zero by default.
+WHEN a customer views a category, THE system SHALL display all products within that category.
 
-THE system SHALL require sellers to specify initial stock quantities for each SKU.
+WHEN an administrator deletes a category, THE system SHALL move all products in that category to an "uncategorized" status.
 
-WHEN inventory is added, THE system SHALL update stock levels in real-time.
+### 3.2 Product Structure Requirements
 
-WHEN a product is purchased, THE system SHALL immediately decrement the corresponding SKU stock level.
+Each product SHALL contain the following required attributes:
+- Name (required)
+- Description (required)
+- Category (required, can be a subcategory)
+- Base price (required)
+- Images (multiple with reordering capability)
+- Variants (SKU codes with option values and prices)
 
-THE system SHALL maintain real-time inventory counts with 100% accuracy.
+THE system SHALL require all mandatory product fields during creation.
 
-## Shopping Experience Requirements
+THE seller SHALL own all products they create.
 
-### Shopping Cart Functionality
+### 3.3 Product Variant Requirements
 
-WHEN a customer adds a product to their cart, THE system SHALL create or update the cart item with the specified quantity.
+Each product variant SHALL include:
+- SKU code (unique identifier, required)
+- Option values (e.g., color: "Red", size: "Large")
+- Price (optional override of base price)
+- Stock quantity (required, starts at 0)
 
-THE system SHALL preserve cart contents for authenticated customers across sessions for a period of 30 days.
+THE seller SHALL be able to:
+- Add variants to products
+- Edit variant details
+- Delete variants subject to order constraints
 
-WHEN a customer updates the quantity of an item in their cart, THE system SHALL recalculate the total cart value and update inventory availability indicators.
+WHEN a seller modifies a variant, THE system SHALL create a snapshot of the previous state.
 
-THE system SHALL display the following information for each cart item: Product name and image, selected variants, unit price, total price for the item, and available quantity in stock.
+WHERE a product has no variants, THE system SHALL display it as "unavailable" and non-purchasable.
 
-THE system SHALL display cart summary information including subtotal, applicable taxes, shipping costs, applied discounts, and order total.
+A product SHALL require at least one variant to be purchasable.
 
-### Wishlist Management
+### 3.4 Product Management Rules
 
-WHEN a customer adds a product to their wishlist, THE system SHALL save the product reference along with selected variants.
+THE seller SHALL be able to edit their own products.
 
-THE system SHALL allow customers to create multiple wishlists with privacy settings.
+WHEN a seller modifies a product, THE system SHALL create a snapshot of the previous state.
 
-THE system SHALL allow customers to add items from their wishlist directly to their shopping cart.
+THE seller SHALL be able to delete products IF:
+- No variant of the product has paid or shipped status orders
+- No cancellation or refund requests exist for any variant
 
-THE system SHALL notify customers when wishlist items go on sale or become unavailable.
+WHEN a seller deletes a product, THE system SHALL:
+- Remove the product from listings
+- Delete all variants and inventory records
+- Remove the product from search results and category listings
 
-## Order Processing and Payment Requirements
+THE seller SHALL be able to view snapshots of their own products.
 
-### Order Creation Process
+THE administrator SHALL be able to view snapshots of any product.
 
-WHEN a customer initiates checkout from their shopping cart, THE system SHALL create a new order with a unique order identifier in format ORD-YYYYMMDD-NNNN.
+Snapshots SHALL be preserved even after product deletion.
 
-THE system SHALL validate that all items in the shopping cart exist and are available for purchase before order creation.
+### 3.5 Product Image Management
 
-THE system SHALL calculate the total order amount including product prices, taxes, shipping costs, and applicable discounts.
+THE seller SHALL be able to upload multiple images for products.
 
-### Payment Integration
+THE seller SHALL be able to reorder images, with the first image designated as the main thumbnail.
 
-THE system SHALL support payment methods including credit/debit cards, digital wallets (PayPal, Apple Pay, Google Pay), and bank transfers.
+THE seller SHALL be able to delete images from products.
 
-THE system SHALL integrate with a payment gateway provider that supports secure payment processing and PCI compliance.
+Image changes SHALL be included in product snapshots.
 
-THE system SHALL NOT store sensitive payment information such as credit card numbers or CVV codes.
+### 3.6 Product Search and Filtering
 
-IF payment is successfully authorized, THEN THE system SHALL mark order status as "confirmed", send order confirmation email, reserve inventory, and generate shipping label.
+THE customer SHALL be able to search products by name across all sellers.
 
-IF payment is declined, THEN THE system SHALL mark order status as "payment_failed", notify customer, and allow retry with different method.
+Search results SHALL be paginated.
 
-## Order Tracking and Shipping Requirements
+THE customer SHALL be able to filter search results by:
+- Category
+- Price range (minimum and maximum)
+- In-stock status only
 
-### Shipment Tracking
+THE customer SHALL be able to sort search results by:
+- Newest first
+- Price (low to high)
+- Price (high to low)
 
-WHEN a customer places an order, THE system SHALL generate a unique tracking identifier for the shipment.
+### 3.7 Product Display Requirements
 
-THE system SHALL provide real-time tracking information for all active orders.
+WHEN displaying product lists (search results, category pages), EACH product SHALL show:
+- Main image (thumbnail)
+- Name
+- Base price (or price range for variable-priced products)
+- Seller shop name
+- Average rating (if reviews exist)
 
-THE system SHALL display tracking information in a chronological timeline format with timestamp, location, and description for each event.
+WHEN displaying a product detail page, THE system SHALL show:
+- All images in gallery format
+- Name and full description
+- Category
+- Seller shop name with link to profile
+- All available variants with prices and stock status
+- Average rating and total review count
+- All reviews
 
-WHEN a tracking event occurs, THE system SHALL update the tracking status within 30 minutes of the event.
+## 4. Shopping Cart and Ordering System
 
-### Status Updates
+### 4.1 Wishlist Management
 
-WHEN an order is confirmed, THE system SHALL set the initial status to "Processing".
+THE customer SHALL be able to:
+- Add products to their wishlist
+- View their wishlist with pagination
+- Remove products from their wishlist
 
-WHEN an order is shipped, THE system SHALL update the status to "Shipped" and generate tracking information.
+WHEN a seller deletes a product, THE system SHALL automatically remove that product from all customer wishlists.
 
-THE system SHALL automatically update order status based on tracking events from carriers.
+### 4.2 Shopping Cart Operations
 
-WHEN a package is delivered successfully, THE system SHALL update the status to "Delivered".
+THE customer SHALL be able to:
+- Add specific product variants to their cart with quantity specification
+- View their cart contents
+- Modify item quantities
+- Remove items from their cart
 
-## User Review and Rating System Requirements
+WHEN a customer adds a variant that already exists in their cart, THE system SHALL combine the quantities into a single line item.
 
-### Review Submission
+THE cart SHALL display for each item:
+- Product name
+- Variant options
+- Price
+- Quantity
+- Subtotal
 
-WHEN a customer purchases a product, THE system SHALL allow that customer to submit one review per product variant they have purchased.
+THE cart SHALL display the total price of all items.
 
-THE system SHALL require customers to provide a star rating between 1 and 5 when submitting a review.
+IF a variant's stock is less than the cart quantity, THE system SHALL display a warning to the customer.
 
-THE system SHALL allow customers to include written review text with minimum length of 10 characters and maximum length of 2000 characters.
+IF a variant is deleted or becomes out of stock, THE system SHALL mark that item as unavailable in the cart.
 
-THE system SHALL allow customers to upload up to 5 photos with each review.
+### 4.3 Checkout Process
 
-### Rating System
+THE customer SHALL be able to proceed to checkout from their cart.
 
-THE system SHALL calculate product ratings based on average of all submitted star ratings for that product.
+Unavailabile items SHALL NOT be processed during checkout.
 
-THE system SHALL display average product rating with both numerical value and visual star representation.
+THE customer SHALL be required to select a shipping address or use the default address.
 
-THE system SHALL show total number of reviews next to the average rating.
+THE customer SHALL be able to review the order summary before placing the order, including:
+- List of items with prices
+- Shipping address
+- Total price
 
-THE system SHALL update product ratings in real-time when new reviews are submitted.
+THE customer SHALL confirm the order to initiate payment processing.
 
-### Review Moderation
+ONCE an order is placed, THE shipping address SHALL NOT be changeable.
 
-THE system SHALL automatically flag reviews containing profanity or inappropriate language for moderation review.
+### 4.4 Payment Processing Integration
 
-THE system SHALL prevent submission of reviews with more than 5 identical consecutive characters.
+THE system SHALL integrate with an external payment gateway.
 
-THE system SHALL provide admin users with a moderation dashboard to review flagged content.
+WHEN the customer confirms the order, THE system SHALL process payment.
 
-THE system SHALL allow admins to approve, reject, or request revision of flagged reviews.
+IF payment processing fails, THE system SHALL:
+- Notify the customer of the failure
+- Preserve the customer's cart contents
+- Allow the customer to retry payment
 
-## Seller Management System Requirements
+IF payment processing succeeds, THE system SHALL create the order.
 
-### Seller Registration
+## 5. Order Management and Fulfillment System
 
-WHEN a user submits a seller registration request with business information, THE system SHALL validate the provided information and create a pending seller account for approval.
+### 5.1 Order Creation Process
 
-THE system SHALL require administrator approval for all new seller accounts before they can list products.
+WHEN payment succeeds, THE system SHALL:
+- Create an order record
+- Generate order items with "paid" status
+- Create snapshots of purchased products, variants, and seller profiles
+- Decrease stock quantities for purchased variants
+- Remove purchased items from the customer's cart
 
-THE system SHALL collect information during seller registration including business legal name, registration number, contact information, business address, tax ID, bank account information, and intended product categories.
+### 5.2 Order Structure
 
-### Product Management
+Each order SHALL consist of one or more order items.
 
-WHEN a seller creates a new product listing, THE system SHALL require information including title, description, category assignment, base price, variants, images, inventory quantities, and shipping dimensions.
+Each order item SHALL represent a purchased product variant with a quantity.
 
-THE system SHALL allow sellers to define multiple variants for their products based on attributes such as color, size, material, and style.
+IF a customer purchases 3 of the same variant, THE system SHALL create one order item with quantity 3.
 
-THE system SHALL enable sellers to set different prices and inventory levels for each product variant.
+Order items from different sellers SHALL be possible within a single order.
 
-THE system SHALL support product statuses that sellers can manage: Active, Draft, and Archived.
+Each order item SHALL have its own independent status.
 
-### Sales Reporting
+Each order item SHALL be individually cancellable or refundable.
 
-THE system SHALL provide sellers with a sales dashboard showing revenue summaries, order volume statistics, top selling products, and sales trends.
+Order items SHALL be grouped into shipments when shipped.
 
-THE system SHALL allow sellers to view detailed information about orders containing their products.
+### 5.3 Order Status Management
 
-THE system SHALL provide sellers with monthly financial summaries including total sales revenue, platform fees, and net earnings.
+#### Order Item Statuses
+Each order item SHALL have one of the following statuses:
+- Paid: Payment completed, awaiting shipment
+- Shipped: Item has been shipped by seller
+- Delivered: Customer has confirmed delivery
+- Cancelled: Item was cancelled before shipping
+- Refunded: Item was refunded after delivery
 
-## Order History and Cancellation/Refund Requirements
+#### Order Aggregate Status
+The overall order status SHALL be determined from its items:
+- IF all items are paid → Order status is "paid"
+- IF any item is shipped (and none delivered) → Order status is "shipped"
+- IF all items are delivered → Order status is "delivered"
+- IF all items are cancelled → Order status is "cancelled"
+- IF all items are refunded → Order status is "refunded"
+- IF items have mixed statuses → Order status is "partially completed"
 
-### Order History Display
+### 5.4 Order History
 
-WHEN a customer navigates to their account dashboard, THE system SHALL display a chronological list of their past orders with basic information including order number, date, total amount, and current status.
+THE customer SHALL be able to view their order history with:
+- Pagination
+- Newest orders listed first
 
-WHEN a customer selects a specific order from their history, THE system SHALL present detailed order information including items, addresses, shipping method, tax information, and payment method.
+Each order in the list SHALL display:
+- Order number
+- Date
+- Total price
+- Overall status
 
-THE system SHALL allow customers to filter their order history by date range and status.
+THE customer SHALL be able to view full order details including:
+- List of items with product name, variant, quantity, price, and status
+- Shipping address
+- List of shipments with tracking information
 
-### Cancellation Request Process
+## 6. Shipping and Tracking System
 
-WHEN a customer requests to cancel an order, THE system SHALL only permit cancellation if the order status is "Pending" or "Confirmed" and shipping has not yet been initiated.
+### 6.1 Shipment Concept
 
-WHEN a customer submits a cancellation request for an eligible order, THE system SHALL change the order status to "Cancellation Requested", send confirmation email, and suspend further processing.
+A shipment SHALL represent a package sent by a seller containing one or more order items from that seller.
 
-THE system SHALL allow administrators to either approve or deny cancellation requests.
+Different sellers SHALL ship items in separate shipments.
 
-IF the administrator approves the cancellation, THEN THE system SHALL change the order status to "Cancelled", initiate the refund process, send confirmation to the customer, and adjust inventory levels.
+A seller SHALL be able to ship items individually or group multiple items into one shipment.
 
-### Refund Processing
+### 6.2 Shipping Process
 
-THE system SHALL process refunds for cancelled orders, returned items that pass quality inspection, damaged items, and cases where the wrong item was shipped.
+THE seller SHALL be able to view order items that require shipping.
 
-WHEN processing a refund, THE system SHALL determine the refund amount based on original product pricing, applied discounts, shipping costs, and taxes paid.
+WHEN creating a shipment, THE seller SHALL:
+- Select one or more items from the same seller
+- Enter tracking information (carrier name and tracking number)
 
-THE system SHALL issue refunds using the original payment method whenever possible.
+All items in the same shipment SHALL share the same tracking information.
 
-WHEN a refund is approved, THE system SHALL notify the customer via email with confirmation and estimated timeframe for refund to appear in their account.
+WHEN a shipment is created, THE system SHALL:
+- Update all included items to "shipped" status
+- Provide tracking information to the customer
 
-## Admin Dashboard and System Management Requirements
+### 6.3 Delivery Confirmation
 
-### Order Management
+THE customer SHALL be able to view tracking information for each shipment.
 
-WHEN an administrator accesses the dashboard, THE system SHALL display a summary of recent orders including total orders in the last 24 hours, pending orders, orders with shipping issues, and revenue generated.
+THE customer SHALL be able to confirm delivery for entire shipments (not individual items).
 
-THE system SHALL allow administrators to search and filter orders by ID, customer, date range, status, payment status, shipping carrier, and product.
+WHEN a customer confirms delivery for a shipment, THE system SHALL update all items in that shipment to "delivered" status.
 
-THE system SHALL allow administrators to update order status, add tracking numbers, send status notifications, cancel orders, and add notes to order history.
+IF a customer does not confirm delivery within 14 days of shipping, THE system SHALL automatically update all items in that shipment to "delivered" status.
 
-### Product Administration
+## 7. Inventory Management and Tracking
 
-THE system SHALL allow administrators to view, search, and filter all products in the catalog.
+### 7.1 Inventory History Tracking
 
-THE system SHALL allow administrators to create and edit product information, modify pricing, manage inventory, adjust SEO settings, and deactivate/reactivate products.
+Each variant SHALL track stock quantity through inventory records.
 
-THE system SHALL support bulk operations including price updates, inventory adjustments, status changes, and product deletions.
+Each inventory record SHALL contain:
+- Quantity change (positive for restocking, negative for sales/adjustments)
+- Reason for change
+- Timestamp
 
-### User Management
+Current stock levels SHALL be calculated by summing all inventory records.
 
-THE system SHALL provide a comprehensive user directory that allows administrators to view, search, and filter users by account status.
+### 7.2 Seller Inventory Operations
 
-THE system SHALL allow administrators to activate/deactivate user accounts, reset passwords, update contact information, and suspend accounts for policy violations.
+THE seller SHALL be able to increase inventory (restock):
+- With a positive quantity
+- With a reason for the restocking
 
-THE system SHALL provide specific tools for managing seller accounts including approval/rejection of applications, performance monitoring, and account suspension/termination.
+THE seller SHALL be able to decrease inventory (adjustments/losses):
+- With a negative quantity
+- With a reason for the adjustment
 
-### System Monitoring
+### 7.3 Inventory Automation
 
-THE system SHALL display real-time system health indicators including server uptime, database performance, API response times, active sessions, and error rates.
+WHEN an order is placed successfully, THE system SHALL automatically create negative inventory records for purchased variants.
 
-THE system SHALL maintain detailed logs of administrative actions, user account modifications, product changes, order status modifications, and security events.
+WHEN an order is cancelled, THE system SHALL automatically create positive inventory records to restore stock.
 
-THE system SHALL allow administrators to configure site-wide settings, manage payment gateways, update shipping options, configure tax settings, and manage promotional discounts.
+WHEN a refund is processed, THE system SHALL automatically create positive inventory records to restore stock.
 
-## Security and Compliance Requirements
+### 7.4 Stock Status Management
 
-### Authentication and Authorization
+THE seller SHALL be able to view the full inventory history for each variant.
 
-WHEN a guest user initiates account registration, THE system SHALL collect email address, password, and basic profile information.
+WHEN stock quantity reaches 0, THE system SHALL display the variant as "out of stock".
 
-WHEN a user submits registration information, THE system SHALL validate that the email address is properly formatted and not already registered.
+Out of stock variants SHALL NOT be available for adding to cart.
 
-WHEN a user successfully registers, THE system SHALL send a verification email to the provided address.
+## 8. Cancellation and Refund System
 
-THE system SHALL use JSON Web Tokens (JWT) for authentication and authorization with 30-minute access tokens and 30-day refresh tokens.
+### 8.1 Cancellation Request Process
 
-THE system SHALL store JWT tokens in httpOnly cookies with secure flags for enhanced security.
+THE customer SHALL be able to request cancellation for order items with "paid" status.
 
-### Data Protection
+Cancellation requests SHALL require a text reason from the customer.
 
-THE system SHALL maintain 99.9% uptime for catalog browsing and search functionality.
+THE system SHALL notify the relevant seller of cancellation requests.
 
-THE system SHALL encrypt all sensitive session data both in transit and at rest.
+When a seller responds to a cancellation request, THE system SHALL create a snapshot of the request state.
 
-THE system SHALL implement rate limiting on authentication attempts to prevent brute force attacks.
+IF a seller approves a cancellation request, THE system SHALL:
+- Update the item status to "cancelled"
+- Process refund for that item
+- Restore stock quantities through inventory records
+- Allow the remaining items in the order to continue processing
 
-THE system SHALL log all authentication events including successful logins, failed attempts, and logout events.
+IF all items in an order are cancelled, THE system SHALL update the overall order status to "cancelled".
 
-## Performance and Scalability Requirements
+### 8.2 Refund Request Process
 
-WHEN a customer navigates to any product listing page, THE system SHALL load and display content within 1.5 seconds under normal conditions.
+THE customer SHALL be able to request refunds for order items with "delivered" status.
 
-WHEN filtering or sorting is applied, THE system SHALL update the product listing within 500 milliseconds.
+Refund requests SHALL require a text reason from the customer.
 
-THE system SHALL process payments and confirm orders within 5 seconds under normal conditions.
+Refund requests SHALL be time-limited to 7 days after delivery confirmation.
 
-THE system SHALL support peak order processing volume of 1000 orders per hour.
+THE system SHALL notify the relevant seller of refund requests.
 
-THE system SHALL maintain 99.9% uptime for order processing functionality.
+When a seller responds to a refund request, THE system SHALL create a snapshot of the request state.
 
-THE system SHALL support at least 10,000 concurrent users with no degradation in shopping experience performance.
+IF a seller approves a refund request, THE system SHALL:
+- Update the item status to "refunded"
+- Process refund for that item
+- Restore stock quantities through inventory records
+- Leave other items in the order unaffected
 
-## Integration and Future Considerations
+IF all items in an order are refunded, THE system SHALL update the overall order status to "refunded".
 
-THE product catalog system SHALL integrate with the product variants module to display available options and pricing variations.
+## 9. Reviews and Ratings System
 
-THE system SHALL connect to the user reviews module to display average ratings and review counts.
+### 9.1 Review Creation
 
-THE system SHALL interface with the search infrastructure to provide updated index data when products or categories are modified.
+THE customer SHALL be able to write a review for products they have purchased.
 
-WHERE the platform supports multiple warehouses, THE system SHALL track inventory separately for each location.
+Review creation SHALL be limited to items with "delivered" status.
 
-THE system SHALL be architected to support multilingual product information when expanding to international markets.
+THE customer SHALL be able to submit one review per product per order.
 
-```mermaid
-graph LR
-  A["E-commerce Mall Platform"] --"Customer Access"--- B["User Registration & Authentication"]
-  A --"Product Management"--- C["Product Catalog & Variants"]
-  A --"Shopping Experience"--- D["Cart & Wishlist"]
-  A --"Order Processing"--- E["Order Placement & Payment"]
-  A --"Order Management"--- F["Tracking & Shipping Status"]
-  A --"User Engagement"--- G["Reviews & Ratings"]
-  A --"Seller Operations"--- H["Seller Accounts & Inventory"]
-  A --"Order History"--- I["History & Refunds"]
-  A --"Administration"--- J["Admin Dashboard"]
-  
-  style A fill:#e1f5fe
-  style B fill:#c8e6c9
-  style C fill:#c8e6c9
-  style D fill:#c8e6c9
-  style E fill:#c8e6c9
-  style F fill:#c8e6c9
-  style G fill:#c8e6c9
-  style H fill:#c8e6c9
-  style I fill:#c8e6c9
-  style J fill:#c8e6c9
-```
+Each review SHALL include:
+- Rating (integer from 1 to 5 stars, required)
+- Text content (optional)
 
-```mermaid
-graph LR
-  A["Customer Browses Products"] 
-  B["View Product Detail"]
-  C["Select Variants"]
-  D{"Add to Cart or Wishlist?"}
-  E["Add to Cart"]
-  F["Add to Wishlist"]
-  G["View Cart"]
-  H["Proceed to Checkout"]
-  I["View Wishlist"]
-  J["Move Item to Cart"]
-  
-  A -- "Browse"  B
-  B -- "Select"  C
-  C -- "Configure"  D
-  D -- "Cart"  E
-  D -- "Wishlist"  F
-  E -- "Continue"  G
-  G -- "Checkout"  H
-  F -- "Save"  I
-  I -- "Later Purchase"  J
-  J -- "Add"  G
-```
+### 9.2 Review Management
+
+THE customer SHALL be able to edit their own reviews.
+
+WHEN a customer edits a review, THE system SHALL create a snapshot of the previous version.
+
+THE customer SHALL be able to delete their own reviews.
+
+WHEN a customer deletes a review, THE snapshot history SHALL be preserved.
+
+THE customer SHALL be able to delete their entire account.
+
+WHEN a customer deletes their account, THEIR reviews SHALL be preserved but shown as authored by a "deleted user".
+
+### 9.3 Review Display
+
+Reviews SHALL be displayed on product detail pages.
+
+Reviews SHALL be sorted by newest first.
+
+Product average ratings SHALL be calculated from all non-deleted reviews.
+
+## 10. Seller Dashboard and Performance Tracking
+
+### 10.1 Dashboard Overview
+
+THE seller dashboard SHALL display key shop metrics including:
+- Total number of active products
+- Total number of order items (for seller's products)
+- Number of pending cancellation requests
+- Number of pending refund requests
+
+### 10.2 Order Item Management
+
+THE seller SHALL be able to view a list of all order items for their products.
+
+THE seller SHALL be able to filter order items by status.
+
+## 11. Administrative Oversight System
+
+### 11.1 User Management
+
+THE administrator SHALL be able to view all customer accounts.
+
+THE administrator SHALL be able to ban customers (preventing login).
+
+THE administrator SHALL be able to unban customers.
+
+THE administrator SHALL be able to view all seller accounts.
+
+THE administrator SHALL be able to ban sellers (preventing login, preserving existing orders).
+
+### 11.2 Seller Registration Oversight
+
+THE administrator SHALL be able to view pending seller approval requests.
+
+THE administrator SHALL be able to approve or reject seller registrations.
+
+WHEN rejecting a seller registration, THE administrator SHALL provide a reason.
+
+THE administrator SHALL be able to suspend seller accounts.
+
+WHEN a seller is suspended, THE system SHALL:
+- Hide their products from search and category listings
+- Prevent new product creation or editing
+- Allow processing of existing orders
+
+### 11.3 Product Oversight
+
+THE administrator SHALL be able to view all products on the platform.
+
+THE administrator SHALL be able to view snapshots of any product.
+
+THE administrator SHALL be able to delete any product for policy violations.
+
+### 11.4 Category Management
+
+THE administrator SHALL be able to create new categories and subcategories.
+
+THE administrator SHALL be able to edit existing category names and descriptions.
+
+THE administrator SHALL be able to delete categories.
+
+### 11.5 Order Oversight
+
+THE administrator SHALL be able to view all orders on the platform.
+
+THE administrator SHALL be able to force-cancel entire orders or individual items.
+
+THE administrator SHALL be able to force-refund entire orders or individual items.
+
+## 12. Data Snapshot and Audit System
+
+### 12.1 Snapshot Principles
+
+THE platform SHALL create snapshots for all modifications to critical business data.
+
+Snapshots SHALL record:
+- Timestamp of the change
+- What was changed
+- Values before and after the change
+
+Snapshots SHALL be immutable and undeletable.
+
+Snapshots SHALL be accessible to relevant parties for dispute resolution.
+
+### 12.2 Data Covered by Snapshots
+
+THE system SHALL create snapshots for modifications to:
+- Products (all fields including images)
+- Product variants (SKU code, option values, price)
+- Seller profiles (shop name, description, logo)
+- Order items (product, variant, and seller profile at time of purchase)
+- Reviews (rating, text content)
+- Cancellation requests (reason, status changes)
+- Refund requests (reason, status changes)
+
+### 12.3 Snapshot Implementation
+
+WHEN any editable data is modified, THE system SHALL automatically create a snapshot of the previous state.
+
+Snapshots SHALL be viewable by:
+- Data owners
+- Administrators
+- Authorized parties for dispute resolution
+
+Snapshots SHALL be preserved indefinitely, even after data deletion.
+
+> *Note: This requirements specification defines the business capabilities and constraints of the e-commerce platform. All technical implementation decisions (architecture, database design, API specifications, etc.) will be determined in subsequent development phases.*

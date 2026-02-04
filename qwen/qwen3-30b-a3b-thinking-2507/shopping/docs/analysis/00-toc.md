@@ -1,144 +1,326 @@
-# Shopping Mall Platform Requirements Analysis
+# E-Commerce Shopping Mall Platform
 
-## Service Vision & Overview
-The Shopping Mall Platform is a comprehensive e-commerce solution designed to provide seamless online shopping experiences for customers, robust product management for sellers, and efficient operational tools for administrators. The platform will support scalable transactions, personalized user experiences, and real-time inventory management to meet the demands of modern e-commerce.
+## 1. Customer Management
 
-### Business Context
-This platform addresses market gaps by providing a unified solution for both buyers and sellers in a single ecosystem. The platform's vision is to become the preferred marketplace for regional consumers by focusing on trust, ease of use, and exceptional customer service.
+### Account Lifecycle
 
-## Problem Definition
-Customers face significant challenges with current e-commerce platforms: fragmented experiences, limited product visibility, complex ordering processes, and unreliable inventory management. Sellers struggle with disjointed systems for product management and order processing, leading to decreased sales and customer satisfaction.
+WHEN a customer registers using email and password, THE system SHALL create an account with required validation:
+- Email must be valid format
+- Password must meet complexity requirements (min 8 characters, mixed case)
+- Email verification process before account activation
 
-### Key Problems Addressed
-- Fragmented customer experiences across different platforms
-- Inconsistent product information and inventory availability
-- Complicated ordering and payment processes
-- Lack of unified management for sellers across multiple product offerings
+WHEN a customer attempts to log in with invalid credentials, THE system SHALL return HTTP 401 with error code `AUTH_INVALID_CREDENTIALS` within 2 seconds.
 
-## Core Value Proposition
-The platform delivers unique value through a unified marketplace experience where customers can browse, purchase, and manage all their shopping needs in one place, while sellers can effectively manage their products, orders, and customer relationships without using multiple systems.
+WHEN a customer requests password change, THE system SHALL require:
+- Current password verification
+- New password meeting complexity requirements
+- Confirmation of new password
+- Time-based security check to prevent brute force
 
-### Competitive Differentiation
-Unlike other platforms, we offer:
-1. **Integrated Seller-Customer Ecosystem**: Single platform for both buyers and sellers
-2. **Real-time Inventory Visibility**: Accurate stock levels across all sales channels
-3. **Personalized Shopping Experiences**: Tailored recommendations based on user behavior
-4. **Seamless Order Management**: Single dashboard for order, shipping, and customer service
+WHEN a customer deletes their account, THE system SHALL:
+- Permanently delete profile information
+- Preserve order history and reviews (marked as 'deleted user')
+- Prevent new order creation but retain purchase history for record keeping
+- Remove all active sessions
 
-## User Actors & Permissions
-
-| Actor | Permission Level | Key Capabilities |
-|-------|------------------|------------------|
-| Customer | Member | Browse products, purchase items, manage cart, view order history, leave reviews, manage addresses, wishlist items |
-| Seller | Member | Manage product catalog, update inventory, process orders, view sales reports, manage product variants, configure shipping options |
-| Admin | Admin | Manage all user accounts, oversee platform operations, generate system reports, manage integrations, handle security configurations |
-
-### Authentication Requirements
-
-**Authentication Workflow**
-
+*Integration with Authentication Flow:* 
 ```mermaid
-graph TD
-A[User Enters Login Credentials] --> B{Valid Credentials?}
-B -->|Yes| C[Generate JWT Token]
-B -->|No| D[Show Error Message]
-C --> E[Store Session Data]
-E --> F[Redirect to Dashboard]
-D --> G[Allow Retry]
-```
+graph LR
+  A[Sign Up] --> B[Email Verification]
+  B --> C{Valid Email}
+  C -->|Yes| D[Activate Account]
+  C -->|No| E[Error & Retry]
+  D --> F[Set Session Token]
+  F --> G[Login Available]
+```  
 
-- WHEN a user provides valid username and password, THE system SHALL generate a JWT token with a 2-hour expiration period
-- WHEN a user logs out, THE system SHALL invalidate the token and remove session data
-- WHEN an authentication token expires, THE system SHALL redirect to login screen and prompt for new credentials
+### Profile Management
 
-## Primary User Scenarios
+WHEN a customer edits their display name, THE system SHALL allow alphanumeric characters only (max 50 characters) and enforce:
+- No special characters
+- No whitespace as first/last character
+- Real-time validation feedback
 
-### 1. Product Search and Discovery
+WHEN a customer updates their phone number, THE system SHALL:
+- Validate against international format standards
+- Apply country code detection
+- Store in E.164 format
+- Provide error message for invalid numbers
 
-**Scenario Description**: A customer browses the platform to find products based on categories, keywords, or filters.
+WHEN a customer requests phone number change, THE system SHALL:
+- Require secondary verification (email/SMS)
+- Log change attempt with timestamp
+- Update only after successful verification
 
-- WHEN a customer enters keywords into the search bar, THE system SHALL display relevant products with matching names, descriptions, or categories
-- WHEN a customer filters products by category, color, or size, THE system SHALL update the product listing in real-time while maintaining search results
-- WHEN multiple filters are applied, THE system SHALL combine all filter conditions to show the most specific results
+## 2. Seller Management
 
-### 2. Shopping Cart Management
+### Account Approval Process
 
-**Scenario Description**: A customer adds items to their shopping cart, adjusts quantities, and proceeds to checkout.
+WHEN a seller submits registration request, THE system SHALL:
+- Store submission with timestamp and required fields
+- Set account status to `pending`
+- Notify administrators via email
+- Prevent access to seller dashboard
 
-- WHEN a customer adds a product with variants (e.g., color or size) to the cart, THE system SHALL allow selection of specific variant before adding to cart
-- WHEN cart quantities are updated, THE system SHALL immediately reflect the new totals and stock availability
-- WHEN the cart contains out-of-stock items, THE system SHALL display a warning and allow continuation but prevent checkout until in-stock items are selected
+WHEN an administrator rejects a seller registration, THE system SHALL:
+- Record rejection reason as mandatory field
+- Send notification to seller with rejection details
+- Allow new registration request only after 24 hours
+- Create audit trail of rejection
 
-### 3. Order Placement and Payment
+WHEN a seller is rejected, THE system SHALL:
+- Preserved all previous application data
+- Prevent immediate re-submission
+- Generate confirmation email with actionable feedback
+- Track rejection statistics for admin review
 
-**Scenario Description**: A customer completes an order purchase with payment processing.
+### Seller Profile Management
 
-- WHEN a customer proceeds to checkout, THE system SHALL validate shipping addresses and payment information
-- WHEN payment is processed successfully, THE system SHALL display the order confirmation with tracking information
-- WHEN payment fails, THE system SHALL provide clear error messages and allow retry within the same checkout flow
+WHEN a seller updates their shop name, THE system SHALL:
+- Create new profile snapshot
+- Preserve previous shop name
+- Update all references to current shop name
+- Audit timestamp of change
 
-## Secondary User Scenarios
+WHEN a seller edits their profile logo, THE system SHALL:
+- Generate new snapshot preserving previous image
+- Store new logo with versioning
+- Maintain image quality standards
+- Provide confirmation of successful upload
 
-### 1. Seller Product Management
+WHEN a seller is suspended, THE system SHALL:
+- Hide products from search and category listings
+- Prevent new product creation
+- Block product edits
+- Allow processing of existing orders
+- Store suspension reason in audit log
 
-**Scenario Description**: A seller manages their product catalog and inventory.
+*Seller Approval Workflow*
+```mermaid
+flowchart TB
+  A[New Seller Registration] --> B{Verify Required Fields}
+  B -->|Valid| C[Status: Pending]
+  B -->|Invalid| D[Show Validation Errors]
+  C --> E[Admin Review]
+  E -->|Approve| F[Status: Approved]
+  E -->|Reject| G[Status: Rejected]
+  G --> H[Notify Seller with Reason]
+  H --> I[Wait 24 Hours]
+  I --> A
+```  
 
-- WHEN a seller creates a new product with variants, THE system SHALL prompt for all required variant details (color, size, SKU)
-- WHEN a seller updates inventory levels, THE system SHALL immediately reflect changes across all sales channels
-- WHEN a seller adds new product images, THE system SHALL enforce image size limits and format specifications
+## 3. Product Management
 
-### 2. Order Cancellation and Refunds
+### Product Creation Requirements
 
-**Scenario Description**: A customer requests a cancellation or refund.
+WHEN a seller creates a product, THE system SHALL:
+- Require product name (min 3 characters, max 255)
+- Require description (min 10 characters)
+- Require category selection (with subcategories)
+- Require base price > $0.01
+- Prevent product creation without category
 
-- WHEN a customer requests an order cancellation within 2 hours of purchase, THE system SHALL process cancellation and refund the payment
-- WHEN a customer requests a refund after 2 hours, THE system SHALL require additional justification and process within 3 business days
-- WHEN a refund is processed, THE system SHALL update order status to 'Refunded' and notify the customer
+WHEN a product has variants, THE system SHALL:
+- Require at least one variant
+- Validate SKU format uniqueness
+- Enforce price constraints
+- Prevent product creation without required variant information
 
-## Exception Handling
+### Product Variants Management
 
-### Payment Failure Resolution
+WHEN a seller adds a product variant, THE system SHALL:
+- Require SKU code with format `SKU-XXXXX`
+- Require option values (e.g., color, size)
+- Allow price override of base price (optional)
+- Mandate stock quantity > 0
 
-- WHEN a payment gateway transaction fails, THE system SHALL prompt for alternative payment method options
-- WHEN the failure is due to insufficient funds, THE system SHALL provide specific error messaging and instructions
-- WHEN transaction processing fails repeatedly, THE system SHALL log the incident and notify support team
+WHEN a product variant is edited, THE system SHALL:
+- Create product-snapshot-SKU record
+- Preserve previous values
+- Update only after successful validation
+- Log edit attempt with timestamp
 
-### Product Unavailability Handling
+WHEN a product is deleted, THE system SHALL:
+- Delete all variants
+- Delete all inventory records
+- Preserve all product and variant snapshots
+- Mark product as archived in history
 
-- WHEN a product goes out of stock after being added to cart, THE system SHALL display a notification and suggest similar alternatives
-- WHEN inventory levels drop below threshold, THE system SHALL automatically update product availability status
-- WHEN a sold item is restocked, THE system SHALL notify users who previously saved the item to wishlist
+### Inventory Management
 
-## Security & Compliance
+WHEN a customer purchases a product variant, THE system SHALL:
+- Automatically decrease stock quantity
+- Create negative inventory history record
+- Log reason as 'order fulfillment'
+- Prevent purchase if stock = 0
 
-### Data Protection Requirements
+WHEN a seller performs restock, THE system SHALL:
+- Create positive inventory history record
+- Log quantity and reason
+- Update current stock balance
+- Send confirmation to seller
 
-- WHEN user information is collected, THE system SHALL encrypt all personal data at rest and in transit
-- WHEN payment information is processed, THE system SHALL comply with PCI DSS standards for data security
-- WHEN user accounts are created, THE system SHALL enforce strong password policies including minimum length and character requirements
+WHEN stock reaches 0, THE system SHALL:
+- Mark variant as 'out of stock'
+- Prevent addition to cart
+- Update product listing display
+- Send low-stock notification to seller
 
-### Authentication Security
+## 4. Order Management
 
-- WHEN a user logs in from a new device, THE system SHALL prompt for two-factor verification
-- WHEN authentication attempts fail multiple times, THE system SHALL implement account lockout mechanisms after 5 attempts
-- WHEN tokens are invalidated, THE system SHALL remove all access tokens immediately
+### Order Creation and Status
 
-## Business Rules
+WHEN a customer proceeds to checkout with valid cart, THE system SHALL:
+- Verify stock availability per variant
+- Check shipping address validity
+- Calculate total price with tax
+- Create order record with timestamp
 
-### Product Validation Rules
+WHEN an order is created, THE system SHALL:
+- Create product snapshots for each item
+- Create seller profile snapshots for each item
+- Preserve product name, description, variant options, and price at time of purchase
+- Set initial order item status to `paid`
+- Store order in database with unique order ID
 
-- WHEN a new product is created, THE system SHALL validate that all required fields (name, description, price) are present
-- WHEN a product has variants, THE system SHALL require at least one variant configuration (color/size)
-- WHEN a product price is set, THE system SHALL validate it is greater than $0.00
+### Order Item Status Management
 
-### Order Processing Rules
+WHEN an order item is purchased, THE system SHALL set initial status to `paid`.
 
-- WHEN an order is placed, THE system SHALL check inventory levels and reserve items
-- WHEN inventory is low, THE system SHALL send alert to warehouse manager
-- WHEN an order is fulfilled, THE system SHALL update inventory levels immediately
+WHEN a seller ships items, THE system SHALL:
+- Create shipment record with tracking number
+- Update all items in shipment to `shipped`
+- Store shipment timestamp
+- Notify customer of shipping details
 
-### Inventory Management Rules
+WHEN a customer confirms delivery, THE system SHALL:
+- Update all items in shipment to `delivered`
+- Calculate final status
+- Complete order fulfillment
+- Update seller's sales metrics
 
-- WHEN inventory is updated, THE system SHALL track changes with timestamp and user who made the update
-- WHEN inventory falls below threshold, THE system SHALL automatically generate a restock request
-- WHEN products are returned, THE system SHALL update inventory with 'renewable' status
+WHEN an order item is cancelled, THE system SHALL:
+- Create cancellation request
+- Preserve item state at cancellation time
+- Restore stock quantity via inventory record
+- Notify seller and customer
+
+## 5. Address Management
+
+WHEN a customer adds a shipping address, THE system SHALL:
+- Require recipient name, phone, street, city, postal code
+- Validate postal code format based on country
+- Store address in standardized format
+- Provide error messages for missing fields
+
+WHEN an address is set as default, THE system SHALL:
+- Mark as primary for new orders
+- Update address preferences
+- Maintain previous default address history
+- Prevent duplicate default addresses
+
+WHEN an address is deleted, THE system SHALL:
+- Remove from active use
+- Preserve historical records
+- Update all references to previous default
+- Allow access to deleted address for reference
+
+## 6. Wishlist and Cart
+
+### Wishlist Requirements
+
+WHEN a customer adds a product to wishlist, THE system SHALL:
+- Store product ID without variant specificity
+- Allow multiple wishlist entries
+- Update wishlist count in real-time
+- Preserve product image and basic info
+
+WHEN a seller deletes a product, THE system SHALL:
+- Automatically remove it from all customer wishlists
+- Update wishlist count display
+- Log removal event
+- Prevent wishlist access to deleted products
+
+### Shopping Cart Requirements
+
+WHEN a customer adds a variant to cart, THE system SHALL:
+- Combine quantities if same variant exists
+- Validate stock availability
+- Show remaining stock quantity
+- Provide warning if stock < cart quantity
+
+WHEN a customer views cart, THE system SHALL:
+- Display all items with variant options
+- Show image, price, quantity, and subtotal
+- Calculate total price with taxes
+- Highlight out-of-stock items
+
+## 7. Checkout and Payment
+
+WHEN a customer proceeds to checkout, THE system SHALL:
+- Require selected shipping address
+- Verify order totals
+- Show payment options
+- Prevent checkouts with unavailable items
+
+WHEN payment fails, THE system SHALL:
+- Retain cart items
+- Display reason for failure
+- Allow retry without order creation
+- Log payment attempt details
+
+WHEN payment succeeds, THE system SHALL:
+- Create order record
+- Decrease inventory
+- Remove items from cart
+- Generate confirmation email
+- Trigger order fulfillment process
+
+## 8. Reviews and Ratings
+
+WHEN a customer purchases a product, THE system SHALL:
+- Enable review creation only after item status becomes `delivered`
+- Enforce 1-5 star rating
+- Require minimum 5 words for text content
+- Prevent duplicate reviews for same product
+
+WHEN a customer writes a review, THE system SHALL:
+- Create new review snapshot
+- Preserve original review content
+- Update product average rating
+- Store reviewer ID and timestamp
+
+WHEN a customer deletes a review, THE system SHALL:
+- Preserve review snapshot
+- Mark review as deleted
+- Update average rating calculation
+- Prevent public display of deleted review
+
+## 9. Snapshot Preservation Policy
+
+WHEN any editable business data is modified, THE system SHALL:
+- Automatically create snapshot record
+- Record timestamp of change
+- Store user ID of modifier
+- Note modified fields
+- Preserve previous values
+
+SNAPSHOTS SHALL:
+- Be immutable (cannot be deleted or modified)
+- Be accessible to relevant parties (owners for personal data, administrators for disputes)
+- Provide full context for historical data
+- Maintain data integrity across platform
+
+### Snapshot Types and Coverage
+
+| Data Type | Creation Trigger | Preservation Period | Access Level |
+|-----------|-----------------|---------------------|--------------|
+| Product | Edit or delete | Permanent | Owner, Admin |
+| Product Variant | Edit | Permanent | Owner, Admin |
+| Seller Profile | Edit | Permanent | Owner, Admin |
+| Order Item | Purchase | Permanent | Owner, Admin |
+| Review | Edit or delete | Permanent | Owner, Admin |
+| Cancellation Request | Creation | Permanent | Owner, Admin |
+| Refund Request | Creation | Permanent | Owner, Admin |
+
+This document provides business requirements only. All technical implementations (architecture, APIs, database design) are at the discretion of the development team.

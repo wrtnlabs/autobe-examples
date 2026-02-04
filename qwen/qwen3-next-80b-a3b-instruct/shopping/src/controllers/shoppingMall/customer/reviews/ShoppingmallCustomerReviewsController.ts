@@ -1,188 +1,192 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
 import typia, { tags } from "typia";
 
-import { IShoppingMallProductReview } from "../../../../api/structures/IShoppingMallProductReview";
-import { IPageIShoppingMallProductReview } from "../../../../api/structures/IPageIShoppingMallProductReview";
-import { IShoppingMallReviewFlag } from "../../../../api/structures/IShoppingMallReviewFlag";
+import { IPageIShoppingMallReview } from "../../../../api/structures/IPageIShoppingMallReview";
+import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallReview";
+import { CustomerAuth } from "../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { deleteShoppingMallCustomerReviewsReviewId } from "../../../../providers/deleteShoppingMallCustomerReviewsReviewId";
+import { getShoppingMallCustomerReviewsReviewId } from "../../../../providers/getShoppingMallCustomerReviewsReviewId";
+import { patchShoppingMallCustomerReviews } from "../../../../providers/patchShoppingMallCustomerReviews";
+import { postShoppingMallCustomerReviews } from "../../../../providers/postShoppingMallCustomerReviews";
+import { putShoppingMallCustomerReviewsReviewId } from "../../../../providers/putShoppingMallCustomerReviewsReviewId";
 
 @Controller("/shoppingMall/customer/reviews")
 export class ShoppingmallCustomerReviewsController {
   /**
-   * Create a new product review submission in the shopping mall platform. This
-   * operation allows authenticated customers to submit textual feedback and
-   * star ratings for products they have purchased, contributing to the
-   * platform's community-driven product evaluation system.
+   * Create a review for a product after the associated order item has been delivered.
    *
-   * The review is associated with a specific product variant through the
-   * product_id field and must reference a completed order to ensure review
-   * authenticity. This prevents users from leaving reviews for products they
-   * have not actually purchased, maintaining the integrity of the customer
-   * feedback system.
+   * This operation allows authenticated customers to submit a review for a product when their order item has reached the 'delivered' status. The review system is designed to capture customer feedback on product quality and experience, which becomes part of the product's public reputation. When a customer submits a review, the system validates that the order item status is 'delivered' before allowing the operation, ensuring that reviews are only submitted after the product has been received.
    *
-   * Security and integrity mechanisms include automatic verification of
-   * purchase history through the order management system. Only customers who
-   * have successfully completed an order containing the target product variant
-   * are permitted to submit reviews. The review submission flow requires the
-   * customer to be authenticated and active, preventing anonymous or suspended
-   * accounts from posting reviews.
+   * The review must include a mandatory star rating between 1 and 5, reflecting the customer's satisfaction level. An optional text field allows customers to provide additional context or detailed feedback about their experience. The system links the review explicitly to the customer who submitted it and the specific product being reviewed, creating an immutable record of customer opinion.
    *
-   * The review submission triggers automated content moderation workflows that
-   * check for inappropriate language, spam patterns, or policy violations
-   * before making the review visible to other users. Moderation actions include
-   * flagging for human review, auto-rejection, or automatic approval based on
-   * predefined criteria.
+   * Reviews impact product visibility and purchasing decisions - products with higher average ratings receive increased prominence on search results and category pages. The review system incorporates snapshot preservation as defined in the Snapshot Principle, with each review modification creating an entry in the shopping_mall_review_snapshots table for audit and dispute resolution.
    *
-   * The operation enforces business validation rules including minimum
-   * character length for review text, maximum rating value of 5 stars, and
-   * limits on review submission frequency within 24-hour periods to prevent
-   * review flooding. All submissions are time-stamped and linked to the
-   * submitting user's account for audit purposes.
+   * When a customer deletes their review, the numeric rating is preserved in the product's average_rating field to maintain statistical integrity, but the text content is hidden from public view. The average_rating field in the shopping_mall_products table is updated whenever reviews are created, edited, or deleted.
    *
-   * This review system supports customer decision-making by providing authentic
-   * social proof and product insights. The data generated feeds into seller
-   * performance analytics and product improvement initiatives. Other operations
-   * that interact with this functionality include PATCH /reviews (to search
-   * reviews), PUT /reviews/{id} (to update reviews), and DELETE /reviews/{id}
-   * (to delete reviews).
+   * This operation integrates with the Order Service to verify delivery status before allowing review creation. Reviews are subject to moderation policies, with administrators able to delete inappropriate content through the shopping_mall_reviews table or permanently remove them through administrative tools.
+   *
+   * Error scenarios include attempting to create duplicate reviews for the same product in the same order, trying to review non-delivered items, or submitting ratings outside the 1-5 range.
    *
    * @param connection
-   * @param body Data payload containing review content and metadata required
-   *   for product review submission.
+   * @param body Data required to create a product review.
+   * @x-autobe-specification Validate that the customer has an order item with the specified product_id where status='delivered'. Check that no existing review exists for this customer-product combination. Verify rating is between 1 and 5 (inclusive). Create record in shopping_mall_reviews table with customer_id, product_id, rating, text (if provided), and created_at timestamp. Emit ReviewCreated event. Recalculate product's average rating using all non-deleted reviews. Return the newly created review object with review_id, product_id, customer_id, rating, text, created_at.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
+    @CustomerAuth()
+    customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallProductReview.ICreate,
-  ): Promise<IShoppingMallProductReview> {
-    body;
-    return typia.random<IShoppingMallProductReview>();
+    body: IShoppingMallReview.ICreate,
+  ): Promise<IShoppingMallReview> {
+    try {
+      return await postShoppingMallCustomerReviews({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Retrieve filtered and paginated reviews from the system. This operation
-   * operates on the shopping_mall_reviews table and provides advanced search
-   * capabilities for finding reviews based on product, user, rating, status,
-   * and date range.
+   * Retrieve a paginated list of product reviews with aggregated rating statistics for a specific product.
    *
-   * The operation supports comprehensive pagination with configurable page
-   * sizes and sorting options. Reviews can be filtered by product ID, user ID,
-   * rating range (1-5 stars), review status (approved, pending, rejected), and
-   * date range. Sorting can be done by creation date, rating, helpfulness
-   * votes, or popularity.
+   * This operation returns a comprehensive list of reviews for a given product, including the average rating and total review count. The API supports advanced filtering through request body parameters, ensuring efficient retrieval of reviews without requiring multiple round-trips to the server. Reviews displayed to customers exclude any content marked as deleted by the user, though their numeric ratings continue to contribute to the overall product rating.
    *
-   * Security considerations include rate limiting for search operations and
-   * appropriate filtering of sensitive review information based on the
-   * requesting user's authorization level. Only users with appropriate
-   * permissions can access detailed review information including hidden content
-   * or moderator notes. Admins can view all reviews including those marked as
-   * hidden, while regular users can only view approved reviews.
+   * The system maintains a complete audit trail of all review modifications through immutable snapshots captured in the shopping_mall_review_snapshots table. While customer-deleted reviews hide their text content and display "deleted user" as the author, the associated rating remains active in the average calculation. In contrast, administrative deletions remove the review's rating from the average calculation entirely, though the original content remains preserved for compliance and dispute resolution purposes.
    *
-   * This operation integrates with the shopping_mall_reviews table as defined
-   * in the database schema, incorporating all available review fields and
-   * relationships. The response includes review summary information optimized
-   * for list displays, with options to include additional details based on
-   * authorization level. Related operations: GET /reviews/{reviewId} for
-   * detailed review retrieval, POST /reviews for creating new reviews.
+   * This operation integrates directly with the product review system and requires the caller to specify which product's reviews are being requested using the product_id field in the request body. For customer-facing displays, the system prioritizes performance through pagination and caching while preserving the integrity of review metrics as defined in the platform's review principle. Administrators have full access to original review content through a separate audit interface, but this endpoint returns only consumer-viewable data.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for review filtering
-   *   and sorting
+   * @param body Search criteria and pagination parameters for product review filtering
+   * @x-autobe-specification Query shopping_mall_reviews table with pagination using cursor-based pagination for efficiency. Filter by product_id provided in request body. Exclude reviews where is_deleted = true from display but include them in totalCount calculation if deleted by customer. Exclude reviews where is_deleted = true from averageRating calculation if deleted by admin. Join with shopping_mall_review_snapshots to determine deletion reason and actor type for admin visibility. Calculate average rating dynamically using only non-deleted reviews or customer-deleted reviews (retain numeric rating but exclude text). Round average to one decimal place. Include totalCount of reviews matching criteria. Apply rate limiting of 50 requests per minute per customer. Cache results for 5 minutes with product_id-based cache keys.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallProductReview.IRequest,
-  ): Promise<IPageIShoppingMallProductReview.ISummary> {
-    body;
-    return typia.random<IPageIShoppingMallProductReview.ISummary>();
+    body: IShoppingMallReview,
+  ): Promise<IPageIShoppingMallReview.ISummary> {
+    try {
+      return await patchShoppingMallCustomerReviews({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Update an existing product review with revised content, ratings, or
-   * metadata. This operation allows customers to modify their previously
-   * submitted reviews on products they have purchased. The review is identified
-   * by its unique review ID and must be owned by the authenticated customer.
+   * Retrieve a specific product review by its unique identifier.
    *
-   * The operation validates that the review ID exists and belongs to the
-   * currently authenticated customer. Any updates to the review content, star
-   * rating, or summary must comply with the platform's content policies.
-   * Updates are permanently recorded in the platform's audit log.
+   * This operation fetches detailed information about a single review from the shopping_mall_reviews database table. Each review contains the reviewer's rating (1-5), optional text content, creation timestamp, author information, and status field. The review identifier (reviewId) is a UUID that uniquely identifies each review record in the system.
    *
-   * Security: Only the original reviewer (customer) can update their own
-   * reviews. Admins may not modify customer reviews through this endpoint.
+   * This endpoint supports viewing reviews based on their status, with only approved/reviewed reviews (status='approved') returned by default. Reviews marked as pending (status='pending'), rejected (status='rejected'), or resolved (status='resolved') will not be returned. The operation provides complete review data including the original rating assignment, any textual feedback provided by the customer, and the timestamps indicating when the review was created and last modified.
    *
-   * Business logic: Updates to review content, ratings, or metadata affect
-   * product rating aggregates and may trigger moderation review if changes are
-   * excessive. The review's modification timestamp is automatically updated.
-   * Related operations: GET /products/{productId}/reviews/{reviewId} (view),
-   * DELETE /products/{productId}/reviews/{reviewId} (delete).
+   * This function complements the product-level review aggregation endpoints and supports review-level auditing and customer service workflows. It is intended for use by customers viewing their own reviews, sellers reviewing feedback on their products, and administrators performing review moderation tasks.
    *
    * @param connection
-   * @param reviewId Unique identifier of the target review. Must be a valid
-   *   UUID string and must belong to the authenticated customer.
-   * @param body Updated review data including optional new rating, content,
-   *   summary, and images.
+   * @param reviewId Unique identifier of the target review record. This UUID corresponds to the primary key in the shopping_mall_reviews table.
+   * @x-autobe-specification Query shopping_mall_reviews table using reviewId as primary key. Return full review record including rating, text, creation timestamp, and author information. Validate reviewId format is UUID. Return 404 if review not found or if review has been deleted (isDeleted=true). No caching layer is implemented for review data as reviews are frequently updated or reported.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":reviewId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("reviewId")
+    reviewId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallReview> {
+    try {
+      return await getShoppingMallCustomerReviewsReviewId({
+        customer,
+        reviewId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing customer review for a product.
+   *
+   * This operation allows authenticated customers to modify their previously submitted product reviews. Customers can update their rating (1-5 scale) and/or revise the written text content to improve clarity, correct inaccuracies, or provide additional insights. The review remains associated with the same product and seller, while the updated content reflects the customer's most current perspective.
+   *
+   * To ensure review integrity, this operation validates that the requesting user is the original author of the review. Only reviews submitted by authenticated customers can be modified, and updates must occur within the platform's review editing window as defined by business rules. The original submission timestamp is preserved for audit and historical reference.
+   *
+   * When updating a review, the system enforces rating constraints (1-5 range) and validates text content length limits. The review history is maintained through the snapshot system, capturing the state of the review before modification.
+   *
+   * This operation directly modifies the shopping_mall_reviews table and triggers the snapshot system to preserve the previous version of the review for compliance and dispute resolution purposes. Related operations include creating a new review (POST /products/{productId}/reviews) and reading review details (GET /products/{productId}/reviews).
+   *
+   * @param connection
+   * @param reviewId Unique identifier of the review to be updated (global scope)
+   * @param body Updated content for the review, including new rating and/or revised text
+   * @x-autobe-specification Update review by review ID using the shopping_mall_reviews table. Verify that the authenticated user ID matches the review's author ID before permitting update. Apply updates to rating and text fields only. Preserve createdAt timestamp. Return updated review object with full details. Log update action for audit trail purposes. Reject if review does not exist or user does not own the review.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reviewId")
   public async update(
-    @TypedParam("reviewId")
-    reviewId: string,
-    @TypedBody()
-    body: IShoppingMallProductReview.IUpdate,
-  ): Promise<IShoppingMallProductReview> {
-    reviewId;
-    body;
-    return typia.random<IShoppingMallProductReview>();
-  }
-
-  /**
-   * Flag a product review for moderator review due to potential violations of
-   * community guidelines. This operation creates an entry in the review_flag
-   * table linking the flagged review to a reporting user and a reason code,
-   * triggering a moderation workflow. The review remains visible to all users
-   * during moderation, but is hidden from public view if flagged as
-   * inappropriate by an administrator.
-   *
-   * This operation corresponds to the product_review_flags table in the
-   * database schema, which stores flags on reviews for moderator review. The
-   * system allows any authenticated user to flag reviews they consider
-   * inappropriate, while only admin users can resolve flags. The flagged status
-   * is recorded permanently in the audit log.
-   *
-   * Security: Only authenticated users can flag reviews. The user's identity is
-   * derived from the authentication token. Each user may flag a specific review
-   * only once, and repeated flagging attempts are rate-limited. Admin users can
-   * view all flagged reviews but cannot flag reviews themselves.
-   *
-   * Implementation: This operation inserts a record into review_flags with the
-   * review_id, reporter_id, reason_code, and timestamp. It does not modify the
-   * original review record. The moderation system processes flagged reviews
-   * asynchronously, and reviewers can update the flag status to approved or
-   * rejected with associated notes.
-   *
-   * Related operations: GET /reviews/{reviewId} (view review), PATCH
-   * /moderation/reviews (admin to resolve flags).
-   *
-   * @param connection
-   * @param reviewId Unique identifier of the review being flagged. Must
-   *   reference an existing review in the product_reviews table.
-   * @param body Details of the flag reason and optional comments from the
-   *   reporting user.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":reviewId/flag")
-  public async flag(
+    @CustomerAuth()
+    customer: CustomerPayload,
     @TypedParam("reviewId")
     reviewId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IShoppingMallReviewFlag.IRequest,
-  ): Promise<IShoppingMallReviewFlag> {
-    reviewId;
-    body;
-    return typia.random<IShoppingMallReviewFlag>();
+    body: IShoppingMallReview.IUpdate,
+  ): Promise<IShoppingMallReview> {
+    try {
+      return await putShoppingMallCustomerReviewsReviewId({
+        customer,
+        reviewId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a customer's review of a product. This operation permanently removes the review from public visibility on product pages and customer dashboards, but preserves the full review data in an immutable snapshot for audit and dispute resolution purposes.
+   *
+   * The system enforces a 30-day window for review deletion: customers can only delete their own reviews if they were created within the last 30 days. After this period, deletion is permanently prohibited to maintain the integrity of product ratings and historical data.
+   *
+   * When a review is deleted, its text content is replaced with "deleted user" in all public displays, but the numerical rating value is retained in the calculation of the product's average rating. This preserves statistical integrity while respecting user privacy and request for removal.
+   *
+   * All deletion events trigger creation of an immutable snapshot that captures the complete state of the review at the moment of deletion, including the original text, rating, creation timestamp, and metadata. These snapshots are accessible to the review author, the product seller, and administrators for audit purposes.
+   *
+   * This operation requires authentication with the same customer account that created the review. Unauthorized attempts to delete reviews belonging to other users will be rejected.
+   *
+   * Related operations: POST /reviews (create review), PUT /reviews/{reviewId} (edit review).
+   *
+   * @param connection
+   * @param reviewId Unique identifier of the review to be deleted.
+   * @x-autobe-specification Find review record by reviewId, verify the requester is the review author using JWT authentication. If deletion is within 30 days of creation, mark review as deleted (is_deleted = true) and save an immutable snapshot of the full review state including original text, rating, and timestamps. Do not remove the record from the database. Do not adjust product ratings - user-deleted reviews still contribute to average. Emit 'ReviewDeleted' event. Return 204 No Content on success. If deletion is outside 30-day window, return 403 Forbidden with message 'Reviews can only be deleted within 30 days of creation'. If review not found or requester not author, return 404 Not Found.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":reviewId")
+  public async erase(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("reviewId")
+    reviewId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteShoppingMallCustomerReviewsReviewId({
+        customer,
+        reviewId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

@@ -1,42 +1,32 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import jwt from "jsonwebtoken";
 import typia, { tags } from "typia";
 import { v4 } from "uuid";
+
 import { MyGlobal } from "../MyGlobal";
+import { UserPayload } from "../decorators/payload/UserPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { ITodoAppTodoItem } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoItem";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { UserPayload } from "../decorators/payload/UserPayload";
-import { TodoAppTodoItemTransformer } from "../transformers/TodoAppTodoItemTransformer";
-
 export async function deleteTodoAppUserTodosTodoId(props: {
   user: UserPayload;
-  todoId: string & tags.Format<"uuid">;
-}): Promise<ITodoAppTodoItem> {
-  const todoItem = await MyGlobal.prisma.todo_app_todo_items.findUnique({
+  todoId: string;
+}): Promise<void> {
+  // Validate todo exists and belongs to user
+  const todo = await MyGlobal.prisma.todo_app_todos.findUnique({
     where: {
       id: props.todoId,
+      user: { id: props.user.id },
     },
   });
-  if (!todoItem) {
-    throw new HttpException("Todo item not found", 404);
+  if (!todo) {
+    throw new HttpException("Todo not found", 404);
   }
-  if (todoItem.user_id !== props.user.id) {
-    throw new HttpException(
-      "Forbidden - You can only delete your own todo items",
-      403,
-    );
-  }
-  const deleted = await MyGlobal.prisma.todo_app_todo_items.delete({
-    where: {
-      id: props.todoId,
-    },
-    ...TodoAppTodoItemTransformer.select(),
+  // Delete todo only - edit_histories table does not exist
+  await MyGlobal.prisma.todo_app_todos.delete({
+    where: { id: props.todoId },
   });
-  return await TodoAppTodoItemTransformer.transform(deleted);
 }

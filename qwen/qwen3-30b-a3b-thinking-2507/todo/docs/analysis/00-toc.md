@@ -1,156 +1,158 @@
-# Table of Contents: Todo Application Planning
+# Functional Requirements Specification: Multi-User Todo Application
 
-## Project Overview
-
-**Purpose**: This document defines the complete planning roadmap for the Todo application, establishing the foundation for backend development. The application will provide a minimal viable solution for users to create, manage, and track to-do items with zero unnecessary complexity.
-
-**Business Context**: The Todo application solves the common problem of users needing a simple, intuitive task management tool without the complexity of full-featured productivity suites. It targets users who require a straightforward solution for personal task tracking with no setup friction.
-
-**Core Philosophy**: We implement only the absolute essential features without any extras. The system will focus exclusively on user experience and core functionality with zero technical debt from the start.
-
-## Service Vision
+## Service Overview
 
 ### Business Justification
+WHEN market analysis fails to identify private task management solutions with complete edit history tracking, THE system SHALL provide a private, multi-user to-do application that prioritizes user data security and detailed activity tracking without compromising privacy.
 
-THE Todo application SHALL solve the problem of disorganized personal task management by providing a simple, one-click task creation and tracking solution. THE application SHALL fill the gap in the market for minimalism-focused tools where users avoid complex interfaces.
+### Market Opportunity
+WHEN users express frustration with existing to-do apps that compromise privacy or lack comprehensive audit trails, THE system SHALL fill the gap by delivering a private, history-focused to-do application with no shared data elements.
+
+### Long-Term Goals
+WHEN a user's task management needs evolve over time (e.g., adding shared task features), THE system SHALL support continuous improvement through feature enhancements that maintain core privacy principles.
 
 ### Core Value Proposition
+IF users value privacy and auditability in their to-do management, THEN THEY SHOULD SELECT THIS APPLICATION over competitors that lack these critical features when managing personal tasks with potential future sharing needs.
 
-THE system SHALL provide users with an immediate value by allowing them to:
+## Problem Definition
 
-- Add task titles with zero configuration
-- Mark tasks as complete with a single action
-- Track all tasks in a single, clean view
+### Current Challenges for Users
 
-### Success Metrics
+WHEN users attempt to manage to-dos across multiple applications (e.g., one for personal, one for shared tasks), THEY EXPERIENCE inconsistent data across platforms and difficulty maintaining edit history.
 
-THE application SHALL achieve:
+WHILE users seek centralized to-do management, THE system SHALL not provide solution that supports both personal privacy and granular sharing at task level, forcing users to maintain multiple applications.
 
-- 5+ task creation actions per user session (measured via usage analytics)
-- 85%+ task completion rate within 24 hours (based on user feedback)
-- 90%+ user satisfaction score (measured through post-task surveys)
+### Pain Points in Existing Solutions
+
+WHEN to-do applications fail to maintain complete edit histories for private tasks, THE system SHALL avoid this limitation by implementing user-private history with automatic tracking.
+
+IF a solution offers task sharing, THEN THE system SHALL not require team accounts for private task management, preventing users from having to create separate accounts.
+
+### Opportunity in the Market
+
+WHERE existing solutions compromise privacy for feature richness, THE system SHALL differentiate by providing both privacy and robust history capabilities without requiring user account sharing.
+
+## Core Value Proposition
+
+### Key Differentiators
+THE system SHALL provide user-private data management with task-level sharing controls, complete edit history tracking, and strict no-data-sharing between user accounts.
+
+### Unique User Value
+WHEN a user seeks to manage their tasks without concern for other users accessing their personal data, THE system SHALL deliver a completely private experience where no data is shared across accounts by default.
+
+### Competitive Advantage
+THE system SHALL outperform competitors by maintaining strict privacy boundaries between user accounts while providing detailed action history for every item, eliminating the need for users to choose between privacy and functionality.
+
+## Service Operations Overview
+
+### User Journey Flow
+WHEN a user logs in, THEY SHALL access their private to-do list directly without seeing other users' data. WHEN they create a new todo, THEY SHALL immediately see it with default incomplete status.
+
+### Core Functionality
+WHEN a user manages their to-dos, THEY SHALL perform all actions (create, edit, delete, restore) exclusively within their private space with no possibility of cross-account data access.
 
 ## User Actors
 
-### Primary Actor
+### User Actor Definition
+WHEN a user signs up for the application with email and password, THEY SHALL become a single account owner with exclusive access to their to-do data.
 
-**Name**: user
-**Description**: Authenticated user who can create, track, and manage to-do items
+### Permissions & Capabilities
+THE system SHALL grant each user complete ownership and control over their to-do items with no exceptions. THE system SHALL never permit users to view other users' profiles, todos, or history.
 
-**Business Authentication Requirements**:
+### Authentication Flow
+WHEN a user completes successful login, THEY SHALL establish a session for their exclusive account access with JWT tokens. WHEN password reset is requested, THEY SHALL receive verification via email to update credentials.
 
-WHEN a user attempts to access the Todo application, THE system SHALL require authentication via email and password.
+## Primary User Scenarios
 
-THE user session SHALL expire after 15 minutes of inactivity.
+### Sign Up and Initial Setup
+WHEN a new user creates an account with email and password, THEY SHALL be immediately able to create their first to-do item. WHEN they provide a display name, THEY SHALL see it in their profile but others cannot view it.
 
-THE system SHALL verify user email addresses during registration.
+### Creating and Managing Todos
+WHEN a user creates a new to-do, THEY SHALL provide a title (required) and optional description, start date, and due date. THE system SHALL automatically mark the todo as incomplete by default.
 
-### Actor Permissions
+### Viewing and Filtering Todos
+WHEN a user views their to-dos, THEY SHALL see a paginated list showing title, completion status, start date (if set), due date (if set), and creation date. WHEN applying filters (All/Complete/Incomplete), THEY SHALL instantly see filtered results without reloading.
 
-| Action | User | 
-|--------|--------|
-| Create task | ✅ |
-| Mark task complete | ✅ |
-| List tasks | ✅ |
-| Delete task | ❌ |
-| View other users' tasks | ❌ |
+### Editing Todos
+WHEN a user edits a todo's title, description, start date, or due date, THEY SHALL trigger a history entry for each change. THE system SHALL record all modifications in chronological order with timestamps.
 
-## Core Functionality
+### Viewing Edit History
+WHEN a user views the edit history of a todo, THEY SHALL see a list of changes sorted from newest to oldest with specific details: previous/after values for title, description, start date, and due date.
 
-### Task Life Cycle
+## Secondary User Scenarios
 
-The entire task management process shall follow a simple three-step journey:
+### Bulk Actions
+WHEN a user selects multiple to-dos for deletion, THEY SHALL see a confirmation dialog. WHEN confirmed, THEY SHALL move all selected to trash with individual history entries created.
 
-1. **Creation**: User specifies a task title
-2. **Completion**: User marks task as complete
-3. **Retention**: Completed tasks remain visible for review
+### Cross-Device Sync
+WHILE a user accesses their to-dos from multiple devices, THE system SHALL maintain synchronous updates across all platforms with the most recent changes visible immediately.
 
-**Business Process Flow**:
+## Business Rules and Constraints
 
+### Validation Rules
+- WHEN a user creates a todo without title, THE system SHALL prevent creation and display "Title is required to create a todo".
+- WHEN a user sets start date after due date, THE system SHALL display "Start date cannot be after due date".
+- WHEN a user attempts to manage another user's todos, THE system SHALL display "You cannot edit or delete another user's todos".
+
+### Data Storage Rules
+- THE system SHALL store all dates in ISO 8601 format (YYYY-MM-DD).
+- THE system SHALL automatically set completion status to incomplete for new todos.
+- THE system SHALL enforce deletion as soft delete (mark deleted) without removing from database.
+
+### Edit History Rules
+- WHEN a user edits any field of a todo item, THE system SHALL create a history entry.
+- WHEN a user permanently deletes a todo from trash, THE system SHALL delete all associated history entries.
+- THE system SHALL not create history entries for no-actual-change operations.
+
+### Workflow Constraints
 ```mermaid
 graph LR
-    A[Start Application] --> B{User Registered?}
-    B -->|Yes| C[Login with Credentials]
-    B -->|No| D[Registration Flow]
-    C --> E[Task Creation Interface]
-    E --> F[Add Task Title]
-    E --> G[Mark Complete]
-    F --> H[Task Added]
-    G --> I[Task Marked Complete]
-    H --> J[Task Display]
-    I --> J[Task Display]
-    J --> K[View All Tasks]
+  A[New Todo] -->|Created| B{"Status?"}
+  B -->|Incomplete| C[Incomplete Todo]
+  B -->|Complete| D[Complete Todo]
+  C -->|Mark Complete| D
+  C -->|Mark Incomplete| C
+  D -->|Mark Incomplete| C
+  C -->|Delete| E[Deleted Todo]
+  D -->|Delete| E
+  E -->|Restore| C
+  E -->|Permanent Delete| F[Permanently Deleted]
+  F -->|Hard Delete| G[No Record]
 ```
 
-### Implementation Requirements
-
-THE system SHALL maintain tasks with only a title and completion status.
-
-WHEN a user adds a new task, THE system SHALL store it with the current timestamp.
-
-THE system SHALL allow users to view all tasks ordered by creation time (newest first).
-
-## Business Rules
-
-### Basic Creation Rules
-
-TASKS SHALL have:
-
-- A unique identifier (UUID format)
-- A title (minimum 3 characters, maximum 100 characters)
-- A completion status (boolean)
-- A creation timestamp (ISO 8601 format)
-
-THE task title SHALL NOT contain special characters ($, @, #, etc.) for security reasons.
-
-### Completion Rules
-
-WHEN a user marks a task complete, THE system SHALL update the completion status to 'true'.
-
-THE system SHALL NOT allow task deletion even after completion.
-
-WHILE a task is uncompleted, THE user SHALL have the ability to mark it complete.
-
-## Error Handling
-
-### Validation Errors
-
-IF a user submits a task title with fewer than 3 characters, THEN THE system SHALL display 'Task title must be at least 3 characters.'
-
-IF a user submits a task title containing forbidden special characters, THEN THE system SHALL display 'Task title cannot contain special characters.'
-
-### Session Errors
-
-IF a user's session expires during task creation, THEN THE system SHALL redirect to the login page with 'Your session has expired. Please log in again.' message.
+### Privacy and Security Constraints
+- THE system SHALL ensure that each user can only view todos within their own account; IF a user attempts to access another user's todos, THE system SHALL block access and display "Unauthorized access - you can only view your own todos".
+- THE system SHALL automatically delete all todos associated with a user's account when they permanently delete their account (including items in trash and history).
 
 ## Performance Requirements
 
-### Response Latency
+### Response Time
+WHEN a user views a paginated todo list with 100 items, THE system SHALL load within 1 second for 95% of users.
 
-WHEN a user adds a new task, THE system SHALL respond within 500 milliseconds under normal load conditions.
+### Scale Expectations
+WHEN a user has 10,000 todos, THE system SHALL support pagination with 20 items per page at response times under 2 seconds.
 
-THE system SHALL handle up to 100 concurrent users without degraded performance.
+### Error Handling
+WHEN a system error prevents a todo from being processed, THE system SHALL display "An unexpected error occurred. Please try again." with a retry button.
 
-### Data Availability
+## Authentication Requirements
 
-THE system SHALL ensure all tasks remain available during user sessions.
+### User Credential Management
+- WHEN a user changes password, THEY SHALL receive confirmation email and previous session logs out.
+- WHEN a user deletes account, THEY SHALL see confirmation dialog before permanent removal of all data.
 
-WHEN a user views their task list, THE system SHALL load all tasks within 2 seconds.
+### Session Management
+- THE system SHALL use JWT tokens with 15-minute expiration for security.
+- THE system SHALL invalidate tokens when password is changed or account is deleted.
 
-## Document Relationships
+## Error Handling Requirements
 
-This TOC document provides the overall project roadmap. The complete business requirements are documented in the following related documents:
+### User-Facing Error Scenarios
+- WHEN a user tries to restore a todo not in trash, THE system SHALL display "This item is no longer in your trash".
+- WHEN a user attempts to delete an item already permanently deleted, THE system SHALL display "This item has already been permanently deleted".
 
-- [Service Overview](./01-service-overview.md)
-- [User Actors and Authentication](./02-user-actors.md)
-- [Functional Requirements](./03-functional-requirements.md)
+## Final Documentation Notes
 
-## Development Approach
+This document represents the complete business requirements specification for the Multi-User Todo Application. All technical implementation details (database schema, API contracts, UI specifications) will be generated in subsequent pipeline phases based on this requirements specification.
 
-**Minimalism Principle**: The solution implements only the essential features as defined in this document - no additional capabilities will be included.
-
-**Testing Strategy**: All core functionality will be validated through user scenarios rather than technical specifications to ensure practical usability.
-
-**Architecture Constraints**: The solution will follow a simple, single-layer architecture without unnecessary abstractions.
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+> *This document defines business requirements only. All technical implementations are at the discretion of the development team.*

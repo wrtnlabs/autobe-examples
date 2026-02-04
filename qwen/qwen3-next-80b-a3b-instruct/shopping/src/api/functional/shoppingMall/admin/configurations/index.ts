@@ -1,48 +1,52 @@
-import { IConnection, HttpError } from "@nestia/fetcher";
-import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia, { tags } from "typia";
 
 import { IShoppingMallConfiguration } from "../../../../structures/IShoppingMallConfiguration";
 
 /**
- * Update platform configuration settings by configuration code. This operation
- * modifies platform-wide settings stored in the shopping_mall_configurations
- * table and requires administrative privileges.
+ * Create or update configuration settings for the shopping mall platform. This operation modifies the shopping_mall_configurations table which stores system-wide configuration parameters that control platform behavior.
  *
- * Configuration data is stored as key-value pairs in the database where
- * configCode serves as the unique identifier for each configuration setting.
- * This operation allows only administrators to modify critical platform
- * parameters such as payment gateway settings, shipping provider
- * configurations, email template overrides, and system-wide feature flags.
+ * This endpoint allows administrators to update critical configuration options including payment gateway settings, shipping methods, default categories, notification templates, and system-wide behaviors. Configuration changes take effect immediately across the platform.
  *
- * The operation requires authentication with admin credentials and validates
- * that the configuration code exists in the database before applying updates.
- * The configuration update is atomic and transactional, ensuring data
- * consistency even when updating multiple configuration properties. After
- * successful update, the system immediately invalidates cached configuration
- * values and broadcasts configuration change events to all relevant services.
+ * All configuration changes are tracked through the snapshot system. When a configuration value is updated, a new snapshot is created that preserves the previous state. This ensures auditability and ability to roll back changes if needed.
  *
- * No request body is needed for this operation as the configuration values are
- * embedded directly in the request payload. The operation responds with the
- * updated configuration object, reflecting all changes. Related operations
- * include GET /configurations/{configCode} to retrieve configuration values and
- * PATCH /configurations to list all available configurations.
+ * The operation accepts any configuration field defined in the shopping_mall_configurations table. Only fields existing in the schema are accepted. Configuration changes should be made with caution as they can affect platform-wide behavior, including customer experience, seller operations, and administrative workflows.
+ *
+ * The system validates all configuration values against expected formats and data types. Invalid values result in immediate rejection with specific error messages indicating the validation failure. This prevents configuration drift and maintains system integrity.
+ *
+ * Related operations: GET /configurations retrieves current configuration values, while GET /configurations/snapshots provides historical version history of configuration changes.
  *
  * @param props.connection
- * @param props.configCode Unique configuration code identifying the platform
- *   setting to update
- * @param props.body Configuration parameters to update
- * @path /shoppingMall/admin/configurations/:configCode
- * @accessor api.functional.shoppingMall.admin.configurations.update
+ * @param props.body Configuration settings to create or update in the shopping_mall_configurations table
+ * @x-autobe-specification Insert or update configuration records in the shopping_mall_configurations table. The operation accepts a JSON payload with configuration key-value pairs where keys correspond to column names in the shopping_mall_configurations table.
+ *
+ * For each configuration field provided in the request body:
+ * - If a configuration record with that key exists in the database, update its value
+ * - If no record exists with that key, create a new configuration record
+ * - Log timestamp and user ID as context for the change
+ * - Create a configuration snapshot preserving the previous value
+ * - Return the updated configuration object with all current values
+ *
+ * The operation must ensure that:
+ * - Only authorized administrators can make changes
+ * - Configuration values match expected data types (string, number, boolean)
+ * - Configuration keys correspond to existing columns in the shopping_mall_configurations table
+ * - Value modifications are properly tracked in snapshots
+ * - All configuration changes are auditable with user context
+ *
+ * After successful operation, the service returns the complete current configuration state including all unchanged values.
+ * @path /shoppingMall/admin/configurations
+ * @accessor api.functional.shoppingMall.admin.configurations.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function update(
+export async function create(
   connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? update.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -52,27 +56,26 @@ export async function update(
           },
         },
         {
-          ...update.METADATA,
-          path: update.path(props),
+          ...create.METADATA,
+          path: create.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace update {
+export namespace create {
   export type Props = {
-    /** Unique configuration code identifying the platform setting to update */
-    configCode: string;
-
-    /** Configuration parameters to update */
-    body: IShoppingMallConfiguration.IUpdate;
+    /**
+     * Configuration settings to create or update in the shopping_mall_configurations table
+     */
+    body: IShoppingMallConfiguration.ICreate;
   };
-  export type Body = IShoppingMallConfiguration.IUpdate;
+  export type Body = IShoppingMallConfiguration.ICreate;
   export type Response = IShoppingMallConfiguration;
 
   export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/admin/configurations/:configCode",
+    method: "POST",
+    path: "/shoppingMall/admin/configurations",
     request: {
       type: "application/json",
       encrypted: false,
@@ -83,22 +86,20 @@ export namespace update {
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/admin/configurations/${encodeURIComponent(props.configCode ?? "null")}`;
+  export const path = () => "/shoppingMall/admin/configurations";
   export const random = (): IShoppingMallConfiguration =>
     typia.random<IShoppingMallConfiguration>();
   export const simulate = (
     connection: IConnection,
-    props: update.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: update.path(props),
+      path: create.path(),
       contentType: "application/json",
     });
     try {
-      assert.param("configCode")(() => typia.assert(props.configCode));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -114,34 +115,31 @@ export namespace update {
 }
 
 /**
- * Permanently delete a system configuration by its unique code identifier. This
- * operation removes the configuration record from the
- * shopping_mall_configurations table in the database and cannot be undone.
+ * Update global configuration settings for the shopping mall platform. This operation allows authorized administrators to modify system-wide configuration parameters that control platform behavior, appearance, and functionality across all user roles and business processes.
  *
- * This is a hard delete operation that completely removes the configuration
- * data. The system does not retain any archived copies of deleted
- * configurations, and any dependent services that relied on this configuration
- * will no longer have access to these settings.
+ * The configuration system manages critical global settings including currency code (ISO 4217 standard), timezone (IANA timezone database), locale (language and regional format preferences), payment gateway configurations, tax calculation rules, shipping rate settings, and various platform feature toggles that modify the user experience. Changes to these settings affect all customers, sellers, and administrators uniformly and immediately across the entire platform.
  *
- * Security: Only administrators can perform this operation. All configuration
- * deletions are recorded in the audit log system with the admin actor's
- * identity, timestamp, and IP address for compliance purposes. This operation
- * should be used with extreme caution as it irreversibly removes critical
- * system settings.
+ * Configuration parameters are stored as a single record in the shopping_mall_configurations database table, ensuring data consistency and atomicity during updates. All configuration values are validated against domain-specific constraints (e.g., currency must be valid ISO 4217, timezone must be valid IANA format) before being applied to prevent invalid states.
+ *
+ * Due to the system-critical nature of these configurations, this operation requires elevated administrative privileges. Configuration changes are logged in an audit trail with detailed information about who made the change, when it was made, and what values were changed from and to, for compliance and troubleshooting purposes.
+ *
+ * To ensure system stability and performance, successfully updated configurations are cached in memory for five minutes to avoid redundant database reads. The cache is automatically invalidated on subsequent configuration changes or system restarts.
+ *
+ * This configuration endpoint follows the principle of centralized system control, ensuring that global platform settings cannot be overridden or modified through individual user actions or distributed system components.
  *
  * @param props.connection
- * @param props.configCode Unique business identifier code of the configuration
- *   to be deleted (global scope)
- * @path /shoppingMall/admin/configurations/:configCode
- * @accessor api.functional.shoppingMall.admin.configurations.erase
+ * @param props.body Set of global platform configuration parameters that can be updated in a single atomic operation.
+ * @x-autobe-specification Update global platform configuration parameters by modifying fields in the shopping_mall_configurations table. Only authorized administrators can modify configuration settings. Validate all configuration parameter values against domain-specific constraints before update (e.g., currency codes must be valid ISO 4217 codes, timezone must be valid IANA format). Apply configuration changes atomically as a single transaction. If any parameter validation fails, reject the entire update and return appropriate error codes. Cache configuration in memory for 5 minutes after successful update. Log all configuration changes to audit trail system with timestamp, user ID, and before/after values. Return exact updated configuration object after successful commit.
+ * @path /shoppingMall/admin/configurations
+ * @accessor api.functional.shoppingMall.admin.configurations.patch
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function erase(
+export async function patch(
   connection: IConnection,
-  props: erase.Props,
-): Promise<erase.Response> {
+  props: patch.Props,
+): Promise<patch.Response> {
   return true === connection.simulate
-    ? erase.simulate(connection, props)
+    ? patch.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -151,25 +149,113 @@ export async function erase(
           },
         },
         {
-          ...erase.METADATA,
-          path: erase.path(props),
+          ...patch.METADATA,
+          path: patch.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace patch {
+  export type Props = {
+    /**
+     * Set of global platform configuration parameters that can be updated in a single atomic operation.
+     */
+    body: IShoppingMallConfiguration;
+  };
+  export type Body = IShoppingMallConfiguration;
+  export type Response = IShoppingMallConfiguration;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/admin/configurations",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/admin/configurations";
+  export const random = (): IShoppingMallConfiguration =>
+    typia.random<IShoppingMallConfiguration>();
+  export const simulate = (
+    connection: IConnection,
+    props: patch.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: patch.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a specific system configuration by its unique identifier from the shopping_mall_configurations table. This read-only operation allows administrators to inspect the current state of a configuration setting that controls platform behavior, performance parameters, or feature flags.
+ *
+ * The configuration is identified by a unique identifier specified in the path parameter ({configurationId}). This endpoint returns all details of the configuration including the configuration key, its current value, descriptive context, and timestamps of when it was created and last updated.
+ *
+ * This operation supports administrative oversight functions, enabling platform administrators to verify configuration settings during troubleshooting, audits, or system maintenance. The data returned represents the exact state of the configuration at the time of the request. The system does not allow modifications to configurations through this endpoint—changes must be made through designated administrative update operations.
+ *
+ * Access to this endpoint is restricted to administrative roles as defined in the system permissions framework. This endpoint does not accept any request body—configuration identification is exclusively handled through the path parameter to maintain RESTful design principles.
+ *
+ * @param props.connection
+ * @param props.configurationId Unique identifier of the target configuration record in the shopping_mall_configurations table
+ * @x-autobe-specification Query shopping_mall_configurations table for the configuration with matching id. Return the configuration record with all its fields including key, value, description, created_at and updated_at. Return 404 if no matching configuration is found. Cache the result for 5 minutes using configurationId as the cache key. Log this read access in the audit log system with user identity and timestamp.
+ * @path /shoppingMall/admin/configurations/:configurationId
+ * @accessor api.functional.shoppingMall.admin.configurations.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
       );
 }
-export namespace erase {
+export namespace at {
   export type Props = {
     /**
-     * Unique business identifier code of the configuration to be deleted
-     * (global scope)
+     * Unique identifier of the target configuration record in the shopping_mall_configurations table
      */
-    configCode: string;
+    configurationId: string;
   };
   export type Response = IShoppingMallConfiguration;
 
   export const METADATA = {
-    method: "DELETE",
-    path: "/shoppingMall/admin/configurations/:configCode",
+    method: "GET",
+    path: "/shoppingMall/admin/configurations/:configurationId",
     request: null,
     response: {
       type: "application/json",
@@ -178,21 +264,126 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/admin/configurations/${encodeURIComponent(props.configCode ?? "null")}`;
+    `/shoppingMall/admin/configurations/${encodeURIComponent(props.configurationId ?? "null")}`;
   export const random = (): IShoppingMallConfiguration =>
     typia.random<IShoppingMallConfiguration>();
   export const simulate = (
     connection: IConnection,
-    props: erase.Props,
+    props: at.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: erase.path(props),
+      path: at.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("configCode")(() => typia.assert(props.configCode));
+      assert.param("configurationId")(() =>
+        typia.assert(props.configurationId),
+      );
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update a system configuration setting by its unique configuration identifier.
+ *
+ * This operation allows authorized administrators to modify critical platform settings stored in the shopping_mall_configurations table. Each configuration represents a system parameter that controls functionality such as payment processing thresholds, shipping default values, marketplace fee structures, or display preferences. Examples include minimum_order_value for order fulfillment, max_upload_size for media, or default_currency for international pricing.
+ *
+ * The configurationId parameter identifies the specific configuration setting to update, which corresponds to the unique identifier in the shopping_mall_configurations table. The request body provides the new values for the configuration, including the value field and optional metadata such as description or context.
+ *
+ * Security considerations: This operation requires administrator privileges. Unauthorized attempts will be rejected. All configuration changes trigger automatic system behavior: audit logs are created to record actor information and timestamps, and a snapshot of the configuration state is preserved as part of the comprehensive snapshot mechanism to ensure compliance and historical traceability.
+ *
+ * Business rules enforce validation of configuration values against predefined constraints defined in the database schema. For example, numeric values must remain within acceptable ranges, string values must conform to required formats, and boolean values must be strictly true or false. Invalid configurations will be rejected with appropriate error codes.
+ *
+ * Related operations: GET /configurations to retrieve configuration settings, GET /configurations/{configurationId} to view a specific configuration in detail, and GET /configurations/snapshots to review historical configuration changes.
+ *
+ * @param props.connection
+ * @param props.configurationId Unique identifier of the system configuration to be updated (UUID format).
+ * @param props.body New values for the configuration to be updated.
+ * @x-autobe-specification Update shopping_mall_configurations entry using configurationId as primary key. Validate that configuration key exists in allowed configurations list. Apply type-specific validation: string values must meet format requirements, number values must respect min/max constraints, boolean values must be true/false. Perform atomic update transaction. Generate snapshot of configuration state before update. Log update action with actor details and timestamp in audit trail. Return updated configuration object with all fields including metadata and audit information.
+ * @path /shoppingMall/admin/configurations/:configurationId
+ * @accessor api.functional.shoppingMall.admin.configurations.putByConfigurationid
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function putByConfigurationid(
+  connection: IConnection,
+  props: putByConfigurationid.Props,
+): Promise<putByConfigurationid.Response> {
+  return true === connection.simulate
+    ? putByConfigurationid.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...putByConfigurationid.METADATA,
+          path: putByConfigurationid.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace putByConfigurationid {
+  export type Props = {
+    /**
+     * Unique identifier of the system configuration to be updated (UUID format).
+     */
+    configurationId: string & tags.Format<"uuid">;
+
+    /**
+     * New values for the configuration to be updated.
+     */
+    body: IShoppingMallConfiguration.IUpdate;
+  };
+  export type Body = IShoppingMallConfiguration.IUpdate;
+  export type Response = IShoppingMallConfiguration;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/shoppingMall/admin/configurations/:configurationId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/admin/configurations/${encodeURIComponent(props.configurationId ?? "null")}`;
+  export const random = (): IShoppingMallConfiguration =>
+    typia.random<IShoppingMallConfiguration>();
+  export const simulate = (
+    connection: IConnection,
+    props: putByConfigurationid.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: putByConfigurationid.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("configurationId")(() =>
+        typia.assert(props.configurationId),
+      );
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

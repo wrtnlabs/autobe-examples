@@ -1,0 +1,244 @@
+/// Tracks quantitative metrics and activity statistics for discussion board
+/// sections.
+///
+/// Maintains real-time statistics including article counts, comment volumes,
+/// engagement metrics, and last activity timestamps for each section. This
+/// enables section performance analysis, trending content identification,
+/// and administrative reporting.
+///
+/// The statistics are automatically updated by system triggers when
+/// articles, comments, or user interactions occur within sections. Each
+/// section maintains exactly one statistics record that evolves over time as
+/// activity increases.
+///
+/// Supports requirements for section-level analytics and administrative
+/// oversight of section engagement patterns.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section these statistics measure. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Total number of articles published in this section. Increments
+  /// automatically when new articles are created.
+  article_count Int
+  
+  /// Total number of comments across all articles in this section. Tracks
+  /// overall discussion volume.
+  comment_count Int
+  
+  /// Cumulative count of all article and section page views within this
+  /// section.
+  total_views Int
+  
+  /// Total distinct users who have contributed articles or comments to this
+  /// section.
+  unique_contributors Int
+  
+  /// Timestamp of the most recent article published in this section. Null when
+  /// no articles exist.
+  last_article_at DateTime?
+  
+  /// Timestamp of the most recent comment posted in this section. Null when no
+  /// comments exist.
+  last_comment_at DateTime?
+  
+  /// Latest timestamp of any activity (article, comment, view) in this
+  /// section. Always reflects current engagement.
+  last_activity_at DateTime
+  
+  /// Timestamp when statistics tracking began for this section.
+  created_at DateTime
+  
+  /// Timestamp of the last statistics update for this section.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_id], map: "discussion_board_section_statistics_discussion_board_s_fa4ca89f")
+  @@index([last_activity_at])
+  // spellchecker: ignore-next-line
+  @@index([article_count, last_activity_at], map: "discussion_board_section_statistics_article_count_last_b6d78720")
+}
+
+/// Manages administrator assignments to sections for content moderation and
+/// management responsibilities.
+///
+/// This junction table establishes many-to-many relationships between
+/// administrators and sections, tracking assignment lifecycle and status.
+/// Each assignment records when an administrator was assigned to a section,
+/// current assignment status, and provides audit trail capabilities for
+/// assignment changes.
+///
+/// Administrators can be assigned to multiple sections, and sections can
+/// have multiple administrators. The system maintains comprehensive tracking
+/// of assignment creation, modifications, and status changes to ensure
+/// proper access control and accountability for section-specific
+/// administrative functions.
+///
+/// Assignment status follows a managed lifecycle with clear transitions
+/// between active, inactive, and suspended states, with timestamps tracking
+/// each status change for audit purposes.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the assigned administrator responsible for section
+  /// management. {@link discussion_board_administrators.id}
+  discussion_board_administrator_id String
+  
+  /// Reference to the section being managed by the administrator. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Timestamp when the administrator was initially assigned to this section.
+  assigned_at DateTime
+  
+  /// Current assignment status. Valid values: active, inactive, suspended.
+  /// Active assignments grant section management privileges.
+  status String
+  
+  /// Timestamp when the assignment status was last changed. Used for audit
+  /// trail and status change tracking.
+  status_changed_at DateTime
+  
+  /// Timestamp when this assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this assignment record was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  permissions discussion_board_section_admin_permissions[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_id, discussion_board_section_id], map: "discussion_board_section_admins_discussion_board_admin_ca726404")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, status], map: "discussion_board_section_admins_discussion_board_secti_50e8f998")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, status], map: "discussion_board_section_admins_discussion_board_admin_f4e126a9")
+  @@index([status, status_changed_at])
+}
+
+/// Historical snapshots of section configurations capturing point-in-time
+/// states for audit trail and version control functionality.
+///
+/// Each snapshot preserves the exact configuration state of a section at a
+/// specific moment in time, allowing administrators to track changes, revert
+/// configurations, and maintain comprehensive audit trails. Snapshots are
+/// automatically created when section configurations are modified,
+/// supporting regulatory compliance and administrative oversight.
+///
+/// The snapshots reference {@link discussion_board_sections.id} to maintain
+/// the historical relationship with the parent section entity while storing
+/// independent configuration states for version comparison and rollback
+/// capabilities.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent section configuration snapshot. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Snapshot version of the section name captured at creation time for
+  /// historical accuracy.
+  name String
+  
+  /// Snapshot version of the section description preserved for audit trail
+  /// purposes.
+  description String?
+  
+  /// Timestamp when this configuration snapshot was captured for audit trail
+  /// purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_39571b0c")
+}
+
+/// Stores permission definitions for administrator assignments to sections,
+/// enforcing First Normal Form compliance.
+///
+/// This child table decomposes the non-atomic permission data from the main
+/// assignment table, providing proper normalization and flexible permission
+/// management. Each permission record defines the specific access level
+/// granted to an administrator for a particular section assignment.
+///
+/// Permissions follow a hierarchical structure with clear role definitions
+/// that determine what administrative actions can be performed within the
+/// assigned section. This separation allows for flexible permission
+/// management without denormalizing the main assignment relationship.
+///
+/// The table supports multiple permission levels per assignment and
+/// maintains proper referential integrity with the parent assignment table.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_admin_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent section administrator assignment. {@link
+  /// discussion_board_section_admins.id}
+  discussion_board_section_admin_id String
+  
+  /// Specific permission level granted for this assignment. Valid values:
+  /// moderator, manager, viewer. Controls administrative capabilities within
+  /// the assigned section.
+  permission_level String
+  
+  /// Timestamp when this specific permission was granted to the assignment.
+  granted_at DateTime
+  
+  /// Timestamp when this permission record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  assignment discussion_board_section_admins @relation(fields: [discussion_board_section_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_admin_id, permission_level], map: "discussion_board_section_admin_permissions_discussion__77e25e66")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_admin_id], map: "discussion_board_section_admin_permissions_discussion__132c0e0a")
+  @@index([permission_level])
+}

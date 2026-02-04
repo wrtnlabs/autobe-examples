@@ -1,0 +1,164 @@
+/// Tracks requests from users to become administrators, including their
+/// justification and approval status.
+///
+/// This table manages the lifecycle of administrator privilege requests from
+/// submission through
+/// approval or rejection. Each request is associated with a specific user
+/// and must include a
+/// justification. The system maintains the complete history of all requests
+/// along with their
+/// resolution status and timing information.
+///
+/// Administrator requests cannot be edited once submitted, ensuring the
+/// integrity of the request
+/// process and preventing users from modifying their justification after
+/// submission. This design
+/// supports auditability and accountability in the administrator selection
+/// process.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who is requesting administrator privileges. References the
+  /// unique identifier of the user account that submitted this request. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// The super administrator who approved this request, if approved.
+  /// References the administrator account that granted administrator
+  /// privileges. {@link discussion_board_super_administrators.id}
+  discussion_board_super_administrator_id String?
+  
+  /// The justification provided by the user for why they should be granted
+  /// administrator privileges. This text explains the user's qualifications
+  /// and reasons for requesting elevated access.
+  justification String
+  
+  /// The current status of this administrator request. Indicates whether the
+  /// request is awaiting review, has been approved, or has been rejected.
+  status String
+  
+  /// Timestamp when this request was initially submitted by the user.
+  created_at DateTime
+  
+  /// Timestamp when this request was last updated, typically when it was
+  /// approved or rejected.
+  updated_at DateTime
+  
+  /// Timestamp when this request was approved, if approved.
+  approved_at DateTime?
+  
+  /// Timestamp when this request was rejected, if rejected.
+  rejected_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  approver discussion_board_super_administrators? @relation(fields: [discussion_board_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_administrator_id], map: "discussion_board_administrator_requests_discussion_boa_f37fd44e")
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_user_id, status], map: "discussion_board_administrator_requests_discussion_boa_efabd406")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_administrator_requests_discussion_boa_96e16e95")
+  @@index([status, created_at])
+}
+
+/// Tracks user requests for administrator privileges including justification
+/// and approval workflow status.
+///
+/// This table manages the complete lifecycle of administrator privilege
+/// requests from
+/// submission through final resolution. Users submit requests with detailed
+/// justifications
+/// which are then reviewed by super administrators who can either approve or
+/// reject them.
+///
+/// The system maintains full audit trail of all request activities including
+/// submission
+/// timestamps, resolution actions, and responsible administrators. Rejected
+/// requests remain
+/// visible for transparency and future reference, while approved requests
+/// trigger privilege
+/// assignment workflows.
+///
+/// Key operational aspects:
+/// - Requests can only be submitted by regular users (not already
+/// administrators)
+/// - Super administrators have exclusive rights to process requests
+/// - Each request maintains independent status tracking
+/// - Historical records are preserved for compliance and auditing purposes
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_ban_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the administrator request. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Super administrator who approved this request, if applicable. {@link
+  /// discussion_board_super_administrators.id}.
+  approved_by_id String?
+  
+  /// Super administrator who rejected this request, if applicable. {@link
+  /// discussion_board_super_administrators.id}.
+  rejected_by_id String?
+  
+  /// Justification provided by user for requesting administrator privileges.
+  /// Must be between 10-1000 characters as specified in requirements.
+  justification String
+  
+  /// Current status of the administrator request in the approval workflow.
+  status String
+  
+  /// Timestamp when the request was initially submitted by the user.
+  submitted_at DateTime
+  
+  /// Timestamp when the request was approved by a super administrator, if
+  /// applicable.
+  approved_at DateTime?
+  
+  /// Timestamp when the request was rejected by a super administrator, if
+  /// applicable.
+  rejected_at DateTime?
+  
+  /// Optional reason provided by super administrator when rejecting a request.
+  rejection_reason String?
+  
+  /// Timestamp when the request record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the request record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  requester discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  approver discussion_board_super_administrators? @relation("discussion_board_moderation_ban_requests_of_approved_by_id", fields: [approved_by_id], references: [id], onDelete: Cascade)
+  rejector discussion_board_super_administrators? @relation("discussion_board_moderation_ban_requests_of_rejected_by_id", fields: [rejected_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([approved_by_id])
+  @@index([rejected_by_id])
+  
+  @@index([status])
+  @@index([submitted_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, submitted_at], map: "discussion_board_moderation_ban_requests_discussion_bo_dd53af18")
+}

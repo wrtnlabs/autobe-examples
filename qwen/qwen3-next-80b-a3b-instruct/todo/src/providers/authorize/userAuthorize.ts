@@ -16,7 +16,7 @@ export async function userAuthorize(request: {
   }
 
   // payload.id contains top-level user table ID
-  // Query using primary key since User is the top-level actor table
+  // Query using appropriate field based on schema structure
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       id: payload.id,

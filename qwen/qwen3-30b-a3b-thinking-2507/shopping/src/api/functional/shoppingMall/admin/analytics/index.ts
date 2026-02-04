@@ -1,1 +1,1 @@
-export * as inventory from "./inventory/index";
+export * as sales from "./sales/index";

@@ -1,58 +1,37 @@
-import { IConnection, HttpError } from "@nestia/fetcher";
-import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia, { tags } from "typia";
 
-import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallOrderItem";
 import { IPageIShoppingMallOrderItem } from "../../../../../structures/IPageIShoppingMallOrderItem";
+import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallOrderItem";
+
+export * as cancel from "./cancel/index";
+export * as refund from "./refund/index";
 
 /**
- * Create a new order item associated with a specific shopping order in the
- * e-commerce platform.
+ * Retrieve detailed information about a specific item within a customer's order. This operation accesses the shopping_mall_order_items table to fetch comprehensive data about an individual product item in an order, including all relevant contextual information from related entities.
  *
- * This operation allows customers or system processes to add individual product
- * variants to an existing order. Each item must reference a valid product
- * variant (SKU) and specify the quantity to be purchased. The order must
- * already exist and be in a state that permits item addition (typically
- * 'pending' or 'draft'), as items cannot be added to completed, cancelled, or
- * shipped orders.
+ * The operation provides full visibility into the product detail as it was at the time of purchase, including the product name, description, base price, and seller information. It also retrieves the specific variant selected (color, size, etc.), its price, and stock quantity at purchase time. The seller's shop name and logo are included to maintain historical accuracy. The item's status and fulfillment information are returned to show current state.
  *
- * The system validates that the requested product variant exists, is available
- * in the requested quantity, belongs to the same seller as specified in the
- * order, and is active (not discontinued). If inventory is insufficient, the
- * operation returns an error. Pricing is locked at the time of creation, using
- * the current variant price from shopping_mall_product_variant_pricing,
- * ensuring price stability even if the product price changes later.
+ * This endpoint is essential for customers who need to verify order details, check historical pricing, and review product specifications after purchase. It is also critical for customer service agents handling inquiries and for sellers managing support requests.
  *
- * The item is immediately associated with the order and recorded in the
- * shopping_mall_order_items table. Once successfully created, the order's total
- * amount is recalculated, and inventory for the variant is reserved in the
- * shopping_mall_variant_inventory table. This operation does not trigger
- * payment processing; it only adds items to the order. Related operations
- * include: updating order items via PUT /orders/{orderCode}/items/{itemId},
- * deleting items via DELETE /orders/{orderCode}/items/{itemId}, and retrieving
- * order items via GET /orders/{orderCode}/items.
- *
- * Security: The customer must be authenticated as the owner of the order or
- * have admin privileges. The operation verifies order ownership via the
- * orderCode and the authenticated user's identity, preventing unauthorized
- * modifications.
+ * For audit and dispute resolution, this operation provides a complete snapshot of the purchase transaction as recorded in the system. The data structure ensures consistency with the product snapshots and order snapshots that are maintained for compliance purposes.
  *
  * @param props.connection
- * @param props.orderCode Unique business identifier code of the target order
- *   (global scope)
- * @param props.body Details required to create a new order item, including the
- *   product variant and quantity.
- * @path /shoppingMall/admin/orders/:orderCode/items
- * @accessor api.functional.shoppingMall.admin.orders.items.create
+ * @param props.orderId Unique identifier of the target order (in UUID format)
+ * @param props.orderItemId Unique identifier of the target order item (in UUID format)
+ * @x-autobe-specification Query shopping_mall_order_items table by order_id and item_id to retrieve the specific order item. Join with shopping_mall_orders to validate ownership and order status. Join with shopping_mall_products to get product name and description. Join with shopping_mall_product_variants to get variant options and pricing. Join with shopping_mall_sellers to get seller information. Return all fields from shopping_mall_order_items with expanded reference data from related tables. Apply authorization check to ensure requesting user owns the order.
+ * @path /shoppingMall/admin/orders/:orderId/items/:orderItemId
+ * @accessor api.functional.shoppingMall.admin.orders.items.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function at(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: at.Props,
+): Promise<at.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? at.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -62,30 +41,129 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(props),
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the target order (in UUID format)
+     */
+    orderId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the target order item (in UUID format)
+     */
+    orderItemId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallOrderItem;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/admin/orders/:orderId/items/:orderItemId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderId ?? "null")}/items/${encodeURIComponent(props.orderItemId ?? "null")}`;
+  export const random = (): IShoppingMallOrderItem =>
+    typia.random<IShoppingMallOrderItem>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("orderId")(() => typia.assert(props.orderId));
+      assert.param("orderItemId")(() => typia.assert(props.orderItemId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update the quantity or status of a specific order item within an existing order. This operation allows authenticated users (the customer who placed the order or the seller who provided the product) to modify the quantity of a particular item, as long as the order is still in a modifiable state (e.g., paid but not shipped). The operation follows a partial update pattern, meaning only the provided fields (quantity or status) are updated; unspecified fields are left unchanged.
+ *
+ * The order item must belong to the authenticated user's order, and the system enforces strict ownership validation. For customers, updates are only permitted if the order status allows modification (e.g., not shipped or delivered). For sellers, updates to quantity are generally disallowed unless supporting a merchant override for inventory reconciliation. The update may trigger inventory adjustments if the quantity is decreased, and the system must validate against available stock for increases.
+ *
+ * If the updated quantity exceeds available stock for the variant, the system returns a 400 error with a warning message. The operation is idempotent — updating the same quantity twice has no additional effect. The status field may be updated by sellers to reflect fulfillment changes, but only during appropriate workflow stages. This endpoint indirectly affects the order's total price and shipping eligibility.
+ *
+ * Related operations: [GET /orders/{orderId}/items/{orderItemId}] to view the current state; [DELETE /orders/{orderId}/items/{orderItemId}] to remove the item entirely.
+ *
+ * @param props.connection
+ * @param props.orderId Unique identifier of the order containing the item to update. Must match the authenticated user's order.
+ * @param props.orderItemId Unique identifier of the specific order item to update. Must belong to the order identified by orderId.
+ * @param props.body Partial update object for order item fields. Only quantity or status can be updated. Any other fields provided are ignored.
+ * @x-autobe-specification Retrieve the order item by orderId and orderItemId, verify owned by authenticated user. Validate order state allows modification (not shipped, delivered, cancelled, refunded). If quantity is provided: ensure it's positive integer, validate available inventory (stockQuantity - reservedQuantity >= newQuantity), calculate new subtotal. If status is provided: validate allowed transitions based on order and seller authority. Update the single order item fields (quantity, updatedAt, status) in a transaction. If quantity changes, adjust inventory record using subtract/add based on delta. Recalculate order total. Return updated order item object with new subtotal and status. Cache the order item for 1 minute
+ * @path /shoppingMall/admin/orders/:orderId/items/:orderItemId
+ * @accessor api.functional.shoppingMall.admin.orders.items.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace update {
   export type Props = {
-    /** Unique business identifier code of the target order (global scope) */
-    orderCode: string;
+    /**
+     * Unique identifier of the order containing the item to update. Must match the authenticated user's order.
+     */
+    orderId: string;
 
     /**
-     * Details required to create a new order item, including the product
-     * variant and quantity.
+     * Unique identifier of the specific order item to update. Must belong to the order identified by orderId.
      */
-    body: IShoppingMallOrderItem.ICreate;
+    orderItemId: string;
+
+    /**
+     * Partial update object for order item fields. Only quantity or status can be updated. Any other fields provided are ignored.
+     */
+    body: IShoppingMallOrderItem.IUpdate;
   };
-  export type Body = IShoppingMallOrderItem.ICreate;
+  export type Body = IShoppingMallOrderItem.IUpdate;
   export type Response = IShoppingMallOrderItem;
 
   export const METADATA = {
-    method: "POST",
-    path: "/shoppingMall/admin/orders/:orderCode/items",
+    method: "PUT",
+    path: "/shoppingMall/admin/orders/:orderId/items/:orderItemId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -97,21 +175,22 @@ export namespace create {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}/items`;
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderId ?? "null")}/items/${encodeURIComponent(props.orderItemId ?? "null")}`;
   export const random = (): IShoppingMallOrderItem =>
     typia.random<IShoppingMallOrderItem>();
   export const simulate = (
     connection: IConnection,
-    props: create.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: create.path(props),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("orderCode")(() => typia.assert(props.orderCode));
+      assert.param("orderId")(() => typia.assert(props.orderId));
+      assert.param("orderItemId")(() => typia.assert(props.orderItemId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -127,39 +206,110 @@ export namespace create {
 }
 
 /**
- * Retrieve all items associated with a specific order in the shopping mall
- * system. This operation performs a selective search across the
- * shopping_mall_order_items table, returning a paginated list of all product
- * variants and quantities linked to the specified order.
+ * Remove an order item from an order prior to shipment or while in a cancellable state. This operation permanently deletes the specified order item from the shopping_mall_order_items table, which tracks individual line items within each order. The order item can only be removed if it is in a 'paid' or 'awaiting_shipment' status, in alignment with the system's business workflow where order items become immutable once shipped.
  *
- * The operation requires the orderCode parameter which uniquely identifies the
- * target order. The code should be used instead of ordinal ID when available,
- * as it provides a human-readable identifier for the order. This endpoint
- * returns only the items associated with the specific order, not the full order
- * details.
+ * The deletion is a hard delete (not soft delete), ensuring that once an order item is removed, it is completely purged from the system and cannot be recovered. This policy is consistent with the system's requirement that inventory and financial reconciliation occur at the time of deletion, rather than using tombstone records.
  *
- * Security: This operation requires customer authorization for viewing their
- * own orders or seller/admin authorization for viewing orders they're
- * responsible for. The system checks ownership by verifying the requesting
- * user's relationship to the specified orderCode as defined in the order_items
- * association.
+ * This operation can be triggered by customers for cancellation requests before shipping, or by administrators for policy violations or fulfillment errors. Once executed, the system automatically updates the associated order's total price and removes the item from any future shipment preparation.
  *
- * Pagination and filtering: The request body supports advanced filtering and
- * pagination parameters including limit, offset, and search fields for product
- * names or variant attributes. Results are sorted chronologically by item
- * creation date by default.
- *
- * Error conditions: Returns 404 if orderCode is invalid or not found, 403 if
- * the requester lacks authority to view this order, and 422 if request
- * parameters are malformed. Related operations: GET /orders/{orderCode} for
- * full order details, POST /orders to create new orders.
+ * The order item cannot be removed if the order has already been shipped or if the item has been partially or fully delivered. Attempting to delete an order item in these states will result in a 409 Conflict response.
  *
  * @param props.connection
- * @param props.orderCode Unique business identifier code of the target order
- *   (global scope)
- * @param props.body Search parameters for filtering and pagination of order
- *   items
- * @path /shoppingMall/admin/orders/:orderCode/items
+ * @param props.orderId The unique identifier of the order containing the item to be erased.
+ * @param props.orderItemId The unique identifier of the order item to be erased.
+ * @x-autobe-specification Query the shopping_mall_order_items table for the specified orderId and orderItemId. Verify the item's current status is 'paid' or 'awaiting_shipment'. If status is not eligible for deletion, return 409 Conflict response. If eligible, perform a hard delete of the record. Update the associated order's total price by subtracting the item's price and quantity. Remove the item from any pending shipment bundles. Log the deletion in the order audit trail for compliance purposes.
+ * @path /shoppingMall/admin/orders/:orderId/items/:orderItemId
+ * @accessor api.functional.shoppingMall.admin.orders.items.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * The unique identifier of the order containing the item to be erased.
+     */
+    orderId: string;
+
+    /**
+     * The unique identifier of the order item to be erased.
+     */
+    orderItemId: string;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/shoppingMall/admin/orders/:orderId/items/:orderItemId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderId ?? "null")}/items/${encodeURIComponent(props.orderItemId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("orderId")(() => typia.assert(props.orderId));
+      assert.param("orderItemId")(() => typia.assert(props.orderItemId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve all order items associated with a specific order.
+ *
+ * This operation returns a complete list of all items that make up a particular order, including detailed product information, pricing, quantities, seller details, and item status. It is used by both customers to review their order contents and by sellers to manage their portion of multi-seller orders.
+ *
+ * The operation retrieves data from the shopping_mall_order_items table, which contains the core order item information with fields including quantity, unit price, and status. It joins with shopping_mall_products to retrieve product names, descriptions, and category information. It also joins with shopping_mall_sellers to provide seller names, logo URLs, and shop information. Additionally, it links with shopping_mall_order_item_snapshots to ensure historical accuracy of product and seller states at the time of order creation, preserving the integrity of transaction records for auditing and dispute resolution purposes.
+ *
+ * For performance optimization, the query uses efficient indexing on the orderId parameter, ensuring fast response times even with large order histories. Security is enforced through authentication; only users with appropriate permissions (the order creator or associated seller) can access order items.
+ *
+ * Related operations include GET /orders/{orderId} for comprehensive order details, and PATCH /orders/{orderId}/items for creating order items during cart checkout.
+ *
+ * @param props.connection
+ * @param props.orderId Unique identifier of the target order (UUID format). This parameter is required to identify the specific order whose items are being retrieved. Must be a valid UUID.
+ * @x-autobe-specification Query shopping_mall_order_items table filtered by orderId. Join with shopping_mall_products to get product names and descriptions. Join with shopping_mall_sellers to get seller information. Join with shopping_mall_order_item_snapshots for historical state at order creation. Return paginated results with pagination metadata. Implement efficient indexing on orderId field for performance.
+ * @path /shoppingMall/admin/orders/:orderId/items
  * @accessor api.functional.shoppingMall.admin.orders.items.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -182,37 +332,31 @@ export async function index(
           path: index.path(props),
           status: null,
         },
-        props.body,
       );
 }
 export namespace index {
   export type Props = {
-    /** Unique business identifier code of the target order (global scope) */
-    orderCode: string;
-
-    /** Search parameters for filtering and pagination of order items */
-    body: IShoppingMallOrderItem.IRequest;
+    /**
+     * Unique identifier of the target order (UUID format). This parameter is required to identify the specific order whose items are being retrieved. Must be a valid UUID.
+     */
+    orderId: string & tags.Format<"uuid">;
   };
-  export type Body = IShoppingMallOrderItem.IRequest;
-  export type Response = IPageIShoppingMallOrderItem.ISummary;
+  export type Response = IPageIShoppingMallOrderItem;
 
   export const METADATA = {
-    method: "PATCH",
-    path: "/shoppingMall/admin/orders/:orderCode/items",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    method: "GET",
+    path: "/shoppingMall/admin/orders/:orderId/items",
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}/items`;
-  export const random = (): IPageIShoppingMallOrderItem.ISummary =>
-    typia.random<IPageIShoppingMallOrderItem.ISummary>();
+  export const path = (props: Props) =>
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderId ?? "null")}/items`;
+  export const random = (): IPageIShoppingMallOrderItem =>
+    typia.random<IPageIShoppingMallOrderItem>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -224,8 +368,7 @@ export namespace index {
       contentType: "application/json",
     });
     try {
-      assert.param("orderCode")(() => typia.assert(props.orderCode));
-      assert.body(() => typia.assert(props.body));
+      assert.param("orderId")(() => typia.assert(props.orderId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

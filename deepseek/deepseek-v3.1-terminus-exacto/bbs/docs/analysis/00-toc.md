@@ -1,165 +1,323 @@
-# Table of Contents - Economic/Political Discussion Board
+# Economic/Political Discussion Board - Complete Requirements Specification
 
-## Project Overview
+## Executive Summary
 
-This documentation set provides complete requirements for building a simple economic and political discussion board platform. The system enables users to engage in meaningful discussions about economic and political topics while supporting image and file attachments. The platform maintains a straightforward, minimal design focused on core discussion functionality without unnecessary complexity.
+The Economic/Political Discussion Board is a comprehensive online platform designed for structured discourse on economic and political topics. This platform enables users to engage in meaningful discussions through article publishing, commenting, and community interaction within specialized sections managed by an administrative hierarchy.
 
-### Core Platform Philosophy
-The discussion board prioritizes quality discourse over engagement metrics, creating an environment conducive to substantive conversations about complex topics. Unlike general social media platforms that often prioritize viral content, this platform emphasizes evidence-based arguments, respectful debate, and knowledge sharing among users genuinely interested in economic and political subjects.
+### Business Context and Value Proposition
+The platform addresses the market need for moderated discussion spaces where users can engage in substantive economic and political discourse without the noise and toxicity of general social media platforms. The value proposition centers on quality content, community moderation, and structured discussion organization.
 
-### Business Value Proposition
-The platform addresses a specific market gap by providing a dedicated space for serious economic/political discourse that combines the accessibility of social media with the substance of academic platforms. Users benefit from specialized moderation, robust attachment support for research materials, and a community focused on these specific subject areas.
+### Target Market Analysis
+Primary user segments include:
+- Academics and researchers in economics and political science
+- Policy professionals and government officials
+- Engaged citizens interested in substantive discourse
+- Students studying related disciplines
 
-## Documentation Structure
+The platform targets users seeking meaningful dialogue rather than rapid-fire social media interactions.
 
-The project documentation is organized into 11 comprehensive documents that cover all aspects of the discussion board requirements:
+### Success Metrics and Performance Indicators
+- **User Engagement**: Daily active users, article creation rate, comment participation
+- **Content Quality**: Average article length, comment-to-article ratio, section participation
+- **Administrative Efficiency**: Moderation response times, ban appeal handling
+- **System Performance**: Page load times, search responsiveness, concurrent user support
 
-### Core Documentation
-- **[Service Overview Document](./01-service-overview.md)** - Defines the business purpose, target audience, and value proposition for the discussion board platform
-- **[User Actors and Authentication Guide](./02-user-actors.md)** - Documents all user roles, authentication requirements, and permission matrices
+## User Actors and Authentication Requirements
 
-### User Experience Documentation
-- **[User Journey Documentation](./03-user-journey.md)** - Describes complete user flows from registration to content creation and engagement
-- **[Functional Requirements Specification](./04-functional-requirements.md)** - Defines all system features and functionality using EARS format
+### User Role Hierarchy
+The system implements a three-tier user hierarchy with clearly defined permission boundaries and escalation paths.
 
-### Business Logic Documentation
-- **[Business Rules and Validation Guide](./05-business-rules.md)** - Documents content validation, user behavior guidelines, and moderation policies
-- **[Error Handling and Recovery Procedures](./06-error-handling.md)** - Defines user-facing error scenarios and recovery workflows
+**Regular User (Member)**
+- Primary content creator and community participant
+- Full access to article creation, commenting, and profile management
+- Ability to request administrator privileges through formal process
 
-### Technical Requirements Documentation
-- **[Performance Requirements Specification](./07-performance-requirements.md)** - Defines response time expectations and scalability targets
-- **[Security Requirements Guide](./08-security-requirements.md)** - Documents authentication security and data protection requirements
+**Administrator Role**
+- Elevated privileges for content moderation and section management
+- Retains all regular user capabilities plus administrative functions
+- Operates under super administrator supervision
 
-### Content Management Documentation
-- **[Content Lifecycle Management](./09-content-lifecycle.md)** - Defines content creation, moderation, archival, and deletion procedures
-- **[Future Considerations and Enhancements](./10-future-considerations.md)** - Outlines potential future features and scalability opportunities
+**Super Administrator Role**
+- Ultimate system authority with complete oversight capabilities
+- Manages administrator appointments, promotions, and demotions
+- Cannot be demoted except by another super administrator
 
-## Navigation Guide
+### Authentication System Specifications
 
-### For Backend Developers
-Start with these documents to understand implementation requirements:
-1. **[Functional Requirements Specification](./04-functional-requirements.md)** - Core feature specifications including post creation, commenting, and attachment handling
-2. **[User Actors and Authentication Guide](./02-user-actors.md)** - User management, authentication flows, and security implementation
-3. **[Business Rules and Validation Guide](./05-business-rules.md)** - Content validation logic and moderation workflows
+**User Registration Process**
+```mermaid
+graph LR
+  A["Registration Form"] --> B["Email Validation"]
+  B --> C{"Email Verified?"}
+  C -->|"Yes"| D["Account Activation"]
+  C -->|"No"| E["Send Verification Email"]
+  D --> F["Auto-Login"]
+  E --> G["Wait for Verification"]
+```
 
-### For Product Managers
-Focus on user experience and business requirements:
-1. **[Service Overview Document](./01-service-overview.md)** - Business context, target audience analysis, and success metrics
-2. **[User Journey Documentation](./03-user-journey.md)** - Complete user interaction flows from discovery through active participation
-3. **[Content Lifecycle Management](./09-content-lifecycle.md)** - Content management processes and moderation escalation procedures
+**Authentication Requirements**
+- WHEN a user registers, THE system SHALL validate email format and require minimum 8-character password with mixed character types
+- UPON successful registration, THE system SHALL send email verification with 24-hour expiration
+- WHERE email verification is completed, THE system SHALL automatically authenticate the user
+- IF verification expires, THE system SHALL require re-registration
 
-### For Business Stakeholders
-Review strategic documents for project understanding:
-1. **[Service Overview Document](./01-service-overview.md)** - Business model, competitive positioning, and value proposition
-2. **[Future Considerations and Enhancements](./10-future-considerations.md)** - Growth opportunities and strategic roadmap
+**Session Management**
+- WHEN a user logs in with valid credentials, THE system SHALL generate JWT tokens with 15-minute access token and 7-day refresh token
+- THE system SHALL automatically refresh tokens when access tokens expire during active sessions
+- IF refresh token validation fails, THE system SHALL require re-authentication
 
-## Document Relationships
+**Security Requirements**
+- THE system SHALL implement rate limiting to prevent brute force attacks
+- WHERE login attempts exceed 5 failures within 15 minutes, THE system SHALL temporarily lock the account
+- PASSWORD changes SHALL invalidate all active sessions immediately
+
+### Permission Matrix
+
+| Action | Regular User | Administrator | Super Administrator |
+|--------|--------------|---------------|---------------------|
+| Create/Edit Own Articles | ✅ | ✅ | ✅ |
+| Delete Own Articles | ✅ | ✅ | ✅ |
+| Create Comments | ✅ | ✅ | ✅ |
+| Edit Own Profile | ✅ | ✅ | ✅ |
+| Submit Admin Request | ✅ | ❌ | ❌ |
+| Create/Edit Sections | ❌ | ✅ | ✅ |
+| Delete Any Article | ❌ | ✅ | ✅ |
+| Delete Any Comment | ❌ | ✅ | ✅ |
+| Ban/Unban Users | ❌ | ✅ | ✅ |
+| Approve Admin Requests | ❌ | ❌ | ✅ |
+| Promote/Demote Admins | ❌ | ❌ | ✅ |
+
+## User Profile Management Requirements
+
+### Profile Data Structure
+Each user profile SHALL contain the following information:
+- **Required**: User ID, email address, account creation date, account status
+- **Optional**: Display name (max 50 characters), biography text (max 500 characters)
+
+### Profile Management Functions
+
+**Profile Editing Workflow**
+```mermaid
+graph LR
+  A["Access Profile"] --> B{"Own Profile?"}
+  B -->|"Yes"| C["Edit Mode Enabled"]
+  B -->|"No"| D["View Only Mode"]
+  C --> E["Update Display Name/Bio"]
+  E --> F["Save Changes"]
+  F --> G["Profile Updated"]
+  D --> H["View User Activity"]
+```
+
+**Profile Viewing Requirements**
+- WHEN viewing any user profile, THE system SHALL display:
+  - User display name and biography
+  - Complete list of published articles with titles and dates
+  - Complete list of comments with preview text and article context
+- THE system SHALL never expose user email addresses on public profiles
+
+## Section Management Requirements
+
+### Section Organizational Structure
+Sections provide the primary content categorization mechanism for organizing discussions by topic areas.
+
+**Section Data Specifications**
+- Each section SHALL have unique name (3-50 characters) and description (10-200 characters)
+- Sections SHALL be created and managed exclusively by administrators
+- Section statistics SHALL include article count, last activity timestamp, and moderation status
+
+**Section Browsing Interface**
+- WHEN users access the platform, THE system SHALL display available sections in logical order
+- EACH section entry SHALL show name, description, article count, and recent activity indicator
+- SECTION selection SHALL filter article listings to show only content from that section
 
 ```mermaid
 graph LR
-    A["00-toc.md<br/>Table of Contents"] --> B["01-service-overview.md<br/>Business Context"]
-    A --> C["02-user-actors.md<br/>Authentication"]
-    A --> D["03-user-journey.md<br/>User Flows"]
-    A --> E["04-functional-requirements.md<br/>Features"]
-    
-    B --> F["10-future-considerations.md<br/>Future Planning"]
-    C --> G["08-security-requirements.md<br/>Security"]
-    D --> E
-    E --> H["05-business-rules.md<br/>Validation"]
-    E --> I["06-error-handling.md<br/>Error Recovery"]
-    E --> J["07-performance-requirements.md<br/>Performance"]
-    H --> K["09-content-lifecycle.md<br/>Content Management"]
+  A["Main Dashboard"] --> B["Section List"]
+  B --> C["Select Section"]
+  C --> D["Filtered Article List"]
+  D --> E["View Individual Article"]
 ```
 
-## Quick Reference by Topic
+### Section Administration
+- WHEN an administrator creates a section, THE system SHALL validate name uniqueness and description completeness
+- SECTION editing SHALL allow modification of name and description while preserving all existing content
+- WHERE section deletion is required, THE system SHALL handle content preservation with clear section references
 
-### Authentication & Security
-- User registration and login: **[User Actors Guide](./02-user-actors.md)**
-- Security requirements: **[Security Requirements](./08-security-requirements.md)**
-- Permission management: **[User Actors Guide](./02-user-actors.md)**
-- Session management and token handling: **[User Actors Guide](./02-user-actors.md)**
+## Article Management Requirements
 
-### Content Management
-- Post creation and editing: **[Functional Requirements](./04-functional-requirements.md)**
-- Attachment handling: **[Functional Requirements](./04-functional-requirements.md)**
-- Content validation: **[Business Rules](./05-business-rules.md)**
-- Moderation workflows: **[Content Lifecycle](./09-content-lifecycle.md)**
-- Content archival and deletion: **[Content Lifecycle](./09-content-lifecycle.md)**
+### Article Creation Specifications
 
-### User Experience
-- Registration process: **[User Journey](./03-user-journey.md)**
-- Discussion flows: **[User Journey](./03-user-journey.md)**
-- Error handling: **[Error Handling Guide](./06-error-handling.md)**
-- Performance expectations: **[Performance Requirements](./07-performance-requirements.md)**
+**Required Article Fields**
+- **Title**: 3-200 character limit with content validation
+- **Content**: 50-10,000 character plain text with basic formatting support
+- **Section**: Mandatory selection from available active sections
 
-### Technical Specifications
-- Performance targets: **[Performance Requirements](./07-performance-requirements.md)**
-- Security implementation: **[Security Requirements](./08-security-requirements.md)**
-- System architecture: Distributed across functional documents
-- Business requirements in natural language: **[Functional Requirements](./04-functional-requirements.md)**
+**Optional Article Features**
+- **File Attachments**: Multiple files up to 10MB each, total 50MB per article
+- **Image Attachments**: Multiple images up to 5MB each, total 25MB per article
+- **Tags**: Multiple free-text tags (max 30 characters each, max 10 tags per article)
 
-## Document Update History
+**Article Creation Workflow**
+```mermaid
+graph LR
+  A["Select Section"] --> B["Enter Title & Content"]
+  B --> C["Add Attachments"]
+  C --> D["Apply Tags"]
+  D --> E{"Validation Pass?"}
+  E -->|"Yes"| F["Publish Article"]
+  E -->|"No"| G["Show Specific Errors"]
+  F --> H["Article Live"]
+  G --> B
+```
 
-This table of contents will be maintained as the primary navigation tool throughout the project lifecycle. All new documents will be added here with appropriate descriptions and relationships.
+### Article Editing and Deletion
+- WHEN users edit their articles, THE system SHALL allow modification of all fields including attachments and tags
+- ARTICLE deletion SHALL remove all associated comments and attachments permanently
+- THE system SHALL maintain edit history with timestamps and modification details
 
-| Document | Version | Last Updated | Primary Audience | Key Focus Areas |
-|----------|---------|--------------|------------------|----------------|
-| 00-toc.md | 1.0 | 2025-11-18 | All Stakeholders | Navigation structure, document relationships |
-| 01-service-overview.md | 1.0 | 2025-11-18 | Business Stakeholders | Business model, target audience, value proposition |
-| 02-user-actors.md | 1.0 | 2025-11-18 | Development Team | Authentication, user roles, permission matrices |
-| 03-user-journey.md | 1.0 | 2025-11-18 | Product Managers | User flows, interaction patterns, error scenarios |
-| 04-functional-requirements.md | 1.0 | 2025-11-18 | Development Team | Feature specifications, EARS requirements |
-| 05-business-rules.md | 1.0 | 2025-11-18 | Development Team | Content validation, moderation policies, community guidelines |
-| 06-error-handling.md | 1.0 | 2025-11-18 | Development Team | Error scenarios, recovery workflows, user messaging |
-| 07-performance-requirements.md | 1.0 | 2025-11-18 | Development Team | Response times, scalability, performance targets |
-| 08-security-requirements.md | 1.0 | 2025-11-18 | Development Team | Authentication security, data protection, attachment security |
-| 09-content-lifecycle.md | 1.0 | 2025-11-18 | Development Team | Content states, moderation workflows, archival policies |
-| 10-future-considerations.md | 1.0 | 2025-11-18 | Business Stakeholders | Growth opportunities, feature roadmap, scalability planning |
+## Article Browsing and Search Requirements
 
-## Implementation Guidelines
+### Article Listing Specifications
+- THE system SHALL display article lists showing: title, author display name, tags, comment count, publication timestamp
+- LIST views SHALL NOT display full article content, only metadata and title
+- PAGINATION SHALL support configurable page sizes with navigation controls
 
-### For Development Teams
-WHEN implementing the discussion board platform, THE development team SHALL reference the complete documentation set to ensure all business requirements are met.
+### Sorting and Filtering Capabilities
+- WHEN browsing articles, THE system SHALL provide newest-first and oldest-first sorting options
+- TAG-based filtering SHALL allow users to narrow listings by multiple tag selections
+- SECTION filtering SHALL work in conjunction with other filtering mechanisms
 
-WHERE technical decisions are required, THE team SHALL prioritize the simple, minimal design philosophy outlined in the service overview.
+### Search Functionality
+- FULL-TEXT search SHALL span article titles and content with relevance ranking
+- SEARCH results SHALL maintain pagination and support the same filtering options as browsing
+- WHERE multiple filters are applied, THE system SHALL use AND logic for combined filtering
 
-### For Quality Assurance
-WHEN testing the platform, THE QA team SHALL verify that all functional requirements from the specification documents are properly implemented.
+## Comment System Requirements
 
-WHERE performance testing is conducted, THE team SHALL use the targets defined in the performance requirements document as success criteria.
+### Comment Structure and Limitations
+- COMMENTS SHALL be single-level only without nested reply functionality
+- EACH comment SHALL have maximum 10,000 character limit with basic text formatting
+- COMMENT display SHALL show author, content, and timestamp in chronological order
 
-### For Project Management
-WHEN planning development iterations, THE project manager SHALL ensure that all core functionality from the requirements documents is prioritized.
+### Comment Management
+- USERS SHALL be able to edit and delete their own comments
+- ADMINISTRATORS SHALL have authority to delete any comment for moderation purposes
+- COMMENT deletion SHALL be permanent with no archive or recovery mechanism
 
-WHERE scope changes are considered, THE manager SHALL evaluate impact against the documented business requirements.
+**Comment Creation Workflow**
+```mermaid
+graph LR
+  A["View Article"] --> B{"Authenticated?"}
+  B -->|"Yes"| C["Comment Input Form"]
+  B -->|"No"| D["Login Prompt"]
+  C --> E["Submit Comment"]
+  E --> F{"Validation Pass?"}
+  F -->|"Yes"| G["Add to Comment Thread"]
+  F -->|"No"| H["Show Errors"]
+  H --> C
+  G --> I["Update Display"]
+```
 
-## Cross-Document Dependencies
+## Administrator System Requirements
 
-### Critical Dependencies
-- **Authentication System**: Requires coordination between User Actors, Security Requirements, and User Journey documents
-- **Content Moderation**: Integrates requirements from Business Rules, Content Lifecycle, and Functional Requirements
-- **Attachment Handling**: Spans Functional Requirements, Security Requirements, and Performance Requirements
+### Administrator Promotion Process
+The pathway from regular user to administrator follows a structured approval system with oversight.
 
-### Implementation Sequencing
-1. **Foundation Phase**: Implement core authentication and user management based on User Actors documentation
-2. **Content Phase**: Build post and comment functionality following Functional Requirements
-3. **Moderation Phase**: Add content moderation features using Business Rules and Content Lifecycle guidelines
-4. **Optimization Phase**: Enhance performance and security based on Performance and Security Requirements
+**Promotion Request Workflow**
+- WHEN a user requests administrator status, THE system SHALL require written justification
+- SUPER administrators SHALL review pending requests with approve/reject authority
+- WHERE promotion is approved, THE user SHALL immediately receive administrator privileges
 
-## Quality Assurance Checklist
+**Administrator Hierarchy Management**
+- SUPER administrators SHALL have exclusive authority to promote regular administrators to super administrator status
+- THE system SHALL prevent self-demotion of super administrators to maintain system oversight
+- ADMINISTRATOR demotion SHALL be logged with reasons and oversight documentation
 
-### Documentation Completeness
-- [ ] All 11 documents are properly referenced and described
-- [ ] Navigation structure supports all stakeholder types
-- [ ] Quick reference sections cover all major functional areas
-- [ ] Document relationships are clearly documented
-- [ ] Update history is maintained for version tracking
+### Administrative Capabilities Matrix
 
-### Business Requirements Coverage
-- [ ] Simple discussion board functionality is fully specified
-- [ ] Image and file attachment requirements are documented
-- [ ] Authentication and user management workflows are defined
-- [ ] Content moderation processes are specified
-- [ ] Performance and security expectations are established
+| Administrative Function | Regular Administrator | Super Administrator |
+|-------------------------|----------------------|---------------------|
+| Section Creation/Editing | ✅ | ✅ |
+| Section Deletion | ❌ | ✅ |
+| Content Moderation | ✅ | ✅ |
+| User Banning | ✅ | ✅ |
+| Admin Request Review | ❌ | ✅ |
+| Administrator Promotion | ❌ | ✅ |
+| Administrator Demotion | ❌ | ✅ |
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+## Banning System Requirements
+
+### Ban Implementation Process
+- WHEN an administrator bans a user, THE system SHALL require documented reason (min 10 characters)
+- BANNED users SHALL be immediately logged out and prevented from future authentication
+- EXISTING content from banned users SHALL remain visible with appropriate status indications
+
+### Ban Management Interface
+- ADMINISTRATORS SHALL access a comprehensive ban management dashboard
+- THE interface SHALL provide search, filtering, and bulk operation capabilities
+- BAN records SHALL include user information, reason, date, and administering administrator
+
+**Banning Workflow**
+```mermaid
+graph LR
+  A["Admin Identifies User"] --> B["Provide Ban Reason"]
+  B --> C{"Reason Valid?"}
+  C -->|"Yes"| D["Apply Ban"]
+  C -->|"No"| E["Request Valid Reason"]
+  D --> F["Log Ban Action"]
+  F --> G["Notify System"]
+  E --> B
+```
+
+### Unbanning Process
+- WHEN an administrator unbans a user, THE system SHALL immediately restore all access privileges
+- UNBAN actions SHALL be logged alongside original ban records for complete history
+- UNBANNED users SHALL regain full platform access without additional restrictions
+
+## Business Rules and Constraints
+
+### Content Validation Rules
+- ARTICLE titles SHALL be unique within their respective sections to prevent duplication
+- USER display names SHALL be unique across the entire platform
+- CONTENT moderation SHALL follow predefined community guidelines consistently
+
+### Performance Requirements
+- ARTICLE listings SHALL load within 2 seconds under normal operational conditions
+- SEARCH functionality SHALL return results within 3 seconds for typical query volumes
+- COMMENT display SHALL be instantaneous for articles with up to 100 comments
+
+### Security Requirements
+- USER authentication SHALL enforce strong password policies with complexity requirements
+- FILE uploads SHALL undergo security scanning and type validation
+- ADMINISTRATIVE actions SHALL be comprehensively logged for audit purposes
+
+## Error Handling Requirements
+
+### User-Facing Error Management
+- WHEN authentication fails, THE system SHALL provide clear error messages without exposing security details
+- WHERE content validation fails, THE system SHALL indicate specific field requirements
+- IF system errors occur, THE system SHALL maintain graceful degradation with appropriate user notifications
+
+### Administrative Error Handling
+- ADMINISTRATIVE functions SHALL include comprehensive validation to prevent invalid operations
+- ERROR conditions SHALL be logged with sufficient detail for troubleshooting
+- SYSTEM shall prevent administrative actions that would compromise platform integrity
+
+## Success Criteria and Acceptance Metrics
+
+### Functional Validation Metrics
+- ALL user registration and authentication workflows SHALL function correctly with 99.9% reliability
+- CONTENT creation and management SHALL maintain data integrity across all operations
+- ADMINISTRATIVE functions SHALL enforce proper role-based access control without exceptions
+
+### User Experience Metrics
+- SYSTEM responsiveness SHALL meet all specified performance requirements under expected load
+- CONTENT discovery through browsing and search SHALL be intuitive and efficient
+- ADMINISTRATIVE tools SHALL provide comprehensive capabilities without unnecessary complexity
+
+### Operational Metrics
+- SYSTEM uptime SHALL maintain 99.5% availability during peak usage periods
+- DATA backup and recovery procedures SHALL support complete system restoration within 4 hours
+- SECURITY monitoring SHALL detect and alert on suspicious activities within 15 minutes
+
+This comprehensive requirements specification provides the complete business foundation for developing the Economic/Political Discussion Board platform. The document focuses exclusively on business requirements, leaving all technical implementation decisions to the discretion of the development team based on established software engineering best practices.

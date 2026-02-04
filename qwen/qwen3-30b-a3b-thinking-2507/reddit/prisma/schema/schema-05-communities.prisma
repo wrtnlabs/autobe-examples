@@ -1,0 +1,177 @@
+/// Core community information including name, description, icon, and creator
+/// association.
+///
+/// Communities are the fundamental group entities that define
+/// user-subscribable topic spaces. Each community represents a dedicated
+/// space for users to engage in focused discussions. The platform supports
+/// communities with unique names, descriptive purposes, and visual
+/// identifiers (icons) that allow users to quickly identify community focus
+/// areas.
+///
+/// Communities require a unique name as their primary identifier and the
+/// creator automatically becomes the community owner with full management
+/// rights. This table serves as the foundation for community management,
+/// subscriptions, and moderation operations, enabling all user interactions
+/// centered around specific community spaces.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator of the community's {@link community_platform_users.id}.
+  community_platform_users_id String
+  
+  /// Unique community name between 10-50 characters containing only letters,
+  /// numbers, and underscores. Must be globally unique across all communities
+  /// to prevent naming conflicts.
+  name String
+  
+  /// Community description text up to 500 characters explaining the
+  /// community's purpose, topics covered, and intended audience. Provides
+  /// users with context before subscribing to the community.
+  description String
+  
+  /// URL path to the square icon image file used as visual representation of
+  /// the community. Must reference a validated image file stored on the
+  /// platform.
+  icon_url String
+  
+  /// Timestamp when the community was first created. Records the origin point
+  /// for all community activity and metrics.
+  created_at DateTime
+  
+  /// Timestamp of the last community detail change. Tracks when community
+  /// information was modified (name, description, icon).
+  updated_at DateTime
+  
+  /// Timestamp indicating when the community was logically deleted. When
+  /// populated, the community remains visible to owners but not active users.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creator community_platform_users @relation(fields: [community_platform_users_id], references: [id], onDelete: Cascade)
+  
+  subscriptions community_platform_community_subscriptions[]
+  moderators community_platform_community_moderators[]
+  posts community_platform_posts[]
+  bans community_platform_bans[]
+  moderationSettings community_platform_moderation_settings[]
+  
+  @@index([community_platform_users_id])
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Tracks user subscriptions to communities for engagement and content
+/// discovery.
+///
+/// Stores the relationship between users and communities they choose to
+/// follow, enabling users to receive notifications and content specific to
+/// their subscribed communities.
+///
+/// Each subscription is tracked with an active status flag to manage
+/// community engagement levels. The system maintains real-time subscription
+/// data to support community browsing features and user engagement metrics.
+///
+/// Subscription status can be active or inactive (unsubscribed), with
+/// timestamps tracking when subscriptions were created or updated.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community the user is subscribed to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// User who created the subscription. {@link community_platform_users.id}.
+  user_id String
+  
+  /// Current subscription status - active (true) or unsubscribed (false).
+  active Boolean
+  
+  /// Subscription creation timestamp.
+  created_at DateTime
+  
+  /// Last subscription modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, user_id], map: "community_platform_community_subscriptions_community_i_dbbf772d")
+  @@index([user_id])
+}
+
+/// Tracks user assignments as moderators within specific communities,
+/// granting them moderation capabilities for the designated community.
+///
+/// This table establishes the relationship between users and communities,
+/// specifically identifying which users are granted moderation rights. The
+/// role field specifies the level of permission granted to the moderator
+/// (e.g., 'moderator', 'admin').
+///
+/// Moderation capabilities include content deletion, user bans, and other
+/// community-specific moderation actions. Assignments are managed by
+/// community owners who can add or remove moderators at their discretion.
+///
+/// This table serves as a junction table linking community roles with users,
+/// and is managed through the community management API endpoints.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that is being moderated. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// User assigned as moderator. {@link community_platform_users.id}
+  user_id String
+  
+  /// Moderation role (e.g., 'moderator', 'admin'). Can be restricted to
+  /// specific roles as defined in business requirements.
+  role String
+  
+  /// When the moderator assignment was created.
+  created_at DateTime
+  
+  /// Last time the moderator assignment was updated.
+  updated_at DateTime
+  
+  /// When the moderator assignment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, user_id], map: "community_platform_community_moderators_community_id_u_dadade3c")
+  @@index([community_id])
+  @@index([user_id])
+}

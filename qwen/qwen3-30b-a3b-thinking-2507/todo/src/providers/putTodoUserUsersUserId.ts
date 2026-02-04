@@ -8,6 +8,7 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
@@ -16,45 +17,40 @@ export async function putTodoUserUsersUserId(props: {
   userId: string & tags.Format<"uuid">;
   body: ITodoUser.IUpdate;
 }): Promise<ITodoUser> {
-  // Verify user ID matches authenticated user
-  if (props.userId !== props.user.id) {
+  // Verify user ownership
+  if (props.user.id !== props.userId) {
     throw new HttpException(
-      "Forbidden - You can only update your own profile",
+      "Forbidden - You can only edit your own profile",
       403,
     );
   }
-  // Verify user exists
-  const existingUser = await MyGlobal.prisma.todo_users.findUnique({
-    where: { id: props.userId },
-  });
-  if (!existingUser) {
-    throw new HttpException("User not found", 404);
-  }
-  // Validate new email if provided
-  if (props.body.email && props.body.email !== existingUser.email) {
-    const emailExists = await MyGlobal.prisma.todo_users.findFirst({
-      where: { email: props.body.email },
+  // Handle empty displayName - no change (including undefined)
+  const displayName = props.body.displayName;
+  if (displayName == null || displayName.trim().length === 0) {
+    const existingUser = await MyGlobal.prisma.todo_users.findUnique({
+      where: { id: props.userId },
+      select: { id: true },
     });
-    if (emailExists) {
-      throw new HttpException("Email already in use", 409);
+    if (!existingUser) {
+      throw new HttpException("User not found", 404);
     }
+    return { id: existingUser.id };
   }
-  // Prepare update data with updated_at timestamp
-  const updateData = {
-    ...props.body,
-    updated_at: toISOStringSafe(new Date()),
-  };
-  // Perform update
+  // Now we know displayName is defined and non-empty
+  if (displayName.length < 1 || displayName.length > 50) {
+    throw new HttpException("Display name must be 1-50 characters", 422);
+  }
+  const pattern = /^[a-zA-Z0-9 .,_:';()/-]+$/;
+  if (!pattern.test(displayName)) {
+    throw new HttpException("Display name contains invalid characters", 422);
+  }
+  // Update database only the required field
   const updatedUser = await MyGlobal.prisma.todo_users.update({
     where: { id: props.userId },
-    data: updateData,
+    data: {
+      display_name: displayName,
+    },
+    select: { id: true },
   });
-  // Format and return response with all required fields
-  return {
-    id: updatedUser.id,
-    email: updatedUser.email,
-    name: updatedUser.name, // Added missing required field
-    createdAt: toISOStringSafe(updatedUser.created_at),
-    updatedAt: toISOStringSafe(updatedUser.updated_at),
-  };
+  return { id: updatedUser.id };
 }

@@ -1,0 +1,164 @@
+/// Shopping carts representing temporary product selections by customers
+/// before order commitment. Each customer has one active shopping cart that
+/// persists their selections across sessions.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who owns this shopping cart. {@link
+  /// shopping_mall_customers.id}
+  customer_id String
+  
+  /// When this shopping cart was initially created.
+  created_at DateTime
+  
+  /// When this shopping cart was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shoppingCartItems shopping_mall_shopping_cart_items[]
+  
+  @@unique([customer_id])
+  @@index([created_at])
+}
+
+/// Individual items within shopping carts, representing specific product
+/// variants with selected quantities.
+///
+/// This table connects customers' cart selections to actual products and
+/// variants, enabling quantity management and cart operations.
+/// Each cart item links to a specific product variant, allowing customers to
+/// select particular options (size, color, etc.)
+/// Cart items maintain quantity information so customers can specify how
+/// many of each variant they wish to purchase.
+/// When the same variant is added multiple times, quantities are combined
+/// rather than creating duplicate entries.
+/// Cart items include timestamp fields for auditing when items were added or
+/// modified.
+/// Items are soft deleted when removed from cart to preserve audit trails
+/// for potential dispute resolution.
+/// Cart items are converted to order items when a customer successfully
+/// places an order.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shopping cart this item belongs to. {@link
+  /// shopping_mall_shopping_carts.id}
+  shopping_mall_shopping_cart_id String
+  
+  /// The specific product variant selected for this cart item. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// The quantity of this product variant the customer wishes to purchase.
+  /// Must be a positive integer as partial quantities are not supported.
+  quantity Int
+  
+  /// Whether this cart item has been soft deleted. Used when items are removed
+  /// from cart to maintain audit trails.
+  deleted_at DateTime?
+  
+  /// When this cart item was first added to the shopping cart. Important for
+  /// temporal ordering and audit tracking.
+  created_at DateTime
+  
+  /// When this cart item was last modified in the shopping cart. Updated when
+  /// quantities change or item properties are modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_shopping_cart_items_shopping_mall_produc_6e71f3d4")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_shopping_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_shopping_cart_items_shopping_mall_shoppi_18f3d7bd")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shopping_cart_id, created_at], map: "shopping_mall_shopping_cart_items_shopping_mall_shoppi_4e2ca514")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_shopping_cart_items_shopping_mall_produc_77a1c211")
+}
+
+/// Wishlist items representing products that customers have saved for
+/// potential future purchase.
+///
+/// These items are maintained separately from shopping carts and can be
+/// converted to cart items when
+/// customers decide to purchase. Each wishlist item links a specific
+/// customer to a specific product
+/// they have expressed interest in purchasing later.
+///
+/// Wishlist items provide a mechanism for customers to save products they
+/// like but aren't ready to
+/// purchase immediately. This allows users to easily revisit products
+/// they're interested in without
+/// having to search for them again.
+///
+/// Each customer can have multiple wishlist items, and each product can be
+/// in multiple wishlists
+/// across different customers. When a customer deletes a wishlist item, it
+/// has no effect on the
+/// underlying product or other customers' wishlists.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who added this product to their wishlist. Links to the
+  /// customer's account information.
+  shopping_mall_customer_id String
+  
+  /// The product that has been added to the wishlist. Links to the product's
+  /// information.
+  shopping_mall_product_id String
+  
+  /// When this wishlist item was created.
+  created_at DateTime
+  
+  /// When this wishlist item was last updated.
+  updated_at DateTime
+  
+  /// When this wishlist item was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_wishlist_items_shopping_mall_customer_id_043f4270")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_customer_id_dcbce088")
+  @@index([shopping_mall_product_id])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([updated_at])
+}

@@ -1,0 +1,138 @@
+/// Stores all ban records with comprehensive details about user restrictions
+/// and administrative actions.
+///
+/// Captures the complete life-cycle of user bans including the banned user
+/// reference, banning administrator, detailed ban reason, duration
+/// specifications, and current status tracking. Supports active bans,
+/// expired bans, and manually revoked bans with full audit trail.
+///
+/// Each ban record links to the banned user through reference to the
+/// discussion_board_users table and the implementing administrator through
+/// discussion_board_administrators. Ban reasons comply with the minimum
+/// 10-character requirement for documentation clarity.
+///
+/// The table maintains temporal fields for creation, modification, and soft
+/// deletion, enabling comprehensive ban management and reporting
+/// capabilities for administrative oversight.
+///
+/// @namespace Banning
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the banned user's record using {@link
+  /// discussion_board_users.id}.
+  banned_user_id String
+  
+  /// Reference to the administrator who applied the ban using {@link
+  /// discussion_board_administrators.id}.
+  administrator_id String
+  
+  /// Detailed reason for the ban implementation, providing clear documentation
+  /// of the violation or cause. Minimum 10 characters required as per platform
+  /// policy.
+  ban_reason String
+  
+  /// Current status of the ban: 'active' for currently enforced bans,
+  /// 'expired' for time-based bans that completed, 'revoked' for manually
+  /// cancelled bans.
+  status String
+  
+  /// Timestamp when the ban becomes active and takes effect on user access.
+  effective_from DateTime
+  
+  /// Timestamp when the ban automatically expires. Null indicates indefinite
+  /// ban duration requiring manual intervention.
+  effective_until DateTime?
+  
+  /// Timestamp when the ban was manually revoked by an administrator before
+  /// its scheduled expiration. Null indicates not revoked.
+  revoked_at DateTime?
+  
+  /// Reason provided by administrator for manually revoking the ban before its
+  /// scheduled expiration.
+  revoke_reason String?
+  
+  /// Timestamp when the ban record was initially created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last modified or updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of ban records, maintaining audit trail while
+  /// removing from active operations.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser discussion_board_users @relation(fields: [banned_user_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([banned_user_id, effective_from])
+  @@index([status, effective_from])
+  @@index([administrator_id, created_at])
+  @@index([effective_until, status])
+}
+
+/// Tracks administrative actions related to ban management for comprehensive
+/// audit trail and accountability.
+///
+/// Records every administrative action performed on ban records, including
+/// ban application, modification, extension, and removal operations. Each
+/// entry captures the specific administrator who performed the action, the
+/// timestamp of the operation, the type of action taken, and any additional
+/// context or notes related to the administrative decision.
+///
+/// Maintains referential integrity with both the ban records being acted
+/// upon and the administrators performing the actions. This audit trail
+/// supports accountability, compliance requirements, and administrative
+/// oversight by providing a complete historical record of all ban-related
+/// administrative activities.
+///
+/// The table supports moderation transparency and enables administrators to
+/// review the complete lifecycle of ban records, including who made specific
+/// decisions and when those actions occurred.
+///
+/// @namespace Banning
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ban record being acted upon. {@link discussion_board_bans.id}
+  discussion_board_ban_id String
+  
+  /// The administrator who performed this action. {@link
+  /// discussion_board_administrators.id}
+  discussion_board_administrator_id String
+  
+  /// Type of administrative action performed on the ban record. Valid values:
+  /// 'application', 'modification', 'extension', 'removal'.
+  action_type String
+  
+  /// Additional context or notes about the administrative action, providing
+  /// details about the decision or circumstances.
+  action_context String?
+  
+  /// Timestamp when the administrative action was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  ban discussion_board_bans @relation(fields: [discussion_board_ban_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_ban_id, created_at], map: "discussion_board_ban_admin_actions_discussion_board_ba_f8854739")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_ban_admin_actions_discussion_board_ad_5be8e8a7")
+}

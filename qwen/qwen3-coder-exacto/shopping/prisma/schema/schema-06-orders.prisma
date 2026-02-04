@@ -1,0 +1,913 @@
+/// Main order records representing committed purchases with customer and
+/// address information
+///
+/// This table serves as the central hub for all order processing workflows,
+/// capturing
+/// the essential metadata and linkage information required to track customer
+/// purchases from commitment through fulfillment. Each record represents a
+/// successful transaction where payment has been processed and the customer
+/// has committed to the purchase.
+///
+/// The table implements proper foreign key relationships to customer profiles
+/// for accountability, shipping addresses for delivery coordination, and
+/// maintains
+/// comprehensive temporal tracking through standard audit fields. It also
+/// includes status tracking to monitor the overall lifecycle of the order from
+/// creation through completion or cancellation.
+///
+/// Orders maintain a many-to-one relationship with customers (one customer can
+/// place multiple orders) and a one-to-one relationship with shipping addresses
+/// (an order is delivered to exactly one location, though multiple items within
+/// the order may be shipped in separate packages).
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Authenticated customer who placed the order. {@link
+  /// shopping_mall_customers.id}
+  ///
+  /// References the customer account record to establish ownership and enable
+  /// account-based order history queries. This relationship ensures that all
+  /// orders can be traced back to a verified customer profile for both
+  /// business analytics and customer service purposes.
+  shopping_mall_customer_id String
+  
+  /// Human-readable order identifier for customer support and reference
+  ///
+  /// A unique business key that provides customers and support staff with
+  /// an easy-to-reference order number for inquiries, rather than requiring
+  /// the use of UUIDs in customer communications. This number follows a
+  /// predictable sequential pattern within each calendar year to aid in
+  /// manual order location and provides immediate temporal context.
+  code String
+  
+  /// Total monetary value of the order at time of purchase
+  ///
+  /// Represents the complete purchase amount including all items, taxes,
+  /// and fees as calculated at checkout time. This frozen value ensures
+  /// consistent financial tracking regardless of any post-purchase
+  /// adjustments or modifications to individual order items.
+  amount Float
+  
+  /// Current state of the overall order lifecycle
+  ///
+  /// Tracks the aggregate status derived from the individual states of all
+  /// order items within this order, providing a simplified view of the
+  /// order's progression. Valid states include 'paid' (order confirmed),
+  /// 'shipped' (at least one item dispatched), 'delivered' (all items
+  /// received), 'cancelled' (all items cancelled), and 'partially completed'
+  /// (mixed final states across items).
+  status String
+  
+  /// Timestamp when order was successfully created after payment processing
+  ///
+  /// Records the exact moment when the order record was committed to the
+  /// database following successful payment authorization and inventory
+  /// reservation. This timestamp serves as the definitive order creation
+  /// date for reporting and customer communication purposes.
+  created_at DateTime
+  
+  /// Timestamp of last modification to order metadata or status
+  ///
+  /// Tracks the most recent update to any aspect of the order record,
+  /// including status changes, administrative adjustments, or metadata
+  /// modifications. This enables efficient sorting of active orders and
+  /// provides an audit trail for operational tracking.
+  updated_at DateTime
+  
+  /// Timestamp when order was marked as permanently deleted (soft delete)
+  ///
+  /// Used for compliance with data retention policies while maintaining
+  /// operational integrity. When set, indicates the order has been
+  /// archived according to legal requirements, though all related records
+  /// (payment, shipment, item details) remain accessible for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  items shopping_mall_order_items[]
+  payments shopping_mall_order_payments[]
+  shipments shopping_mall_shipments[]
+  
+  @@unique([code])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([status, created_at])
+  @@index([created_at])
+  @@index([amount])
+  @@index([updated_at])
+}
+
+/// Individual items within customer orders representing purchased product
+/// variants with quantities and pricing.
+///
+/// Each order item represents a specific product variant that a customer has
+/// purchased
+/// with a defined quantity. These items link to product snapshots that
+/// preserve the
+/// exact product information at the time of purchase, ensuring accurate
+/// records for
+/// legal, audit, and dispute resolution purposes. Order items have
+/// independent lifecycle
+/// management through their own status system, allowing for individual
+/// processing such as
+/// shipment, cancellation, or refund without affecting other items in the
+/// same order.
+///
+/// Order items form the core transaction tracking mechanism in the
+/// e-commerce platform,
+/// enabling precise inventory management, payment processing, and
+/// fulfillment coordination.
+/// They connect customers, sellers, products, and variants in a
+/// comprehensive purchase record.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The specific order this item belongs to. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// The purchased product variant with its unique SKU and specifications.
+  /// {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Snapshot of the product information at time of purchase for audit trail.
+  /// {@link shopping_mall_order_item_product_snapshots.id}
+  shopping_mall_order_item_product_snapshot_id String
+  
+  /// Snapshot of the seller information at time of purchase for audit trail.
+  /// {@link shopping_mall_order_item_seller_snapshots.id}
+  shopping_mall_order_item_seller_snapshot_id String
+  
+  /// Quantity of this product variant purchased in this order item. Must be a
+  /// positive integer representing how many units the customer bought.
+  quantity Int
+  
+  /// Price per unit of the product variant at the time of purchase. This is
+  /// captured from the product variant snapshot to ensure accurate financial
+  /// records even if prices change after purchase.
+  price Float
+  
+  /// Timestamp when this order item was created. This represents when the
+  /// order was placed and payment was confirmed.
+  created_at DateTime
+  
+  /// Timestamp when this order item was last updated. Used for tracking any
+  /// modifications to the order item status or processing information.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  productSnapshot shopping_mall_order_item_product_snapshots @relation(fields: [shopping_mall_order_item_product_snapshot_id], references: [id], onDelete: Cascade)
+  sellerSnapshot shopping_mall_order_item_seller_snapshots @relation(fields: [shopping_mall_order_item_seller_snapshot_id], references: [id], onDelete: Cascade)
+  
+  inventoryHistories shopping_mall_inventory_history_order_items[]
+  shipmentItem shopping_mall_order_shipment_items?
+  orderCancellationRequests shopping_mall_order_cancellation_requests[]
+  orderRefundRequests shopping_mall_order_refund_requests[]
+  statusHistories shopping_mall_order_item_status_histories[]
+  shipmentItems shopping_mall_shipment_items[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  review shopping_mall_product_reviews?
+  sellerOrderItems shopping_mall_seller_order_items[]
+  sellerCancellationRequest shopping_mall_seller_cancellation_requests?
+  forcedCancellation shopping_mall_forced_cancellations?
+  forcedRefund shopping_mall_forced_refunds?
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_product_snapshot_id], map: "shopping_mall_order_items_shopping_mall_order_item_pro_536326ab")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_seller_snapshot_id], map: "shopping_mall_order_items_shopping_mall_order_item_sel_8d958d89")
+  
+  @@index([shopping_mall_order_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_order_items_shopping_mall_product_varian_f645dd4c")
+}
+
+/// Payment records tracking transaction details, payment methods, and
+/// processing status for orders. This table maintains comprehensive
+/// information about payment processing including amounts, methods, external
+/// identifiers, and current processing status to ensure proper financial
+/// tracking of all orders in the system.
+///
+/// This entity represents the subsdiary payment processing component of the
+/// order management system. It tracks the financial aspects of orders with
+/// links to external payment gateways, current payment status, and
+/// transaction amounts. Each record is associated with exactly one order
+/// through the foreign key relationship.
+///
+/// The payment processing workflow follows these status transitions:
+/// - pending: Initial state when payment is initiated
+/// - succeeded: Payment successfully processed by external gateway
+/// - failed: Payment rejected or errored during processing
+/// - cancelled: Payment explicitly cancelled by user or system
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this payment record belongs to. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// The total amount that needs to be paid for the order, in the smallest
+  /// currency unit (e.g., cents for USD).
+  amount Int
+  
+  /// Identifier for the payment transaction from the external payment gateway
+  /// (e.g., Stripe, PayPal).
+  payment_intent_id String
+  
+  /// Current status of the payment processing workflow. Valid values: pending,
+  /// succeeded, failed, cancelled.
+  status String
+  
+  /// When the payment record was initially created in our system.
+  created_at DateTime
+  
+  /// When the payment record was last updated in our system.
+  updated_at DateTime
+  
+  /// When the payment record was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  
+  @@unique([payment_intent_id])
+  @@index([status])
+}
+
+/// Shipment records tracking package deliveries with carrier information and
+/// tracking numbers for fulfilled order items in the order management
+/// system.
+///
+/// This entity serves as a bridge between the order processing system and
+/// the shipping fulfillment system. Each record represents a physical
+/// package that will be sent to a customer, containing one or more order
+/// items. The table maintains essential shipping metadata including carrier
+/// details, tracking information, and status, enabling end-to-end order
+/// fulfillment tracking. Shipments are created when sellers prepare to send
+/// items to customers, typically after payment processing is complete.
+///
+/// This table does not contain full shipment history or detailed tracking
+/// events, which are managed in the dedicated shipping component. Instead,
+/// it focuses on the order-centric view of shipment information needed for
+/// order management workflows. Status tracking is kept minimal here as the
+/// detailed status history is maintained in the order item status histories
+/// table.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller responsible for fulfilling this shipment. References the seller
+  /// entity that owns the products being shipped in this package. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Associated tracking information for this shipment. Links to the detailed
+  /// tracking records maintained in the shipping component. {@link
+  /// shopping_mall_trackings.id}.
+  shopping_mall_tracking_id String
+  
+  /// Shipment record in the dedicated shipping component. Links to the
+  /// comprehensive shipment entity that contains detailed shipping information
+  /// and logistics data. {@link shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Name of the shipping carrier handling this package. Examples include
+  /// 'FedEx', 'UPS', 'DHL', 'USPS', 'Amazon Logistics'. This value is captured
+  /// at shipment creation for order tracking purposes.
+  carrier_name String
+  
+  /// Carrier-assigned tracking number for this shipment. Used to monitor the
+  /// package's journey from seller to customer. Format varies by carrier
+  /// (e.g., 1Z999AA1234567890 for UPS, 999999999999 for FedEx).
+  tracking_number String
+  
+  /// Timestamp when this shipment record was created in the order system.
+  /// Marks the beginning of the fulfillment process for the associated order
+  /// items.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this shipment record. Used for tracking
+  /// modifications and maintaining data freshness.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  tracking shopping_mall_trackings @relation(fields: [shopping_mall_tracking_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_shipment_id])
+  
+  @@unique([shopping_mall_tracking_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_shipments_shopping_mall_seller_id__81d0119a")
+  @@index([carrier_name, tracking_number])
+}
+
+/// Junction table linking shipments to their constituent order items for
+/// tracking purposes.
+///
+/// This table creates a many-to-many relationship between shipments and
+/// order items, allowing multiple
+/// order items from the same seller to be grouped into a single shipment. It
+/// enables flexible
+/// shipment configurations where individual items or groups of items can be
+/// packaged together for
+/// delivery tracking.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipment that contains this order item. Links to the shipment entity
+  /// which contains
+  /// details about the package delivery including carrier information and
+  /// tracking numbers.
+  /// {@link shopping_mall_shipments.id}
+  shopping_mall_shipment_id String
+  
+  /// The order item included in this shipment. Links to the specific purchased
+  /// product variant
+  /// with its quantity and pricing information. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Timestamp when this shipment item relationship was created.
+  ///
+  /// Records when an order item was assigned to a specific shipment for
+  /// delivery tracking purposes.
+  /// This timestamp helps with shipment preparation monitoring and delivery
+  /// timeline calculations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_shipment_id, shopping_mall_order_item_id], map: "shopping_mall_order_shipment_items_shopping_mall_shipm_bd608768")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_shipment_items_shopping_mall_order_ba4acb3b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id, created_at], map: "shopping_mall_order_shipment_items_shopping_mall_shipm_c29e21da")
+}
+
+/// Customer cancellation requests for order items with reasons and approval
+/// status tracking.
+///
+/// Records customer-initiated requests to cancel order items that are in
+/// 'paid' status. Each request
+/// captures the customer's reason for cancellation and tracks the approval
+/// workflow with the seller.
+/// Requests are processed independently, allowing customers to cancel some
+/// items in an order while
+/// keeping others active.
+///
+/// The cancellation process follows these business rules:
+/// - Customers can only request cancellation for items with 'paid' status
+/// - Requests must include a text reason explaining why the cancellation is
+/// needed
+/// - Sellers must approve or reject each cancellation request
+/// - Approved cancellations result in item status changes to 'cancelled'
+/// - Inventory quantities are automatically restored upon approval
+/// - Refunds are processed for approved cancellations
+///
+/// This table serves as the core entity for dispute resolution between
+/// customers and sellers
+/// regarding pre-shipment order modifications. It enables the platform to
+/// maintain an audit
+/// trail of all cancellation activities for compliance and customer service
+/// purposes.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target order item for cancellation. {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Customer who initiated the cancellation request. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session when request was created. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Customer's explanation for why they want to cancel this order item. Must
+  /// clearly state the reason to help sellers understand the request context.
+  reason String
+  
+  /// Current state of the cancellation request in the approval workflow. Valid
+  /// values: 'requested', 'approved', 'rejected'. Status transitions follow
+  /// the business process for handling customer cancellation requests.
+  status String
+  
+  /// Seller's explanation when rejecting a cancellation request. Required when
+  /// status is set to 'rejected' to inform the customer of the decision
+  /// rationale.
+  rejection_reason String?
+  
+  /// When the cancellation request was first submitted by the customer. Used
+  /// for tracking response times and service level compliance.
+  created_at DateTime
+  
+  /// When the cancellation request was last modified. Reflects any status
+  /// changes or updates to rejection reasons.
+  updated_at DateTime
+  
+  /// When the cancellation request was soft deleted. Maintains audit trail for
+  /// legal compliance while removing from active customer views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_order_cancellation_requests_shopping_mal_5b421511")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_order_cancellation_requests_shopping_mal_c160ef11")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, status], map: "shopping_mall_order_cancellation_requests_shopping_mal_ee41a425")
+}
+
+/// Main table storing refund requests for order items with 'delivered'
+/// status. Tracks the customer's reason for refund and maintains links to
+/// the relevant order item and product snapshots for dispute resolution.
+///
+/// This table represents the core entity for customer-initiated refund
+/// requests, which can only be made for order items that have been
+/// delivered. The refund request process follows a specific workflow where
+/// customers submit requests with reasons, sellers respond with approval or
+/// rejection, and the system handles status transitions and notifications
+/// accordingly. Refund requests are time-limited to 7 days after delivery
+/// confirmation.
+///
+/// The table captures all essential information needed for the refund
+/// workflow including timestamps, reasons, and status tracking. Related
+/// entities handle the polymorphic relationships with customers and sellers,
+/// while snapshots preserve historical product information for audit
+/// purposes.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item for which refund is being requested. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Snapshot of the product information at time of purchase. {@link
+  /// shopping_mall_product_snapshots.id}
+  shopping_mall_product_snapshot_id String
+  
+  /// Snapshot of the product variant information at time of purchase. {@link
+  /// shopping_mall_product_variant_snapshots.id}
+  shopping_mall_product_variant_snapshot_id String
+  
+  /// Customer's reason for requesting the refund. Must be between 10 and 1000
+  /// characters explaining why they want a refund for this order item.
+  reason String
+  
+  /// Current status of the refund request in the workflow process. Valid
+  /// values: 'requested' (customer submitted), 'approved' (seller approved),
+  /// 'rejected' (seller rejected), 'cancelled' (customer cancelled).
+  status String
+  
+  /// Optional rejection reason provided by the seller when declining a refund
+  /// request. Required when status is 'rejected', must be between 10 and 500
+  /// characters.
+  rejection_reason String?
+  
+  /// Timestamp when the refund request was initially submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last updated (approval/rejection).
+  updated_at DateTime
+  
+  /// Timestamp when the refund request was deleted (soft delete for audit
+  /// trail).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  productSnapshot shopping_mall_product_snapshots @relation(fields: [shopping_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  variantSnapshot shopping_mall_product_variant_snapshots @relation(fields: [shopping_mall_product_variant_snapshot_id], references: [id], onDelete: Cascade)
+  
+  customerRelation shopping_mall_order_refund_request_of_customers?
+  sellerRelation shopping_mall_order_refund_request_of_sellers?
+  snapshots shopping_mall_order_refund_request_snapshots[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_snapshot_id], map: "shopping_mall_order_refund_requests_shopping_mall_prod_f68a3897")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_snapshot_id], map: "shopping_mall_order_refund_requests_shopping_mall_prod_7490cd26")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_order_refund_requests_shopping_mall_orde_6e0cc52e")
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Tracks refund requests initiated by customers, linking to the customer
+/// and their session at the time of request. Maintains the relationship
+/// between the customer and their refund request, preserving the customer
+/// context for audit purposes.
+///
+/// This subtype entity implements the compatible actor pattern for
+/// polymorphic ownership, ensuring referential integrity and proper data
+/// normalization. It stores customer-specific information related to the
+/// refund request including the customer ID and session, following the main
+/// entity + subtype entities pattern required for multiple actor types.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refund_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request this customer relationship belongs to. {@link
+  /// shopping_mall_order_refund_requests.id}
+  shopping_mall_order_refund_request_id String
+  
+  /// The customer who initiated this refund request. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// The customer's session when initiating the refund request. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when this customer relationship was established.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_order_refund_requests @relation(fields: [shopping_mall_order_refund_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_refund_request_id], map: "shopping_mall_order_refund_request_of_customers_shoppi_4cdc0777")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_order_refund_request_of_customers_shoppi_14f4fea3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_order_refund_request_of_customers_shoppi_97956c66")
+}
+
+/// Tracks seller responses to refund requests, linking to the seller and
+/// their session at the time of response. Maintains the relationship between
+/// the seller and their response to a refund request.
+///
+/// This subtype entity implements the compatible actor pattern for
+/// polymorphic ownership, ensuring referential integrity and proper data
+/// normalization. It stores seller-specific information related to the
+/// refund request response including the seller ID and session. The entity
+/// only exists for approved or rejected refund requests, not for pending
+/// ones.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refund_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request this seller relationship belongs to. {@link
+  /// shopping_mall_order_refund_requests.id}
+  shopping_mall_order_refund_request_id String
+  
+  /// The seller who responded to this refund request. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// The seller's session when responding to the refund request. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when this seller response was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_order_refund_requests @relation(fields: [shopping_mall_order_refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_refund_request_id], map: "shopping_mall_order_refund_request_of_sellers_shopping_d5c74d2f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_order_refund_request_of_sellers_shopping_92a58ddb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_order_refund_request_of_sellers_shopping_dd3fbf83")
+}
+
+/// Immutable records capturing the state of refund requests and their
+/// processing history for financial audit and dispute resolution.
+///
+/// This table maintains a complete audit trail of all refund request
+/// modifications, preserving historical data for legal compliance. Each
+/// snapshot records the exact state of a refund request at a specific point
+/// in time, including all fields and their values. Snapshots are created
+/// automatically when refund requests are created, approved, rejected, or
+/// otherwise modified.
+///
+/// The snapshot system ensures that critical financial data remains
+/// available for dispute resolution and regulatory compliance, even after
+/// refund requests are deleted or modified. This approach satisfies the
+/// platform's legal requirements for maintaining immutable records of all
+/// business transactions.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request this snapshot represents. {@link
+  /// shopping_mall_order_refund_requests.id}
+  shopping_mall_order_refund_request_id String
+  
+  /// Customer's reason for requesting the refund as captured in this snapshot.
+  reason String
+  
+  /// Status of the refund request at time of snapshot.
+  status String
+  
+  /// Rejection reason provided by the seller (if applicable) at time of
+  /// snapshot.
+  rejection_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_order_refund_requests @relation(fields: [shopping_mall_order_refund_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_refund_request_id], map: "shopping_mall_order_refund_request_snapshots_shopping__e889066e")
+  @@index([created_at])
+}
+
+/// Order item status history tracking for audit trail and state change
+/// monitoring.
+///
+/// This table maintains an immutable record of all status transitions for
+/// order items,
+/// providing a complete audit trail for dispute resolution and business
+/// analytics.
+/// Each record captures the exact moment a status changed, who performed the
+/// change,
+/// and the business context of that transition.
+///
+/// The table is append-only to ensure data integrity and legal compliance.
+/// Status
+/// transitions follow a defined workflow where each change must be
+/// explicitly recorded
+/// with proper authorization context.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order item whose status is being tracked. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Reference to the administrator who performed the status change, if
+  /// applicable. {@link shopping_mall_admins.id}
+  shopping_mall_admin_id String?
+  
+  /// The status of the order item at this point in time. Valid values
+  /// represent the complete order item lifecycle from payment to final
+  /// resolution.
+  status String
+  
+  /// Optional note explaining the reason for this status change, particularly
+  /// useful for manual interventions or exceptional circumstances.
+  note String?
+  
+  /// Timestamp when this status change was recorded in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_order_item_status_histories_shopping_mal_b134af1d")
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_order_item_status_histories_shopping_mal_08db33ac")
+}
+
+/// Immutable snapshots of product and variant information at the time of
+/// purchase, used for dispute resolution and audit purposes. This table
+/// captures the exact state of products when they were purchased, ensuring
+/// accurate records for customer service and legal compliance.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original product that was purchased. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// The specific variant of the product that was purchased. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Name of the product at the time of purchase. Captures the exact product
+  /// name as it appeared when the customer made their purchase.
+  name String
+  
+  /// Description of the product at the time of purchase. Maintains the full
+  /// product description as it existed during the transaction for reference in
+  /// disputes or customer service inquiries.
+  description String
+  
+  /// Base price of the product at the time of purchase. Records the product's
+  /// base price as it was when the order was placed, separate from any
+  /// variant-specific pricing.
+  base_price Float
+  
+  /// SKU code of the purchased variant. Preserves the unique identifier of the
+  /// specific product variant that was purchased.
+  sku_code String
+  
+  /// Price of the specific variant at the time of purchase. Captures the final
+  /// price of the variant as it was when the order was placed, which may
+  /// differ from the base product price.
+  variant_price Float
+  
+  /// Timestamp when this snapshot was created. Records the exact moment when
+  /// the product information was captured for this order item.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  relatedOrderItem shopping_mall_order_items?
+  refundRequests shopping_mall_refund_requests[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_order_item_product_snapshots_shopping_ma_08e2ba79")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_order_item_product_snapshots_shopping_ma_3edcf6cd")
+  @@index([created_at])
+}
+
+/// Seller profile snapshots capturing seller information at the time of
+/// purchase for historical records and dispute resolution.
+///
+/// This table maintains immutable records of seller profile data as it
+/// existed when an order was placed. It ensures accurate historical tracking
+/// for audit purposes and legal compliance, preserving seller information
+/// even if the original seller profile is modified or deleted after the
+/// purchase.
+///
+/// The snapshot includes all relevant seller profile information at the time
+/// of purchase such as shop name, description, and logo reference. This
+/// enables accurate representation of seller details as they appeared when
+/// the customer made their purchase, supporting dispute resolution and
+/// maintaining audit trails for regulatory compliance.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original seller profile. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Name of the seller's shop at the time of the order. This preserves the
+  /// seller's shop name as it appeared when the customer made their purchase,
+  /// ensuring accurate identification even if the seller changes their shop
+  /// name after the order is placed.
+  shop_name String
+  
+  /// Description of the seller's shop at the time of the order. This preserves
+  /// the seller's shop description as it existed when the customer made their
+  /// purchase, maintaining historical accuracy for audit and dispute
+  /// resolution purposes.
+  shop_description String?
+  
+  /// Reference or identifier to the seller's logo image at the time of the
+  /// order. This preserves the visual identity of the seller's shop as it
+  /// appeared when the customer made their purchase, ensuring consistent
+  /// representation in order history even if the seller updates their logo
+  /// afterward.
+  logo_image_id String?
+  
+  /// The timestamp when the seller profile snapshot was created, indicating
+  /// exactly when the order was placed and the seller information was
+  /// recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  orderItem shopping_mall_order_items?
+  refundRequests shopping_mall_refund_requests[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_item_seller_snapshots_shopping_mal_b7bc0702")
+  @@index([created_at])
+  @@index([shop_name])
+}

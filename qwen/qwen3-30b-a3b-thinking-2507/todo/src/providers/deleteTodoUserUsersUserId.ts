@@ -8,28 +8,56 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoUserUsersUserId(props: {
   user: UserPayload;
-  userId: string;
+  userId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify current user is the one being deleted
+  // Verify that the authenticated user matches the userId parameter
   if (props.user.id !== props.userId) {
     throw new HttpException(
-      "Forbidden: You can only delete your own account",
+      "Forbidden - User matching account ID is required",
       403,
     );
   }
-  // Verify the target user exists
-  const existingUser = await MyGlobal.prisma.todo_users.findUnique({
+  // Soft delete user account
+  await MyGlobal.prisma.todo_users.update({
     where: { id: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
   });
-  if (!existingUser) {
-    throw new HttpException("User not found", 404);
-  }
-  // Perform hard delete
-  await MyGlobal.prisma.todo_users.delete({
-    where: { id: props.userId },
+  // Soft delete all associated data across related tables
+  await MyGlobal.prisma.todo_todos.updateMany({
+    where: { userId: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
+  });
+  await MyGlobal.prisma.todo_histories.updateMany({
+    where: { userId: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
+  });
+  await MyGlobal.prisma.todo_user_sessions.updateMany({
+    where: { userId: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
+  });
+  await MyGlobal.prisma.todo_user_email_verifications.updateMany({
+    where: { userId: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
+  });
+  await MyGlobal.prisma.todo_user_password_resets.updateMany({
+    where: { userId: props.userId },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
   });
 }

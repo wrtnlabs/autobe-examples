@@ -5,15 +5,18 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityBbsModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsModerator";
+import type { ICommunityPlatformAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAuthorizationToken";
+import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
 export async function authorize_moderator_refresh(
   connection: api.IConnection,
   props: {
-    body: ICommunityBbsModerator.IRefresh;
+    body: ICommunityPlatformModerator.IRefresh;
   },
-): Promise<ICommunityBbsModerator.IAuthorized> {
-  return await api.functional.communityBbs.auth.moderator.refresh(connection, {
-    body: props.body,
-  });
+): Promise<ICommunityPlatformModerator.IAuthorized> {
+  return await api.functional.communityPlatform.auth.moderator.refresh(
+    connection,
+    { body: props.body },
+  );
 }

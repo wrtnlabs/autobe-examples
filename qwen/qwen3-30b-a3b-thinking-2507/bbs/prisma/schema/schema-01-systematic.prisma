@@ -1,101 +1,50 @@
-/// System-wide configuration key-value stores.
+/// System-wide configuration settings and feature flags that control
+/// platform behavior, accessibility, and user experience across the entire
+/// application.
 ///
-/// This table stores all system configuration parameters as key-value pairs.
-/// Each configuration key appears exactly once, allowing for easy reading
-/// and update of settings.
+/// Stores key-value pairs for configuration parameters, where the key
+/// represents the setting name (e.g., 'comment_min_length',
+/// 'article_max_tags') and the value represents the current setting value.
+/// This table also includes human-readable descriptions for each
+/// configuration setting.
 ///
-/// The value is stored as a string to accommodate various configuration
-/// types (boolean, numeric, string) that will be parsed by the application.
-/// Configuration updates trigger timestamps for tracking changes.
-/// Soft deletion is supported to maintain historical configuration states
-/// without removing records from the database.
-///
-/// Key configuration features include:
-/// - Feature flags for enabling/disabling platform features
-/// - Performance parameters such as rate limits and timeouts
-/// - Global settings affecting user experience
+/// These configuration settings can be modified through the platform's
+/// administrative interface to adjust platform behavior without requiring
+/// code changes. System configurations include settings related to content
+/// rules, user experience features, and platform capabilities.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_configs {
+model econ_politic_board_system_configs {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Configuration parameter name, must be unique across all configurations.
-  key String
-  
-  /// Configuration parameter value, stored as a string representing the actual
-  /// value (e.g., 'true' for boolean, '50' for integer). The application
-  /// parses this value to the appropriate type.
-  value String
-  
-  /// Timestamp when the configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when the configuration was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the configuration was soft-deleted (null means active).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([key])
-  @@index([key, deleted_at])
-}
-
-/// Channel configuration entities for organizing discussion content.
-///
-/// Stores named channels with branding and content rules to structure
-/// discussions into thematic topics. Each channel has unique branding for
-/// visual differentiation in the UI.
-///
-/// Channels are foundational to the forum's structure and cannot be deleted
-/// from the system (only hidden for moderation). Business rules dictate that
-/// a channel must have a unique name, description, and branding.
-///
-/// Channel rules define required content formatting, post types, and
-/// behavior guidelines to maintain topic focus and quality across the
-/// discussion platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_channels {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Channel name displayed to users. Must be unique across all channels.
+  /// Unique configuration key name (e.g., 'comment_min_length',
+  /// 'article_max_tags'). Used to identify this configuration setting.
   name String
   
-  /// Detailed description of the channel's purpose and scope for users.
+  /// Current value of the configuration setting (e.g., '10', '5'). Can be a
+  /// number, string, or boolean represented as string.
+  value String
+  
+  /// Human-readable description of what this configuration setting does and
+  /// its purpose in the system.
   description String
   
-  /// Hex color code used for branding. Example: #3498db.
-  branding_color String
-  
-  /// Text rules for content posted in this channel. Includes formatting
-  /// requirements and topic restrictions.
-  content_rules String
-  
-  /// Time when the channel was created.
+  /// Timestamp when this configuration setting was added to the system.
   created_at DateTime
   
-  /// Time when the channel was last updated.
+  /// Timestamp when this configuration setting was last modified.
   updated_at DateTime
   
-  /// Time when the channel was soft-deleted. Null if active.
+  /// Timestamp when this configuration setting was deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([name])
-  @@index([created_at])
 }

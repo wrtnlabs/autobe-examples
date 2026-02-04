@@ -1,0 +1,234 @@
+/// Main shopping cart container managing customer-specific cart sessions and
+/// metadata.
+///
+/// Each cart represents a unique shopping session for a customer, allowing
+/// them to add products to their cart temporarily before committing to a
+/// purchase. Carts can be active for in-progress shopping sessions or
+/// abandoned if left inactive.
+///
+/// The cart maintains association with a specific customer through foreign
+/// key reference to enable cart persistence across browser sessions and
+/// devices. Customers can have multiple carts over time, with typically one
+/// active cart per shopping session.
+///
+/// Cart status tracking supports business analytics for cart abandonment
+/// rates and shopping behavior analysis. Soft deletion enables cart
+/// preservation for analytical purposes while respecting customer data
+/// privacy.
+///
+/// All cart modifications are tracked through the cart snapshots table to
+/// maintain audit trail compliance with the platform's snapshot architecture
+/// principle.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this shopping cart. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Current status of the shopping cart: 'active' for in-progress carts,
+  /// 'abandoned' for inactive carts.
+  status String
+  
+  /// Timestamp when the cart was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the cart was soft-deleted for analytics preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  items ecommerce_mall_cart_items[]
+  snapshots ecommerce_mall_cart_snapshots[]
+  
+  @@unique([ecommerce_mall_customer_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Individual line items within shopping carts representing specific product
+/// variant selections with quantity tracking.
+///
+/// Each cart item captures a customer's selection of a particular product
+/// variant within their shopping session. Items maintain the selected
+/// variant, quantity, and pricing information as it existed when added to
+/// the cart to prevent price changes during the shopping session.
+///
+/// The cart item structure separates individual product selections from the
+/// overall cart container, allowing customers to manage multiple items
+/// independently while preserving the cart's integrity through the shopping
+/// process.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent shopping cart container that owns this line item.
+  /// {@link ecommerce_mall_carts.id}
+  ecommerce_mall_cart_id String
+  
+  /// References the selected product variant that this cart item represents.
+  /// {@link ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Quantity of this specific product variant selected in the cart. Mutable
+  /// field that can be modified during the shopping session.
+  quantity Int
+  
+  /// Snapshot of the variant price at the time the item was added to the cart.
+  /// Preserves pricing integrity during the shopping session.
+  price Float
+  
+  /// Timestamp when this cart item was initially added to the shopping cart.
+  created_at DateTime
+  
+  /// Timestamp when this cart item quantity or selection was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was removed from the shopping cart.
+  /// Supports soft deletion for cart management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart ecommerce_mall_carts @relation(fields: [ecommerce_mall_cart_id], references: [id], onDelete: Cascade)
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_cart_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_cart_id_ecomm_80aa4785")
+  @@index([ecommerce_mall_cart_id, created_at])
+  @@index([ecommerce_mall_product_variant_id])
+}
+
+/// Immutable snapshots of cart state preserving complete cart information at
+/// specific points in time.
+///
+/// Captures the entire cart state including customer information, cart
+/// metadata, and all items for audit trail purposes and abandoned cart
+/// analysis. Each snapshot represents a frozen state of the cart that cannot
+/// be modified, supporting the platform's snapshot principle where all data
+/// modifications create immutable records.
+///
+/// Used for analyzing customer behavior, recovering abandoned carts, and
+/// maintaining audit trails of cart modifications over time. Snapshots are
+/// created automatically when significant cart changes occur or at regular
+/// intervals for abandoned cart tracking.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original cart that this snapshot captures. {@link
+  /// ecommerce_mall_carts.id}.
+  ecommerce_mall_cart_id String
+  
+  /// Customer who owned the cart at snapshot time. {@link
+  /// ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Reason for creating this snapshot, such as 'cart_abandoned',
+  /// 'before_checkout', 'periodic_backup', or 'cart_modified'.
+  snapshot_reason String
+  
+  /// Total number of items in the cart at snapshot time.
+  total_items Int
+  
+  /// Total monetary value of all items in the cart at snapshot time.
+  total_value Float
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart ecommerce_mall_carts @relation(fields: [ecommerce_mall_cart_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  items ecommerce_mall_cart_snapshot_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_cart_id, created_at], map: "ecommerce_mall_cart_snapshots_ecommerce_mall_cart_id_c_d61471ce")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_cart_snapshots_ecommerce_mall_customer__4a586743")
+  @@index([snapshot_reason, created_at])
+}
+
+/// Individual items captured within cart snapshots, preserving the specific
+/// product variant selections and quantities.
+///
+/// Each record represents a single item that was present in the cart at the
+/// time the snapshot was created. This child table decomposes the repeating
+/// group of cart items from the main snapshot table, enforcing First Normal
+/// Form (1NF) by storing each item separately with its complete state
+/// including variant information, quantity, and pricing.
+///
+/// Used for detailed analysis of cart contents, abandoned item tracking, and
+/// understanding customer shopping patterns at the individual item level.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_snapshot_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent cart snapshot containing this item. {@link
+  /// ecommerce_mall_cart_snapshots.id}.
+  ecommerce_mall_cart_snapshot_id String
+  
+  /// Product variant that was selected in the cart at snapshot time. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Quantity of this specific product variant selected in the cart at
+  /// snapshot time.
+  quantity Int
+  
+  /// Price per unit of the product variant at the time the snapshot was
+  /// created.
+  unit_price Float
+  
+  /// Total price for this item (quantity × unit_price) at snapshot time.
+  total_price Float
+  
+  /// Timestamp when this snapshot item was created (matches parent snapshot
+  /// timestamp).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cartSnapshot ecommerce_mall_cart_snapshots @relation(fields: [ecommerce_mall_cart_snapshot_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_cart_snapshot_id, created_at], map: "ecommerce_mall_cart_snapshot_items_ecommerce_mall_cart_83031f45")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_cart_snapshot_items_ecommerce_mall_prod_d973ec19")
+}

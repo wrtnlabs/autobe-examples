@@ -1,166 +1,124 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
 import typia, { tags } from "typia";
 
-import { IPageIShoppingMallSeller } from "../../../../api/structures/IPageIShoppingMallSeller";
 import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSeller";
+import { IShoppingMallSellerRejectionReason } from "../../../../api/structures/IShoppingMallSellerRejectionReason";
+import { AdminAuth } from "../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { postShoppingMallAdminSellersSellerId } from "../../../../providers/postShoppingMallAdminSellersSellerId";
+import { postShoppingMallAdminSellersSellerIdReject } from "../../../../providers/postShoppingMallAdminSellersSellerIdReject";
+import { postShoppingMallAdminSellersSellerIdSuspend } from "../../../../providers/postShoppingMallAdminSellersSellerIdSuspend";
 
-@Controller("/shoppingMall/admin/sellers")
+@Controller("/shoppingMall/admin/sellers/:sellerId")
 export class ShoppingmallAdminSellersController {
   /**
-   * Retrieve a filtered and paginated list of sellers from the system. This
-   * operation operates on the shopping_mall_sellers table from the database
-   * schema and provides advanced search capabilities for finding sellers based
-   * on multiple criteria including business name, seller status, registration
-   * date ranges, and product category alignment.
+   * Reject a seller's registration application.
    *
-   * The operation supports comprehensive pagination with configurable page
-   * sizes and sorting options. Sellers can sort by registration date, business
-   * name, product count, average rating, or other relevant fields in ascending
-   * or descending order.
+   * This operation permanently denies a seller's application to join the platform as a selling entity. It is performed by an administrator after reviewing the seller's registration details. Once a seller is rejected, they cannot proceed with selling on the platform until a new registration is submitted. This action triggers a system snapshot of the rejection decision for audit and compliance purposes.
    *
-   * Security considerations include rate limiting for search operations and
-   * appropriate filtering of sensitive seller information based on the
-   * requesting user's authorization level. Only users with appropriate
-   * permissions can access detailed seller information, while basic seller
-   * lists may be available to authenticated users.
+   * The rejection must include a reason (minimum 10 characters) that explains why the application was denied, and this reason will be provided to the seller via email. Rejected seller accounts cannot log in, cannot create products, and have their shop name hidden from all public listings. If a rejected seller later submits a new application, the system will reset their status to "pending_approval" but will preserve all historical rejection records and snapshots.
    *
-   * This operation integrates with the shopping_mall_sellers table as defined
-   * in the database schema, incorporating all available seller fields and
-   * relationships. The response includes seller summary information optimized
-   * for list displays, with options to include additional details based on
-   * authorization level.
+   * This operation follows the business logic defined in the 03-seller-account.md requirements document, which states: "WHEN an administrator rejects a seller, THE system SHALL set status to 'rejected', require administrator to enter a rejection reason (minimum 10 characters), and notify seller via email." Here, the reason is provided in the request body by the administrator.
+   *
+   * If the seller id does not exist, the system returns 404 Not Found. If the seller has already been approved or is suspended, the system returns 400 Bad Request rejecting the request because only pending applications can be rejected. The seller profile snapshot is created automatically by the system at the time of this rejection.
+   *
+   * Related operations: PATCH /sellers/{sellerId}/approve (to approve a seller), POST /sellers/{sellerId}/reapply (for rejected sellers to reapply).
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for seller filtering
+   * @param sellerId Unique identifier of the seller whose registration is being rejected. Must exist in the shopping_mall_sellers table and have status 'pending_approval'.
+   * @param body The reason for rejecting the seller's registration. Must be at least 10 characters long and explain the decision clearly for compliance purposes.
+   * @x-autobe-specification Update shopping_mall_sellers set status = 'rejected', rejection_reason = $reason, updated_at = now() where seller_id = $sellerId and status = 'pending_approval'.
+   * Check if seller_id exists and status is 'pending_approval', otherwise return 404 or 400 respectively.
+   * Create a snapshot of shopping_mall_sellers state with rejection reason and timestamp, linking it to the operation.
+   * Log this rejection event with administrator ID and IP address for audit trail.
+   * Send email to seller with rejection reason if email address is verified.
+   * Return 204 No Content on success.
+   * Use database transaction for atomic update and snapshot creation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedBody()
-    body: IShoppingMallSeller.IRequest,
-  ): Promise<IPageIShoppingMallSeller.ISummary> {
-    body;
-    return typia.random<IPageIShoppingMallSeller.ISummary>();
-  }
-
-  /**
-   * View detailed information of a specific seller account registered on the
-   * shoppingMall platform. This operation retrieves data from the
-   * shopping_mall_sellers table in the database schema, providing comprehensive
-   * seller profile information including business details, registration status,
-   * contact information, and performance metrics. The seller is identified via
-   * the sellerCode path parameter, which corresponds to the seller's unique
-   * business identifier in the database system.
-   *
-   * Security is enforced through admin-only access, ensuring only authorized
-   * platform administrators can view sensitive seller account information. The
-   * operation validates that the requested seller exists and returns
-   * appropriate error responses for non-existent seller identifiers.
-   *
-   * Related operations include: PATCH /sellers (list all sellers), PUT
-   * /sellers/{sellerCode} (update seller information), and DELETE
-   * /sellers/{sellerCode} (deactivate seller account). This read-only operation
-   * is essential for administrative oversight, seller management, and
-   * compliance audits.
-   *
-   * @param connection
-   * @param sellerId Unique identifier of the target seller account. This
-   *   corresponds to the seller's primary key in the shopping_mall_sellers
-   *   table, typically a UUID value assigned during seller registration.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":sellerId")
-  public async getBySellerid(
+  @TypedRoute.Post("reject")
+  public async reject(
+    @AdminAuth()
+    admin: AdminPayload,
     @TypedParam("sellerId")
     sellerId: string,
-  ): Promise<IShoppingMallSeller> {
-    sellerId;
-    return typia.random<IShoppingMallSeller>();
+    @TypedBody()
+    body: IShoppingMallSellerRejectionReason,
+  ): Promise<void> {
+    try {
+      return await postShoppingMallAdminSellersSellerIdReject({
+        admin,
+        sellerId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Permanently removes a seller account from the shoppingMall platform. This
-   * operation directly targets the shopping_mall_sellers database table and
-   * performs a hard delete of the seller record, removing all associated data
-   * including product listings, seller-specific configuration, and verification
-   * documentation. The operation cannot be undone and all seller data is
-   * permanently erased from the system.
+   * Admin-only endpoint to permanently suspend a seller account.
    *
-   * This deletion is immediate and irreversible. All related records across the
-   * system including products, verification documents, bank accounts, and
-   * compliance history are permanently purged from the database. No archival
-   * mechanism or status flags are utilized, as the schema supports only
-   * complete hard deletion of seller records.
+   * This operation immediately restricts all actions by a suspended seller across the entire shopping mall platform. When a seller is suspended, their shop becomes fully invisible to customers—their products disappear from search results, storefronts, and category listings. All authentication tokens for this seller are immediately revoked, preventing any future access to seller-facing interfaces. The seller's account is preserved with all associated data, but any new orders or promotions they attempt to create are automatically rejected. Existing order fulfillment may be suspended pending review, with notifications sent to affected buyers.
    *
-   * Security: Only admin users can execute this operation. The system enforces
-   * strict authorization controls to ensure that only administrators with full
-   * system privileges can permanently remove seller accounts.
+   * Suspension is a restricted administrative action that must be performed by admin or superAdmin roles with appropriate authority. The suspension action does not delete the seller account or erase any historical data, preserving audit trails and compliance records. Suspended sellers can be reinstated later by an administrator if applicable and appropriate. The system will create an immutable profile snapshot capturing the exact state of the seller's shop before suspension, including shop name, description, and profile image.
+   *
+   * This operation is deliberately not idempotent and uses the POST method because suspension is considered an actionable event, not a state update. A separate endpoint exists for unsuspension. The suspension must only occur if the target seller exists and is not already suspended.
    *
    * @param connection
-   * @param sellerId Unique identifier of the target seller account to be
-   *   permanently deleted
+   * @param sellerId Unique identifier of the target seller account to suspend. This must match the seller's primary key 'id' in the shopping_mall_sellers table. This UUID is system-generated upon seller registration and remains unchanged throughout the seller's lifecycle.
+   * @x-autobe-specification Find seller by id in shopping_mall_sellers table. If seller does not exist, return 404. If seller already suspended, return 409 Conflict. Set seller is_suspended to true, update suspended_at timestamp, and log suspension event in shopping_mall_seller_profile_snapshots. Do not change account status or delete records—suspension is a temporary restriction. Trigger system-wide access restrictions: hide shop from catalog, disable product publishing, nullify pending orders, revoke authentication tokens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":sellerId")
-  public async erase(
+  @TypedRoute.Post("suspend")
+  public async suspend(
+    @AdminAuth()
+    admin: AdminPayload,
     @TypedParam("sellerId")
     sellerId: string & tags.Format<"uuid">,
   ): Promise<void> {
-    sellerId;
-    return typia.random<void>();
+    try {
+      return await postShoppingMallAdminSellersSellerIdSuspend({
+        admin,
+        sellerId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Retrieve detailed information about a specific seller account from the
-   * shoppingMall platform system. This operation operates on the
-   * shopping_mall_sellers database table and provides comprehensive seller
-   * profile data including business information, registration details, and
-   * account status.
+   * Reinstate a suspended seller account to active status in the shopping mall platform.
    *
-   * The operation requires the seller's unique identifier (sellerId) to
-   * precisely locate and retrieve the seller's complete profile information.
-   * The sellerId is the UUID primary key of the seller record in the database,
-   * ensuring unique identification regardless of code values.
+   * This operation allows administrators to restore seller account privileges after suspension due to policy violations, compliance reviews, or temporary administrative holds. The seller must currently have a status of 'suspended' for this operation to succeed; attempting to reinstate already active or pending sellers will result in an error.
    *
-   * Security and authorization: This endpoint is accessible by authenticated
-   * administrative users ('admin') who require access to seller information for
-   * oversight and support purposes. Authenticated sellers can also access this
-   * endpoint to retrieve their own profile information, but the system
-   * automatically validates that the sellerId in the path matches the seller ID
-   * authenticated in the user's JWT token. Sellers cannot access other sellers'
-   * profiles.
+   * The system automatically clears the suspension reason field upon successful reinstatement and updates the updated_at timestamp. A complete audit log entry is created recording who performed the reinstatement and when. All associated seller data including shop name, products, and customer relationships remain unchanged and instantly become accessible to customers again. The seller receives a system notification of the status change.
    *
-   * Data integrity: All fields in the response are sourced directly from the
-   * shopping_mall_sellers table and reflect the current state of the seller's
-   * account as stored in the database. This includes seller business
-   * information, contact details, registration date, verification status, and
-   * account permissions.
-   *
-   * This operation supports both seller self-service access and administrative
-   * oversight, with different data visibility levels based on the requesting
-   * actor's authorization level. For regular users, sensitive information such
-   * as bank account details and internal notes is excluded from the response.
-   * Administrators receive a complete profile with full details including
-   * internal system flags and historical data.
-   *
-   * Related operations: Seller update (PUT /sellers/{sellerId}), seller status
-   * change (PUT /sellers/{sellerId}/status), and seller list search (PATCH
-   * /sellers).
+   * This operation is restricted to administrators with seller management permissions. It does not modify any other aspects of the seller's profile, pending orders, or financial status. The operation performs a direct status transition from 'suspended' to 'active' according to the shopping_mall_sellers database schema which does not support soft delete functionality.
    *
    * @param connection
-   * @param sellerCode Unique business identifier code of the target seller
-   *   (global scope). This is a human-readable code assigned to each seller
-   *   during registration instead of a UUID identifier, providing better
-   *   usability in URLs and API integrations.
+   * @param sellerId Unique identifier of the seller account to be reinstated. This UUID corresponds to the primary key of the shopping_mall_sellers table.
+   * @x-autobe-specification Query shopping_mall_sellers table with sellerId parameter. Verify seller status is 'suspended' before updating to 'active'. Update status and clear suspension_reason if exists. Log action in audit trail. Return updated seller record. Enforce admin authorization before execution.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":sellerCode")
-  public async getBySellercode(
-    @TypedParam("sellerCode")
-    sellerCode: string,
+  @TypedRoute.Post()
+  public async update(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("sellerId")
+    sellerId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallSeller> {
-    sellerCode;
-    return typia.random<IShoppingMallSeller>();
+    try {
+      return await postShoppingMallAdminSellersSellerId({
+        admin,
+        sellerId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

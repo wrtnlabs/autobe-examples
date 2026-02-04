@@ -1,255 +1,85 @@
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
-import typia from "typia";
+import typia, { tags } from "typia";
 
-import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingMallOrderItem";
 import { IPageIShoppingMallOrderItem } from "../../../../../api/structures/IPageIShoppingMallOrderItem";
+import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingMallOrderItem";
+import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
+import { getShoppingMallCustomerOrdersOrderIdItems } from "../../../../../providers/getShoppingMallCustomerOrdersOrderIdItems";
+import { getShoppingMallCustomerOrdersOrderIdItemsOrderItemId } from "../../../../../providers/getShoppingMallCustomerOrdersOrderIdItemsOrderItemId";
 
-@Controller("/shoppingMall/customer/orders/:orderCode/items")
+@Controller("/shoppingMall/customer/orders/:orderId/items")
 export class ShoppingmallCustomerOrdersItemsController {
   /**
-   * Create a new order item associated with a specific shopping order in the
-   * e-commerce platform.
+   * Retrieve all order items associated with a specific order.
    *
-   * This operation allows customers or system processes to add individual
-   * product variants to an existing order. Each item must reference a valid
-   * product variant (SKU) and specify the quantity to be purchased. The order
-   * must already exist and be in a state that permits item addition (typically
-   * 'pending' or 'draft'), as items cannot be added to completed, cancelled, or
-   * shipped orders.
+   * This operation returns a complete list of all items that make up a particular order, including detailed product information, pricing, quantities, seller details, and item status. It is used by both customers to review their order contents and by sellers to manage their portion of multi-seller orders.
    *
-   * The system validates that the requested product variant exists, is
-   * available in the requested quantity, belongs to the same seller as
-   * specified in the order, and is active (not discontinued). If inventory is
-   * insufficient, the operation returns an error. Pricing is locked at the time
-   * of creation, using the current variant price from
-   * shopping_mall_product_variant_pricing, ensuring price stability even if the
-   * product price changes later.
+   * The operation retrieves data from the shopping_mall_order_items table, which contains the core order item information with fields including quantity, unit price, and status. It joins with shopping_mall_products to retrieve product names, descriptions, and category information. It also joins with shopping_mall_sellers to provide seller names, logo URLs, and shop information. Additionally, it links with shopping_mall_order_item_snapshots to ensure historical accuracy of product and seller states at the time of order creation, preserving the integrity of transaction records for auditing and dispute resolution purposes.
    *
-   * The item is immediately associated with the order and recorded in the
-   * shopping_mall_order_items table. Once successfully created, the order's
-   * total amount is recalculated, and inventory for the variant is reserved in
-   * the shopping_mall_variant_inventory table. This operation does not trigger
-   * payment processing; it only adds items to the order. Related operations
-   * include: updating order items via PUT /orders/{orderCode}/items/{itemId},
-   * deleting items via DELETE /orders/{orderCode}/items/{itemId}, and
-   * retrieving order items via GET /orders/{orderCode}/items.
+   * For performance optimization, the query uses efficient indexing on the orderId parameter, ensuring fast response times even with large order histories. Only the customer who created the order or the associated seller can access this data.
    *
-   * Security: The customer must be authenticated as the owner of the order or
-   * have admin privileges. The operation verifies order ownership via the
-   * orderCode and the authenticated user's identity, preventing unauthorized
-   * modifications.
+   * Historical state of products and sellers at order creation is preserved in linked shopping_mall_order_item_snapshots records. Order items are hard-deleted from the system when purged, but their state is preserved in snapshots for audit purposes.
+   *
+   * Related operations include GET /orders/{orderId} for comprehensive order details.
    *
    * @param connection
-   * @param orderCode Unique business identifier code of the target order
-   *   (global scope)
-   * @param body Details required to create a new order item, including the
-   *   product variant and quantity.
+   * @param orderId Unique identifier of the target order (UUID format). This parameter is required to identify the specific order whose items are being retrieved. Must be a valid UUID.
+   * @x-autobe-specification Query shopping_mall_order_items table filtered by orderId. Join with shopping_mall_products to get product names and descriptions. Join with shopping_mall_sellers to get seller information. Join with shopping_mall_order_item_snapshots for historical state at order creation. Return paginated results with pagination metadata. Implement efficient indexing on orderId field for performance.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
-    @TypedParam("orderCode")
-    orderCode: string,
-    @TypedBody()
-    body: IShoppingMallOrderItem.ICreate,
-  ): Promise<IShoppingMallOrderItem> {
-    orderCode;
-    body;
-    return typia.random<IShoppingMallOrderItem>();
-  }
-
-  /**
-   * Retrieve all items associated with a specific order in the shopping mall
-   * system. This operation performs a selective search across the
-   * shopping_mall_order_items table, returning a paginated list of all product
-   * variants and quantities linked to the specified order.
-   *
-   * The operation requires the orderCode parameter which uniquely identifies
-   * the target order. The code should be used instead of ordinal ID when
-   * available, as it provides a human-readable identifier for the order. This
-   * endpoint returns only the items associated with the specific order, not the
-   * full order details.
-   *
-   * Security: This operation requires customer authorization for viewing their
-   * own orders or seller/admin authorization for viewing orders they're
-   * responsible for. The system checks ownership by verifying the requesting
-   * user's relationship to the specified orderCode as defined in the
-   * order_items association.
-   *
-   * Pagination and filtering: The request body supports advanced filtering and
-   * pagination parameters including limit, offset, and search fields for
-   * product names or variant attributes. Results are sorted chronologically by
-   * item creation date by default.
-   *
-   * Error conditions: Returns 404 if orderCode is invalid or not found, 403 if
-   * the requester lacks authority to view this order, and 422 if request
-   * parameters are malformed. Related operations: GET /orders/{orderCode} for
-   * full order details, POST /orders to create new orders.
-   *
-   * @param connection
-   * @param orderCode Unique business identifier code of the target order
-   *   (global scope)
-   * @param body Search parameters for filtering and pagination of order items
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
+  @TypedRoute.Get()
   public async index(
-    @TypedParam("orderCode")
-    orderCode: string,
-    @TypedBody()
-    body: IShoppingMallOrderItem.IRequest,
-  ): Promise<IPageIShoppingMallOrderItem.ISummary> {
-    orderCode;
-    body;
-    return typia.random<IPageIShoppingMallOrderItem.ISummary>();
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("orderId")
+    orderId: string & tags.Format<"uuid">,
+  ): Promise<IPageIShoppingMallOrderItem> {
+    try {
+      return await getShoppingMallCustomerOrdersOrderIdItems({
+        customer,
+        orderId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Retrieve a specific order item from an order using its unique code. This
-   * operation accesses the shopping_mall_order_items table and returns detailed
-   * information about the item as it existed at the time of the order
-   * placement, including pricing and inventory state captured at time of
-   * purchase.
+   * Retrieve detailed information about a specific item within a customer's order. This operation accesses the shopping_mall_order_items table to fetch comprehensive data about an individual product item in an order, including all relevant contextual information from related entities.
    *
-   * The order and item codes are used as composite unique identifiers to locate
-   * the specific order item. The system uses the unique constraint defined on
-   * (order_id, code) in the shopping_mall_order_items table. The orderCode
-   * represents the shopping_mall_orders.code field, and itemCode represents the
-   * shopping_mall_order_items.code field. Both are human-readable business
-   * identifiers rather than system-generated UUIDs.
+   * The operation provides full visibility into the product detail as it was at the time of purchase, including the product name, description, base price, and seller information. It also retrieves the specific variant selected (color, size, etc.), its price, and stock quantity at purchase time. The seller's shop name and logo are included to maintain historical accuracy. The item's status and fulfillment information are returned to show current state.
    *
-   * Security considerations include verification that the requesting user has
-   * permission to access this order (either as the order owner or as an admin).
-   * The system cross-checks the order's customerId field against the
-   * authenticated user ID. Access is denied to users who did not create the
-   * order and who are not administrators.
+   * This endpoint is essential for customers who need to verify order details, check historical pricing, and review product specifications after purchase. It is also critical for customer service agents handling inquiries and for sellers managing support requests.
    *
-   * The operation also verifies that both the order and the item exist and are
-   * not marked for deletion. If the order status is 'cancelled' or 'refunded',
-   * the item data is still accessible for record-keeping and dispute resolution
-   * purposes.
-   *
-   * In the event the order code or item code does not exist in the system, a
-   * 404 Not Found error is returned. Requesting invalid codes is strictly
-   * prohibited and will not return empty results.
-   *
-   * This operation complements GET /orders/{orderCode} to provide deeper
-   * visibility into individual items within an order. It is used for order
-   * tracking, customer service inquiries, and return processing when customers
-   * need exact product details at the time of purchase.
-   *
-   * Related operations: GET /orders/{orderCode} (retrieves entire order
-   * summary), PATCH /orders/{orderCode}/items (lists all items in an order),
-   * and POST /orders/{orderCode}/items (creates new items in an order, though
-   * this typically happens during cart checkout).
+   * For audit and dispute resolution, this operation provides a complete snapshot of the purchase transaction as recorded in the system. The data structure ensures consistency with the product snapshots and order snapshots that are maintained for compliance purposes.
    *
    * @param connection
-   * @param orderCode Unique business identifier code of the target order
-   *   (global scope)
-   * @param itemCode Unique business identifier code of the target order item
-   *   within the order (scoped to order)
+   * @param orderId Unique identifier of the target order (in UUID format)
+   * @param orderItemId Unique identifier of the target order item (in UUID format)
+   * @x-autobe-specification Query shopping_mall_order_items table by order_id and item_id to retrieve the specific order item. Join with shopping_mall_orders to validate ownership and order status. Join with shopping_mall_products to get product name and description. Join with shopping_mall_product_variants to get variant options and pricing. Join with shopping_mall_sellers to get seller information. Return all fields from shopping_mall_order_items with expanded reference data from related tables. Apply authorization check to ensure requesting user owns the order.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":itemCode")
+  @TypedRoute.Get(":orderItemId")
   public async at(
-    @TypedParam("orderCode")
-    orderCode: string,
-    @TypedParam("itemCode")
-    itemCode: string,
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("orderId")
+    orderId: string & tags.Format<"uuid">,
+    @TypedParam("orderItemId")
+    orderItemId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallOrderItem> {
-    orderCode;
-    itemCode;
-    return typia.random<IShoppingMallOrderItem>();
-  }
-
-  /**
-   * Update a specific order item within an order. This operation modifies the
-   * quantity and pricing of an order item based on the orderCode and itemCode
-   * path parameters. The operation updates the OrderItems table in the database
-   * schema, ensuring that order item changes reflect real-time inventory
-   * adjustments and order summary recalculations.
-   *
-   * The order item must belong to the specified order, and the itemCode must
-   * correspond to a valid product variant. The operation validates that the
-   * requested quantity does not exceed available inventory for the product
-   * variant. If inventory is insufficient, the operation returns a validation
-   * error.
-   *
-   * This operation is accessible only to the customer who created the order.
-   * System administrators also have access for order management and customer
-   * service purposes. The operation triggers inventory adjustments in the
-   * ProductVariantInventory table, updating available stock counts based on the
-   * change in order item quantity.
-   *
-   * Order items cannot be added or removed through this endpoint - this
-   * operation is strictly for modifying existing item quantities. This design
-   * maintains order integrity and prevents manipulation of order composition
-   * through direct modification.
-   *
-   * Related operations: GET /orders/{orderCode} to retrieve order details,
-   * PATCH /orders/{orderCode}/items to list all order items, and GET
-   * /product-variants/{itemCode} to verify product variant details before
-   * modification.
-   *
-   * @param connection
-   * @param orderCode Unique business identifier code of the target order
-   *   (global scope)
-   * @param itemCode Unique business identifier code of the target order item
-   *   within the order (scoped to order)
-   * @param body Updated quantity and pricing details for the order item
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":itemCode")
-  public async update(
-    @TypedParam("orderCode")
-    orderCode: string,
-    @TypedParam("itemCode")
-    itemCode: string,
-    @TypedBody()
-    body: IShoppingMallOrderItem.IUpdate,
-  ): Promise<IShoppingMallOrderItem> {
-    orderCode;
-    itemCode;
-    body;
-    return typia.random<IShoppingMallOrderItem>();
-  }
-
-  /**
-   * Delete a specific order item from an existing order. This operation
-   * permanently removes the specified order item from the order's items
-   * collection in the shopping_mall_order_items table. The operation references
-   * the order's code identifier (not UUID) for business readability in the URL
-   * path.
-   *
-   * The customer must have a valid session and the order must be in a state
-   * permitting modification (e.g., not shipped or completed). The system checks
-   * that the item belongs to the specified order and that the customer is the
-   * owner of the order before deletion.
-   *
-   * Implementation note: This operation performs a hard delete, immediately
-   * removing the item record from the database. The deletion affects inventory
-   * levels, order totals, and tax calculations. After successful deletion, the
-   * order status may transition from "pending" to "updated" as appropriate.
-   * Related operations: GET /orders/{orderCode} (retrieve order), PATCH
-   * /orders/{orderCode}/items (list items).
-   *
-   * @param connection
-   * @param orderCode Unique business identifier code of the target order
-   *   (global scope)
-   * @param itemCode Unique business identifier code of the target order item
-   *   (scoped to order)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":itemCode")
-  public async erase(
-    @TypedParam("orderCode")
-    orderCode: string,
-    @TypedParam("itemCode")
-    itemCode: string,
-  ): Promise<void> {
-    orderCode;
-    itemCode;
-    return typia.random<void>();
+    try {
+      return await getShoppingMallCustomerOrdersOrderIdItemsOrderItemId({
+        customer,
+        orderId,
+        orderItemId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -14,18 +15,22 @@ export namespace TodoUserAtSummaryTransformer {
         id: true,
         email: true,
         password_hash: true,
+        display_name: true,
+        email_verified: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        todo_user_sessions: true,
+        sessions: true,
+        passwordResets: true,
+        emailVerifications: true,
+        todos: true,
       },
     } satisfies Prisma.todo_usersFindManyArgs;
   }
   export async function transform(input: Payload): Promise<ITodoUser.ISummary> {
     return {
       id: input.id,
-      name: input.email.split("@")[0],
-      email: input.email,
+      display_name: input.display_name ?? "",
     };
   }
 }

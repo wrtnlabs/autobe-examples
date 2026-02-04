@@ -1,364 +1,371 @@
-/// System-wide configuration settings and feature flags governing the
-/// application's behavior.
+/// System-wide configuration settings including feature flags, performance
+/// thresholds, and operational parameters.
 ///
-/// Stores modifiable parameters that control forum functionality, such as
-/// feature toggles, display settings, rate limits, and system behaviors.
-/// Administrative users can enable or disable features through this
-/// centralized configuration system.
+/// This singleton table stores essential operational parameters that control
+/// the behavior of the entire Economic/Political Discussion Board system.
+/// All values in this table are system configuration settings that determine
+/// functionality, performance limits, and operational constraints.
 ///
-/// Each configuration key represents a specific behavioral control point
-/// that can be updated dynamically without code deployment. The active flag
-/// determines whether the configuration is currently applied to the running
-/// system.
+/// This table serves as the authoritative source for feature enablement,
+/// rate limits, search thresholds, and system behavior control.
+/// Changes to these settings require administrative access and are typically
+/// managed by the DevOps team through deployment pipelines rather than
+/// runtime interfaces.
+///
+/// The table contains boolean flags for feature enablement, numeric
+/// thresholds for performance optimization, and string parameters for
+/// operational configuration.
+/// All values are persisted and persist across application restarts.
+///
+/// This table is the configuration backbone of the entire system,
+/// determining what features are available, how the system performs under
+/// load, and how various components behave.
+///
+/// Note: This table is classified as primary since it's the authoritative
+/// configuration source, even though not directly managed by end-users.
+///
+/// The table includes:
+/// - Feature flags for enabling/disabling system capabilities
+/// - Performance thresholds for search, upload, and response times
+/// - Operational parameters for file size limits, connection rates, and caching
+/// - Tracking fields for audit purposes (created_at, updated_at)
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_configurations {
+model economic_discussion_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifier. Must be a dot-separated hierarchical
-  /// name (e.g., 'feature.upload.enabled'). All keys must be unique.
-  key String
-  
-  /// Configuration value stored as string. Can represent boolean, number, or
-  /// text values encoded as string (e.g., "true", "5000", "default_template").
-  value String
-  
-  /// Human-readable description explaining the purpose and impact of this
-  /// configuration setting.
-  description String
-  
-  /// Indicates whether this configuration is currently active and applied to
-  /// the system. Inactive configurations are preserved for historical
-  /// reference but ignored by the application.
-  active Boolean
-  
-  /// Timestamp when this configuration was first created in the system.
+  /// Timestamp when this configuration was created (immutable).
   created_at DateTime
   
-  /// Timestamp of the last modification to this configuration.
+  /// Timestamp when this configuration was last modified.
   updated_at DateTime
   
-  /// Timestamp when this configuration was logically deleted. NULL means the
-  /// configuration is still active (not deleted). Used for audit trail and
-  /// recovery of configuration changes.
-  deleted_at DateTime?
+  /// Flag indicating whether full-text search functionality is enabled
+  /// system-wide.
+  search_enabled Boolean
+  
+  /// Minimum number of characters required in search query to trigger
+  /// full-text search (prevents overly broad queries).
+  article_search_threshold Int
+  
+  /// Maximum number of search results to return per page.
+  search_result_limit Int
+  
+  /// Flag indicating whether file uploads (for articles) are enabled
+  /// system-wide.
+  file_upload_enabled Boolean
+  
+  /// Maximum file size allowed for uploads in megabytes (enforces 50MB limit
+  /// per file).
+  max_file_size_mb Int
+  
+  /// Maximum number of files/images allowed per article (enforces 5-file
+  /// limit).
+  max_files_per_article Int
+  
+  /// Flag indicating whether comments on articles are enabled system-wide.
+  comment_enabled Boolean
+  
+  /// Minimum character length required for a comment (enforces 5-character
+  /// minimum).
+  min_comment_length Int
+  
+  /// Maximum character length allowed for a comment (enforces 1,000-character
+  /// limit).
+  max_comment_length Int
+  
+  /// Flag indicating whether citizens can submit requests to become
+  /// administrators.
+  admin_request_enabled Boolean
+  
+  /// Flag indicating whether a ban reason is mandatory when banning users
+  /// (enforces 10-character minimum).
+  ban_reason_required Boolean
+  
+  /// Maximum number of concurrent sessions allowed per user (enforces
+  /// reasonable session limits).
+  max_sessions_per_user Int
+  
+  /// Number of hours before a session expires (sets cookie/JWT expiry time).
+  session_expiry_hours Int
+  
+  /// Flag indicating whether client-side caching is enabled for improved
+  /// performance.
+  cache_enabled Boolean
+  
+  /// Time to live for cached content in seconds. Sets duration for static
+  /// content caching.
+  cache_ttl_seconds Int
+  
+  /// Flag indicating whether the system is in maintenance mode (disables most
+  /// user features).
+  maintenance_mode Boolean
+  
+  /// Flag indicating whether system emails (password resets, notifications)
+  /// are enabled.
+  email_notification_enabled Boolean
+  
+  /// SMTP host address for outgoing email notifications. Configured by system
+  /// administrator.
+  email_smtp_host String?
+  
+  /// SMTP port address for outgoing email notifications. Typically 587 or 465.
+  email_smtp_port Int?
+  
+  /// Username for SMTP authentication when sending system emails.
+  email_smtp_username String?
+  
+  /// Display name used in system-generated emails (e.g., "Economic Discussion
+  /// Board").
+  email_sender_name String?
+  
+  /// Email address used as sender for system-generated emails (e.g.,
+  /// "noreply@economicsite.com").
+  email_sender_address String?
+  
+  /// Flag indicating whether PostgreSQL GIN trigram indexes are enabled for
+  /// fuzzy search support.
+  search_trigram_enabled Boolean
+  
+  /// Minimum similarity threshold (0.0-1.0) for fuzzy matching in search
+  /// queries. Higher = more exact matches.
+  search_fuzzy_threshold Float
+  
+  /// Flag indicating whether system automatically archives old comments after
+  /// 1 year (for performance).
+  auto_archive_old_comments Boolean
+  
+  /// Number of days after which comments are considered "old" and eligible for
+  /// archiving.
+  auto_archive_days Int
+  
+  /// Maximum number of articles allowed in a single section before warning the
+  /// administrator of potential overload.
+  max_articles_per_section Int
+  
+  /// Maximum number of tags allowed per article (enforces 10-tag limit).
+  max_tags_per_article Int
+  
+  /// Flag indicating whether system should suggest tags to users as they type.
+  auto_tag_suggestions Boolean
+  
+  /// Maximum number of requests allowed per minute per IP address (enforces
+  /// 100 requests per minute limit).
+  rate_limit_requests_per_minute Int
+  
+  /// Maximum number of login attempts allowed per email address within 15
+  /// minutes.
+  rate_limit_login_attempts Int
+  
+  /// Maximum number of administrator actions (ban/delete) allowed per minute
+  /// per admin to prevent abuse.
+  max_admin_actions_per_minute Int
+  
+  /// Flag indicating whether all critical system actions are logged for
+  /// security auditing.
+  audit_logs_enabled Boolean
+  
+  /// Number of days to retain audit logs before auto-deletion of old records.
+  audit_log_retention_days Int
+  
+  /// Flag indicating whether the data retention policy is enforced to keep
+  /// banned users' content.
+  data_retention_enabled Boolean
+  
+  /// Flag indicating whether automated backups of content are performed daily.
+  content_backups_enabled Boolean
+  
+  /// Number of days to retain automated content backups before deletion.
+  backup_retention_days Int
+  
+  /// Experimental feature flag for enabling new UI components (not used in
+  /// production yet).
+  feature_flag_new_ui Boolean
+  
+  /// Experimental feature flag for enabling v2 API endpoints (not used in
+  /// production yet).
+  feature_flag_api_v2 Boolean
+  
+  /// Experimental feature flag enabling community moderation features (not
+  /// used in production yet).
+  feature_flag_community_moderation Boolean
+  
+  /// Experimental feature flag enabling AI-powered article recommendations
+  /// (not used in production yet).
+  feature_flag_ai_recommendations Boolean
+  
+  /// Feature flag enabling dark mode interface for all users.
+  feature_flag_dark_mode Boolean
+  
+  /// Feature flag enabling multi-language support for content (English only
+  /// currently).
+  feature_flag_language_support Boolean
+  
+  /// Feature flag enabling mobile app integration and features.
+  feature_flag_mobile_app Boolean
+  
+  /// Feature flag enabling daily email digests of article activity.
+  feature_flag_email_digest Boolean
+  
+  /// Feature flag enabling emoji reactions on comments.
+  feature_flag_emoji_reactions Boolean
+  
+  /// Feature flag enabling administrators to pin important articles to top of
+  /// section.
+  feature_flag_pinned_articles Boolean
+  
+  /// Feature flag enabling users to follow specific discussion topics.
+  feature_flag_topic_following Boolean
+  
+  /// Feature flag enabling user achievement badges for participation.
+  feature_flag_user_badges Boolean
+  
+  /// Feature flag enabling users to view their past search queries.
+  feature_flag_search_history Boolean
+  
+  /// Feature flag enabling users to see who viewed their profile.
+  feature_flag_profile_views Boolean
+  
+  /// Feature flag enabling users to hide their online status.
+  feature_flag_privacy_mode Boolean
   
   //----
   // RELATIONS
   //----
-  @@unique([key])
-  @@index([active])
-}
-
-/// System-wide file upload restrictions governing attachment size, type, and
-/// quantity limits for posts and comments.
-///
-/// Defines the technical constraints for all file uploads in the forum
-/// system, ensuring consistent policy enforcement across all user
-/// interactions. This configuration table establishes non-negotiable limits
-/// on file size, permitted MIME types, and the maximum number of files that
-/// can be attached to a single post.
-///
-/// These restrictions are applied globally to both post and comment
-/// attachments and are enforced by the application layer before any file
-/// upload processing occurs. The values in this table constitute the
-/// definitive policy for file upload operations and must be updated by
-/// administrators who have elevated privileges.
-///
-/// All attachments must comply with the declared constraints - any attempt
-/// to upload a file that exceeds the size limit, uses a disallowed
-/// extension, or exceeds the per-post limit will result in immediate
-/// rejection with a user-facing error message.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_upload_limits {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  componentStatuses economic_discussion_component_statuses[]
   
-  /// Maximum allowed file size in bytes for any single uploaded file. The
-  /// system enforces a strict threshold of 5,242,880 bytes (5MB) to ensure
-  /// performance and storage efficiency.
-  max_file_size Int
-  
-  /// Comma-separated list of file extensions permitted for uploads. Must
-  /// include: .jpg, .jpeg, .png, .gif, .pdf, .txt, .docx, .csv. Any other file
-  /// MIME types will be rejected at the application layer.
-  allowed_file_types String
-  
-  /// Maximum number of files that can be attached to a single post or comment.
-  /// Limits the total count of attachment files per post to prevent abuse or
-  /// performance degradation.
-  max_files_per_post Int
-  
-  /// Timestamp of when this upload limit configuration was first created in
-  /// the system. Used for audit trail and change tracking.
-  created_at DateTime
-  
-  /// Timestamp of the most recent modification to this upload limit
-  /// configuration. Tracks when administrators last revised the file upload
-  /// restrictions.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@index([created_at])
   @@index([updated_at])
+  @@index([created_at, updated_at])
 }
 
-/// Tracks moderation flags for posts triggered by three or more distinct
-/// user reports.
+/// Status tracking for application components (search engine, file storage,
+/// email service) with health indicators and last check timestamps.
 ///
-/// This subsidiary table records when a post has accumulated sufficient
-/// reports from distinct users to trigger automated moderation review. Each
-/// flag represents a single post that has reached the threshold requiring
-/// administrative attention. The table does not store individual report
-/// details but aggregates the count of distinct reporters.
+/// This table monitors the operational health of critical system components.
+/// Each record represents the current status of a specific system component,
+/// with the most recent check timestamp and any error details from the last
+/// health check.
 ///
-/// This table exists purely to support the moderation workflow of posts and
-/// has no independent user operations. It's automatically created and
-/// managed by the system when report thresholds are met, and is referenced
-/// by moderation systems to identify posts needing review.
+/// The system automatically updates these records periodically through
+/// health monitoring services. Administrators use this data to identify
+/// failing components and troubleshoot infrastructure issues.
+///
+/// Relationship: Each component status is linked to a specific configuration
+/// in economic_discussion_configurations.
+///
+/// Status values are typically: 'healthy', 'degraded', 'critical', 'unknown'.
+///
+/// No soft delete required as component status records are updated rather
+/// than deleted.
+///
+/// This table is classified as subsidiary because it supports the
+/// economic_discussion_configurations table and is managed by system
+/// infrastructure, not direct user interaction.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_moderation_flags {
+model economic_discussion_component_statuses {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The post that has been flagged for moderation. {@link
-  /// economic_forum_posts.id}.
-  economic_forum_post_id String
+  /// Configuration record for this component. {@link
+  /// economic_discussion_configurations.id}.
+  economic_discussion_configurations_id String
   
-  /// Total number of distinct users who have reported this post. When this
-  /// reaches 3 or more, the moderation flag is activated.
-  report_count Int
-  
-  /// Timestamp when the moderation flag was activated (i.e., when report_count
-  /// reached threshold).
+  /// Record creation timestamp in UTC.
   created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  /// Current health status of the component. Valid values: 'healthy',
+  /// 'degraded', 'critical', 'unknown'.
+  status String
+  
+  /// Timestamp of the last health check performed for this component.
+  last_check_at DateTime
+  
+  /// Error message from the most recent health check, if any. Empty string if
+  /// no error occurred.
+  error_message String?
   
   //----
   // RELATIONS
   //----
-  post economic_forum_posts @relation(fields: [economic_forum_post_id], references: [id], onDelete: Cascade)
+  configuration economic_discussion_configurations @relation(fields: [economic_discussion_configurations_id], references: [id], onDelete: Cascade)
   
-  @@unique([economic_forum_post_id])
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_configurations_id, last_check_at], map: "economic_discussion_component_statuses_economic_discus_94f6ed4b")
+  @@index([status, last_check_at])
 }
 
-/// Audit log of all administrative actions including bans, post deletions,
-/// and moderation approvals.
+/// Metadata about system versions, build times, and deployment information
+/// for audit and diagnostics.
 ///
-/// Records immutable events when administrators perform system management
-/// actions. Each audit entry captures the actor who performed the action,
-/// the type of target entity affected, the specific action taken, and the
-/// reason provided.
+/// Stores immutable deployment records for version control, debugging, and
+/// operational audit. Each record represents a single deployment event and
+/// captures the exact software version, build timestamp, deployment
+/// timestamp, git commit hash, environment, and additional metadata for
+/// diagnostic purposes. Records are append-only and permanently retained as
+/// part of system audit history.
 ///
-/// This table is critical for accountability, legal compliance, and
-/// operational transparency. Audit entries are created once and never
-/// modified, ensuring data integrity of system actions.
-///
-/// Multiple actors (users and admins) can perform audits, so the actor_type
-/// discriminator field indicates whether the action came from a user or
-/// admin account. The target_type field identifies the entity type being
-/// modified (e.g., "post", "user", "comment").
+/// This table is managed by the deployment pipeline, not by users. It has no
+/// direct user interaction, no editing capability, and no role-based
+/// permissions since it's purely operational metadata for internal
+/// diagnostics and changelog generation.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_system_audits {
+model economic_discussion_deployment_metadata {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User who performed the audit action. {@link economic_forum_users.id}.
-  user_id String?
+  /// Application version number in semver format (e.g., "1.2.3").
+  version String
   
-  /// Admin who performed the audit action. {@link economic_forum_admins.id}.
-  admin_id String?
+  /// UTC timestamp when the application was built.
+  build_time DateTime
   
-  /// Type of actor who performed the action. Values: "user" or "admin". Used
-  /// to determine which actor table the foreign key references.
-  actor_type String
+  /// UTC timestamp when this version was deployed to the target environment.
+  deployment_time DateTime
   
-  /// Type of entity that was affected by the audit action. Examples: "post",
-  /// "comment", "user", "admin", "attachment". Used to identify the context of
-  /// the action.
-  target_type String
+  /// Full git commit hash that was built and deployed.
+  git_commit String
   
-  /// ID of the entity that was affected by the audit action. References a
-  /// record in another table (e.g., economic_forum_posts,
-  /// economic_forum_users).
-  target_id String
+  /// Target deployment environment (e.g., "production", "staging",
+  /// "development").
+  env String
   
-  /// The specific administrative action performed. Values: "ban", "unban",
-  /// "delete", "restore", "approve", "reject", "modify". Follows standard
-  /// moderation action taxonomy.
-  action String
+  /// JSON-formatted string containing optional additional deployment metadata
+  /// (e.g., CI pipeline URL, build server info, custom tags).
+  additional_metadata String?
   
-  /// Detailed explanation provided by the administrator for the action taken.
-  /// Required for accountability and audit review.
-  reason String
-  
-  /// Timestamp when the audit entry was created. This is immutable - the time
-  /// the administrative action was performed.
+  /// Timestamp when this deployment record was created in the database.
   created_at DateTime
   
-  /// Soft delete timestamp for audit entries. Required to maintain audit trail
-  /// integrity without deleting records from the database.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user economic_forum_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  admin economic_forum_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  @@index([user_id, created_at])
-  @@index([admin_id, created_at])
-  @@index([target_id, created_at])
-  @@index([action, created_at])
-}
-
-/// Email verification tokens for users and administrators to confirm
-/// ownership of email addresses.
-///
-/// Records generated during user registration or email change workflows.
-/// Contains unique verification tokens with expiration time to ensure secure
-/// email confirmation.
-///
-/// System automatically generates these tokens and sends them via email.
-/// When a user clicks the verification link, the system validates the token
-/// and records the confirmation timestamp.
-///
-/// The token is invalidated after expiration or upon confirmation. Soft
-/// delete is supported to maintain audit trails while retaining the ability
-/// to identify invalid tokens.
-///
-/// Uses actor_type to differentiate between user and admin verification
-/// records, with corresponding foreign keys to economic_forum_users and
-/// economic_forum_admins.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The user who requested email verification. {@link
-  /// economic_forum_users.id}.
-  economic_forum_user_id String?
-  
-  /// The admin who requested email verification. {@link
-  /// economic_forum_admins.id}.
-  economic_forum_admin_id String?
-  
-  /// Type of actor this verification record belongs to. Valid values: 'user'
-  /// or 'admin'. Used to determine which actor table the foreign key
-  /// references.
-  actor_type String
-  
-  /// Unique random token generated for email verification. Used in
-  /// verification link sent to user's email address. Must be encrypted in
-  /// transit and at rest.
-  token String
-  
-  /// Timestamp when the verification token was created and issued.
-  created_at DateTime
-  
-  /// Timestamp when the verification token expires. After this point, the
-  /// token is invalidated and cannot be used for verification.
-  expired_at DateTime
-  
-  /// Timestamp when the email address was successfully verified by the user.
-  /// NULL if verification is pending or failed.
-  confirmed_at DateTime?
-  
-  /// Timestamp when the verification record was soft-deleted. NULL means the
-  /// record is active. Used to retain audit trail for revoked or expired
-  /// tokens.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user economic_forum_users? @relation(fields: [economic_forum_user_id], references: [id], onDelete: Cascade)
-  admin economic_forum_admins? @relation(fields: [economic_forum_admin_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  @@unique([economic_forum_user_id])
-  @@unique([economic_forum_admin_id])
-  @@index([created_at, actor_type])
-}
-
-/// Tracks whether the system is currently in maintenance mode and provides
-/// scheduling information for planned downtime.
-///
-/// This configuration table controls system-wide maintenance operations,
-/// determining whether users see a maintenance message instead of normal
-/// application content.
-///
-/// The maintenance mode is activated and managed by administrators through
-/// system controls, not by end users. It serves as a passive system control
-/// point that affects all users simultaneously.
-///
-/// When active, the application redirects users to a maintenance page
-/// instead of serving regular content.
-///
-/// This table does not track historical maintenance events - it only
-/// reflects the current or next scheduled maintenance state.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_forum_maintenance_modes {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Indicates whether maintenance mode is currently active. True means the
-  /// system displays a maintenance message instead of regular content.
-  is_active Boolean
-  
-  /// The scheduled start time for maintenance window. NULL means no upcoming
-  /// scheduled maintenance.
-  scheduled_start DateTime?
-  
-  /// The scheduled end time for maintenance window. NULL means no upcoming
-  /// scheduled maintenance.
-  scheduled_end DateTime?
-  
-  /// The message displayed to users when the system is in maintenance mode.
-  /// Contains guidance about expected downtime and when service will resume.
-  maintenance_message String
-  
-  /// Timestamp when this maintenance mode configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when this maintenance mode configuration was last updated.
+  /// Timestamp when this deployment record was last updated (always equals
+  /// created_at as records are immutable).
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@index([is_active])
   // spellchecker: ignore-next-line
-  @@index([scheduled_start, scheduled_end], map: "economic_forum_maintenance_modes_scheduled_start_sched_6d25729c")
+  @@unique([version, env, build_time], map: "economic_discussion_deployment_metadata_version_env_bu_974b6b6a")
+  @@unique([git_commit])
+  @@index([env])
+  @@index([build_time])
+  @@index([deployment_time])
+  @@index([version])
 }

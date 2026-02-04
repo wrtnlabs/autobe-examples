@@ -1,0 +1,177 @@
+/// Customer product reviews with ratings for items they have purchased and
+/// received.
+///
+/// This table stores reviews written by customers for products they have
+/// actually purchased and received. Each review is tied to a specific order
+/// item, ensuring that only legitimate purchasers can leave feedback. The
+/// review includes both a numerical rating (1-5 stars) and optional textual
+/// feedback, along with timestamps for creation and modification tracking.
+///
+/// Reviews can be associated with snapshots of the product information at
+/// the time of purchase, preserving historical context even if the product
+/// details change later. This supports accurate dispute resolution and
+/// maintains the integrity of the feedback system.
+///
+/// The system prevents multiple reviews per product per customer, ensuring
+/// that each customer can only leave one review for a given product they
+/// purchased. This helps maintain the authenticity and fairness of the
+/// review system.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item that was purchased and is being reviewed. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// The customer who wrote the review. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// The product that was reviewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// The star rating given by the customer, from 1 to 5 stars. This represents
+  /// the customer's overall satisfaction with the purchased product.
+  score Int
+  
+  /// Optional text content of the review, where customers can provide detailed
+  /// feedback about their experience with the product.
+  body String?
+  
+  /// Timestamp when the review was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated or modified.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft deleted, if applicable. Allows for
+  /// recovery of reviews while maintaining data integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  snapshots shopping_mall_product_review_snapshots[]
+  votes shopping_mall_product_review_votes[]
+  
+  @@unique([shopping_mall_order_item_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_product_reviews_shopping_mall_customer_i_7102737c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_customer_i_71cc7be0")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_product_id_20a1ef06")
+}
+
+/// Historical snapshots of product review content for audit trail and legal
+/// compliance.
+///
+/// This table captures immutable point-in-time records of product reviews,
+/// preserving their state even after deletions or modifications. Each
+/// snapshot is created whenever a review is edited or deleted, ensuring a
+/// complete history for dispute resolution and compliance purposes. The
+/// snapshots maintain the exact content and rating that customers originally
+/// submitted, providing an accurate historical record.
+///
+/// This entity is essential for maintaining data integrity in the review
+/// system as it prevents data loss and provides an audit trail for all
+/// review modifications. It supports both business requirements for customer
+/// trust and legal requirements for data preservation.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original review that this snapshot represents. {@link
+  /// shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Numerical rating given in the review (1 to 5 stars). This captures the
+  /// exact rating at the time of the snapshot.
+  rating Int
+  
+  /// Text content of the review at the time of the snapshot. This preserves
+  /// the customer's exact words and feedback.
+  content String?
+  
+  /// Timestamp when this snapshot was created. This ensures chronological
+  /// tracking of review history.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id, created_at], map: "shopping_mall_product_review_snapshots_shopping_mall_p_e85e2b48")
+}
+
+/// Customer voting on product review helpfulness to support quality metrics
+/// and sorting.
+///
+/// This table tracks individual customer votes on whether they found a product
+/// review helpful. Each vote is associated with both a specific customer and
+/// review, allowing the system to calculate overall helpfulness scores and
+/// prevent duplicate voting. The vote value indicates the customer's sentiment
+/// (1 for helpful, -1 for not helpful), enabling the platform to rank reviews
+/// by their perceived value to other customers.
+///
+/// The table supports the core reputation management system by:
+/// 1. Enabling collaborative filtering of review quality
+/// 2. Providing data for review sorting algorithms
+/// 3. Preventing vote manipulation through unique constraints
+/// 4. Maintaining audit trails of user engagement
+///
+/// This entity is a fundamental component of the review ecosystem, working in
+/// conjunction with product reviews and their snapshots to create a
+/// comprehensive
+/// feedback mechanism that enhances the customer shopping experience through
+/// community-driven quality assessment.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who cast the vote. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Review being voted on. {@link shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Vote value indicating helpfulness (1 = helpful, -1 = not helpful).
+  value Int
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id], map: "shopping_mall_product_review_votes_shopping_mall_produ_6fd3b181")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_review_id], map: "shopping_mall_product_review_votes_shopping_mall_custo_d058725e")
+}

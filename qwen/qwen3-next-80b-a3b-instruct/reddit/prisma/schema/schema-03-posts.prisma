@@ -1,0 +1,325 @@
+/// Main record for every user-created post with its metadata, type, and
+/// community association.
+///
+/// Represents a content post created by a registered user within a
+/// subscribed community. Each post has a title and exactly one content type:
+/// text, link, or image. The actual content is stored in separate tables to
+/// enforce 1NF compliance, only the metadata and type indicator are kept
+/// here.
+///
+/// Posts are central to the platform’s functionality, appearing in feeds
+/// based on subscription, popularity, or community context. The vote score
+/// is computed dynamically from the post_votes table, while comment_count is
+/// maintained as an optimization for feed display performance.
+///
+/// Soft delete is supported, allowing moderation and user-initiated removal
+/// of posts while preserving audit trails. Posts can be edited within 24
+/// hours of creation, after which edits are frozen. The updated_at timestamp
+/// reflects the last edit within this window.
+///
+/// Relationships:
+/// - Belongs to an author ({@link community_platform_members.id}, {@link
+/// community_platform_moderators.id}, or {@link
+/// community_platform_owners.id})
+/// - Belongs to a community ({@link community_platform_communities.id})
+/// - Links to content via one of: {@link
+/// community_platform_post_texts.post_id}, {@link
+/// community_platform_post_urls.post_id}, {@link
+/// community_platform_post_images.post_id}
+/// - Relates to votes via {@link community_platform_post_votes.post_id}
+/// - Tracks comment count from related comments in Comments component
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who created this post. Reference to member, moderator, or owner
+  /// actor table. {@link community_platform_members.id}, {@link
+  /// community_platform_moderators.id}, or {@link
+  /// community_platform_owners.id}.
+  author_id String
+  
+  /// The community where this post was created. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// The title of the post. Must be 1–300 characters long. Required field.
+  title String
+  
+  /// Timestamp when the post was created. Always recorded and non-nullable.
+  created_at DateTime
+  
+  /// Timestamp when the post was last edited. Only updated within 24 hours of
+  /// creation. Non-nullable.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Null if still active. Used for
+  /// moderation auditing and temporary removal.
+  deleted_at DateTime?
+  
+  /// Net vote score: total upvotes minus total downvotes. Maintained for
+  /// performance in feed display. Calculated from
+  /// community_platform_post_votes.
+  vote_score Int
+  
+  /// Total number of comments on this post. Stored for performance in feed
+  /// display. Updated when comments are created or deleted.
+  comment_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  textContent community_platform_post_texts?
+  url community_platform_post_urls?
+  image community_platform_post_images?
+  votes community_platform_post_votes[]
+  moderationLogs community_platform_moderation_logs[]
+  reportsOnPosts community_platform_reports[]
+  
+  @@unique([title, author_id])
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([vote_score, created_at])
+}
+
+/// Stores the text content for text-type posts, linked to the parent post by
+/// post_id.
+///
+/// This table holds the actual textual content of posts created by users
+/// when they choose the 'text' content type. Each record is uniquely
+/// associated with one post and contains only the raw text input by the
+/// user.
+///
+/// The table is designed as a subsidiary entity that supports the main post
+/// record. Text content is separated from other post attributes to enforce
+/// semantic isolation and normalize data model. While this table contains a
+/// foreign key to posts, its lifecycle is entirely tied to the parent
+/// post—no independent creation, editing or deletion occurs at this level.
+/// When a user edits a text post, the content in this table is atomically
+/// replaced.
+///
+/// This design allows the system to efficiently serve different post types
+/// (text, link, image) without requiring nullable fields in a monolithic
+/// table, and supports clients that need to render just the text content
+/// independently of other metadata.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's identifier that this text content belongs to. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// The full text content of the post. Cannot be empty.
+  text String
+  
+  /// Timestamp when this text content was first created. Matches the parent
+  /// post's creation time.
+  created_at DateTime
+  
+  /// Timestamp when this text content was last modified. Updates when user
+  /// edits their text post within the 24-hour window.
+  updated_at DateTime
+  
+  /// Timestamp when this text content was soft-deleted as part of post
+  /// deletion. Allows auditing and recovery if needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+}
+
+/// Stores the URL links for link-type posts, linked to the parent post by
+/// post_id.
+///
+/// This table exists to normalize link-type content in the community
+/// platform, ensuring each post has exactly one URL when it is a link post.
+/// It separates the URL from the common post metadata table to maintain
+/// strict First Normal Form (1NF), preventing NULL values in a combined
+/// content field.
+///
+/// Each record is a one-to-one companion to a community_platform_posts
+/// record where the post type is 'link'. When a user creates a link post,
+/// this table stores the full HTTP/HTTPS URL, while the parent post record
+/// stores title, author, community, and timestamps. This structure allows
+/// for clean separation of concerns, efficient querying of link content, and
+/// proper data types.
+///
+/// The URL is not editable through this table directly — updates occur
+/// through the parent post editing workflow. No independent management of
+/// URLs occurs in the application UI — they are always accessed as part of
+/// the parent post. Soft-deletion is handled by the parent post record.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_urls {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post entity. This establishes a 1:1 relationship.
+  /// Post must be of type 'link'. {@link community_platform_posts.id}.
+  post_id String
+  
+  /// The full HTTP or HTTPS URL of the linked resource. Must be a valid URL
+  /// starting with http:// or https://. This field stores the exact string
+  /// provided by the user during post creation.
+  url String
+  
+  /// Timestamp when this link record was created. Matches the parent post's
+  /// creation time.
+  created_at DateTime
+  
+  /// Timestamp when this link record was last updated. Follows parent post's
+  /// update cycle.
+  updated_at DateTime
+  
+  /// Timestamp when this record was soft-deleted. Always NULL unless the
+  /// parent post was deleted. Soft delete handled by parent post.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+}
+
+/// Image metadata for image-type posts, linked directly to their parent post.
+///
+/// Stores the URL location, file size, and MIME type of images associated
+/// with posts. Images are not stored as binary data in the database but as
+/// references to externally hosted files (e.g., S3). This design ensures
+/// scalability and separation of concerns between application and storage.
+///
+/// Each image record belongs to exactly one post and is managed exclusively
+/// through the post's lifecycle. When a post is deleted, its images are also
+/// deleted. Images have no independent existence or API endpoints — users
+/// never interact with them directly. Only the post system references and
+/// displays these images.
+///
+/// The table tracks the size of the image in bytes and its MIME type for
+/// content validation and responsive display purposes. Soft deletion is
+/// supported for audit trails and potential recovery during moderation
+/// workflows.
+///
+/// Foreign key relationship: {@link community_platform_posts.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post this image belongs to. {@link community_platform_posts.id}.
+  post_id String
+  
+  /// External URL where the image file is hosted (e.g., S3 bucket). Must be a
+  /// valid, publicly accessible URI.
+  url String
+  
+  /// Size of the image file in bytes for bandwidth estimation and storage cost
+  /// tracking.
+  size_bytes Int
+  
+  /// MIME type of the image (e.g., 'image/jpeg', 'image/png'). Used for
+  /// validation and browser content-type handling.
+  mime_type String
+  
+  /// Timestamp when the image record was created. Always populated.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated. Always populated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted. NULL if still active. Used for
+  /// audit trail and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+}
+
+/// Individual votes on posts with upvote (+1) or downvote (-1) ratings.
+/// Records each user's vote action on a specific post, allowing vote changes
+/// through new vote records rather than updates.
+///
+/// Each vote is tracked as a separate record to support the ability for
+/// users to change their vote from upvote to downvote, or to remove their
+/// vote entirely. The associated post's score is calculated as the sum of
+/// all related vote_type values.
+///
+/// These records are immutable in the sense that a user cannot change a vote
+/// - they must create a new vote record to change their vote. This design
+/// allows complete auditability of voting behavior and accurate history
+/// tracking.
+///
+/// Votes are always tied to specific users and posts, with no direct
+/// user-facing management interface - votes are created, changed, or removed
+/// through post interaction UIs only.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who cast this vote. {@link community_platform_members.id}
+  user_id String
+  
+  /// The post that was voted on. {@link community_platform_posts.id}
+  post_id String
+  
+  /// The vote value: +1 for upvote, -1 for downvote. Represents the direction
+  /// of the vote. No other values are permitted.
+  vote_type Int
+  
+  /// Timestamp when the vote was created. Recorded at the moment the vote
+  /// action occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@index([post_id])
+  @@index([user_id])
+}

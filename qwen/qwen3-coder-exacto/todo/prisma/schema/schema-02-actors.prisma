@@ -1,0 +1,228 @@
+/// todo app actors table.
+///
+/// This table stores core information about users who can authenticate and
+/// use the todo application. It contains credential information for
+/// authentication as well as profile data that is visible to the user. All
+/// todos and related data in the system belong to a specific user from this
+/// table.
+///
+/// The table implements email-based authentication with password hashing for
+/// security. Each user has a unique email address that serves as their login
+/// identifier. Profile information includes a display name that can be
+/// updated by the user.
+///
+/// Users in this table can create, view, edit, and delete their own todos.
+/// They have full control over their data including the ability to
+/// permanently delete their account, which removes all associated todos,
+/// history, and other personal data from the system.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and communication. Must be
+  /// unique across all users in the system.
+  email String
+  
+  /// Hashed password for user authentication. Uses bcrypt hashing for security.
+  password String
+  
+  /// User's display name that appears in the application interface. Can be
+  /// updated by the user as needed.
+  display_name String
+  
+  /// Timestamp when the user account was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sessions todo_app_todo_user_sessions[]
+  passwordResets todo_app_todo_user_password_resets[]
+  emailVerifications todo_app_todo_user_email_verifications[]
+  todos todo_app_todos[]
+  trashEntries todo_app_trash_entries[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens for user authentication with access and refresh token
+/// support for todo users.
+///
+/// This table manages authentication sessions for todo app users, storing
+/// both access and refresh tokens
+/// with their expiration times. It maintains client connection metadata and
+/// tracks session usage for
+/// security auditing. Each session is tied to a specific user and supports
+/// token refresh workflows.
+///
+/// The table implements secure session management with automatic expiration
+/// and last usage tracking.
+/// It enforces uniqueness constraints on both access and refresh tokens to
+/// prevent conflicts. Sessions
+/// are linked to users through the todo_app_todo_user_id foreign key with a
+/// one-to-many relationship,
+/// enabling users to have multiple concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// todo_app_todo_users.id
+  todo_app_todo_user_id String
+  
+  /// Access token for authentication
+  access_token String
+  
+  /// Refresh token for obtaining new access tokens
+  refresh_token String
+  
+  /// IP address of the client when the session was created
+  ip String
+  
+  /// User agent string of the client when the session was created
+  user_agent String?
+  
+  /// Timestamp when the session was created
+  created_at DateTime
+  
+  /// Timestamp when the access token expires
+  access_token_expires_at DateTime
+  
+  /// Timestamp when the refresh token expires
+  refresh_token_expires_at DateTime
+  
+  /// Timestamp when the session was last used
+  last_used_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todoUser todo_app_todo_users @relation(fields: [todo_app_todo_user_id], references: [id], onDelete: Cascade)
+  
+  todoEditHistories todo_app_todo_edit_histories[]
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_user_id, created_at], map: "todo_app_todo_user_sessions_todo_app_todo_user_id_crea_736040ad")
+}
+
+/// Password reset tokens with expiration for secure user password recovery
+/// workflow in the todo application.
+///
+/// This table manages the password reset process for todo users, storing
+/// unique tokens that are emailed to users when they request a password
+/// reset. Each token has an expiration time after which it becomes invalid.
+/// The table links to the main user account for verification during the
+/// reset process.
+///
+/// The tokens are designed to be single-use - once a password reset is
+/// completed using a token, that token is removed from this table. Expired
+/// tokens are also regularly cleaned up to maintain table performance.
+///
+/// When users successfully reset their password, the related entries in this
+/// table are automatically deleted as part of the password reset completion
+/// process.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo user who requested the password reset. Links to the
+  /// main user account that the reset token is valid for. {@link
+  /// todo_app_todo_users.id}
+  todo_user_id String
+  
+  /// Cryptographically secure random token string sent to the user's email
+  /// address. Used to authenticate the password reset request. Should be
+  /// sufficiently long and random to prevent guessing attacks.
+  reset_token String
+  
+  /// Timestamp when the password reset token expires. After this time, the
+  /// token becomes invalid and cannot be used for password reset. Typically
+  /// set to a short duration (e.g., 1 hour) from creation time.
+  expires_at DateTime
+  
+  /// When this password reset record was created. Used for tracking token age
+  /// and debugging purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todoUser todo_app_todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reset_token])
+  @@index([todo_user_id])
+  @@index([expires_at])
+  @@index([created_at])
+}
+
+/// Email verification tokens for user registration confirmation in the todo
+/// application.
+///
+/// This table stores email verification tokens generated when a new user
+/// registers. Each token is associated with a specific user and has an
+/// expiration time. Once a user clicks the verification link containing this
+/// token, their email is confirmed and they can fully access the
+/// application. The token is then invalidated.
+///
+/// Tokens are automatically cleaned up after expiration to maintain database
+/// performance. The system ensures tokens are cryptographically secure and
+/// single-use to prevent security vulnerabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The todo user associated with this email verification token. {@link
+  /// todo_app_todo_users.id}
+  todo_app_todo_user_id String
+  
+  /// Cryptographically secure token value used for email verification. This is
+  /// a unique, random string that is emailed to the user as part of a
+  /// verification link.
+  code String
+  
+  /// Expiration timestamp for the email verification token. After this time,
+  /// the token becomes invalid and the user must request a new verification
+  /// email.
+  expired_at DateTime
+  
+  /// Timestamp when the email verification token was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todoUser todo_app_todo_users @relation(fields: [todo_app_todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_user_id, created_at], map: "todo_app_todo_user_email_verifications_todo_app_todo_u_149f4b16")
+}

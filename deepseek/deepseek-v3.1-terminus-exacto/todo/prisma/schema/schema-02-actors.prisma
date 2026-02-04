@@ -1,18 +1,22 @@
-/// User accounts for the Todo application.
+/// Registered user accounts with email/password authentication credentials
+/// and profile information for todo management.
 ///
-/// Stores user authentication information, profile data, and account status
-/// for individuals managing their personal todo lists. Each user has a
-/// unique email address and secure password authentication, along with a
-/// display name for personalization.
+/// Stores the core identity information for authenticated users including
+/// email addresses used for login, securely hashed passwords, and display
+/// names for user identification. Each user account serves as the root
+/// entity for all user-specific data including todos, sessions, and profile
+/// information.
 ///
-/// Users can create, read, update, and delete their own todo items while
-/// maintaining complete data isolation from other users. The system supports
-/// user verification workflows, account status management, and activity
-/// tracking through last login timestamps.
+/// The table enforces email uniqueness across the entire application to
+/// prevent duplicate accounts and supports comprehensive authentication
+/// workflows including registration, login, password changes, and account
+/// deletion. Soft deletion is implemented to support reversible account
+/// operations while maintaining data integrity.
 ///
-/// User accounts support soft deletion for data recovery scenarios while
-/// maintaining comprehensive audit trails of account lifecycle events and
-/// authentication activities.
+/// User accounts are completely isolated from each other with strict privacy
+/// enforcement ensuring users can only access their own data. The table
+/// forms the foundation for all user-centric functionality in the todo
+/// application.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -23,61 +27,66 @@ model todo_app_users {
   /// Primary Key.
   id String @id
   
-  /// User's unique email address used for authentication and communication.
+  /// User's unique email address used for authentication and account
+  /// identification. Must be unique across all users in the system.
   email String
   
-  /// Securely hashed password for user authentication using industry-standard
-  /// algorithms.
+  /// Securely hashed password for user authentication. Stored using
+  /// industry-standard bcrypt hashing algorithm.
   password_hash String
   
-  /// User's display name for personalization and identification in the
-  /// application.
-  name String
+  /// User-chosen display name for identification purposes. Displayed
+  /// throughout the application interface.
+  display_name String
   
-  /// Current user account status. Valid business values: active, suspended,
-  /// verified, pending_verification, locked.
-  status String
-  
-  /// Timestamp of the user's most recent successful login for activity
-  /// tracking.
-  last_login_at DateTime?
-  
-  /// Timestamp when the user account was created.
+  /// Timestamp when the user account was originally created.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated.
+  /// Timestamp of the most recent update to the user account information.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft deleted, if applicable.
+  /// Timestamp when the user account was soft-deleted. Null indicates active
+  /// account.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_app_user_sessions todo_app_user_sessions[]
-  todo_app_todos todo_app_todos[]
+  sessions todo_app_user_sessions[]
+  passwordResets todo_app_user_password_resets[]
+  todos todo_app_todos[]
+  todoCompletionHistories todo_app_todo_completion_histories[]
+  todoTags todo_app_todo_tags[]
+  todoAttachments todo_app_todo_attachments[]
+  todoComments todo_app_todo_comments[]
+  todoTemplates todo_app_todo_templates[]
+  templateCategories todo_app_todo_template_categories[]
+  templateTags todo_app_todo_template_tags[]
+  todoCategories todo_app_todo_categories[]
+  todoCompletions todo_app_todo_completions[]
+  todoTrashEntries todo_app_todo_trash_entries[]
+  userTodos todo_app_user_todos[]
+  todoTrashItems todo_app_todo_trash_items[]
+  filteringPreferences todo_app_filtering_preferences[]
+  sortingPreference todo_app_sorting_preferences?
+  profile todo_app_profiles?
   
   @@unique([email])
-  @@index([status, created_at])
-  @@index([last_login_at])
+  @@index([created_at])
+  @@index([deleted_at])
 }
 
-/// User session records for authentication tracking and security management.
+/// JWT session tokens for user authentication with access and refresh token
+/// support for secure session management.
 ///
-/// Stores active user sessions for secure access to the Todo application.
-/// Each session represents an authenticated connection from a user's device,
-/// containing comprehensive connection context information for audit and
-/// security purposes.
+/// Tracks user login sessions with connection metadata including IP address,
+/// connection URL, and referrer information. Each session belongs to exactly
+/// one user and includes creation timestamp and mandatory expiration time
+/// for security.
 ///
-/// Sessions are automatically created during successful login and track
-/// connection details including IP address, user agent, and referrer
-/// information. The system maintains session state securely and validates
-/// authentication tokens on each API request.
-///
-/// Sessions require independent management capabilities including search
-/// across all users, expiration tracking, and security monitoring. Users and
-/// administrators need to view and manage active sessions for security
-/// compliance.
+/// Sessions are managed through authentication workflows and provide
+/// append-only audit trail of user login events. The expired_at field
+/// ensures sessions have finite lifetimes for security compliance.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,36 +100,82 @@ model todo_app_user_sessions {
   /// Belonged user's {@link todo_app_users.id}.
   todo_app_user_id String
   
-  /// IP address of the connection that created this session for security
-  /// tracking.
+  /// IP address of the connection where the session was created.
   ip String
-  
-  /// User agent string identifying the device and browser used for this
-  /// session.
-  user_agent String
   
   /// Connection URL where the session was established.
   href String
   
-  /// Referrer URL that directed the user to the application.
+  /// Referrer URL that directed the user to the session creation page.
   referrer String
   
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expired or was terminated.
-  expired_at DateTime?
-  
-  /// Timestamp of the most recent activity in this session for timeout
-  /// tracking.
-  last_activity_at DateTime
+  /// Timestamp when the session expires. Sessions must have finite lifetimes
+  /// for security.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  todoEditHistories todo_app_todo_edit_histories[]
+  
   @@index([todo_app_user_id, created_at])
-  @@index([expired_at])
-  @@index([last_activity_at])
+}
+
+/// Password reset tokens with expiration for secure user password recovery
+/// workflow.
+///
+/// Stores temporary tokens generated for password reset requests, allowing
+/// users to securely reset their passwords through email verification. Each
+/// token has a limited validity period and can only be used once to prevent
+/// unauthorized access.
+///
+/// The token system provides a secure mechanism for password recovery while
+/// maintaining account security through expiration and single-use
+/// constraints. Tokens are automatically invalidated after use or expiration
+/// to prevent replay attacks.
+///
+/// This table supports the authentication requirements for password reset
+/// functionality, ensuring users can recover access to their accounts while
+/// maintaining security best practices.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Unique password reset token generated for secure password recovery.
+  token String
+  
+  /// Expiration timestamp when the reset token becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the reset token was successfully used.
+  used_at DateTime?
+  
+  /// Timestamp when the reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the reset token was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([todo_app_user_id, created_at])
+  @@index([expires_at])
 }

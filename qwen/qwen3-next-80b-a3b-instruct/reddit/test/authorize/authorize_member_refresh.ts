@@ -5,15 +5,16 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityBbsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityBbsMember";
+import type { ICommunityPlatformAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAuthorizationToken";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
 export async function authorize_member_refresh(
   connection: api.IConnection,
   props: {
-    body: ICommunityBbsMember.IRefresh;
+    body: ICommunityPlatformMember.IRefresh;
   },
-): Promise<ICommunityBbsMember.IAuthorized> {
-  return await api.functional.communityBbs.auth.member.refresh(connection, {
-    body: props.body,
-  });
+): Promise<ICommunityPlatformMember.IAuthorized> {
+  return await api.functional.communityPlatform.auth.member.refresh(
+    connection,
+    { body: props.body },
+  );
 }

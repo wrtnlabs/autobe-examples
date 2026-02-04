@@ -1,0 +1,342 @@
+/// Individual comments made on posts or other comments, with support for
+/// nested replies.
+///
+/// Stores user-generated commentary on posts and other comments within the
+/// community platform. Each comment has a single textual content authored by
+/// a user and can be replied to, creating a threaded discussion hierarchy.
+/// Comments are the primary unit of user interaction in discussions and
+/// serve as the foundation for voting and moderation systems.
+///
+/// Every comment is associated with exactly one user author through the
+/// author_id foreign key, establishing clear ownership. Comments can be
+/// nested by referencing a parent comment via parent_id, enabling
+/// multi-level reply threads without depth restrictions.
+///
+/// The vote score field stores the aggregate net score from upvotes and
+/// downvotes for performance optimization, though individual votes are
+/// tracked in a separate table. Comments can be soft-deleted for moderation
+/// purposes while preserving audit trails.
+///
+/// This table supports independent management: users can search their own
+/// comments across all posts, moderators can review comments irrespective of
+/// their parent post, and notification systems trigger based on comment
+/// activity. This independence makes the primary stance correct, not
+/// subsidiary.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who created this comment. {@link community_platform_members.id}
+  /// or {@link community_platform_guests.id} depending on user type.
+  author_id String
+  
+  /// The parent comment (if this is a reply) or the parent post (if this
+  /// comment is directly on a post). {@link community_platform_comments.id} or
+  /// {@link community_platform_posts.id}.
+  parent_id String?
+  
+  /// The text content of the comment. Must be between 1 and 1000 characters as
+  /// specified in requirements.
+  content String
+  
+  /// The net vote score of this comment (upvotes minus downvotes). Derived
+  /// from the community_platform_comment_votes table.
+  vote_score Int
+  
+  /// Timestamp when this comment was created.
+  created_at DateTime
+  
+  /// Timestamp when this comment was last edited. Updated within 24 hours of
+  /// creation when edits are allowed.
+  updated_at DateTime
+  
+  /// Timestamp when this comment was soft-deleted. Null means the comment is
+  /// still visible.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  replies community_platform_comments[] @relation("recursive")
+  votes community_platform_comment_votes[]
+  commentEdits community_platform_comment_edits[]
+  reports community_platform_comment_reports[]
+  visibilities community_platform_comment_visibilities[]
+  moderationLogs community_platform_moderation_logs[]
+  reportsOnComments community_platform_reports[]
+  
+  @@index([author_id, deleted_at])
+  @@index([parent_id, created_at])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([vote_score])
+}
+
+/// Tracks individual upvotes and downvotes on comments, allowing users to
+/// change or remove their votes.
+///
+/// Each record represents a single vote from a user on a specific comment.
+/// The system records whether a vote is an upvote (+1) or downvote (-1) and
+/// maintains historical records for auditing purposes. Users can change
+/// their vote (upvote to downvote, or remove vote entirely) by creating a
+/// new vote record with updated type, which overwrites the previous vote
+/// state in the aggregated score calculation. This table ensures vote
+/// integrity and supports the real-time vote score computation for comments.
+///
+/// Votes are managed entirely by the system when users interact with
+/// comments. Users cannot directly create or view votes individually; they
+/// interact with the comment interface, and the system updates this table
+/// accordingly. This is a supporting table that provides the data foundation
+/// for comment karma calculations but is not independently accessed by end
+/// users.
+///
+/// Relationships:
+/// - Each vote belongs to one user (via user_id)
+/// - Each vote belongs to one comment (via comment_id)
+/// - A user can vote on many comments
+/// - A comment can receive many votes
+/// - Votes are immutable historical records that persist even when user
+/// changes their vote (previous votes are kept for audit trail)
+///
+/// Note: This table does not have a primary key named "id" as it's a
+/// junction table with composite key (user_id, comment_id). The primary key
+/// is enforced by the unique index on (user_id, comment_id).
+///
+/// No soft delete capability is needed as votes are not deleted, only
+/// overwritten by new vote records.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting user's {@link community_platform_members.id}.
+  user_id String
+  
+  /// Target comment's {@link community_platform_comments.id}.
+  comment_id String
+  
+  /// True for upvote (+1), false for downvote (-1).
+  vote_type Boolean
+  
+  /// Timestamp when the vote was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter community_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, comment_id])
+  @@index([comment_id])
+  @@index([user_id])
+}
+
+/// Edits to comments made within the 15-minute edit window, preserving
+/// original content and tracking changes for audit and moderation purposes.
+///
+/// Records every modification made to a comment during its edit window,
+/// storing both the original content before the edit and the new content
+/// after the edit. Each edit record is linked to the specific comment and
+/// the user who made the edit. These records are essential for moderation,
+/// content integrity verification, and user accountability.
+///
+/// When a comment is edited, a new record is created with the original
+/// content and the updated content. The comment's current content can be
+/// determined by the most recent edit, or the original comment content if no
+/// edits exist. This design ensures that even after modifications, the
+/// complete edit history remains intact and accessible for auditing
+/// purposes, while preventing alteration or deletion of past versions.
+///
+/// This table supports the requirement that users can edit their comments
+/// within 15 minutes of creation, and moderators need complete historical
+/// records of all edits for dispute resolution and moderation decisions.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment that was edited. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// The user ID who performed the edit. {@link community_platform_members.id}
+  /// or {@link community_platform_moderators.id} or {@link
+  /// community_platform_owners.id}.
+  editor_id String
+  
+  /// The full text content of the comment before the edit was made. Must be
+  /// preserved exactly as originally submitted to provide an immutable audit
+  /// trail.
+  original_content String
+  
+  /// The full text content of the comment after the edit was made. Contains
+  /// the new value that replaced the original content.
+  edited_content String
+  
+  /// Timestamp when this edit record was created. Records when the edit
+  /// occurred, which should be within 15 minutes of the comment's original
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp that reflects when the edit occurred. Exactly matches
+  /// created_at; used for clarity in queries seeking edits sorted by edit
+  /// time.
+  edited_at DateTime
+  
+  /// The soft-delete timestamp. If null, the edit record is active. If
+  /// populated, the edit record has been logically deleted (very rare),
+  /// perhaps due to moderation action or system cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  editor community_platform_members @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  @@unique([comment_id, created_at])
+  @@index([editor_id])
+}
+
+/// Tracks user reports on comments with status (pending/approved/dismissed),
+/// reason text, reporter ID, and timestamp.
+///
+/// Each report entry records a user's report on a specific comment,
+/// providing context for moderator review. This table is central to the
+/// platform's moderation system, allowing moderators to investigate reported
+/// content and take appropriate action. Reports are automatically created
+/// when a user submits a report on a comment and can be approved, dismissed,
+/// or remain pending.
+///
+/// Reports are associated with the comment being reported (via comment_id)
+/// and the user who submitted the report (via reporter_id). Reports have a
+/// status field that indicates their current state in the moderation
+/// workflow. This table is used exclusively by the moderation system and is
+/// not directly accessed by regular users.
+///
+/// Note: The reporter_id references community_platform_members because only
+/// authenticated members (not guests) can report content. The comment_id
+/// references the community_platform_comments table that contains the
+/// reported comment.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who submitted the report. References the reporting member's
+  /// profile. {@link community_platform_members.id}
+  reporter_id String
+  
+  /// The comment that was reported. References the specific comment being
+  /// reported. {@link community_platform_comments.id}
+  comment_id String
+  
+  /// The reason provided by the user for reporting this comment. Must be
+  /// between 10 and 500 characters.
+  reason String
+  
+  /// The current status of the report in the moderation workflow. Valid
+  /// values: 'pending', 'approved', 'dismissed'.
+  status String
+  
+  /// The timestamp when the report was submitted by the user.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_platform_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedComment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reporter_id, comment_id])
+  @@index([reporter_id])
+  @@index([comment_id])
+  @@index([status])
+}
+
+/// Tracks whether each comment is visible to banned users, enabling display
+/// of comments while preventing interaction from restricted accounts.
+///
+/// This table determines comment visibility for users who have been banned
+/// from a community. When a user is banned, their visibility status for
+/// individual comments is tracked here rather than applying a blanket
+/// restriction, allowing moderation systems to selectively reveal or conceal
+/// specific comment threads.
+///
+/// The visibility state is automatically updated when a user is banned or
+/// unbanned from a community. When a user is banned, their visibility is set
+/// to false for all new comments (if policy dictates) and preserved for
+/// existing comments to maintain forum context. When unbanned, their
+/// visibility is restored to true.
+///
+/// This table supports moderation workflows where certain banned users may
+/// retain view access to specific comment threads for audit or contextual
+/// purposes, while other banned users have full restriction.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_visibilities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user whose visibility status is being tracked. {@link
+  /// community_platform_members.id}.
+  user_id String
+  
+  /// The comment whose visibility is being controlled. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Whether this banned user can see this specific comment. True means
+  /// visible, false means hidden. This overrides the general ban rules for
+  /// targeted content visibility.
+  is_visible Boolean
+  
+  /// Timestamp when this visibility record was created.
+  created_at DateTime
+  
+  /// Timestamp when this visibility record was last updated (e.g., when
+  /// visibility was toggled).
+  updated_at DateTime
+  
+  /// Timestamp when this visibility record was soft-deleted. Null means active
+  /// record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, comment_id])
+  @@index([comment_id])
+}

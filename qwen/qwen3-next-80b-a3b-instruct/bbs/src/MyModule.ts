@@ -1,76 +1,54 @@
 import { Module } from "@nestjs/common";
 
-import { EconomicforumAuthUserController } from "./controllers/economicForum/auth/user/EconomicforumAuthUserController";
-import { EconomicforumAuthAdminController } from "./controllers/economicForum/auth/admin/EconomicforumAuthAdminController";
-import { EconomicforumUserAuthUsersLogoutController } from "./controllers/economicForum/user/auth/users/logout/EconomicforumUserAuthUsersLogoutController";
-import { EconomicforumUserAuthUsersEmailVerifyController } from "./controllers/economicForum/user/auth/users/email/verify/EconomicforumUserAuthUsersEmailVerifyController";
-import { EconomicforumUserAuthUsersEmailVerifyResendController } from "./controllers/economicForum/user/auth/users/email/verify/resend/EconomicforumUserAuthUsersEmailVerifyResendController";
-import { EconomicforumUserUsersController } from "./controllers/economicForum/user/users/EconomicforumUserUsersController";
-import { EconomicforumAdminAuthAdminsLogoutController } from "./controllers/economicForum/admin/auth/admins/logout/EconomicforumAdminAuthAdminsLogoutController";
-import { EconomicforumAdminAuthAdminsEmail_verifyController } from "./controllers/economicForum/admin/auth/admins/email/verify/request/EconomicforumAdminAuthAdminsEmail_verifyController";
-import { EconomicforumAdminAuthAdminsEmailController } from "./controllers/economicForum/admin/auth/admins/email/verify/EconomicforumAdminAuthAdminsEmailController";
-import { EconomicforumAdminAuthAdminsEmail_verifyResendController } from "./controllers/economicForum/admin/auth/admins/email/verify/resend/EconomicforumAdminAuthAdminsEmail_verifyResendController";
-import { EconomicforumAdminAdminsController } from "./controllers/economicForum/admin/admins/EconomicforumAdminAdminsController";
-import { EconomicforumUserAuthUsersEmailVerificationsController } from "./controllers/economicForum/user/auth/users/email/verifications/EconomicforumUserAuthUsersEmailVerificationsController";
-import { EconomicforumUserAuthUsersPasswordResetsController } from "./controllers/economicForum/user/auth/users/password/resets/EconomicforumUserAuthUsersPasswordResetsController";
-import { EconomicforumAdminAuthAdminsEmailVerificationsController } from "./controllers/economicForum/admin/auth/admins/email/verifications/EconomicforumAdminAuthAdminsEmailVerificationsController";
-import { EconomicforumAdminAuthAdminsPasswordResetsController } from "./controllers/economicForum/admin/auth/admins/password/resets/EconomicforumAdminAuthAdminsPasswordResetsController";
-import { EconomicforumUserAuthUsersSessionsController } from "./controllers/economicForum/user/auth/users/sessions/EconomicforumUserAuthUsersSessionsController";
-import { EconomicforumAdminAuthAdminsSessionsController } from "./controllers/economicForum/admin/auth/admins/sessions/EconomicforumAdminAuthAdminsSessionsController";
-import { EconomicforumUserPostsController } from "./controllers/economicForum/user/posts/EconomicforumUserPostsController";
-import { EconomicforumAdminPostsController } from "./controllers/economicForum/admin/posts/EconomicforumAdminPostsController";
-import { EconomicforumUserPostsCommentsController } from "./controllers/economicForum/user/posts/comments/EconomicforumUserPostsCommentsController";
-import { EconomicforumAdminPostsCommentsController } from "./controllers/economicForum/admin/posts/comments/EconomicforumAdminPostsCommentsController";
-import { EconomicforumUserPostsReportsController } from "./controllers/economicForum/user/posts/reports/EconomicforumUserPostsReportsController";
-import { EconomicforumAdminPostsReportsController } from "./controllers/economicForum/admin/posts/reports/EconomicforumAdminPostsReportsController";
-import { EconomicforumUserAttachmentfilesController } from "./controllers/economicForum/user/attachmentFiles/EconomicforumUserAttachmentfilesController";
-import { EconomicforumAdminAttachmentfilesController } from "./controllers/economicForum/admin/attachmentFiles/EconomicforumAdminAttachmentfilesController";
-import { EconomicforumAdminSystemAuditReportsController } from "./controllers/economicForum/admin/system/audit/reports/EconomicforumAdminSystemAuditReportsController";
-import { EconomicforumAdminSystemMaintenanceStatusController } from "./controllers/economicForum/admin/system/maintenance/status/EconomicforumAdminSystemMaintenanceStatusController";
-import { EconomicforumAdminSystemAnalyticsModerationController } from "./controllers/economicForum/admin/system/analytics/moderation/EconomicforumAdminSystemAnalyticsModerationController";
-import { EconomicforumAdminSystemUploadLimitsController } from "./controllers/economicForum/admin/system/upload/limits/EconomicforumAdminSystemUploadLimitsController";
-import { EconomicforumPostsCommentsMetricsController } from "./controllers/economicForum/posts/comments/metrics/EconomicforumPostsCommentsMetricsController";
-import { EconomicforumPostsModerationSummaryController } from "./controllers/economicForum/posts/moderation/summary/EconomicforumPostsModerationSummaryController";
-import { EconomicforumPostsAnalyticsController } from "./controllers/economicForum/posts/analytics/EconomicforumPostsAnalyticsController";
-import { EconomicforumPostsAttachmentsController } from "./controllers/economicForum/posts/attachments/EconomicforumPostsAttachmentsController";
-import { EconomicforumAdminAttachment_filesSummaryController } from "./controllers/economicForum/admin/attachment-files/summary/EconomicforumAdminAttachment_filesSummaryController";
+import { EconomicdiscussionAdministratorAdminAnalyticsArticlesController } from "./controllers/economicDiscussion/administrator/admin/analytics/articles/EconomicdiscussionAdministratorAdminAnalyticsArticlesController";
+import { EconomicdiscussionAdministratorAdminAnalyticsMost_commentedController } from "./controllers/economicDiscussion/administrator/admin/analytics/most-commented/EconomicdiscussionAdministratorAdminAnalyticsMost_commentedController";
+import { EconomicdiscussionAdministratorAdminAnalyticsTagsController } from "./controllers/economicDiscussion/administrator/admin/analytics/tags/EconomicdiscussionAdministratorAdminAnalyticsTagsController";
+import { EconomicdiscussionAdministratorBansController } from "./controllers/economicDiscussion/administrator/bans/EconomicdiscussionAdministratorBansController";
+import { EconomicdiscussionAdministratorSectionsController } from "./controllers/economicDiscussion/administrator/sections/EconomicdiscussionAdministratorSectionsController";
+import { EconomicdiscussionAdministratorUnbansController } from "./controllers/economicDiscussion/administrator/unbans/EconomicdiscussionAdministratorUnbansController";
+import { EconomicdiscussionArticlesController } from "./controllers/economicDiscussion/articles/EconomicdiscussionArticlesController";
+import { EconomicdiscussionAuthAdministratorController } from "./controllers/economicDiscussion/auth/administrator/EconomicdiscussionAuthAdministratorController";
+import { EconomicdiscussionAuthCitizenController } from "./controllers/economicDiscussion/auth/citizen/EconomicdiscussionAuthCitizenController";
+import { EconomicdiscussionAuthSuperadministratorController } from "./controllers/economicDiscussion/auth/superAdministrator/EconomicdiscussionAuthSuperadministratorController";
+import { EconomicdiscussionCitizenArticlesController } from "./controllers/economicDiscussion/citizen/articles/EconomicdiscussionCitizenArticlesController";
+import { EconomicdiscussionCitizenArticlesCommentsController } from "./controllers/economicDiscussion/citizen/articles/comments/EconomicdiscussionCitizenArticlesCommentsController";
+import { EconomicdiscussionCitizenCommentsController } from "./controllers/economicDiscussion/citizen/comments/EconomicdiscussionCitizenCommentsController";
+import { EconomicdiscussionCitizenProfileController } from "./controllers/economicDiscussion/citizen/profile/EconomicdiscussionCitizenProfileController";
+import { EconomicdiscussionSearchArticlesController } from "./controllers/economicDiscussion/search/articles/EconomicdiscussionSearchArticlesController";
+import { EconomicdiscussionSectionsController } from "./controllers/economicDiscussion/sections/EconomicdiscussionSectionsController";
+import { EconomicdiscussionSectionsArticlesController } from "./controllers/economicDiscussion/sections/articles/EconomicdiscussionSectionsArticlesController";
+import { EconomicdiscussionSuperadministratorAdminAnalyticsArticlesController } from "./controllers/economicDiscussion/superAdministrator/admin/analytics/articles/EconomicdiscussionSuperadministratorAdminAnalyticsArticlesController";
+import { EconomicdiscussionSuperadministratorAdminAnalyticsMost_commentedController } from "./controllers/economicDiscussion/superAdministrator/admin/analytics/most-commented/EconomicdiscussionSuperadministratorAdminAnalyticsMost_commentedController";
+import { EconomicdiscussionSuperadministratorAdminAnalyticsTagsController } from "./controllers/economicDiscussion/superAdministrator/admin/analytics/tags/EconomicdiscussionSuperadministratorAdminAnalyticsTagsController";
+import { EconomicdiscussionSuperadministratorAdministrator_request_decisionsController } from "./controllers/economicDiscussion/superAdministrator/administrator-request-decisions/EconomicdiscussionSuperadministratorAdministrator_request_decisionsController";
+import { EconomicdiscussionSuperadministratorAdministrator_requestsController } from "./controllers/economicDiscussion/superAdministrator/administrator-requests/EconomicdiscussionSuperadministratorAdministrator_requestsController";
+import { EconomicdiscussionSuperadministratorAdministrator_requestsPendingController } from "./controllers/economicDiscussion/superAdministrator/administrator-requests/pending/EconomicdiscussionSuperadministratorAdministrator_requestsPendingController";
 
 @Module({
   controllers: [
-    EconomicforumAuthUserController,
-    EconomicforumAuthAdminController,
-    EconomicforumUserAuthUsersLogoutController,
-    EconomicforumUserAuthUsersEmailVerifyController,
-    EconomicforumUserAuthUsersEmailVerifyResendController,
-    EconomicforumUserUsersController,
-    EconomicforumAdminAuthAdminsLogoutController,
-    EconomicforumAdminAuthAdminsEmail_verifyController,
-    EconomicforumAdminAuthAdminsEmailController,
-    EconomicforumAdminAuthAdminsEmail_verifyResendController,
-    EconomicforumAdminAdminsController,
-    EconomicforumUserAuthUsersEmailVerificationsController,
-    EconomicforumUserAuthUsersPasswordResetsController,
-    EconomicforumAdminAuthAdminsEmailVerificationsController,
-    EconomicforumAdminAuthAdminsPasswordResetsController,
-    EconomicforumUserAuthUsersSessionsController,
-    EconomicforumAdminAuthAdminsSessionsController,
-    EconomicforumUserPostsController,
-    EconomicforumAdminPostsController,
-    EconomicforumUserPostsCommentsController,
-    EconomicforumAdminPostsCommentsController,
-    EconomicforumUserPostsReportsController,
-    EconomicforumAdminPostsReportsController,
-    EconomicforumUserAttachmentfilesController,
-    EconomicforumAdminAttachmentfilesController,
-    EconomicforumAdminSystemAuditReportsController,
-    EconomicforumAdminSystemMaintenanceStatusController,
-    EconomicforumAdminSystemAnalyticsModerationController,
-    EconomicforumAdminSystemUploadLimitsController,
-    EconomicforumPostsCommentsMetricsController,
-    EconomicforumPostsModerationSummaryController,
-    EconomicforumPostsAnalyticsController,
-    EconomicforumPostsAttachmentsController,
-    EconomicforumAdminAttachment_filesSummaryController,
+    EconomicdiscussionAuthCitizenController,
+    EconomicdiscussionAuthAdministratorController,
+    EconomicdiscussionAuthSuperadministratorController,
+    EconomicdiscussionSectionsController,
+    EconomicdiscussionAdministratorSectionsController,
+    EconomicdiscussionArticlesController,
+    EconomicdiscussionCitizenArticlesController,
+    EconomicdiscussionSectionsArticlesController,
+    EconomicdiscussionCitizenArticlesCommentsController,
+    EconomicdiscussionCitizenCommentsController,
+    EconomicdiscussionSuperadministratorAdministrator_request_decisionsController,
+    EconomicdiscussionSuperadministratorAdministrator_requestsController,
+    EconomicdiscussionAdministratorBansController,
+    EconomicdiscussionAdministratorUnbansController,
+    EconomicdiscussionCitizenProfileController,
+    EconomicdiscussionAdministratorAdminAnalyticsArticlesController,
+    EconomicdiscussionSuperadministratorAdminAnalyticsArticlesController,
+    EconomicdiscussionAdministratorAdminAnalyticsTagsController,
+    EconomicdiscussionSuperadministratorAdminAnalyticsTagsController,
+    EconomicdiscussionAdministratorAdminAnalyticsMost_commentedController,
+    EconomicdiscussionSuperadministratorAdminAnalyticsMost_commentedController,
+    EconomicdiscussionSuperadministratorAdministrator_requestsPendingController,
+    EconomicdiscussionSearchArticlesController,
   ],
 })
 export class MyModule {}

@@ -1,0 +1,781 @@
+/// Main order records containing customer information, shipping address,
+/// payment details, and overall order status.
+///
+/// Represents completed purchases that require fulfillment and tracking.
+/// Each order is associated with a specific customer and contains shipping
+/// information for delivery. Orders aggregate multiple order items from
+/// potentially different sellers into a single transaction.
+///
+/// The order status tracks the overall progression from creation through
+/// payment processing, fulfillment, and delivery completion. Orders maintain
+/// financial information including subtotal, shipping costs, tax
+/// calculations, and final total amounts.
+///
+/// Soft deletion is supported to maintain order history while allowing for
+/// customer service operations. All order modifications are tracked through
+/// temporal fields for audit purposes.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Unique order identifier displayed to customers for reference and tracking
+  /// purposes.
+  order_number String
+  
+  /// Primary street address line for order delivery.
+  shipping_address_line1 String
+  
+  /// Secondary address line for apartment, suite, or unit number.
+  shipping_address_line2 String?
+  
+  /// City for order delivery address.
+  shipping_city String
+  
+  /// State or province for order delivery address.
+  shipping_state String
+  
+  /// Postal code or ZIP code for order delivery address.
+  shipping_postal_code String
+  
+  /// Country for order delivery address.
+  shipping_country String
+  
+  /// Total cost of all order items before taxes and shipping.
+  subtotal_amount Float
+  
+  /// Total shipping cost for the entire order.
+  shipping_amount Float
+  
+  /// Total tax amount calculated for the order.
+  tax_amount Float
+  
+  /// Final order total including subtotal, shipping, and taxes.
+  total_amount Float
+  
+  /// Current overall order status. Valid values: pending, processing, shipped,
+  /// delivered, cancelled, refunded.
+  status String
+  
+  /// Timestamp when the order was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the order was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  orderItems ecommerce_mall_order_items[]
+  refundRequests ecommerce_mall_refund_requests[]
+  paymentTransactions ecommerce_mall_payment_transactions[]
+  
+  @@unique([order_number])
+  @@index([ecommerce_mall_customer_id, created_at])
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Individual items within orders with product/variant snapshots, seller
+/// information, and independent status tracking.
+///
+/// Each order item represents a specific product variant purchased by a
+/// customer, with its own quantity, pricing, and status independent of the
+/// overall order. Items can have different fulfillment statuses even within
+/// the same order, supporting multi-seller scenarios where different sellers
+/// fulfill different items.
+///
+/// The table maintains references to immutable snapshots of product and
+/// variant information at the time of purchase, ensuring data integrity for
+/// historical accuracy. Each item tracks its seller relationship and
+/// supports independent status progression through the fulfillment
+/// lifecycle.
+///
+/// Order items are managed independently from the parent order, allowing for
+/// individual cancellation, refund, and status updates while maintaining the
+/// overall order context.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order that contains this item. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Seller responsible for fulfilling this order item. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Quantity of the product variant purchased in this order item.
+  quantity Int
+  
+  /// Unit price of the product variant at the time of purchase.
+  unit_price Float
+  
+  /// Calculated total price (quantity × unit_price) for this order item.
+  total_price Float
+  
+  /// Current status of this order item (pending, processing, shipped,
+  /// delivered, cancelled, refunded).
+  status String
+  
+  /// Timestamp when this order item was created.
+  created_at DateTime
+  
+  /// Timestamp when this order item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this order item was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  saleReview ecommerce_mall_sale_reviews?
+  snapshots ecommerce_mall_order_item_snapshots[]
+  cancellationRequests ecommerce_mall_cancellation_requests[]
+  refundRequests ecommerce_mall_refund_requests[]
+  statusLogs ecommerce_mall_order_status_logs[]
+  shipmentItems ecommerce_mall_shipment_items[]
+  reviewEligibility ecommerce_mall_review_eligibilities?
+  
+  @@index([ecommerce_mall_order_id, status])
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status, created_at])
+}
+
+/// Immutable snapshots preserving the complete state of order items at the
+/// time of purchase for audit trails and dispute resolution.
+///
+/// Captures all product, variant, and seller information exactly as it
+/// existed when the customer completed their purchase, including product
+/// details, pricing, variant options, and seller information. This ensures
+/// that any subsequent changes to products, variants, or seller profiles do
+/// not affect the historical record of what was actually purchased.
+///
+/// Each snapshot is linked to a specific order item and contains the
+/// complete purchase context needed for accurate order history, customer
+/// service inquiries, and potential disputes. The snapshot system guarantees
+/// data integrity by preventing retroactive modifications to purchase
+/// records.
+///
+/// Snapshots are created automatically during order creation and are never
+/// modified, serving as an append-only historical record that maintains the
+/// integrity of the transactional data.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order item being snapshotted. {@link ecommerce_mall_order_items.id}
+  ecommerce_mall_order_item_id String
+  
+  /// Product name at the time of purchase, captured exactly as displayed to
+  /// the customer.
+  product_name String
+  
+  /// Product description at the time of purchase, providing context for what
+  /// was ordered.
+  product_description String?
+  
+  /// Variant name or option combination description at purchase time.
+  variant_name String
+  
+  /// Seller's shop name or business name at the time of purchase.
+  seller_name String
+  
+  /// Seller's shop description or profile information at purchase time.
+  seller_description String?
+  
+  /// Unit price charged for this item at the time of purchase.
+  unit_price Float
+  
+  /// Currency code for the unit price (e.g., USD, EUR, JPY).
+  currency String
+  
+  /// Quantity of this specific variant ordered by the customer.
+  quantity Int
+  
+  /// Timestamp when this snapshot was created during order processing.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  productReviews ecommerce_mall_product_reviews[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id], map: "ecommerce_mall_order_item_snapshots_ecommerce_mall_ord_5c332730")
+  @@index([created_at])
+}
+
+/// Shipment tracking information updates from carriers including status
+/// changes, location updates, and delivery estimates.
+///
+/// Each tracking update represents a status change or location update
+/// provided by the shipping carrier's tracking system. Tracking updates are
+/// crucial for both sellers monitoring shipment progress and customers
+/// awaiting delivery.
+///
+/// The table preserves the complete history of tracking events for each
+/// shipment, enabling detailed shipment lifecycle analysis and providing
+/// transparency throughout the delivery process. Tracking updates
+/// automatically sync with carrier APIs or are manually entered by sellers.
+///
+/// Tracking information supports the automatic delivery confirmation system
+/// that marks shipments as delivered either through customer confirmation or
+/// automatically after 14 days from the last tracking update.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment being tracked. {@link ecommerce_mall_shipments.id}
+  ecommerce_mall_shipment_id String
+  
+  /// Shipment tracking number provided by the carrier for package
+  /// identification and tracking.
+  tracking_number String
+  
+  /// Shipping carrier responsible for the shipment (e.g., UPS, FedEx, DHL,
+  /// etc.).
+  carrier_name String
+  
+  /// Current tracking status provided by the carrier (e.g., 'in_transit',
+  /// 'out_for_delivery', 'delivered', etc.).
+  status String
+  
+  /// Current location or last scan location of the shipment as reported by the
+  /// carrier.
+  location String?
+  
+  /// Detailed description of the tracking event or status update provided by
+  /// the carrier.
+  description String?
+  
+  /// Estimated delivery date and time provided by the carrier based on current
+  /// tracking information.
+  estimated_delivery DateTime?
+  
+  /// Timestamp when this tracking update was created and recorded in the
+  /// system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [ecommerce_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shipment_id, created_at], map: "ecommerce_mall_shipment_trackings_ecommerce_mall_shipm_3140c5dd")
+}
+
+/// Customer-initiated cancellation requests for order items with status
+/// tracking and seller response handling.
+///
+/// Stores cancellation requests submitted by customers for specific order
+/// items that have not yet been shipped. Each request includes the
+/// cancellation reason, current status, and workflow tracking information.
+/// The system supports cancellation requests for individual order items
+/// within multi-item orders.
+///
+/// Requests follow a workflow from pending to approved/rejected, with
+/// sellers responsible for reviewing and responding to cancellation
+/// requests. The request maintains references to the customer, order item,
+/// seller, and session for audit trail purposes.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// request management. Status tracking ensures proper workflow progression
+/// and customer communication throughout the cancellation process.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who initiated the cancellation request. {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Session used by customer when creating the cancellation request. {@link
+  /// ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Order item being requested for cancellation. {@link
+  /// ecommerce_mall_order_items.id}
+  ecommerce_mall_order_item_id String
+  
+  /// Seller responsible for reviewing the cancellation request. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Current status of the cancellation request. Valid values: pending,
+  /// approved, rejected, cancelled. Status transitions follow business
+  /// workflow rules.
+  status String
+  
+  /// Customer-provided reason for requesting cancellation. Required field
+  /// explaining why the customer wants to cancel the order item.
+  reason String
+  
+  /// Timestamp when the cancellation request was initially created by the
+  /// customer.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated, including
+  /// status changes and seller responses.
+  updated_at DateTime
+  
+  /// Timestamp when the cancellation request was soft deleted, maintaining
+  /// audit trail while removing from active workflows.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  statusLogs ecommerce_mall_cancellation_request_status_logs[]
+  responses ecommerce_mall_cancellation_request_responses[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id], map: "ecommerce_mall_cancellation_requests_ecommerce_mall_cu_bcbd7945")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id], map: "ecommerce_mall_cancellation_requests_ecommerce_mall_or_1d3d2cc8")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_cancellation_requests_ecommerce_mall_cu_dc66c9e2")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, status], map: "ecommerce_mall_cancellation_requests_ecommerce_mall_se_5fb64990")
+  @@index([status, created_at])
+}
+
+/// Complete audit trail of cancellation request status changes with
+/// timestamps and reason documentation.
+///
+/// Tracks every status transition for cancellation requests, providing a
+/// complete history of workflow progression. Each log entry records the
+/// status change timestamp, the new status, and any associated reason or
+/// notes for the transition.
+///
+/// Used for audit purposes, customer service inquiries, and dispute
+/// resolution. The status log ensures transparency in the cancellation
+/// workflow and provides historical context for any status changes
+/// throughout the request lifecycle.
+///
+/// This subsidiary table is managed through the parent cancellation request
+/// entity and does not require independent API operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_status_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cancellation request associated with this status log entry. {@link
+  /// ecommerce_mall_cancellation_requests.id}
+  ecommerce_mall_cancellation_request_id String
+  
+  /// Previous status of the cancellation request before this transition
+  /// occurred.
+  previous_status String?
+  
+  /// New status assigned to the cancellation request during this transition.
+  new_status String
+  
+  /// Reason or explanation for the status transition, providing context for
+  /// the change.
+  transition_reason String?
+  
+  /// Timestamp when this status transition was recorded in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [ecommerce_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_cancellation_request_id, created_at], map: "ecommerce_mall_cancellation_request_status_logs_ecomme_79cf687c")
+}
+
+/// Seller responses to customer cancellation requests with response content
+/// and timestamps.
+///
+/// Stores seller responses to cancellation requests, including
+/// approval/rejection decisions and any additional comments or instructions
+/// for the customer. Each response is associated with the seller's session
+/// for audit trail purposes.
+///
+/// Responses can include additional information such as restocking fees,
+/// return instructions, or alternative solutions. The response system
+/// supports multiple interactions between seller and customer throughout the
+/// cancellation workflow.
+///
+/// This subsidiary table is managed through the parent cancellation request
+/// entity and provides a complete record of seller-customer communication
+/// regarding cancellation decisions.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cancellation request associated with this seller response. {@link
+  /// ecommerce_mall_cancellation_requests.id}
+  ecommerce_mall_cancellation_request_id String
+  
+  /// Seller who provided this response to the cancellation request. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Session used by seller when providing the response. {@link
+  /// ecommerce_mall_seller_sessions.id}
+  ecommerce_mall_seller_session_id String
+  
+  /// Type of response provided by the seller. Valid values: approval,
+  /// rejection, request_more_info, alternative_offer.
+  response_type String
+  
+  /// Content of the seller's response including comments, instructions, or
+  /// additional information for the customer.
+  response_content String
+  
+  /// Timestamp when the seller response was submitted.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [ecommerce_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession ecommerce_mall_seller_sessions @relation(fields: [ecommerce_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_session_id], map: "ecommerce_mall_cancellation_request_responses_ecommerc_6682bc61")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_cancellation_request_id, created_at], map: "ecommerce_mall_cancellation_request_responses_ecommerc_4a5780e7")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_cancellation_request_responses_ecommerc_596327c6")
+}
+
+/// Customer-initiated refund requests for delivered items requiring seller
+/// approval and eligibility validation.
+///
+/// Tracks refund requests submitted by customers for products they have
+/// successfully received. Each request must validate eligibility based on
+/// delivery confirmation timestamps and platform refund policies. Supports
+/// workflow management with seller response tracking, status progression,
+/// and audit trail maintenance.
+///
+/// Refund requests are linked to specific order items and require seller
+/// review before processing. The system validates eligibility criteria such
+/// as delivery confirmation and refund window compliance. Status transitions
+/// track the request lifecycle from submission to completion or rejection.
+///
+/// Maintains complete audit trail including submission details, seller
+/// responses, and processing decisions. References delivery confirmations to
+/// validate receipt of purchased items before refund consideration.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted this refund request. {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller responsible for processing this refund request. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Order containing the item requested for refund. {@link
+  /// ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Specific order item requested for refund. {@link
+  /// ecommerce_mall_order_items.id}
+  ecommerce_mall_order_item_id String
+  
+  /// Delivery confirmation validating item receipt. {@link
+  /// ecommerce_mall_delivery_confirmations.id}
+  ecommerce_mall_delivery_confirmation_id String
+  
+  /// Customer-provided reason for requesting refund, explaining
+  /// dissatisfaction or issue with purchased product.
+  reason String
+  
+  /// Current status of refund request workflow. Valid values: pending,
+  /// under_review, approved, rejected, processed, cancelled.
+  status String
+  
+  /// Amount requested for refund by customer, which may be full or partial
+  /// item price depending on refund policy.
+  requested_amount Float
+  
+  /// Final approved refund amount determined by seller review process. Can be
+  /// different from requested amount.
+  approved_amount Float?
+  
+  /// Timestamp when customer submitted the refund request. Used for
+  /// eligibility validation and timing constraints.
+  requested_at DateTime
+  
+  /// Deadline for seller response before automatic approval or escalation
+  /// according to platform policies.
+  expires_at DateTime?
+  
+  /// Timestamp when seller reviewed and responded to the refund request.
+  seller_reviewed_at DateTime?
+  
+  /// Seller's explanation or justification for their decision on the refund
+  /// request.
+  seller_response String?
+  
+  /// Timestamp when refund was successfully processed through payment system.
+  processed_at DateTime?
+  
+  /// Timestamp when this refund request record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this refund request record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  deliveryConfirmation ecommerce_mall_delivery_confirmations @relation(fields: [ecommerce_mall_delivery_confirmation_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_delivery_confirmation_id], map: "ecommerce_mall_refund_requests_ecommerce_mall_delivery_e5cd5668")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id, ecommerce_mall_customer_id], map: "ecommerce_mall_refund_requests_ecommerce_mall_order_it_2035922b")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, status, requested_at], map: "ecommerce_mall_refund_requests_ecommerce_mall_customer_dd788420")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, status, requested_at], map: "ecommerce_mall_refund_requests_ecommerce_mall_seller_i_07c30d32")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, status], map: "ecommerce_mall_refund_requests_ecommerce_mall_order_id_3e94be3f")
+  @@index([status, expires_at])
+}
+
+/// Complete audit trail of all order item status changes with timestamps and
+/// reason documentation.
+///
+/// Tracks every status transition for order items throughout their
+/// lifecycle, from initial creation through processing, shipping, delivery,
+/// and any cancellations or refunds. Each record captures the specific
+/// status change event, including the previous status, new status,
+/// timestamp, and the actor responsible for the change.
+///
+/// Maintains a comprehensive audit trail for compliance, dispute resolution,
+/// and operational analysis. Status changes can be initiated by customers
+/// (cancellation requests), sellers (shipment updates), administrators
+/// (manual interventions), or system processes (automatic status
+/// progression).
+///
+/// The log entries are immutable and provide complete visibility into the
+/// order fulfillment workflow, enabling detailed reporting on processing
+/// times, bottlenecks, and operational efficiency.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_status_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target order item's {@link ecommerce_mall_order_items.id}.
+  ecommerce_mall_order_item_id String
+  
+  /// Type of actor who initiated the status change. Valid values: 'customer',
+  /// 'seller', 'administrator', 'super_administrator', 'system'.
+  actor_type String
+  
+  /// The status value before the change occurred. Captures the state at the
+  /// moment before transition.
+  previous_status String
+  
+  /// The status value after the change occurred. Represents the new state
+  /// resulting from this transition.
+  new_status String
+  
+  /// Explanation or documentation for why the status change occurred. May
+  /// include system messages, user input, or automated reasoning.
+  reason String?
+  
+  /// Timestamp when the status change was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the status log entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_item_id, created_at], map: "ecommerce_mall_order_status_logs_ecommerce_mall_order__cbbd5012")
+  @@index([actor_type, created_at])
+  @@index([previous_status, new_status])
+}
+
+/// Payment processing records for financial transactions processed through
+/// external payment gateways.
+///
+/// Stores comprehensive transaction details including amounts, payment
+/// gateway responses, status tracking, and reconciliation data. Each
+/// transaction is linked to a specific order and customer session for
+/// authentication and audit purposes.
+///
+/// Payment lifecycle includes multiple status transitions from payment
+/// initiation through gateway processing to final completion or failure.
+/// Transaction IDs from external payment providers are stored for
+/// reconciliation and dispute resolution.
+///
+/// Soft deletion is supported to maintain audit trails while allowing for
+/// administrative management of payment records.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who initiated this payment. References the customer's {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Order associated with this payment transaction. References the order's
+  /// {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Customer session active during payment initiation. References the
+  /// session's {@link ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Unique transaction identifier provided by the external payment gateway
+  /// for reconciliation purposes.
+  gateway_transaction_id String
+  
+  /// Name of the payment gateway used for this transaction (e.g., Stripe,
+  /// PayPal, etc.).
+  gateway_name String
+  
+  /// Transaction amount in the specified currency.
+  amount Float
+  
+  /// Currency code for the transaction amount (e.g., USD, EUR, etc.).
+  currency String
+  
+  /// Current payment status with values: pending, processing, completed,
+  /// failed, refunded.
+  status String
+  
+  /// Payment method used for this transaction (e.g., credit_card,
+  /// bank_transfer, digital_wallet).
+  payment_method String
+  
+  /// Response code received from the payment gateway indicating transaction
+  /// outcome.
+  gateway_response_code String?
+  
+  /// Human-readable response message from the payment gateway.
+  gateway_response_message String?
+  
+  /// Raw response data from the payment gateway in JSON or other format for
+  /// debugging.
+  gateway_response_data String?
+  
+  /// Timestamp when this payment transaction was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this payment transaction was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this payment transaction was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id], map: "ecommerce_mall_payment_transactions_ecommerce_mall_cus_c51cd7a6")
+  
+  // spellchecker: ignore-next-line
+  @@unique([gateway_transaction_id, gateway_name], map: "ecommerce_mall_payment_transactions_gateway_transactio_7f5f1d6c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, created_at], map: "ecommerce_mall_payment_transactions_ecommerce_mall_ord_984c059a")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_payment_transactions_ecommerce_mall_cus_f7289697")
+  @@index([status, created_at])
+  @@index([gateway_name, created_at])
+}

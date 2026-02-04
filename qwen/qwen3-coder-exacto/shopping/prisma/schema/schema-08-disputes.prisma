@@ -1,0 +1,347 @@
+/// Main entity for cancellation requests, tracking customer-initiated
+/// cancellations for paid order items. This table stores the reason for
+/// cancellation, maintains links to relevant order items, and preserves
+/// snapshots of product information at the time of purchase for dispute
+/// resolution purposes.
+///
+/// Each cancellation request is associated with exactly one order item from
+/// a customer's purchase. The request can be approved or rejected by the
+/// seller, with the outcome affecting inventory levels and triggering
+/// refunds when approved. Cancellation requests are subject to specific
+/// business rules - they can only be made for order items with 'paid'
+/// status, not for items that have already been shipped or delivered.
+///
+/// This entity works in conjunction with subtype tables
+/// (shopping_mall_cancellation_request_of_customers and
+/// shopping_mall_cancellation_request_of_sellers) to maintain proper
+/// relationships with both customers who initiate cancellations and sellers
+/// who respond to them. A snapshot table
+/// (shopping_mall_cancellation_request_snapshots) preserves the history of
+/// all changes to these requests for audit purposes.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the order item being cancelled. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Foreign key to the product snapshot at time of purchase. {@link
+  /// shopping_mall_product_snapshots.id}
+  shopping_mall_product_snapshot_id String
+  
+  /// Foreign key to the product variant snapshot at time of purchase. {@link
+  /// shopping_mall_product_variant_snapshots.id}
+  shopping_mall_product_variant_snapshot_id String
+  
+  /// Customer-provided reason for requesting the cancellation
+  reason String
+  
+  /// Current status of the cancellation request
+  status String
+  
+  /// Timestamp when the cancellation request was created
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the cancellation request was deleted (soft delete)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  productSnapshot shopping_mall_product_snapshots @relation(fields: [shopping_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  variantSnapshot shopping_mall_product_variant_snapshots @relation(fields: [shopping_mall_product_variant_snapshot_id], references: [id], onDelete: Cascade)
+  
+  customerSpecific shopping_mall_cancellation_request_of_customers?
+  sellerResponse shopping_mall_cancellation_request_of_sellers?
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_orde_706003cc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_snapshot_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_prod_4076db56")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_snapshot_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_prod_6d60118c")
+}
+
+/// Customer cancellation requests linking to customer and session at time of
+/// request
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who initiated this cancellation request. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Session of the customer when initiating this cancellation request. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Main cancellation request this customer-specific record references.
+  /// {@link shopping_mall_cancellation_requests.id}
+  shopping_mall_cancellation_request_id String
+  
+  /// Timestamp when this customer-specific cancellation request record was
+  /// created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_cancellation_request_of_customers_shoppi_c22dd2f8")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cancellation_request_id], map: "shopping_mall_cancellation_request_of_customers_shoppi_ed7db383")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cancellation_request_of_customers_shoppi_4be14681")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id], map: "shopping_mall_cancellation_request_of_customers_shoppi_1714de94")
+}
+
+/// Seller responses to cancellation requests with approval/rejection
+/// decision and justification.
+///
+/// This table tracks seller responses to customer-initiated cancellation
+/// requests for order
+/// items with 'paid' status. It captures the seller's decision
+/// (approve/reject) along with
+/// their justification and maintains links to relevant snapshots for audit
+/// purposes.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated cancellation request. {@link
+  /// shopping_mall_cancellation_requests.id}
+  shopping_mall_cancellation_request_id String
+  
+  /// Seller who responded to the cancellation request. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller's session when responding. {@link shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Seller's decision on the cancellation request. True to approve, false to
+  /// reject.
+  approval Boolean
+  
+  /// Seller's justification for their decision. Required when rejecting a
+  /// request.
+  reason String
+  
+  /// When the seller's response was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  session shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cancellation_request_id], map: "shopping_mall_cancellation_request_of_sellers_shopping_7838247d")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_cancellation_request_of_sellers_shopping_d4466599")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_cancellation_request_of_sellers_shopping_9728dc47")
+}
+
+/// Main table storing refund requests for order items with 'delivered'
+/// status. Tracks the customer's reason for refund and maintains links to
+/// the relevant order item and product snapshots.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item being refunded. {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Snapshot of the purchased product at time of order for dispute
+  /// resolution. {@link shopping_mall_order_item_product_snapshots.id}
+  shopping_mall_order_item_product_snapshot_id String
+  
+  /// Snapshot of the seller profile at time of order for historical records.
+  /// {@link shopping_mall_order_item_seller_snapshots.id}
+  shopping_mall_order_item_seller_snapshot_id String
+  
+  /// Text reason provided by customer for requesting refund
+  reason String
+  
+  /// Current status of the refund request
+  status String
+  
+  /// Timestamp when the refund request was initially created
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the refund request was deleted (soft delete)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  productSnapshot shopping_mall_order_item_product_snapshots @relation(fields: [shopping_mall_order_item_product_snapshot_id], references: [id], onDelete: Cascade)
+  sellerSnapshot shopping_mall_order_item_seller_snapshots @relation(fields: [shopping_mall_order_item_seller_snapshot_id], references: [id], onDelete: Cascade)
+  
+  sellerResponse shopping_mall_refund_request_of_sellers?
+  sellerRefundRequest shopping_mall_seller_refund_requests?
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  @@index([shopping_mall_order_item_id])
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_product_snapshot_id], map: "shopping_mall_refund_requests_shopping_mall_order_item_527282ed")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_seller_snapshot_id], map: "shopping_mall_refund_requests_shopping_mall_order_item_b0c67b7c")
+}
+
+/// Customer refund requests linking to customer and session at time of
+/// request. Maintains relationship between customer and their refund
+/// request.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who initiated refund request. Links to customer identity for
+  /// request validation and communication. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer's session when initiating refund request. Used for audit trail
+  /// and security validation. {@link shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_refund_request_of_customers_shopping_mal_397b86bc")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_refund_request_of_customers_shopping_mal_44faf198")
+}
+
+/// Seller-specific responses to customer refund requests for delivered order
+/// items.
+///
+/// This table tracks when sellers respond to refund requests initiated by
+/// customers, linking to both the seller and their authentication session at
+/// the response time. It maintains the relationship between the seller and
+/// their response to a refund request, storing whether it was approved or
+/// rejected and any attached response message.
+///
+/// When a seller responds to a customer refund request, a record is created
+/// here containing their response decision and message. This record
+/// references the main refund request in the primary table
+/// shopping_mall_refund_requests.
+///
+/// This table implements the standard seller polymorphic pattern where
+/// seller-specific attributes related to order management are stored in
+/// specialized tables. This allows sellers to properly track and respond to
+/// refund requests associated with their products.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main refund request record that this seller response applies to.
+  /// References the core refund request in shopping_mall_refund_requests.
+  shopping_mall_refund_request_id String
+  
+  /// The authenticated seller who is responding to this refund request.
+  /// References the seller's account record in shopping_mall_sellers.
+  shopping_mall_seller_id String
+  
+  /// The specific seller authentication session during which this response was
+  /// provided. References the session in shopping_mall_seller_sessions.
+  shopping_mall_seller_session_id String
+  
+  /// Seller's response status to the refund request. Valid values are
+  /// 'approved' for accepted refunds or 'rejected' for declined refund
+  /// requests.
+  status String
+  
+  /// Optional text explanation provided by the seller when responding to the
+  /// refund request. This field is required when rejecting a refund request.
+  reason String?
+  
+  /// The exact timestamp when the seller created their refund response. This
+  /// preserves the chronological sequence of all responses.
+  created_at DateTime
+  
+  /// The timestamp of the most recent modification to this seller's refund
+  /// response. Enables tracking of any changes in seller response decisions.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  session shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_refund_request_of_sellers_shopping_mall__349fc40e")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_refund_request_id], map: "shopping_mall_refund_request_of_sellers_shopping_mall__70248597")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_refund_request_of_sellers_shopping_mall__359ef106")
+  @@index([status, created_at])
+}

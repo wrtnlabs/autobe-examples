@@ -1,284 +1,654 @@
-# User Actor Requirements for E-Commerce Shopping Mall
+# E-Commerce Shopping Mall Platform Requirements Specification
 
-## User Actor Definitions
+## 1. Introduction
 
-### 1. Customer (Registered User)
+This document defines the comprehensive requirements for an e-commerce shopping mall platform that facilitates transactions between customers and sellers. The platform implements a multi-actor system with distinct roles and permissions, ensuring secure transactions with complete audit trails through data snapshotting.
 
-THE customer SHALL be a registered user of the platform with the following capabilities:
+## 2. User Actors and Authentication
 
-WHEN a customer accesses the platform, THE system SHALL provide access to browse all public products and categories.
+### 2.1 Customer Requirements
 
-THE customer SHALL be able to search for products using keywords, filters, and sorting options.
+#### 2.1.1 Account Management
 
-THE customer SHALL be able to view detailed product information including descriptions, images, prices, and available variants.
+WHEN a guest attempts to access any platform feature, THE system SHALL require registration and authentication before granting access.
 
-THE customer SHALL be able to add products to their shopping cart and manage cart contents including quantity adjustments and item removal.
+WHEN a customer registers, THE system SHALL require email address and password for account creation.
 
-THE customer SHALL be able to save products to a personal wishlist for future reference.
+WHEN a customer logs in, THE system SHALL authenticate using email and password credentials.
 
-THE customer SHALL be able to create and manage multiple shipping addresses associated with their account.
+WHEN a customer requests password change, THE system SHALL allow password modification after verifying current credentials.
 
-THE customer SHALL be able to place orders using items from their shopping cart.
+WHEN a customer requests account deletion, THE system SHALL:
+- Delete all profile information including display name and phone number
+- Preserve all order history and records for legal and seller purposes
+- Preserve all product reviews but display them as authored by "deleted user"
+- Remove the customer's ability to authenticate
 
-THE customer SHALL be able to select from their saved addresses during checkout.
+#### 2.1.2 Profile Management
 
-THE customer SHALL be able to track order status and shipment progress after purchase.
+THE customer profile SHALL include display name and phone number.
 
-THE customer SHALL be able to submit product reviews and ratings for items they have purchased.
+WHEN a customer accesses profile management, THE system SHALL allow editing of display name and phone number.
 
-THE customer SHALL be able to view their complete order history with details.
+#### 2.1.3 Address Management
 
-THE customer SHALL be able to request order cancellations for eligible orders.
+THE customer SHALL be able to add multiple shipping addresses.
 
-THE customer SHALL be able to initiate refund requests for eligible purchases.
+WHEN a customer manages addresses, EACH address SHALL include recipient name, phone number, street address, city, state/province, postal code, and country.
 
-THE customer SHALL be able to update their personal profile information including contact details and password.
+WHEN a customer edits an address, THE system SHALL allow modification of all address fields.
 
-### 2. Seller (Vendor)
+WHEN a customer deletes an address, THE system SHALL remove that address from their profile.
 
-THE seller SHALL be an authorized vendor account with the ability to manage their own product catalog.
+WHEN a customer sets a default address, THE system SHALL designate one address as the default shipping destination.
 
-THE seller SHALL be able to create new product listings with complete details including categories, descriptions, pricing, and images.
+### 2.2 Seller Requirements
 
-THE seller SHALL be able to define product variants (SKUs) with different attributes such as size, color, and options.
+#### 2.2.1 Account Management
 
-THE seller SHALL be able to manage inventory levels for each product variant.
+WHEN a seller registers, THE system SHALL require email address and password for account creation.
 
-THE seller SHALL be able to update product information, pricing, and availability as needed.
+WHEN a seller logs in, THE system SHALL authenticate using email and password credentials.
 
-THE seller SHALL be able to view orders placed for their products with customer shipping information.
+WHEN a seller requests password change, THE system SHALL allow password modification after verifying current credentials.
 
-THE seller SHALL be able to update order status to reflect fulfillment progress (processing, shipped, delivered).
+WHEN a seller requests account deletion, THE system SHALL:
+- Allow deletion only when no pending orders exist (paid or shipped status)
+- Allow deletion only when no pending cancellation or refund requests exist
+- Delete all products from active listings
+- Preserve order history and snapshots
+- Preserve shop name references in past orders
+- Remove the seller's ability to authenticate
 
-THE seller SHALL be able to view sales reports and performance analytics for their products.
+#### 2.2.2 Account Approval Process
 
-THE seller SHALL be able to respond to customer reviews for their products.
+THE seller account SHALL require administrator approval before gaining selling privileges.
 
-THE seller SHALL be able to update their business profile information including contact details and store description.
+WHEN a seller accesses their account, THE system SHALL display their current approval status (pending, approved, rejected).
 
-### 3. Admin (System Administrator)
+WHEN a seller's registration is rejected, THE system SHALL provide the rejection reason to the seller.
 
-THE admin SHALL have full system access to manage all platform functions.
+WHEN a seller's registration is rejected, THE system SHALL allow submission of a new registration request.
 
-THE admin SHALL be able to manage all user accounts including customers and sellers.
+#### 2.2.3 Profile Management
 
-THE admin SHALL be able to create, modify, and remove product categories and subcategories.
+THE seller profile SHALL include shop name, shop description, and logo image.
 
-THE admin SHALL be able to review and moderate product listings for policy compliance.
+WHEN a seller edits their profile, THE system SHALL:
+- Allow modification of shop name, description, and logo
+- Create a snapshot of the previous profile state
+- Preserve all snapshots for audit and dispute resolution
 
-THE admin SHALL be able to oversee all orders across the platform.
+WHEN a customer views seller information, THE system SHALL display the current seller profile.
 
-THE admin SHALL be able to manage order statuses and resolve disputes between customers and sellers.
+### 2.3 Administrator Requirements
 
-THE admin SHALL be able to configure payment methods and shipping options.
+#### 2.3.1 Authentication and Administration
 
-THE admin SHALL be able to generate comprehensive platform reports including sales, user activity, and inventory status.
+WHEN an administrator logs in, THE system SHALL authenticate with appropriate credentials.
 
-THE admin SHALL be able to manage promotional campaigns and discount codes.
+THE administrator SHALL have access to all administrative functions based on their grade level.
 
-THE admin SHALL be able to configure system settings and platform parameters.
+#### 2.3.2 Administrator Management
 
-THE admin SHALL be able to moderate user reviews and handle policy violations.
+WHEN a user requests administrator privileges, THE system SHALL:
+- Allow submission of requests including rationale
+- Display pending requests to super administrators
+- Allow super administrators to approve or reject requests
+- Convert approved users to administrator status
 
-THE admin SHALL be able to monitor system performance and user activity logs.
+WHEN managing administrator grades, THE system SHALL:
+- Support two grades: regular administrator and super administrator
+- Allow super administrators to promote regular administrators to super administrator
+- Allow super administrators to demote other super administrators to regular administrator
+- Prevent super administrators from demoting themselves
+
+#### 2.3.3 Seller Management
+
+WHEN managing seller registrations, THE system SHALL:
+- Display pending seller approval requests to administrators
+- Allow approval or rejection of seller registrations
+- Require rejection reasons when rejecting seller registrations
+- Allow rejected sellers to submit new registration requests
+- Allow suspension of seller accounts
+- WHEN suspending a seller, THE system SHALL:
+  - Hide seller products from search and category listings
+  - Prevent purchase of seller products
+  - Allow processing of existing orders
+  - Prevent creation or editing of products
+- Allow unsuspension of seller accounts
+
+#### 2.3.4 Category Management
+
+THE administrator SHALL be able to create categories and subcategories.
+
+WHEN managing categories, THE system SHALL:
+- Allow creation of categories with name and description
+- Allow editing of category names and descriptions
+- Allow deletion of categories
+- WHEN a category is deleted, THE system SHALL make products in that category uncategorized
+
+#### 2.3.5 Oversight Functions
+
+WHEN overseeing products, THE system SHALL:
+- Allow viewing of all platform products
+- Allow viewing of product snapshots
+- Allow deletion of products for policy violations
+
+WHEN overseeing orders, THE system SHALL:
+- Allow viewing of all platform orders
+- Allow force-cancellation of individual items or entire orders
+- Allow force-refund of individual items or entire orders
+
+WHEN managing users, THE system SHALL:
+- Allow viewing of all customer accounts
+- Allow banning and unbanning of customers
+- Allow viewing of all seller accounts
+- Allow banning and unbanning of sellers
+
+### 2.4 Authentication System
+
+#### 2.4.1 Authentication Flow
+
+THE authentication system SHALL support email and password based authentication for all user actors.
+
+WHEN a user attempts authentication, THE system SHALL:
+- Validate email format
+- Verify password against stored secure hash
+- Generate secure session tokens upon successful authentication
+- Associate appropriate permissions with the session
+
+#### 2.4.2 Session Management
+
+THE system SHALL maintain user sessions using JWT tokens.
+
+WHEN a user authenticates successfully, THE system SHALL:
+- Generate access token with 30-minute expiration
+- Generate refresh token with 30-day expiration
+- Include user ID, actor type, and permissions in JWT payload
+- Store tokens in httpOnly cookies for security
+
+WHEN a session expires, THE system SHALL require re-authentication.
+
+#### 2.4.3 Password Security
+
+THE system SHALL enforce strong password requirements for all actors.
+
+WHEN a user changes password, THE system SHALL:
+- Validate password strength
+- Hash password using industry-standard algorithms
+- Invalidate existing sessions
 
-## Authentication Requirements
+### 2.5 Permission Matrix
+
+| Action | Customer | Seller | Administrator |
+|--------|----------|--------|---------------|
+| Register account | ✅ | ✅ | ✅ |
+| Log in | ✅ | ✅ | ✅ |
+| Change password | ✅ | ✅ | ✅ |
+| Delete account | ✅ | WHERE no pending obligations | WHERE authorized grade |
+| View products | ✅ | ✅ | ✅ |
+| Create/edit profile | ✅ | ✅ | |
+| Manage addresses | ✅ | | |
+| Create products | | ✅ (approved) | |
+| Edit products | | ✅ (approved/own) | ✅ (any) |
+| Delete products | | ✅ (approved/own/criteria) | ✅ (any) |
+| View seller dashboard | | ✅ | |
+| Process orders | | ✅ (own) | ✅ (any) |
+| Manage inventory | | ✅ (own) | |
+| Approve sellers | | | ✅ |
+| Manage categories | | | ✅ |
+| Ban users | | | ✅ |
+| View all orders | | | ✅ |
+| Force cancel/refund | | | ✅ |
 
-### Registration Process
+### 2.6 Account Lifecycle Management
+
+#### 2.6.1 Registration Process
+
+WHEN a user registers, THE system SHALL:
+- Validate email uniqueness
+- Enforce password strength requirements
+- Create account in pending state where applicable
+- Send verification email
+- Activate account upon email verification
+
+#### 2.6.2 Account States
+
+THE system SHALL support the following account states:
+- Pending (awaiting email verification or approval)
+- Active (fully operational)
+- Suspended (limited functionality)
+- Banned (no access)
+- Deleted (permanently removed with data retention)
 
-WHEN a guest user initiates account registration, THE system SHALL collect email address, password, and basic profile information.
+#### 2.6.3 Data Retention
+
+WHEN an account is deleted, THE system SHALL:
+- Immediately revoke authentication capabilities
+- Preserve audit-relevant data as required by law
+- Mark user-generated content as from deleted user where appropriate
+- Schedule complete data purge according to retention policy
+
+## 3. Product and Category Management
+
+### 3.1 Product Structure
 
-WHEN a user submits registration information, THE system SHALL validate that the email address is properly formatted.
+#### 3.1.1 Core Product Attributes
+
+WHEN a seller creates a product, THE system SHALL require the following fields:
+- Name (required, text)
+- Description (required, text)
+- Category (required, selectable from administrator-defined categories)
+- Base price (required, monetary value)
+
+THE system SHALL associate each product with the seller who created it.
+
+#### 3.1.2 Product Images
+
+WHEN a seller manages product images, THE system SHALL:
+- Allow uploading of multiple images
+- Allow reordering of images (first image is primary thumbnail)
+- Allow deletion of images
+- Include image changes in product snapshots
+
+#### 3.1.3 Product Modification
+
+WHEN a seller modifies a product, THE system SHALL:
+- Create a complete snapshot of the product's current state
+- Include all product fields and images in the snapshot
+- Preserve snapshots even after product deletion
 
-WHEN a user submits registration information, THE system SHALL verify that the email address is not already registered in the system.
+#### 3.1.4 Product Deletion
 
-WHEN a user successfully registers, THE system SHALL send a verification email to the provided address.
+WHEN a seller requests product deletion, THE system SHALL:
+- Allow deletion only when no pending order items exist for any variant
+- Allow deletion only when no pending cancellation/refund requests exist for any variant
+- Remove all variants and inventory records
+- Remove product from search and category listings
+- Preserve order history and snapshots
+
+### 3.2 Category System
 
-WHEN a user clicks the verification link in their email, THE system SHALL activate their account and allow full platform access.
+#### 3.2.1 Category Hierarchy
 
-IF a user attempts to register with an email that is already in use, THEN THE system SHALL display an appropriate error message.
+THE system SHALL organize products into categories with one level of subcategories.
 
-WHEN a user requests to reset their password, THE system SHALL send a password reset link to their registered email address.
+WHEN managing categories, THE system SHALL require:
+- Name (required, text)
+- Description (required, text)
 
-WHEN a user accesses the password reset link within its validity period, THE system SHALL allow them to set a new password.
+WHEN displaying categories to customers, THE system SHALL:
+- Show all categories in a browsable list
+- Allow viewing products within each category
 
-### Login Process
+### 3.3 Search and Discovery
 
-WHEN a user submits login credentials, THE system SHALL validate the email and password combination.
+#### 3.3.1 Product Search
 
-WHEN valid credentials are provided, THE system SHALL generate authentication tokens and establish a user session.
+WHEN a customer searches for products, THE system SHALL support filtering by:
+- Search term matching product names
+- Category (including subcategories)
+- Price range (minimum and maximum)
+- Stock status (in-stock items only)
 
-WHEN invalid credentials are provided, THE system SHALL deny access and display an appropriate error message.
+WHEN displaying search results, THE system SHALL:
+- Paginate results
+- Allow sorting by newest first, price low-to-high, and price high-to-low
+- Show product thumbnail, name, base price, seller name, and average rating
 
-WHEN a user attempts to log in with an unverified email address, THE system SHALL deny access and prompt for email verification.
+#### 3.3.2 Product Listings
 
-WHEN a user logs in successfully, THE system SHALL redirect them to their personalized dashboard.
+WHEN displaying product lists (search results, category pages), THE system SHALL show:
+- Main image (thumbnail)
+- Name
+- Base price (or price range if variants differ)
+- Seller shop name
+- Average rating and review count (if available)
 
-### Session Management
+#### 3.3.3 Product Detail Page
+
+WHEN a customer views a product detail page, THE system SHALL display:
+- All product images
+- Name and description
+- Category
+- Seller shop name with link to profile
+- All available variants with prices and stock status
+- Average rating and total review count
+- All reviews
 
-THE system SHALL maintain user sessions using secure JWT tokens for authentication.
+## 4. Shopping and Order Management
 
-THE system SHALL automatically log out users after a period of inactivity as defined by security policies.
+### 4.1 Wishlist Functionality
 
-THE user SHALL be able to manually log out from their account on any device.
+WHEN a customer manages their wishlist, THE system SHALL:
+- Allow adding products to wishlist
+- Display paginated wishlist
+- Show products (not specific variants)
+- Allow removing products from wishlist
+- Automatically remove deleted products from all wishlists
 
-WHEN a user logs out, THE system SHALL invalidate their session tokens across all devices.
+### 4.2 Shopping Cart Operations
 
-THE user SHALL be able to view and manage active sessions from their account settings.
+#### 4.2.1 Cart Management
 
-WHEN a user changes their password, THE system SHALL invalidate all existing sessions except the current one.
+WHEN a customer adds items to their cart, THE system SHALL:
+- Require selection of specific variants (not just products)
+- Allow specifying quantity
+- Combine quantities for identical variants already in cart
 
-### Profile Management
+WHEN displaying the cart, THE system SHALL show:
+- Product name
+- Variant options
+- Price
+- Quantity
+- Subtotal per item
+- Total price for all items
 
-THE user SHALL be able to update their personal information including name, contact details, and preferences.
+WHEN a customer modifies their cart, THE system SHALL:
+- Allow changing item quantities
+- Allow removing items
 
-THE user SHALL be able to change their password through the account settings.
+#### 4.2.2 Cart Validation
 
-THE user SHALL be able to manage notification preferences for emails and alerts.
+WHEN displaying the cart, THE system SHALL indicate:
+- If a variant's stock is less than the cart quantity
+- If a variant is deleted or out of stock (marked as unavailable)
 
-## Permission Matrix
+WHEN proceeding to checkout, THE system SHALL prevent checkout of unavailable items.
 
-| Functionality | Customer | Seller | Admin |
-|---------------|:--------:|:------:|:-----:|
-| Browse products | ✅ | ✅ | ✅ |
-| Search products | ✅ | ✅ | ✅ |
-| View product details | ✅ | ✅ | ✅ |
-| Add to cart | ✅ | ❌ | ❌ |
-| Manage cart | ✅ | ❌ | ❌ |
-| Create wishlist | ✅ | ❌ | ❌ |
-| Manage addresses | ✅ | ❌ | ❌ |
-| Place orders | ✅ | ❌ | ❌ |
-| Track orders | ✅ | ✅ | ✅ |
-| Submit reviews | ✅ | ✅ | ✅ |
-| View order history | ✅ | ✅ | ✅ |
-| Request cancellations | ✅ | ❌ | ✅ |
-| Request refunds | ✅ | ❌ | ✅ |
-| Create products | ❌ | ✅ | ✅ |
-| Edit products | ❌ | ✅ | ✅ |
-| Manage inventory | ❌ | ✅ | ✅ |
-| Update order status | ❌ | ✅ | ✅ |
-| View sales reports | ❌ | ✅ | ✅ |
-| Respond to reviews | ❌ | ✅ | ✅ |
-| Manage user accounts | ❌ | ❌ | ✅ |
-| Manage categories | ❌ | ❌ | ✅ |
-| Moderate content | ❌ | ❌ | ✅ |
-| Generate system reports | ❌ | ❌ | ✅ |
-| Configure platform | ❌ | ❌ | ✅ |
+### 4.3 Checkout Process
 
-## JWT Token Management
+#### 4.3.1 Checkout Workflow
 
-### Token Structure and Content
+WHEN a customer proceeds to checkout, THE system SHALL:
+- Require selection of shipping address (or use default)
+- Display order summary including:
+  - List of items with prices
+  - Shipping address
+  - Total price
+- Prevent modification of shipping address after order placement
 
-THE system SHALL use JSON Web Tokens (JWT) for authentication and authorization.
+### 4.4 Payment Integration
 
-THE JWT payload SHALL include the following standard claims:
-- `sub`: User ID (unique identifier)
-- `role`: User role (customer, seller, or admin)
-- `permissions`: Array of permitted actions based on user role
-- `iat`: Issued at timestamp
-- `exp`: Expiration timestamp
+#### 4.4.1 Payment Processing
 
-THE access token SHALL have a validity period of 30 minutes.
+WHEN a customer confirms an order, THE system SHALL:
+- Process payment through an external gateway
+- Handle both payment success and failure scenarios
 
-THE refresh token SHALL have a validity period of 30 days.
+IF payment succeeds, THEN THE system SHALL:
+- Create the order
+- Decrease stock quantities for purchased variants
+- Remove items from customer's cart
+- Save product and variant snapshots for each order item
 
-### Token Storage and Security
+IF payment fails, THEN THE system SHALL:
+- Not create an order
+- Allow customer to retry payment
 
-THE system SHALL store JWT tokens in httpOnly cookies for enhanced security against XSS attacks.
+### 4.5 Order Creation
 
-THE system SHALL use secure flags for cookies when operating over HTTPS connections.
+#### 4.5.1 Order Generation
 
-THE system SHALL implement CSRF protection mechanisms to prevent cross-site request forgery.
+WHEN an order is successfully placed, THE system SHALL:
+- Create an order record
+- Generate order items for each purchased variant
+- Set all order items to "paid" status
+- Save snapshots of purchased products, variants, and seller profiles
+- Create negative inventory records for each purchased variant
 
-THE system SHALL validate all tokens on each authenticated request for expiration and integrity.
+#### 4.5.2 Order Structure
 
-### Token Refresh Process
+THE system SHALL organize orders as follows:
+- An order contains one or more order items
+- Each order item represents a specific variant with a quantity
+- Order items can come from different sellers
+- Each order item has its own status
+- Order items can be individually cancelled or refunded
+- Order items are grouped into shipments when shipped
 
-WHEN an access token expires during user activity, THE system SHALL automatically attempt to refresh it using the refresh token.
+### 4.6 Order History
 
-WHEN a refresh token is used successfully, THE system SHALL generate new access and refresh tokens.
+#### 4.6.1 Order List
 
-IF a refresh token is expired or invalid, THE system SHALL redirect the user to the login page.
+WHEN a customer views their order history, THE system SHALL:
+- Display a paginated list sorted by newest first
+- Show order number, date, total price, and overall order status
 
-THE system SHALL maintain a secure refresh token rotation mechanism to prevent replay attacks.
+#### 4.6.2 Order Details
 
-### Role-Based Access Control
+WHEN a customer views order details, THE system SHALL display:
+- List of items with product name, variant, quantity, price, and item status
+- Shipping address
+- List of shipments with tracking information
 
-THE system SHALL validate user permissions on each API request based on their JWT claims.
+### 4.7 Order Status Management
 
-THE system SHALL deny access to restricted resources when a user lacks the necessary permissions.
+#### 4.7.1 Item Status
 
-WHEN a user attempts to access a resource outside their permissions, THE system SHALL return an appropriate HTTP 403 Forbidden response.
+THE system SHALL support the following order item statuses:
+- Paid: Payment completed, awaiting seller shipment
+- Shipped: Seller has shipped the item
+- Delivered: Item has been delivered
+- Cancelled: Item was cancelled
+- Refunded: Item was refunded
 
-THE system SHALL log all authorization failures for security monitoring purposes.
+#### 4.7.2 Order Status Derivation
 
-```mermaid
-graph LR
-  A["User Authentication Flow"] 
-  
-  subgraph "Authentication Process"
-    B["User Login Request"]
-    C{"Credentials Valid?"}
-    D["Generate JWT Tokens"]
-    E["Set Secure Cookies"]
-    F["Redirect to Dashboard"]
-  end
-  
-  subgraph "Authorization Process"
-    G["Validate JWT on Request"]
-    H{"Token Valid and Not Expired?"}
-    I["Check User Permissions"]
-    J{"Has Required Permissions?"}
-    K["Allow Access"]
-    L["Return Forbidden Error"]
-  end
-  
-  M["Access Protected Resource"]
-  
-  A -. "1. Submit Credentials" .- B
-  B -. "2. Validate Credentials" .- C
-  C -- "Yes" -. "3. Create Tokens" .- D
-  D -. "4. Store Tokens" .- E
-  E -. "5. Complete Login" .- F
-  F -. "6. User Activity" .- M
-  M -. "7. Validate Request" .- G
-  G -. "8. Token Check" .- H
-  H -- "Yes" -. "9. Permissions Check" .- I
-  I -. "10. Authorization" .- J
-  J -- "Yes" -. "11. Grant Access" .- K
-  J -- "No" -. "11. Deny Access" .- L
-  H -- "No" -. "Deny Request" .- L
-  C -- "No" -. "Show Error" .- L
-```
+THE system SHALL derive overall order status based on item statuses:
+- All items paid → Order is "paid"
+- Any item shipped (none delivered) → Order is "shipped"
+- All items delivered → Order is "delivered"
+- All items cancelled → Order is "cancelled"
+- All items refunded → Order is "refunded"
+- Mixed states → Order is "partially completed"
 
-## Session Management Requirements
+## 5. Inventory and Variant Management
 
-### Concurrent Sessions
+### 5.1 Product Variants (SKU)
 
-THE system SHALL allow users to maintain multiple active sessions across different devices.
+#### 5.1.1 Variant Structure
 
-THE user SHALL be able to view all active sessions from their account settings.
+WHEN a seller creates product variants, EACH variant SHALL include:
+- SKU code (unique identifier, required)
+- Option values (e.g., color: "Red", size: "Large")
+- Price (can override base price, optional)
+- Stock quantity (required, starts at 0)
 
-THE user SHALL be able to revoke access from specific devices or terminate all sessions except the current one.
+#### 5.1.2 Variant Management
 
-WHEN a user's password is changed, THE system SHALL terminate all other active sessions.
+WHEN a seller modifies variants, THE system SHALL:
+- Create a snapshot of the variant's state
+- Allow adding, editing, or deleting variants
+- Require at least one variant for product to be purchasable
 
-### Session Security
+WHEN a seller deletes a variant, THE system SHALL:
+- Allow deletion only when no pending order items exist for that variant
+- Allow deletion only when no pending cancellation/refund requests exist for that variant
 
-THE system SHALL implement rate limiting on authentication attempts to prevent brute force attacks.
+#### 5.1.3 Product Availability
 
-THE system SHALL log all authentication events including successful logins, failed attempts, and logout events.
+WHEN determining product availability, THE system SHALL:
+- Mark products with no variants as "unavailable" for purchase
+- Mark variants with zero stock as "out of stock"
+- Prevent adding out-of-stock variants to cart
 
-THE system SHALL implement secure session timeout mechanisms to protect against unauthorized access.
+### 5.2 Inventory Management
 
-THE system SHALL encrypt all sensitive session data both in transit and at rest.
+#### 5.2.1 Inventory Records
 
-### Account Recovery
+THE system SHALL track inventory through history records with:
+- Quantity change (positive for restocking, negative for orders/adjustments)
+- Reason for change
+- Timestamp
 
-WHEN a user requests account recovery, THE system SHALL send recovery instructions to their registered email.
+WHEN calculating current stock, THE system SHALL sum all inventory records.
 
-THE account recovery process SHALL have a time-limited validity period.
+#### 5.2.2 Inventory Operations
 
-THE system SHALL log all account recovery attempts for security monitoring.
+WHEN a seller manages inventory, THE system SHALL:
+- Allow adding stock (restocking) with quantity and reason
+- Allow subtracting stock (adjustment/loss) with quantity and reason
+- Automatically create negative records for order placements
+- Automatically create positive records for cancellations/refunds
 
-IF multiple failed recovery attempts are detected, THE system SHALL temporarily lock the account and notify the user.
+WHEN stock reaches zero, THE system SHALL:
+- Mark the variant as "out of stock"
+- Prevent addition to cart
+
+## 6. Shipping and Tracking System
+
+### 6.1 Shipment Concept
+
+THE system SHALL implement shipping as follows:
+- A shipment is a package sent by a seller
+- A shipment can contain multiple order items from the same seller
+- Different sellers always ship separately
+- Sellers can choose to ship items individually or bundle into one shipment
+
+### 6.2 Shipping Process
+
+WHEN a seller processes shipping, THE system SHALL:
+- Display order items requiring shipment
+- Allow selection of items for a shipment
+- Require entry of tracking information (carrier name, tracking number)
+- Set all items in the shipment to "shipped" status
+
+### 6.3 Delivery Confirmation
+
+WHEN managing delivery confirmation, THE system SHALL:
+- Display tracking information per shipment
+- Allow customers to confirm delivery per shipment
+- Set all items in a confirmed shipment to "delivered" status
+- Automatically mark shipments as "delivered" after 14 days from shipping if unconfirmed
+
+## 7. Cancellation and Refund System
+
+### 7.1 Cancellation Process
+
+#### 7.1.1 Customer Cancellation Request
+
+WHEN a customer requests item cancellation, THE system SHALL:
+- Allow cancellation only for items with "paid" status
+- Require a reason for cancellation
+- Create a cancellation request for seller review
+
+#### 7.1.2 Seller Response
+
+WHEN a seller responds to a cancellation request, THE system SHALL:
+- Allow approval or rejection of the request
+- Create a snapshot of the request state
+
+IF a seller approves a cancellation request, THEN THE system SHALL:
+- Set the item status to "cancelled"
+- Process refund for that item
+- Create positive inventory record to restore stock
+- Allow remaining items to continue processing
+
+IF all items in an order are cancelled, THEN THE system SHALL set order status to "cancelled".
+
+### 7.2 Refund Process
+
+#### 7.2.1 Customer Refund Request
+
+WHEN a customer requests a refund, THE system SHALL:
+- Allow refund requests only for items with "delivered" status
+- Require a reason for the refund
+- Limit requests to within 7 days of delivery
+- Create a refund request for seller review
+
+#### 7.2.2 Seller Response
+
+WHEN a seller responds to a refund request, THE system SHALL:
+- Allow approval or rejection of the request
+- Create a snapshot of the request state
+
+IF a seller approves a refund request, THEN THE system SHALL:
+- Set the item status to "refunded"
+- Process refund for that item
+- Create positive inventory record to restore stock
+- Allow remaining items to continue processing
+
+IF all items in an order are refunded, THEN THE system SHALL set order status to "refunded".
+
+## 8. Reviews and Ratings System
+
+### 8.1 Review Creation
+
+WHEN a customer creates a review, THE system SHALL:
+- Allow reviews only for products they have purchased
+- Allow reviews only after item status is "delivered"
+- Limit to one review per product per order
+- Require rating (1-5 stars)
+- Allow optional text content
+
+### 8.2 Review Display and Management
+
+WHEN displaying product reviews, THE system SHALL:
+- Sort reviews by newest first
+- Display on the product detail page
+
+WHEN a customer manages their reviews, THE system SHALL:
+- Allow editing reviews
+- Create snapshots of review edits
+- Allow deleting reviews (with snapshot preservation)
+- Display "deleted user" for reviews from deleted accounts
+
+### 8.3 Rating Calculation
+
+THE system SHALL calculate product ratings by:
+- Averaging all non-deleted review ratings
+- Displaying the average with appropriate precision
+- Showing total review count
+
+## 9. Seller Dashboard and Analytics
+
+### 9.1 Dashboard Overview
+
+WHEN a seller accesses their dashboard, THE system SHALL display:
+- Total number of products
+- Total number of order items
+- Number of pending cancellation requests
+- Number of pending refund requests
+
+### 9.2 Order Management
+
+WHEN a seller manages orders, THE system SHALL:
+- Display a list of all order items for their products
+- Allow filtering by status
+
+## 10. Data Snapshots and Audit Trail
+
+### 10.1 Snapshot Principles
+
+THE system SHALL implement comprehensive snapshotting for all editable data:
+- Create snapshots whenever data is modified
+- Preserve previous states for audit and dispute resolution
+- Record modification timestamp, changes made, and before/after values
+- Maintain snapshots even after data deletion
+
+### 10.2 Snapshot Coverage
+
+WHEN creating snapshots, THE system SHALL capture:
+- Products (all fields including images)
+- Product variants (SKU code, option values, price)
+- Seller profiles (shop name, description, logo)
+- Order items (product, variant, seller profile at purchase time)
+- Reviews (rating, text content)
+- Cancellation requests (reason, status changes)
+- Refund requests (reason, status changes)
+
+### 10.3 Product Snapshot Structure
+
+WHEN a product is edited, THE system SHALL create a product snapshot that:
+- Includes all product fields (name, description, category, base price, images)
+- Includes snapshots of all variants at that moment
+- Preserves complete state for audit purposes
+
+### 10.4 Snapshot Access
+
+WHEN accessing snapshots, THE system SHALL:
+- Allow sellers to view snapshots of their own products
+- Allow administrators to view snapshots of any product
+- Allow owners to view relevant snapshots for dispute resolution

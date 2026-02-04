@@ -10,7 +10,7 @@ import { prepare_random_shopping_mall_channel } from "../prepare/prepare_random_
 export async function generate_random_shopping_mall_admin_channels_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IShoppingMallChannel.ICreate>;
+    body?: DeepPartial<IShoppingMallChannel.ICreate> | undefined;
   },
 ): Promise<IShoppingMallChannel> {
   const prepared: IShoppingMallChannel.ICreate =

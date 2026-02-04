@@ -1,0 +1,1 @@
+I need to analyze the requirements for the Economic/Political Discussion Board and create a detailed specification document. Let me first check if there are any previous analysis files I should reference.

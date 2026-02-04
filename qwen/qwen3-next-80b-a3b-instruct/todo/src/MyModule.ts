@@ -1,19 +1,19 @@
 import { Module } from "@nestjs/common";
 
 import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
-import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
-import { TodoappUserAuthUsersVerifyEmailController } from "./controllers/todoApp/user/auth/users/verify/email/TodoappUserAuthUsersVerifyEmailController";
-import { TodoappUserAuthUsersController } from "./controllers/todoApp/user/auth/users/logout/TodoappUserAuthUsersController";
-import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
+import { TodoappUserEmail_verificationsController } from "./controllers/todoApp/user/email-verifications/TodoappUserEmail_verificationsController";
+import { TodoappUserPassword_resetsController } from "./controllers/todoApp/user/password-resets/TodoappUserPassword_resetsController";
+import { TodoappUserProfileController } from "./controllers/todoApp/user/profile/TodoappUserProfileController";
+import { TodoappUserSessionsController } from "./controllers/todoApp/user/sessions/TodoappUserSessionsController";
 import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
 
 @Module({
   controllers: [
     TodoappAuthUserController,
-    TodoappAuthGuestController,
-    TodoappUserAuthUsersVerifyEmailController,
-    TodoappUserAuthUsersController,
-    TodoappUserUsersController,
+    TodoappUserProfileController,
+    TodoappUserSessionsController,
+    TodoappUserEmail_verificationsController,
+    TodoappUserPassword_resetsController,
     TodoappUserTodosController,
   ],
 })

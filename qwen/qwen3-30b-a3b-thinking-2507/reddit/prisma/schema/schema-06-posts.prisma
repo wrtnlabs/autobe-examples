@@ -1,0 +1,231 @@
+/// Core post entity that serves as the entry point for content creation on
+/// the platform.
+///
+/// Stores all essential metadata for posts including title, author,
+/// community, and type. Each post represents a content contribution with the
+/// ability to be text, link, or image.
+///
+/// Posts are the focal point for user engagement, featuring the ability to
+/// be upvoted/downvoted, commented on, and interacted with through the karma
+/// system. The type field determines how the content is displayed and
+/// validated.
+///
+/// Posts are managed independently by users who have subscribed to the
+/// relevant community, and can be created, edited, and deleted within the
+/// platform's workflow.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community to which this post belongs. This is a required relationship
+  /// that links the post to the specific community it's being created in.
+  community_platform_community_id String
+  
+  /// Author of the post who created it. Reference to the author user's profile
+  /// data.
+  community_platform_user_id String
+  
+  /// Post title for the content being displayed. Must be between 10-100
+  /// characters as per business requirements.
+  title String
+  
+  /// Type of post. Valid values: 'text', 'link', 'image' based on business
+  /// requirements for content types.
+  post_type String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Allows content moderation and
+  /// historical tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  votes community_platform_post_votes[]
+  textContent community_platform_post_text_contents?
+  linkUrls community_platform_post_link_urls[]
+  images community_platform_post_image_uploads[]
+  comments community_platform_comments[]
+  
+  @@index([community_platform_community_id])
+  @@index([community_platform_user_id])
+}
+
+/// Stores rich text content for text-based posts with character limit
+/// validation.
+///
+/// Holds the formatted text content for text posts with up to 10,000
+/// characters as required by the platform. The content is stored in a format
+/// that supports markdown and rich text formatting for display across all
+/// interface types.
+///
+/// This table maintains a separate record for each text-based post, storing
+/// the actual content and character count for validation purposes. It
+/// directly references the community_platform_posts table to link the
+/// content to the specific post instance.
+///
+/// Character count is stored as a separate field to enable efficient
+/// validation before saving content, reducing the need for on-the-fly
+/// calculations during user input.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_text_contents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Text post's {@link community_platform_posts.id}.
+  post_id String
+  
+  /// Rich text content for text-based posts with markdown support. Must not
+  /// exceed 10,000 characters.
+  content String
+  
+  /// Character count of the content text for automatic validation. Matches
+  /// content length for display and limits.
+  character_count Int
+  
+  /// Content creation timestamp with timezone. Reflects when user created the
+  /// post text.
+  created_at DateTime
+  
+  /// Content last modification timestamp. Tracked for versioning and audit
+  /// trails.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null if still active, set when content is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+}
+
+/// Stores URL information for link-based posts with validation for proper
+/// URL format.
+///
+/// This table captures the web URL used in link posts across the community
+/// platform. It supports link-based posts by storing the necessary URL
+/// information including the actual URL, optional title and description for
+/// the linked resource, and audit data for tracking the content's lifecycle.
+/// The table follows normalization principles by having no direct relation
+/// to the main post table - instead, the main post table references this
+/// link via a foreign key.
+///
+/// The system validates the URL format, ensuring only properly formatted
+/// URLs are accepted for link posts. This validation is performed at the
+/// application level, but the table structure supports it with proper data
+/// types and constraints.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_link_urls {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main post entity in community_platform_posts.
+  community_platform_posts_id String
+  
+  /// Full URL for the linked content. Must be a valid URL format.
+  url String
+  
+  /// Optional title or summary that describes the linked content.
+  title String?
+  
+  /// Optional detailed description for the linked content, if provided.
+  description String?
+  
+  /// Timestamp when the URL information was created.
+  created_at DateTime
+  
+  /// Timestamp when the URL information was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the URL was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_posts_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_posts_id], map: "community_platform_post_link_urls_community_platform_p_6e27d9bf")
+  
+  @@index([created_at])
+}
+
+/// Stores image file paths and metadata for image-based posts, including
+/// size validation and file type information.
+///
+/// Each entry links to a specific post through a foreign key relationship,
+/// enabling image data to be retrieved with associated post content.
+/// The file size field validates images are under 10MB as required by post
+/// type specifications, preventing oversized uploads that could impact
+/// performance.
+/// The mime_type field specifies the file content type (JPG, PNG, GIF) for
+/// proper handling during display and storage operations.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_image_uploads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent post this image belongs to. {@link community_platform_posts.id}
+  post_id String
+  
+  /// Location of the image file in the storage system.
+  file_path String
+  
+  /// File size in megabytes (MB), must be <= 10.0 for image uploads.
+  file_size Float
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// Timestamp when the image was stored in the system.
+  created_at DateTime
+  
+  /// Timestamp when the image metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted (null if still active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  
+  @@index([file_size])
+}

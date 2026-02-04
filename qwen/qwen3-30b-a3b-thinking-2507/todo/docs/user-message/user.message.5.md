@@ -1,1 +1,1 @@
-Make the e2e test functions.
+Implement API functions.

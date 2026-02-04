@@ -1,0 +1,197 @@
+/// A topic-specific online community where users gather to share and discuss
+/// content.
+///
+/// Communities serve as the central organizing unit of the platform,
+/// enabling users to form interest-based groups around specific topics. Each
+/// community has a unique identifier, a descriptive name, and may be
+/// configured with a custom icon to represent its theme. Communities are
+/// created by owners who have full administrative rights, and users may
+/// subscribe to communities they wish to follow and contribute to.
+///
+/// The community's subscriber count reflects the number of active members
+/// who have chosen to follow the community, though visibility and
+/// participation are open to all users regardless of subscription status.
+/// Communities may be moderated, and owners have the authority to appoint
+/// moderators who can manage content and users within the community.
+///
+/// This entity is distinct from user profiles and post content — it serves
+/// as the architectural foundation for grouping and moderating
+/// community-driven discourse on the platform.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community owner who created this community. {@link
+  /// community_platform_owners.id}.
+  owner_id String
+  
+  /// Unique name representing the community's identity. Must be alphanumeric
+  /// with hyphens and underscores only, and globally unique across the
+  /// platform.
+  name String
+  
+  /// Brief description of the community's purpose, focus, or guidelines.
+  /// Limited to 500 characters for clarity and discoverability.
+  description String
+  
+  /// URL pointing to the community's icon image. Supports JPEG, PNG, and GIF
+  /// formats. Up to 2MB in size. May be null if no custom icon is uploaded.
+  icon String?
+  
+  /// Count of users currently subscribed to this community. Automatically
+  /// increments when a user subscribes and decrements when unsubscribing.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created. Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the community's metadata (e.g., name,
+  /// description, icon). Updated on each edit.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp indicating when the community was removed. If null,
+  /// the community is active. Used for audit trails and potential restoration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  owner community_platform_owners @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  subscribers community_platform_community_subscriptions[]
+  setting community_platform_community_settings?
+  posts community_platform_posts[]
+  bans community_platform_bans[]
+  
+  @@index([owner_id])
+  
+  @@unique([name])
+  @@index([subscriber_count])
+}
+
+/// Tracks which users are subscribed to which communities.
+///
+/// This junction table implements the many-to-many relationship between
+/// members and communities. Each record represents a subscription
+/// relationship, where a user (member) is subscribed to a specific
+/// community. Subscriptions are managed directly by users through
+/// subscribe/unsubscribe actions, and the system must efficiently support
+/// queries for all communities a user subscribes to and all users subscribed
+/// to a community.
+///
+/// The subscription relationship is tracked by the existence of a row —
+/// unsubscribing is achieved by deleting the record. Both the user and
+/// community must exist for a valid subscription. This table enables feed
+/// personalization (home feed = posts from subscribed communities) and
+/// community growth tracking (subscriber count).
+///
+/// No soft delete or update operations are needed — a subscription is active
+/// if the row exists. The creation timestamp is preserved for analytics, but
+/// no edit tracking is required since the subscription state is binary
+/// (subscribed/unsubscribed).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who subscribed to this community. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// The community to which the member is subscribed. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Timestamp when the subscription was created. This records when the user
+  /// joined the community.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_community_subscriptions_community_p_cd4b4000")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_community_subscriptions_community_p_21a3350e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id], map: "community_platform_community_subscriptions_community_p_2b4b8c5a")
+}
+
+/// Configuration settings per community including visibility, moderation
+/// rules, and feature flags.
+///
+/// This table stores the operational configuration for each community,
+/// including whether it is public or private, which moderation rules are
+/// enforced (e.g., auto-delete profanity, block links), and feature flags
+/// (e.g., enable voting, enable comments, enable images). These settings are
+/// managed by the community owner and moderators through the community
+/// interface and are applied automatically by the system to all content
+/// within the community.
+///
+/// This is a subsidiary entity — it is never directly accessed or modified
+/// by users through API endpoints. Instead, it is internally referenced and
+/// updated when a community owner or moderator changes settings via the UI.
+/// The settings are also read-only for users viewing the community, ensuring
+/// consistent behavior without exposing the underlying configuration
+/// mechanics.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this setting applies to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Determines whether the community is publicly viewable and discoverable.
+  /// 'public' = visible in all feeds, 'private' = only accessible by
+  /// subscribers. Follows: public/private enum.
+  visibility String
+  
+  /// JSON string containing a set of auto-moderation flags for the community.
+  /// Includes properties like 'auto_delete_profanity', 'block_external_links',
+  /// 'require_approval_for_new_posts'.
+  moderation_rules String
+  
+  /// JSON string enabling or disabling community-specific features. Includes
+  /// properties like 'enable_commenting', 'enable_voting',
+  /// 'enable_image_posts', 'enable_link_posts', 'enable_text_posts'.
+  feature_flags String
+  
+  /// Timestamp when these community settings were first created.
+  created_at DateTime
+  
+  /// Timestamp when these community settings were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when these community settings were logically deleted (soft
+  /// delete). Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  @@index([visibility])
+}

@@ -1,9 +1,0 @@
-export * as configs from "./configs/index";
-export * as channels from "./channels/index";
-export * as members from "./members/index";
-export * as admins from "./admins/index";
-export * as discussion_board from "./discussion_board/index";
-export * as articles from "./articles/index";
-export * as moderation from "./moderation/index";
-export * as dashboard from "./dashboard/index";
-export * as analytics from "./analytics/index";

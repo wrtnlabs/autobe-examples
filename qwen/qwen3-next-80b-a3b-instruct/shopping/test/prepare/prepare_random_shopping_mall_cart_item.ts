@@ -6,11 +6,10 @@ import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
 export function prepare_random_shopping_mall_cart_item(
-  input?: DeepPartial<IShoppingMallCartItem.ICreate>,
+  input?: DeepPartial<IShoppingMallCartItem.ICreate> | undefined,
 ): IShoppingMallCartItem.ICreate {
   return {
-    product_variant_id:
-      input?.product_variant_id ?? typia.random<string & tags.Format<"uuid">>(),
+    variantId: input?.variantId ?? typia.random<string & tags.Format<"uuid">>(),
     quantity:
       input?.quantity ??
       typia.random<

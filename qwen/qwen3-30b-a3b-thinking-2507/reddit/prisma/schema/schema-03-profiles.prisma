@@ -1,0 +1,59 @@
+/// User profile metadata for registered community members, including display
+/// name, bio, and avatar image details.
+///
+/// Stores essential user identity information beyond authentication
+/// credentials, allowing users to customize their public identity within
+/// community platforms. Each profile is tied to a single user account in the
+/// Actors component, ensuring 1:1 relationship matching user management
+/// requirements.
+///
+/// Profile data provides consistent user representation across all community
+/// interactions while maintaining separation of authentication credentials
+/// (stored in Actors component) from user identity details (stored in
+/// Profiles component). All profile data is managed directly by users
+/// through dedicated profile modification flows.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account owner of this profile. {@link community_platform_users.id}.
+  user_id String
+  
+  /// Unique display name for the user in the community platform. Must be
+  /// between 2-50 characters and contain only alphanumeric characters,
+  /// underscores, or hyphens.
+  display_name String
+  
+  /// User's personal bio description limited to 500 characters with basic
+  /// formatting support. All HTML tags are automatically stripped for
+  /// security.
+  bio String?
+  
+  /// URL path to the user's avatar image file stored in the application.
+  /// Images must meet square aspect ratio requirements and be resized to
+  /// 200x200 pixels.
+  avatar_url String?
+  
+  /// Timestamp when the profile was first created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft-deleted, allowing for recovery and
+  /// audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}

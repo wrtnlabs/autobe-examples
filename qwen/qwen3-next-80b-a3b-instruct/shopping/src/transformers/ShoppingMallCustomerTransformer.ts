@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/sdk";
 import { ArrayUtil } from "@nestia/e2e";
 import typia, { tags } from "typia";
 
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -15,9 +16,12 @@ export namespace ShoppingMallCustomerTransformer {
       select: {
         id: true,
         email: true,
-        first_name: true,
-        last_name: true,
-        phone: true,
+        password_hash: true,
+        display_name: true,
+        phone_number: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     } satisfies Prisma.shopping_mall_customersFindManyArgs;
   }
@@ -25,13 +29,9 @@ export namespace ShoppingMallCustomerTransformer {
     input: Payload,
   ): Promise<IShoppingMallCustomer> {
     return {
-      id: input.id,
-      email: input.email,
-      name:
-        (input.first_name || "") +
-        (input.last_name ? " " + input.last_name : ""),
-      phone: input.phone ?? undefined,
-      address: undefined,
+      customerId: input.id,
+      displayName: input.display_name ?? "",
+      phoneNumber: input.phone_number ?? "",
     };
   }
 }

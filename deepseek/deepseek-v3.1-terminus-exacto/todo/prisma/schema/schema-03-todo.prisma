@@ -1,0 +1,1072 @@
+/// Core todo items that users create, manage, and organize.
+///
+/// Stores the essential todo information including title, description,
+/// optional start and due dates, and completion status. Each todo is owned
+/// by exactly one user and maintains a complete lifecycle with creation,
+/// modification, and soft deletion tracking.
+///
+/// Todos serve as the central entity in the application, supporting
+/// comprehensive management operations including creation, viewing, editing,
+/// completion tracking, and organization through filtering and sorting. The
+/// table enforces strict data isolation between users, ensuring complete
+/// privacy for all todo operations.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Main todo description text. Required field with maximum length of 200
+  /// characters.
+  title String
+  
+  /// Optional detailed description providing additional context about the
+  /// todo. Maximum length of 2000 characters.
+  description String?
+  
+  /// Optional date indicating when work on this todo can begin. Can be left
+  /// empty for todos without specific start timing.
+  start_date DateTime?
+  
+  /// Optional date indicating when this todo should be completed. Can be left
+  /// empty for todos without deadlines.
+  due_date DateTime?
+  
+  /// Completion status indicating whether the todo is marked as complete.
+  /// Default value is false for new todos.
+  completed Boolean
+  
+  /// Timestamp when the todo was initially created by the user.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to the todo, including status
+  /// changes and edits.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft-deleted and moved to trash. Null
+  /// indicates the todo is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  snapshots todo_app_todo_snapshots[]
+  editHistories todo_app_todo_edit_histories[]
+  completionHistories todo_app_todo_completion_histories[]
+  tags todo_app_todo_tags[]
+  attachments todo_app_todo_attachments[]
+  comments todo_app_todo_comments[]
+  reminders todo_app_todo_reminders[]
+  childDependencies todo_app_todo_dependencies[] @relation("todo_app_todo_dependencies_of_parent_todo_id")
+  parentDependencies todo_app_todo_dependencies[] @relation("todo_app_todo_dependencies_of_child_todo_id")
+  completions todo_app_todo_completions[]
+  trashEntry todo_app_todo_trash_entries?
+  todoUsers todo_app_user_todos[]
+  trashEntries todo_app_todo_trash_items[]
+  
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_user_id, completed])
+  @@index([todo_app_user_id, due_date])
+}
+
+/// Point-in-time snapshots of todo items for comprehensive audit trail and
+/// version history.
+///
+/// Captures the complete state of a todo at specific moments in time,
+/// typically after significant modifications or completion status changes.
+/// Each snapshot preserves the exact combination of title, description,
+/// dates, and completion status that existed when the snapshot was created.
+///
+/// Snapshots serve as an indelible audit trail that enables users to review
+/// the evolution of their todos over time, providing accountability and
+/// historical context. They are particularly valuable for tracking
+/// significant milestones such as completion status changes, major content
+/// revisions, or deadline modifications.
+///
+/// The snapshot architecture ensures that even after multiple edits, users
+/// can reconstruct the complete lifecycle of their todo items. This supports
+/// compliance requirements, troubleshooting efforts, and personal
+/// productivity analysis by maintaining accurate historical records of task
+/// evolution.
+///
+/// Each snapshot is permanently linked to its parent {@link
+/// todo_app_todos.id} and cannot be modified once created, ensuring data
+/// integrity for audit purposes. Snapshots are managed automatically by the
+/// system during significant todo state transitions.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo item's {@link todo_app_todos.id} that this
+  /// snapshot captures.
+  todo_app_todo_id String
+  
+  /// The exact title text that existed on the todo when this snapshot was
+  /// created. Preserves historical context for audit trail purposes.
+  title String
+  
+  /// The complete description content that existed on the todo when this
+  /// snapshot was created. May be empty if no description was set.
+  description String?
+  
+  /// The completion status (true/false) that was active on the todo when this
+  /// snapshot was captured. Essential for tracking workflow progress.
+  completion_status Boolean
+  
+  /// The start date that was set on the todo when this snapshot was created.
+  /// Preserves planning timeline for historical analysis.
+  start_date DateTime?
+  
+  /// The due date that was set on the todo when this snapshot was created.
+  /// Maintains historical context for deadline management.
+  due_date DateTime?
+  
+  /// The exact timestamp when this snapshot was created. Essential for
+  /// chronological ordering and audit trail accuracy.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+}
+
+/// Individual edit history entries tracking specific field changes made to
+/// todos.
+///
+/// Captures detailed audit trail of todo modifications with before/after
+/// values for title, description, start date, and due date fields. Each
+/// entry represents a single edit session and includes timestamp with
+/// millisecond precision for chronological ordering.
+///
+/// History entries are subsidiary to the main todo entity and are accessed
+/// through todo-specific operations. The system creates separate entries for
+/// each distinct save operation, maintaining edit session integrity and
+/// providing comprehensive audit trail capabilities.
+///
+/// Edit history is preserved through soft delete operations and permanently
+/// removed only when todos are permanently deleted from the system.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo being edited. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Reference to the user session that performed the edit. {@link
+  /// todo_app_user_sessions.id}
+  todo_app_user_session_id String
+  
+  /// Timestamp when the edit was made, recorded with millisecond precision in
+  /// UTC format.
+  created_at DateTime
+  
+  /// Original title value before the edit, captured only if title was changed
+  /// during this edit session.
+  previous_title String?
+  
+  /// Updated title value after the edit, captured only if title was changed
+  /// during this edit session.
+  new_title String?
+  
+  /// Original description value before the edit, captured only if description
+  /// was changed during this edit session.
+  previous_description String?
+  
+  /// Updated description value after the edit, captured only if description
+  /// was changed during this edit session.
+  new_description String?
+  
+  /// Original start date value before the edit, captured only if start date
+  /// was changed during this edit session.
+  previous_start_date DateTime?
+  
+  /// Updated start date value after the edit, captured only if start date was
+  /// changed during this edit session.
+  new_start_date DateTime?
+  
+  /// Original due date value before the edit, captured only if due date was
+  /// changed during this edit session.
+  previous_due_date DateTime?
+  
+  /// Updated due date value after the edit, captured only if due date was
+  /// changed during this edit session.
+  new_due_date DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  session todo_app_user_sessions @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_user_session_id, created_at], map: "todo_app_todo_edit_histories_todo_app_user_session_id__c7ae0933")
+}
+
+/// Tracks completion status changes for todos with full audit trail.
+///
+/// Each entry records when a todo was marked complete or incomplete,
+/// capturing the timestamp and user who made the change. This provides
+/// complete historical tracking of completion status transitions for audit
+/// purposes and enables features like "time to completion" analytics.
+///
+/// The history preserves both the previous status and new status, allowing
+/// for comprehensive change tracking. Each entry is automatically created
+/// whenever a user toggles the completion status of a todo, ensuring no
+/// completion events are lost.
+///
+/// Soft delete capability is supported to maintain audit trail integrity
+/// while allowing for data management.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_completion_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo whose completion status changed. {@link
+  /// todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Reference to the user who changed the completion status. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Previous completion status before the change. True if todo was completed,
+  /// false if not completed.
+  old_completed Boolean
+  
+  /// New completion status after the change. True if todo was marked complete,
+  /// false if marked incomplete.
+  new_completed Boolean
+  
+  /// Timestamp when the completion status change occurred. Used for audit
+  /// trail and chronological ordering of history entries.
+  completed_at DateTime
+  
+  /// Timestamp when this history entry was created. Should match completed_at
+  /// but maintained for audit consistency.
+  created_at DateTime
+  
+  /// Timestamp when this history entry was last updated. Typically remains
+  /// unchanged after creation.
+  updated_at DateTime
+  
+  /// Timestamp when this history entry was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_id, completed_at], map: "todo_app_todo_completion_histories_todo_app_todo_id_co_d80f1c04")
+  // spellchecker: ignore-next-line
+  @@index([todo_app_user_id, completed_at], map: "todo_app_todo_completion_histories_todo_app_user_id_co_af23206c")
+  @@index([completed_at])
+}
+
+/// Junction table for many-to-many relationships between todos and tags.
+///
+/// Enables optional tagging system for todo categorization and organization.
+/// Each todo can have multiple tags, and each tag can be associated with
+/// multiple todos, providing flexible classification capabilities for better
+/// organization and search functionality.
+///
+/// Tags are reusable across todos to maintain consistency and efficiency.
+/// The table ensures proper referential integrity while supporting the
+/// categorization requirements specified in the todo management
+/// functionality.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated todo. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Reference to the user who created this tag association. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Timestamp when this tag was associated with the todo.
+  created_at DateTime
+  
+  /// Timestamp when this tag association was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_todo_id, todo_app_user_id])
+  @@index([todo_app_user_id, created_at])
+}
+
+/// File attachments associated with todos for providing additional context
+/// and supporting information.
+///
+/// Stores metadata for files uploaded by users to enhance their todo items
+/// with supplementary materials. Each attachment is linked to a specific
+/// todo and tracks file information including name, type, size, and storage
+/// location.
+///
+/// Attachments maintain privacy by being accessible only to the todo owner
+/// and are managed through parent todo operations. The system tracks upload
+/// timestamps and user information for audit purposes while ensuring file
+/// integrity through proper storage path management.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated todo that this attachment belongs to. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// User who uploaded this attachment. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Original filename of the uploaded attachment as provided by the user.
+  filename String
+  
+  /// MIME type or file extension indicating the attachment format (e.g.,
+  /// image/jpeg, application/pdf).
+  file_type String
+  
+  /// Size of the attachment file in bytes for storage management and display
+  /// purposes.
+  file_size Int
+  
+  /// File system or cloud storage path where the actual attachment file is
+  /// stored.
+  storage_path String
+  
+  /// Timestamp when this attachment was uploaded to the system.
+  created_at DateTime
+  
+  /// Timestamp when this attachment record was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  uploader todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+  @@index([todo_app_user_id, created_at])
+}
+
+/// User comments and notes on individual todos for collaboration and
+/// discussion.
+///
+/// Stores textual comments created by users on specific todo items, enabling
+/// collaborative task management and communication around task details. Each
+/// comment is associated with both the target todo and the user who created
+/// it, maintaining clear ownership and context.
+///
+/// Comments support rich discussion around todo items, allowing users to ask
+/// questions, provide updates, share insights, or coordinate work. The
+/// system maintains complete audit trails of comment creation and
+/// modification, with soft deletion support for content moderation while
+/// preserving discussion history.
+///
+/// Comments remain attached to their parent todo even if the todo content
+/// changes, providing persistent context for ongoing discussions. Users can
+/// create multiple comments per todo, and each comment can be independently
+/// managed, edited, or deleted by its author.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target todo item that this comment belongs to. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// User who created this comment. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// The textual content of the comment. Supports rich discussion and
+  /// collaboration around todo items.
+  content String
+  
+  /// Timestamp when the comment was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted, allowing for restoration if
+  /// needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  author todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Scheduled reminders for todos with due dates or start dates.
+///
+/// Tracks notification settings and timing for todo reminders, allowing
+/// users to receive alerts for upcoming tasks. Each reminder is associated
+/// with a specific todo and can be configured for different trigger
+/// conditions including due date proximity, start date notifications, or
+/// custom timing.
+///
+/// Reminders support various scheduling options including one-time
+/// notifications, recurring patterns, and custom timing intervals. The
+/// system tracks reminder status to ensure proper delivery and user
+/// notification management.
+///
+/// Reminders maintain their own lifecycle independent of the associated
+/// todo, allowing users to manage notification preferences separately from
+/// the core todo functionality.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_reminders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated todo for this reminder. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Type of reminder trigger condition. Valid values: 'due_date',
+  /// 'start_date', 'custom'. Determines when the reminder should be triggered.
+  reminder_type String
+  
+  /// Time offset in minutes before the target date when reminder should
+  /// trigger. Positive values indicate time before, negative values indicate
+  /// time after.
+  trigger_offset Int
+  
+  /// Recurrence pattern for repeating reminders. Examples: 'none', 'daily',
+  /// 'weekly', 'monthly'. Empty for one-time reminders.
+  recurrence_pattern String?
+  
+  /// Current status of the reminder. Valid values: 'pending', 'triggered',
+  /// 'cancelled', 'completed'.
+  status String
+  
+  /// Exact date and time when the reminder is scheduled to trigger.
+  scheduled_at DateTime
+  
+  /// Date and time when the reminder was actually triggered, if applicable.
+  triggered_at DateTime?
+  
+  /// Method for delivering the reminder notification. Examples: 'push',
+  /// 'email', 'in_app'.
+  notification_method String
+  
+  /// Date and time when the reminder was created.
+  created_at DateTime
+  
+  /// Date and time when the reminder was last updated.
+  updated_at DateTime
+  
+  /// Date and time when the reminder was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, scheduled_at])
+  @@index([status, scheduled_at])
+  @@index([reminder_type, scheduled_at])
+}
+
+/// Tracks dependency relationships between todos for workflow management.
+///
+/// This table establishes many-to-many relationships between todos where one
+/// todo depends on the completion of another todo. Each dependency
+/// represents a workflow relationship such as "Task B cannot start until
+/// Task A is completed."
+///
+/// The dependency structure enables complex todo workflows and ensures
+/// proper sequencing of tasks. Each dependency record connects a parent todo
+/// (the prerequisite) to a child todo (the dependent task) and includes
+/// metadata about the relationship type and creation context.
+///
+/// Dependencies are managed through todo operations and provide the
+/// foundation for workflow automation and task sequencing capabilities.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_dependencies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent todo that serves as the prerequisite. {@link todo_app_todos.id}
+  parent_todo_id String
+  
+  /// Child todo that depends on the parent todo. {@link todo_app_todos.id}
+  child_todo_id String
+  
+  /// Type of dependency relationship between todos. Common types include:
+  /// 'completion' (child depends on parent completion), 'start' (child depends
+  /// on parent start), or custom workflow relationships.
+  dependency_type String
+  
+  /// Timestamp when the dependency relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when the dependency relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the dependency relationship was soft-deleted, allowing for
+  /// restoration if needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentTodo todo_app_todos @relation("todo_app_todo_dependencies_of_parent_todo_id", fields: [parent_todo_id], references: [id], onDelete: Cascade)
+  childTodo todo_app_todos @relation("todo_app_todo_dependencies_of_child_todo_id", fields: [child_todo_id], references: [id], onDelete: Cascade)
+  
+  @@unique([parent_todo_id, child_todo_id])
+  @@index([parent_todo_id, created_at])
+  @@index([child_todo_id, created_at])
+}
+
+/// Reusable todo templates for creating standardized task patterns with
+/// predefined fields and settings.
+///
+/// Templates allow users to define reusable patterns for common tasks,
+/// capturing title structures, descriptions, date patterns, and
+/// categorization rules. Each template is owned by a specific user and can
+/// be used to quickly create todos with consistent properties.
+///
+/// Templates include standardized fields similar to actual todos but
+/// designed for reuse across multiple todo instances. They serve as
+/// blueprints for task creation while maintaining separation from actual
+/// work items. Templates support categorization and tagging for organization
+/// of frequently used patterns.
+///
+/// Template management includes creation, updating, and deletion operations
+/// independent of todo lifecycle. Templates can be shared within user
+/// accounts or kept private depending on business rules.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Template creator's {@link todo_app_users.id}.
+  user_id String
+  
+  /// Name of the template for identification and selection purposes.
+  template_name String
+  
+  /// Default todo title pattern that will be used when creating todos from
+  /// this template.
+  title String
+  
+  /// Optional description pattern for todos created from this template.
+  description String?
+  
+  /// Pattern or rule for setting start dates when using this template (e.g.,
+  /// '+1 day', 'next monday').
+  start_date_pattern String?
+  
+  /// Pattern or rule for setting due dates when using this template (e.g., '+7
+  /// days', 'end of week').
+  due_date_pattern String?
+  
+  /// Default category suggestion for todos created from this template.
+  category_default String?
+  
+  /// Whether this template is publicly available for other users to utilize.
+  is_public Boolean
+  
+  /// Number of times this template has been used to create todos, tracked for
+  /// popularity and analytics.
+  usage_count Int
+  
+  /// Timestamp when this template was originally created by the user.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this template.
+  updated_at DateTime
+  
+  /// Timestamp when this template was soft-deleted, allowing for restoration
+  /// if needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  categories todo_app_todo_template_categories[]
+  tags todo_app_todo_template_tags[]
+  
+  @@unique([user_id, template_name])
+  @@index([user_id, is_public])
+  @@index([user_id, created_at])
+  @@index([usage_count])
+}
+
+/// Categories for organizing and classifying reusable todo templates.
+///
+/// Template categories allow users to organize their templates into logical
+/// groups such as 'Work', 'Personal', 'Project Tasks', or 'Recurring
+/// Activities'. Categories provide organizational structure for template
+/// management and discovery.
+///
+/// Each category belongs to a specific user and can be associated with
+/// multiple templates. Categories support hierarchical organization if
+/// needed, with parent-child relationships for nested categorization.
+/// Category application is optional, allowing templates to remain
+/// uncategorized if preferred.
+///
+/// Categories improve template discoverability and management efficiency by
+/// grouping related patterns together, making it easier for users to find
+/// appropriate templates for different contexts.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_template_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Template being categorized {@link todo_app_todo_templates.id}.
+  todo_template_id String
+  
+  /// Category creator's {@link todo_app_users.id}.
+  user_id String
+  
+  /// Name of the category for template organization.
+  category_name String
+  
+  /// Optional description explaining the purpose and scope of this category.
+  description String?
+  
+  /// Numerical order for displaying categories in user interfaces.
+  sort_order Int?
+  
+  /// Optional parent category reference for hierarchical organization.
+  parent_category_id String?
+  
+  /// Whether this category should be default for new templates belonging to
+  /// this user.
+  is_default Boolean
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this category.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  template todo_app_todo_templates @relation(fields: [todo_template_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, category_name])
+  @@index([todo_template_id])
+  @@index([user_id, sort_order])
+  @@index([parent_category_id])
+}
+
+/// Tags for labeling and filtering reusable todo templates.
+///
+/// Template tags provide flexible labeling system for templates, allowing
+/// users to apply multiple descriptive labels to each template. Tags support
+/// free-form categorization beyond the hierarchical category system,
+/// enabling cross-cutting classification.
+///
+/// Tags can represent various template characteristics such as 'quick-task',
+/// 'complex', 'weekly', 'monthly', or 'high-priority'. Multiple tags can be
+/// applied to a single template, and tags can be shared across different
+/// templates for consistent labeling.
+///
+/// Tags enable advanced filtering and discovery capabilities, allowing users
+/// to find templates based on multiple classification dimensions
+/// simultaneously. Tag management includes creation, application, and search
+/// functionality.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_template_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Template being tagged {@link todo_app_todo_templates.id}.
+  todo_template_id String
+  
+  /// Tag creator's {@link todo_app_users.id}.
+  user_id String
+  
+  /// Descriptive label applied to the template for classification and
+  /// filtering.
+  tag_name String
+  
+  /// Optional color code for visual representation of this tag in user
+  /// interfaces.
+  color_code String?
+  
+  /// Timestamp when this tag was applied to the template.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  template todo_app_todo_templates @relation(fields: [todo_template_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_template_id, tag_name])
+  @@index([todo_template_id])
+  @@index([user_id, tag_name])
+}
+
+/// Category classification system for organizing todos by type or project.
+///
+/// Provides flexible categorization for user todos, allowing organization by
+/// project, type, priority, or custom classification systems. Each category
+/// is private to the user who created it, maintaining complete data
+/// isolation and privacy.
+///
+/// Categories can be used to group related todos and provide additional
+/// organizational structure beyond basic filtering. Users can create, edit,
+/// and manage their categories independently from their todo management
+/// workflow.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// category management. Categories remain accessible through their
+/// association with existing todos even when marked as deleted.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link todo_app_users.id}.
+  user_id String
+  
+  /// Display name of the category for user identification and selection.
+  name String
+  
+  /// Optional description providing additional context about the category's
+  /// purpose and scope.
+  description String?
+  
+  /// Optional color code for visual categorization and user interface display.
+  color String?
+  
+  /// Sorting order for category display in user interfaces, allowing custom
+  /// organization.
+  sort_order Int?
+  
+  /// Timestamp when the category was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted, enabling restoration
+  /// capabilities.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, name])
+  @@index([user_id, sort_order])
+  @@index([user_id, created_at])
+}
+
+/// Tracks historical completion status changes for todos with timestamps and
+/// user references.
+///
+/// Each entry represents a single completion status change event, recording
+/// when a todo was marked as complete or incomplete by a specific user. This
+/// provides a complete audit trail of completion activity across the
+/// application.
+///
+/// The table maintains referential integrity with both the todo being
+/// completed and the user who performed the action. This enables
+/// comprehensive reporting on completion patterns, user productivity
+/// metrics, and todo lifecycle analysis.
+///
+/// Completion history is preserved indefinitely to support accountability
+/// and historical analysis requirements. The records are append-only and
+/// cannot be modified once created, ensuring data integrity for audit
+/// purposes.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_completions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo whose completion status was changed. {@link
+  /// todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Reference to the user who changed the completion status. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// The new completion status after the change. True indicates the todo was
+  /// marked as complete, false indicates it was marked as incomplete.
+  completed Boolean
+  
+  /// Timestamp when the completion status change occurred. Used for
+  /// chronological ordering and audit trail purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, created_at])
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Manages soft-deleted todos with deletion timestamps and restoration
+/// tracking.
+///
+/// Stores todos that have been moved to trash through soft delete operations
+/// but remain recoverable until permanent deletion. Each entry tracks when
+/// the todo was deleted, which user performed the deletion, and provides
+/// restoration capability.
+///
+/// Trash entries maintain complete todo data integrity while preventing
+/// accidental data loss. Users can independently manage their trash contents
+/// through restoration or permanent deletion workflows. The system ensures
+/// strict privacy by isolating trash entries to their respective owners.
+///
+/// Soft deletion preserves all todo attributes and edit history, allowing
+/// complete recovery of accidentally deleted items. Permanent deletion
+/// removes the trash entry and associated todo data irreversibly.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_trash_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this trash entry. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Soft-deleted todo reference. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Timestamp when the todo was moved to trash through soft deletion.
+  soft_deleted_at DateTime
+  
+  /// Timestamp when the todo was restored from trash back to active status.
+  /// Null indicates still in trash.
+  restored_at DateTime?
+  
+  /// Timestamp when this trash entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this trash entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this trash entry was permanently deleted. Null indicates
+  /// still recoverable.
+  permanently_deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_todo_id])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_user_id, soft_deleted_at], map: "todo_app_todo_trash_entries_todo_app_user_id_soft_dele_3011fa07")
+  @@index([restored_at])
+}
+
+/// Junction table managing ownership relationships between users and their
+/// todos.
+///
+/// Enforces strict data isolation between users by maintaining many-to-many
+/// relationships between users and todo items. Each record represents a
+/// user's ownership of a specific todo, ensuring that users can only access
+/// their own todos and preventing cross-user data visibility.
+///
+/// This table serves as the foundation for the application's privacy
+/// guarantees, automatically filtering todo access based on user ownership.
+/// All todo operations must reference this table to verify ownership before
+/// allowing any data access or modification.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns this todo relationship. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Reference to the todo item owned by the user. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Timestamp when the ownership relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when the ownership relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the ownership relationship was soft-deleted, allowing for
+  /// data recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id, todo_app_todo_id])
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_todo_id])
+}
+
+/// Soft-deleted todos awaiting restoration or permanent deletion.
+///
+/// Manages the lifecycle of todos that have been moved to trash but not yet
+/// permanently deleted. Each entry represents a todo that has been
+/// soft-deleted by a user and can be restored or permanently removed.
+///
+/// Includes tracking of deletion timestamp, the user who performed the
+/// deletion, and supports restoration workflow with optional restoration
+/// timestamp. Entries remain in this table until either restored to active
+/// status or permanently deleted from the system.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_trash_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who performed the deletion. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Reference to the todo that has been soft-deleted. {@link
+  /// todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Timestamp when the todo was moved to trash. Used for tracking deletion
+  /// time and supporting automatic cleanup workflows.
+  deleted_at DateTime
+  
+  /// Timestamp when the todo was restored from trash back to active status.
+  /// Null indicates the item is still in trash awaiting restoration or
+  /// permanent deletion.
+  restored_at DateTime?
+  
+  /// Timestamp when this trash entry was created (typically same as
+  /// deleted_at).
+  created_at DateTime
+  
+  /// Timestamp when this trash entry was last updated, useful for tracking
+  /// modifications or restoring operations.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_todo_id])
+  @@index([todo_app_user_id, deleted_at])
+  @@index([deleted_at])
+}

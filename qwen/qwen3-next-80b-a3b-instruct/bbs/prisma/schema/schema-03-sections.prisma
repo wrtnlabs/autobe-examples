@@ -1,0 +1,82 @@
+/// Stores section metadata including name, description,
+/// creation/modification timestamps, and deletion status. Each section
+/// serves as a top-level category for organizing articles.
+///
+/// Sections are managed exclusively by administrators and provide the
+/// organizational structure for article content. Users can browse and filter
+/// articles by section, but only administrators can create, edit, or delete
+/// sections. Section names must be unique and follow naming conventions
+/// (alphanumeric, spaces, hyphens, underscores). The description provides
+/// additional context about the section's scope and purpose.
+///
+/// When a section is deleted, it is marked with deleted_at timestamp rather
+/// than being physically removed, preserving historical article-to-section
+/// relationships while hiding the section from active listings. All section
+/// modifications are tracked through created_at and updated_at fields which
+/// record the exact moment of creation and last edit.
+///
+/// Section name and description fields are validated during creation and
+/// edit operations to ensure they meet minimum and maximum character length
+/// requirements (name: 3-50 characters, description: 50-500 characters).
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who created this section. {@link
+  /// economic_discussion_administrators.id}.
+  created_by_id String
+  
+  /// The administrator who last updated this section. {@link
+  /// economic_discussion_administrators.id}.
+  updated_by_id String
+  
+  /// The administrator who deleted this section, if applicable. {@link
+  /// economic_discussion_administrators.id}.
+  deleted_by_id String?
+  
+  /// Section display name, between 3 and 50 characters. Must be unique across
+  /// all sections and contain only alphanumeric characters, spaces, hyphens,
+  /// and underscores.
+  name String
+  
+  /// Detailed description of the section's purpose and content scope, between
+  /// 50 and 500 characters. Provides context for users browsing sections and
+  /// helps administrators understand the section's intended use.
+  description String
+  
+  /// Timestamp when the section was created. Recorded in UTC and immutable
+  /// once set.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated. Automatically updated with
+  /// each edit operation.
+  updated_at DateTime
+  
+  /// Timestamp when this section was deleted. If null, the section is active
+  /// and visible. If set, the section is hidden from active listings but
+  /// remains in database for historical integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdBy economic_discussion_administrators @relation("economic_discussion_sections_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy economic_discussion_administrators @relation("economic_discussion_sections_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
+  deletedBy economic_discussion_administrators? @relation("economic_discussion_sections_of_deleted_by_id", fields: [deleted_by_id], references: [id], onDelete: Cascade)
+  
+  articles economic_discussion_articles[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  @@index([created_by_id, created_at])
+  @@index([updated_by_id, updated_at])
+  @@index([deleted_by_id, deleted_at])
+}

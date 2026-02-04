@@ -113,11 +113,11 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 1, documents: 11 | 100.00 % | 604,809 | 320 sec
-✅ database | namespaces: 3, models: 4 | 100.00 % | 692,168 | 289 sec
-✅ interface | operations: 15, schemas: 21 | 80.47 % | 12,897,203 | 4423 sec
-✅ test | functions: 8 | 29.17 % | 4,402,083 | 1925 sec
-❌ realize | functions: 22, errors: 8 | 72.58 % | 12,138,952 | 7757 sec
+✅ analyze | actors: 1, documents: 12 | 96.77 % | 808,919 | 487 sec
+✅ database | namespaces: 2, models: 6 | 92.31 % | 1,022,365 | 846 sec
+✅ interface | operations: 17, schemas: 23 | 70.98 % | 20,759,008 | 3848 sec
+✅ test | functions: 20 | 95.24 % | 12,304,595 | 2061 sec
+❌ realize | functions: 24, errors: 4 | 85.81 % | 9,964,789 | 4330 sec
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
@@ -133,35 +133,38 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 497 | 91 | 16 | 345 | 69.42 %
-analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 11 | 0 | 3 | 11 | 100.00 %
-analyzeReview | 12 | 0 | 0 | 12 | 100.00 %
+total | 576 | 96 | 34 | 480 | 83.33 %
+analyzeScenario | 2 | 1 | 0 | 1 | 50.00 %
+analyzeWrite | 12 | 0 | 3 | 12 | 100.00 %
+analyzeReview | 17 | 0 | 0 | 17 | 100.00 %
 databaseGroup | 2 | 0 | 0 | 2 | 100.00 %
-databaseComponent | 6 | 0 | 0 | 6 | 100.00 %
-databaseComponentReview | 6 | 0 | 0 | 6 | 100.00 %
-databaseSchema | 4 | 0 | 0 | 4 | 100.00 %
-databaseSchemaReview | 4 | 0 | 0 | 4 | 100.00 %
+databaseGroupReview | 1 | 0 | 0 | 1 | 100.00 %
+databaseAuthorization | 2 | 0 | 0 | 2 | 100.00 %
+databaseAuthorizationReview | 1 | 0 | 0 | 1 | 100.00 %
+databaseComponent | 4 | 0 | 0 | 4 | 100.00 %
+databaseComponentReview | 2 | 0 | 0 | 2 | 100.00 %
+databaseSchema | 8 | 2 | 0 | 6 | 75.00 %
+databaseSchemaReview | 6 | 0 | 0 | 6 | 100.00 %
 interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
-interfaceAuthorization | 3 | 2 | 0 | 1 | 33.33 %
-interfaceEndpoint | 5 | 0 | 0 | 5 | 100.00 %
+interfaceAuthorization | 4 | 2 | 0 | 2 | 50.00 %
+interfaceEndpoint | 4 | 0 | 0 | 4 | 100.00 %
 interfaceEndpointReview | 4 | 0 | 0 | 4 | 100.00 %
-interfaceOperation | 20 | 8 | 0 | 12 | 60.00 %
-interfaceOperationReview | 12 | 0 | 0 | 12 | 100.00 %
-interfaceSchema | 21 | 5 | 0 | 16 | 76.19 %
-interfaceSchemaReview | 79 | 11 | 0 | 68 | 86.08 %
-interfaceComplement | 1 | 0 | 0 | 1 | 100.00 %
-interfaceSchemaRename | 1 | 0 | 0 | 1 | 100.00 %
-interfacePrerequisite | 22 | 7 | 0 | 15 | 68.18 %
-testScenario | 69 | 5 | 0 | 4 | 5.80 %
-testScenarioReview | 3 | 0 | 0 | 3 | 100.00 %
-testWrite | 10 | 2 | 0 | 8 | 80.00 %
-testCorrect | 14 | 1 | 1 | 13 | 92.86 %
+interfaceOperation | 19 | 5 | 0 | 14 | 73.68 %
+interfaceOperationReview | 16 | 1 | 0 | 15 | 93.75 %
+interfaceSchema | 25 | 6 | 1 | 19 | 76.00 %
+interfaceSchemaRename | 7 | 1 | 0 | 6 | 85.71 %
+interfaceSchemaRefine | 38 | 22 | 0 | 16 | 42.11 %
+interfaceSchemaReview | 90 | 26 | 0 | 64 | 71.11 %
+interfacePrerequisite | 16 | 2 | 0 | 14 | 87.50 %
+testScenario | 20 | 2 | 1 | 18 | 90.00 %
+testScenarioReview | 27 | 0 | 0 | 27 | 100.00 %
+testWrite | 33 | 2 | 1 | 31 | 93.94 %
+testCorrect | 67 | 3 | 9 | 64 | 95.52 %
 realizeAuthorizationWrite | 2 | 0 | 0 | 2 | 100.00 %
-realizeAuthorizationCorrect | 12 | 5 | 0 | 7 | 58.33 %
+realizeAuthorizationCorrect | 5 | 1 | 3 | 4 | 80.00 %
 realizePlan | 7 | 0 | 0 | 7 | 100.00 %
-realizeWrite | 39 | 11 | 0 | 27 | 69.23 %
-realizeCorrect | 126 | 34 | 12 | 92 | 73.02 %
+realizeWrite | 38 | 10 | 4 | 28 | 73.68 %
+realizeCorrect | 96 | 10 | 12 | 86 | 89.58 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

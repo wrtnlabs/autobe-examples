@@ -1,16 +1,22 @@
 import { Module } from "@nestjs/common";
 
-import { AuthUserController } from "./controllers/auth/user/AuthUserController";
+import { TodoAuthUserController } from "./controllers/todo/auth/user/TodoAuthUserController";
+import { TodoUserAuthUsersController } from "./controllers/todo/user/auth/users/logout/TodoUserAuthUsersController";
+import { TodoUserAuthUsersVerifyEmailController } from "./controllers/todo/user/auth/users/verify/email/TodoUserAuthUsersVerifyEmailController";
+import { TodoUserTodosController } from "./controllers/todo/user/todos/TodoUserTodosController";
+import { TodoUserTodosBulk_deleteController } from "./controllers/todo/user/todos/bulk/delete/TodoUserTodosBulk_deleteController";
+import { TodoUserTodosHistoriesController } from "./controllers/todo/user/todos/histories/TodoUserTodosHistoriesController";
 import { TodoUserUsersController } from "./controllers/todo/user/users/TodoUserUsersController";
-import { TodoUserUsersSessionsController } from "./controllers/todo/user/users/sessions/TodoUserUsersSessionsController";
-import { TodoUserTasksController } from "./controllers/todo/user/tasks/TodoUserTasksController";
 
 @Module({
   controllers: [
-    AuthUserController,
+    TodoAuthUserController,
+    TodoUserAuthUsersController,
+    TodoUserAuthUsersVerifyEmailController,
     TodoUserUsersController,
-    TodoUserUsersSessionsController,
-    TodoUserTasksController,
+    TodoUserTodosController,
+    TodoUserTodosHistoriesController,
+    TodoUserTodosBulk_deleteController,
   ],
 })
 export class MyModule {}

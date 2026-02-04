@@ -1,0 +1,50 @@
+/// User profile storage for display names and bios with business constraints.
+///
+/// Stores additional user information beyond the core identity provided in
+/// the authentication system. Profile data is optional for users to provide
+/// and can be updated at any time, but cannot be set to null permanently
+/// (must maintain minimal user visibility information). The display name
+/// field enforces a maximum length of 30 characters as specified in the
+/// business rules.
+///
+/// The bio field provides a text-based description for user profiles with a
+/// maximum length of 500 characters for consistent content presentation
+/// across the platform. Both profile fields are optional but should be
+/// present for users who choose to establish a profile.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_politic_board_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the core member identity
+  econ_politic_board_members_id String
+  
+  /// Custom user display name visible to others. Maximum 30 characters as per
+  /// business rules.
+  display_name String?
+  
+  /// User profile bio text for additional self-description. Maximum 500
+  /// characters as per business rules.
+  bio String?
+  
+  /// Date and time the profile was created, used for historical tracking.
+  created_at DateTime
+  
+  /// Date and time the profile was last updated, used for tracking changes.
+  updated_at DateTime
+  
+  /// Date and time the profile was marked as deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member econ_politic_board_members @relation(fields: [econ_politic_board_members_id], references: [id], onDelete: Cascade)
+  
+  @@index([econ_politic_board_members_id])
+}

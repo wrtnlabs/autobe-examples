@@ -1,0 +1,86 @@
+/// Main todo items created by users in the todo application, containing all
+/// core metadata including title, description, and temporal fields for task
+/// management.
+///
+/// This table represents the primary business entity for the todo
+/// application where users store their task items. Each todo is owned by a
+/// specific user who is authenticated through the todo_app_todo_users
+/// relationship.
+///
+/// Key aspects of this table include:
+///
+/// - Complete ownership tracking through foreign key relationships to user
+/// accounts
+/// - Soft deletion support for the trash system
+/// - Full temporal tracking with created_at, updated_at, and deleted_at
+/// timestamps
+/// - Status tracking with completed boolean field
+/// - Proper indexing strategy for common query patterns
+///
+/// The table is designed to support all user operations including:
+///
+/// - Viewing personal todo lists with pagination
+/// - Creating new todos with optional metadata
+/// - Updating todos with full edit history tracking (handled by History
+/// component)
+/// - Soft deleting todos which moves them to trash (handled by Trash component)
+/// - Filtering and sorting todos by various criteria
+/// - Permanent relationship with user owners for privacy enforcement
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this todo item. {@link todo_app_todo_users.id}.
+  todo_app_todo_user_id String
+  
+  /// Concise summary of what needs to be done. This is the primary identifier
+  /// users see in their todo lists.
+  title String
+  
+  /// Detailed explanation or additional context for the todo item. May contain
+  /// formatting or extended information.
+  description String?
+  
+  /// When the user plans to start working on this todo. Used for sorting and
+  /// filtering todos by start date.
+  start_date DateTime?
+  
+  /// Deadline by which this todo should be completed. Critical for sorting,
+  /// filtering, and priority management.
+  due_date DateTime?
+  
+  /// Whether this todo has been marked as complete by the user. This is the
+  /// primary status indicator for filtering.
+  completed Boolean
+  
+  /// When this todo was originally created by the user. Used for chronological
+  /// sorting and filtering.
+  created_at DateTime
+  
+  /// When this todo was last modified by the user. Used for sorting by recent
+  /// activity.
+  updated_at DateTime
+  
+  /// When this todo was moved to trash (soft delete). Null means active todo,
+  /// non-null means in trash.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_todo_users @relation(fields: [todo_app_todo_user_id], references: [id], onDelete: Cascade)
+  
+  editHistories todo_app_todo_edit_histories[]
+  trashEntry todo_app_trash_entries?
+  permanentDeletionRecords todo_app_permanent_deletion_records[]
+  
+  @@index([todo_app_todo_user_id, created_at])
+  @@index([todo_app_todo_user_id, completed])
+  @@index([todo_app_todo_user_id, due_date])
+}

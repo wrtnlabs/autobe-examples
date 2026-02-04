@@ -1,8 +1,8 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException } from '@nestjs/common';
 
-import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize";
-import { UserPayload } from "../../decorators/payload/UserPayload";
+import { MyGlobal } from '../../MyGlobal';
+import { jwtAuthorize } from './jwtAuthorize';
+import { UserPayload } from '../../decorators/payload/UserPayload';
 
 export async function userAuthorize(request: {
   headers: {
@@ -11,8 +11,8 @@ export async function userAuthorize(request: {
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
 
-  if (payload.type !== "user") {
-    throw new ForbiddenException(`You're not a user`);
+  if (payload.type !== 'user') {
+    throw new ForbiddenException(`You're not a ${payload.type}`);
   }
 
   const user = await MyGlobal.prisma.todo_users.findFirst({
@@ -23,8 +23,8 @@ export async function userAuthorize(request: {
   });
 
   if (!user) {
-    throw new ForbiddenException("User not found");
+    throw new ForbiddenException('User not found or inactive');
   }
 
   return payload;
-}
+};

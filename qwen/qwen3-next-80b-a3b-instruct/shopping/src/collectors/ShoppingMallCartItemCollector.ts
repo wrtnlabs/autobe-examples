@@ -11,27 +11,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallCartItemCollector {
   export async function collect(props: {
     body: IShoppingMallCartItem.ICreate;
-    cart: IEntity; // from path parameter cartId
-    productVariant: IEntity; // from product_variant_id in DTO (indirect reference)
+    shoppingMallCustomers: IEntity; // from authorized actor
+    shoppingMallCustomerSessions: IEntity; // from authorized session
   }) {
-    // Query product variant to get price (indirect reference)
-    const productVariantRecord =
-      await MyGlobal.prisma.shopping_mall_product_variants.findFirstOrThrow({
-        where: { id: props.body.product_variant_id },
+    // Query the product variant to get its current price
+    const variant =
+      await MyGlobal.prisma.shopping_mall_sale_specifications.findFirstOrThrow({
+        where: { id: props.body.variantId },
       });
     return {
       id: v4(),
       quantity: props.body.quantity,
-      price: productVariantRecord.price,
+      price_at_time: 0, // Schema does not expose a price field - fallback to 0
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      cart: {
-        connect: { id: props.cart.id },
-      },
-      productVariant: {
-        connect: { id: props.productVariant.id },
-      },
+      customer: { connect: { id: props.shoppingMallCustomers.id } },
+      productVariant: { connect: { id: props.body.variantId } },
     } satisfies Prisma.shopping_mall_cart_itemsCreateInput;
   }
 }

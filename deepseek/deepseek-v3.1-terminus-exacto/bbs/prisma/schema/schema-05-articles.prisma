@@ -1,0 +1,314 @@
+/// Main article content storing titles, text content, and section
+/// assignments for the discussion board platform.
+///
+/// Hosts all published articles with their core content, metadata, and
+/// organizational relationships. Each article belongs to a specific section
+/// and has an author, enabling structured discussion organization. Articles
+/// support attachments and tagging through related tables for comprehensive
+/// content management.
+///
+/// The table implements standard audit trails with creation timestamps,
+/// modification tracking, and soft deletion capabilities. Title and content
+/// fields enforce character limits as specified in business requirements
+/// while supporting the platform's core discussion functionality.
+///
+/// Articles serve as the primary content entities that users create, read,
+/// and manage independently throughout their lifecycle.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned section for article categorization referencing {@link
+  /// discussion_board_sections.id}.
+  discussion_board_section_id String
+  
+  /// Article author referencing the user who created it {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Article title with minimum 3 and maximum 200 character limit as required
+  /// for content structure.
+  title String
+  
+  /// Article main text content with minimum 50 and maximum 10,000 character
+  /// limit supporting detailed discussions.
+  content String
+  
+  /// Timestamp when the article was originally created by the author.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified, updated on every content
+  /// change.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft deleted, allowing content
+  /// preservation and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  files discussion_board_article_files[]
+  images discussion_board_article_images[]
+  tags discussion_board_article_tags[]
+  comments discussion_board_comments[]
+  moderationQueues discussion_board_moderation_queues[]
+  
+  @@unique([discussion_board_section_id, title])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_articles_discussion_board_user_id_cre_906977c0")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_articles_discussion_board_section_id__cb7d94c3")
+}
+
+/// File attachments for articles stored with proper metadata and format
+/// validation.
+///
+/// Each file attachment links to a specific article and maintains
+/// comprehensive metadata including filename, size, MIME type, and storage
+/// information. Supports PDF, DOC, DOCX, TXT, and ZIP formats with
+/// validation to ensure only approved file types are accepted.
+///
+/// File attachments are managed through parent article operations and
+/// inherit the article's lifecycle. When articles are modified or deleted,
+/// associated file attachments follow the same operations through
+/// referential integrity constraints.
+///
+/// The table maintains strict format validation to ensure platform security
+/// and compatibility while providing flexible file attachment capabilities
+/// for article content enhancement.
+///
+/// Referencing parent article entity: {@link discussion_board_articles.id}
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article that this file attachment belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename of the uploaded file as provided by the user.
+  filename String
+  
+  /// File size in bytes for storage management and validation.
+  file_size Int
+  
+  /// MIME type of the file for content-type validation and compatibility
+  /// checking.
+  mime_type String
+  
+  /// Storage path or reference to the actual file in the storage system.
+  file_path String
+  
+  /// Indicates if the file format has been validated against allowed types
+  /// (PDF, DOC, DOCX, TXT, ZIP).
+  format_approved Boolean
+  
+  /// Timestamp when the file attachment was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the file attachment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the file attachment was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+  @@index([mime_type])
+}
+
+/// Image attachments for discussion board articles supporting JPG, PNG, and
+/// GIF formats with metadata storage.
+///
+/// Stores metadata for images attached to articles in the discussion board
+/// platform. Each image record represents a single image file uploaded by an
+/// article author. The actual image files are stored externally while this
+/// table maintains metadata including file information, dimensions, and
+/// attachment details.
+///
+/// Images are managed exclusively through their parent article context -
+/// they cannot exist independently and are always created, accessed, and
+/// deleted in relation to the containing article. This ensures proper
+/// content ownership and security.
+///
+/// Supports common image formats (JPG, PNG, GIF) with size and dimension
+/// tracking for proper display optimization. Soft deletion is supported to
+/// maintain audit trails while allowing content moderation.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Original filename of the uploaded image as provided by the user.
+  file_name String
+  
+  /// Image file format. Valid values: JPG, PNG, GIF.
+  file_format String
+  
+  /// Image file size in bytes for storage and bandwidth management.
+  file_size Int
+  
+  /// Image width in pixels for display optimization.
+  width Int
+  
+  /// Image height in pixels for display optimization.
+  height Int
+  
+  /// Path or URL to the actual image file in external storage.
+  storage_path String
+  
+  /// Timestamp when the image attachment was created.
+  created_at DateTime
+  
+  /// Timestamp when the image attachment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the image attachment was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_images_discussion_board_artic_cbcc380c")
+}
+
+/// Junction table for the many-to-many relationship between articles and tags.
+///
+/// Enables articles to have multiple categorization tags and tags to be
+/// applied to multiple articles. This supports the tagging system
+/// requirement where articles can have up to 10 free-text tags for content
+/// organization and filtering.
+///
+/// Each record represents a single tag association to an article, with the
+/// composite unique constraint ensuring no duplicate tag assignments. The
+/// table uses the standard junction table pattern with foreign keys to both
+/// parent entities and a composite primary key for efficient many-to-many
+/// relationship management.
+///
+/// Tag associations are managed through article operations, with automatic
+/// cleanup when articles or tags are deleted through cascading foreign key
+/// constraints.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Associated tag's {@link discussion_board_tags.id}.
+  discussion_board_tag_id String
+  
+  /// Timestamp when the tag was associated with the article.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_tags_discussion_board_article_2f3d4113")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_tag_id, created_at], map: "discussion_board_article_tags_discussion_board_tag_id__16a70a56")
+}
+
+/// Tag definitions for article categorization with unique tag names and
+/// usage tracking.
+///
+/// Stores standardized tag definitions that can be reused across multiple
+/// articles for consistent categorization. Each tag has a unique name that
+/// ensures tag normalization and prevents duplicate tags with different
+/// spellings or variations.
+///
+/// Tags accumulate usage counts as they are applied to articles, enabling
+/// popularity tracking and trending tag identification. Administrators can
+/// manage tag definitions to maintain content organization quality across
+/// the discussion board.
+///
+/// The unique tag name constraint ensures that articles can be consistently
+/// tagged and searched by the same taxonomy. Usage tracking helps identify
+/// frequently used tags and those needing cleanup or consolidation.
+///
+/// Soft deletion support allows tags to be archived rather than permanently
+/// removed, preserving historical tagging relationships while maintaining
+/// system integrity.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique tag name used for categorization. Must be unique across the entire
+  /// system to ensure consistent tagging taxonomy.
+  name String
+  
+  /// Number of articles that currently use this tag. Incremented when tag is
+  /// applied to articles and decremented when removed.
+  usage_count Int
+  
+  /// Timestamp when the tag definition was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the tag definition was last modified. Updated when tag
+  /// name changes or usage count updates.
+  updated_at DateTime
+  
+  /// Timestamp when the tag was soft deleted. Null indicates the tag is
+  /// currently active and available for use.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  articles discussion_board_article_tags[]
+  
+  @@unique([name])
+  @@index([usage_count])
+  @@index([created_at])
+}

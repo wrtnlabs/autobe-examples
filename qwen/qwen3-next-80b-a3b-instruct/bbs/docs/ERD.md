@@ -4,958 +4,1282 @@
 
 - [Actors](#actors)
 - [Systematic](#systematic)
-- [Posts](#posts)
-- [Attachments](#attachments)
+- [Sections](#sections)
+- [Articles](#articles)
+- [Comments](#comments)
+- [Administration](#administration)
+- [Banning](#banning)
 
 ## Actors
 
 ```mermaid
 erDiagram
-"economic_forum_users" {
+"economic_discussion_citizens" {
   String id PK
   String email UK
   String password_hash
+  String display_name
+  String bio "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"economic_discussion_citizen_sessions" {
+  String id PK
+  String citizen_id FK
+  String ip
+  String href
+  String referrer "nullable"
+  DateTime created_at
+  DateTime expired_at
+}
+"economic_discussion_citizen_password_resets" {
+  String id PK
+  String citizen_id FK,UK
+  String token UK
+  DateTime expires_at
+  DateTime created_at
+  DateTime updated_at
+}
+"economic_discussion_administrators" {
+  String id PK
+  String citizen_id FK,UK
+  String email UK
+  String password_hash
+  String display_name "nullable"
+  String bio "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_forum_user_sessions" {
+"economic_discussion_administrator_sessions" {
   String id PK
-  String user_id FK
+  String administrator_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at
 }
-"economic_forum_user_email_verifications" {
+"economic_discussion_administrator_password_resets" {
   String id PK
-  String economic_forum_user_id FK
-  String token UK
-  DateTime created_at
-  DateTime expired_at
-  DateTime deleted_at "nullable"
-}
-"economic_forum_user_password_resets" {
-  String id PK
-  String economic_forum_user_id FK,UK
-  String token UK
-  DateTime expired_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"economic_forum_admins" {
-  String id PK
-  String email UK
-  String password_hash
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"economic_forum_admin_sessions" {
-  String id PK
-  String economic_forum_admin_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at
-}
-"economic_forum_admin_password_resets" {
-  String id PK
-  String economic_forum_admin_id FK
+  String economic_discussion_administrator_id FK
   String token UK
   DateTime expires_at
   Boolean used
   DateTime created_at
   DateTime updated_at
+}
+"economic_discussion_super_administrators" {
+  String id PK
+  String email UK
+  String password_hash
+  String display_name
+  String bio "nullable"
+  DateTime created_at
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"economic_forum_admin_email_verifications" {
+"economic_discussion_super_administrator_sessions" {
   String id PK
-  String admin_id FK
+  String super_administrator_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at
+}
+"economic_discussion_super_administrator_password_resets" {
+  String id PK
+  String super_administrator_id FK
   String token UK
   DateTime expires_at
+  Boolean used
   DateTime created_at
-  DateTime deleted_at "nullable"
+  DateTime updated_at
 }
-"economic_forum_user_sessions" }o--|| "economic_forum_users" : user
-"economic_forum_user_email_verifications" }o--|| "economic_forum_users" : user
-"economic_forum_user_password_resets" |o--|| "economic_forum_users" : user
-"economic_forum_admin_sessions" }o--|| "economic_forum_admins" : admin
-"economic_forum_admin_password_resets" }o--|| "economic_forum_admins" : admin
-"economic_forum_admin_email_verifications" }o--|| "economic_forum_admins" : admin
+"economic_discussion_citizen_sessions" }o--|| "economic_discussion_citizens" : citizen
+"economic_discussion_citizen_password_resets" |o--|| "economic_discussion_citizens" : citizen
+"economic_discussion_administrators" |o--|| "economic_discussion_citizens" : citizen
+"economic_discussion_administrator_sessions" }o--|| "economic_discussion_administrators" : administrator
+"economic_discussion_administrator_password_resets" }o--|| "economic_discussion_administrators" : administrator
+"economic_discussion_super_administrator_sessions" }o--|| "economic_discussion_super_administrators" : superAdministrator
+"economic_discussion_super_administrator_password_resets" }o--|| "economic_discussion_super_administrators" : superAdministrator
 ```
 
-### `economic_forum_users`
+### `economic_discussion_citizens`
 
-Registered user accounts with email/password authentication credentials,
-email verification status, and profile information.
+Registered citizen accounts with email/password authentication
+credentials and profile information including display name and bio.
 
-Stores primary identity information for authenticated users of the
-economic forum platform. Each user account is uniquely identified by
-email and secured with a hashed password. This table serves as the
-canonical source of user identity for the entire system, serving as the
-root of all ownership and permission relationships. User accounts are
-linked to their corresponding sessions through the
-economic_forum_user_sessions table and are referenced by
-economic_forum_user_email_verifications and
-economic_forum_user_password_resets for authentication workflows.
+Each citizen can register with a unique email and password, manage their
+profile by editing their display name and bio, and interact with the
+system by creating articles and writing comments. Citizns are the
+foundational user type who can request administrator status.
 
-The designation of this table as an "actor" means it represents a true
-user type with its own distinct authentication flow, separate from any
-business domain entities like posts or attachments.
+This table stores authentication credentials securely using bcrypt
+password hashing. Profile data is kept separate from session persistence
+and password reset mechanisms that are handled in companion tables.
 
-Properties as follows:
+All citizen accounts are subject to hard deletion (not soft deletion)
+when users explicitly request account removal, which triggers the
+permanent removal of all associated articles and comments.
 
-- `id`: Primary Key.
-- `email`
-  > Unique email address used for login and communication. Must be a valid
-  > email format and globally unique across all users.
-- `password_hash`
-  > Cryptographic hash of the user's password. Never store plain text
-  > passwords. Generated using bcrypt or similar secure algorithm.
-- `created_at`
-  > Timestamp when this user account was created. Automatically set upon
-  > account registration and never modified.
-- `updated_at`
-  > Timestamp when this user account was last updated. Updated on any profile
-  > changes, password resets, or account status modifications.
-- `deleted_at`
-  > Timestamp when this user account was soft-deleted. Nullable - if null,
-  > account is active. Used to preserve audit trail while hiding inactive
-  > accounts from user interfaces.
-
-### `economic_forum_user_sessions`
-
-JWT session tokens for user authentication with access token, refresh
-token, and 24-hour expiration.
-
-This table tracks login sessions for users of the economic_forum
-platform, serving as an append-only audit trail of authentication events.
-Each record represents a single user session established through
-successful login, containing connection metadata and temporal context
-necessary for security monitoring and session management.
-
-Sessions are created upon successful authentication and expire after 24
-hours by default. The system does not permit unlimited sessions for
-security reasons, so expired_at is always set.
-
-This table has no independent API endpoints - all lifecycle operations
-are managed exclusively through the authentication subsystem.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`: The user's [economic_forum_users.id](#economic_forum_users) who owns this session.
-- `ip`: The IP address used to establish this session.
-- `href`: The URL of the connection that established this session.
-- `referrer`: The referrer URL that led to this session establishment.
-- `created_at`: The timestamp when this session was created.
-- `expired_at`
-  > The timestamp when this session will expire. Always set to 24 hours after
-  > created_at. Not nullable to enforce security policy.
-
-### `economic_forum_user_email_verifications`
-
-Email verification tokens with 24-hour expiration to confirm user email
-addresses during registration before enabling file uploads.
-
-This subsidiary table stores temporary one-time verification tokens
-issued during account registration or email change workflows. Each token
-is associated with a specific user and expires after exactly 24 hours for
-security. The presence of a record indicates the email address is
-unverified, while deletion (or expiration) signifies successful
-verification.
-
-Tokens are designed to be single-use and cannot be reused. Users will
-receive the token via email and must enter it on the verification page to
-complete the process. The system uses this table to prevent unauthorized
-email changes and enforce reliable communication channels.
-
-This table is managed entirely by the system during user registration and
-account modification flows, not through direct user CRUD operations -
-making it a subsidiary entity.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `economic_forum_user_id`
-  > User associated with this verification request. {@link
-  > economic_forum_users.id}.
-- `token`
-  > Unique one-time verification token generated for email confirmation. Must
-  > be cryptographically random and unguessable.
-- `created_at`
-  > Timestamp when this verification token was issued. Used to calculate
-  > 24-hour expiration window and enforce security policies.
-- `expired_at`
-  > Timestamp when this verification token expires (24 hours after
-  > created_at). Must be exactly 24 hours after creation. Sessions cannot be
-  > extended beyond this point.
-- `deleted_at`
-  > Timestamp when this verification record was soft-deleted (upon successful
-  > verification or manual cleanup). Absence indicates active/unverified
-  > status.
-
-### `economic_forum_user_password_resets`
-
-Password reset tokens for user account recovery with 1-hour expiration
-window.
-
-Supports secure password recovery workflow by generating unique,
-time-limited tokens that users can use to reset their authentication
-credentials. Each token is associated with exactly one user account and
-becomes invalid after one hour from creation.
-
-Tokens are used exclusively in the password reset workflow and are not
-exposed to users except via secure, encrypted communication channels.
-Once a password is successfully reset, the corresponding token is marked
-for deletion to maintain audit trail and prevent token reuse.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `economic_forum_user_id`
-  > Reference to the user account requesting password reset. {@link
-  > economic_forum_users.id}.
-- `token`
-  > Unique hashed token used for password reset validation. Generated
-  > securely and sent to user via email.
-- `expired_at`
-  > Exact datetime when the password reset token expires. Fixed 1-hour window
-  > from creation per security requirements.
-- `created_at`
-  > Timestamp when the password reset token was generated and issued to the
-  > user.
-- `updated_at`
-  > Timestamp when the password reset token was last modified (e.g. marked as
-  > used or deleted).
-- `deleted_at`
-  > Timestamp when the password reset token was logically deleted (soft
-  > delete). Used for audit trail tracking.
-
-### `economic_forum_admins`
-
-Administrator accounts with email/password authentication credentials and
-elevated privileges for content moderation and user management.
-
-Stores credentials and profile information for system administrators who
-have the authority to moderate content, delete inappropriate posts, and
-manage user accounts. This table serves as the canonical identity record
-for admin actors, with all authentication and session management flows
-centered around this entity.
-
-Administrators are distinct from regular users because they have elevated
-permissions and are responsible for system integrity. Each admin has a
-unique email address for secure authentication and communication.
+Citizens have no administrative privileges and are restricted to viewing
+content, creating articles/comments, and managing their own profile.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Administrator email address for authentication and communication. Must be
-  > unique and used as the primary login identifier.
+  > Unique email address used for authentication and communication. Must be
+  > valid according to RFC 5322 standards and unique across all citizens.
 - `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Used for
-  > secure login verification via bcrypt or equivalent hashing algorithm.
+  > Cryptographically hashed password using bcrypt algorithm. Never stores
+  > plain text passwords. Used for authentication during login.
+- `display_name`
+  > Public display name shown to other users. Used in article and comment
+  > attribution. Must be between 1 and 100 characters.
+- `bio`
+  > Optional biography or personal description provided by the citizen. Can
+  > be edited at any time. Limited to 500 characters.
 - `created_at`
-  > Timestamp when the administrator account was created. Records the initial
-  > registration date for audit purposes.
+  > Timestamp when the citizen account was created. Set once at registration
+  > and never modified.
 - `updated_at`
-  > Timestamp of the last update to the administrator record. Updated
-  > whenever profile information is modified.
-- `deleted_at`
-  > Soft delete timestamp for administrator accounts. When set, the account
-  > is considered deactivated but retained for audit trails. Null value
-  > indicates active status.
+  > Timestamp of the last update to the citizen's profile information
+  > (display name or bio). Updated automatically on each profile
+  > modification.
 
-### `economic_forum_admin_sessions`
+### `economic_discussion_citizen_sessions`
 
-JWT session tokens for admin authentication with access and refresh token
-support for secure, persistent sessions.
-
-Tracks login sessions for economic_forum_admins users with connection
-metadata including IP address, requested URL, and referrer information.
-This is an append-only audit trail that records each authentication
-event. Sessions expire after a defined period for security, and the
-expired_at field is mandatory to prevent unlimited sessions which pose
-security risks.
-
-Each session is tied to exactly one admin account and cannot exist
-independently. The system uses this table to validate active sessions
-during requests and to audit login activity for security investigations.
+Tracks login sessions for citizen users. Each session represents one
+authentication event with associated connection context and expiration
+timing.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_forum_admin_id`
-  > The admin account associated with this session. {@link
-  > economic_forum_admins.id}.
-- `ip`
-  > The IP address from which the session was initiated. Required for
-  > security monitoring and geo-location tracking.
-- `href`
-  > The full URL of the page that initiated the session. Used for tracking
-  > access patterns and identifying entry points.
-- `referrer`
-  > The referrer URL that led to this session initiation. Provides context
-  > about the source of the authentication request.
-- `created_at`
-  > The timestamp when this session was created. Required to establish
-  > session lifecycle and track duration.
+- `citizen_id`: Citizen's [economic_discussion_citizens.id](#economic_discussion_citizens).
+- `ip`: IP address from which the session was initialized.
+- `href`: URL of the initial page requested during session creation.
+- `referrer`: Referrer URL captured at session creation.
+- `created_at`: Timestamp when the session was created.
 - `expired_at`
-  > The timestamp when this session will expire. Mandatory for security
-  > compliance to prevent unlimited sessions. Sessions must have an explicit
-  > expiration time.
+  > Timestamp when the session expires. Sessions must expire for security;
+  > unlimited sessions are prohibited unless explicitly requested.
 
-### `economic_forum_admin_password_resets`
+### `economic_discussion_citizen_password_resets`
 
-Password reset tokens for administrative accounts with expiration and
-usage tracking.
+Password reset tokens for citizen account recovery workflows.
 
-Stores one-time tokens used to initiate password recovery workflows for
-economic_forum_admins. Each token is generated when an admin requests a
-password reset and is valid for a limited time. The system marks the
-token as used once it has been applied, rendering it invalid for future
-use.
+Each token is generated when a citizen requests a password reset and is
+used exactly once to verify identity and reset credentials. The system
+enforces secure password recovery by requiring tokens to expire within a
+defined period.
 
-Tokens are stored with explicit expiration dates and timestamps for
-security auditing. Soft deletion is supported to maintain a complete
-audit trail of all password reset attempts, including those that were
-never completed.
+Tokens are single-use - after successful password reset, the token
+becomes invalid and is not reused. The token value is cryptographically
+generated and sufficiently random to prevent brute force attacks.
 
-This table is managed entirely by the authentication system and not
-directly accessed or modified by end users.
+This table supports secure password recovery without exposing user
+credentials and prevents token replay attacks by enforcing expiration.
+All tokens are linked to a specific citizen account for auditability.
+
+No soft delete is used as reset tokens have finite lifespans and are
+purged automatically upon expiration or after use. The system retains
+token records for audit trail purposes until expiration.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_forum_admin_id`: Admin account requesting password reset. [economic_forum_admins.id](#economic_forum_admins).
+- `citizen_id`
+  > The citizen who requested the password reset. {@link
+  > economic_discussion_citizens.id}.
 - `token`
-  > Randomly generated unique token string for password reset. Used to
-  > authenticate the reset request.
+  > Unique cryptographically secure token for password reset. Must be
+  > globally unique and unguessable. Used to verify the identity of the
+  > requesting citizen.
 - `expires_at`
-  > Expiration timestamp for the password reset token. After this time, the
-  > token is no longer valid.
+  > Expiration timestamp for the password reset token. Session must expire to
+  > prevent abuse. All tokens have a fixed expiration time for security.
+- `created_at`: Timestamp when the reset token was generated and issued to the user.
+- `updated_at`
+  > Timestamp when the reset token was last modified (typically updated when
+  > token is used or invalidated).
+
+### `economic_discussion_administrators`
+
+Administrator accounts with elevated privileges for content and user
+moderation, authenticated via email/password.
+
+Represents users who have been granted administrative rights to moderate
+content, manage sections, and enforce community guidelines.
+Administrators retain the capabilities of regular citizens (creating
+articles, commenting) with additional permissions for deletion, banning,
+and section management. Each administrator is formally promoted from a
+citizen account through a request and approval workflow.
+
+This table contains core authentication credentials (email and password
+hash), profile data (display name and bio), and temporal fields for
+auditing. It serves as the authoritative identity record for the
+administrator actor type. The relationship with
+economic_discussion_citizens establishes identity inheritance, ensuring
+seamless transition from regular user to administrator status, while
+economic_discussion_administrator_sessions manages active login sessions.
+
+All administrative actions performed via the system are logged with this
+administrator’s identity as the source.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `citizen_id`
+  > Base citizen identity record this administrator was promoted from. {@link
+  > economic_discussion_citizens.id}.
+- `email`
+  > Administrator email address used for authentication and communication.
+  > Must be unique system-wide.
+- `password_hash`
+  > bcrypt-hashed password for secure authentication. Never stored in plain
+  > text.
+- `display_name`
+  > Public-facing name displayed to other users. Override for the base
+  > citizen display name if changed.
+- `bio`: Optional biography or profile description provided by the administrator.
+- `created_at`: Timestamp when this administrator account was created (promotion date).
+- `updated_at`: Timestamp last updated (profile edit, password change, etc.).
+- `deleted_at`
+  > Timestamp when administrator account was soft-deleted. If null, account
+  > is active.
+
+### `economic_discussion_administrator_sessions`
+
+Tracks login sessions for administrator actors. Records connection
+context and authentication state for auditing and security.
+
+Each session represents a single successful administrator login event.
+The session is active from created_at until expired_at, at which point it
+becomes invalid. Administrators may have multiple concurrent sessions.
+
+This table is essential for maintaining secure authentication state.
+Connection metadata (IP, referrer) helps detect suspicious activity.
+Sessions are automatically expired by the system and can be revoked by
+administrators.
+
+This table is replenished with new sessions on successful login and does
+not support CRUD operations from users. Its data is managed entirely by
+the authentication system.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `administrator_id`: Administrator's [economic_discussion_administrators.id](#economic_discussion_administrators).
+- `ip`: The IP address from which the session was initiated.
+- `href`: The URL of the page from which the login request originated.
+- `referrer`: The referrer URL in the HTTP request header at time of login.
+- `created_at`: The exact time when this session was created (UTC).
+- `expired_at`
+  > The time when this session expires and becomes invalid. Sessions MUST
+  > expire for security; this field cannot be null.
+
+### `economic_discussion_administrator_password_resets`
+
+Password reset tokens for administrators, used to securely recover access
+to their accounts.
+
+This table stores cryptographic tokens issued when an administrator
+initiates a password reset request. Each token is single-use and expires
+after a limited duration. The system generates and validates tokens
+programmatically during the password recovery workflow, never exposing
+them to users directly in the UI.
+
+Tokens are created when an administrator requests password reset,
+invalidated when used to reset the password, and automatically purged
+after expiration. The table ensures that only legitimate, in-flight
+password reset requests can alter account credentials.
+
+This is a supporting entity for the administrator actor system and should
+not be directly accessed or modified by application logic outside the
+authentication service.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_administrator_id`
+  > The administrator account this reset token belongs to. {@link
+  > economic_discussion_administrators.id}.
+- `token`
+  > Unique cryptographic token used to authenticate the password reset
+  > request. Must be stored in encoded format and verified during reset.
+- `expires_at`
+  > Expiration timestamp for the reset token. After this time, the token
+  > becomes invalid and cannot be used. Must be non-null to ensure security.
 - `used`
-  > Flag indicating whether the password reset token has been successfully
-  > used to change the password.
+  > Indicates whether this reset token has already been consumed to reset the
+  > password. Once true, no further operations can use this token.
 - `created_at`
-  > Timestamp when the password reset token was created and issued to the
-  > admin.
+  > Timestamp when the reset token was generated and issued to the
+  > administrator.
 - `updated_at`
-  > Timestamp when the password reset token was last updated (typically when
-  > marked as used).
-- `deleted_at`
-  > Timestamp when the password reset token record was soft-deleted. Null
-  > indicates the record is active. Used for audit trail preservation.
+  > Timestamp of the last update to this record, typically updated when the
+  > 'used' field is set to true.
 
-### `economic_forum_admin_email_verifications`
+### `economic_discussion_super_administrators`
 
-Email verification tokens to confirm admin email addresses during account
-registration or update.
+Super administrator accounts with highest system privileges including
+promotion/demotion rights, authenticated via email/password.
 
-Stores temporary tokens used to verify the authenticity of admin email
-addresses during account creation or email change procedures. Each token
-is unique, single-use, and expires after a defined period (typically 24
-hours) to ensure security.
+Represents the highest authority level in the system, capable of managing
+all administrator promotions and demotions. Unlike regular
+administrators, super administrators can elevate other administrators to
+super administrator status and demote super administrators (but not
+themselves). This entity serves as the root of the privilege hierarchy
+and requires strict authentication with secure password hashing.
 
-The token is sent to the admin's email address and must be presented to
-complete the verification process. Once verified, the token is
-invalidated. This table maintains an audit trail of all verification
-attempts, including successful validations and expired or unused tokens.
+Each super administrator account is associated with a unique email
+address for login and a password hash for authentication security. The
+account retains standard profile fields including display name and bio
+for personalization. All super administrator accounts are subject to the
+same soft delete capability as other actors, preserving audit trails
+while allowing for account removal when necessary.
+
+This actor type must have its own dedicated session table
+(economic_discussion_super_administrator_sessions) and password reset
+table (economic_discussion_super_administrator_password_resets) to
+maintain separation of concerns and security domains.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `admin_id`
-  > Admin account that this email verification is associated with. {@link
-  > economic_forum_admins.id}.
-- `token`
-  > Unique verification token generated for email confirmation. Must be
-  > cryptographically random and URL-safe to prevent guessing attacks.
-- `expires_at`
-  > Expiration timestamp for the verification token. Tokens are always valid
-  > for a limited time (typically 24 hours) for security reasons.
+- `email`
+  > Unique email address used for authentication and system communications.
+  > Must be valid per RFC 5322 standard and unique across all actor types.
+- `password_hash`
+  > bcrypt hash of the user's password. Never store plain text passwords.
+  > Required for login authentication functionality.
+- `display_name`
+  > Public-facing name for the super administrator. Used in UI displays,
+  > notifications, and audit trails. Must be non-empty and suitable for
+  > public display.
+- `bio`
+  > Optional personal bio or description provided by the super administrator.
+  > Limited to 500 characters for brevity and readability. May contain basic
+  > formatting for profile presentation.
 - `created_at`
-  > Timestamp when this verification token was created and issued to the
-  > admin.
+  > Timestamp when the super administrator account was created. Automatically
+  > set by the system upon registration.
+- `updated_at`
+  > Timestamp of the last update to the super administrator account (profile
+  > changes, password reset, etc.). Automatically updated by the system.
 - `deleted_at`
-  > Soft delete timestamp indicating when this verification record was
-  > logically deleted, either upon successful verification or manual cleanup.
+  > Soft delete timestamp. If null, account is active. If set, account is
+  > marked as deleted and cannot be used for authentication. This preserves
+  > audit trails while logically removing access.
+
+### `economic_discussion_super_administrator_sessions`
+
+JWT session tokens for super administrator authentication with access and
+refresh token support.
+
+Tracks login sessions for super administrators with complete connection
+context including IP address, connection URL, and referrer information.
+Each session represents a distinct authentication event and is associated
+with exactly one super administrator account.
+
+Sessions are append-only audit trails that record when and from where a
+super administrator logged in. All sessions have an expiration time to
+enforce security policies - sessions cannot remain active indefinitely.
+
+The session data is used for security monitoring, detecting unauthorized
+access patterns, and maintaining compliance with authentication
+standards. Super administrators can have multiple concurrent sessions.
+
+This table strictly follows the session pattern: no additional fields
+beyond the required specification, no updates to existing records, and no
+soft deletion of session records.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `super_administrator_id`
+  > Associated super administrator account. {@link
+  > economic_discussion_super_administrators.id}.
+- `ip`: IP address of the device used to initiate the session.
+- `href`: URL of the connection endpoint that initiated this session.
+- `referrer`: Referrer URL that led the user to this application.
+- `created_at`: Timestamp when the session was created.
+- `expired_at`
+  > Timestamp when the session will expire. Sessions must expire for security
+  > - this field is NOT NULL.
+
+### `economic_discussion_super_administrator_password_resets`
+
+Password reset tokens for super administrators with expiration and usage
+tracking.
+
+This table stores temporary tokens used for secure password recovery of
+super administrator accounts. Each token is single-use, has a limited
+expiration period, and is automatically invalidated after use. The system
+generates these tokens when super administrators request password resets,
+and the tokens are consumed during the password reset process.
+
+Tokens are bound to a specific super administrator via the
+super_administrator_id foreign key, ensuring that reset requests are tied
+to the correct account. The used flag prevents token reuse, which is a
+critical security feature. The expires_at field enforces time-bound
+security, ensuring tokens cannot be used indefinitely. This table is
+managed entirely by the authentication system and is never directly
+accessed or modified by end users.
+
+All records in this table are temporary and expected to be cleaned up
+after expiration or use. No permanent user data is stored here, only
+ephemeral authentication artifacts that support secure password recovery
+workflows.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `super_administrator_id`
+  > The super administrator associated with this password reset token. {@link
+  > economic_discussion_super_administrators.id}.
+- `token`
+  > Unique, cryptographically secure token string used for password reset.
+  > This value is sent to the super administrator through secure channels
+  > (email) and must be presented to complete password reset.
+- `expires_at`
+  > Expiration timestamp for the password reset token. Tokens are valid only
+  > until this time, after which they become invalid and cannot be used for
+  > password reset.
+- `used`
+  > Flag indicating whether this reset token has been used to change a
+  > password. Once true, the token is invalidated and cannot be used again.
+- `created_at`
+  > Timestamp when this password reset token was generated and issued to the
+  > super administrator.
+- `updated_at`
+  > Timestamp of the last update to this record, typically when the token is
+  > marked as used.
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"economic_forum_configurations" {
+"economic_discussion_configurations" {
   String id PK
-  String key UK
-  String value
+  DateTime created_at
+  DateTime updated_at
+  Boolean search_enabled
+  Int article_search_threshold
+  Int search_result_limit
+  Boolean file_upload_enabled
+  Int max_file_size_mb
+  Int max_files_per_article
+  Boolean comment_enabled
+  Int min_comment_length
+  Int max_comment_length
+  Boolean admin_request_enabled
+  Boolean ban_reason_required
+  Int max_sessions_per_user
+  Int session_expiry_hours
+  Boolean cache_enabled
+  Int cache_ttl_seconds
+  Boolean maintenance_mode
+  Boolean email_notification_enabled
+  String email_smtp_host "nullable"
+  Int email_smtp_port "nullable"
+  String email_smtp_username "nullable"
+  String email_sender_name "nullable"
+  String email_sender_address "nullable"
+  Boolean search_trigram_enabled
+  Float search_fuzzy_threshold
+  Boolean auto_archive_old_comments
+  Int auto_archive_days
+  Int max_articles_per_section
+  Int max_tags_per_article
+  Boolean auto_tag_suggestions
+  Int rate_limit_requests_per_minute
+  Int rate_limit_login_attempts
+  Int max_admin_actions_per_minute
+  Boolean audit_logs_enabled
+  Int audit_log_retention_days
+  Boolean data_retention_enabled
+  Boolean content_backups_enabled
+  Int backup_retention_days
+  Boolean feature_flag_new_ui
+  Boolean feature_flag_api_v2
+  Boolean feature_flag_community_moderation
+  Boolean feature_flag_ai_recommendations
+  Boolean feature_flag_dark_mode
+  Boolean feature_flag_language_support
+  Boolean feature_flag_mobile_app
+  Boolean feature_flag_email_digest
+  Boolean feature_flag_emoji_reactions
+  Boolean feature_flag_pinned_articles
+  Boolean feature_flag_topic_following
+  Boolean feature_flag_user_badges
+  Boolean feature_flag_search_history
+  Boolean feature_flag_profile_views
+  Boolean feature_flag_privacy_mode
+}
+"economic_discussion_component_statuses" {
+  String id PK
+  String economic_discussion_configurations_id FK
+  DateTime created_at
+  DateTime updated_at
+  String status
+  DateTime last_check_at
+  String error_message "nullable"
+}
+"economic_discussion_deployment_metadata" {
+  String id PK
+  String version
+  DateTime build_time
+  DateTime deployment_time
+  String git_commit UK
+  String env
+  String additional_metadata "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"economic_discussion_component_statuses" }o--|| "economic_discussion_configurations" : configuration
+```
+
+### `economic_discussion_configurations`
+
+System-wide configuration settings including feature flags, performance
+thresholds, and operational parameters.
+
+This singleton table stores essential operational parameters that control
+the behavior of the entire Economic/Political Discussion Board system.
+All values in this table are system configuration settings that determine
+functionality, performance limits, and operational constraints.
+
+This table serves as the authoritative source for feature enablement,
+rate limits, search thresholds, and system behavior control.
+Changes to these settings require administrative access and are typically
+managed by the DevOps team through deployment pipelines rather than
+runtime interfaces.
+
+The table contains boolean flags for feature enablement, numeric
+thresholds for performance optimization, and string parameters for
+operational configuration.
+All values are persisted and persist across application restarts.
+
+This table is the configuration backbone of the entire system,
+determining what features are available, how the system performs under
+load, and how various components behave.
+
+Note: This table is classified as primary since it's the authoritative
+configuration source, even though not directly managed by end-users.
+
+The table includes:
+- Feature flags for enabling/disabling system capabilities
+- Performance thresholds for search, upload, and response times
+- Operational parameters for file size limits, connection rates, and caching
+- Tracking fields for audit purposes (created_at, updated_at)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `created_at`: Timestamp when this configuration was created (immutable).
+- `updated_at`: Timestamp when this configuration was last modified.
+- `search_enabled`
+  > Flag indicating whether full-text search functionality is enabled
+  > system-wide.
+- `article_search_threshold`
+  > Minimum number of characters required in search query to trigger
+  > full-text search (prevents overly broad queries).
+- `search_result_limit`: Maximum number of search results to return per page.
+- `file_upload_enabled`
+  > Flag indicating whether file uploads (for articles) are enabled
+  > system-wide.
+- `max_file_size_mb`
+  > Maximum file size allowed for uploads in megabytes (enforces 50MB limit
+  > per file).
+- `max_files_per_article`
+  > Maximum number of files/images allowed per article (enforces 5-file
+  > limit).
+- `comment_enabled`: Flag indicating whether comments on articles are enabled system-wide.
+- `min_comment_length`
+  > Minimum character length required for a comment (enforces 5-character
+  > minimum).
+- `max_comment_length`
+  > Maximum character length allowed for a comment (enforces 1,000-character
+  > limit).
+- `admin_request_enabled`
+  > Flag indicating whether citizens can submit requests to become
+  > administrators.
+- `ban_reason_required`
+  > Flag indicating whether a ban reason is mandatory when banning users
+  > (enforces 10-character minimum).
+- `max_sessions_per_user`
+  > Maximum number of concurrent sessions allowed per user (enforces
+  > reasonable session limits).
+- `session_expiry_hours`: Number of hours before a session expires (sets cookie/JWT expiry time).
+- `cache_enabled`
+  > Flag indicating whether client-side caching is enabled for improved
+  > performance.
+- `cache_ttl_seconds`
+  > Time to live for cached content in seconds. Sets duration for static
+  > content caching.
+- `maintenance_mode`
+  > Flag indicating whether the system is in maintenance mode (disables most
+  > user features).
+- `email_notification_enabled`
+  > Flag indicating whether system emails (password resets, notifications)
+  > are enabled.
+- `email_smtp_host`
+  > SMTP host address for outgoing email notifications. Configured by system
+  > administrator.
+- `email_smtp_port`: SMTP port address for outgoing email notifications. Typically 587 or 465.
+- `email_smtp_username`: Username for SMTP authentication when sending system emails.
+- `email_sender_name`
+  > Display name used in system-generated emails (e.g., "Economic Discussion
+  > Board").
+- `email_sender_address`
+  > Email address used as sender for system-generated emails (e.g.,
+  > "noreply@economicsite.com").
+- `search_trigram_enabled`
+  > Flag indicating whether PostgreSQL GIN trigram indexes are enabled for
+  > fuzzy search support.
+- `search_fuzzy_threshold`
+  > Minimum similarity threshold (0.0-1.0) for fuzzy matching in search
+  > queries. Higher = more exact matches.
+- `auto_archive_old_comments`
+  > Flag indicating whether system automatically archives old comments after
+  > 1 year (for performance).
+- `auto_archive_days`
+  > Number of days after which comments are considered "old" and eligible for
+  > archiving.
+- `max_articles_per_section`
+  > Maximum number of articles allowed in a single section before warning the
+  > administrator of potential overload.
+- `max_tags_per_article`: Maximum number of tags allowed per article (enforces 10-tag limit).
+- `auto_tag_suggestions`: Flag indicating whether system should suggest tags to users as they type.
+- `rate_limit_requests_per_minute`
+  > Maximum number of requests allowed per minute per IP address (enforces
+  > 100 requests per minute limit).
+- `rate_limit_login_attempts`
+  > Maximum number of login attempts allowed per email address within 15
+  > minutes.
+- `max_admin_actions_per_minute`
+  > Maximum number of administrator actions (ban/delete) allowed per minute
+  > per admin to prevent abuse.
+- `audit_logs_enabled`
+  > Flag indicating whether all critical system actions are logged for
+  > security auditing.
+- `audit_log_retention_days`: Number of days to retain audit logs before auto-deletion of old records.
+- `data_retention_enabled`
+  > Flag indicating whether the data retention policy is enforced to keep
+  > banned users' content.
+- `content_backups_enabled`: Flag indicating whether automated backups of content are performed daily.
+- `backup_retention_days`: Number of days to retain automated content backups before deletion.
+- `feature_flag_new_ui`
+  > Experimental feature flag for enabling new UI components (not used in
+  > production yet).
+- `feature_flag_api_v2`
+  > Experimental feature flag for enabling v2 API endpoints (not used in
+  > production yet).
+- `feature_flag_community_moderation`
+  > Experimental feature flag enabling community moderation features (not
+  > used in production yet).
+- `feature_flag_ai_recommendations`
+  > Experimental feature flag enabling AI-powered article recommendations
+  > (not used in production yet).
+- `feature_flag_dark_mode`: Feature flag enabling dark mode interface for all users.
+- `feature_flag_language_support`
+  > Feature flag enabling multi-language support for content (English only
+  > currently).
+- `feature_flag_mobile_app`: Feature flag enabling mobile app integration and features.
+- `feature_flag_email_digest`: Feature flag enabling daily email digests of article activity.
+- `feature_flag_emoji_reactions`: Feature flag enabling emoji reactions on comments.
+- `feature_flag_pinned_articles`
+  > Feature flag enabling administrators to pin important articles to top of
+  > section.
+- `feature_flag_topic_following`: Feature flag enabling users to follow specific discussion topics.
+- `feature_flag_user_badges`: Feature flag enabling user achievement badges for participation.
+- `feature_flag_search_history`: Feature flag enabling users to view their past search queries.
+- `feature_flag_profile_views`: Feature flag enabling users to see who viewed their profile.
+- `feature_flag_privacy_mode`: Feature flag enabling users to hide their online status.
+
+### `economic_discussion_component_statuses`
+
+Status tracking for application components (search engine, file storage,
+email service) with health indicators and last check timestamps.
+
+This table monitors the operational health of critical system components.
+Each record represents the current status of a specific system component,
+with the most recent check timestamp and any error details from the last
+health check.
+
+The system automatically updates these records periodically through
+health monitoring services. Administrators use this data to identify
+failing components and troubleshoot infrastructure issues.
+
+Relationship: Each component status is linked to a specific configuration
+in economic_discussion_configurations.
+
+Status values are typically: 'healthy', 'degraded', 'critical', 'unknown'.
+
+No soft delete required as component status records are updated rather
+than deleted.
+
+This table is classified as subsidiary because it supports the
+economic_discussion_configurations table and is managed by system
+infrastructure, not direct user interaction.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_configurations_id`
+  > Configuration record for this component. {@link
+  > economic_discussion_configurations.id}.
+- `created_at`: Record creation timestamp in UTC.
+- `updated_at`: Last update timestamp in UTC.
+- `status`
+  > Current health status of the component. Valid values: 'healthy',
+  > 'degraded', 'critical', 'unknown'.
+- `last_check_at`: Timestamp of the last health check performed for this component.
+- `error_message`
+  > Error message from the most recent health check, if any. Empty string if
+  > no error occurred.
+
+### `economic_discussion_deployment_metadata`
+
+Metadata about system versions, build times, and deployment information
+for audit and diagnostics.
+
+Stores immutable deployment records for version control, debugging, and
+operational audit. Each record represents a single deployment event and
+captures the exact software version, build timestamp, deployment
+timestamp, git commit hash, environment, and additional metadata for
+diagnostic purposes. Records are append-only and permanently retained as
+part of system audit history.
+
+This table is managed by the deployment pipeline, not by users. It has no
+direct user interaction, no editing capability, and no role-based
+permissions since it's purely operational metadata for internal
+diagnostics and changelog generation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `version`: Application version number in semver format (e.g., "1.2.3").
+- `build_time`: UTC timestamp when the application was built.
+- `deployment_time`: UTC timestamp when this version was deployed to the target environment.
+- `git_commit`: Full git commit hash that was built and deployed.
+- `env`
+  > Target deployment environment (e.g., "production", "staging",
+  > "development").
+- `additional_metadata`
+  > JSON-formatted string containing optional additional deployment metadata
+  > (e.g., CI pipeline URL, build server info, custom tags).
+- `created_at`: Timestamp when this deployment record was created in the database.
+- `updated_at`
+  > Timestamp when this deployment record was last updated (always equals
+  > created_at as records are immutable).
+
+## Sections
+
+```mermaid
+erDiagram
+"economic_discussion_sections" {
+  String id PK
+  String created_by_id FK
+  String updated_by_id FK
+  String deleted_by_id FK "nullable"
+  String name UK
   String description
-  Boolean active
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-}
-"economic_forum_upload_limits" {
-  String id PK
-  Int max_file_size
-  String allowed_file_types
-  Int max_files_per_post
-  DateTime created_at
-  DateTime updated_at
-}
-"economic_forum_moderation_flags" {
-  String id PK
-  String economic_forum_post_id FK,UK
-  Int report_count
-  DateTime created_at
-}
-"economic_forum_system_audits" {
-  String id PK
-  String user_id FK "nullable"
-  String admin_id FK "nullable"
-  String actor_type
-  String target_type
-  String target_id
-  String action
-  String reason
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"economic_forum_email_verifications" {
-  String id PK
-  String economic_forum_user_id FK,UK "nullable"
-  String economic_forum_admin_id FK,UK "nullable"
-  String actor_type
-  String token UK
-  DateTime created_at
-  DateTime expired_at
-  DateTime confirmed_at "nullable"
-  DateTime deleted_at "nullable"
-}
-"economic_forum_maintenance_modes" {
-  String id PK
-  Boolean is_active
-  DateTime scheduled_start "nullable"
-  DateTime scheduled_end "nullable"
-  String maintenance_message
-  DateTime created_at
-  DateTime updated_at
 }
 ```
 
-### `economic_forum_configurations`
+### `economic_discussion_sections`
 
-System-wide configuration settings and feature flags governing the
-application's behavior.
+Stores section metadata including name, description,
+creation/modification timestamps, and deletion status. Each section
+serves as a top-level category for organizing articles.
 
-Stores modifiable parameters that control forum functionality, such as
-feature toggles, display settings, rate limits, and system behaviors.
-Administrative users can enable or disable features through this
-centralized configuration system.
+Sections are managed exclusively by administrators and provide the
+organizational structure for article content. Users can browse and filter
+articles by section, but only administrators can create, edit, or delete
+sections. Section names must be unique and follow naming conventions
+(alphanumeric, spaces, hyphens, underscores). The description provides
+additional context about the section's scope and purpose.
 
-Each configuration key represents a specific behavioral control point
-that can be updated dynamically without code deployment. The active flag
-determines whether the configuration is currently applied to the running
-system.
+When a section is deleted, it is marked with deleted_at timestamp rather
+than being physically removed, preserving historical article-to-section
+relationships while hiding the section from active listings. All section
+modifications are tracked through created_at and updated_at fields which
+record the exact moment of creation and last edit.
+
+Section name and description fields are validated during creation and
+edit operations to ensure they meet minimum and maximum character length
+requirements (name: 3-50 characters, description: 50-500 characters).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique configuration key identifier. Must be a dot-separated hierarchical
-  > name (e.g., 'feature.upload.enabled'). All keys must be unique.
-- `value`
-  > Configuration value stored as string. Can represent boolean, number, or
-  > text values encoded as string (e.g., "true", "5000", "default_template").
+- `created_by_id`
+  > The administrator who created this section. {@link
+  > economic_discussion_administrators.id}.
+- `updated_by_id`
+  > The administrator who last updated this section. {@link
+  > economic_discussion_administrators.id}.
+- `deleted_by_id`
+  > The administrator who deleted this section, if applicable. {@link
+  > economic_discussion_administrators.id}.
+- `name`
+  > Section display name, between 3 and 50 characters. Must be unique across
+  > all sections and contain only alphanumeric characters, spaces, hyphens,
+  > and underscores.
 - `description`
-  > Human-readable description explaining the purpose and impact of this
-  > configuration setting.
-- `active`
-  > Indicates whether this configuration is currently active and applied to
-  > the system. Inactive configurations are preserved for historical
-  > reference but ignored by the application.
-- `created_at`: Timestamp when this configuration was first created in the system.
-- `updated_at`: Timestamp of the last modification to this configuration.
-- `deleted_at`
-  > Timestamp when this configuration was logically deleted. NULL means the
-  > configuration is still active (not deleted). Used for audit trail and
-  > recovery of configuration changes.
-
-### `economic_forum_upload_limits`
-
-System-wide file upload restrictions governing attachment size, type, and
-quantity limits for posts and comments.
-
-Defines the technical constraints for all file uploads in the forum
-system, ensuring consistent policy enforcement across all user
-interactions. This configuration table establishes non-negotiable limits
-on file size, permitted MIME types, and the maximum number of files that
-can be attached to a single post.
-
-These restrictions are applied globally to both post and comment
-attachments and are enforced by the application layer before any file
-upload processing occurs. The values in this table constitute the
-definitive policy for file upload operations and must be updated by
-administrators who have elevated privileges.
-
-All attachments must comply with the declared constraints - any attempt
-to upload a file that exceeds the size limit, uses a disallowed
-extension, or exceeds the per-post limit will result in immediate
-rejection with a user-facing error message.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `max_file_size`
-  > Maximum allowed file size in bytes for any single uploaded file. The
-  > system enforces a strict threshold of 5,242,880 bytes (5MB) to ensure
-  > performance and storage efficiency.
-- `allowed_file_types`
-  > Comma-separated list of file extensions permitted for uploads. Must
-  > include: .jpg, .jpeg, .png, .gif, .pdf, .txt, .docx, .csv. Any other file
-  > MIME types will be rejected at the application layer.
-- `max_files_per_post`
-  > Maximum number of files that can be attached to a single post or comment.
-  > Limits the total count of attachment files per post to prevent abuse or
-  > performance degradation.
+  > Detailed description of the section's purpose and content scope, between
+  > 50 and 500 characters. Provides context for users browsing sections and
+  > helps administrators understand the section's intended use.
 - `created_at`
-  > Timestamp of when this upload limit configuration was first created in
-  > the system. Used for audit trail and change tracking.
+  > Timestamp when the section was created. Recorded in UTC and immutable
+  > once set.
 - `updated_at`
-  > Timestamp of the most recent modification to this upload limit
-  > configuration. Tracks when administrators last revised the file upload
-  > restrictions.
-
-### `economic_forum_moderation_flags`
-
-Tracks moderation flags for posts triggered by three or more distinct
-user reports.
-
-This subsidiary table records when a post has accumulated sufficient
-reports from distinct users to trigger automated moderation review. Each
-flag represents a single post that has reached the threshold requiring
-administrative attention. The table does not store individual report
-details but aggregates the count of distinct reporters.
-
-This table exists purely to support the moderation workflow of posts and
-has no independent user operations. It's automatically created and
-managed by the system when report thresholds are met, and is referenced
-by moderation systems to identify posts needing review.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `economic_forum_post_id`
-  > The post that has been flagged for moderation. {@link
-  > economic_forum_posts.id}.
-- `report_count`
-  > Total number of distinct users who have reported this post. When this
-  > reaches 3 or more, the moderation flag is activated.
-- `created_at`
-  > Timestamp when the moderation flag was activated (i.e., when report_count
-  > reached threshold).
-
-### `economic_forum_system_audits`
-
-Audit log of all administrative actions including bans, post deletions,
-and moderation approvals.
-
-Records immutable events when administrators perform system management
-actions. Each audit entry captures the actor who performed the action,
-the type of target entity affected, the specific action taken, and the
-reason provided.
-
-This table is critical for accountability, legal compliance, and
-operational transparency. Audit entries are created once and never
-modified, ensuring data integrity of system actions.
-
-Multiple actors (users and admins) can perform audits, so the actor_type
-discriminator field indicates whether the action came from a user or
-admin account. The target_type field identifies the entity type being
-modified (e.g., "post", "user", "comment").
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`: User who performed the audit action. [economic_forum_users.id](#economic_forum_users).
-- `admin_id`: Admin who performed the audit action. [economic_forum_admins.id](#economic_forum_admins).
-- `actor_type`
-  > Type of actor who performed the action. Values: "user" or "admin". Used
-  > to determine which actor table the foreign key references.
-- `target_type`
-  > Type of entity that was affected by the audit action. Examples: "post",
-  > "comment", "user", "admin", "attachment". Used to identify the context of
-  > the action.
-- `target_id`
-  > ID of the entity that was affected by the audit action. References a
-  > record in another table (e.g., economic_forum_posts,
-  > economic_forum_users).
-- `action`
-  > The specific administrative action performed. Values: "ban", "unban",
-  > "delete", "restore", "approve", "reject", "modify". Follows standard
-  > moderation action taxonomy.
-- `reason`
-  > Detailed explanation provided by the administrator for the action taken.
-  > Required for accountability and audit review.
-- `created_at`
-  > Timestamp when the audit entry was created. This is immutable - the time
-  > the administrative action was performed.
+  > Timestamp when the section was last updated. Automatically updated with
+  > each edit operation.
 - `deleted_at`
-  > Soft delete timestamp for audit entries. Required to maintain audit trail
-  > integrity without deleting records from the database.
+  > Timestamp when this section was deleted. If null, the section is active
+  > and visible. If set, the section is hidden from active listings but
+  > remains in database for historical integrity.
 
-### `economic_forum_email_verifications`
-
-Email verification tokens for users and administrators to confirm
-ownership of email addresses.
-
-Records generated during user registration or email change workflows.
-Contains unique verification tokens with expiration time to ensure secure
-email confirmation.
-
-System automatically generates these tokens and sends them via email.
-When a user clicks the verification link, the system validates the token
-and records the confirmation timestamp.
-
-The token is invalidated after expiration or upon confirmation. Soft
-delete is supported to maintain audit trails while retaining the ability
-to identify invalid tokens.
-
-Uses actor_type to differentiate between user and admin verification
-records, with corresponding foreign keys to economic_forum_users and
-economic_forum_admins.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `economic_forum_user_id`
-  > The user who requested email verification. {@link
-  > economic_forum_users.id}.
-- `economic_forum_admin_id`
-  > The admin who requested email verification. {@link
-  > economic_forum_admins.id}.
-- `actor_type`
-  > Type of actor this verification record belongs to. Valid values: 'user'
-  > or 'admin'. Used to determine which actor table the foreign key
-  > references.
-- `token`
-  > Unique random token generated for email verification. Used in
-  > verification link sent to user's email address. Must be encrypted in
-  > transit and at rest.
-- `created_at`: Timestamp when the verification token was created and issued.
-- `expired_at`
-  > Timestamp when the verification token expires. After this point, the
-  > token is invalidated and cannot be used for verification.
-- `confirmed_at`
-  > Timestamp when the email address was successfully verified by the user.
-  > NULL if verification is pending or failed.
-- `deleted_at`
-  > Timestamp when the verification record was soft-deleted. NULL means the
-  > record is active. Used to retain audit trail for revoked or expired
-  > tokens.
-
-### `economic_forum_maintenance_modes`
-
-Tracks whether the system is currently in maintenance mode and provides
-scheduling information for planned downtime.
-
-This configuration table controls system-wide maintenance operations,
-determining whether users see a maintenance message instead of normal
-application content.
-
-The maintenance mode is activated and managed by administrators through
-system controls, not by end users. It serves as a passive system control
-point that affects all users simultaneously.
-
-When active, the application redirects users to a maintenance page
-instead of serving regular content.
-
-This table does not track historical maintenance events - it only
-reflects the current or next scheduled maintenance state.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `is_active`
-  > Indicates whether maintenance mode is currently active. True means the
-  > system displays a maintenance message instead of regular content.
-- `scheduled_start`
-  > The scheduled start time for maintenance window. NULL means no upcoming
-  > scheduled maintenance.
-- `scheduled_end`
-  > The scheduled end time for maintenance window. NULL means no upcoming
-  > scheduled maintenance.
-- `maintenance_message`
-  > The message displayed to users when the system is in maintenance mode.
-  > Contains guidance about expected downtime and when service will resume.
-- `created_at`: Timestamp when this maintenance mode configuration was created.
-- `updated_at`: Timestamp when this maintenance mode configuration was last updated.
-
-## Posts
+## Articles
 
 ```mermaid
 erDiagram
-"economic_forum_posts" {
+"economic_discussion_articles" {
   String id PK
-  String economic_forum_user_id FK
-  String economic_forum_admin_id FK "nullable"
+  String section_id FK
+  String author_id FK
   String title
-  String body
-  String status
+  String content
+  Int comment_count
+  Int view_count
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"economic_forum_post_comments" {
+"economic_discussion_article_tags" {
   String id PK
-  String post_id FK
-  String parent_id FK "nullable"
-  String user_id FK
-  String body
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  String economic_discussion_article_id FK
+  String tag
 }
-"economic_forum_post_reports" {
+"economic_discussion_article_files" {
   String id PK
-  String reporter_id FK
-  String reported_post_id FK
-  String reason
-  String status
+  String economic_discussion_article_id FK
+  String original_name
+  Int size
+  String type
+  String(80000) location
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"economic_forum_post_comments" }o--|| "economic_forum_posts" : post
-"economic_forum_post_comments" }o--o| "economic_forum_post_comments" : parent
-"economic_forum_post_reports" }o--|| "economic_forum_posts" : reportedPost
+"economic_discussion_article_tags" }o--|| "economic_discussion_articles" : article
+"economic_discussion_article_files" }o--|| "economic_discussion_articles" : article
 ```
 
-### `economic_forum_posts`
+### `economic_discussion_articles`
 
-User-created discussion posts with text content, moderation status, and
-chronological metadata.
+Core article entity storing title, content, section reference, author
+reference, timestamps, status, comment count, and view count.
 
-Stores the primary content objects of the economic forum platform,
-representing questions, insights, or arguments posted by authenticated
-users. Each post can receive multiple replies in the form of comments and
-may be flagged or hidden through moderation workflows.
+Represents user-generated content in the economic/political discussion
+board. Each article is authored by a citizen, assigned to exactly one
+section, and may have multiple tags and file attachments through separate
+tables. Users can create, edit, and delete their own articles, and the
+system tracks creation and modification timestamps for audit and content
+freshness.
 
-Posts are independently managed entities requiring full CRUD operations:
-users can create new posts, search across all posts, edit their own
-content, and delete posts they no longer wish to maintain. Administrators
-can flag or hide inappropriate content while preserving the audit trail.
+Articles are the primary business entity that users interact with
+directly: they create, search, filter, and browse articles across
+sections. Article views and comment counts are tracked as integer
+counters for performance optimization.
 
-The post remains attached to its original author even if author profile
-information changes, ensuring historical integrity of discussion context.
-Soft deletion is implemented to facilitate moderation policies while
-maintaining data integrity for audit purposes.
+Article content is stored as plain text with no versioning; edits
+overwrite previous content. Article deletion permanently removes the
+record from the database (hard delete).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_forum_user_id`: Author's user account. [economic_forum_users.id](#economic_forum_users).
-- `economic_forum_admin_id`
-  > Moderator who performed the last action (flag/hide). {@link
-  > economic_forum_admins.id}.
+- `section_id`
+  > The section to which this article belongs. {@link
+  > economic_discussion_sections.id}.
+- `author_id`
+  > The citizen who created this article. {@link
+  > economic_discussion_citizens.id}.
 - `title`
-  > Title of the post, limited to 200 characters for display clarity and
-  > search optimization.
-- `body`
-  > Main content of the post in Markdown format. Contains the full text of
-  > the user's contribution, which may include formatting, links, and code
-  > blocks.
-- `status`
-  > Current moderation status of the post. Valid values: 'active', 'flagged',
-  > 'hidden'. Status transitions follow moderation workflow rules.
-- `created_at`
-  > Timestamp when the post was originally created. Immutable and used for
-  > chronological ordering and feed generation.
+  > Article title with length between 6 and 200 characters. Required field
+  > for article creation.
+- `content`
+  > Full article body text, between 100 and 10,000 characters. Required field
+  > for article creation.
+- `comment_count`
+  > Number of comments associated with this article. Updated incrementally as
+  > comments are added or deleted.
+- `view_count`
+  > Number of times this article has been viewed. Updated on each page load
+  > or access.
+- `created_at`: Timestamp when the article was created. Always recorded in UTC timezone.
 - `updated_at`
-  > Timestamp when the post was last modified. Updated whenever title or body
-  > is edited by the author or administrator.
-- `deleted_at`
-  > Timestamp when the post was soft-deleted. NULL indicates the post is
-  > active. Used for moderation workflows where posts are hidden rather than
-  > permanently removed.
+  > Timestamp when the article was last edited. Updated on every modification
+  > of title, content, tags, or attachments.
 
-### `economic_forum_post_comments`
+### `economic_discussion_article_tags`
 
-Threaded comments and replies to posts, supporting up to 5 levels of
-nesting with parent-child relationships.
+Junction table managing the many-to-many relationship between articles
+and tags, with each row representing one tag applied to one article.
 
-Stores user-generated replies to forum posts with hierarchical structure,
-allowing users to respond directly to specific comments or posts. Each
-comment is associated with a single post and created by an authenticated
-user through their session.
+Allows articles to have multiple free-text tags and tags to be shared
+across multiple articles. This table enables tag-based filtering and
+searching while maintaining normalized data.
 
-Comments have a nested structure where replies can be posted to other
-comments, forming parent-child relationships up to five levels deep. This
-enables threaded discussions while maintaining performance through proper
-indexing.
+Tags are case-sensitive free-text strings up to 50 characters, stored
+directly in this junction table. The relationship is enforced by
+composite unique constraint on article_id and tag.
 
-Comments are soft-deletable for moderation purposes and tracked with full
-audit trail via created_at, updated_at, and deleted_at timestamps. Users
-can edit their own comments within a reasonable time window, with updates
-reflected in the updated_at field.
-
-Each comment is tied to exactly one post through post_id and one user
-through user_id, ensuring proper ownership and attribution. File
-attachments are managed separately in the Attachments component via
-economic_forum_post_attachments junction table.
+This table has no lifecycle or ownership beyond its association with
+articles and is only modified when articles are edited.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `post_id`: The forum post this comment belongs to. [economic_forum_posts.id](#economic_forum_posts).
-- `parent_id`
-  > The parent comment this is a reply to. Self-referential relationship.
-  > [economic_forum_post_comments.id](#economic_forum_post_comments).
-- `user_id`
-  > The authenticated user who created this comment. {@link
-  > economic_forum_users.id}.
-- `body`: The text content of the comment. Contains the user's reply or response.
-- `created_at`: Timestamp when this comment was created.
-- `updated_at`: Timestamp when this comment was last updated.
-- `deleted_at`
-  > Timestamp when this comment was soft-deleted for moderation purposes. If
-  > null, comment is active.
+- `economic_discussion_article_id`
+  > Reference to the article this tag belongs to. {@link
+  > economic_discussion_articles.id}.
+- `tag`
+  > The tag string applied to this article. Case-sensitive, 2-50 characters
+  > long. Each combination of article_id and tag is unique.
 
-### `economic_forum_post_reports`
+### `economic_discussion_article_files`
 
-User-submitted reports on forum posts for moderation review.
+Stores metadata for all file attachments associated with articles,
+including original name, size, type, and storage location.
 
-Records reports made by authenticated users against specific posts. Each
-report contains a reason provided by the reporter and a status that
-tracks the moderation workflow (pending, reviewed, resolved, or
-rejected). Reports are independent entities with their own lifecycle and
-can be searched, filtered, and acted upon by moderators regardless of the
-associated post.
+This table captures comprehensive metadata for every file uploaded to
+support articles. Files are stored permanently as long as their parent
+article exists. Files are managed exclusively through article operations
+(create/edit/delete) and do not have independent management by users.
 
-Reports are linked to the reporter through economic_forum_users and to
-the reported post through economic_forum_posts. When a post is deleted,
-its reports remain in the system for audit purposes. Soft deletion is
-supported to preserve historical data while allowing moderators to clean
-up obsolete reports.
+File type is stored as MIME type (e.g., application/pdf, image/png)
+allowing the system to serve appropriate content types and handle
+different file formats appropriately. Storage location points to the
+physical file path or cloud storage URI.
+
+If an article is deleted, all associated files are cascaded and removed
+from the system.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reporter_id`: Reporter user's [economic_forum_users.id](#economic_forum_users).
-- `reported_post_id`: Reported post's [economic_forum_posts.id](#economic_forum_posts).
-- `reason`
-  > The reason provided by the user for reporting this post. Maximum 1000
-  > characters.
-- `status`
-  > The current moderation status of the report. Valid values: 'pending',
-  > 'reviewed', 'resolved', 'rejected'.
-- `created_at`: Timestamp when this report was created.
-- `updated_at`: Timestamp when this report was last updated (e.g., when status changed).
-- `deleted_at`
-  > Timestamp when this report was soft-deleted. If null, the report is
-  > active.
+- `economic_discussion_article_id`: Reference to the parent article. [economic_discussion_articles.id](#economic_discussion_articles).
+- `original_name`
+  > The original filename as uploaded by the user. Required to preserve
+  > user's file naming convention.
+- `size`: File size in bytes. Used for storage monitoring and display to users.
+- `type`
+  > MIME type of the file (e.g., application/pdf, image/jpeg). Used to
+  > determine file handling and display.
+- `location`
+  > Storage location URI where the file is physically stored, e.g.,
+  > https://storage.example.com/files/... May include protocol, domain, and
+  > path.
+- `created_at`: Timestamp when the file was uploaded and recorded in the system.
+- `updated_at`
+  > Timestamp when the file metadata was last updated. May be updated during
+  > storage migration or metadata correction.
 
-## Attachments
+## Comments
 
 ```mermaid
 erDiagram
-"economic_forum_attachment_files" {
+"economic_discussion_comments" {
   String id PK
-  String hashed_filename UK
-  String original_filename
-  String mime_type
-  Float size
+  String economic_discussion_article_id FK
+  String economic_discussion_citizen_id FK
+  String deleted_by FK "nullable"
+  String content
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  Int version
+  String status
+  String deletion_reason "nullable"
+}
+"economic_discussion_comment_reactions" {
+  String id PK
+  String user_id FK
+  String comment_id FK
+  Boolean is_helpful
   DateTime created_at
 }
-"economic_forum_post_attachments" {
-  String id PK
-  String economic_forum_post_id FK
-  String economic_forum_attachment_file_id FK
-  Int sequence
-}
-"economic_forum_post_attachments" }o--|| "economic_forum_attachment_files" : attachmentFile
+"economic_discussion_comment_reactions" }o--|| "economic_discussion_comments" : comment
 ```
 
-### `economic_forum_attachment_files`
+### `economic_discussion_comments`
 
-Stores file metadata for uploaded attachments including unique hashed
-filename, original filename, MIME type, file size, and upload timestamp.
+User comments on articles with content, author reference, and timestamps.
+Stores all comment metadata including version, status, and deletion
+information.
 
-Contains immutable metadata for files attached to posts, ensuring file
-integrity, tracking, and efficient retrieval. Each record represents a
-single uploaded file with its technical properties, used by the
-application to serve files and validate uploads. The actual file storage
-is managed externally (e.g., cloud storage), with this table storing only
-reference and metadata information.
+Each comment represents a user's contribution to an article's discussion
+thread. Comments are owned by a citizen user and associated with one
+article. The system supports soft deletion so that comments can be
+removed from display while preserving audit trail. Every edit increments
+the version number for change tracking. Administrator deletions are
+recorded separately to identify who deleted the comment and why.
 
-Files are linked to posts via the economic_forum_post_attachments
-junction table. This table exists purely as supporting metadata and is
-not independently managed by users - attachments are created and deleted
-via their parent posts.
+Comments are not nested or threaded — each comment is a direct response
+to an article. They support full text search via GIN index on content.
+The status field replaces traditional boolean flags to allow explicit
+lifecycle management with 'active' and 'deleted' states.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `hashed_filename`
-  > Unique hashed filename generated to prevent storage conflicts and enable
-  > secure file referencing. Uses secure hashing algorithm to create unique
-  > identifier from original filename and content.
-- `original_filename`
-  > The original filename as provided by the user during upload. Preserved
-  > for display purposes and to maintain user intent, but never used for file
-  > storage or direct access.
-- `mime_type`
-  > The official MIME type of the file (e.g., 'image/jpeg',
-  > 'application/pdf'). Used for content delivery and validation to ensure
-  > only permitted file types are uploaded.
-- `size`
-  > Size of the file in bytes. Enforces maximum 5MB (5,242,880 bytes) limit
-  > per file as specified in requirements. Stored as double to accommodate
-  > precise byte counting.
+- `economic_discussion_article_id`
+  > Reference to the article this comment belongs to. {@link
+  > economic_discussion_articles.id}.
+- `economic_discussion_citizen_id`
+  > Reference to the citizen who wrote this comment. {@link
+  > economic_discussion_citizens.id}.
+- `deleted_by`
+  > Reference to the administrator who deleted this comment, if any. {@link
+  > economic_discussion_administrators.id}.
+- `content`: The text content of the comment. Must be between 5 and 1000 characters.
 - `created_at`
-  > Timestamp when the file was uploaded and metadata was recorded. Used for
-  > sorting attachments in upload order within posts and for audit purposes.
+  > The timestamp when the comment was created. Always set to current UTC
+  > time upon creation.
+- `updated_at`
+  > The timestamp when the comment was last edited. Updates on every edit
+  > operation.
+- `deleted_at`
+  > The timestamp when the comment was deleted. Null if not deleted. Supports
+  > soft delete.
+- `version`
+  > Incremented by 1 for each successful edit. Starts at 1 for the initial
+  > comment creation.
+- `status`
+  > Current status of the comment. Valid values: 'active', 'deleted'. This
+  > field replaces deleted flag with explicit status tracking.
+- `deletion_reason`
+  > The reason provided by the administrator for deleting this comment. Null
+  > if not deleted or not provided.
 
-### `economic_forum_post_attachments`
+### `economic_discussion_comment_reactions`
 
-Junction table linking posts to their attached files, ensuring each
-attachment is associated with exactly one post and maintaining order of
-upload.
-
-This table manages the many-to-many relationship between
-economic_forum_posts and economic_forum_attachment_files by creating a
-direct association with an explicit sequence number. Each attachment
-record in this table points to one specific post and one specific file,
-establishing the parent-child relationship between content and media.
-
-The sequence field (integer) determines the display order of attachments
-under each post, with lower numbers appearing first. This ensures
-attachments are presented in the exact order they were uploaded by the
-user.
-
-This junction table enables efficient querying of all attachments for a
-given post while maintaining the upload sequence, and prevents direct
-interaction with attachments outside the context of their parent post.
-
-When a post is deleted, all associated attachment records in this table
-are automatically removed as a cascading deletion through the foreign key
-relationship.
+Tracks user reactions (e.g., 'helpful' votes) on comments. Each reaction
+represents a single user's feedback on a specific comment.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `economic_forum_post_id`
-  > Reference to the post that this attachment belongs to. {@link
-  > economic_forum_posts.id}.
-- `economic_forum_attachment_file_id`
-  > Reference to the file record containing metadata for this attachment.
-  > [economic_forum_attachment_files.id](#economic_forum_attachment_files).
-- `sequence`
-  > Numeric order of attachment within the post. Lower values appear first,
-  > ensuring attachments are displayed in upload sequence. Must be positive
-  > integer.
+- `user_id`
+  > The citizen who created this reaction. {@link
+  > economic_discussion_citizens.id}.
+- `comment_id`
+  > The comment this reaction is associated with. {@link
+  > economic_discussion_comments.id}.
+- `is_helpful`
+  > Whether the reaction is marked as 'helpful'. True if user voted the
+  > comment as helpful, false otherwise.
+- `created_at`: The timestamp when this reaction was created. Immutable after creation.
+
+## Administration
+
+```mermaid
+erDiagram
+"economic_discussion_administrator_requests" {
+  String id PK
+  String economic_discussion_citizen_id FK
+  String reason
+  DateTime created_at
+}
+"economic_discussion_administrator_request_decisions" {
+  String id PK
+  String economic_discussion_administrator_request_id FK,UK
+  String reviewer_id FK
+  String decision
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economic_discussion_administrator_request_decisions" |o--|| "economic_discussion_administrator_requests" : request
+```
+
+### `economic_discussion_administrator_requests`
+
+Tracks requests from citizens to become administrators, including the
+reason and submission timestamp.
+
+Each request represents a citizen's formal application for elevated
+permissions within the system. Records remain permanently for audit
+purposes and are never deleted regardless of approval status.
+
+Requests are submitted by citizens through a dedicated interface and
+appear in a review queue for super administrators. Each request contains
+a detailed justification text that explains why the citizen believes they
+should be granted administrator privileges.
+
+The request is considered "pending" until a super administrator processes
+it through the companion
+economic_discussion_administrator_request_decisions table. The request
+model itself does not track approval status; that state is maintained in
+the decision table.
+
+This table supports independent operations: citizens can create requests,
+and super administrators can list, review, and act upon them. Therefore,
+it has primary stance and requires full CRUD API endpoints for request
+management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_citizen_id`
+  > The citizen who submitted this administrator request. {@link
+  > economic_discussion_citizens.id}.
+- `reason`
+  > The reason provided by the citizen for requesting administrator
+  > privileges. Must be at least 10 characters long.
+- `created_at`
+  > Timestamp when the administrator request was submitted by the citizen.
+  > Uses UTC time.
+
+### `economic_discussion_administrator_request_decisions`
+
+Records decisions by super administrators on administrator requests,
+including approval/rejection status, reviewer, and decision timestamp.
+
+This subsidiary table captures the outcome of reviews performed by super
+administrators on pending administrator requests.
+Each decision record is created when a super administrator takes action
+(approve or reject) on a specific administrator request.
+The decision cannot exist without its associated request, and each
+request has at most one decision.
+
+The table tracks not only the outcome (approved/rejected) but also who
+made the decision and when, creating a full audit trail.
+It maintains a direct relationship with the
+economic_discussion_administrator_requests table and references the super
+administrator who performed the action.
+All decisions are permanently recorded and never modified after creation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_administrator_request_id`
+  > The administrator request being decided. {@link
+  > economic_discussion_administrator_requests.id}.
+- `reviewer_id`
+  > The super administrator who made the decision. {@link
+  > economic_discussion_super_administrators.id}.
+- `decision`: The outcome of the decision: 'approved' or 'rejected'.
+- `created_at`: Timestamp when the decision record was created.
+- `updated_at`: Timestamp when the decision record was last updated.
+- `deleted_at`: Timestamp when this decision was logically deleted (soft delete).
+
+## Banning
+
+```mermaid
+erDiagram
+"economic_discussion_bans" {
+  String id PK
+  String citizen_id FK,UK
+  String admin_id FK
+  String reason
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economic_discussion_unbans" {
+  String id PK
+  String ban_id FK
+  String admin_id FK
+  DateTime created_at
+  String reason "nullable"
+}
+"economic_discussion_unbans" }o--|| "economic_discussion_bans" : ban
+```
+
+### `economic_discussion_bans`
+
+Stores active user bans with reason, administering administrator ID, and
+timestamp. References user ID from Authorization Agent's citizens table.
+
+Each record represents an active ban on a citizen user imposed by an
+administrator. The ban reason must be provided and is stored as a text
+field with minimum 10 characters as required by the system. This table
+enables administrators to track and manage banned users through the
+moderation interface, allowing them to view, search, and unban users. The
+ban status is managed through the deleted_at field, allowing for
+reversible bans while maintaining an audit trail.
+
+The reason field is indexed with GIN for full-text search capabilities,
+allowing administrators to efficiently search for bans by reason
+keywords. The combination of user_id and deleted_at ensures only one
+active ban per user can exist at a time.
+
+Banned users' own articles and comments are preserved and remain visible
+to other users, as required by the business model. This table only
+controls access to the platform through login denial, not content
+deletion.
+
+Foreign key relationships link this table to citizens (banned user) and
+administrators (admin who imposed the ban). Session termination and
+notification to the user are handled by the authentication service and do
+not require additional database fields.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `citizen_id`: The citizen account being banned. [economic_discussion_citizens.id](#economic_discussion_citizens)
+- `admin_id`
+  > The administrator who imposed this ban. {@link
+  > economic_discussion_administrators.id}
+- `reason`
+  > The reason for banning this user. Must be between 10 and 500 characters
+  > as required. This field is searchable by administrators using full-text
+  > search features.
+- `created_at`: Timestamp when the ban was created. Always set to current UTC time.
+- `updated_at`: Timestamp when the ban was last updated. Automatically updated on changes.
+- `deleted_at`
+  > Timestamp when the ban was lifted (unbanned). If NULL, the ban is active.
+  > Used for recoverable bans that can be restored.
+
+### `economic_discussion_unbans`
+
+Records when a previously banned user has been unbanned by an
+administrator for audit trail purposes.
+
+Each unban event is linked to a specific ban record and documents which
+administrator performed the unban action with the reason provided. This
+table serves as an immutable audit trail of permission restoration,
+allowing system administrators to track when and why access was
+reinstated after a ban.
+
+No user-facing functionality requires direct interaction with unbans -
+they are purely operational records for compliance and accountability.
+
+All records are appended only and never updated or deleted to maintain
+complete audit integrity.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ban_id`
+  > References the original ban record being undone. {@link
+  > economic_discussion_bans.id}.
+- `admin_id`
+  > The administrator who performed the unban action. {@link
+  > economic_discussion_administrators.id}.
+- `created_at`: The exact moment when the unban action was performed.
+- `reason`
+  > The reason provided by the administrator for unban. This context helps
+  > determine if the unban was appropriate or if policy violations occurred
+  > during the ban period.

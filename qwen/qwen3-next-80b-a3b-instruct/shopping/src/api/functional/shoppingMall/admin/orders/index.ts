@@ -1,62 +1,38 @@
-import { IConnection, HttpError } from "@nestia/fetcher";
+import { HttpError, IConnection } from "@nestia/fetcher";
+import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
-import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+
+import { IShoppingMallOrder } from "../../../../structures/IShoppingMallOrder";
+
 export * as items from "./items/index";
-export * as addresses from "./addresses/index";
-export * as payments from "./payments/index";
-export * as events from "./events/index";
-export * as returns from "./returns/index";
-export * as refunds from "./refunds/index";
-export * as deliveries from "./deliveries/index";
 
 /**
- * Permanently removes an order record from the shopping mall system. This is a
- * hard delete operation that completely eliminates the order and all its
- * related data from the database without any possibility of recovery.
+ * Retrieve the complete details of a specific order, including all associated order items, shipment information, and historical snapshots of both order items and their variants.
  *
- * The operation targets the shopping_mall_orders table in the database schema
- * and removes all associated records from dependent tables including shipping,
- * payments, order items, and audit logs. Because this is a business-critical
- * financial transaction, the system enforces hard deletion to ensure data
- * integrity and legal compliance for completed transactions.
+ * This operation provides a comprehensive view of an order's entire lifecycle, accessible to the customer who placed the order, as well as administrators with appropriate permissions. The response includes the core order information such as order number, total price, payment status, and timestamps, combined with detailed information about each order item including product name, SKU, quantity, unit price, and seller details. Each order item is linked to its corresponding shipment information with carrier and tracking details, and historical snapshot versions of both the order item and its product variant at the time of order placement.
  *
- * Security protocol requires that only authenticated users with proper
- * permissions (the order owner or admin) can initiate this deletion. The system
- * automatically verifies ownership by matching the authenticated user's ID with
- * the order's customer_id field before performing deletion. Admin users can
- * delete any order regardless of ownership for support and compliance
- * purposes.
+ * All order items within the same order may originate from different sellers, and each item carries its own status (paid, shipped, delivered, cancelled, refunded) allowing for complex order scenarios. The system maintains immutable snapshots of each order item's state at the time of order creation, preserving critical information like product name, variant options, and pricing that may change after order placement. Similarly, the product variant details at purchase time are preserved in snapshot form to ensure accurate historical records for tax, warranty, or return purposes.
  *
- * This hard delete operation cannot be undone. Once executed, the order and all
- * its associated data are permanently lost from the system. The system
- * maintains comprehensive audit logs of deletion events for compliance
- * purposes, recording the actor, timestamp, and IP address of the deletion
- * request.
+ * The response structure supports critical business processes including customer service inquiries, return and refund processing, dispute resolution, inventory reconciliation, and compliance auditing. Administrators use this detailed data for investigation of suspicious transactions, customer support, and performance monitoring of sellers and shipping providers.
  *
- * This deletion pattern follows financial transaction integrity best practices
- * where completed orders that have been fully processed, shipped, and paid are
- * permanently archived in the database and removed from active records to
- * maintain system performance and data consistency.
+ * This endpoint requires the customer to be authenticated and authorized to access the specific order. For security reasons, the order must be associated with the authenticated user's account. Admin users can access any order regardless of ownership.
  *
- * Note: Canceled or pending orders are managed through separate status-based
- * workflows and are not affected by this hard deletion operation, which only
- * applies to orders that have been fully completed and processed through the
- * system.
+ * Related operations: PATCH /orders (for browsing all orders), DELETE /orders/{orderId} (for order deletion if allowed by policy), POST /orders/{orderId}/items/{orderItemId}/cancel (for cancellation requests), and POST /orders/{orderId}/items/{orderItemId}/refund (for refund requests). A comprehensive history of all changes to this order is preserved in the snapshot records accessible through the IShoppingMallOrderSnapshots collection.
  *
  * @param props.connection
- * @param props.orderCode Unique business identifier code of the target order
- *   (global scope)
- * @path /shoppingMall/admin/orders/:orderCode
- * @accessor api.functional.shoppingMall.admin.orders.erase
+ * @param props.orderId Unique identifier of the target order
+ * @x-autobe-specification Query shopping_mall_orders table by order_id (UUID). Join with shopping_mall_order_items to retrieve all order items for this order, filtering by order_id and excluding deleted items. Join with shopping_mall_sellers to get seller details (shop name, logo) for each order item. Join with shopping_mall_shipments to retrieve shipment information linked to the order via shipment-to-order-item association. Use shopping_mall_order_item_snapshots to get historical snapshot data for each order item at time of creation. Join with shopping_mall_sale_specifications to retrieve variant options and prices as they existed at purchase time. Apply pagination for order items using cursor-based pagination due to potentially large result sets. Ensure order_item_snapshots reference the correct snapshot version corresponding to the order creation timestamp. Include order total price calculation from sum of order_item quantities multiplied by unit prices. Return order status based on aggregation of item statuses and shipment delivery status. Implement rate limiting of 20 requests per minute per customer to prevent abuse.
+ * @path /shoppingMall/admin/orders/:orderId
+ * @accessor api.functional.shoppingMall.admin.orders.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function erase(
+export async function at(
   connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
+  props: at.Props,
+): Promise<at.Response> {
   return true === connection.simulate
-    ? erase.simulate(connection, props)
+    ? at.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -66,21 +42,24 @@ export async function erase(
           },
         },
         {
-          ...erase.METADATA,
-          path: erase.path(props),
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
       );
 }
-export namespace erase {
+export namespace at {
   export type Props = {
-    /** Unique business identifier code of the target order (global scope) */
-    orderCode: string;
+    /**
+     * Unique identifier of the target order
+     */
+    orderId: string;
   };
+  export type Response = IShoppingMallOrder;
 
   export const METADATA = {
-    method: "DELETE",
-    path: "/shoppingMall/admin/orders/:orderCode",
+    method: "GET",
+    path: "/shoppingMall/admin/orders/:orderId",
     request: null,
     response: {
       type: "application/json",
@@ -89,20 +68,21 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderCode ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+    `/shoppingMall/admin/orders/${encodeURIComponent(props.orderId ?? "null")}`;
+  export const random = (): IShoppingMallOrder =>
+    typia.random<IShoppingMallOrder>();
   export const simulate = (
     connection: IConnection,
-    props: erase.Props,
-  ): void => {
+    props: at.Props,
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: erase.path(props),
+      path: at.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("orderCode")(() => typia.assert(props.orderCode));
+      assert.param("orderId")(() => typia.assert(props.orderId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

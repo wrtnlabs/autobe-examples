@@ -1,1 +1,1 @@
-Create the API interface specification.
+Design the database schema.

@@ -1,63 +1,37 @@
-import { IConnection, HttpError } from "@nestia/fetcher";
-import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia from "typia";
 
-import { IShoppingMallProductReview } from "../../../../structures/IShoppingMallProductReview";
-import { IPageIShoppingMallProductReview } from "../../../../structures/IPageIShoppingMallProductReview";
-import { IShoppingMallReviewModeration } from "../../../../structures/IShoppingMallReviewModeration";
-import { IShoppingMallReviewModerationLog } from "../../../../structures/IShoppingMallReviewModerationLog";
-export * as votes from "./votes/index";
-export * as moderation_logs from "./moderation_logs/index";
-export * as images from "./images/index";
-export * as replies from "./replies/index";
-export * as _export from "./_export/index";
+import { IShoppingMallReviewReport } from "../../../../structures/IShoppingMallReviewReport";
+
+export * as reports from "./reports/index";
+export * as stats from "./stats/index";
+export * as dashboard from "./dashboard/index";
+export * as metrics from "./metrics/index";
 
 /**
- * Permanently remove a product review from the system. This operation deletes
- * the review record from the shopping_mall_reviews table in the database schema
- * and immediately removes all associated data including reviews, flags, votes,
- * replies, and images.
+ * Submit a report on a review that violates platform policy. This operation allows users to flag reviews that contain inappropriate content, spam, or other violations of community guidelines.
  *
- * The deletion is performed as a hard delete (permanent removal) since the
- * shopping_mall_reviews table does not contain a soft_delete_column or similar
- * soft-deletion tracking field. There is no recovery mechanism for deleted
- * reviews; once removed, the data is irretrievably erased from the system.
+ * When a user reports a review, the system creates a report record linked to the specific review and records the user's reason for reporting. The reported review itself is not modified or deleted; instead, the report is stored in the review reports system as an immutable record. Administrators can view all reports and take appropriate action such as hiding the review from public view or deleting it with an official reason.
  *
- * This operation is only accessible to administrators due to the sensitive
- * nature of content moderation and the potential for abuse. The system ensures
- * that only users with admin privileges can invoke this deletion operation to
- * prevent malicious removal of legitimate customer feedback.
+ * This operation supports the platform's content moderation system as specified in the Reviews and Ratings requirements. The system must preserve snapshots of all review modifications and deletions, but review reports are separate records that help administrators identify problematic content based on community feedback.
  *
- * When a review is deleted, the system automatically removes all dependent
- * records from the following tables in a single transaction:
- * shopping_mall_review_flags, shopping_mall_review_images,
- * shopping_mall_review_moderation_logs, shopping_mall_review_replies, and
- * shopping_mall_review_votes. This maintains referential integrity and prevents
- * orphaned records from cluttering the database.
- *
- * Security and compliance: The deletion action is logged in the
- * shopping_mall_audit_logs table with the admin's identity, timestamp, and the
- * review ID that was deleted. This audit trail ensures regulatory compliance
- * with content moderation guidelines and provides an audit path for reviewing
- * moderation decisions.
- *
- * Related operations: List all reviews (PATCH /reviews), get single review (GET
- * /reviews/{reviewId}), create review (POST /reviews).
+ * Reports trigger internal notifications to administrators and are stored permanently as part of the audit trail for compliance purposes. Reported reviews remain visible to the public until an administrator takes action, allowing for transparent community moderation while preserving due process.
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the review to be permanently
- *   deleted
- * @path /shoppingMall/admin/reviews/:reviewId
- * @accessor api.functional.shoppingMall.admin.reviews.erase
+ * @param props.body The review ID and reason for reporting the review
+ * @x-autobe-specification Create a new review report record in the system linking the review ID from the request body with the user ID from the JWT token and the reported reason. Validate that the review ID exists and belongs to a valid review in the system. Ensure the user has not already reported this particular review to prevent duplicate reports. Store the report in the shopping_mall_review_reports table with the reporter ID, review ID, report reason, and timestamp. Return a success response indicating the report was submitted successfully.
+ * @path /shoppingMall/admin/reviews/report
+ * @accessor api.functional.shoppingMall.admin.reviews.report
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function erase(
+export async function report(
   connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
+  props: report.Props,
+): Promise<report.Response> {
   return true === connection.simulate
-    ? erase.simulate(connection, props)
+    ? report.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -67,125 +41,26 @@ export async function erase(
           },
         },
         {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /** Unique identifier of the review to be permanently deleted */
-    reviewId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/shoppingMall/admin/reviews/:reviewId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/admin/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("reviewId")(() => typia.assert(props.reviewId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve filtered and paginated reviews from the system. This operation
- * operates on the shopping_mall_reviews table and provides advanced search
- * capabilities for finding reviews based on product, user, rating, status, and
- * date range.
- *
- * The operation supports comprehensive pagination with configurable page sizes
- * and sorting options. Reviews can be filtered by product ID, user ID, rating
- * range (1-5 stars), review status (approved, pending, rejected), and date
- * range. Sorting can be done by creation date, rating, helpfulness votes, or
- * popularity.
- *
- * Security considerations include rate limiting for search operations and
- * appropriate filtering of sensitive review information based on the requesting
- * user's authorization level. Only users with appropriate permissions can
- * access detailed review information including hidden content or moderator
- * notes. Admins can view all reviews including those marked as pending or
- * rejected, while regular users can only view approved reviews.
- *
- * This operation integrates with the shopping_mall_reviews table as defined in
- * the database schema, incorporating all available review fields and
- * relationships. The response includes review summary information optimized for
- * list displays, with options to include additional details based on
- * authorization level. Related operations: GET /reviews/{reviewId} for detailed
- * review retrieval, POST /reviews for creating new reviews.
- *
- * @param props.connection
- * @param props.body Search criteria and pagination parameters for review
- *   filtering and sorting
- * @path /shoppingMall/admin/reviews
- * @accessor api.functional.shoppingMall.admin.reviews.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
+          ...report.METADATA,
+          path: report.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace report {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for review filtering and
-     * sorting
+     * The review ID and reason for reporting the review
      */
-    body: IShoppingMallProductReview.IRequest;
+    body: IShoppingMallReviewReport.IRequest;
   };
-  export type Body = IShoppingMallProductReview.IRequest;
-  export type Response = IPageIShoppingMallProductReview.ISummary;
+  export type Body = IShoppingMallReviewReport.IRequest;
+  export type Response = IShoppingMallReviewReport.IResponse;
 
   export const METADATA = {
     method: "PATCH",
-    path: "/shoppingMall/admin/reviews",
+    path: "/shoppingMall/admin/reviews/report",
     request: {
       type: "application/json",
       encrypted: false,
@@ -196,131 +71,20 @@ export namespace index {
     },
   } as const;
 
-  export const path = () => "/shoppingMall/admin/reviews";
-  export const random = (): IPageIShoppingMallProductReview.ISummary =>
-    typia.random<IPageIShoppingMallProductReview.ISummary>();
+  export const path = () => "/shoppingMall/admin/reviews/report";
+  export const random = (): IShoppingMallReviewReport.IResponse =>
+    typia.random<IShoppingMallReviewReport.IResponse>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: report.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(),
+      path: report.path(),
       contentType: "application/json",
     });
     try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Moderate a product review by approving, rejecting, or flagging it as
- * inappropriate. This operation operates on the
- * shopping_mall_review_moderation_logs table to record moderator actions on
- * product reviews.
- *
- * This endpoint allows authorized administrators to take action on customer
- * reviews that violate platform guidelines or contain inappropriate content.
- * Each moderation action creates an immutable audit log entry that tracks the
- * moderator who took action, the timestamp, the review being moderated, the
- * action taken (approve/reject/flag), and any optional comment explaining the
- * decision.
- *
- * Security considerations include strict authorization controls that limit this
- * functionality to administrators only. The system maintains an immutable audit
- * trail of all moderation actions for compliance purposes. The operation
- * validates that the referenced review exists and is in a modifiable state.
- *
- * This operation integrates with the shopping_mall_review_moderation_logs
- * entity to create an audit trail of reviewer actions, and with the
- * shopping_mall_reviews entity to ensure the review exists and to update its
- * status accordingly. Related operations: GET /reviews/{reviewId} (view
- * review), PATCH /reviews (list reviews).
- *
- * @param props.connection
- * @param props.reviewId Unique identifier of the target review to be moderated
- * @param props.body Moderation action details including the action type and
- *   optional comment
- * @path /shoppingMall/admin/reviews/:reviewId/moderate
- * @accessor api.functional.shoppingMall.admin.reviews.moderate
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function moderate(
-  connection: IConnection,
-  props: moderate.Props,
-): Promise<moderate.Response> {
-  return true === connection.simulate
-    ? moderate.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...moderate.METADATA,
-          path: moderate.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace moderate {
-  export type Props = {
-    /** Unique identifier of the target review to be moderated */
-    reviewId: string;
-
-    /**
-     * Moderation action details including the action type and optional
-     * comment
-     */
-    body: IShoppingMallReviewModeration.IRequest;
-  };
-  export type Body = IShoppingMallReviewModeration.IRequest;
-  export type Response = IShoppingMallReviewModerationLog;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/shoppingMall/admin/reviews/:reviewId/moderate",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/admin/reviews/${encodeURIComponent(props.reviewId ?? "null")}/moderate`;
-  export const random = (): IShoppingMallReviewModerationLog =>
-    typia.random<IShoppingMallReviewModerationLog>();
-  export const simulate = (
-    connection: IConnection,
-    props: moderate.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: moderate.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("reviewId")(() => typia.assert(props.reviewId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;

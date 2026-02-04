@@ -1,10 +1,8 @@
-export * as sections from "./sections/index";
-export * as sellers from "./sellers/index";
+export * as account_status_histories from "./account_status_histories/index";
+export * as profile_snapshots from "./profile_snapshots/index";
 export * as products from "./products/index";
 export * as categories from "./categories/index";
-export * as inventory from "./inventory/index";
-export * as variant from "./variant/index";
 export * as orders from "./orders/index";
-export * as payments from "./payments/index";
-export * as refunds from "./refunds/index";
-export * as reviews from "./reviews/index";
+export * as order_items from "./order_items/index";
+export * as dashboard from "./dashboard/index";
+export * as analytics from "./analytics/index";
